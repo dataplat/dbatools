@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
         Remove-Item -Path $DestBackupDir -Recurse -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Get last history for single database" {

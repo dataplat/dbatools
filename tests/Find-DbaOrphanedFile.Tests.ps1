@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
             Remove-Item "C:\$($backupFile.BackupFile)" -Force -ErrorAction SilentlyContinue
             Remove-Item $tmpBackupPath3 -Recurse -Force -ErrorAction SilentlyContinue
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         It "Has the correct properties" {
             $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Force

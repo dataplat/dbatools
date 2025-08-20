@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Remove the export directory.
         Remove-Item -Path $exportPath -Recurse -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When exporting binary files from database" {

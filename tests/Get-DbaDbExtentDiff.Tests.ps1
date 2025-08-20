@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created object.
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets Changed Extents for Multiple Databases" {

@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
             RECONFIGURE;
             GO" -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Can stop an external process" {

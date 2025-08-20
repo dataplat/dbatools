@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Clean up all test alerts created during testing
         Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $global:testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Creating a new SQL Server Agent alert" {

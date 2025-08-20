@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created registered servers.
         Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName, $regSrvName2 | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing registered servers" {

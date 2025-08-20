@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaLogin @splatRemoveLogin
         $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {

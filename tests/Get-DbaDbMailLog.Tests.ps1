@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("DELETE FROM msdb.[dbo].[sysmail_log] WHERE last_mod_user = 'dbatools\dbatoolssci'")
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets Db Mail Log" {

@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Ignore cleanup errors
         }
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying server triggers between instances" {

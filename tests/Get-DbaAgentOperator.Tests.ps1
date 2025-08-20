@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
         $server.Query($sql)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Get back some operators" {

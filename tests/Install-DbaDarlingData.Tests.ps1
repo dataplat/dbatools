@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $darlingDbDownload -Confirm:$false
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Installs to specified database: $darlingDbDownload" {
@@ -91,7 +91,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $darlingDbLocalFile -Confirm:$false
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Installs to specified database: $darlingDbLocalFile" {

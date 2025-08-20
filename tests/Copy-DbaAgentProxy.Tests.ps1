@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sql = "DROP CREDENTIAL dbatoolsci_credential"
         $destServer.Query($sql)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying agent proxy between instances" {

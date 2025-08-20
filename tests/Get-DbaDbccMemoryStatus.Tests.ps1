@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # No cleanup needed for this read-only command
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Validate standard output" {

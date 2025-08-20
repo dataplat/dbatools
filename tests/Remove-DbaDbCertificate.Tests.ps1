@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Successfully removes database certificate in master" {

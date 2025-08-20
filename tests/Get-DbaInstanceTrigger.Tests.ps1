@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup the created triggers
         $sql = "DROP TRIGGER [$trigger1Name] ON ALL SERVER;DROP TRIGGER [$trigger2Name] ON ALL SERVER"
         $instance.query($sql)
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When retrieving instance triggers" {

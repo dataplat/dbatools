@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $server.Query("DROP VIEW [$schemaName].$viewNameWithSchema", "tempdb")
         $null = $server.Query("DROP SCHEMA [$schemaName]", "tempdb")
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {

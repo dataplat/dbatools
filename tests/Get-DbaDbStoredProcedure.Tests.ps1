@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $db1 | Remove-DbaDatabase -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {

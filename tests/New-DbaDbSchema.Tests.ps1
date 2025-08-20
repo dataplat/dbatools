@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $newDbs | Remove-DbaDatabase -Confirm:$false
         $null = $logins | Remove-DbaLogin -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "commands work as expected" {

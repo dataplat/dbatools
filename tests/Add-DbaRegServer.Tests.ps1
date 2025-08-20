@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         Get-DbaRegServer -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When adding a registered server" {

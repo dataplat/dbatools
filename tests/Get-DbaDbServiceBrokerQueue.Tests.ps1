@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $server.Query("DROP QUEUE $queuename", "tempdb")
         $null = $server.Query("DROP PROCEDURE $procname", "tempdb")
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets the service broker queue" {

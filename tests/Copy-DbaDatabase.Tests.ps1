@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Remove-DbaDatabase @splatRemoveSupport -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Support databases are excluded when AllDatabase selected" {

@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
         Remove-Item -Path "$($TestConfig.Temp)\$dbname.bak", "$($TestConfig.Temp)\$dbname.trn" -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "removes ag db" {

@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created objects.
         $null = $testDatabases | Remove-DbaDatabase -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing database schemas" {

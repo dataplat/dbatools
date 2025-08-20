@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
             Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue -Confirm:$false
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Gets all snapshots by default" {

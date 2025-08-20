@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance3 -Login "claudio", "port", "tester" -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "revokes big perms" {
         It "returns results with proper data" {

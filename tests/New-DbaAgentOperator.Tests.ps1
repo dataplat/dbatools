@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email3
         $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email4
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "New Agent Operator is added properly" {

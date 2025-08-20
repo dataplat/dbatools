@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
         Invoke-DbaQuery @splatCleanup -Query "DROP RESOURCE POOL [dbatoolsci_offhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE" -ErrorAction SilentlyContinue
         Invoke-DbaQuery @splatCleanup -Query "DROP RESOURCE POOL [dbatoolsci_prod];ALTER RESOURCE GOVERNOR RECONFIGURE" -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying resource governor settings" {

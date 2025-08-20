@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $newDb1, $newDb2, $newDb3 | Remove-DbaDatabase -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing filegroups" {

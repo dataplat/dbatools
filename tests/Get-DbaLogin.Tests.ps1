@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Does sql instance have a SA account" {

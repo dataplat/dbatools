@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
         Get-DbaProcess -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
         Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin | Remove-DbaLogin -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When adding a sql login" {

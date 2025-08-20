@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Remove the temp directory.
             Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should export some text matching create table" {

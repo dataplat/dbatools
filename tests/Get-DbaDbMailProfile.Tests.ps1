@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
             @profile_name='$profilename';"
         $server.Query($mailProfile)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets DbMail Profile" {

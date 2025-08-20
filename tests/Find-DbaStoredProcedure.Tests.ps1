@@ -117,7 +117,7 @@ AS
             }
             $null = Remove-DbaDatabase @splatRemoveDb
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should find a specific StoredProcedure named sp_dbatoolsci_custom" {

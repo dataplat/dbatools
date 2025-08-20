@@ -67,7 +67,7 @@ END;
         $DropTestUDFunction = "DROP FUNCTION dbo.dbatoolssci_ISOweek;"
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestUDFunction -Database master -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "User Functions are correctly located" {

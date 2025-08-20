@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When enabling force network encryption" {

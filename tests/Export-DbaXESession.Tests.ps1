@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Check if output file was created" {

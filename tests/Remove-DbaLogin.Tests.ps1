@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Clean up any remaining test login
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin -Confirm:$false -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing a login" {

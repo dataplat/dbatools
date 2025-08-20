@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2 -EndPoint dbatoolsci_MirroringEndpoint
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "returns success" {

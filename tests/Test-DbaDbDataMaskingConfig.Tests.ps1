@@ -129,7 +129,7 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
         Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "gives no errors with a correct json file" {

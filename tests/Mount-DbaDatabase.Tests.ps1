@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
         Remove-Item -Path C:\Temp\detachattach.bak -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Attaches a single database and tests to ensure the alias still exists" {

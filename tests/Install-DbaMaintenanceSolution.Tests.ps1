@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
             $server.Databases['tempdb'].Query("DROP TABLE CommandLog")
             Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -Database tempdb -Query "drop procedure CommandExecute; drop procedure DatabaseBackup; drop procedure DatabaseIntegrityCheck; drop procedure IndexOptimize;"
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "does not overwrite existing" {

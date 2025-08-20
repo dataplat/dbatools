@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Validating Database Input" {

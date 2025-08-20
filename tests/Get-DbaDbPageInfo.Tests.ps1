@@ -67,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Count Pages" {
         It "returns the proper results" {

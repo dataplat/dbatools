@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created objects.
         $null = $server.Query("DROP PROCEDURE $startupProc", $dbname)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When enabling a startup procedure" {

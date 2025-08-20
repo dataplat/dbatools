@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Clean up any remaining test categories
             $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3" -Confirm:$false -ErrorAction SilentlyContinue
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have the right name and category type" {

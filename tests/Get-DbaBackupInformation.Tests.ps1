@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase
         Remove-Item -Path $DestBackupDir, $DestBackupDirOla -Recurse -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Get history for all database" {

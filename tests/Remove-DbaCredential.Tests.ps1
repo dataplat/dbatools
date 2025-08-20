@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
             $existingCredentials | Remove-DbaCredential -Confirm:$false -ErrorAction SilentlyContinue
         }
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing SQL credentials" {

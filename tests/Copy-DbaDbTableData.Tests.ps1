@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example")
         $null = $sourceDb.Query("DROP TABLE tempdb.dbo.dbatoolsci_willexist")
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying table data within same instance" {

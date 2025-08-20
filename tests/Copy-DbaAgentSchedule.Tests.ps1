@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
         $server.Query($sql)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying agent schedule between instances" {

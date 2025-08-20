@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Remove the backup directory.
         Remove-Item -Path $testFolder -Recurse -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     # See https://github.com/dataplat/dbatools/issues/7038
