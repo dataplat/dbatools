@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
             ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should -Be 0
         }
         It "Should have renamed datafiles as well" {
-            ($out | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should -BeGreaterThan 0
+            ($out | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count | Should -BeGreaterThan 0
         }
     }
 
@@ -200,7 +200,7 @@ Describe $CommandName -Tag IntegrationTests {
             ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should -Be 0
         }
         It "Should have renamed datafiles as well" {
-            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count | Should -Be 0
+            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count | Should -BeGreaterThan 0
         }
         It "Should have moved all data files to c:\restores\" {
             (($output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'D' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\restores' }).count | Should -Be 0
