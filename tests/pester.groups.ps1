@@ -25,6 +25,7 @@ $TestsRunGroups = @{
         # tests that work locally against SQL Server 2022 instances without problems but fail on AppVeyor
         'ConvertTo-DbaXESession',
         'Dismount-DbaDatabase',
+        'Export-DbaInstance',
         'Export-DbaUser',
         'Get-DbaPermission',
         'Get-DbaUserPermission',
