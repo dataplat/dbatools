@@ -28,7 +28,11 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $set = Get-DbaPfDataCollectorSet | Select-Object -First 1
+
+            foreach ($set in Get-DbaPfDataCollectorSet) {
+                write-warning -Message "DbaPfDataCollectorSet: $($set.Name) is $($set.State)"
+            }
+            $set = Get-DbaPfDataCollectorSet | Where-Object State -eq 'Running' | Select-Object -First 1
             $set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
             Start-Sleep 2
 
@@ -36,11 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
             $set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should return a result with the right computername and name is not null" {
