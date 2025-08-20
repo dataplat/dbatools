@@ -25,21 +25,29 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Command execution and functionality" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $set = Get-DbaPfDataCollectorSet | Select-Object -First 1
+            $set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+            Start-Sleep 2
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         AfterAll {
-            $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should return a result with the right computername and name is not null" {
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
-            $script:set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-            Start-Sleep 2
-
-            $results = $script:set | Select-Object -First 1 | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
-            if (-not $warn) {
+            $results = $set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+            if (-not $WarnVar) {
                 $results.ComputerName | Should -Be $env:COMPUTERNAME
-                $results.Name | Should -Not -Be $null
+                $results.Name | Should -Not -BeNullOrEmpty
             }
         }
     }

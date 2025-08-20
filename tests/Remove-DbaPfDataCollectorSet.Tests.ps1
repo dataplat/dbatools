@@ -40,6 +40,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Clean up any remaining data collector sets
         $null = Remove-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command return the proper results" {

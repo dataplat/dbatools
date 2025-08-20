@@ -62,6 +62,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $newDb | Remove-DbaDatabase -Confirm:$false
         Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         Remove-Item -Path $testFile -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Command actually works" {
 

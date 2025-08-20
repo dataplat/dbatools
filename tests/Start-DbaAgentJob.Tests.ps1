@@ -54,6 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobNames -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "returns a CurrentRunStatus of not Idle and supports pipe" {

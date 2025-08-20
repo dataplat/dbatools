@@ -86,6 +86,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Remove backup files.
         Remove-Item -Path "$($TestConfig.Temp)\$global:dbnameFullModel*", "$($TestConfig.Temp)\$global:dbnameBulkLoggedModel*" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Param validation" {

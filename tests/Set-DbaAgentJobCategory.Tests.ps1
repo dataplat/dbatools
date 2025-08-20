@@ -45,6 +45,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Cleanup and ignore all output
             Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $newCategoryName -Confirm:$false -ErrorAction SilentlyContinue
             Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategoryName -Confirm:$false -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have the right name and category type" {

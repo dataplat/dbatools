@@ -28,11 +28,6 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "tests a certificate" {
-        BeforeAll {
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
         AfterAll {
             Remove-DbaComputerCertificate -Thumbprint "29C469578D6C6211076A09CEE5C5797EEA0C2713" -Confirm:$false
         }

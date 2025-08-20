@@ -60,6 +60,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXECUTE msdb.dbo.sysmail_delete_profile_sp @profile_name = '$mailProfileName'"
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC msdb.dbo.sp_set_sqlagent_properties @local_host_server=N''"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "changes agent server job history properties to 10000 / 100" {

@@ -46,6 +46,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Restore the original port configuration
             $null = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $originalPort -Confirm:$false -WarningAction SilentlyContinue
             $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should change the port" {

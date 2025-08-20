@@ -38,6 +38,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $oldBackupDirectory
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "returns proper information" {

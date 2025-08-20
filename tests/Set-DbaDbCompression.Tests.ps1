@@ -54,6 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database $dbName | Stop-DbaProcess -WarningAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command gets results" {

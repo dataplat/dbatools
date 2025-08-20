@@ -60,6 +60,8 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-Item -Path "$global:tempdbDataFilePath\DataDir1_$global:random" -Force -ErrorAction SilentlyContinue
         Remove-Item -Path "$global:tempdbDataFilePath\DataDir2_$global:random" -Force -ErrorAction SilentlyContinue
         Remove-Item -Path "$global:tempdbDataFilePath\Log_$global:random" -Force -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Command actually works" {
 
