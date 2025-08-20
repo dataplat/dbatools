@@ -1,179 +1,215 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Format-DbaBackupInformation",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'BackupHistory', 'ReplaceDatabaseName', 'ReplaceDbNameInFile', 'DataFileDirectory', 'LogFileDirectory', 'DestinationFileStreamDirectory', 'DatabaseNamePrefix', 'DatabaseFilePrefix', 'DatabaseFileSuffix', 'RebaseBackupFolder', 'Continue', 'FileMapping', 'PathSep', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should have the expected parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "BackupHistory",
+                "ReplaceDatabaseName",
+                "ReplaceDbNameInFile",
+                "DataFileDirectory",
+                "LogFileDirectory",
+                "DestinationFileStreamDirectory",
+                "DatabaseNamePrefix",
+                "DatabaseFilePrefix",
+                "DatabaseFileSuffix",
+                "RebaseBackupFolder",
+                "Continue",
+                "FileMapping",
+                "PathSep",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
-
+Describe $CommandName -Tag IntegrationTests {
     Context "Rename a Database" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $output = $history | Format-DbaBackupInformation -ReplaceDatabaseName 'Pester'
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $output = $history | Format-DbaBackupInformation -ReplaceDatabaseName 'Pester'
+        }
+
         It "Should have a database name of Pester" {
-            ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should be 0
+            ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should -Be 0
         }
         It "Should have renamed datafiles as well" {
-            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count
+            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count | Should -Be 0
         }
 
     }
 
     Context "Test it works as a parameter as well" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $output = Format-DbaBackupInformation -BackupHistory $History -ReplaceDatabaseName 'Pester'
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName 'Pester'
+        }
+
         It "Should have a database name of Pester" {
-            ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should be 0
+            ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should -Be 0
         }
         It "Should have renamed datafiles as well" {
-            ($out | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should Be 0
+            ($out | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should -Be 0
         }
     }
 
     Context "Rename 2 dbs using a hash" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-        $output = Format-DbaBackupInformation -BackupHistory $History -ReplaceDatabaseName @{'ContinuePointTest' = 'Spiggy'; 'RestoreTimeClean' = 'Eldritch' }
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName @{'ContinuePointTest' = 'Spiggy'; 'RestoreTimeClean' = 'Eldritch' }
+        }
+
         It "Should have no databases other than spiggy and eldritch" {
-            ($output | Where-Object { $_.Database -notin ('Spiggy', 'Eldritch') }).count | Should be 0
+            ($output | Where-Object { $_.Database -notin ('Spiggy', 'Eldritch') }).count | Should -Be 0
         }
         It "Should have renamed all RestoreTimeCleans to Eldritch" {
-            ($Output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Where-Object { $_.Database -ne 'Eldritch' }).count | Should be 0
+            ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Where-Object { $_.Database -ne 'Eldritch' }).count | Should -Be 0
         }
         It "Should have renamed all the RestoreTimeClean files to Eldritch" {
-            ($out | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'RestoreTimeClean' }).count | Should Be 0
-            ($out | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'eldritch' }).count | Should Be ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
+            ($out | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'RestoreTimeClean' }).count | Should -Be 0
+            ($out | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'eldritch' }).count | Should -Be ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
 
         }
         It "Should have renamed all ContinuePointTest to Spiggy" {
-            ($Output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Where-Object { $_.Database -ne 'Spiggy' }).count | Should be 0
+            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Where-Object { $_.Database -ne 'Spiggy' }).count | Should -Be 0
         }
         It "Should have renamed all the ContinuePointTest files to Spiggy" {
-            ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should Be 0
-            ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'spiggy' }).count | Should Be ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
+            ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should -Be 0
+            ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'spiggy' }).count | Should -Be ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
 
         }
     }
 
     Context "Rename 1 dbs using a hash" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-        $output = Format-DbaBackupInformation -BackupHistory $History -ReplaceDatabaseName @{'ContinuePointTest' = 'Alice' }
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName @{'ContinuePointTest' = 'Alice' }
+        }
+
         It "Should have no databases other than spiggy and eldritch" {
-            ($output | Where-Object { $_.Database -notin ('RestoreTimeClean', 'Alice') }).count | Should be 0
+            ($output | Where-Object { $_.Database -notin ('RestoreTimeClean', 'Alice') }).count | Should -Be 0
         }
         It "Should have left RestoreTimeClean alone" {
-            ($Output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Where-Object { $_.Database -ne 'RestoreTimeClean' }).count | Should be 0
+            ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Where-Object { $_.Database -ne 'RestoreTimeClean' }).count | Should -Be 0
         }
         It "Should have renamed all ContinuePointTest to Alice" {
-            ($Output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Where-Object { $_.Database -ne 'Alice' }).count | Should be 0
+            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Where-Object { $_.Database -ne 'Alice' }).count | Should -Be 0
         }
         It "Should have renamed all the ContinuePointTest files to Alice" {
-            ($Output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should Be 0
-            ($Output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'alice' }).count | Should Be ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
+            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should -Be 0
+            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'alice' }).count | Should -Be ($out | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
         }
     }
 
     Context "Check DB Name prefix and suffix" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $output = $history | Format-DbaBackupInformation -DatabaseNamePrefix PREFIX
         It "Should have prefixed all db names" {
-            ($Output | Where-Object { $_.Database -like 'PREFIX*' }).count | Should be $output.count
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $output = $history | Format-DbaBackupInformation -DatabaseNamePrefix PREFIX
+            ($output | Where-Object { $_.Database -like 'PREFIX*' }).count | Should -Be $output.count
         }
 
     }
 
     Context "Check DataFileDirectory moves all files" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-        $output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores
-
         It "Should have move ALL files to c:\restores\" {
-            (($Output | Select-Object -ExpandProperty Filelist).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\restores' }).count | Should Be 0
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -DataFileDirectory c:\restores
+            (($output | Select-Object -ExpandProperty Filelist).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\restores' }).count | Should -Be 0
         }
     }
 
     Context "Check DataFileDirectory and LogFileDirectory work independently" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-        $output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores\ -LogFileDirectory c:\logs
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -DataFileDirectory c:\restores\ -LogFileDirectory c:\logs
+        }
 
         It "Should  have moved all data files to c:\restores\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'D' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\restores' }).count | Should Be 0
+            (($output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'D' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\restores' }).count | Should -Be 0
         }
         It "Should have moved all log files to c:\logs\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'L' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\logs' }).count | Should Be 0
+            (($output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'L' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\logs' }).count | Should -Be 0
         }
     }
 
     Context "Check LogFileDirectory works for just logfiles" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-        $Output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores\ -LogFileDirectory c:\logs
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -DataFileDirectory c:\restores\ -LogFileDirectory c:\logs
+        }
 
         It "Should not have moved all data files to c:\restores\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'D' }).PhysicalName | Split-Path | Where-Object { $_ -eq 'c:\logs' }).count | Should Be 0
+            (($output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'D' }).PhysicalName | Split-Path | Where-Object { $_ -eq 'c:\logs' }).count | Should -Be 0
         }
         It "Should have moved all log files to c:\logs\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'L' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\logs' }).count | Should Be 0
+            (($output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'L' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\logs' }).count | Should -Be 0
         }
     }
 
     Context "Test RebaseBackupFolder" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder c:\backups\
-
         It "Should not have moved all backup files to c:\backups" {
-            ($Output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should Be $History.count
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -RebaseBackupFolder c:\backups\
+            ($output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should -Be $history.count
         }
 
     }
 
     Context "Test PathSep" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder 'c:\backups'
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        }
+
         It "Should not have changed the default path separator" {
-            ($Output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should Be $History.count
+            $output = Format-DbaBackupInformation -BackupHistory $history -RebaseBackupFolder 'c:\backups'
+            ($output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should -Be $history.count
         }
-        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder 'c:\backups' -PathSep '\'
         It "Should not have changed the default path separator even when passed explicitely" {
-            ($Output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should Be $History.count
+            $output = Format-DbaBackupInformation -BackupHistory $history -RebaseBackupFolder 'c:\backups' -PathSep '\'
+            ($output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should -Be $history.count
         }
-        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder '/opt/mssql/backups' -PathSep '/'
         It "Should have changed the path separator as instructed" {
-            $result = $Output | Select-Object -ExpandProperty FullName | ForEach-Object { $all = $_.Split('/'); $all[0..($all.Length - 2)] -Join '/' }
-            ($result | Where-Object { $_ -eq '/opt/mssql/backups' }).count | Should Be $History.count
+            $output = Format-DbaBackupInformation -BackupHistory $history -RebaseBackupFolder '/opt/mssql/backups' -PathSep '/'
+            $result = $output | Select-Object -ExpandProperty FullName | ForEach-Object { $all = $_.Split('/'); $all[0..($all.Length - 2)] -Join '/' }
+            ($result | Where-Object { $_ -eq '/opt/mssql/backups' }).count | Should -Be $history.count
         }
     }
 
     Context "Test everything all at once" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $output = $history | Format-DbaBackupInformation -ReplaceDatabaseName 'Pester' -DataFileDirectory c:\restores -LogFileDirectory c:\logs\ -RebaseBackupFolder c:\backups\
-        It "Should have a database name of Pester" {
-            ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should be 0
-        }
-        It "Should have renamed datafiles as well" {
-            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count
-        }
-        It "Should have moved all data files to c:\restores\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'D' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\restores' }).count | Should Be 0
-        }
-        It "Should have moved all log files to c:\logs\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'L' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\logs' }).count | Should Be 0
-        }
-        It "Should not have moved all backup files to c:\backups" {
-            ($Output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should Be $History.count
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $output = $history | Format-DbaBackupInformation -ReplaceDatabaseName 'Pester' -DataFileDirectory c:\restores -LogFileDirectory c:\logs\ -RebaseBackupFolder c:\backups\
         }
 
+        It "Should have a database name of Pester" {
+            ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should -Be 0
+        }
+        It "Should have renamed datafiles as well" {
+            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count | Should -Be 0
+        }
+        It "Should have moved all data files to c:\restores\" {
+            (($output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'D' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\restores' }).count | Should -Be 0
+        }
+        It "Should have moved all log files to c:\logs\" {
+            (($output | Select-Object -ExpandProperty Filelist | Where-Object { $_.Type -eq 'L' }).PhysicalName | Split-Path | Where-Object { $_ -ne 'c:\logs' }).count | Should -Be 0
+        }
+        It "Should not have moved all backup files to c:\backups" {
+            ($output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should -Be $history.count
+        }
     }
 }
