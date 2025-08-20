@@ -31,6 +31,7 @@ $TestsRunGroups = @{
         'Get-DbaUserPermission',
         'Install-DbaDarlingData',
         'Invoke-DbaWhoisActive',
+        'New-DbaAgentSchedule',
         'Remove-DbaAvailabilityGroup',
         'Remove-DbaLinkedServer',
         'Set-DbaAgentJobStep',   # This outputs the message "[New-DbaAgentJob] Something went wrong creating the job. | Value cannot be null. / Parameter name: newParent" and failes in Describe with "Cannot bind argument to parameter 'SqlInstance' because it is null."

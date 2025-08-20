@@ -1,19 +1,30 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaBalanceDataFiles",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'RebuildOffline', 'EnableException', 'Force'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "RebuildOffline",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # Create the server object
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -56,21 +67,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $server -Database $dbname
     }
 
     Context "Data is balanced among data files" {
-
-        $results = Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -RebuildOffline -Force
-
-        It "Result returns success" {
-            $results.Success | Should -Be $true
+        BeforeAll {
+            $results = Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -RebuildOffline -Force
         }
 
-        $sizeUsedBefore = $results.DataFilesStart[0].UsedSpace.Kilobyte
-        $sizeUsedAfter = $results.DataFilesEnd[0].UsedSpace.Kilobyte
+        It "Result returns success" {
+            $results.Success | Should -BeTrue
+        }
 
         It "New used space should be less" {
+            $sizeUsedBefore = $results.DataFilesStart[0].UsedSpace.Kilobyte
+            $sizeUsedAfter = $results.DataFilesEnd[0].UsedSpace.Kilobyte
 
             $sizeUsedAfter | Should -BeLessThan $sizeUsedBefore
         }
