@@ -63,7 +63,7 @@ DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
 
             $db1 | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should find auto growth events in the default trace" {

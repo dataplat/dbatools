@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should get at least 2 categories" {

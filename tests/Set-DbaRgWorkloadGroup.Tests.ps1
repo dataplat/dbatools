@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $wklGroupCleanupNames -ErrorAction SilentlyContinue
             $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolCleanupName -Type "Internal" -ErrorAction SilentlyContinue
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Sets a workload group in default resource pool" {

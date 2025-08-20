@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             @account_name = '$mailAccountName';"
         $cleanupServer.Query($mailAccountSettings)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets DbMailServer" {

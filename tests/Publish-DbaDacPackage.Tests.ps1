@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database $dbname -Confirm:$false
         Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterEach {

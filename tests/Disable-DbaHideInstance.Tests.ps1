@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # No specific cleanup needed for this test
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Returns result with HideInstance set to false" {

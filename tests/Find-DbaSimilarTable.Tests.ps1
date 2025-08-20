@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
             $db.Query("DROP TABLE dbatoolsci_table1")
             $db.Query("DROP TABLE dbatoolsci_table2")
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "returns at least two rows" {

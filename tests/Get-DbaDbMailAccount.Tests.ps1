@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
             @account_name = '$accountName';"
         $server.Query($mailAccountSettings)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets DbMail Account" {

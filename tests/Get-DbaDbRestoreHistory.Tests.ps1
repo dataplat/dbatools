@@ -89,7 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-Item -Path $logBackup.BackupPath -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $diffBackup.BackupPath -Force -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Preparation" {
         It "Should have prepared" {

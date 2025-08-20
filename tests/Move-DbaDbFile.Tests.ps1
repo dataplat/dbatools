@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-Item -Path "$global:physicalPathFolder\New" -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path "$global:physicalPathFolder\dbatoolsci_MoveDbFile.mdf" -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Should output current database structure" {

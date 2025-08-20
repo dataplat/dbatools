@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup created objects.
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "DROP PROCEDURE dbo.my_proc" -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     It "creates a usable sql parameter" {
         $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output

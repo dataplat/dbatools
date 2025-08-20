@@ -67,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
         $destGroupStore = $destDbStore.ServerGroups[$groupName]
         $destGroupStore.Drop()
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying registered servers" {

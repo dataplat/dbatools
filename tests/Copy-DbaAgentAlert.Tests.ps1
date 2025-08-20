@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         $serverCleanup3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
         $serverCleanup3.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying alerts" {

@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $global:testWorkloadGroup, $global:testWorkloadGroup2 -ErrorAction SilentlyContinue
         $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $global:testResourcePool -Type $global:testResourcePoolType -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When creating workload groups" {

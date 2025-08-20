@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Remove the temporary directory and any exported files.
         Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Test Importing Session Template" {

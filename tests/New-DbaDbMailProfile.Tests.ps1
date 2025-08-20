@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
         $server.query($regularaccountsettings)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Sets DbMail Profile" {

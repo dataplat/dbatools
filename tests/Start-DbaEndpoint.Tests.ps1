@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Restore the endpoint to its original state
         Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint "TSQL Default TCP" | Start-DbaEndpoint -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "starts the endpoint" {

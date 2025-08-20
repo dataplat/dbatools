@@ -104,7 +104,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         Remove-TempObjects $db, $db2
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "copies the view data" {

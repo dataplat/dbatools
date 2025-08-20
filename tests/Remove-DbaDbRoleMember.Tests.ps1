@@ -113,7 +113,7 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase
         Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {

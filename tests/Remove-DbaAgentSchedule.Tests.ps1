@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup any remaining test schedules
         $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Confirm:$false -Force
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing schedules" {

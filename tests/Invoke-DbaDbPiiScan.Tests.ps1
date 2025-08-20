@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created objects.
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $piiscanDb -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When scanning for PII data" {

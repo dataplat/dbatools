@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
         }
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command works with piped input" {

@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Cleanup all created objects.
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName -Confirm:$false
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should Create new key in GetAsKey called test4" {

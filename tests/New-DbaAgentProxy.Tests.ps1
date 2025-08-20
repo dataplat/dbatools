@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
             if ($global:agentProxySSISDisabled) { $global:agentProxySSISDisabled.Drop() }
             if ($global:agentProxyLoginRole) { $global:agentProxyLoginRole.Drop() }
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "does not try to add the proxy without a valid credential" {

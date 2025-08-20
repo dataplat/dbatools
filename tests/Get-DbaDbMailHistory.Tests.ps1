@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server.Query("DELETE FROM msdb.dbo.sysmail_profile WHERE profile_id = '$profile_id'")
         $server.Query("DELETE FROM msdb.dbo.sysmail_mailitems WHERE profile_id = '$profile_id'")
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets Db Mail History" {

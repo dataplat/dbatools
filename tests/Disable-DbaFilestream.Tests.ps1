@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Restore the original FileStream level
         Set-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $originalFileStream.InstanceAccessLevel -Force
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When changing FileStream Level" {

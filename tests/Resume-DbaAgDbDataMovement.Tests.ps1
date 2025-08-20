@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring | Remove-DbaEndpoint
         $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "resumes  data movement" {

@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $remainingCategories.Name -Confirm:$false
             }
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have the right name" {

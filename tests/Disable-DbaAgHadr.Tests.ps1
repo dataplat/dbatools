@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Re-enable HADR for future tests
         $null = Enable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When disabling HADR" {

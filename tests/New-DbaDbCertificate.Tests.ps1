@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $masterkey | Remove-DbaDbMasterKey -Confirm:$false
             }
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Successfully creates a new database certificate in default, master database" {

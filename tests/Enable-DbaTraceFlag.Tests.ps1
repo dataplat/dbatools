@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
             $testInstance.Query("DBCC TRACEOFF($safeTraceFlag,-1)")
         }
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When enabling a trace flag" {

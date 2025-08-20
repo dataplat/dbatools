@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server1.Query($dropSql)
         $server2.Query($dropSql)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying linked server with the same properties" {
