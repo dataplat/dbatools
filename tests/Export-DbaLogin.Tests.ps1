@@ -30,7 +30,7 @@ Describe $CommandName -Tag UnitTests {
                 "DestinationVersion",
                 "NoPrefix",
                 "Passthru",
-                "ObjectLevel"
+                "ObjectLevel",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

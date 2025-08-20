@@ -29,13 +29,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1 -Max $inst1CurrentMaxValue
-        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance2 -Max $inst2CurrentMaxValue
+        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1 -Max $inst1CurrentMaxValue -WarningAction SilentlyContinue
+        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance2 -Max $inst2CurrentMaxValue -WarningAction SilentlyContinue
     }
 
     Context "Connects to multiple instances" {
         BeforeAll {
-            $multiInstanceResults = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Max 1024
+            $multiInstanceResults = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Max 1024 -WarningAction SilentlyContinue
         }
 
         It "Returns 1024 for each instance" {
