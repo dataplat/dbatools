@@ -1,18 +1,31 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaCustomError",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'MessageID', 'Severity', 'MessageText', 'Language', 'WithLog', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "MessageID",
+                "Severity",
+                "MessageText",
+                "Language",
+                "WithLog",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2

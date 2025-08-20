@@ -1,20 +1,31 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Restore-DbaDbSnapshot",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Snapshot', 'InputObject', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Snapshot",
+                "InputObject",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-# Targets only instance2 because it's the only one where Snapshots can happen
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -39,10 +50,10 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Parameters validation" {
         It "Stops if no Database or Snapshot" {
-            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should Throw "You must specify"
+            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw "You must specify"
         }
         It "Is nice by default" {
-            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should Not Throw "You must specify"
+            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must specify"
         }
     }
     Context "Operations on snapshots" {
@@ -57,45 +68,45 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "Honors the Database parameter, restoring only snapshots of that database" {
             $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2 -Confirm:$false -EnableException -Force
-            $result.Status | Should Be "Normal"
-            $result.Name | Should Be $db2
+            $result.Status | Should -Be "Normal"
+            $result.Name | Should -Be $db2
 
             $server.Query("INSERT INTO [$db1].[dbo].[Example] values ('sample2')")
             $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false -Force
-            $result.Name | Should Be $db1
+            $result.Name | Should -Be $db1
 
             # the other snapshot has been dropped
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1
-            $result.Count | Should Be 1
+            $result.Count | Should -Be 1
 
             # the query doesn't return records inserted before the restore
             $result = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 10
-            $result.id | Should Be 1
+            $result.id | Should -Be 1
         }
 
         It "Honors the Snapshot parameter" {
             $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1 -Confirm:$false -EnableException -Force
-            $result.Name | Should Be $db1
-            $result.Status | Should Be "Normal"
+            $result.Name | Should -Be $db1
+            $result.Status | Should -Be "Normal"
 
             # the other snapshot has been dropped
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1
-            $result.SnapshotOf | Should Be $db1
-            $result.Database.Name | Should Be $db1_snap
+            $result.SnapshotOf | Should -Be $db1
+            $result.Database.Name | Should -Be $db1_snap
 
             # the log size has been restored to the correct size
-            $server.databases[$db1].Logfiles.Size | Should Be 13312
+            $server.databases[$db1].Logfiles.Size | Should -Be 13312
         }
 
         It "Stops if multiple snapshot for the same db are passed" {
             $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1, $db1_snap2 -Confirm:$false *> $null
-            $result | Should Be $null
+            $result | Should -Be $null
         }
 
         It "has the correct default properties" {
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2
             $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance', 'DiskUsage'
-            ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+            ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
 }
