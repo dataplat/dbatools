@@ -1,41 +1,35 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaQuery",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Invoke-DbaQuery" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        BeforeAll {
-            $command = Get-Command Invoke-DbaQuery
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
-                'SqlInstance',
-                'SqlCredential',
-                'Database',
-                'Query',
-                'QueryTimeout',
-                'File',
-                'SqlObject',
-                'As',
-                'SqlParameter',
-                'AppendServerInstance',
-                'MessagesToOutput',
-                'InputObject',
-                'ReadOnly',
-                'EnableException',
-                'CommandType',
-                'NoExec',
-                'AppendConnectionString'
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Query",
+                "QueryTimeout",
+                "File",
+                "SqlObject",
+                "As",
+                "SqlParameter",
+                "AppendServerInstance",
+                "MessagesToOutput",
+                "InputObject",
+                "ReadOnly",
+                "EnableException",
+                "CommandType",
+                "NoExec",
+                "AppendConnectionString"
             )
-        }
-        It "Should only contain our specific parameters" {
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
-        }
-
-        It "Has parameter: <_>" -ForEach $expectedParameters {
-            $command | Should -HaveParameter $PSItem
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
     Context "Validate alias" {
@@ -45,7 +39,7 @@ Describe "Invoke-DbaQuery" -Tag 'UnitTests' {
     }
 }
 
-Describe "Invoke-DbaQuery" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
@@ -181,14 +175,14 @@ SELECT @@servername as dbname
 '@
         $results = @()
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query $query -Verbose 4>&1 | ForEach-Object {
-            $results += [pscustomobject]@{
+            $results += [PSCustomObject]@{
                 FiredAt = (Get-Date).ToUniversalTime()
-                Out     = $_
+                Out     = $PSItem
             }
         }
         $results.Length | Should -Be 7 # 6 'messages' plus the actual resultset
-        ($results | ForEach-Object { Get-Date -Date $_.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
-        #($results[0..3]  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count | Should -Be 1 # everything before stmt_4 is fired at the same time
+        ($results | ForEach-Object { Get-Date -Date $PSItem.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
+        #($results[0..3]  | ForEach-Object { Get-Date -Date $PSItem.FiredAt -f s } | Get-Unique).Count | Should -Be 1 # everything before stmt_4 is fired at the same time
         #$parsedstmt_1 = Get-Date -Date $results[0].Out.Message.split('|')[2]
         #(Get-Date -Date (Get-Date -Date $parsedstmt_1).AddSeconds(3) -f s) | Should -Be (Get-Date -Date $results[0].FiredAt -f s) # stmt_1 is fired 3 seconds after the logged date
         #$parsedstmt_4 = Get-Date -Date $results[3].Out.Message.split('|')[2]
@@ -212,16 +206,16 @@ SELECT @@servername as dbname
 '@
         $results = @()
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query $query -MessagesToOutput | ForEach-Object {
-            $results += [pscustomobject]@{
+            $results += [PSCustomObject]@{
                 FiredAt = (Get-Date).ToUniversalTime()
-                Out     = $_
+                Out     = $PSItem
             }
         }
         $results.Length | Should -Be 7 # 6 'messages' plus the actual resultset
-        ($results | ForEach-Object { Get-Date -Date $_.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
+        ($results | ForEach-Object { Get-Date -Date $PSItem.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
     }
     It "Executes stored procedures with parameters" {
-        $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "dbatoolsci_procedure_example" -SqlParameters @{p1 = 1 } -CommandType StoredProcedure
+        $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "dbatoolsci_procedure_example" -SqlParameters @{ p1 = 1 } -CommandType StoredProcedure
         $results.TestColumn | Should -Be 1
     }
     It "Executes script file with a relative path (see #6184)" {
@@ -328,11 +322,11 @@ BEGIN
 END"
         $outparam = New-DbaSqlParameter -Direction Output -Size -1
         $inparam = @()
-        $inparam += [pscustomobject]@{
+        $inparam += [PSCustomObject]@{
             somestring = 'string1'
             somedate   = '2021-07-15T01:02:00'
         }
-        $inparam += [pscustomobject]@{
+        $inparam += [PSCustomObject]@{
             somestring = 'string2'
             somedate   = '2021-07-15T02:03:00'
         }

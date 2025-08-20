@@ -29,15 +29,11 @@ function Invoke-DbatoolsFormatter {
         PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\Get-DbaDatabase.ps1
 
         Reformats C:\dbatools\public\Get-DbaDatabase.ps1 to dbatools' standards
-
-    .EXAMPLE
-        PS C:\> Get-ChildItem *.ps1 | Invoke-DbatoolsFormatter
-
-        Reformats all .ps1 files in the current directory, showing progress for the batch operation
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
+        [alias("FullName)")]
         [object[]]$Path,
         [switch]$EnableException
     )
@@ -66,47 +62,17 @@ function Invoke-DbatoolsFormatter {
         if ($psVersionTable.Platform -ne 'Unix') {
             $OSEOL = "`r`n"
         }
-
-        # Collect all paths for progress tracking
-        $allPaths = @()
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        # Collect all paths from pipeline
-        $allPaths += $Path
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        $totalFiles = $allPaths.Count
-        $currentFile = 0
-        $processedFiles = 0
-        $updatedFiles = 0
-
-        foreach ($p in $allPaths) {
-            $currentFile++
-
+        foreach ($p in $Path) {
             try {
                 $realPath = (Resolve-Path -Path $p -ErrorAction Stop).Path
             } catch {
-                Write-Progress -Activity "Formatting PowerShell files" -Status "Error resolving path: $p" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
                 Stop-Function -Message "Cannot find or resolve $p" -Continue
-                continue
             }
 
-            # Skip directories
-            if (Test-Path -Path $realPath -PathType Container) {
-                Write-Progress -Activity "Formatting PowerShell files" -Status "Skipping directory: $realPath" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
-                Write-Message -Level Verbose "Skipping directory: $realPath"
-                continue
-            }
-
-            $fileName = Split-Path -Leaf $realPath
-            Write-Progress -Activity "Formatting PowerShell files" -Status "Processing: $fileName" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
-
-            $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
-            $content = $originalContent
-
+            $content = Get-Content -Path $realPath -Raw -Encoding UTF8
             if ($OSEOL -eq "`r`n") {
                 # See #5830, we are in Windows territory here
                 # Is the file containing at least one `r ?
@@ -119,32 +85,11 @@ function Invoke-DbatoolsFormatter {
 
             #strip ending empty lines
             $content = $content -replace "(?s)$OSEOL\s*$"
-
-            # Preserve aligned assignments before formatting
-            # Look for patterns with multiple spaces before OR after the = sign
-            $alignedPatterns = [regex]::Matches($content, '(?m)^\s*(\$\w+|\w+)\s{2,}=\s*.+$|^\s*(\$\w+|\w+)\s*=\s{2,}.+$')
-            $placeholders = @{ }
-
-            foreach ($match in $alignedPatterns) {
-                $placeholder = "___ALIGNMENT_PLACEHOLDER_$($placeholders.Count)___"
-                $placeholders[$placeholder] = $match.Value
-                $content = $content.Replace($match.Value, $placeholder)
-            }
-
             try {
-                $formattedContent = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
-                if ($formattedContent) {
-                    $content = $formattedContent
-                }
+                $content = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
             } catch {
-                # Just silently continue - the formatting might still work partially
+                Write-Message -Level Warning "Unable to format $p"
             }
-
-            # Restore the aligned patterns
-            foreach ($key in $placeholders.Keys) {
-                $content = $content.Replace($key, $placeholders[$key])
-            }
-
             #match the ending indentation of CBH with the starting one, see #4373
             $CBH = $CBHRex.Match($content).Value
             if ($CBH) {
@@ -160,44 +105,12 @@ function Invoke-DbatoolsFormatter {
                 }
             }
             $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-            $correctCase = @(
-                'DbaInstanceParameter'
-                'PSCredential'
-                'PSCustomObject'
-                'PSItem'
-            )
             $realContent = @()
+            #trim whitespace lines
             foreach ($line in $content.Split("`n")) {
-                foreach ($item in $correctCase) {
-                    $line = $line -replace $item, $item
-                }
-                #trim whitespace lines
                 $realContent += $line.Replace("`t", "    ").TrimEnd()
             }
-
-            $newContent = $realContent -Join "$OSEOL"
-
-            # Compare without empty lines to detect real changes
-            $originalNonEmpty = ($originalContent -split "[\r\n]+" | Where-Object { $_.Trim() }) -join ""
-            $newNonEmpty = ($newContent -split "[\r\n]+" | Where-Object { $_.Trim() }) -join ""
-
-            if ($originalNonEmpty -ne $newNonEmpty) {
-                [System.IO.File]::WriteAllText($realPath, $newContent, $Utf8NoBomEncoding)
-                Write-Message -Level Verbose "Updated: $realPath"
-                $updatedFiles++
-            } else {
-                Write-Message -Level Verbose "No changes needed: $realPath"
-            }
-
-            $processedFiles++
+            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "$OSEOL"), $Utf8NoBomEncoding)
         }
-
-        # Complete the progress bar
-        Write-Progress -Activity "Formatting PowerShell files" -Status "Complete" -PercentComplete 100 -CurrentOperation "Processed $processedFiles files, updated $updatedFiles"
-        Start-Sleep -Milliseconds 500  # Brief pause to show completion
-        Write-Progress -Activity "Formatting PowerShell files" -Completed
-
-        # Summary message
-        Write-Message -Level Verbose "Formatting complete: Processed $processedFiles files, updated $updatedFiles files"
     }
 }

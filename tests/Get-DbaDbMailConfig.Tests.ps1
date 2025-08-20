@@ -1,62 +1,104 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbMailConfig",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailSettings = @{
-            AccountRetryAttempts           = '1'
-            AccountRetryDelay              = '60'
-            DatabaseMailExeMinimumLifeTime = '600'
-            DefaultAttachmentEncoding      = 'MIME'
-            LoggingLevel                   = '2'
-            MaxFileSize                    = '1000'
-            ProhibitedExtensions           = 'exe,dll,vbs,js'
+            AccountRetryAttempts           = "1"
+            AccountRetryDelay              = "60"
+            DatabaseMailExeMinimumLifeTime = "600"
+            DefaultAttachmentEncoding      = "MIME"
+            LoggingLevel                   = "2"
+            MaxFileSize                    = "1000"
+            ProhibitedExtensions           = "exe,dll,vbs,js"
         }
         foreach ($m in $mailSettings.GetEnumerator()) {
             $server.query("exec msdb.dbo.sysmail_configure_sp '$($m.key)','$($m.value)';")
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # No specific cleanup needed for DbMail config tests
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Gets DbMail Settings" {
-        $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        Foreach ($row in $($results)) {
-            It "Should have Configured Value of $($row.name)" {
-                $row.name | Should Bein $mailSettings.keys
+        BeforeAll {
+            $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2
+            $mailSettings = @{
+                AccountRetryAttempts           = "1"
+                AccountRetryDelay              = "60"
+                DatabaseMailExeMinimumLifeTime = "600"
+                DefaultAttachmentEncoding      = "MIME"
+                LoggingLevel                   = "2"
+                MaxFileSize                    = "1000"
+                ProhibitedExtensions           = "exe,dll,vbs,js"
             }
-            It "Should have Configured Value settings for $($row.name) of $($row.value)" {
-                $row.value | Should Bein $mailSettings.values
+        }
+
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have all configured settings" {
+            foreach ($row in $results) {
+                $row.name | Should -BeIn $mailSettings.keys
+                $row.value | Should -BeIn $mailSettings.values
             }
         }
     }
+
     Context "Gets DbMail Settings when using -Name" {
-        $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2 -Name "ProhibitedExtensions"
+        BeforeAll {
+            $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2 -Name "ProhibitedExtensions"
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Name 'ProhibitedExtensions'" {
-            $results.name | Should Be "ProhibitedExtensions"
+            $results.name | Should -BeExactly "ProhibitedExtensions"
         }
+
         It "Should have Value 'exe,dll,vbs,js'" {
-            $results.value | Should Be "exe,dll,vbs,js"
+            $results.value | Should -BeExactly "exe,dll,vbs,js"
         }
+
         It "Should have Description 'Extensions not allowed in outgoing mails'" {
-            $results.description | Should Be "Extensions not allowed in outgoing mails"
+            $results.description | Should -BeExactly "Extensions not allowed in outgoing mails"
         }
     }
 }

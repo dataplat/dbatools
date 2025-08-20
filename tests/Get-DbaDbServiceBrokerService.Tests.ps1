@@ -1,47 +1,77 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbServiceBrokerService",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Database', 'ExcludeDatabase', 'ExcludeSystemService'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "ExcludeSystemService",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $procname = ("dbatools_{0}" -f $(Get-Random))
-        $server.Query("CREATE PROCEDURE $procname AS SELECT 1", 'tempdb')
-        $queuename = ("dbatools_{0}" -f $(Get-Random))
-        $server.Query("CREATE QUEUE $queuename WITH STATUS = ON , RETENTION = OFF , ACTIVATION (  STATUS = ON , PROCEDURE_NAME = $procname , MAX_QUEUE_READERS = 1 , EXECUTE AS OWNER  ), POISON_MESSAGE_HANDLING (STATUS = ON)", 'tempdb')
-        $servicename = ("dbatools_{0}" -f $(Get-Random))
-        $server.Query("CREATE SERVICE $servicename ON QUEUE $queuename ([DEFAULT])", 'tempdb')
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set up Service Broker components for testing
+        $global:testServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $global:testProcName = "dbatools_{0}" -f $(Get-Random)
+        $global:testServer.Query("CREATE PROCEDURE $global:testProcName AS SELECT 1", "tempdb")
+        $global:testQueueName = "dbatools_{0}" -f $(Get-Random)
+        $global:testServer.Query("CREATE QUEUE $global:testQueueName WITH STATUS = ON , RETENTION = OFF , ACTIVATION (  STATUS = ON , PROCEDURE_NAME = $global:testProcName , MAX_QUEUE_READERS = 1 , EXECUTE AS OWNER  ), POISON_MESSAGE_HANDLING (STATUS = ON)", "tempdb")
+        $global:testServiceName = "dbatools_{0}" -f $(Get-Random)
+        $global:testServer.Query("CREATE SERVICE $global:testServiceName ON QUEUE $global:testQueueName ([DEFAULT])", "tempdb")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
+
     AfterAll {
-        $null = $server.Query("DROP SERVICE $servicename", 'tempdb')
-        $null = $server.Query("DROP QUEUE $queuename", 'tempdb')
-        $null = $server.Query("DROP PROCEDURE $procname", 'tempdb')
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup Service Broker components
+        $null = $global:testServer.Query("DROP SERVICE $global:testServiceName", "tempdb")
+        $null = $global:testServer.Query("DROP QUEUE $global:testQueueName", "tempdb")
+        $null = $global:testServer.Query("DROP PROCEDURE $global:testProcName", "tempdb")
     }
 
     Context "Gets the service broker service" {
-        $results = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.instance2 -database tempdb -ExcludeSystemService:$true
+        BeforeAll {
+            $testResults = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.instance2 -Database tempdb -ExcludeSystemService:$true
+        }
+
         It "Gets results" {
-            $results | Should Not Be $Null
+            $testResults | Should -Not -BeNullOrEmpty
         }
-        It "Should have a name of $servicename" {
-            $results.name | Should Be "$servicename"
+
+        It "Should have a name of $global:testServiceName" {
+            $testResults.Name | Should -Be $global:testServiceName
         }
+
+
         It "Should have an owner of dbo" {
-            $results.owner | Should Be "dbo"
+            $testResults.Owner | Should -Be "dbo"
         }
-        It "Should have a queuename of $queuename" {
-            $results.QueueName | Should be "$QueueName"
+
+        It "Should have a queuename of $global:testQueueName" {
+            $testResults.QueueName | Should -Be $global:testQueueName
         }
     }
 }

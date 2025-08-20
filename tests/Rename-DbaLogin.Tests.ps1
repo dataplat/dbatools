@@ -1,44 +1,86 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Rename-DbaLogin",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'NewLogin', 'EnableException', 'Force'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Login",
+                "NewLogin",
+                "EnableException",
+                "Force"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $login = "dbatoolsci_renamelogin"
-        $renamed = "dbatoolsci_renamelogin2"
-        $password = 'MyV3ry$ecur3P@ssw0rd'
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set variables. They are available in all the It blocks.
+        $loginName = "dbatoolsci_renamelogin"
+        $renamedLogin = "dbatoolsci_renamelogin2"
+        $password = "MyV3ry$ecur3P@ssw0rd"
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $newlogin = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login -Password $securePassword
-    }
-    AfterAll {
-        $null = Stop-DbaProcess -SqlInstance $TestConfig.instance1 -Login $renamed
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $renamed -Confirm:$false
+
+        # Create the test login
+        $splatNewLogin = @{
+            SqlInstance = $TestConfig.instance1
+            Login       = $loginName
+            Password    = $securePassword
+        }
+        $newLogin = New-DbaLogin @splatNewLogin
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "renames the login" {
-        $results = Rename-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login -NewLogin $renamed
-        It "rename is successful" {
-            $results.Status | Should Be "Successful"
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects
+        $null = Stop-DbaProcess -SqlInstance $TestConfig.instance1 -Login $renamedLogin
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $renamedLogin
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+    }
+
+    Context "When renaming a login" {
+        BeforeAll {
+            $splatRename = @{
+                SqlInstance = $TestConfig.instance1
+                Login       = $loginName
+                NewLogin    = $renamedLogin
+            }
+            $results = Rename-DbaLogin @splatRename
         }
-        It "output for previous login is correct" {
-            $results.PreviousLogin | Should Be $login
+
+        It "Should be successful" {
+            $results.Status | Should -Be "Successful"
         }
-        It "output for new login is correct" {
-            $results.NewLogin | Should Be $renamed
+
+        It "Should return the correct previous login name" {
+            $results.PreviousLogin | Should -Be $loginName
         }
-        It "results aren't null" {
-            Get-DbaLogin -SqlInstance $TestConfig.instance1 -login $renamed | Should Not BeNullOrEmpty
+
+        It "Should return the correct new login name" {
+            $results.NewLogin | Should -Be $renamedLogin
+        }
+
+        It "Should create the renamed login in the database" {
+            Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login $renamedLogin | Should -Not -BeNullOrEmpty
         }
     }
 }

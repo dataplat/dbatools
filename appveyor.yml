@@ -9,6 +9,7 @@ skip_commits:
   files:
     - '**/*.md'
     - '**/*.json'
+    - '!.github/dbatools-library-version.json'
     - 'docs/**'
     - '.github/FUNDING.yml'
     - '.github/ISSUE_TEMPLATE/**'

@@ -1,34 +1,62 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbMaskingConfig",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Column', 'Path', 'Locale', 'CharacterString', 'SampleCount', 'KnownNameFilePath', 'PatternFilePath', 'ExcludeDefaultKnownName', 'ExcludeDefaultPattern', 'Force', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Column",
+                "Path",
+                "Locale",
+                "CharacterString",
+                "SampleCount",
+                "KnownNameFilePath",
+                "PatternFilePath",
+                "ExcludeDefaultKnownName",
+                "ExcludeDefaultPattern",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $dbname = "dbatoolsci_maskconfig"
-        $sql = "CREATE TABLE [dbo].[people](
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
+        $maskingDbName = "dbatoolsci_maskconfig"
+        $createPeopleTableSql = "CREATE TABLE [dbo].[people](
                     [fname] [varchar](50) NULL,
                     [lname] [varchar](50) NULL,
                     [dob] [datetime] NULL
                 ) ON [PRIMARY]"
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
-        $db.Query($sql)
-        $sql = "INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
+        $testDatabase = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $maskingDbName
+        $testDatabase.Query($createPeopleTableSql)
+        $insertPeopleDataSql = "INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
                 INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')"
-        $db.Query($sql)
+        $testDatabase.Query($insertPeopleDataSql)
 
         # bug 6934
-        $db.Query("
+        $testDatabase.Query("
                 CREATE TABLE dbo.DbConfigTest
                 (
                     id              SMALLINT      NOT NULL,
@@ -42,26 +70,46 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 (1, '127.0.0.1', '123 Fake Street', '123 Fake Street', '123 Fake Street'),
                 (2, '', '123 Fake Street', '123 Fake Street', '123 Fake Street'),
                 (3, 'fe80::7df3:7015:89e9:fbed%15', '123 Fake Street', '123 Fake Street', '123 Fake Street')")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
-        $results | Remove-Item -Confirm:$false -ErrorAction Ignore
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $maskingDbName -Confirm:$false
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Command works" {
-
         It "Should output a file with specific content" {
-            $results = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Path C:\temp
-            $results.Directory.Name | Should -Be temp
-            $results.FullName | Should -FileContentMatch $dbname
-            $results.FullName | Should -FileContentMatch fname
+            $splatMaskingConfig = @{
+                SqlInstance = $TestConfig.instance1
+                Database    = $maskingDbName
+                Path        = $backupPath
+            }
+            $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
 
-            Remove-Item -Path $results.FullName
+            $configResults.Directory.Name | Should -Match $CommandName
+            $configResults.FullName | Should -FileContentMatch $maskingDbName
+            $configResults.FullName | Should -FileContentMatch "fname"
         }
 
         It "Bug 6934: matching IPAddress, Address, and StreetAddress on known names" {
-            $results = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Table DbConfigTest -Path C:\temp
-            $jsonOutput = Get-Content $results.FullName | ConvertFrom-Json
+            $splatMaskingConfig = @{
+                SqlInstance = $TestConfig.instance1
+                Database    = $maskingDbName
+                Table       = "DbConfigTest"
+                Path        = $backupPath
+            }
+            $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
+            $jsonOutput = Get-Content $configResults.FullName | ConvertFrom-Json
 
             $jsonOutput.Tables.Columns[1].Name | Should -Be "IPAddress"
             $jsonOutput.Tables.Columns[1].MaskingType | Should -Be "Internet"
@@ -78,8 +126,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $jsonOutput.Tables.Columns[4].Name | Should -Be "Street"
             $jsonOutput.Tables.Columns[4].MaskingType | Should -Be "Address"
             $jsonOutput.Tables.Columns[4].SubType | Should -Be "StreetAddress"
-
-            Remove-Item -Path $results.FullName
         }
     }
 }

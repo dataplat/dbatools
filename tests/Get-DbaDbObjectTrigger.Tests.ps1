@@ -1,24 +1,34 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbObjectTrigger",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        $paramCount = 7
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaDbObjectTrigger).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Type', 'InputObject', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Type",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $dbname = "dbatoolsci_addtriggertoobject"
         $tablename = "dbo.dbatoolsci_trigger"
         $triggertablename = "dbatoolsci_triggerontable"
@@ -53,13 +63,23 @@ CREATE TRIGGER $triggerviewname
         $server.Query("$triggerview", $dbname)
 
         $systemDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeUser
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Gets Table Trigger" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -ExcludeDatabase $systemDbs.Name | Where-Object Name -eq "dbatoolsci_triggerontable"
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
@@ -71,7 +91,9 @@ CREATE TRIGGER $triggerviewname
         }
     }
     Context "Gets Table Trigger when using -Database" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object Name -eq "dbatoolsci_triggerontable"
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
@@ -83,7 +105,9 @@ CREATE TRIGGER $triggerviewname
         }
     }
     Context "Gets Table Trigger passing table object using pipeline" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbname -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
+        BeforeAll {
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbname -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
@@ -95,7 +119,9 @@ CREATE TRIGGER $triggerviewname
         }
     }
     Context "Gets View Trigger" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -ExcludeDatabase $systemDbs.Name | Where-Object Name -eq "dbatoolsci_triggeronview"
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
@@ -107,7 +133,9 @@ CREATE TRIGGER $triggerviewname
         }
     }
     Context "Gets View Trigger when using -Database" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object Name -eq "dbatoolsci_triggeronview"
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
@@ -119,7 +147,9 @@ CREATE TRIGGER $triggerviewname
         }
     }
     Context "Gets View Trigger passing table object using pipeline" {
-        $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeSystemView | Get-DbaDbObjectTrigger
+        BeforeAll {
+            $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeSystemView | Get-DbaDbObjectTrigger
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
@@ -131,46 +161,54 @@ CREATE TRIGGER $triggerviewname
         }
     }
     Context "Gets Table and View Trigger passing both objects using pipeline" {
-        $tableResults = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbname -Table "dbatoolsci_trigger"
-        $viewResults = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeSystemView
-        $results = $tableResults, $viewResults | Get-DbaDbObjectTrigger
+        BeforeAll {
+            $tableResults = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbname -Table "dbatoolsci_trigger"
+            $viewResults = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeSystemView
+            $results = $tableResults, $viewResults | Get-DbaDbObjectTrigger
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
-        It "Should be enabled" {
+        It "Should return two triggers" {
             $results.Count | Should -Be 2
         }
     }
     Context "Gets All types Trigger when using -Type" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname -Type All
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname -Type All
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
-        It "Should be only one" {
+        It "Should return two triggers" {
             $results.Count | Should -Be 2
         }
     }
     Context "Gets only Table Trigger when using -Type" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname -Type Table
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname -Type Table
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
         It "Should be only one" {
             $results.Count | Should -Be 1
         }
-        It "Should have text of Trigger" {
+        It "Should be a Table trigger" {
             $results.Parent.GetType().Name | Should -Be "Table"
         }
     }
     Context "Gets only View Trigger when using -Type" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname -Type View
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.instance2 -Database $dbname -Type View
+        }
         It "Gets results" {
             $results | Should -Not -Be $null
         }
         It "Should be only one" {
             $results.Count | Should -Be 1
         }
-        It "Should have text of Trigger" {
+        It "Should be a View trigger" {
             $results.Parent.GetType().Name | Should -Be "View"
         }
     }

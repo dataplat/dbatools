@@ -1,21 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaNetworkConfiguration",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'OutputType', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "Credential",
+                "OutputType",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
+Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
-        $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
-        $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -OutputType TcpIpProperties
+        BeforeAll {
+            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+            $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -OutputType TcpIpProperties
+        }
 
         It "Should Return a Result" {
             $resultsFull | Should -Not -Be $null
@@ -23,10 +34,29 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "has the correct properties" {
-            $ExpectedPropsFull = 'ComputerName,InstanceName,SqlInstance,SharedMemoryEnabled,NamedPipesEnabled,TcpIpEnabled,TcpIpProperties,TcpIpAddresses,Certificate,Advanced'.Split(',')
-            ($resultsFull.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedPropsFull | Sort-Object)
-            $ExpectedPropsTcpIpProperties = 'ComputerName,InstanceName,SqlInstance,Enabled,KeepAlive,ListenAll'.Split(',')
-            ($resultsTcpIpProperties.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedPropsTcpIpProperties | Sort-Object)
+            $expectedPropsFull = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SharedMemoryEnabled",
+                "NamedPipesEnabled",
+                "TcpIpEnabled",
+                "TcpIpProperties",
+                "TcpIpAddresses",
+                "Certificate",
+                "Advanced"
+            )
+            ($resultsFull.PsObject.Properties.Name | Sort-Object) | Should -BeExactly ($expectedPropsFull | Sort-Object)
+
+            $expectedPropsTcpIpProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Enabled",
+                "KeepAlive",
+                "ListenAll"
+            )
+            ($resultsTcpIpProperties.PsObject.Properties.Name | Sort-Object) | Should -BeExactly ($expectedPropsTcpIpProperties | Sort-Object)
         }
     }
 }

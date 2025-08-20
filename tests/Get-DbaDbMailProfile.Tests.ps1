@@ -1,67 +1,102 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbMailProfile",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Profile', 'ExcludeProfile', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Profile",
+                "ExcludeProfile",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $profilename = "dbatoolsci_test_$(get-random)"
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $profilename = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_add_profile_sp
             @profile_name='$profilename',
             @description='Profile for system email';"
-        $server.query($mailProfile)
+        $server.Query($mailProfile)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_delete_profile_sp
             @profile_name='$profilename';"
-        $server.query($mailProfile)
+        $server.Query($mailProfile)
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Gets DbMail Profile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -eq "$profilename"}
+        BeforeAll {
+            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $profilename
+            $results2 = Get-DbaDbMailProfile -SqlInstance $server | Where-Object Name -eq $profilename
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Name of $profilename" {
-            $results.name | Should Be $profilename
+            $results.Name | Should -BeExactly $profilename
         }
-        It "Should have Desctiption of 'Profile for system email' " {
-            $results.description | Should Be 'Profile for system email'
+
+        It "Should have Description of 'Profile for system email'" {
+            $results.Description | Should -BeExactly "Profile for system email"
         }
-        $results2 = Get-DbaDbMailProfile -SqlInstance $server | Where-Object {$_.name -eq "$profilename"}
+
         It "Gets results from multiple instances" {
-            $results2 | Should Not Be $null
-            ($results2 | Select-Object SqlInstance -Unique).count | Should -Be 2
+            $results2 | Should -Not -BeNullOrEmpty
+            ($results2 | Select-Object SqlInstance -Unique).Count | Should -BeExactly 2
         }
     }
+
     Context "Gets DbMailProfile when using -Profile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -Profile $profilename
+        BeforeAll {
+            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -Profile $profilename
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Name of $profilename" {
-            $results.name | Should Be $profilename
+            $results.Name | Should -BeExactly $profilename
         }
-        It "Should have Desctiption of 'Profile for system email' " {
-            $results.description | Should Be 'Profile for system email'
+
+        It "Should have Description of 'Profile for system email'" {
+            $results.Description | Should -BeExactly "Profile for system email"
         }
     }
+
     Context "Gets no DbMailProfile when using -ExcludeProfile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -ExcludeProfile $profilename
         It "Gets no results" {
-            $results | Should -Not -Contain $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -ExcludeProfile $profilename
+            $results.Name | Should -Not -Contain $profilename
         }
     }
 }

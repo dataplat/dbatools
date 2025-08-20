@@ -1,21 +1,29 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaInstalledPatch",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
+
+Describe $CommandName -Tag IntegrationTests {
     Context "Validate output" {
-        $result = Get-DbaInstalledPatch -ComputerName $TestConfig.instance1
         It "has some output" {
+            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.instance1
             $result | Should -Not -BeNullOrEmpty
         }
     }

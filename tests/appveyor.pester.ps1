@@ -71,7 +71,7 @@ Start-Sleep 5
 function Split-ArrayInParts($array, [int]$parts) {
     #splits an array in "equal" parts
     $size = $array.Length / $parts
-    $counter = [pscustomobject] @{ Value = 0 }
+    $counter = [PSCustomObject] @{ Value = 0 }
     $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
     $rtn = @()
     foreach ($g in $groups) {
@@ -391,7 +391,7 @@ function Get-ComprehensiveErrorMessage {
 
     return @{
         ErrorMessage = ($errorMessages | Where-Object { $PSItem } | Select-Object -Unique) -join " | "
-        StackTrace = ($stackTraces | Where-Object { $PSItem } | Select-Object -Unique) -join "`n---`n"
+        StackTrace   = ($stackTraces | Where-Object { $PSItem } | Select-Object -Unique) -join "`n---`n"
     }
 }
 
@@ -448,14 +448,14 @@ function Export-TestFailureSummary {
             $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '5' -DebugMode:$DebugErrorExtraction
 
             @{
-                Name         = $PSItem.Name
-                Describe     = if ($PSItem.Path.Count -gt 0) { $PSItem.Path[0] } else { "" }
-                Context      = if ($PSItem.Path.Count -gt 1) { $PSItem.Path[1] } else { "" }
-                ErrorMessage = $errorInfo.ErrorMessage
-                StackTrace   = if ($errorInfo.StackTrace) { $errorInfo.StackTrace } else { $stackTrace }
-                LineNumber   = $lineNumber
-                Parameters   = $PSItem.Data
-                TestFile     = $TestFile.Name
+                Name          = $PSItem.Name
+                Describe      = if ($PSItem.Path.Count -gt 0) { $PSItem.Path[0] } else { "" }
+                Context       = if ($PSItem.Path.Count -gt 1) { $PSItem.Path[1] } else { "" }
+                ErrorMessage  = $errorInfo.ErrorMessage
+                StackTrace    = if ($errorInfo.StackTrace) { $errorInfo.StackTrace } else { $stackTrace }
+                LineNumber    = $lineNumber
+                Parameters    = $PSItem.Data
+                TestFile      = $TestFile.Name
                 RawTestResult = $PSItem | ConvertTo-Json -Depth 3 -Compress
             }
         }
@@ -739,99 +739,99 @@ if (-not $Finalize) {
                 # Use comprehensive error extraction for finalization too
                 $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '4' -DebugMode:$DebugErrorExtraction
 
-                [pscustomobject]@{
-                    Describe = $PSItem.Describe
-                    Context  = $PSItem.Context
-                    Name     = "It $name"
-                    Result   = $PSItem.Result
-                    Message  = $errorInfo.ErrorMessage
-                    StackTrace = $errorInfo.StackTrace
+                [PSCustomObject]@{
+                    Describe          = $PSItem.Describe
+                    Context           = $PSItem.Context
+                    Name              = "It $name"
+                    Result            = $PSItem.Result
+                    Message           = $errorInfo.ErrorMessage
+                    StackTrace        = $errorInfo.StackTrace
                     RawFailureMessage = $PSItem.FailureMessage
                 }
             } | Sort-Object Describe, Context, Name, Result, Message
-
-            $detailedFailures | Format-List
-
-            # Save detailed failure information as artifact
-            $detailedFailureSummary = @{
-                PesterVersion = "4"
-                TotalFailedTests = $faileditems.Count
-                DetailedFailures = $detailedFailures | ForEach-Object {
-                    @{
-                        Describe = $PSItem.Describe
-                        Context = $PSItem.Context
-                        TestName = $PSItem.Name
-                        Result = $PSItem.Result
-                        ErrorMessage = $PSItem.Message
-                        StackTrace = $PSItem.StackTrace
-                        RawFailureMessage = $PSItem.RawFailureMessage
-                        FullContext = "$($PSItem.Describe) > $($PSItem.Context) > $($PSItem.Name)"
-                    }
-                }
-            }
-
-            $detailedFailureFile = "$ModuleBase\DetailedTestFailures_Pester4.json"
-            $detailedFailureSummary | ConvertTo-Json -Depth 10 | Out-File $detailedFailureFile -Encoding UTF8
-            Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester4.json"
-
-            throw "$failedcount tests failed."
-        }
-    }
-
-    $results5 = @(Get-ChildItem -Path "$ModuleBase\Pester5Results*.xml" | Import-Clixml)
-    $failedcount += $results5 | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-    # pester 5 output
-    $faileditems = $results5 | Select-Object -ExpandProperty Tests | Where-Object { $PSItem.Passed -notlike $True }
-    if ($faileditems) {
-        Write-Warning "Failed tests summary (pester 5):"
-        $detailedFailures = $faileditems | ForEach-Object {
-            $name = $PSItem.Name
-
-            # Use comprehensive error extraction for finalization too
-            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '5' -DebugMode:$DebugErrorExtraction
-
-            [pscustomobject]@{
-                Path    = $PSItem.Path -Join '/'
-                Name    = "It $name"
-                Result  = $PSItem.Result
-                Message = $errorInfo.ErrorMessage
-                StackTrace = $errorInfo.StackTrace
-                RawErrorRecord = if ($PSItem.ErrorRecord) { $PSItem.ErrorRecord -Join " | " } else { "No ErrorRecord" }
-            }
-        } | Sort-Object Path, Name, Result, Message
 
         $detailedFailures | Format-List
 
         # Save detailed failure information as artifact
         $detailedFailureSummary = @{
-            PesterVersion = "5"
+            PesterVersion    = "4"
             TotalFailedTests = $faileditems.Count
             DetailedFailures = $detailedFailures | ForEach-Object {
                 @{
-                    TestPath = $PSItem.Path
-                    TestName = $PSItem.Name
-                    Result = $PSItem.Result
-                    ErrorMessage = $PSItem.Message
-                    StackTrace = $PSItem.StackTrace
-                    RawErrorRecord = $PSItem.RawErrorRecord
-                    FullContext = "$($PSItem.Path) > $($PSItem.Name)"
+                    Describe          = $PSItem.Describe
+                    Context           = $PSItem.Context
+                    TestName          = $PSItem.Name
+                    Result            = $PSItem.Result
+                    ErrorMessage      = $PSItem.Message
+                    StackTrace        = $PSItem.StackTrace
+                    RawFailureMessage = $PSItem.RawFailureMessage
+                    FullContext       = "$($PSItem.Describe) > $($PSItem.Context) > $($PSItem.Name)"
                 }
             }
         }
 
-        $detailedFailureFile = "$ModuleBase\DetailedTestFailures_Pester5.json"
+        $detailedFailureFile = "$ModuleBase\DetailedTestFailures_Pester4.json"
         $detailedFailureSummary | ConvertTo-Json -Depth 10 | Out-File $detailedFailureFile -Encoding UTF8
-        Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester5.json"
+        Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester4.json"
 
         throw "$failedcount tests failed."
     }
+}
 
-    #opt-in
-    if ($IncludeCoverage) {
-        # for now, this manages recreating a codecov-ingestable format for pester 4. Pester 5 uses JaCoCo natively, which
-        # codecov accepts ... there's only the small matter that we generate one coverage per run, and there's a run per test file
-        # and there's no native-powershelly-way to merge JaCoCo reports. Let's start small, and complicate our lives farther down the line.
-        $CodecovReport = Get-CodecovReport -Results $results -ModuleBase $ModuleBase
-        $CodecovReport | ConvertTo-Json -Depth 4 -Compress | Out-File -FilePath "$ModuleBase\PesterResultsCoverage.json" -Encoding utf8
+$results5 = @(Get-ChildItem -Path "$ModuleBase\Pester5Results*.xml" | Import-Clixml)
+$failedcount += $results5 | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+# pester 5 output
+$faileditems = $results5 | Select-Object -ExpandProperty Tests | Where-Object { $PSItem.Passed -notlike $True }
+if ($faileditems) {
+    Write-Warning "Failed tests summary (pester 5):"
+    $detailedFailures = $faileditems | ForEach-Object {
+        $name = $PSItem.Name
+
+        # Use comprehensive error extraction for finalization too
+        $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '5' -DebugMode:$DebugErrorExtraction
+
+        [PSCustomObject]@{
+            Path           = $PSItem.Path -Join '/'
+            Name           = "It $name"
+            Result         = $PSItem.Result
+            Message        = $errorInfo.ErrorMessage
+            StackTrace     = $errorInfo.StackTrace
+            RawErrorRecord = if ($PSItem.ErrorRecord) { $PSItem.ErrorRecord -Join " | " } else { "No ErrorRecord" }
+        }
+    } | Sort-Object Path, Name, Result, Message
+
+$detailedFailures | Format-List
+
+# Save detailed failure information as artifact
+$detailedFailureSummary = @{
+    PesterVersion    = "5"
+    TotalFailedTests = $faileditems.Count
+    DetailedFailures = $detailedFailures | ForEach-Object {
+        @{
+            TestPath       = $PSItem.Path
+            TestName       = $PSItem.Name
+            Result         = $PSItem.Result
+            ErrorMessage   = $PSItem.Message
+            StackTrace     = $PSItem.StackTrace
+            RawErrorRecord = $PSItem.RawErrorRecord
+            FullContext    = "$($PSItem.Path) > $($PSItem.Name)"
+        }
     }
+}
+
+$detailedFailureFile = "$ModuleBase\DetailedTestFailures_Pester5.json"
+$detailedFailureSummary | ConvertTo-Json -Depth 10 | Out-File $detailedFailureFile -Encoding UTF8
+Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester5.json"
+
+throw "$failedcount tests failed."
+}
+
+#opt-in
+if ($IncludeCoverage) {
+    # for now, this manages recreating a codecov-ingestable format for pester 4. Pester 5 uses JaCoCo natively, which
+    # codecov accepts ... there's only the small matter that we generate one coverage per run, and there's a run per test file
+    # and there's no native-powershelly-way to merge JaCoCo reports. Let's start small, and complicate our lives farther down the line.
+    $CodecovReport = Get-CodecovReport -Results $results -ModuleBase $ModuleBase
+    $CodecovReport | ConvertTo-Json -Depth 4 -Compress | Out-File -FilePath "$ModuleBase\PesterResultsCoverage.json" -Encoding utf8
+}
 }

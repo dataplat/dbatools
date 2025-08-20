@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -27,9 +24,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -41,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
-        $exportPath = "C:\temp\exports-$CommandName-$(Get-Random)"
+        $exportPath = "$($TestConfig.Temp)\exports-$CommandName-$(Get-Random)"
         $null = New-Item -Path $exportPath -ItemType Directory -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

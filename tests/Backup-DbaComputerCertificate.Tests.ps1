@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Backup-DbaComputerCertificate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Backup-DbaComputerCertificate
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SecurePassword",
                 "InputObject",
                 "Path",
@@ -17,49 +18,52 @@ Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
                 "Type",
                 "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Backup-DbaComputerCertificate" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
+        # Explain what needs to be set up for the test:
+        # To test certificate backup, we need a certificate installed on the computer.
+
+        # Set variables. They are available in all the It blocks.
         $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
         $certPath = "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
-        $backupPath = $TestConfig.Temp
 
+        # Create the objects.
         $null = Add-DbaComputerCertificate -Path $certPath
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaComputerCertificate -Thumbprint $certThumbprint
+        # Cleanup all created object.
+        $null = Remove-DbaComputerCertificate -Thumbprint $certThumbprint -ErrorAction SilentlyContinue
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Certificate is backed up properly" {
-        BeforeAll {
-            $result = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath
-        }
-
-        AfterAll {
-            Get-ChildItem -Path $result.FullName | Remove-Item
-        }
-
         It "Returns the proper results" {
-            $result.Name | Should -Match "$certThumbprint.cer"
+            $backupResult = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath
+            $backupResult.Name | Should -Match "$certThumbprint.cer"
         }
     }
 }

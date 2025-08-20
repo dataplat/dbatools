@@ -2,17 +2,13 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Disable-DbaReplDistributor",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-
-Add-ReplicationLibrary
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters      = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -20,12 +16,11 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
-
-    # Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1
 }
+
+# TODO: Is this needed? Add-ReplicationLibrary
+
+# Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1

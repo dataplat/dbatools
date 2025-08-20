@@ -1,35 +1,46 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-PSRemoting",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 . "$PSScriptRoot\..\private\functions\Test-PSRemoting.ps1"
 
-
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "returns a boolean with no exceptions" {
-        $result = Test-PSRemoting -ComputerName "funny"
-        It "returns $false when failing" {
-            $result | Should Be $false
+Describe $CommandName -Tag IntegrationTests {
+    Context "Returns a boolean with no exceptions" {
+        BeforeAll {
+            $failResult = Test-PSRemoting -ComputerName "funny"
+            $successResult = Test-PSRemoting -ComputerName localhost
         }
-        $result = Test-PSRemoting -ComputerName localhost
-        It "returns $true when succeeding" {
-            $result | Should Be $true
+
+        It "Returns false when failing" {
+            $failResult | Should -Be $false
+        }
+
+        It "Returns true when succeeding" {
+            $successResult | Should -Be $true
         }
     }
-    Context "handles an instance, using just the computername" {
-        $result = Test-PSRemoting -ComputerName $TestConfig.instance1
-        It "returns $true when succeeding" {
-            $result | Should Be $true
+
+    Context "Handles an instance, using just the computername" {
+        It "Returns true when succeeding" {
+            $instanceResult = Test-PSRemoting -ComputerName $TestConfig.instance1
+            $instanceResult | Should -Be $true
         }
     }
 }

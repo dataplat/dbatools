@@ -1,34 +1,46 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDiagnosticAdsNotebook",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'TargetVersion', 'Path', 'IncludeDatabaseSpecific', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "TargetVersion",
+                "Path",
+                "IncludeDatabaseSpecific",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $file = "c:\temp\myNotebook.ipynb"
+        $testNotebookFile = "C:\Temp\myNotebook-$(Get-Random).ipynb"
     }
+
     AfterAll {
-        $null = Remove-Item -Path $file -ErrorAction SilentlyContinue
+        $null = Remove-Item -Path $testNotebookFile -ErrorAction SilentlyContinue
     }
-    Context "creates notebook" {
-        It "should create a file" {
-            $notebook = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $file -IncludeDatabaseSpecific
-            $notebook | Should Not BeNullOrEmpty
+
+    Context "Creates notebook" {
+        It "Should create a file" {
+            $notebook = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $testNotebookFile -IncludeDatabaseSpecific
+            $notebook | Should -Not -BeNullOrEmpty
         }
 
-        It "returns a file that includes specific phrases" {
-            $results = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $file -IncludeDatabaseSpecific
-            $results | Should Not BeNullOrEmpty
+        It "Returns a file that includes specific phrases" {
+            $results = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $testNotebookFile -IncludeDatabaseSpecific
+            $results | Should -Not -BeNullOrEmpty
             ($results | Get-Content) -contains "information for current instance"
         }
     }

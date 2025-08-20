@@ -2,12 +2,12 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Disable-DbaAgHadr",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -16,9 +16,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -44,11 +41,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When disabling HADR" {
-        BeforeAll {
-            $disableResults = Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force
-        }
-
         It "Successfully disables HADR" {
+            $disableResults = Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force
             $disableResults.IsHadrEnabled | Should -BeFalse
         }
     }

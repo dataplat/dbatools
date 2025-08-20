@@ -1,43 +1,64 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbDbccOpenTran",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
+
+Describe $CommandName -Tag IntegrationTests {
     Context "Gets results for Open Transactions" {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Field', 'Data'
-        $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1
+        BeforeAll {
+            $props = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Cmd",
+                "Output",
+                "Field",
+                "Data"
+            )
+        }
 
         It "returns results for DBCC OPENTRAN" {
-            $result | Should Not Be $null
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1
+            $result | Should -Not -BeNullOrEmpty
         }
 
         It "returns multiple results" {
-            $result.Count -gt 0 | Should Be $true
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1
+            $result.Count | Should -BeGreaterThan 0
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
+        It "Should return all expected properties" {
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1
+            foreach ($prop in $props) {
+                $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
             }
         }
 
-        $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1 -Database tempDB
-        $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempDB
+        It "returns results for a specific database" {
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1 -Database tempDB
+            $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempDB
 
-        It "returns results for a database" {
-            $result | Should Not Be $null
-            $result.Database | Get-Unique | Should -Be tempDB
+            $result | Should -Not -BeNullOrEmpty
+            $result.Database | Get-Unique | Should -Be "tempDB"
             $result.DatabaseId | Get-Unique | Should -Be $tempDB.Id
         }
     }

@@ -1,54 +1,83 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaAgentSchedule",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Schedule', 'ScheduleUid', 'id', 'InputObject', 'EnableException', 'Force'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Schedule",
+                "ScheduleUid",
+                "Id",
+                "InputObject",
+                "EnableException",
+                "Force"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
-        $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        foreach ($FrequencySubdayType in ('Time', 'Seconds', 'Minutes', 'Hours')) {
-            $variables = @{SqlInstance    = $TestConfig.instance2
+        $startDate = (Get-Date).AddDays(2).ToString("yyyyMMdd")
+        $endDate = (Get-Date).AddDays(4).ToString("yyyyMMdd")
+
+        foreach ($FrequencySubdayType in ("Time", "Seconds", "Minutes", "Hours")) {
+            $splatSchedule = @{
+                SqlInstance               = $TestConfig.instance2
                 Schedule                  = "dbatoolsci_$FrequencySubdayType"
-                FrequencyRecurrenceFactor = '1'
-                FrequencySubdayInterval   = '1'
+                FrequencyRecurrenceFactor = "1"
+                FrequencySubdayInterval   = "1"
                 FrequencySubdayType       = $FrequencySubdayType
-                StartDate                 = $start
-                StartTime                 = '010000'
-                EndDate                   = $end
-                EndTime                   = '020000'
+                StartDate                 = $startDate
+                StartTime                 = "010000"
+                EndDate                   = $endDate
+                EndTime                   = "020000"
             }
-            $null = New-DbaAgentSchedule @variables
+            $null = New-DbaAgentSchedule @splatSchedule
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Should remove schedules" {
-        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object { $_.name -like 'dbatools*' }
-        It "Should find all created schedule" {
-            $results | Should Not BeNullOrEmpty
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup any remaining test schedules
+        $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Confirm:$false -Force
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+    }
+
+    Context "When removing schedules" {
+        It "Should find all created schedules" {
+            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
-        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes
-        It "Should not find dbatoolsci_Minutes" {
-            $results | Should BeNullOrEmpty
+        It "Should remove specific schedule by name" {
+            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
+            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes
+            $results | Should -BeNullOrEmpty
         }
 
-        $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object { $_.name -like 'dbatools*' } | Remove-DbaAgentSchedule -Confirm:$false -Force
-        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object { $_.name -like 'dbatools*' }
-        It "Should not find any created schedule" {
-            $results | Should BeNullOrEmpty
+        It "Should remove all remaining test schedules via pipeline" {
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Confirm:$false -Force
+            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $results | Should -BeNullOrEmpty
         }
     }
 }

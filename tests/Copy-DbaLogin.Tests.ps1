@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogins', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'ExcludePermissionSync', 'NewSid', 'EnableException', 'ObjectLevel'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
@@ -98,11 +98,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "No overwrite" {
-        BeforeAll {
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql"
-        }
-        $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Login tester
         It "Should say skipped" {
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql"
+            $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Login tester
             $results.Status | Should -Be "Skipped"
             $results.Notes | Should -Be "Already exists on destination"
         }

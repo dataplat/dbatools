@@ -1,69 +1,111 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbMailServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Server', 'Account', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Server",
+                "Account",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $accountname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set variables. They are available in all the It blocks.
+        $mailAccountName = "dbatoolsci_test_$(Get-Random)"
+
+        # Create the mail account for testing
+        $primaryServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
-            @account_name='$accountname',
+            @account_name='$mailAccountName',
             @description='Mail account for email alerts',
             @email_address='dbatoolssci@dbatools.io',
             @display_name ='dbatoolsci mail alerts',
             @mailserver_name='smtp.dbatools.io',
             @replyto_address='no-reply@dbatools.io';"
-        $server.query($mailAccountSettings)
+        $primaryServer.Query($mailAccountSettings)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
-            @account_name = '$accountname';"
-        $server.query($mailAccountSettings)
+            @account_name = '$mailAccountName';"
+        $cleanupServer.Query($mailAccountSettings)
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Gets DbMailServer" {
-        $results = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 | Where-Object {$_.account -eq "$accountname"}
+        BeforeAll {
+            $mailServerResults = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 | Where-Object Account -eq $mailAccountName
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $mailServerResults | Should -Not -BeNullOrEmpty
         }
-        It "Should have Account of $accounName" {
-            $results.Account | Should Be $accountname
+
+        It "Should have Account of $mailAccountName" {
+            $mailServerResults.Account | Should -Be $mailAccountName
         }
-        It "Should have Name of 'smtp.dbatools.io' " {
-            $results.Name | Should Be 'smtp.dbatools.io'
+
+        It "Should have Name of 'smtp.dbatools.io'" {
+            $mailServerResults.Name | Should -Be "smtp.dbatools.io"
         }
+
         It "Should have Port on 25" {
-            $results.Port | Should Be 25
+            $mailServerResults.Port | Should -Be 25
         }
+
         It "Should have SSL Disabled" {
-            $results.EnableSSL | Should Be $false
+            $mailServerResults.EnableSSL | Should -Be $false
         }
-        It "Should have ServerType of 'SMTP' " {
-            $results.ServerType | Should Be 'SMTP'
+
+        It "Should have ServerType of 'SMTP'" {
+            $mailServerResults.ServerType | Should -Be "SMTP"
         }
     }
+
     Context "Gets DbMailServer using -Server" {
-        $results = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 -Server 'smtp.dbatools.io'
+        BeforeAll {
+            $serverFilterResults = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 -Server "smtp.dbatools.io"
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $serverFilterResults | Should -Not -BeNullOrEmpty
         }
     }
+
     Context "Gets DbMailServer using -Account" {
-        $results = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 -Account $accounname
+        BeforeAll {
+            $accountFilterResults = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 -Account $mailAccountName
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $accountFilterResults | Should -Not -BeNullOrEmpty
         }
     }
 }

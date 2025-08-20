@@ -56,3 +56,4 @@ allcommands.ps1
 /.aitools/.aider
 /.aitools/.aitools/.aider
 /.aitools
+.aider*

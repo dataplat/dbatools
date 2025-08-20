@@ -1,63 +1,96 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaLinkedServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LinkedServer', 'ExcludeLinkedServer', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "LinkedServer",
+                "ExcludeLinkedServer",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("EXEC master.dbo.sp_addlinkedserver
             @server = N'$($TestConfig.instance3)',
             @srvproduct=N'SQL Server' ;")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = $server.Query("EXEC master.dbo.sp_dropserver '$($TestConfig.instance3)', 'droplogins';  ")
     }
 
     Context "Gets Linked Servers" {
-        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -eq "$($TestConfig.instance3)"}
+        BeforeAll {
+            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $TestConfig.instance3
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Remote Server of $($TestConfig.instance3)" {
-            $results.RemoteServer | Should Be $TestConfig.instance3
+            $results.RemoteServer | Should -Be $TestConfig.instance3
         }
+
         It "Should have a product name of SQL Server" {
-            $results.productname | Should Be 'SQL Server'
+            $results.productname | Should -Be "SQL Server"
         }
+
         It "Should have Impersonate for authentication" {
-            $results.Impersonate | Should Be $true
+            $results.Impersonate | Should -Be $true
         }
     }
+
     Context "Gets Linked Servers using -LinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer $TestConfig.instance3
+        BeforeAll {
+            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer $TestConfig.instance3
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Remote Server of $($TestConfig.instance3)" {
-            $results.RemoteServer | Should Be $TestConfig.instance3
+            $results.RemoteServer | Should -Be $TestConfig.instance3
         }
+
         It "Should have a product name of SQL Server" {
-            $results.productname | Should Be 'SQL Server'
+            $results.productname | Should -Be "SQL Server"
         }
+
         It "Should have Impersonate for authentication" {
-            $results.Impersonate | Should Be $true
+            $results.Impersonate | Should -Be $true
         }
     }
+
     Context "Gets Linked Servers using -ExcludeLinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -ExcludeLinkedServer $TestConfig.instance3
         It "Gets results" {
-            $results | Should Be $null
+            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -ExcludeLinkedServer $TestConfig.instance3
+            $results | Should -BeNullOrEmpty
         }
     }
 }

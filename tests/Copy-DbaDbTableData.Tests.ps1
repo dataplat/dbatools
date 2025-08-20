@@ -2,13 +2,13 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Copy-DbaDbTableData",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters      = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -36,9 +36,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -49,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $sourceDb      = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
         $destinationDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
         $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
             INSERT dbo.dbatoolsci_example
@@ -76,14 +73,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example") -ErrorAction SilentlyContinue
-        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example2") -ErrorAction SilentlyContinue
-        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example3") -ErrorAction SilentlyContinue
-        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example4") -ErrorAction SilentlyContinue
-        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example3") -ErrorAction SilentlyContinue
-        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example4") -ErrorAction SilentlyContinue
-        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example") -ErrorAction SilentlyContinue
-        $null = $sourceDb.Query("DROP TABLE tempdb.dbo.dbatoolsci_willexist") -ErrorAction SilentlyContinue
+        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example")
+        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example2")
+        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example3")
+        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example4")
+        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example3")
+        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example4")
+        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example")
+        $null = $sourceDb.Query("DROP TABLE tempdb.dbo.dbatoolsci_willexist")
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
@@ -135,8 +132,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "opens and closes connections properly" {
             $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table "dbo.dbatoolsci_example", "dbo.dbatoolsci_example4" | Copy-DbaDbTableData -Destination $TestConfig.instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
             $results.Count | Should -Be 2
-            $table1DbCount  = $sourceDb.Query("select id from dbo.dbatoolsci_example")
-            $table4DbCount  = $destinationDb.Query("select id from dbo.dbatoolsci_example4")
+            $table1DbCount = $sourceDb.Query("select id from dbo.dbatoolsci_example")
+            $table4DbCount = $destinationDb.Query("select id from dbo.dbatoolsci_example4")
             $table1Db2Count = $sourceDb.Query("select id from dbo.dbatoolsci_example")
             $table4Db2Count = $destinationDb.Query("select id from dbo.dbatoolsci_example4")
             $table1DbCount.Count | Should -Be $table1Db2Count.Count

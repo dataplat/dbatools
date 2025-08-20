@@ -1,50 +1,73 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-DbaMigrationConstraint",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $db1 = "dbatoolsci_testMigrationConstraint"
-        $db2 = "dbatoolsci_testMigrationConstraint_2"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $db1"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $db2"
-        $needed = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1, $db2
-        $setupright = $true
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        $global:db1 = "dbatoolsci_testMigrationConstraint"
+        $global:db2 = "dbatoolsci_testMigrationConstraint_2"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $global:db1"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $global:db2"
+        $needed = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:db1, $global:db2
+        $global:setupright = $true
         if ($needed.Count -ne 2) {
-            $setupright = $false
-            it "has failed setup" {
-                Set-TestInconclusive -message "Setup failed"
-            }
+            $global:setupright = $false
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        if (-not $appveyor) {
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database $db1, $db2 -ErrorAction SilentlyContinue
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database $global:db1, $global:db2 -ErrorAction SilentlyContinue
+    }
+
+    Context "When setup is successful" {
+        It "Should have setup correctly" {
+            $global:setupright | Should -Be $true
         }
     }
+
     Context "Validate multiple databases" {
-        It 'Both databases are migratable' {
+        It "Both databases are migratable" {
             $results = Test-DbaMigrationConstraint -Source $TestConfig.instance1 -Destination $TestConfig.instance2
             foreach ($result in $results) {
-                $result.IsMigratable | Should Be $true
+                $result.IsMigratable | Should -Be $true
             }
         }
     }
+
     Context "Validate single database" {
-        It 'Databases are migratable' {
-            (Test-DbaMigrationConstraint -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Database $db1).IsMigratable | Should Be $true
+        It "Databases are migratable" {
+            (Test-DbaMigrationConstraint -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Database $global:db1).IsMigratable | Should -Be $true
         }
     }
 }

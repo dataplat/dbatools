@@ -1,21 +1,31 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Stop-DbaDbEncryption",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues["*:Confirm"] = $false
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
@@ -33,9 +43,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $db | New-DbaDbCertificate
         $db | New-DbaDbEncryptionKey -Force
         $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         if ($db) {
             $db | Remove-DbaDatabase
         }
@@ -45,14 +61,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($delmasterkey) {
             $masterkey | Remove-DbaDbMasterKey
         }
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Command actually works" {
         It "should disable encryption on a database with piping" {
             # Give it time to finish encrypting or it'll error
             Start-Sleep 10
-            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.instance2
-            $warn | Should -Be $null
+            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.instance2 -WarningVariable warn
+            $warn | Should -BeNullOrEmpty
             foreach ($result in $results) {
                 $result.EncryptionEnabled | Should -Be $false
             }

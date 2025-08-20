@@ -1,116 +1,135 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaCustomError",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'MessageID', 'Language', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "MessageID",
+                "Language",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $results = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 1 -MessageText "test_70000"
-        $results = New-DbaCustomError -SqlInstance $server, $server2 -MessageID 70001 -Severity 1 -MessageText "test_70001"
-        $results = New-DbaCustomError -SqlInstance $server, $server2 -MessageID 70002 -Severity 1 -MessageText "test_70002"
-        $results = New-DbaCustomError -SqlInstance $server -MessageID 70003 -Severity 1 -MessageText "test_70003" -Language "English"
-        $results = New-DbaCustomError -SqlInstance $server -MessageID 70005 -Severity 5 -MessageText "test_70005" -Language "English"
+        $serverPrimary = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $serverSecondary = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+
+        $null = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70000 -Severity 1 -MessageText "test_70000"
+        $null = New-DbaCustomError -SqlInstance $serverPrimary, $serverSecondary -MessageID 70001 -Severity 1 -MessageText "test_70001"
+        $null = New-DbaCustomError -SqlInstance $serverPrimary, $serverSecondary -MessageID 70002 -Severity 1 -MessageText "test_70002"
+        $null = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70003 -Severity 1 -MessageText "test_70003" -Language "English"
+        $null = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70005 -Severity 5 -MessageText "test_70005" -Language "English"
 
         # add other languages available now that the english message is added
-        $languages = $server.Query("SELECT alias FROM sys.syslanguages WHERE alias NOT LIKE '%English%'")
+        $availableLanguages = $serverPrimary.Query("SELECT alias FROM sys.syslanguages WHERE alias NOT LIKE '%English%'")
 
-        foreach ($lang in $languages) {
-            $languageName = $lang.alias
-            $results = New-DbaCustomError -SqlInstance $server -MessageID 70003 -Severity 1 -MessageText "test_70003_$languageName" -Language "$languageName"
-            $results2 = New-DbaCustomError -SqlInstance $server -MessageID 70005 -Severity 5 -MessageText "test_70005_$languageName" -Language "$languageName"
+        foreach ($languageEntry in $availableLanguages) {
+            $languageName = $languageEntry.alias
+            $null = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70003 -Severity 1 -MessageText "test_70003_$languageName" -Language "$languageName"
+            $null = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70005 -Severity 5 -MessageText "test_70005_$languageName" -Language "$languageName"
         }
 
-        $results = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 1 -MessageText "test_70004" -Language "English"
+        $null = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70004 -Severity 1 -MessageText "test_70004" -Language "English"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70000) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70000, @lang = 'all'; END")
-        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70001) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70001, @lang = 'all'; END")
-        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70002) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70002, @lang = 'all'; END")
-        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70003) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70003, @lang = 'all'; END")
-        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70004) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70004, @lang = 'all'; END")
-        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70005) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70005, @lang = 'all'; END")
-        $server2.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70001) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70001, @lang = 'all'; END")
-        $server2.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70002) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70002, @lang = 'all'; END")
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70000) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70000, @lang = 'all'; END")
+        $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70001) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70001, @lang = 'all'; END")
+        $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70002) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70002, @lang = 'all'; END")
+        $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70003) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70003, @lang = 'all'; END")
+        $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70004) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70004, @lang = 'all'; END")
+        $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70005) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70005, @lang = 'all'; END")
+        $serverSecondary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70001) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70001, @lang = 'all'; END")
+        $serverSecondary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70002) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70002, @lang = 'all'; END")
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
-    Context "Validate params" {
+    Context "Parameter validation tests" {
+        It "Message ID validation" {
+            { $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 1 -Language "English" } | Should -Throw
+            { $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 2147483648 -Language "English" } | Should -Throw
 
-        It "Message ID" {
-            { $results = Remove-DbaCustomError -SqlInstance $server -MessageID 1 -Language English } | Should -Throw
-            { $results = Remove-DbaCustomError -SqlInstance $server -MessageID 2147483648 -Language English } | Should -Throw
-
-            $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70000
-            ($server.UserDefinedMessages | Where-Object ID -eq 70000).Count | Should -Be 0
+            $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70000
+            ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70000).Count | Should -Be 0
         }
 
-        It "Language" {
-            $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70003 -Language "InvalidLanguage" -WarningAction SilentlyContinue
-            $results | Should -BeNullOrEmpty
+        It "Language validation" {
+            $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70003 -Language "InvalidLanguage" -WarningAction SilentlyContinue
+            $testResults | Should -BeNullOrEmpty
 
-            $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70003 -Language "French"
-            ($server.UserDefinedMessages | Where-Object { $_.ID -eq 70003 -and $_.Language -eq "French" }).Count | Should -Be 0
+            $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70003 -Language "French"
+            ($serverPrimary.UserDefinedMessages | Where-Object { $PSItem.ID -eq 70003 -and $PSItem.Language -eq "French" }).Count | Should -Be 0
 
-            $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70003 -Language "All"
-            ($server.UserDefinedMessages | Where-Object ID -eq 70003).Count | Should -Be 0 # SMO does a cascade delete of all messages by related ID in this scenario, so the resulting count is 1.
+            $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70003 -Language "All"
+            ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70003).Count | Should -Be 0 # SMO does a cascade delete of all messages by related ID in this scenario, so the resulting count is 1.
 
-            $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70004 -Language "English"
-            ($server.UserDefinedMessages | Where-Object ID -eq 70004).Count | Should -Be 0
+            $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70004 -Language "English"
+            ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70004).Count | Should -Be 0
 
-            $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70005
-            ($server.UserDefinedMessages | Where-Object ID -eq 70005).Count | Should -Be 0
+            $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70005
+            ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70005).Count | Should -Be 0
         }
     }
 
-    Context "Supports multiple server inputs" {
-
-        It "Preconnected servers" {
-            $results = ([DbaInstanceParameter[]]$server, $server2 | Remove-DbaCustomError -MessageID 70001)
-            ($server.UserDefinedMessages | Where-Object ID -eq 70001).Count | Should -Be 0
-            ($server2.UserDefinedMessages | Where-Object ID -eq 70001).Count | Should -Be 0
+    Context "Multiple server input support" {
+        It "Supports preconnected servers" {
+            $testResults = ([DbaInstanceParameter[]]$serverPrimary, $serverSecondary | Remove-DbaCustomError -MessageID 70001)
+            ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70001).Count | Should -Be 0
+            ($serverSecondary.UserDefinedMessages | Where-Object ID -eq 70001).Count | Should -Be 0
         }
 
-        It "Multiple servers via -SqlInstance" {
-            $results = Remove-DbaCustomError -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -MessageID 70002
+        It "Supports multiple servers via SqlInstance parameter" {
+            $testResults = Remove-DbaCustomError -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -MessageID 70002
             # even the SMO server.Refresh() doesn't pick up the changes to the user defined messages
-            $server1Reconnected = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $server2Reconnected = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            ($server1Reconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
-            ($server2Reconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
+            $serverPrimaryReconnected = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $serverSecondaryReconnected = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            ($serverPrimaryReconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
+            ($serverSecondaryReconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
         }
     }
 
-    Context "Simulate an update " {
+    Context "Update simulation tests" {
+        It "Should simulate an update using existing commands" {
+            $testResults = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70000 -Severity 1 -MessageText "test_70000"
+            $testResults.IsLogged | Should -Be $false
+            $testResults.Text | Should -Be "test_70000"
 
-        It "Use the existing commands to simulate an update" {
-            $results = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 1 -MessageText "test_70000"
-            $results.IsLogged | Should -Be $false
-            $results.Text | Should -Be "test_70000"
+            $originalMessage = $serverPrimary.UserDefinedMessages | Where-Object ID -eq 70000
 
-            $original = $server.UserDefinedMessages | Where-Object ID -eq 70000
+            $messageID = $originalMessage.ID
+            $messageSeverity = $originalMessage.Severity
+            $updatedText = "updated text"
+            $messageLanguage = $originalMessage.Language
 
-            $messageID = $original.ID
-            $severity = $original.Severity
-            $text = "updated text"
-            $language = $original.Language
+            $removedMessage = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70000
 
-            $removed = Remove-DbaCustomError -SqlInstance $server -MessageID 70000
-
-            $updated = New-DbaCustomError -SqlInstance $server -MessageID $messageID -Severity $severity -MessageText $text -Language $language -WithLog
-            $updated.IsLogged | Should -Be $true
-            $updated.ID | Should -Be 70000
-            $updated.Text | Should -Be "updated text"
+            $updatedMessage = New-DbaCustomError -SqlInstance $serverPrimary -MessageID $messageID -Severity $messageSeverity -MessageText $updatedText -Language $messageLanguage -WithLog
+            $updatedMessage.IsLogged | Should -Be $true
+            $updatedMessage.ID | Should -Be 70000
+            $updatedMessage.Text | Should -Be "updated text"
         }
     }
 }

@@ -1,20 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaTrace",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Id', 'Default', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Id",
+                "Default",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $traceconfig = Get-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName DefaultTraceEnabled
 
         if ($traceconfig.RunningValue -eq $false) {
@@ -26,9 +38,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server.Query("EXEC sp_configure 'show advanced options', 0;")
             $server.Query("RECONFIGURE WITH OVERRIDE")
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         if ($traceconfig.RunningValue -eq $false) {
             $server.Query("EXEC sp_configure 'show advanced options', 1;")
             $server.Query("RECONFIGURE WITH OVERRIDE")
@@ -39,10 +57,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             #$null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName DefaultTraceEnabled -Value $false
         }
     }
+
     Context "Test Check Default Trace" {
-        $results = Get-DbaTrace -SqlInstance $TestConfig.instance2
         It "Should find at least one trace file" {
-            $results.Id.Count -gt 0 | Should Be $true
+            $results = Get-DbaTrace -SqlInstance $TestConfig.instance2
+            $results.Id.Count -gt 0 | Should -Be $true
         }
     }
 }

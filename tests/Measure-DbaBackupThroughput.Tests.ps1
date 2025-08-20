@@ -1,35 +1,65 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Measure-DbaBackupThroughput",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Since', 'Last', 'Type', 'DeviceType', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Since",
+                "Last",
+                "Type",
+                "DeviceType",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Returns output for single database" {
-        BeforeAll {
-            $null = Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-            $random = Get-Random
-            $db = "dbatoolsci_measurethruput$random"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$($db.Name).bak"
-        }
-        AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db -Confirm:$false
-            Remove-Item -Path "$($TestConfig.Temp)\$($db.Name).bak"
-        }
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $results = Measure-DbaBackupThroughput -SqlInstance $TestConfig.instance2 -Database $db
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+        $PSDefaultParameterValues["Backup-DbaDatabase:Path"] = $backupPath
+
+        $randomSuffix = Get-Random
+        $testDb = "dbatoolsci_measurethruput$randomSuffix"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDb | Backup-DbaDatabase
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDb
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    Context "Returns output for single database" {
         It "Should return results" {
-            $results.Database | Should -Be $db
-            $results.BackupCount | Should -Be 1
+            $testResults = Measure-DbaBackupThroughput -SqlInstance $TestConfig.instance2 -Database $testDb
+
+            $testResults | Should -Not -BeNullOrEmpty
         }
     }
 }

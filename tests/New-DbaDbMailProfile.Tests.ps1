@@ -1,24 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbMailProfile",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Profile', 'Description', 'MailAccountName', 'MailAccountPriority', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Profile",
+                "Description",
+                "MailAccountName",
+                "MailAccountPriority",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $profilename = "dbatoolsci_test_$(get-random)"
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $profilename = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $description = 'Mail account for email alerts'
-        $mailaccountname = 'dbatoolssci@dbatools.io'
+        $description = "Mail account for email alerts"
+        $mailaccountname = "dbatoolssci@dbatools.io"
         $mailaccountpriority = 1
 
         $sql = "EXECUTE msdb.dbo.sysmail_add_account_sp
@@ -28,34 +42,44 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         @display_name = 'Automated Mailer',
         @mailserver_name = 'smtp.ad.local'"
         $server.Query($sql)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
         $server.query($mailAccountSettings)
         $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
         $server.query($regularaccountsettings)
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Sets DbMail Profile" {
-
-        $splat = @{
-            SqlInstance         = $TestConfig.instance2
-            Profile             = $profilename
-            Description         = $description
-            MailAccountName     = $mailaccountname
-            MailAccountPriority = $mailaccountpriority
+        BeforeAll {
+            $splatProfile = @{
+                SqlInstance         = $TestConfig.instance2
+                Profile             = $profilename
+                Description         = $description
+                MailAccountName     = $mailaccountname
+                MailAccountPriority = $mailaccountpriority
+            }
+            $results = New-DbaDbMailProfile @splatProfile
         }
-        $results = New-DbaDbMailProfile @splat
 
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should have Name of $profilename" {
-            $results.name | Should Be $profilename
+            $results.name | Should -Be $profilename
         }
         It "Should have Description of $description " {
-            $results.description | Should Be $description
+            $results.description | Should -Be $description
         }
     }
 }

@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -67,12 +61,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Test Importing Session Template" {
-        BeforeAll {
+        It "session exports to disk" {
             $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template "Profiler TSQL Duration"
             $results = $session | Export-DbaXESessionTemplate -Path $tempPath
-        }
-
-        It "session exports to disk" {
             $results.Name | Should -Be "$sessionName.xml"
         }
     }

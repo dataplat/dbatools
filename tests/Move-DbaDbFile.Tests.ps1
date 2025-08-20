@@ -1,198 +1,234 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Move-DbaDbFile",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileType', 'FileDestination', 'FileToMove', 'DeleteAfterMove', 'FileStructureOnly', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "FileType",
+                "FileDestination",
+                "FileToMove",
+                "DeleteAfterMove",
+                "FileStructureOnly",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_MoveDbFile'
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_MoveDbFile_2DataFiles'
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $dbFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile_2DataFiles | Where-Object TypeDescription -eq 'ROWS'
-        $physicalPathFolder = Split-Path -Path $dbFiles[0].PhysicalName -Parent
-        $physicalPathNewFolder = "$physicalPathFolder\moveFile"
-        $null = New-Item -Path $physicalPathNewFolder -Type Directory
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_MoveDbFile"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_MoveDbFile_2DataFiles"
+
+        $dbFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile_2DataFiles" | Where-Object TypeDescription -eq "ROWS"
+        $global:physicalPathFolder = Split-Path -Path $dbFiles[0].PhysicalName -Parent
+        $global:physicalPathNewFolder = "$global:physicalPathFolder\moveFile"
+        $null = New-Item -Path $global:physicalPathNewFolder -Type Directory
 
         $addNewDataFile = @"
         ALTER DATABASE [dbatoolsci_MoveDbFile_2DataFiles]
         ADD FILE ( NAME = N'dbatoolsci_MoveDbFile_2DataFiles_2'
-                , FILENAME = N'$physicalPathFolder\dbatoolsci_MoveDbFile_2DataFiles_2.ndf')
+                , FILENAME = N'$global:physicalPathFolder\dbatoolsci_MoveDbFile_2DataFiles_2.ndf')
         TO FILEGROUP [PRIMARY]
         GO
 "@
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $addNewDataFile
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile", "dbatoolsci_MoveDbFile_2DataFiles" -Confirm:$false
-        Get-Item -Path "$physicalPathFolder\moveFile" | Remove-Item -Recurse
-        Get-Item -Path "$physicalPathFolder\New" | Remove-Item -Recurse
-        Get-Item -Path "$physicalPathFolder\dbatoolsci_MoveDbFile.mdf" | Remove-Item
+        Remove-Item -Path "$global:physicalPathFolder\moveFile" -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path "$global:physicalPathFolder\New" -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path "$global:physicalPathFolder\dbatoolsci_MoveDbFile.mdf" -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Should output current database structure" {
-        $variables = @{
-            SqlInstance       = $TestConfig.instance2
-            Database          = 'dbatoolsci_MoveDbFile'
-            FileStructureOnly = $true
-        }
+        BeforeAll {
+            $splatFileStructure = @{
+                SqlInstance       = $TestConfig.instance2
+                Database          = "dbatoolsci_MoveDbFile"
+                FileStructureOnly = $true
+            }
 
-        $results = Move-DbaDbFile @variables
+            $global:structureResults = Move-DbaDbFile @splatFileStructure
+        }
 
         It "Should have Results" {
-            $results | Should Not BeNullOrEmpty
+            $global:structureResults | Should -Not -BeNullOrEmpty
         }
         It "Should have a logical name" {
-            $results | Should BeLike '*dbatoolsci_MoveDbFile*'
+            $global:structureResults | Should -BeLike "*dbatoolsci_MoveDbFile*"
         }
         It "Should not have filename and/or extensions" {
-            $results | Should Not BeLike '*mdf*'
+            $global:structureResults | Should -Not -BeLike "*mdf*"
         }
     }
 
     Context "Should move all database data files" {
-        $dbDataFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile | Where-Object TypeDescription -eq 'ROWS'
+        BeforeAll {
+            $global:dbDataFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile" | Where-Object TypeDescription -eq "ROWS"
 
-        $variables = @{
-            SqlInstance     = $TestConfig.instance2
-            Database        = 'dbatoolsci_MoveDbFile'
-            FileType        = 'Data'
-            FileDestination = $physicalPathNewFolder
+            $splatMoveData = @{
+                SqlInstance     = $TestConfig.instance2
+                Database        = "dbatoolsci_MoveDbFile"
+                FileType        = "Data"
+                FileDestination = $global:physicalPathNewFolder
+            }
+
+            $global:dataResults = Move-DbaDbFile @splatMoveData
+
+            Start-Sleep -Seconds 5
         }
-
-        $results = Move-DbaDbFile @variables
-
-        Start-Sleep -Seconds 5
 
         It "Should have Results" {
-            $results | Should Not BeNullOrEmpty
+            $global:dataResults | Should -Not -BeNullOrEmpty
         }
         It "Should have a Success results" {
-            $results.Result | Should Be 'Success'
+            $global:dataResults.Result | Should -Be "Success"
         }
         It "Should have updated database metadata" {
-            $results.DatabaseFileMetadata | Should Be 'Updated'
+            $global:dataResults.DatabaseFileMetadata | Should -Be "Updated"
         }
         It "Should have the previous database name" {
-            Test-Path -Path $dbDataFiles.PhysicalName | Should Be $true
+            Test-Path -Path $global:dbDataFiles.PhysicalName | Should -Be $true
         }
         It "Should have database Online" {
-            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_MoveDbFile').Status | Should Be 'ONLINE'
+            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile").Status | Should -Be "ONLINE"
         }
     }
 
     Context "Should move all database log files and delete source" {
-        $dbLogFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile | Where-Object TypeDescription -eq 'LOG'
+        BeforeAll {
+            $global:dbLogFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile" | Where-Object TypeDescription -eq "LOG"
 
-        $variables = @{
-            SqlInstance     = $TestConfig.instance2
-            Database        = 'dbatoolsci_MoveDbFile'
-            FileType        = 'Log'
-            FileDestination = $physicalPathNewFolder
-            DeleteAfterMove = $true
+            $splatMoveLog = @{
+                SqlInstance     = $TestConfig.instance2
+                Database        = "dbatoolsci_MoveDbFile"
+                FileType        = "Log"
+                FileDestination = $global:physicalPathNewFolder
+                DeleteAfterMove = $true
+            }
+
+            $global:logResults = Move-DbaDbFile @splatMoveLog
+
+            Start-Sleep -Seconds 5
         }
-
-        $results = Move-DbaDbFile @variables
-
-        Start-Sleep -Seconds 5
 
         It "Should have Results" {
-            $results | Should Not BeNullOrEmpty
+            $global:logResults | Should -Not -BeNullOrEmpty
         }
         It "Should have a Success results" {
-            $results.Result | Should Be 'Success'
+            $global:logResults.Result | Should -Be "Success"
         }
         It "Should have updated database metadata" {
-            $results.DatabaseFileMetadata | Should Be 'Updated'
+            $global:logResults.DatabaseFileMetadata | Should -Be "Updated"
         }
         It "Should have deleted source log file " {
-            Test-Path -Path $dbLogFiles.PhysicalName | Should Be $false
+            Test-Path -Path $global:dbLogFiles.PhysicalName | Should -Be $false
         }
         It "Should have database Online" {
-            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_MoveDbFile').Status | Should Be 'ONLINE'
+            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile").Status | Should -Be "ONLINE"
         }
     }
 
     Context "Should move only one database file and delete source" {
-        $dbNDFFile = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile_2DataFiles | Where-Object LogicalName -eq 'dbatoolsci_MoveDbFile_2DataFiles_2'
+        BeforeAll {
+            $global:dbNDFFile = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile_2DataFiles" | Where-Object LogicalName -eq "dbatoolsci_MoveDbFile_2DataFiles_2"
 
-        $variables = @{
-            SqlInstance     = $TestConfig.instance2
-            Database        = 'dbatoolsci_MoveDbFile_2DataFiles'
-            FileToMove      = @{
-                'dbatoolsci_MoveDbFile_2DataFiles_2' = $physicalPathNewFolder
+            $splatMoveSpecific = @{
+                SqlInstance     = $TestConfig.instance2
+                Database        = "dbatoolsci_MoveDbFile_2DataFiles"
+                FileToMove      = @{
+                    "dbatoolsci_MoveDbFile_2DataFiles_2" = $global:physicalPathNewFolder
+                }
+                DeleteAfterMove = $true
             }
-            DeleteAfterMove = $true
+
+            $global:specificResults = Move-DbaDbFile @splatMoveSpecific
+
+            Start-Sleep -Seconds 5
         }
-
-        $results = Move-DbaDbFile @variables
-
-        Start-Sleep -Seconds 5
 
         It "Should have Results" {
-            $results | Should Not BeNullOrEmpty
+            $global:specificResults | Should -Not -BeNullOrEmpty
         }
         It "Should have a Success results" {
-            $results.Result | Should Be 'Success'
+            $global:specificResults.Result | Should -Be "Success"
         }
         It "Should have updated database metadata" {
-            $results.DatabaseFileMetadata | Should Be 'Updated'
+            $global:specificResults.DatabaseFileMetadata | Should -Be "Updated"
         }
         It "Should have deleted source NDF file " {
-            Test-Path -Path $dbNDFFile.PhysicalName | Should Be $false
+            Test-Path -Path $global:dbNDFFile.PhysicalName | Should -Be $false
         }
         It "Should have database Online" {
-            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_MoveDbFile_2DataFiles').Status | Should Be 'ONLINE'
+            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile_2DataFiles").Status | Should -Be "ONLINE"
         }
     }
 
     Context "Should move all files and delete source" {
-        $dbAllFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile_2DataFiles
+        BeforeAll {
+            $global:dbAllFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile_2DataFiles"
 
-        $destinationFolder = "$physicalPathFolder\New"
-        $null = New-Item -Path $destinationFolder -Type Directory
+            $global:destinationFolder = "$global:physicalPathFolder\New"
+            $null = New-Item -Path $global:destinationFolder -Type Directory
 
-        $variables = @{
-            SqlInstance     = $TestConfig.instance2
-            Database        = 'dbatoolsci_MoveDbFile_2DataFiles'
-            FileType        = 'Both'
-            FileDestination = $destinationFolder
-            DeleteAfterMove = $true
+            $splatMoveAll = @{
+                SqlInstance     = $TestConfig.instance2
+                Database        = "dbatoolsci_MoveDbFile_2DataFiles"
+                FileType        = "Both"
+                FileDestination = $global:destinationFolder
+                DeleteAfterMove = $true
+            }
+
+            $global:allResults = Move-DbaDbFile @splatMoveAll
+
+            Start-Sleep -Seconds 5
         }
-
-        $results = Move-DbaDbFile @variables
-
-        Start-Sleep -Seconds 5
 
         It "Should have Results" {
-            $results | Should Not BeNullOrEmpty
+            $global:allResults | Should -Not -BeNullOrEmpty
         }
         It "Should have a Success results" {
-            $results.Result | foreach-object {
-                $_ | Should Be 'Success'
+            $global:allResults.Result | ForEach-Object {
+                $PSItem | Should -Be "Success"
             }
         }
         It "Should have updated database metadata" {
-            $results.DatabaseFileMetadata | foreach-object {
-                $_ | Should Be 'Updated'
+            $global:allResults.DatabaseFileMetadata | ForEach-Object {
+                $PSItem | Should -Be "Updated"
             }
         }
         It "Should have deleted source files" {
-            $dbAllFiles.PhysicalName | foreach-object {
-                Test-Path -Path $_ | Should Be $false
+            $global:dbAllFiles.PhysicalName | ForEach-Object {
+                Test-Path -Path $PSItem | Should -Be $false
             }
         }
         It "Should have database Online" {
-            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_MoveDbFile_2DataFiles').Status | Should Be 'ONLINE'
+            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile_2DataFiles").Status | Should -Be "ONLINE"
         }
     }
 }

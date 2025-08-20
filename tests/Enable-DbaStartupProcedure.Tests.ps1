@@ -1,15 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Enable-DbaStartupProcedure",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command $CommandName
-            $hasParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -17,9 +16,6 @@ Describe $CommandName -Tag UnitTests {
                 "StartupProcedure",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -31,11 +27,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables. They are available in all the It blocks.
-        $server           = Connect-DbaInstance -SqlInstance $TestConfig.Instance2
-        $random           = Get-Random
-        $startupProcName  = "StartUpProc$random"
-        $startupProc      = "dbo.$startupProcName"
-        $dbname           = "master"
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.Instance2
+        $random = Get-Random
+        $startupProcName = "StartUpProc$random"
+        $startupProc = "dbo.$startupProcName"
+        $dbname = "master"
 
         # Create the test startup procedure
         $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)

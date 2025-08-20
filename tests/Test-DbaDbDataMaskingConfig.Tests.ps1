@@ -1,21 +1,28 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-DbaDbDataMaskingConfig",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'FilePath', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "FilePath",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 
     Context "PII Known Names" {
-
-        $piiKnownNames = Get-Content "$PSScriptRoot\..\bin\datamasking\pii-knownnames.json" -Raw | ConvertFrom-Json
-        $randomizerTypes = Get-Content "$PSScriptRoot\..\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ','
+        BeforeAll {
+            $piiKnownNames = Get-Content "$PSScriptRoot\..\bin\datamasking\pii-knownnames.json" -Raw | ConvertFrom-Json
+            $randomizerTypes = Get-Content "$PSScriptRoot\..\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ","
+        }
 
         It "All masking types match randomizer types" {
             # Arrange
@@ -23,7 +30,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
             # Act
             $piiKnownNames | ForEach-Object {
-                $maskingTypesOK = $maskingTypesOK -and ($_.MaskingType -in $randomizerTypes.Type)
+                $maskingTypesOK = $maskingTypesOK -and ($PSItem.MaskingType -in $randomizerTypes.Type)
             }
 
             # Assert
@@ -36,19 +43,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
             # Act
             $piiKnownNames | ForEach-Object {
-                $maskingSubtypesOK = $maskingSubtypesOK -and ($_.MaskingSubType -in $randomizerTypes.SubType)
+                $maskingSubtypesOK = $maskingSubtypesOK -and ($PSItem.MaskingSubType -in $randomizerTypes.SubType)
             }
 
             # Assert
             $maskingSubtypesOK | Should -Be $true
         }
-
     }
 
     Context "PII patterns" {
-
-        $piiPatterns = Get-Content "$PSScriptRoot\..\bin\datamasking\pii-patterns.json" -Raw | ConvertFrom-Json
-        $randomizerTypes = Get-Content "$PSScriptRoot\..\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ','
+        BeforeAll {
+            $piiPatterns = Get-Content "$PSScriptRoot\..\bin\datamasking\pii-patterns.json" -Raw | ConvertFrom-Json
+            $randomizerTypes = Get-Content "$PSScriptRoot\..\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ","
+        }
 
         It "All masking types match randomizer types" {
             # Arrange
@@ -56,7 +63,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
             # Act
             $piiPatterns | ForEach-Object {
-                $maskingTypesOK = $maskingTypesOK -and ($_.MaskingType -in $randomizerTypes.Type)
+                $maskingTypesOK = $maskingTypesOK -and ($PSItem.MaskingType -in $randomizerTypes.Type)
             }
 
             # Assert
@@ -69,24 +76,30 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
             # Act
             $piiPatterns | ForEach-Object {
-                $maskingSubtypesOK = $maskingSubtypesOK -and ($_.MaskingSubType -in $randomizerTypes.SubType)
+                $maskingSubtypesOK = $maskingSubtypesOK -and ($PSItem.MaskingSubType -in $randomizerTypes.SubType)
             }
 
             # Assert
             $maskingSubtypesOK | Should -Be $true
         }
-
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $dbname = "dbatools_maskingtest"
-        $query = "CREATE DATABASE [$dbname]"
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database master -Query $query
+        # For all the temporary files that we want to clean up after the test, we create a directory that we can delete at the end.
+        $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $tempPath -ItemType Directory
 
-        $query = "
+        $dbName = "dbatools_maskingtest"
+        $createDbQuery = "CREATE DATABASE [$dbName]"
+
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database master -Query $createDbQuery
+
+        $createTableQuery = "
         CREATE TABLE [dbo].[Customer](
             [CustomerID] [int] IDENTITY(1,1) NOT NULL,
             [Firstname] [varchar](30) NULL,
@@ -100,19 +113,27 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         ) ON [PRIMARY]
         "
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $query
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbName -Query $createTableQuery
 
-        $file = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Table Customer -Path "C:\temp\datamasking"
+        $file = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance1 -Database $dbName -Table Customer -Path $tempPath
 
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
-        Remove-Item -Path "C:\temp\datamasking" -Recurse
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
+        Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     It "gives no errors with a correct json file" {
-        $findings = @()
-        $findings += Test-DbaDbDataMaskingConfig -FilePath $file.FullName
+        $findings = @(Test-DbaDbDataMaskingConfig -FilePath $file.FullName)
 
         $findings.Count | Should -Be 0
     }
@@ -127,8 +148,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         # Write the JSON back to the file
         $json | ConvertTo-Json -Depth 5 | Out-File $file.FullName -Force
 
-        $findings = @()
-        $findings += Test-DbaDbDataMaskingConfig -FilePath $file.FullName
+        $findings = @(Test-DbaDbDataMaskingConfig -FilePath $file.FullName)
 
         $findings.Count | Should -Be 1
     }

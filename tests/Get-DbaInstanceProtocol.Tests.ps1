@@ -1,31 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaInstanceProtocol",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-
+Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
-        $results = Get-DbaInstanceProtocol -ComputerName $TestConfig.instance1, $TestConfig.instance2
-
-        It "shows some services" {
-            $results.DisplayName | Should Not Be $null
+        BeforeAll {
+            $allResults = Get-DbaInstanceProtocol -ComputerName $TestConfig.instance1, $TestConfig.instance2
+            $tcpResults = $allResults | Where-Object Name -eq "Tcp"
         }
 
-        $results = $results | Where-Object Name -eq Tcp
+        It "shows some services" {
+            $allResults.DisplayName | Should -Not -BeNullOrEmpty
+        }
+
         It "can get TCPIP" {
-            foreach ($result in $results) {
-                $result.Name -eq "Tcp" | Should Be $true
+            foreach ($result in $tcpResults) {
+                $result.Name -eq "Tcp" | Should -Be $true
             }
         }
     }

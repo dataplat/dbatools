@@ -1,20 +1,34 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbFileGroup",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileGroup', 'FileGroupType', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "FileGroup",
+                "FileGroupType",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $random = Get-Random
         $db1name = "dbatoolsci_filegroup_test_$random"
         $db2name = "dbatoolsci_filegroup_test2_$random"
@@ -32,8 +46,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $resetFileStream = $false
         }
 
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $newDb1, $newDb2 | Remove-DbaDatabase -Confirm:$false
 
         if ($resetFileStream) {
@@ -42,7 +62,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "ensure command works" {
-
         It "Creates a filegroup" {
             $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_$random"
             $results.Parent.Name | Should -Be $db1name
@@ -67,7 +86,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_memory_optimized_$random" -FileGroupType MemoryOptimizedDataFileGroup
             $results.Name | Should -Be "filegroup_memory_optimized_$random"
             $results.FileGroupType | Should -Be MemoryOptimizedDataFileGroup
-
         }
 
         It "Creates a filegroup using a database from a pipeline" {

@@ -2,12 +2,12 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Disable-DbaForceNetworkEncryption",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -15,9 +15,6 @@ Describe $CommandName -Tag UnitTests {
                 "Credential",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -25,11 +22,8 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When disabling force network encryption" {
-        BeforeAll {
-            $results = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.instance1 -EnableException
-        }
-
         It "Returns results with ForceEncryption set to false" {
+            $results = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.instance1 -EnableException
             $results.ForceEncryption | Should -BeFalse
         }
     }

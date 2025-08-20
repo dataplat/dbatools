@@ -1,37 +1,66 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaLinkedServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LinkedServer', 'ServerProduct', 'Provider', 'DataSource', 'Location', 'ProviderString', 'Catalog', 'SecurityContext', 'SecurityContextRemoteUser', 'SecurityContextRemoteUserPassword', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "LinkedServer",
+                "ServerProduct",
+                "Provider",
+                "DataSource",
+                "Location",
+                "ProviderString",
+                "Catalog",
+                "SecurityContext",
+                "SecurityContextRemoteUser",
+                "SecurityContextRemoteUserPassword",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
-        $securePassword = ConvertTo-SecureString -String 'securePassword!' -AsPlainText -Force
+        $securePassword = ConvertTo-SecureString -String "securePassword!" -AsPlainText -Force
         $loginName = "dbatoolscli_test_$random"
         New-DbaLogin -SqlInstance $instance3 -Login $loginName -SecurePassword $securePassword
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS1_$random" -Confirm:$false -Force
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS2_$random" -Confirm:$false -Force
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS3_$random" -Confirm:$false -Force
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS4_$random" -Confirm:$false -Force
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS5_$random" -Confirm:$false -Force
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS6_$random" -Confirm:$false -Force
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaLogin -SqlInstance $instance3 -Login $loginName -Confirm:$false
+        # Cleanup all created linked servers.
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS1_$random" -Force -ErrorAction SilentlyContinue
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS2_$random" -Force -ErrorAction SilentlyContinue
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS3_$random" -Force -ErrorAction SilentlyContinue
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS4_$random" -Force -ErrorAction SilentlyContinue
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS5_$random" -Force -ErrorAction SilentlyContinue
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS6_$random" -Force -ErrorAction SilentlyContinue
+
+        # Cleanup test login.
+        Remove-DbaLogin -SqlInstance $instance3 -Login $loginName -ErrorAction SilentlyContinue
     }
 
     Context "ensure command works" {

@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Alert', 'ExcludeAlert', 'InputObject', 'EnableException'
         It "Should only contain our specific parameters" {
@@ -17,8 +17,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeEach {
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $alertName = "dbatoolsci_test_$(get-random)"
-        $alertName2 = "dbatoolsci_test_$(get-random)"
+        $alertName = "dbatoolsci_test_$(Get-Random)"
+        $alertName2 = "dbatoolsci_test_$(Get-Random)"
 
         $null = Invoke-DbaQuery -SqlInstance $server -Query "EXEC msdb.dbo.sp_add_alert @name=N'$alertName', @event_description_keyword=N'$alertName', @severity=25"
         $null = Invoke-DbaQuery -SqlInstance $server -Query "EXEC msdb.dbo.sp_add_alert @name=N'$alertName2', @event_description_keyword=N'$alertName2', @severity=25"

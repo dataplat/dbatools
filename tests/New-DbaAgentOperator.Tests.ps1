@@ -1,59 +1,113 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaAgentOperator",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Operator', 'EmailAddress', 'NetSendAddress', 'PagerAddress', 'PagerDay', 'SaturdayStartTime', 'SaturdayEndTime', 'SundayStartTime', 'SundayEndTime', 'WeekdayStartTime', 'WeekdayEndTime', 'IsFailsafeOperator', 'FailsafeNotificationMethod', 'Force', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Operator",
+                "EmailAddress",
+                "NetSendAddress",
+                "PagerAddress",
+                "PagerDay",
+                "SaturdayStartTime",
+                "SaturdayEndTime",
+                "SundayStartTime",
+                "SundayEndTime",
+                "WeekdayStartTime",
+                "WeekdayEndTime",
+                "IsFailsafeOperator",
+                "FailsafeNotificationMethod",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $email1 = "test1$($random)@test.com"
         $email2 = "test2$($random)@test.com"
         $email3 = "test3$($random)@test.com"
         $email4 = "test4$($random)@test.com"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email1 -Confirm:$false
-        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email2 -Confirm:$false
-        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email3 -Confirm:$false
-        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email4 -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email1
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email2
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email3
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email4
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "New Agent Operator is added properly" {
-
         It "Should have the right name" {
-            $results = New-DbaAgentOperator -SqlInstance $server2 -Operator $email1 -EmailAddress $email1 -PagerDay Everyday -Force
-            $results.Name | Should Be $email1
+            $splatOperator1 = @{
+                SqlInstance  = $server2
+                Operator     = $email1
+                EmailAddress = $email1
+                PagerDay     = "Everyday"
+                Force        = $true
+            }
+            $results = New-DbaAgentOperator @splatOperator1
+            $results.Name | Should -Be $email1
         }
 
         It "Create an agent operator with only the defaults" {
             $results = New-DbaAgentOperator -SqlInstance $server2 -Operator $email2 -EmailAddress $email2
-            $results.Name | Should Be $email2
+            $results.Name | Should -Be $email2
         }
 
         It "Pipeline command" {
             $results = $server2 | New-DbaAgentOperator -Operator $email3 -EmailAddress $email3
-            $results.Name | Should Be $email3
+            $results.Name | Should -Be $email3
         }
 
         It "Creates an agent operator with all params" {
-            $results = New-DbaAgentOperator -SqlInstance $server2 -Operator $email4 -EmailAddress $email4 -NetSendAddress dbauser1 -PagerAddress dbauser1@pager.dbatools.io -PagerDay Everyday -SaturdayStartTime 070000 -SaturdayEndTime 180000 -SundayStartTime 080000 -SundayEndTime 170000 -WeekdayStartTime 060000 -WeekdayEndTime 190000
+            $splatOperatorFull = @{
+                SqlInstance       = $server2
+                Operator          = $email4
+                EmailAddress      = $email4
+                NetSendAddress    = "dbauser1"
+                PagerAddress      = "dbauser1@pager.dbatools.io"
+                PagerDay          = "Everyday"
+                SaturdayStartTime = "070000"  # <- Add quotes
+                SaturdayEndTime   = "180000"  # <- Add quotes
+                SundayStartTime   = "080000"  # <- Add quotes
+                SundayEndTime     = "170000"  # <- Add quotes
+                WeekdayStartTime  = "060000"  # <- Add quotes
+                WeekdayEndTime    = "190000"  # <- Add quotes
+            }
+            $results = New-DbaAgentOperator @splatOperatorFull
             $results.Enabled | Should -Be $true
-            $results.Name | Should Be $email4
+            $results.Name | Should -Be $email4
             $results.EmailAddress | Should -Be $email4
-            $results.NetSendAddress | Should -Be dbauser1
-            $results.PagerAddress | Should -Be dbauser1@pager.dbatools.io
-            $results.PagerDays | Should -Be Everyday
+            $results.NetSendAddress | Should -Be "dbauser1"
+            $results.PagerAddress | Should -Be "dbauser1@pager.dbatools.io"
+            $results.PagerDays | Should -Be "Everyday"
             $results.SaturdayPagerStartTime.ToString() | Should -Be "07:00:00"
             $results.SaturdayPagerEndTime.ToString() | Should -Be "18:00:00"
             $results.SundayPagerStartTime.ToString() | Should -Be "08:00:00"

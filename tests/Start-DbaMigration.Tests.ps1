@@ -1,99 +1,197 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Start-DbaMigration",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'Destination', 'DetachAttach', 'Reattach', 'BackupRestore', 'SharedPath', 'WithReplace', 'NoRecovery', 'AzureCredential', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'SourceSqlCredential', 'DestinationSqlCredential', 'Exclude', 'DisableJobsOnDestination', 'DisableJobsOnSource', 'ExcludeSaRename', 'UseLastBackup', 'Continue', 'Force', 'EnableException', 'KeepCDC', 'KeepReplication', 'MasterKeyPassword'
-
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Source",
+                "Destination",
+                "DetachAttach",
+                "Reattach",
+                "BackupRestore",
+                "SharedPath",
+                "WithReplace",
+                "NoRecovery",
+                "SetSourceReadOnly",
+                "ReuseSourceFolderStructure",
+                "IncludeSupportDbs",
+                "SourceSqlCredential",
+                "DestinationSqlCredential",
+                "Exclude",
+                "DisableJobsOnDestination",
+                "DisableJobsOnSource",
+                "ExcludeSaRename",
+                "UseLastBackup",
+                "KeepCDC",
+                "KeepReplication",
+                "Continue",
+                "Force",
+                "AzureCredential",
+                "MasterKeyPassword",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-
-$PSDefaultParameterValues = @{ }
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
+        # Explain what needs to be set up for the test:
+        # To test migration functionality, we need databases on the source instance that can be migrated to the destination.
+        # We'll create test databases with unique names to avoid conflicts.
+
+        # Set variables. They are available in all the It blocks.
         $random = Get-Random
         $startmigrationrestoredb = "dbatoolsci_startmigrationrestore$random"
         $startmigrationrestoredb2 = "dbatoolsci_startmigrationrestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+        # Clean up any existing databases with these names first
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2 -ErrorAction SilentlyContinue
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb; ALTER DATABASE $startmigrationrestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
-        Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
-        Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
-        $null = Set-DbaDbOwner -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb, $detachattachdb -TargetLogin sa
+        # Create the test databases on instance3 first
+        $splatInstance3 = @{
+            SqlInstance = $TestConfig.instance3
+            Query       = "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+        }
+        Invoke-DbaQuery @splatInstance3
 
-        $backupPath = "$($TestConfig.Temp)\$CommandName"
-        $null = New-Item -Path $backupPath -ItemType Directory
+        # Create the test databases on instance2
+        $splatInstance2Db1 = @{
+            SqlInstance = $TestConfig.instance2
+            Query       = "CREATE DATABASE $startmigrationrestoredb; ALTER DATABASE $startmigrationrestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+        }
+        Invoke-DbaQuery @splatInstance2Db1
+
+        $splatInstance2Db2 = @{
+            SqlInstance = $TestConfig.instance2
+            Query       = "CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+        }
+        Invoke-DbaQuery @splatInstance2Db2
+
+        $splatInstance2Db3 = @{
+            SqlInstance = $TestConfig.instance2
+            Query       = "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+        }
+        Invoke-DbaQuery @splatInstance2Db3
+
+        # Set database owners
+        $splatDbOwner = @{
+            SqlInstance = $TestConfig.instance2
+            Database    = $startmigrationrestoredb, $detachattachdb
+            TargetLogin = "sa"
+        }
+        $null = Set-DbaDbOwner @splatDbOwner
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2
-        Remove-Item -Path $backupPath -Recurse
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2 -ErrorAction SilentlyContinue
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
-    Context "Backup restore" {
-        $results = Start-DbaMigration -Force -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -BackupRestore -SharedPath $backupPath -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials
-
-        It "returns at least one result" {
-            $results | Should -Not -Be $null
-        }
-
-        foreach ($result in $results) {
-            It "copies a database successfully" {
-                $result.Type -eq "Database"
-                $result.Status -eq "Successful"
+    Context  "When using backup restore method" {
+        BeforeAll {
+            $splatMigration = @{
+                Force         = $true
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
+                BackupRestore = $true
+                SharedPath    = $backupPath
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
             }
+            $migrationResults = Start-DbaMigration @splatMigration
         }
 
-        It "retains its name, recovery model, and status." {
-            $dbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb2
-            $dbs[0].Name -ne $null
-            # Compare its variables
-            $dbs[0].Name -eq $dbs[1].Name
-            $dbs[0].RecoveryModel -eq $dbs[1].RecoveryModel
-            $dbs[0].Status -eq $dbs[1].Status
-            $dbs[0].Owner -eq $dbs[1].Owner
+        It "Should return at least one result" {
+            $migrationResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should copy databases successfully" {
+            $databaseResults = $migrationResults | Where-Object Type -eq "Database"
+            $databaseResults | Should -Not -BeNullOrEmpty
+            $successfulResults = $databaseResults | Where-Object Status -eq "Successful"
+            $successfulResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should retain database properties after migration" {
+            $sourceDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb2
+            $destDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $startmigrationrestoredb2
+
+            $sourceDbs.Name | Should -Not -BeNullOrEmpty
+            $destDbs.Name | Should -Not -BeNullOrEmpty
+            # Compare database properties
+            $sourceDbs.Name | Should -Be $destDbs.Name
+            $sourceDbs.RecoveryModel | Should -Be $destDbs.RecoveryModel
+            $sourceDbs.Status | Should -Be $destDbs.Status
+            $sourceDbs.Owner | Should -Be $destDbs.Owner
         }
     }
 
-    Context "Backup restore" {
-        $quickbackup = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory $backupPath
-        $results = Start-DbaMigration -Force -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -UseLastBackup -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials, StartupProcedures
+    Context "When using last backup method" {
+        BeforeAll {
+            # Create backups first
+            $backupResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory $backupPath
 
-        It "returns at least one result" {
-            $results | Should -Not -Be $null
-        }
-
-        foreach ($result in $results) {
-            It "copies a database successfully" {
-                $result.Type -eq "Database"
-                $result.Status -eq "Successful"
+            $splatLastBackup = @{
+                Force         = $true
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
+                UseLastBackup = $true
+                # Excluding MasterCertificates to avoid this warning: [Copy-DbaDbCertificate] The SQL Server service account (NT Service\MSSQL$SQLINSTANCE2) for CLIENT\SQLInstance2 does not have access to
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures", "MasterCertificates"
             }
+            $lastBackupResults = Start-DbaMigration @splatLastBackup
         }
 
-        It "retains its name, recovery model, and status." {
-            $dbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb2
-            $dbs[0].Name -ne $null
-            # Compare its variables
-            $dbs[0].Name -eq $dbs[1].Name
-            $dbs[0].RecoveryModel -eq $dbs[1].RecoveryModel
-            $dbs[0].Status -eq $dbs[1].Status
-            $dbs[0].Owner -eq $dbs[1].Owner
+        It "Should return at least one result" {
+            $lastBackupResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should copy databases successfully" {
+            $databaseResults = $lastBackupResults | Where-Object Type -eq "Database"
+            $databaseResults | Should -Not -BeNullOrEmpty
+            $successfulResults = $databaseResults | Where-Object Status -eq "Successful"
+            $successfulResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should retain database properties after migration" {
+            $sourceDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb2
+            $destDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $startmigrationrestoredb2
+
+            $sourceDbs.Name | Should -Not -BeNullOrEmpty
+            $destDbs.Name | Should -Not -BeNullOrEmpty
+            # Compare database properties
+            $sourceDbs.Name | Should -Be $destDbs.Name
+            $sourceDbs.RecoveryModel | Should -Be $destDbs.RecoveryModel
+            $sourceDbs.Status | Should -Be $destDbs.Status
+            $sourceDbs.Owner | Should -Be $destDbs.Owner
         }
     }
 }

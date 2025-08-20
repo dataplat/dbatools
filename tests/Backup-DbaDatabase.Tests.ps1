@@ -1,83 +1,81 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "Backup-DbaDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Backup-DbaDatabase" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        BeforeAll {
-            $command = Get-Command Backup-DbaDatabase
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
-                'SqlInstance',
-                'SqlCredential',
-                'Database',
-                'ExcludeDatabase',
-                'Path',
-                'FilePath',
-                'ReplaceInName',
-                'NoAppendDbNameInPath',
-                'CopyOnly',
-                'Type',
-                'InputObject',
-                'CreateFolder',
-                'FileCount',
-                'CompressBackup',
-                'Checksum',
-                'Verify',
-                'MaxTransferSize',
-                'BlockSize',
-                'BufferCount',
-                'AzureBaseUrl',
-                'AzureCredential',
-                'NoRecovery',
-                'BuildPath',
-                'WithFormat',
-                'Initialize',
-                'SkipTapeHeader',
-                'TimeStampFormat',
-                'IgnoreFileChecks',
-                'OutputScriptOnly',
-                'EnableException',
-                'EncryptionAlgorithm',
-                'EncryptionCertificate',
-                'IncrementPrefix',
-                'Description'
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Path",
+                "FilePath",
+                "ReplaceInName",
+                "NoAppendDbNameInPath",
+                "CopyOnly",
+                "Type",
+                "InputObject",
+                "CreateFolder",
+                "FileCount",
+                "CompressBackup",
+                "Checksum",
+                "Verify",
+                "MaxTransferSize",
+                "BlockSize",
+                "BufferCount",
+                "AzureBaseUrl",
+                "AzureCredential",
+                "NoRecovery",
+                "BuildPath",
+                "WithFormat",
+                "Initialize",
+                "SkipTapeHeader",
+                "TimeStampFormat",
+                "IgnoreFileChecks",
+                "OutputScriptOnly",
+                "EnableException",
+                "EncryptionAlgorithm",
+                "EncryptionCertificate",
+                "IncrementPrefix",
+                "Description"
             )
-        }
-        It "Should only contain our specific parameters" {
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
-        }
-
-        It "Has parameter: <_>" -ForEach $expectedParameters {
-            $command | Should -HaveParameter $PSItem
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $DestBackupDir = "$($TestConfig.Temp)\backups"
-        if (-Not (Test-Path $DestBackupDir)) {
-            New-Item -Type Container -Path $DestBackupDir
-        }
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        $DestBackupDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Type Container -Path $DestBackupDir
 
         # Write all files to the same backup destination if not otherwise specified
-        $PSDefaultParameterValues['Backup-DbaDatabase:BackupDirectory'] = $DestBackupDir
+        $PSDefaultParameterValues['Backup-DbaDatabase:Path'] = $DestBackupDir
 
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues.Remove('Backup-DbaDatabase:Path')
 
-        if (Test-Path $DestBackupDir) {
-            Remove-Item -Path $DestBackupDir -Force -Recurse
-        }
+        # Remove the backup directory.
+        Remove-Item -Path $DestBackupDir -Force -Recurse -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Properly backups all databases" {
@@ -86,20 +84,17 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         It "Should return a database name, specifically master" {
-            $results.DatabaseName | Should -Contain 'master'
+            $results.DatabaseName | Should -Contain "master"
         }
 
-        It "Should return successful restore for <_.DatabaseName>" -ForEach $results {
-            $PSItem.BackupComplete | Should -BeTrue
+        It "Should return successful restore for all databases" {
+            $results | ForEach-Object { $PSItem.BackupComplete | Should -BeTrue }
         }
     }
 
     Context "Should not backup if database and exclude match" {
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Exclude master -WarningAction SilentlyContinue
-        }
-
         It "Should not return object" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Exclude master -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
         }
     }
@@ -134,11 +129,8 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
     }
 
     Context "Database should backup 2 databases" {
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb
-        }
-
         It "Database backup object count Should Be 2" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb
             $results | Should -HaveCount 2
             $results.BackupComplete | Should -Be @($true, $true)
         }
@@ -146,11 +138,11 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
     Context "Should take path and filename" {
         BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName 'PesterTest.bak'
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName "PesterTest.bak"
         }
 
         It "Should report it has backed up to the path with the correct name" {
-            $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
+            $results.FullName | Should -BeLike "$DestBackupDir*PesterTest.bak"
         }
 
         It "Should have backed up to the path with the correct name" {
@@ -164,7 +156,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         It "Should report it has backed up to the path with the correct name" {
-            $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
+            $results.FullName | Should -BeLike "$DestBackupDir*PesterTest.bak"
         }
 
         It "Should have backed up to the path with the correct name" {
@@ -173,11 +165,8 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
     }
 
     Context "ExcludeDatabase parameter works when using pipes (fixes #5044)" {
-        BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Backup-DbaDatabase -ExcludeDatabase master, tempdb, msdb, model -WarningAction SilentlyContinue
-        }
-
         It "Should report it has backed up to the path with the correct name" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Backup-DbaDatabase -ExcludeDatabase master, tempdb, msdb, model -WarningAction SilentlyContinue
             $results.DatabaseName | Should -Not -Contain master
             $results.DatabaseName | Should -Not -Contain tempdb
             $results.DatabaseName | Should -Not -Contain msdb
@@ -188,7 +177,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
     Context "Handling backup paths that don't exist (1)" {
         BeforeAll {
             $MissingPath = "$DestBackupDir\Missing1\Awol2"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $MissingPath -WarningAction SilentlyContinue
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $MissingPath -WarningAction SilentlyContinue
         }
 
         It "Should not return object" {
@@ -202,44 +191,35 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
     Context "Handling backup paths that don't exist (2)" {
         # $MissingPathTrailing has a trailing slash but we normalize the path before doing the actual backup
-        BeforeAll {
+        It "Should have backed up to $MissingPath" {
             $MissingPathTrailing = "$DestBackupDir\Missing1\Awol2\"
             $MissingPath = "$DestBackupDir\Missing1\Awol2"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $MissingPathTrailing -BuildPath -WarningAction SilentlyContinue
-        }
-
-        It "Should have backed up to $MissingPath" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $MissingPathTrailing -BuildPath -WarningAction SilentlyContinue
             $results.BackupFolder | Should -Be "$MissingPath"
-            $results.Path | Should -Not -BeLike '*\\*'
+            $results.Path | Should -Not -BeLike "*\\*"
         }
     }
 
     Context "CreateFolder switch should append the databasename to the backup path" {
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -CreateFolder
-        }
-
         It "Should have appended master to the backup path" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -CreateFolder
             $results.BackupFolder | Should -Be "$DestBackupDir\master"
         }
     }
 
     Context "CreateFolder switch should append the databasename to the backup path even when striping" {
-        BeforeAll {
-            $backupPaths = "$DestBackupDir\stripewithdb1", "$DestBackupDir\stripewithdb2"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $backupPaths -CreateFolder
-        }
-
         It "Should have appended master to all backup paths" {
+            $backupPaths = "$DestBackupDir\stripewithdb1", "$DestBackupDir\stripewithdb2"
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $backupPaths -CreateFolder
             foreach ($path in $results.BackupFolder) {
-                ($results.BackupFolder | Sort-Object) | Should -Be ($backupPaths | Sort-Object | ForEach-Object { [IO.Path]::Combine($_, 'master') })
+                ($results.BackupFolder | Sort-Object) | Should -Be ($backupPaths | Sort-Object | ForEach-Object { [IO.Path]::Combine($PSItem, "master") })
             }
         }
     }
 
     Context "A fully qualified path should override a backupfolder" {
         BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $TestConfig.Temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $TestConfig.Temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
         }
 
         It "Should report backed up to $DestBackupDir" {
@@ -248,7 +228,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         It "Should have backuped up to $DestBackupDir\PesterTest2.bak" {
-            Test-Path "$DestBackupDir\PesterTest2.bak" | Should -Be $true
+            Test-Path "$DestBackupDir\PesterTest2.bak" | Should -BeTrue
         }
     }
 
@@ -256,7 +236,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         BeforeAll {
             $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
             $null = New-Item -Path $backupPaths -ItemType Directory
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $backupPaths
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $backupPaths
         }
 
         It "Should have created 3 backups" {
@@ -265,25 +245,22 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
         It "Should have written to all 3 folders" {
             $backupPaths | ForEach-Object {
-                $_ | Should -BeIn ($results.BackupFolder)
+                $PSItem | Should -BeIn ($results.BackupFolder)
             }
         }
 
         It "Should have written files with extensions" {
             foreach ($path in $results.BackupFile) {
-                [IO.Path]::GetExtension($path) | Should -Be '.bak'
+                [IO.Path]::GetExtension($path) | Should -Be ".bak"
             }
         }
     }
 
     Context "Should stripe if multiple backupfolders specified (2)" {
-        # Assure that striping logic favours -BackupDirectory and not -Filecount
-        BeforeAll {
-            $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $backupPaths -FileCount 2
-        }
-
+        # Assure that striping logic favours -Path and not -Filecount
         It "Should have created 3 backups, even when FileCount is different" {
+            $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $backupPaths -FileCount 2
             $results.BackupFilesCount | Should -Be 3
         }
     }
@@ -299,7 +276,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
         It "Should have 1 period in file extension" {
             foreach ($path in $results.BackupFile) {
-                [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
+                [IO.Path]::GetExtension($path) | Should -Not -BeLike "*..*"
             }
         }
     }
@@ -323,18 +300,18 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
     Context "Should Backup to default path if none specified" {
         BeforeAll {
-            $PSDefaultParameterValues.Remove('Backup-DbaDatabase:BackupDirectory')
+            $PSDefaultParameterValues.Remove("Backup-DbaDatabase:Path")
             $defaultBackupPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance1).Backup
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName 'PesterTest.bak'
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName "PesterTest.bak"
         }
 
         AfterAll {
-            Get-ChildItem -Path $results.Fullname | Remove-Item
-            $PSDefaultParameterValues['Backup-DbaDatabase:BackupDirectory'] = $DestBackupDir
+            Get-ChildItem -Path $results.FullName | Remove-Item -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues["Backup-DbaDatabase:Path"] = $DestBackupDir
         }
 
         It "Should report it has backed up to the path with the corrrect name" {
-            $results.Fullname | Should -BeLike "$defaultBackupPath*PesterTest.bak"
+            $results.FullName | Should -BeLike "$defaultBackupPath*PesterTest.bak"
         }
 
         It "Should have backed up to the path with the corrrect name" {
@@ -373,20 +350,17 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
     }
 
     Context "Backup can pipe to restore" {
-        BeforeAll {
-            $random = Get-Random
-            $DestDbRandom = "dbatools_ci_backupdbadatabase$random"
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName "dbatoolsci_singlerestore"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
-        }
-
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $DestDbRandom | Remove-DbaDatabase
         }
 
         It "Should return successful restore" {
-            $results.RestoreComplete | Should -Be $true
+            $random = Get-Random
+            $DestDbRandom = "dbatools_ci_backupdbadatabase$random"
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName "dbatoolsci_singlerestore"
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
+            $results.RestoreComplete | Should -BeTrue
         }
     }
 
@@ -406,20 +380,20 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
     Context "Should handle NUL as an input path" {
         BeforeAll {
-            $PSDefaultParameterValues.Remove('Backup-DbaDatabase:BackupDirectory')
+            $PSDefaultParameterValues.Remove('Backup-DbaDatabase:Path')
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName NUL
         }
 
         AfterAll {
-            $PSDefaultParameterValues['Backup-DbaDatabase:BackupDirectory'] = $DestBackupDir
+            $PSDefaultParameterValues["Backup-DbaDatabase:Path"] = $DestBackupDir
         }
 
         It "Should return succesful backup" {
-            $results.BackupComplete | Should -Be $true
+            $results.BackupComplete | Should -BeTrue
         }
 
         It "Should have backed up to NUL:" {
-            $results.FullName[0] | Should -Be 'NUL:'
+            $results.FullName[0] | Should -Be "NUL:"
         }
     }
 
@@ -429,7 +403,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         It "Should return a string" {
-            $results.GetType().ToString() | Should -Be 'System.String'
+            $results.GetType().ToString() | Should -Be "System.String"
         }
 
         It "Should return BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1" {
@@ -447,7 +421,7 @@ go
 CREATE DATABASE encrypted
 go
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $sqlencrypt -Database Master
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $sqlencrypt -Database master
             $createdb = @"
 CREATE DATABASE ENCRYPTION KEY
 WITH ALGORITHM = AES_128
@@ -466,46 +440,37 @@ GO
 drop certificate MyServerCert
 go
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $sqldrop -Database Master
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $sqldrop -Database master
         }
 
         It "Should compress an encrypted db" {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database encrypted -Compress
             Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $results.FullName
-            $results.script | Should -BeLike '*D, COMPRESSION,*'
+            $results.script | Should -BeLike "*D, COMPRESSION,*"
         }
     }
 
     Context "Custom TimeStamp" {
         # Test relies on DateFormat bobob returning bobob as the values aren't interpreted, check here in case .Net rules change
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -TimeStampFormat bobob
-        }
-
         It "Should apply the corect custom Timestamp" {
-            ($results | Where-Object { $_.BackupPath -like '*bobob*' }).count | Should -Be $results.count
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -TimeStampFormat bobob
+            ($results | Where-Object { $PSItem.BackupPath -like "*bobob*" }).Count | Should -Be $results.Count
         }
     }
 
     Context "Test Backup templating" {
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb -BackupDirectory $DestBackupDir\dbname\instancename\backuptype\ -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
-            $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
-        }
-
         It "Should have replaced the markers" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb -Path $DestBackupDir\dbname\instancename\backuptype\ -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+            $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\master\$instanceName\Full\master-Full.bak"
             $results[1].BackupPath | Should -BeLike "$DestBackupDir\msdb\$instanceName\Full\msdb-Full.bak"
         }
     }
 
     Context "Test Backup templating when db object piped in issue 8100" {
-        BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master,msdb | Backup-DbaDatabase -BackupDirectory $DestBackupDir\db2\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
-            $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
-        }
-
         It "Should have replaced the markers" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb | Backup-DbaDatabase -Path $DestBackupDir\db2\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+            $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\db2\master\$instanceName\Full\master-Full.bak"
             $results[1].BackupPath | Should -BeLike "$DestBackupDir\db2\msdb\$instanceName\Full\msdb-Full.bak"
         }
@@ -514,16 +479,16 @@ go
     Context "Test Backup Encryption with Certificate" {
         # TODO: Should the master key be created at lab startup like in instance3?
         BeforeAll {
-            $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
-            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master -SecurePassword $securePass -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+            $securePass = ConvertTo-SecureString "MyStrongPassword123!" -AsPlainText -Force
+            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -SecurePassword $securePass -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
             $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master -Name BackupCertt -Subject BackupCertt
-            $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName 'encryptiontest.bak' -Description "Encrypted backup"
+            $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName "encryptiontest.bak" -Description "Encrypted backup"
             Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $encBackupResults.FullName
         }
 
         AfterAll {
             Remove-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master -Certificate BackupCertt
-            Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+            Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
         }
 
         It "Should encrypt the backup" {
@@ -551,14 +516,14 @@ go
                     $sql = "DROP CREDENTIAL [$TestConfig.azureblob]"
                     $server.Query($sql)
                 }
-                $sql = "CREATE CREDENTIAL [$TestConfig.azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+                $sql = "CREATE CREDENTIAL [$($TestConfig.azureblob)] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$($env:azurepasswd)'"
                 $server.Query($sql)
                 $server.Query("CREATE DATABASE dbatoolsci_azure")
                 if (Get-DbaCredential -SqlInstance $TestConfig.instance2 -name dbatools_ci) {
                     $sql = "DROP CREDENTIAL dbatools_ci"
                     $server.Query($sql)
                 }
-                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$TestConfig.azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
+                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$($TestConfig.azureblobaccount)', SECRET = N'$($env:azurelegacypasswd)'"
                 $server.Query($sql)
             }
 
@@ -569,16 +534,16 @@ go
 
             It "backs up to Azure properly using SHARED ACCESS SIGNATURE" {
                 $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -AzureBaseUrl $TestConfig.azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
-                $results.Database | Should -Be 'dbatoolsci_azure'
-                $results.DeviceType | Should -Be 'URL'
-                $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
+                $results.Database | Should -Be "dbatoolsci_azure"
+                $results.DeviceType | Should -Be "URL"
+                $results.BackupFile | Should -Be "dbatoolsci_azure.bak"
             }
 
             It "backs up to Azure properly using legacy credential" {
                 $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -AzureBaseUrl $TestConfig.azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure2.bak -WithFormat -AzureCredential dbatools_ci
-                $results.Database | Should -Be 'dbatoolsci_azure'
-                $results.DeviceType | Should -Be 'URL'
-                $results.BackupFile | Should -Be 'dbatoolsci_azure2.bak'
+                $results.Database | Should -Be "dbatoolsci_azure"
+                $results.DeviceType | Should -Be "URL"
+                $results.BackupFile | Should -Be "dbatoolsci_azure2.bak"
             }
         }
     }

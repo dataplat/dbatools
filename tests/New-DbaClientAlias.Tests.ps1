@@ -1,24 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaClientAlias",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'ServerName', 'Alias', 'Protocol', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "ServerName",
+                "Alias",
+                "Protocol",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "adds the alias" {
-        $results = New-DbaClientAlias -ServerName sql2016 -Alias dbatoolscialias-new -Verbose:$false
-        It "returns accurate information" {
-            $results.AliasName | Should Be dbatoolscialias-new, dbatoolscialias-new
+Describe $CommandName -Tag IntegrationTests {
+    Context "When creating client alias" {
+        AfterAll {
+            # Cleanup - Remove any aliases that may have been created
+            Get-DbaClientAlias | Remove-DbaClientAlias
         }
-        $results | Remove-DbaClientAlias
+
+        It "Returns accurate information when creating alias" {
+            $aliasName = "dbatoolscialias-new"
+            $serverName = "sql2016"
+            $results = New-DbaClientAlias -ServerName $serverName -Alias $aliasName -Verbose:$false
+            $results.AliasName | Should -Be $aliasName, $aliasName
+        }
     }
 }

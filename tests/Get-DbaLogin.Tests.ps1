@@ -1,54 +1,87 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaLogin",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'IncludeFilter', 'ExcludeLogin', 'ExcludeFilter', 'ExcludeSystemLogin', 'Type', 'HasAccess', 'Locked', 'Disabled', , 'MustChangePassword', 'Detailed', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Login",
+                "IncludeFilter",
+                "ExcludeLogin",
+                "ExcludeFilter",
+                "ExcludeSystemLogin",
+                "Type",
+                "HasAccess",
+                "Locked",
+                "Disabled",
+                "MustChangePassword",
+                "Detailed",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance. This is being used because the 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
         $random = Get-Random
 
         $password = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
-        New-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Password $password
-        New-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin2_$random" -Password $password
+        $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Password $password
+        $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin2_$random" -Password $password
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
-        Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Does sql instance have a SA account" {
-        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
         It "Should report that one account named SA exists" {
-            $results.Count | Should Be 1
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
+            $results.Count | Should -BeExactly 1
         }
     }
 
     Context "Check that SA account is enabled" {
-        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
         It "Should say the SA account is disabled FALSE" {
-            $results.IsDisabled | Should Be "False"
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
+            $results.IsDisabled | Should -Be $false
         }
     }
 
     Context "Check that SA account is SQL Login" {
-        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa -Type SQL -Detailed
-        It "Should report that one SQL Login named SA exists" {
-            $results.Count | Should Be 1
+        BeforeAll {
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa -Type SQL -Detailed
         }
+
+        It "Should report that one SQL Login named SA exists" {
+            $results.Count | Should -BeExactly 1
+        }
+
         It "Should get LoginProperties via Detailed switch" {
-            $results.BadPasswordCount | Should Not Be $null
-            $results.PasswordHash | Should Not Be $null
+            $results.BadPasswordCount | Should -Not -BeNullOrEmpty
+            $results.PasswordHash | Should -Not -BeNullOrEmpty
         }
     }
 
@@ -117,38 +150,74 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             ($results[0].PSobject.Properties.Name -contains "PasswordLastSetTime") | Should -Be $true
         }
 
-        It -Skip:$SkipLocalTest "Locked" {
-            $results = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
-            $results.PasswordPolicyEnforced | Should -Be $true
-
-            # simulate a lockout
-            $invalidPassword = ConvertTo-SecureString -String 'invalid' -AsPlainText -Force
-            $invalidSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "testlogin1_$random", $invalidPassword
-
-            # exceed the lockout count
-            for (($i = 0); $i -le 4; $i++) {
-                try {
-                    Connect-DbaInstance -SqlInstance $TestConfig.instance1 -SqlCredential $invalidSqlCredential
-                } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
-                    Start-Sleep -s 5
-                }
+        It "Locked - Requires password policy enforcement" {
+            # Skip this test if not running locally with proper password policy configured
+            if ($SkipLocalTest) {
+                Set-ItResult -Skipped -Because "Local test disabled - password policy configuration required"
+                return
             }
 
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Locked
-            $results.Name | Should -Contain "testlogin1_$random"
+            try {
+                # Ensure password policy is enforced for the test login
+                $policyResult = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
+                $policyResult.PasswordPolicyEnforced | Should -Be $true
 
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Type SQL
-            $results.IsLocked | Should -Be $true
+                # simulate a lockout
+                $invalidPassword = ConvertTo-SecureString -String "invalid" -AsPlainText -Force
+                $invalidSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "testlogin1_$random", $invalidPassword
 
-            $results = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Unlock -Force
-            $results.IsLocked | Should -Be $false
+                # exceed the lockout count
+                for ($i = 0; $i -le 4; $i++) {
+                    try {
+                        Connect-DbaInstance -SqlInstance $TestConfig.instance1 -SqlCredential $invalidSqlCredential -ErrorAction SilentlyContinue
+                    } catch {
+                        Write-Debug "Invalid login attempt $i - expected for account lockout test"
+                    }
+                    Start-Sleep -Seconds 2
+                }
 
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Locked
-            $results.Name | Should -Not -Contain "testlogin1_$random"
+                # Wait a moment for the lockout to register
+                Start-Sleep -Seconds 5
 
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Type SQL
-            $results.IsLocked | Should -Be $false
+                # Test that the account appears in locked accounts
+                $lockedResults = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Locked
+
+                # Validate we have results and they contain our test login
+                if (-not $lockedResults) {
+                    throw "No locked logins returned - account lockout may not be working in this environment"
+                }
+
+                # Ensure we have an array for proper Contains operation
+                $lockedLoginNames = @($lockedResults | ForEach-Object { $_.Name })
+                $lockedLoginNames | Should -Contain "testlogin1_$random"
+
+                # Verify the specific login shows as locked
+                $specificResult = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Type SQL
+                $specificResult.IsLocked | Should -Be $true
+
+                # Unlock the account for cleanup
+                $unlockResult = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Unlock -Force
+                $unlockResult.IsLocked | Should -Be $false
+
+                # Verify account no longer appears in locked list
+                $lockedResultsAfterUnlock = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Locked
+                if ($lockedResultsAfterUnlock) {
+                    $unlockedLoginNames = @($lockedResultsAfterUnlock | ForEach-Object { $_.Name })
+                    $unlockedLoginNames | Should -Not -Contain "testlogin1_$random"
+                }
+
+                # Final verification that the specific login is unlocked
+                $finalResult = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Type SQL
+                $finalResult.IsLocked | Should -Be $false
+            } catch {
+                # Clean up in case of failure
+                try {
+                    Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Unlock -Force -ErrorAction SilentlyContinue
+                } catch {
+                    Write-Warning "Failed to unlock test login during cleanup: $_"
+                }
+                throw
+            }
         }
 
         It "MustChangePassword" {
@@ -156,7 +225,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $changeResult.MustChangePassword | Should -Be $true
 
             $result = Get-DbaLogin -SqlInstance $TestConfig.instance1 -MustChangePassword
-            $result.Name | Should -Contain "testlogin1_$random"
+
+            # Handle potential null results
+            if ($result) {
+                $resultNames = @($result | ForEach-Object { $_.Name })
+                $resultNames | Should -Contain "testlogin1_$random"
+            } else {
+                throw "No logins requiring password change found when expected"
+            }
         }
     }
 }

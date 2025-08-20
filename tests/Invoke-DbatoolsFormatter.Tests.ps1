@@ -1,25 +1,19 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Invoke-DbatoolsFormatter",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "Path",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -27,7 +21,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $content = @'
+        $content = @"
 function Get-DbaStub {
         <#
         .SYNOPSIS
@@ -41,10 +35,10 @@ process {
 }}
 
 
-'@
+"@
         #ensure empty lines also at the end
         $content = $content + "`r`n    `r`n"
-        $wantedContent = @'
+        $wantedContent = @"
 function Get-DbaStub {
     <#
         .SYNOPSIS
@@ -57,7 +51,7 @@ function Get-DbaStub {
         Write-Message -Level Verbose "stub"
     }
 }
-'@
+"@
     }
 
     Context "formatting actually works" {
@@ -79,10 +73,10 @@ function Get-DbaStub {
             #>
         }
 
-        It "should format things according to dbatools standards" {
+        It "Should format things according to dbatools standards" {
             $newcontent | Should -Be $wantedContent
         }
-        It "should keep the unix EOLs (see #5830)" {
+        It "Should keep the unix EOLs (see #5830)" {
             $newcontentUnix | Should -Be $wantedContent.Replace("`r", "")
         }
     }

@@ -1,27 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaXESessionTemplate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Path', 'Template', 'TargetFilePath', 'TargetFileMetadataPath', 'EnableException', 'StartUpState'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Path",
+                "Template",
+                "TargetFilePath",
+                "TargetFileMetadataPath",
+                "StartUpState",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    AfterAll {
-        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Overly Complex Queries' | Remove-DbaXESession
-    }
-    Context "Test Importing Session Template" {
-        It -Skip "session imports with proper name and non-default target file location" {
-            $result = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template 'Overly Complex Queries' -TargetFilePath C:\temp
-            $result.Name | Should Be "Overly Complex Queries"
-            $result.TargetFile -match 'C\:\\temp' | Should Be $true
+# TODO: We are testing the wrong command here
+Describe $CommandName -Tag IntegrationTests {
+    Context "Get Template Index" {
+        It "returns good results with no missing information" {
+            $results = Get-DbaXESessionTemplate
+            $results | Where-Object Name -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object TemplateName -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object Description -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object Category -eq $null | Should -BeNullOrEmpty
         }
     }
 }

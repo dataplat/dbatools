@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException",
                 "InputObject"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -45,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $tableName = "BunchOFilez"
-        $database  = "tempdb"
+        $database = "tempdb"
 
         # Create the objects.
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database
@@ -71,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
-        $null = $db.Query("DROP TABLE dbo.BunchOFilez") -ErrorAction SilentlyContinue
+        $null = $db.Query("DROP TABLE dbo.BunchOFilez")
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue

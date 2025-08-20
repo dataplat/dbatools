@@ -1,46 +1,52 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaServerRole",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'ExcludeServerRole', 'ExcludeFixedRole', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "ServerRole",
+                "ExcludeServerRole",
+                "ExcludeFixedRole",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
-        $results = Get-DbaServerRole -SqlInstance $TestConfig.instance2
+        BeforeAll {
+            $results = Get-DbaServerRole -SqlInstance $TestConfig.instance2
+        }
+
         It "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,DatabaseEngineEdition,DatabaseEngineType,DateCreated,DateModified,Events,ExecutionManager,ID,InstanceName,IsFixedRole,Login,Name,Owner,Parent,ParentCollection,Properties,Role,ServerRole,ServerVersion,SqlInstance,State,Urn,UserData'.Split(',')
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $expectedProps = "ComputerName,DatabaseEngineEdition,DatabaseEngineType,DateCreated,DateModified,Events,ExecutionManager,ID,InstanceName,IsFixedRole,Login,Name,Owner,Parent,ParentCollection,Properties,Role,ServerRole,ServerVersion,SqlInstance,State,Urn,UserData".Split(",")
+            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
         It "Shows only one value with ServerRole parameter" {
-            $results = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole sysadmin
-            $results[0].Role | Should Be "sysadmin"
+            $singleResult = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole sysadmin
+            $singleResult[0].Role | Should -Be "sysadmin"
         }
 
         It "Should exclude sysadmin from output" {
-            $results = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ExcludeServerRole sysadmin
-            'sysadmin' -NotIn $results.Role | Should Be $true
+            $excludeResults = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ExcludeServerRole sysadmin
+            "sysadmin" -NotIn $excludeResults.Role | Should -Be $true
         }
 
         It "Should exclude fixed server-level roles" {
-            $results = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ExcludeFixedRole
-            'sysadmin' -NotIn $results.Role | Should Be $true
+            $excludeFixedResults = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ExcludeFixedRole
+            "sysadmin" -NotIn $excludeFixedResults.Role | Should -Be $true
         }
-
     }
 }

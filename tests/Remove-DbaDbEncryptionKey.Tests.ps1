@@ -1,65 +1,82 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaDbEncryptionKey",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues["*:Confirm"] = $false
-        $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
-        if (-not $masterkey) {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $encryptionPasswd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $masterKeyExists = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
+        if (-not $masterKeyExists) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
+            $masterKeyExists = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $encryptionPasswd
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
-        if (-not $mastercert) {
+        $masterCertExists = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        if (-not $masterCertExists) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
+            $masterCertExists = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
         }
 
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
-        $db | New-DbaDbMasterKey -SecurePassword $passwd
-        $db | New-DbaDbCertificate
-        $dbkey = $db | New-DbaDbEncryptionKey -Force
+        $testDatabase = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $testDatabase | New-DbaDbMasterKey -SecurePassword $encryptionPasswd
+        $testDatabase | New-DbaDbCertificate
+        $testDbEncryptionKey = $testDatabase | New-DbaDbEncryptionKey -Force
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        if ($db) {
-            $db | Remove-DbaDatabase
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        if ($testDatabase) {
+            $testDatabase | Remove-DbaDatabase
         }
         if ($delmastercert) {
-            $mastercert | Remove-DbaDbCertificate
+            $masterCertExists | Remove-DbaDbCertificate
         }
         if ($delmasterkey) {
-            $masterkey | Remove-DbaDbMasterKey
+            $masterKeyExists | Remove-DbaDbMasterKey
         }
     }
 
     Context "Command actually works" {
         It "should remove encryption key on a database using piping" {
-            $results = $dbkey | Remove-DbaDbEncryptionKey
+            $results = $testDbEncryptionKey | Remove-DbaDbEncryptionKey
             $results.Status | Should -Be "Success"
-            $db.Refresh()
-            $db | Get-DbaDbEncryptionKey | Should -Be $null
+            $testDatabase.Refresh()
+            $testDatabase | Get-DbaDbEncryptionKey | Should -Be $null
         }
         It "should remove encryption key on a database" {
-            $null = $db | New-DbaDbEncryptionKey -Force
-            $results = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $db.Name
+            $null = $testDatabase | New-DbaDbEncryptionKey -Force
+            $results = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $testDatabase.Name
             $results.Status | Should -Be "Success"
-            $db.Refresh()
-            $db | Get-DbaDbEncryptionKey | Should -Be $null
+            $testDatabase.Refresh()
+            $testDatabase | Get-DbaDbEncryptionKey | Should -Be $null
         }
     }
 }

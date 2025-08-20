@@ -1,44 +1,82 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbPartitionScheme",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'PartitionScheme', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "PartitionScheme",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $tempguid = [guid]::newguid();
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Set variables. They are available in all the It blocks.
+        $tempguid = [guid]::newguid()
         $PFName = "dbatoolssci_$($tempguid.guid)"
         $PFScheme = "dbatoolssci_PFScheme"
 
+        # Create the test partition scheme
         $CreateTestPartitionScheme = @"
 CREATE PARTITION FUNCTION [$PFName] (int)  AS RANGE LEFT FOR VALUES (1, 100, 1000, 10000, 100000);
 GO
 CREATE PARTITION SCHEME $PFScheme AS PARTITION [$PFName] ALL TO ( [PRIMARY] );
 "@
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestPartitionScheme -Database master
+        $splatCreate = @{
+            SqlInstance = $TestConfig.instance2
+            Query       = $CreateTestPartitionScheme
+            Database    = "master"
+        }
+        Invoke-DbaQuery @splatCreate
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Cleanup all created objects.
         $DropTestPartitionScheme = @"
 DROP PARTITION SCHEME [$PFScheme];
 GO
 DROP PARTITION FUNCTION [$PFName];
 "@
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestPartitionScheme -Database master
+        $splatDrop = @{
+            SqlInstance     = $TestConfig.instance2
+            Query           = $DropTestPartitionScheme
+            Database        = "master"
+            EnableException = $true
+        }
+        Invoke-DbaQuery @splatDrop -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Partition Schemes are correctly located" {
-        $results1 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2 -Database master | Select-Object *
-        $results2 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2
+        BeforeAll {
+            $results1 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2 -Database master | Select-Object *
+            $results2 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2
+        }
 
         It "Should execute and return results" {
             $results2 | Should -Not -Be $null
@@ -57,11 +95,11 @@ DROP PARTITION FUNCTION [$PFName];
         }
 
         It "Should have FileGroups of [Primary]" {
-            $results1.FileGroups | Should -Be @('PRIMARY', 'PRIMARY', 'PRIMARY', 'PRIMARY', 'PRIMARY', 'PRIMARY')
+            $results1.FileGroups | Should -Be @("PRIMARY", "PRIMARY", "PRIMARY", "PRIMARY", "PRIMARY", "PRIMARY")
         }
 
         It "Should not Throw an Error" {
-            {Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2 -ExcludeDatabase master } | Should -not -Throw
+            { Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2 -ExcludeDatabase master } | Should -Not -Throw
         }
     }
 }

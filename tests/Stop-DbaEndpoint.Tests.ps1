@@ -1,29 +1,47 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Stop-DbaEndpoint",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EndPoint', 'AllEndpoints', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Endpoint",
+                "AllEndpoints",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
-    }
-    AfterAll {
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
-    }
+Describe $CommandName -Tag IntegrationTests {
+    Context "Command execution and functionality" {
+        AfterAll {
+            # Restore endpoint to started state
+            Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
+        }
 
-    It "stops the endpoint" {
-        $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP'
-        $results = $endpoint | Stop-DbaEndpoint -Confirm:$false
-        $results.EndpointState | Should -Be 'Stopped'
+        It "Should stop the endpoint" {
+            # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+            Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
+
+            # We want to run all commands outside of the setup without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+
+            $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP'
+            $results = $endpoint | Stop-DbaEndpoint
+            $results.EndpointState | Should -Be 'Stopped'
+        }
     }
 }

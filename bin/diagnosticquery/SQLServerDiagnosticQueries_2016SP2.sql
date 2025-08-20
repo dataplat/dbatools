@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 1, 2025
+-- Last Modified: August 12, 2025
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -62,7 +62,8 @@ ELSE
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2016 is out of mainstream from Microsoft
+-- SQL Server 2016 fell out of Mainstream Support on Jul 13, 2021
+-- SQL Server 2016 will fall out of Extended Support on Jul 14, 2026
 
 
 -- SQL Server 2016 Builds																		
@@ -99,6 +100,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.6445.1		SP3 + GDR					9/10/2024		https://support.microsoft.com/en-us/topic/kb5042207-description-of-the-security-update-for-sql-server-2016-sp3-gdr-september-10-2024-e27a41df-009d-4a50-85e7-dc8f06b9a5a5	
 -- 13.0.6450.1		SP3 + GDR					10/8/2024		https://support.microsoft.com/en-us/topic/kb5046063-description-of-the-security-update-for-sql-server-2016-sp3-gdr-october-8-2024-87f6091b-a0c0-48e7-8de4-b10381559ba7
 -- 13.0.6455.2		SP3 + GDR					11/12/2024		https://support.microsoft.com/en-us/topic/kb5046855-description-of-the-security-update-for-sql-server-2016-sp3-gdr-november-12-2024-736b0a32-912d-4ea5-baf8-50d046cbfa1a
+-- 13.0.6465.1		SP3 + GDR					8/12/2025		https://support.microsoft.com/en-us/topic/kb5063762-description-of-the-security-update-for-sql-server-2016-sp3-gdr-august-12-2025-c7c25df6-577c-49b3-9ca9-b7e9812b9344
+
+
 
 -- Azure Connect Pack Builds
 -- 13.0.7000.253	Azure Connect Pack			5/19/2022		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2016/servicepack3-azureconnect	
@@ -109,6 +113,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.7040.1		Azure Connect Pack + GDR	9/10/2024		https://support.microsoft.com/en-us/topic/kb5042207-description-of-the-security-update-for-sql-server-2016-sp3-gdr-september-10-2024-e27a41df-009d-4a50-85e7-dc8f06b9a5a5	
 -- 13.0.7045.2		Azure Connect Pack + GDR	10/8/2024		https://support.microsoft.com/en-us/topic/kb5046062-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-october-8-2024-fb7d9289-bbef-4d1f-bd71-fb3e036d81ae
 -- 13.0.7050.2		Azure Connect Pack + GDR	11/12/2024		https://support.microsoft.com/en-us/topic/kb5046856-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-november-12-2024-b180cac0-187e-48eb-b6c6-3d48d0a00902	
+-- 13.0.7060.1		Azure Connect Pack + GDR	8/12/2025		https://support.microsoft.com/en-us/topic/kb5063761-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-august-12-2025-78088dab-76e7-4a0d-8392-9ebb3f7dfefe
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -486,22 +491,78 @@ FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 
--- You can skip the next two queries if you know you don't have a clustered instance
+-- Consolidated memory information from SQL Server 2025 (Query 14) (Memory Snapshot)
+DECLARE @MaxServerMemoryMB AS DECIMAL (15,2);
+DECLARE @SQLServerMemoryUsageMB AS BIGINT;
+DECLARE @SQLServerLockedPagesAllocationMB AS BIGINT;
+DECLARE @TotalPhysicalMemoryMB AS DECIMAL (15,2);
+DECLARE @AvailablePhysicalMemoryMB AS BIGINT;
+DECLARE @SystemMemoryState AS NVARCHAR(50);
+DECLARE @SQLServerStartTime AS DATETIME; 
+DECLARE @SQLBufferPoolMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @SQLSOSNODEMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @AvgPageLifeExpectancy int = 0;
 
+-- Basic information about OS memory amounts and state  
+SELECT @TotalPhysicalMemoryMB = total_physical_memory_kb/1024, 
+		@AvailablePhysicalMemoryMB = available_physical_memory_kb/1024, 
+		@SystemMemoryState = system_memory_state_desc 
+FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 
--- Get information about your cluster nodes and their status  (Query 14) (Cluster Node Properties)
--- (if your database server is in a failover cluster)
-SELECT NodeName, status_description, is_current_owner
-FROM sys.dm_os_cluster_nodes WITH (NOLOCK) OPTION (RECOMPILE);
+-- Get instance-level configuration value for instance  
+SELECT @MaxServerMemoryMB = CONVERT(INT, value)
+FROM sys.configurations WITH (NOLOCK)
+WHERE [name] = N'max server memory (MB)' OPTION (RECOMPILE);
+
+-- SQL Server Memory Usage and Locked Pages Allocations 
+SELECT @SQLServerMemoryUsageMB = physical_memory_in_use_kb/1024, 
+		@SQLServerLockedPagesAllocationMB = locked_page_allocations_kb/1024	   
+FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
+
+-- SQL Server Start Time
+SELECT @SQLServerStartTime = sqlserver_start_time 
+FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
+
+-- SQLBUFFERPOOL Memory Clerk Usage 
+SELECT @SQLBufferPoolMemoryUsageMB = 
+		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'MEMORYCLERK_SQLBUFFERPOOL'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
+-- MEMORYCLERK_SOSNODE Memory Clerk Usage 
+SELECT @SQLSOSNODEMemoryUsageMB = 
+		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'MEMORYCLERK_SOSNODE'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
+-- Page Life Expectancy (PLE) value for current instance  
+SET @AvgPageLifeExpectancy = (SELECT AVG(cntr_value) AS [PageLifeExpectancy]
+FROM sys.dm_os_performance_counters WITH (NOLOCK)
+WHERE [object_name] LIKE N'%Buffer Node%' -- Handles named instances
+AND counter_name = N'Page life expectancy'); 
+
+-- Return final results
+SELECT  @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info],
+		CONVERT(INT, @TotalPhysicalMemoryMB) AS [OS Physical Memory (MB)],		
+		@SystemMemoryState AS [System Memory State],
+		@AvailablePhysicalMemoryMB AS [OS Available Memory (MB)],
+		CONVERT(INT, @MaxServerMemoryMB) AS [SQL Server Max Server Memory (MB)],
+		CONVERT(DECIMAL(18,2),(@MaxServerMemoryMB/@TotalPhysicalMemoryMB) * 100.0) AS [Max Server Memory %],
+		@SQLServerMemoryUsageMB AS [SQL Server Total Memory Usage (MB)],
+		@AvgPageLifeExpectancy AS [Page Life Expectancy (Seconds)],
+		@SQLBufferPoolMemoryUsageMB AS [SQL Buffer Pool Memory Usage (MB)],
+		@SQLSOSNODEMemoryUsageMB AS [SOSNODE Memory Clerk Memory Usage (MB)],
+		@SQLServerLockedPagesAllocationMB AS [SQL Server Locked Pages Allocation (MB)],
+		@SQLServerStartTime AS [SQL Server Start Time];
+GO
 ------
+-- End of Query 14 ***************************************************
 
--- Knowing which node owns the cluster resources is critical
--- Especially when you are installing Windows or SQL Server updates
--- You will see no results if your instance is not clustered
 
--- Recommended hotfixes and updates for Windows Server 2012 R2-based failover clusters
--- https://bit.ly/1z5BfCw
 
+-- You can skip the next two queries if you know you don't have an AG
 
 -- Get information about any AlwaysOn AG cluster this instance is a part of (Query 15) (AlwaysOn AG Cluster)
 SELECT cluster_name, quorum_type_desc, quorum_state_desc
@@ -824,7 +885,7 @@ DROP TABLE IF EXISTS #IOWarningResults;
 
 
 -- Resource Governor Resource Pool information (Query 30) (RG Resource Pools)
-SELECT pool_id, [Name], statistics_start_time,
+SELECT pool_id, [name], statistics_start_time,
        min_memory_percent, max_memory_percent,  
        max_memory_kb/1024 AS [max_memory_mb],  
        used_memory_kb/1024 AS [used_memory_mb],   
@@ -1765,7 +1826,7 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 -- Note: This query could take some time on a busy instance
 SELECT TOP(25) OBJECT_NAME(objectid) AS [ObjectName], 
                cp.objtype, cp.usecounts, cp.size_in_bytes
-			   , qp.query_plan								-- Uncomment if you want the Query Plan
+--			   , qp.query_plan								-- Uncomment if you want the Query Plan
 FROM sys.dm_exec_cached_plans AS cp WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_query_plan(cp.plan_handle) AS qp
 WHERE CAST(qp.query_plan AS NVARCHAR(MAX)) LIKE N'%MissingIndex%'
@@ -1987,7 +2048,7 @@ ON ios.[object_id] = i.[object_id]
 AND ios.index_id = i.index_id
 WHERE o.[object_id] > 100
 GROUP BY o.name, i.name, ios.index_id, ios.partition_number
-HAVING SUM(ios.page_lock_wait_in_ms)+ SUM(row_lock_wait_in_ms) > 0
+HAVING SUM(ios.page_lock_wait_in_ms) + SUM(row_lock_wait_in_ms) > 0
 ORDER BY total_lock_wait_in_ms DESC OPTION (RECOMPILE);
 ------
 

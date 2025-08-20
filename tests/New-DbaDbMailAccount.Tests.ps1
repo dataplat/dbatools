@@ -1,30 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbMailAccount",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('WhatIf', 'Confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Account', 'DisplayName', 'Description', 'EmailAddress', 'ReplyToAddress', 'MailServer', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Account",
+                "DisplayName",
+                "Description",
+                "EmailAddress",
+                "ReplyToAddress",
+                "MailServer",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $accountName = "dbatoolsci_test_$(get-random)"
+        $accountName = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $description = 'Mail account for email alerts'
-        $email_address = 'dbatoolssci@dbatools.net'
-        $display_name = 'dbatoolsci mail alerts'
-        $mailserver_name = 'smtp.dbatools.io'
-        $replyto_address = 'no-reply@dbatools.net'
+        $description = "Mail account for email alerts"
+        $email_address = "dbatoolssci@dbatools.net"
+        $display_name = "dbatoolsci mail alerts"
+        $mailserver_name = "smtp.dbatools.io"
+        $replyto_address = "no-reply@dbatools.net"
 
-        if ( (Get-DbaSpConfigure -SqlInstance $server -Name 'Database Mail XPs').RunningValue -ne 1 ) {
-            Set-DbaSpConfigure -SqlInstance $server -Name 'Database Mail XPs' -Value 1
+        if ( (Get-DbaSpConfigure -SqlInstance $server -Name "Database Mail XPs").RunningValue -ne 1 ) {
+            Set-DbaSpConfigure -SqlInstance $server -Name "Database Mail XPs" -Value 1
         }
     }
     AfterAll {
@@ -34,66 +48,69 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets DbMail Account" {
-
-        $splat = @{
-            SqlInstance    = $TestConfig.instance2
-            Account        = $accountName
-            Description    = $description
-            EmailAddress   = $email_address
-            DisplayName    = $display_name
-            ReplyToAddress = $replyto_address
-            # MailServer is not set, because we don't want to configure the mail server on the instance.
-            # MailServer     = $mailserver_name
+        BeforeAll {
+            $splatMailAccount = @{
+                SqlInstance    = $TestConfig.instance2
+                Account        = $accountName
+                Description    = $description
+                EmailAddress   = $email_address
+                DisplayName    = $display_name
+                ReplyToAddress = $replyto_address
+                # MailServer is not set, because we don't want to configure the mail server on the instance.
+                # MailServer     = $mailserver_name
+            }
+            $results = New-DbaDbMailAccount @splatMailAccount
         }
-        $results = New-DbaDbMailAccount @splat
 
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should have Name of $accountName" {
-            $results.Name | Should Be $accountName
+            $results.Name | Should -Be $accountName
         }
         It "Should have Description of 'Mail account for email alerts' " {
-            $results.Description | Should Be 'Mail account for email alerts'
+            $results.Description | Should -Be "Mail account for email alerts"
         }
         # TODO: If we set the variables then we should use them, don't we?
         It "Should have EmailAddress of '$email_address' " {
-            $results.EmailAddress | Should Be $email_address
+            $results.EmailAddress | Should -Be $email_address
         }
         It "Should have ReplyToAddress of 'no-reply@dbatools.net' " {
-            $results.ReplyToAddress | Should Be 'no-reply@dbatools.net'
+            $results.ReplyToAddress | Should -Be "no-reply@dbatools.net"
         }
         # Skipped, because we have not set the MailServer, because we don't want to configure the mail server on the instance.
-        It -Skip "Should have MailServer of '[smtp.dbatools.io]' " {
-            $results.MailServers | Should Be '[smtp.dbatools.io]'
+        It "Should have MailServer of '[smtp.dbatools.io]' " -Skip {
+            $results.MailServers | Should -Be "[smtp.dbatools.io]"
         }
     }
     Context "Gets DbMail when using -Account" {
-        $results = Get-DbaDbMailAccount -SqlInstance $server -Account $accountName
+        BeforeAll {
+            $results = Get-DbaDbMailAccount -SqlInstance $server -Account $accountName
+        }
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should have Name of $accountName" {
-            $results.name | Should Be $accountName
+            $results.name | Should -Be $accountName
         }
         It "Should have Description of 'Mail account for email alerts' " {
-            $results.description | Should Be 'Mail account for email alerts'
+            $results.description | Should -Be "Mail account for email alerts"
         }
         It "Should have EmailAddress of 'dbatoolssci@dbatools.net' " {
-            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.net'
+            $results.EmailAddress | Should -Be "dbatoolssci@dbatools.net"
         }
         It "Should have ReplyToAddress of 'no-reply@dbatools.net' " {
-            $results.ReplyToAddress | Should Be 'no-reply@dbatools.net'
+            $results.ReplyToAddress | Should -Be "no-reply@dbatools.net"
         }
         # Skipped, because we have not set the MailServer, because we don't want to configure the mail server on the instance.
-        It -Skip "Should have MailServer of '[smtp.dbatools.io]' " {
-            $results.MailServers | Should Be '[smtp.dbatools.io]'
+        It "Should have MailServer of '[smtp.dbatools.io]' " -Skip {
+            $results.MailServers | Should -Be "[smtp.dbatools.io]"
         }
     }
     Context "Gets no DbMail when using -ExcludeAccount" {
-        $results = Get-DbaDbMailAccount -SqlInstance $server -ExcludeAccount $accountName
         It "Gets no results" {
-            $results | Should Be $null
+            $results = Get-DbaDbMailAccount -SqlInstance $server -ExcludeAccount $accountName
+            $results | Should -BeNullOrEmpty
         }
     }
 }

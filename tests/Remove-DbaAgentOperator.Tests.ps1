@@ -1,43 +1,74 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaAgentOperator",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Operator', 'ExcludeOperator', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Operator",
+                "ExcludeOperator",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $email1 = "test1$($random)@test.com"
-        $email2 = "test2$($random)@test.com"
+        $operatorsToCleanup = @()
+        $instanceConnection = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $operatorEmail1 = "test1$($random)@test.com"
+        $operatorEmail2 = "test2$($random)@test.com"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email1 -Confirm:$false
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email2 -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created operators
+        $splatCleanup = @{
+            SqlInstance = $instanceConnection
+            Confirm     = $false
+        }
+        $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorEmail1 -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorEmail2 -ErrorAction SilentlyContinue
+
+        foreach ($operatorName in $operatorsToCleanup) {
+            $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorName -ErrorAction SilentlyContinue
+        }
     }
 
     Context "Remove Agent Operator is removed properly" {
         It "Should have no operator with that name" {
-            Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email1 -Confirm:$false
-            $results = (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $email1).Count
-            $results | Should Be 0
+            Remove-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorEmail1 -Confirm:$false
+            $results = (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorEmail1).Count
+            $results | Should -BeExactly 0
         }
 
         It "supports piping SQL Agent operator" {
-            $operatorName = "dbatoolsci_test_$(get-random)"
-            $null = New-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName
-            (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName ) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName | Remove-DbaAgentOperator -Confirm:$false
-            (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName ) | Should -BeNullOrEmpty
+            $operatorName = "dbatoolsci_test_$(Get-Random)"
+            $operatorsToCleanup += $operatorName
+            $null = New-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName
+            (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName) | Should -Not -BeNullOrEmpty
+            Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName | Remove-DbaAgentOperator -Confirm:$false
+            (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName) | Should -BeNullOrEmpty
         }
     }
 }

@@ -1,68 +1,94 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaDbAsymmetricKey",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Database', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Database",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $database = 'RemAsy'
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database
-    }
-    AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false
-    }
-    Context "Remove a certificate" {
-        $keyname = 'test1'
-        $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-        New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database -SecurePassword $tPassword -confirm:$false
-        $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -database $database
-        $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -WarningVariable warnvar
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        It  "Should create new key in $database called $keyname" {
+        $database = "RemAsy"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Remove a certificate" {
+        BeforeAll {
+            $keyname = "test1"
+            $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
+            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
+            $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -WarningVariable warnvar
+        }
+
+        It "Should create new key in $database called $keyname" {
             $warnvar | Should -BeNullOrEmpty
             $results.database | Should -Be $database
             $results.name | Should -Be $keyname
-            $results.KeyLength | Should -Be '2048'
+            $results.KeyLength | Should -Be "2048"
         }
 
-        $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -confirm:$false
-        $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
         It "Should Remove a certificate" {
+            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -Confirm:$false
+            $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
             $getResults | Should -HaveCount 0
-            $removeResults.Status | Should -Be 'Success'
+            $removeResults.Status | Should -Be "Success"
         }
     }
     Context "Remove a specific certificate" {
-        $keyname = 'test1'
-        $keyname2 = 'test2'
-        $database = 'RemAsy'
-        $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
-        $key2 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database $database
-        $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database -WarningVariable warnvar
+        BeforeAll {
+            $keyname = "test1"
+            $keyname2 = "test2"
+            $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
+            $key2 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database $database
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database -WarningVariable warnvar
+        }
 
-        It  "Should created new keys in $database " {
+        AfterAll {
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database $database -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Should created new keys in $database" {
             $warnvar | Should -BeNullOrEmpty
             $results | Should -HaveCount 2
         }
-        $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -confirm:$false
-        $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database
+
         It "Should Remove a specific certificate" {
+            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -Confirm:$false
+            $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database
             $getResults | Should -HaveCount 1
             $getResults[0].Name | Should -Be $keyname2
-            $removeResults.Status | Should -Be 'Success'
+            $removeResults.Status | Should -Be "Success"
             $removeResults.Name | Should -Be $keyname
         }
-        Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database $database -confirm:$false
     }
 }
-

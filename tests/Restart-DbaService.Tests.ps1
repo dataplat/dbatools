@@ -1,38 +1,52 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Restart-DbaService",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'InstanceName', 'SqlInstance', 'Type', 'InputObject', 'Timeout', 'Credential', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Type",
+                "InputObject",
+                "Timeout",
+                "Credential",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-
+Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
+        BeforeAll {
+            $instanceName = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).ServiceName
+        }
 
-        $instanceName = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).ServiceName
         It "restarts some services" {
             $services = Restart-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
-                $service.State | Should Be 'Running'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be "Running"
+                $service.Status | Should -Be "Successful"
             }
         }
 
         It "restarts some services through pipeline" {
             $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
-                $service.State | Should Be 'Running'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be "Running"
+                $service.Status | Should -Be "Successful"
             }
         }
     }

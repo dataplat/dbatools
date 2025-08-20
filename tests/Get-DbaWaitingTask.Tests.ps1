@@ -1,79 +1,106 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaWaitingTask",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Spid', 'IncludeSystemSpid', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Spid",
+                "IncludeSystemSpid",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing it for,
-        but something similar to below should be included if applicable.
 
-    The below examples are by no means set in stone and there are already
-        a number of test that you can pull examples from in how they are done.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-# Get-DbaNoun
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+        $global:waitingTaskFlag = "dbatools_$(Get-Random)"
+        $global:waitingTaskTime = "00:15:00"
+        $global:waitingTaskSql = "SELECT '$global:waitingTaskFlag'; WAITFOR DELAY '$global:waitingTaskTime'"
+        $global:waitingTaskInstance = $TestConfig.instance2
 
-    $flag = "dbatools_$(Get-Random)"
-    $time = '00:15:00'
-    $sql = "SELECT '$flag'; WAITFOR DELAY '$time'"
-    $instance = $TestConfig.instance2
+        $global:waitingTaskModulePath = "C:\Github\dbatools\dbatools.psm1"
+        $global:waitingTaskJobName = "YouHaveBeenFoundWaiting"
 
-    $modulePath = 'C:\Github\dbatools\dbatools.psm1'
-    $job = 'YouHaveBeenFoundWaiting'
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
 
-    Start-Job -Name $job -ScriptBlock {
-        Import-Module $args[0];
-        (Connect-DbaInstance -SqlInstance $args[1] -ClientName dbatools-waiting).Query($args[2])
-    } -ArgumentList $modulePath, $instance, $sql
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-    <#
-        **This has to sleep as it can take a couple seconds for the job to start**
-        Setting it lower will cause issues, you have to consider the Start-Job has to load the module which takes on average 3-4 seconds itself before it executes the command.
-
-        If someone knows a cleaner method by all means adjust this test.
-    #>
-    Start-Sleep -Seconds 8
-
-    $process = Get-DbaProcess -SqlInstance $instance | Where-Object Program -eq 'dbatools-waiting' | Select-Object -ExpandProperty Spid
-
-    if ($process -ne $null) {
-        Context "Command actually works" {
-            $results = Get-DbaWaitingTask -SqlInstance $instance -Spid $process
-            It "Should have correct properties" {
-                $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Spid,Thread,Scheduler,WaitMs,WaitType,BlockingSpid,ResourceDesc,NodeId,Dop,DbId,InfoUrl,QueryPlan,SqlText'.Split(',')
-                ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-            }
-            It "Should have command of 'WAITFOR'" {
-                $results.WaitType | Should BeLike "*WAITFOR*"
-            }
-        }
-
-        $isProcess = Get-DbaProcess -SqlInstance $instance -Spid $process
-        if ($isProcess) {
-            Stop-DbaProcess -SqlInstance $instance -Spid $process
+        # Clean up any remaining processes and jobs
+        $global:waitingTaskProcess = Get-DbaProcess -SqlInstance $global:waitingTaskInstance | Where-Object Program -eq "dbatools-waiting" | Select-Object -ExpandProperty Spid
+        if ($global:waitingTaskProcess) {
+            Stop-DbaProcess -SqlInstance $global:waitingTaskInstance -Spid $global:waitingTaskProcess -ErrorAction SilentlyContinue
 
             # I've had a few cases where first run didn't actually kill the process
-            $isProcess = Get-DbaProcess -SqlInstance $instance -Spid $process
-            if ($isProcess) {
-                Stop-DbaProcess -SqlInstance $instance -Spid $process -ErrorAction SilentlyContinue
+            $global:waitingTaskProcessCheck = Get-DbaProcess -SqlInstance $global:waitingTaskInstance -Spid $global:waitingTaskProcess
+            if ($global:waitingTaskProcessCheck) {
+                Stop-DbaProcess -SqlInstance $global:waitingTaskInstance -Spid $global:waitingTaskProcess -ErrorAction SilentlyContinue
             }
         }
-        Get-Job -Name $job | Remove-Job -Force -ErrorAction SilentlyContinue
+        Get-Job -Name $global:waitingTaskJobName -ErrorAction SilentlyContinue | Remove-Job -Force -ErrorAction SilentlyContinue
+    }
+
+    Context "Command functionality with waiting task" {
+        BeforeAll {
+            Start-Job -Name $global:waitingTaskJobName -ScriptBlock {
+                Import-Module $args[0];
+                (Connect-DbaInstance -SqlInstance $args[1] -ClientName dbatools-waiting).Query($args[2])
+            } -ArgumentList $global:waitingTaskModulePath, $global:waitingTaskInstance, $global:waitingTaskSql
+
+            <#
+                **This has to sleep as it can take a couple seconds for the job to start**
+                Setting it lower will cause issues, you have to consider the Start-Job has to load the module which takes on average 3-4 seconds itself before it executes the command.
+
+                If someone knows a cleaner method by all means adjust this test.
+            #>
+            Start-Sleep -Seconds 8
+
+            $global:waitingTaskProcess = Get-DbaProcess -SqlInstance $global:waitingTaskInstance | Where-Object Program -eq "dbatools-waiting" | Select-Object -ExpandProperty Spid
+        }
+
+        It "Should have correct properties" -Skip:($null -eq $global:waitingTaskProcess) {
+            $results = Get-DbaWaitingTask -SqlInstance $global:waitingTaskInstance -Spid $global:waitingTaskProcess
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Spid",
+                "Thread",
+                "Scheduler",
+                "WaitMs",
+                "WaitType",
+                "BlockingSpid",
+                "ResourceDesc",
+                "NodeId",
+                "Dop",
+                "DbId",
+                "InfoUrl",
+                "QueryPlan",
+                "SqlText"
+            )
+            ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+        }
+
+        It "Should have command of WAITFOR" -Skip:($null -eq $global:waitingTaskProcess) {
+            $results = Get-DbaWaitingTask -SqlInstance $global:waitingTaskInstance -Spid $global:waitingTaskProcess
+            $results.WaitType | Should -BeLike "*WAITFOR*"
+        }
     }
 }

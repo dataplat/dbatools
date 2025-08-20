@@ -1,14 +1,26 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaMemoryUsage",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'MemoryCounterRegex', 'PlanCounterRegex', 'BufferCounterRegex', 'SSASCounterRegex', 'SSISCounterRegex', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "MemoryCounterRegex",
+                "PlanCounterRegex",
+                "BufferCounterRegex",
+                "SSASCounterRegex",
+                "SSISCounterRegex",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
@@ -17,22 +29,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-Describe "Get-DbaMemoryUsage Integration Test" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
-        $results = Get-DbaMemoryUsage -ComputerName $TestConfig.instance1
+        BeforeAll {
+            $results = Get-DbaMemoryUsage -ComputerName $TestConfig.instance1
+            $resultsSimple = Get-DbaMemoryUsage -ComputerName $TestConfig.instance1
+        }
 
         It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+            $results.Count -gt 0 | Should -BeTrue
         }
         It "has the correct properties" {
             $result = $results[0]
-            $ExpectedProps = 'ComputerName,SqlInstance,CounterInstance,Counter,Pages,Memory'.Split(',')
-            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = "ComputerName", "SqlInstance", "CounterInstance", "Counter", "Pages", "Memory"
+            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
-        $resultsSimple = Get-DbaMemoryUsage -ComputerName $TestConfig.instance1
-        It "returns results" {
-            $resultsSimple.Count -gt 0 | Should Be $true
+        It "returns results from simple call" {
+            $resultsSimple.Count -gt 0 | Should -BeTrue
         }
     }
 }

@@ -1,20 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbUdf",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemUdf', 'Schema', 'ExcludeSchema', 'Name', 'ExcludeName', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "ExcludeSystemUdf",
+                "Schema",
+                "ExcludeSchema",
+                "Name",
+                "ExcludeName",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         #Test Function adapted from examples at:
         #https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql?view=sql-server-2017#examples
         $CreateTestUDFunction = @"
@@ -38,15 +55,26 @@ BEGIN
 END;
 "@
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestUDFunction -Database master
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $DropTestUDFunction = "DROP FUNCTION dbo.dbatoolssci_ISOweek;"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestUDFunction -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestUDFunction -Database master -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "User Functions are correctly located" {
-        $results1 = Get-DbaDbUdf -SqlInstance $TestConfig.instance2 -Database master -Name dbatoolssci_ISOweek | Select-Object *
-        $results2 = Get-DbaDbUdf -SqlInstance $TestConfig.instance2
+        BeforeAll {
+            $results1 = Get-DbaDbUdf -SqlInstance $TestConfig.instance2 -Database master -Name dbatoolssci_ISOweek | Select-Object *
+            $results2 = Get-DbaDbUdf -SqlInstance $TestConfig.instance2
+        }
 
         It "Should execute and return results" {
             $results2 | Should -Not -Be $null
@@ -57,12 +85,12 @@ END;
         }
 
         It "Should have matching name dbo.dbatoolssci_ISOweek" {
-            $results1.name | Should -Be 'dbatoolssci_ISOweek'
-            $results1.schema | Should -Be 'dbo'
+            $results1.Name | Should -Be "dbatoolssci_ISOweek"
+            $results1.Schema | Should -Be "dbo"
         }
 
-        It "Should have a function type of Scalar " {
-            $results1.FunctionType | Should -Be 'Scalar'
+        It "Should have a function type of Scalar" {
+            $results1.FunctionType | Should -Be "Scalar"
         }
 
         It "Should have Parameters of [@Date]" {
@@ -70,7 +98,7 @@ END;
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbUdf -SqlInstance $TestConfig.instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -not -Throw
+            { Get-DbaDbUdf -SqlInstance $TestConfig.instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -Not -Throw
         }
     }
 }

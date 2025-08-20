@@ -1,50 +1,62 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-. "$PSScriptRoot\..\private\functions\Invoke-TlsWebRequest"
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Install-DbaWhoIsActive",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LocalFile', 'Database', 'EnableException', 'Force'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "LocalFile",
+                "Database",
+                "EnableException",
+                "Force"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $dbName = "WhoIsActive-$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
     }
 
     Context "Should install sp_WhoIsActive" {
-        BeforeAll {
-            $results = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
-        }
-
         It "Should output correct results" {
-            $results.Database | Should -Be $dbName
-            $results.Name | Should -Be "sp_WhoisActive"
-            $results.Status | Should -Be "Installed"
+            $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
+            $installResults.Database | Should -Be $dbName
+            $installResults.Name | Should -Be "sp_WhoisActive"
+            $installResults.Status | Should -Be "Installed"
         }
     }
 
     Context "Should update sp_WhoIsActive" {
-        BeforeAll {
-            $results = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
-        }
-
         It "Should output correct results" {
-            $results.Database | Should -Be $dbName
-            $results.Name | Should -Be "sp_WhoisActive"
-            $results.Status | Should -Be "Updated"
+            $updateResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
+            $updateResults.Database | Should -Be $dbName
+            $updateResults.Name | Should -Be "sp_WhoisActive"
+            $updateResults.Status | Should -Be "Updated"
         }
     }
 }

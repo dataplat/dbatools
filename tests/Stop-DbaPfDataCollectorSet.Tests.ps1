@@ -1,33 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Stop-DbaPfDataCollectorSet",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'CollectorSet', 'InputObject', 'NoWait', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "CollectorSet",
+                "InputObject",
+                "NoWait",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
-        $script:set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-        Start-Sleep 2
-    }
-    AfterAll {
-        $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-    }
-    Context "Verifying command works" {
-        It "returns a result with the right computername and name is not null" {
+Describe $CommandName -Tag IntegrationTests {
+    Context "Command execution and functionality" {
+        AfterAll {
+            $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+        }
+
+        It "Should return a result with the right computername and name is not null" {
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
+            $script:set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+            Start-Sleep 2
+
             $results = $script:set | Select-Object -First 1 | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
             if (-not $warn) {
-                $results.ComputerName | Should Be $env:COMPUTERNAME
-                $results.Name | Should Not Be $null
+                $results.ComputerName | Should -Be $env:COMPUTERNAME
+                $results.Name | Should -Not -Be $null
             }
         }
     }

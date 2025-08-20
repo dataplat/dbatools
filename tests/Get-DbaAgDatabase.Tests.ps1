@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -40,8 +37,8 @@ Describe $CommandName -Tag IntegrationTests {
         # To test Get-DbaAgDatabase, we need an availability group with a database that has been backed up.
 
         # Set variables. They are available in all the It blocks.
-        $agName   = "dbatoolsci_getagdb_agroup"
-        $dbName   = "dbatoolsci_getagdb_agroupdb"
+        $agName = "dbatoolsci_getagdb_agroup"
+        $dbName = "dbatoolsci_getagdb_agroupdb"
 
         # Create the objects.
         $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue

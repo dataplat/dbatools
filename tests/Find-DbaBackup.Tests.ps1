@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -20,9 +17,6 @@ Describe $CommandName -Tag UnitTests {
                 "CheckArchiveBit",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -57,21 +51,15 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "BackupFileExtension validation" {
-        BeforeAll {
-            $testPath = "TestDrive:\sqlbackups"
-        }
-
         It "Should not throw when extension includes period" {
+            $testPath = "TestDrive:\sqlbackups"
             { Find-DbaBackup -Path $testPath -BackupFileExtension ".bak" -RetentionPeriod "0d" -EnableException -WarningAction SilentlyContinue } | Should -Not -Throw
         }
     }
 
     Context "BackupFileExtension message validation" {
-        BeforeAll {
-            $testPath = "TestDrive:\sqlbackups"
-        }
-
         It "Should warn about period in extension" {
+            $testPath = "TestDrive:\sqlbackups"
             $warnmessage = Find-DbaBackup -WarningAction Continue -Path $testPath -BackupFileExtension ".bak" -RetentionPeriod "0d" 3>&1
             $warnmessage | Should -BeLike "*period*"
         }

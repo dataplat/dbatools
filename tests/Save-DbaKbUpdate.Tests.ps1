@@ -1,68 +1,92 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Save-DbaKbUpdate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Name', 'Path', 'FilePath', 'InputObject', 'Architecture', 'Language', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Name",
+                "Path",
+                "FilePath",
+                "Architecture",
+                "Language",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # Create unique temp path for this test run to avoid conflicts
+        $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $tempPath -ItemType Directory -Force
+    }
+
+    AfterAll {
+        # Clean up all downloaded files and temp directory
+        Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
+    }
+
     It "downloads a small update" {
-        $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path C:\temp
-        $results.Name -match 'aspnet'
-        $results | Remove-Item -Confirm:$false
+        $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path $tempPath
+        $results.Name -match "aspnet"
+        $global:filesToRemove += $results.FullName
     }
+
     It "supports piping" {
-        $results = Get-DbaKbUpdate -Name KB2992080 | select -First 1 | Save-DbaKbUpdate -Architecture All -Path C:\temp
-        $results.Name -match 'aspnet'
-        $results | Remove-Item -Confirm:$false
+        $results = Get-DbaKbUpdate -Name KB2992080 | Select-Object -First 1 | Save-DbaKbUpdate -Architecture All -Path $tempPath
+        $results.Name -match "aspnet"
+        $global:filesToRemove += $results.FullName
     }
+
     It "Download multiple updates" {
-        $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path C:\temp
+        $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path $tempPath
 
         # basic retry logic in case the first download didn't get all of the files
         if ($null -eq $results -or $results.Count -ne 2) {
             Write-Message -Level Warning -Message "Retrying..."
             if ($results.Count -gt 0) {
-                $results | Remove-Item -Confirm:$false
+                $global:filesToRemove += $results.FullName
             }
             Start-Sleep -s 30
-            $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path C:\temp
+            $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path $tempPath
         }
 
         $results.Count | Should -Be 2
-        $results | Remove-Item -Confirm:$false
+        $global:filesToRemove += $results.FullName
 
         # download multiple updates via piping
-        $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path C:\temp
+        $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path $tempPath
 
         # basic retry logic in case the first download didn't get all of the files
         if ($null -eq $results -or $results.Count -ne 2) {
             Write-Message -Level Warning -Message "Retrying..."
             if ($results.Count -gt 0) {
-                $results | Remove-Item -Confirm:$false
+                $global:filesToRemove += $results.FullName
             }
             Start-Sleep -s 30
-            $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path C:\temp
+            $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path $tempPath
         }
 
         $results.Count | Should -Be 2
-        $results | Remove-Item -Confirm:$false
+        $global:filesToRemove += $results.FullName
     }
 
     # see https://github.com/dataplat/dbatools/issues/6745
     It "Ensuring that variable scope doesn't impact the command negatively" {
         $filter = "SQLServer*-KB-*x64*.exe"
 
-        $results = Save-DbaKbUpdate -Name KB4513696 -Architecture All -Path C:\temp
+        $results = Save-DbaKbUpdate -Name KB4513696 -Architecture All -Path $tempPath
         $results.Count | Should -Be 1
-        $results | Remove-Item -Confirm:$false
+        $global:filesToRemove += $results.FullName
     }
 }

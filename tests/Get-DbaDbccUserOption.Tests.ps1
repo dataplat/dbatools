@@ -1,43 +1,72 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbccUserOption",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Option', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Option",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
-    $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Option', 'Value'
-    $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.instance2
 
-    Context "Validate standard output" {
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
-        }
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $props = @("ComputerName", "InstanceName", "SqlInstance", "Option", "Value")
     }
 
-    Context "Command returns proper info" {
+    Context "Validate standard output" {
+        BeforeAll {
+            $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.instance2
+        }
+
+        It "Should return property: ComputerName" {
+            $result[0].PSObject.Properties["ComputerName"].Name | Should -Be "ComputerName"
+        }
+
+        It "Should return property: InstanceName" {
+            $result[0].PSObject.Properties["InstanceName"].Name | Should -Be "InstanceName"
+        }
+
+        It "Should return property: SqlInstance" {
+            $result[0].PSObject.Properties["SqlInstance"].Name | Should -Be "SqlInstance"
+        }
+
+        It "Should return property: Option" {
+            $result[0].PSObject.Properties["Option"].Name | Should -Be "Option"
+        }
+
+        It "Should return property: Value" {
+            $result[0].PSObject.Properties["Value"].Name | Should -Be "Value"
+        }
+
         It "returns results for DBCC USEROPTIONS" {
-            $result.Count -gt 0 | Should Be $true
+            $result.Count | Should -BeGreaterThan 0
         }
     }
 
     Context "Accepts an Option Value" {
-        $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.instance2 -Option ansi_nulls
-        It "Gets results" {
-            $result | Should Not Be $null
+        BeforeAll {
+            $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.instance2 -Option ansi_nulls
         }
+
+        It "Gets results" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
         It "Returns only one result" {
-            $result.Option -eq 'ansi_nulls' | Should Be $true
+            $result.Option | Should -Be "ansi_nulls"
         }
     }
 }

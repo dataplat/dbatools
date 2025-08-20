@@ -1,20 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbSchema",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Schema', 'SchemaOwner', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Schema",
+                "SchemaOwner",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
 
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Explain what needs to be set up for the test:
+        # To create a database schema, we need a database and optionally a user to act as schema owner.
+        # For testing schema creation, we need databases and users.
+
+        # Set variables. They are available in all the It blocks.
         $random = Get-Random
         $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -23,29 +43,38 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newDbs = New-DbaDatabase -SqlInstance $server1, $server2 -Name $newDbName
 
         $userName = "user_$random"
-        $password = 'MyV3ry$ecur3P@ssw0rd'
+        $password = "MyV3ry`$ecur3P@ssw0rd"
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $logins = New-DbaLogin -SqlInstance $server1, $server2 -Login $userName -Password $securePassword -Force
 
         $null = New-DbaDbUser -SqlInstance $server1, $server2 -Database $newDbName -Login $userName
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
         $null = $newDbs | Remove-DbaDatabase -Confirm:$false
         $null = $logins | Remove-DbaLogin -Confirm:$false
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "commands work as expected" {
 
         It "validates required Schema" {
-            $schema = New-DbaDbSchema -SqlInstance $server1 -WarningAction SilentlyContinue -WarningVariable WarVar
-            $WarVar | Should -Match "Schema is required"
+            $schema = New-DbaDbSchema -SqlInstance $server1 -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "Schema is required"
             $schema | Should -BeNullOrEmpty
         }
 
         It "validates required Database param" {
-            $schema = New-DbaDbSchema -SqlInstance $server1 -Schema TestSchema1 -WarningAction SilentlyContinue -WarningVariable WarVar
-            $WarVar | Should -Match "Database is required when SqlInstance is specified"
+            $schema = New-DbaDbSchema -SqlInstance $server1 -Schema TestSchema1 -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "Database is required when SqlInstance is specified"
             $schema | Should -BeNullOrEmpty
         }
 
@@ -64,8 +93,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "reports a warning that the schema already exists" {
-            $schema = New-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName -WarningAction SilentlyContinue -WarningVariable WarVar
-            $WarVar | Should -Match "Schema TestSchema1 already exists in the database"
+            $schema = New-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "Schema TestSchema1 already exists in the database"
             $schema | Should -BeNullOrEmpty
         }
 

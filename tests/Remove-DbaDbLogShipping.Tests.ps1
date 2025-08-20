@@ -1,55 +1,83 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaDbLogShipping",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'PrimarySqlInstance', 'SecondarySqlInstance', 'PrimarySqlCredential', 'SecondarySqlCredential', 'Database', 'RemoveSecondaryDatabase', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "PrimarySqlInstance",
+                "SecondarySqlInstance",
+                "PrimarySqlCredential",
+                "SecondarySqlCredential",
+                "Database",
+                "RemoveSecondaryDatabase",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-<# Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+<# Describe $CommandName -Tag IntegrationTests {
     # This is a placeholder until we decide on sql2016/sql2017
     BeforeAll {
-        $dbname = "dbatoolsci_logshipping"
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $localPath = 'C:\temp\logshipping'
-        $networkPath = '\\localhost\c$\temp\logshipping'
+        $dbName = "dbatoolsci_logshipping"
+        $localPath = "C:\temp\logshipping"
+        $networkPath = "\\localhost\c$\temp\logshipping"
 
         $primaryServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $secondaryserver = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $secondaryServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
         # Create the database
-        if ($primaryServer.Databases.Name -notcontains $dbname) {
-            $query = "CREATE DATABASE [$dbname]"
+        if ($primaryServer.Databases.Name -notcontains $dbName) {
+            $query = "CREATE DATABASE [$dbName]"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
         }
 
         if (-not (Test-Path -Path $localPath)) {
             $null = New-Item -Path $localPath -ItemType Directory
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Remove database from log shipping with remove secondary database" {
-        $params = @{
-            SourceSqlInstance       = $TestConfig.instance2
-            DestinationSqlInstance  = $TestConfig.instance2
-            Database                = $dbname
-            BackupNetworkPath       = $networkPath
-            BackupLocalPath         = $localPath
-            GenerateFullBackup      = $true
-            CompressBackup          = $true
-            SecondaryDatabaseSuffix = "_LS"
-            Force                   = $true
-        }
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Run the log shipping
-        Invoke-DbaDbLogShipping @params
+        # Cleanup
+        Remove-Item -Path $localPath -Recurse -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "$($dbName)_LS" -ErrorAction SilentlyContinue
+    }
+
+    Context "Remove database from log shipping without removing secondary database" {
+        BeforeAll {
+            $splatLogShipping = @{
+                SourceSqlInstance       = $TestConfig.instance2
+                DestinationSqlInstance  = $TestConfig.instance2
+                Database                = $dbName
+                BackupNetworkPath       = $networkPath
+                BackupLocalPath         = $localPath
+                GenerateFullBackup      = $true
+                CompressBackup          = $true
+                SecondaryDatabaseSuffix = "_LS"
+                Force                   = $true
+            }
+
+            # Run the log shipping
+            Invoke-DbaDbLogShipping @splatLogShipping
+        }
 
         It "Should have the database information" {
             $query = "SELECT pd.primary_database AS PrimaryDatabase,
@@ -58,27 +86,27 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
                 FROM msdb.dbo.log_shipping_primary_secondaries AS ps
                     INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
                         ON [pd].[primary_id] = [ps].[primary_id]
-                WHERE pd.[primary_database] = '$dbname';"
+                WHERE pd.[primary_database] = '$dbName';"
 
             $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
 
-            $results.PrimaryDatabase | Should -Be $dbname
+            $results.PrimaryDatabase | Should -Be $dbName
         }
 
-        # Remove the log shipping
-        $params = @{
-            PrimarySqlInstance   = $TestConfig.instance2
-            SecondarySqlInstance = $TestConfig.instance2
-            Database             = $dbname
-        }
+        It "Should remove log shipping but keep secondary database" {
+            # Remove the log shipping
+            $splatRemove = @{
+                PrimarySqlInstance   = $TestConfig.instance2
+                SecondarySqlInstance = $TestConfig.instance2
+                Database             = $dbName
+            }
 
-        Remove-DbaDbLogShipping @params
+            Remove-DbaDbLogShipping @splatRemove
 
-        $primaryServer.Databases.Refresh()
-        $secondaryserver = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $primaryServer.Databases.Refresh()
+            $secondaryServerRefreshed = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
-        It "Should still have the secondary database" {
-            "$($dbname)_LS" | Should -BeIn $secondaryserver.Databases.Name
+            "$($dbName)_LS" | Should -BeIn $secondaryServerRefreshed.Databases.Name
         }
 
         It "Should no longer have log shipping information" {
@@ -88,7 +116,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
                 FROM msdb.dbo.log_shipping_primary_secondaries AS ps
                     INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
                         ON [pd].[primary_id] = [ps].[primary_id]
-                WHERE pd.[primary_database] = '$dbname';"
+                WHERE pd.[primary_database] = '$dbName';"
 
             $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
 
@@ -96,20 +124,22 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
         }
     }
 
-    Context "Remove database from log shipping with remove secondary database" {
-        $params = @{
-            SourceSqlInstance       = $TestConfig.instance2
-            DestinationSqlInstance  = $TestConfig.instance2
-            Database                = $dbname
-            BackupNetworkPath       = $networkPath
-            BackupLocalPath         = $localPath
-            GenerateFullBackup      = $true
-            CompressBackup          = $true
-            SecondaryDatabaseSuffix = "_LS"
-            Force                   = $true
-        }
+    Context "Remove database from log shipping with secondary database removal" {
+        BeforeAll {
+            $splatLogShipping = @{
+                SourceSqlInstance       = $TestConfig.instance2
+                DestinationSqlInstance  = $TestConfig.instance2
+                Database                = $dbName
+                BackupNetworkPath       = $networkPath
+                BackupLocalPath         = $localPath
+                GenerateFullBackup      = $true
+                CompressBackup          = $true
+                SecondaryDatabaseSuffix = "_LS"
+                Force                   = $true
+            }
 
-        $results = Invoke-DbaDbLogShipping @params
+            $results = Invoke-DbaDbLogShipping @splatLogShipping
+        }
 
         It "Should have the database information" {
             $query = "SELECT pd.primary_database AS PrimaryDatabase,
@@ -118,28 +148,28 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
                 FROM msdb.dbo.log_shipping_primary_secondaries AS ps
                     INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
                         ON [pd].[primary_id] = [ps].[primary_id]
-                WHERE pd.[primary_database] = '$dbname';"
+                WHERE pd.[primary_database] = '$dbName';"
 
             $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
 
-            $results.PrimaryDatabase | Should -Be $dbname
+            $results.PrimaryDatabase | Should -Be $dbName
         }
 
-        # Remove the log shipping
-        $params = @{
-            PrimarySqlInstance      = $TestConfig.instance2
-            SecondarySqlInstance    = $TestConfig.instance2
-            Database                = $dbname
-            RemoveSecondaryDatabase = $true
-        }
+        It "Should remove log shipping and secondary database" {
+            # Remove the log shipping
+            $splatRemove = @{
+                PrimarySqlInstance      = $TestConfig.instance2
+                SecondarySqlInstance    = $TestConfig.instance2
+                Database                = $dbName
+                RemoveSecondaryDatabase = $true
+            }
 
-        Remove-DbaDbLogShipping @params
+            Remove-DbaDbLogShipping @splatRemove
 
-        $primaryServer.Databases.Refresh()
-        $secondaryserver = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $primaryServer.Databases.Refresh()
+            $secondaryServerRefreshed = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
-        It "Should no longer have the secondary database" {
-            "$($dbname)_LS" | Should -Not -BeIn $secondaryserver.Databases.Name
+            "$($dbName)_LS" | Should -Not -BeIn $secondaryServerRefreshed.Databases.Name
         }
 
         It "Should no longer have log shipping information" {
@@ -149,7 +179,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
                 FROM msdb.dbo.log_shipping_primary_secondaries AS ps
                     INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
                         ON [pd].[primary_id] = [ps].[primary_id]
-                WHERE pd.[primary_database] = '$dbname';"
+                WHERE pd.[primary_database] = '$dbName';"
 
             $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
 

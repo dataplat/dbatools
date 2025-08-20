@@ -3,12 +3,17 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Build', 'MinimumBuild', 'MaxBehind', 'Latest', 'SqlInstance', 'SqlCredential', 'Update', 'Quiet', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+    BeforeAll {
+        $PSDefaultParameterValues["*:Confirm"] = $false
+        $PSDefaultParameterValues["*:WarningVariable"] = 'WarnVar'
+    }
+
+    Context "Parameter validation" {
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            $params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+            $knownParameters = 'Build', 'MinimumBuild', 'MaxBehind', 'Latest', 'SqlInstance', 'SqlCredential', 'Update', 'Quiet', 'EnableException'
+            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
     Context "Retired KBs" {
@@ -39,6 +44,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $PSDefaultParameterValues["*:Confirm"] = $false
+        $PSDefaultParameterValues["*:WarningVariable"] = 'WarnVar'
+    }
+
     Context "Command actually works" {
         It "Should return a result" {
             $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $TestConfig.instance2

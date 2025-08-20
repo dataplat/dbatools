@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Login', 'ExcludeLogin', 'Database', 'ExcludeJobs', 'ExcludeDatabase', 'ExcludePassword', 'DefaultDatabase', 'Path', 'FilePath', 'Encoding', 'NoClobber', 'Append', 'BatchSeparator', 'DestinationVersion', 'NoPrefix', 'Passthru', 'ObjectLevel', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
@@ -58,7 +58,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $timenow = (Get-Date -uformat "%m%d%Y%H")
         $ExportedCredential = Get-ChildItem $DefaultExportPath, $AltExportPath | Where-Object { $_.Name -match "$timenow\d{4}-login.sql|Dbatoolsci_login_CustomFile.sql" }
         if ($ExportedCredential) {
-            $null = Remove-Item -Path $($ExportedCredential.FullName) -ErrorAction SilentlyContinue
+            $null = Remove-Item -Path $($ExportedCredential.FullName)
         }
 
         Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login3 -Confirm:$false

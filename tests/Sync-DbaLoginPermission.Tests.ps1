@@ -1,21 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Sync-DbaLoginPermission",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Login",
+                "ExcludeLogin",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $tempguid = [guid]::newguid();
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+
+        $tempguid = [guid]::newguid()
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
         $CreateTestUser = @"
 CREATE LOGIN [$DBUserName]
@@ -27,7 +41,7 @@ GRANT VIEW ANY DEFINITION to [$DBUserName];
 "@
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestUser -Database master
 
-        #This is used later in the test
+        # This is used later in the test
         $CreateTestLogin = @"
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
@@ -38,23 +52,23 @@ CREATE LOGIN [$DBUserName]
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query $DropTestUser -Database master
     }
 
-    Context "Verifying command output" {
+    Context "Command execution and functionality" {
 
         It "Should not have the user permissions of $DBUserName" {
-            $permissionsBefore = Get-DbaUserPermission -SqlInstance $TestConfig.instance3 -Database master | Where-object {$_.member -eq $DBUserName}
-            $permissionsBefore | Should -be $null
+            $permissionsBefore = Get-DbaUserPermission -SqlInstance $TestConfig.instance3 -Database master | Where-Object { $_.member -eq $DBUserName }
+            $permissionsBefore | Should -BeNullOrEmpty
         }
 
         It "Should execute against active nodes" {
-            #Creates the user on
+            # Creates the user on
             Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -Query $CreateTestLogin
-            $results = Sync-DbaLoginPermission -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Login $DBUserName -ExcludeLogin 'NotaLogin' -Warningvariable $warn
+            $results = Sync-DbaLoginPermission -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Login $DBUserName -ExcludeLogin 'NotaLogin' -WarningVariable $warn
             $results.Status | Should -Be 'Successful'
-            $warn | Should -be $null
+            $warn | Should -BeNullOrEmpty
         }
 
-        It "Should have coppied the user permissions of $DBUserName" {
-            $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.instance3 -Database master | Where-object {$_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
+        It "Should have copied the user permissions of $DBUserName" {
+            $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.instance3 -Database master | Where-Object { $_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
             $permissionsAfter.member | Should -Be $DBUserName
         }
     }

@@ -454,14 +454,15 @@ function Add-DbaAgDatabase {
                             $replicaAgDb.Refresh()
                         }
 
-                        # With automatic seeding, .JoinAvailabilityGroup() is not needed, just wait for the magic to happen
+                        # With automatic seeding, .JoinAvailablityGroup() is not needed, just wait for the magic to happen
                         if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -ne 'Automatic') {
                             try {
                                 $progress['CurrentOperation'] = "Joining database $($db.Name) on replica $replicaName"
                                 Write-Message -Level Verbose -Message $progress['CurrentOperation']
                                 Write-Progress @progress
 
-                                $replicaAgDb.JoinAvailabilityGroup()
+                                # DO NOT fix the typo in "JoinAvailablityGroup()" as it is a typo the SMO.
+                                $replicaAgDb.JoinAvailablityGroup()
                             } catch {
                                 $failure = $true
                                 Stop-Function -Message "Failed to join database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue

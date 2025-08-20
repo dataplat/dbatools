@@ -1,4 +1,4 @@
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModulePath = (Get-Item $Path).Parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
@@ -9,13 +9,13 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
 
     $psm1 = Get-Content $ModulePath\$ModuleName.psm1 -Verbose
     $Matches = [regex]::Matches($psm1, "AliasName`"\s=\s`"(\w*-\w*)`"")
-    $Aliases = $Matches.ForEach{$_.Groups[1].Value}
+    $Aliases = $Matches.ForEach{ $_.Groups[1].Value }
 
     foreach ($Alias in $Aliases) {
         Context "Testing $Alias Alias" {
             $Definition = (Get-Alias $Alias).Definition
             It "$Alias Alias should exist" {
-                Get-Alias $Alias| Should Not BeNullOrEmpty
+                Get-Alias $Alias | Should Not BeNullOrEmpty
             }
             It "$Alias Aliased Command $Definition Should Exist" {
                 Get-Command $Definition -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty
@@ -27,7 +27,7 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
 function Split-ArrayInParts($array, [int]$parts) {
     #splits an array in "equal" parts
     $size = $array.Length / $parts
-    $counter = [pscustomobject] @{ Value = 0 }
+    $counter = [PSCustomObject] @{ Value = 0 }
     $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
     $rtn = @()
     foreach ($g in $groups) {
@@ -176,14 +176,14 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
         $FunctionName = $Ast.EndBlock.Statements.Name
         $BaseName = $item.BaseName
         if ($FunctionName -cne $BaseName) {
-            $FunctionNameMatchesErrors += [pscustomobject]@{
+            $FunctionNameMatchesErrors += [PSCustomObject]@{
                 FunctionName = $FunctionName
                 BaseName     = $BaseName
                 Message      = "$FunctionName is not equal to $BaseName"
             }
         }
         If ($FunctionName -NotMatch "-Dba") {
-            $FunctionNameDbaErrors += [pscustomobject]@{
+            $FunctionNameDbaErrors += [PSCustomObject]@{
                 FunctionName = $FunctionName
                 Message      = "$FunctionName does not contain -Dba"
             }
@@ -197,8 +197,8 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
         $FunctionName = $Ast.EndBlock.Statements.Name
         $BaseName = $item.BaseName
         if ($FunctionName -cne $BaseName) {
-            write-host "aaa $functionname bbb $basename"
-            $FunctionNameMatchesErrors += [pscustomobject]@{
+            Write-Host "aaa $functionname bbb $basename"
+            $FunctionNameMatchesErrors += [PSCustomObject]@{
                 FunctionName = $FunctionName
                 BaseName     = $BaseName
                 Message      = "$FunctionName is not equal to $BaseName"

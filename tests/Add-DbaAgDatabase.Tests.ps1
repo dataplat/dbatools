@@ -1,19 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = "Add-DbaAgDatabase",
-    # $TestConfig has to be set outside of the tests by running: $TestConfig = Get-TestConfig
-    # This will set $TestConfig.Defaults with the parameter defaults, including:
-    # * Confirm = $false
-    # * WarningVariable = 'WarnVar'
-    # So you don't have to use -Confirm:$false and you can always use $WarnVar to test for warnings.
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaAgDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe $CommandName -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -29,18 +24,15 @@ Describe $CommandName -Tag "UnitTests" {
                 "AdvancedBackupParams",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe $CommandName -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
         # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
@@ -58,14 +50,15 @@ Describe $CommandName -Tag "IntegrationTests" {
         $nonexistingDb = "dbdoesnotexist"
 
         # Create the objects.
-        $splat = @{
+        $splatAg = @{
             Primary      = $TestConfig.instance3
             Name         = $agName
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
         }
-        $null = New-DbaAvailabilityGroup @splat
+        $null = New-DbaAvailabilityGroup @splatAg
 
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithBackup
         $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup -Path $backupPath
@@ -73,12 +66,12 @@ Describe $CommandName -Tag "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithoutBackup
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created object.
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
@@ -86,7 +79,7 @@ Describe $CommandName -Tag "IntegrationTests" {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup, $existingDbWithoutBackup
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
@@ -95,12 +88,13 @@ Describe $CommandName -Tag "IntegrationTests" {
         # We use the BeforeAll to run the test itself.
         # Results are saved in $results.
         BeforeAll {
-            $splat = @{
+            $splatAddAgDatabase = @{
                 SqlInstance       = $TestConfig.instance3
                 AvailabilityGroup = $agName
                 Database          = $existingDbWithBackup
+                Confirm           = $false
             }
-            $results = Add-DbaAgDatabase @splat
+            $results = Add-DbaAgDatabase @splatAddAgDatabase
         }
 
         # Always include this test to be sure that the command runs without warnings.
@@ -123,7 +117,8 @@ Describe $CommandName -Tag "IntegrationTests" {
                 Database          = $existingDbWithoutBackup
                 # As we don't want an output, we suppress the warning.
                 # But we can still test the warning because WarningVariable is set globally to WarnVar.
-                WarningAction     = 'SilentlyContinue'
+                WarningAction     = "SilentlyContinue"
+                Confirm           = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDb
         }
@@ -143,7 +138,8 @@ Describe $CommandName -Tag "IntegrationTests" {
                 SqlInstance       = $TestConfig.instance3
                 AvailabilityGroup = $agName
                 Database          = $nonexistingDb
-                WarningAction     = 'SilentlyContinue'
+                WarningAction     = "SilentlyContinue"
+                Confirm           = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDb
         }

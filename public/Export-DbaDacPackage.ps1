@@ -116,6 +116,29 @@ function Export-DbaDacPackage {
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
+
+        # Check if sqlpackage is available
+        $sqlPackagePath = Get-DbaSqlPackagePath
+        if (-not $sqlPackagePath) {
+            $installChoice = Read-Host "SqlPackage is required but not found. Would you like to install it now using Install-DbaSqlPackage? (Y/N)"
+            if ($installChoice -match '^[Yy]') {
+                try {
+                    Install-DbaSqlPackage
+                    Write-Message -Level Output -Message "SqlPackage installed successfully. Continuing with export..."
+                    $sqlPackagePath = Get-DbaSqlPackagePath
+                    if (-not $sqlPackagePath) {
+                        Stop-Function -Message "Failed to locate SqlPackage after installation. Please verify the installation." -EnableException:$EnableException
+                        return
+                    }
+                } catch {
+                    Stop-Function -Message "Failed to install SqlPackage. Please install manually or use Install-DbaSqlPackage." -EnableException:$EnableException
+                    return
+                }
+            } else {
+                Stop-Function -Message "SqlPackage is required for this operation. Please install SqlPackage manually or use Install-DbaSqlPackage." -EnableException:$EnableException
+                return
+            }
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -241,23 +264,11 @@ function Export-DbaDacPackage {
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo
 
-                        $sqlpackage = (Get-Command sqlpackage -ErrorAction Ignore).Source
+                        $sqlpackage = Get-DbaSqlPackagePath
                         if ($sqlpackage) {
                             $startprocess.FileName = $sqlpackage
                         } else {
-                            if ($IsLinux) {
-                                $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/linux/sqlpackage"
-                            } elseif ($IsMacOS) {
-                                $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/mac/sqlpackage"
-                            } else {
-                                # if core then get the parent of lib path and then use the desktop location
-                                if ($PsVersionTable.PSEdition -eq 'Core') {
-                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/windows/sqlpackage.exe"
-                                } else {
-                                    # otherwise use the lib path
-                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)\lib\dac\SqlPackage.exe"
-                                }
-                            }
+                            Stop-Function -Message "SqlPackage not found. Please install SqlPackage using Install-DbaSqlPackage or ensure it's available in PATH." -Continue
                         }
                         $startprocess.Arguments = $sqlPackageArgs
                         $startprocess.RedirectStandardError = $true

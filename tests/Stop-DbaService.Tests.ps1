@@ -1,59 +1,74 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Stop-DbaService",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'InstanceName', 'SqlInstance', 'Type', 'InputObject', 'Timeout', 'Credential', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Type",
+                "InputObject",
+                "Timeout",
+                "Credential",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    Context "Command execution and functionality" {
+        BeforeAll {
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
 
-    Context "Command actually works" {
-
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $instanceName = $server.ServiceName
-        $computerName = $server.NetName
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $instanceName = $server.ServiceName
+            $computerName = $server.NetName
+        }
 
         It "stops some services" {
             $services = Stop-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
-                $service.State | Should Be 'Stopped'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be 'Stopped'
+                $service.Status | Should -Be 'Successful'
             }
-        }
 
-        #Start services using native cmdlets
-        if ($instanceName -eq 'MSSQLSERVER') {
-            $serviceName = "SQLSERVERAGENT"
-        } else {
-            $serviceName = "SqlAgent`$$instanceName"
+            # Start services using native cmdlets
+            if ($instanceName -eq 'MSSQLSERVER') {
+                $serviceName = "SQLSERVERAGENT"
+            } else {
+                $serviceName = "SqlAgent`$$instanceName"
+            }
+            Get-Service -ComputerName $computerName -Name $serviceName | Start-Service -WarningAction SilentlyContinue | Out-Null
         }
-        Get-Service -ComputerName $computerName -Name $serviceName | Start-Service -WarningAction SilentlyContinue | Out-Null
 
         It "stops specific services based on instance name through pipeline" {
             $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
-                $service.State | Should Be 'Stopped'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be 'Stopped'
+                $service.Status | Should -Be 'Successful'
             }
-        }
 
-        #Start services using native cmdlets
-        if ($instanceName -eq 'MSSQLSERVER') {
-            $serviceName = "MSSQLSERVER", "SQLSERVERAGENT"
-        } else {
-            $serviceName = "MsSql`$$instanceName", "SqlAgent`$$instanceName"
+            # Start services using native cmdlets
+            if ($instanceName -eq 'MSSQLSERVER') {
+                $serviceName = "MSSQLSERVER", "SQLSERVERAGENT"
+            } else {
+                $serviceName = "MsSql`$$instanceName", "SqlAgent`$$instanceName"
+            }
+            foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Start-Service -WarningAction SilentlyContinue | Out-Null }
         }
-        foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Start-Service -WarningAction SilentlyContinue | Out-Null }
-
     }
 }

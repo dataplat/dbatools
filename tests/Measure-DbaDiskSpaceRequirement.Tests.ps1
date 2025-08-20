@@ -1,48 +1,67 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Measure-DbaDiskSpaceRequirement",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'Database', 'SourceSqlCredential', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Source",
+                "Database",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationDatabase",
+                "DestinationSqlCredential",
+                "Credential",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Should Measure Disk Space Required " {
-        $server1 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance1
-        $server2 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance2
-        $script:Options = @{
-            Source              = $global:TestConfig.instance1
-            Destination         = $global:TestConfig.instance2
-            Database            = "master"
-            DestinationDatabase = "Dbatoolsci_DestinationDB"
+Describe $CommandName -Tag IntegrationTests {
+    Context "Should Measure Disk Space Required" {
+        BeforeAll {
+            $server1 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance1
+            $server2 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance2
+
+            $global:splatMeasure = @{
+                Source              = $global:TestConfig.instance1
+                Destination         = $global:TestConfig.instance2
+                Database            = "master"
+                DestinationDatabase = "Dbatoolsci_DestinationDB"
+            }
+            $global:results = Measure-DbaDiskSpaceRequirement @global:splatMeasure
         }
-        $script:results = Measure-DbaDiskSpaceRequirement @Options
+
         It "Should have information" {
-            $script:results | Should -Not -BeNullOrEmpty
+            $global:results | Should -Not -BeNullOrEmpty
         }
-        foreach ($result in $script:results) {
-            It "Should be sourced from Master" {
-                $result.SourceDatabase | Should -Be $script:Options.Database
-            }
-            It "Should be sourced from the instance $($global:TestConfig.instance1)" {
-                $result.SourceSqlInstance | Should -Be $server1.SqlInstance
-            }
-            It "Should be destined for Dbatoolsci_DestinationDB" {
-                $result.DestinationDatabase | Should -Be $script:Options.DestinationDatabase
-            }
-            It "Should be destined for the instance $($global:TestConfig.instance2)" {
-                $result.DestinationSqlInstance | Should -Be $server2.SqlInstance
-            }
-            It "Should be have files on source" {
-                $result.FileLocation | Should Be "Only on Source"
-            }
+
+        It "Should be sourced from Master" {
+            $global:results[0].SourceDatabase | Should -Be $global:splatMeasure.Database
+        }
+
+        It "Should be sourced from the instance $($global:TestConfig.instance1)" {
+            $global:results[0].SourceSqlInstance | Should -Be $server1.SqlInstance
+        }
+
+        It "Should be destined for Dbatoolsci_DestinationDB" {
+            $global:results[0].DestinationDatabase | Should -Be $global:splatMeasure.DestinationDatabase
+        }
+
+        It "Should be destined for the instance $($global:TestConfig.instance2)" {
+            $global:results[0].DestinationSqlInstance | Should -Be $server2.SqlInstance
+        }
+
+        It "Should have files on source" {
+            $global:results[0].FileLocation | Should -Be "Only on Source"
         }
     }
 }

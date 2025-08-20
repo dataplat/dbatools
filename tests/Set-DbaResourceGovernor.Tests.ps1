@@ -1,21 +1,34 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Set-DbaResourceGovernor",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Enabled', 'Disabled', 'ClassifierFunction', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Enabled",
+                "Disabled",
+                "ClassifierFunction",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
             $classifierFunction = "dbatoolsci_fnRGClassifier"
             $qualifiedClassifierFunction = "[dbo].[$classifierFunction]"
 
@@ -28,7 +41,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             END;"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $createUDFQuery -Database "master"
             Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Disabled -Confirm:$false
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
         }
+
         It "enables resource governor" {
             $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled -Confirm:$false
             $results.Enabled | Should -Be $true
@@ -45,13 +62,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "removes resource governor classifier function" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction 'NULL' -Confirm:$false
-            $results.ClassifierFunction | Should -Be ''
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction "NULL" -Confirm:$false
+            $results.ClassifierFunction | Should -Be ""
         }
+
         AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
             $dropUDFQuery = "DROP FUNCTION $qualifiedClassifierFunction;"
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $dropUDFQuery -Database "master"
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $dropUDFQuery -Database "master" -ErrorAction SilentlyContinue
+
+            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
         }
     }
 }
-

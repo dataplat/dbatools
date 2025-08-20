@@ -5,13 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-. "$PSScriptRoot\..\private\functions\Invoke-Command2.ps1"
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -27,9 +23,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -40,8 +33,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $credLogins   = @("thor", "thorsmomma", "thor_crypto")
-        $plaintext    = "BigOlPassword!"
+        $credLogins = @("thor", "thorsmomma", "thor_crypto")
+        $plaintext = "BigOlPassword!"
         $credPassword = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -94,7 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaCredential -SqlInstance $server2, $server3 -Identity thor, thorsmomma, thor_crypto -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaCredential -SqlInstance $server2, $server3 -Identity thor, thorsmomma, thor_crypto | Remove-DbaCredential
 
         foreach ($login in $credLogins) {
             $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance2
@@ -136,8 +129,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should retain its same properties" {
-            $Credential1 = Get-DbaCredential -SqlInstance $server2 -Name thor -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-            $Credential2 = Get-DbaCredential -SqlInstance $server3 -Name thor -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+            $Credential1 = Get-DbaCredential -SqlInstance $server2 -Name thor
+            $Credential2 = Get-DbaCredential -SqlInstance $server3 -Name thor
 
             # Compare its value
             $Credential1.Name | Should -Be $Credential2.Name
@@ -163,7 +156,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It -Skip:(-not $cryptoProvider) "check warning message if crypto provider is not configured/enabled on destination" {
-            Remove-DbaCredential -SqlInstance $server3 -Credential thor_crypto -Confirm:$false
+            Remove-DbaCredential -SqlInstance $server3 -Credential thor_crypto
             $server3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider DISABLE")
             $results = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thor_crypto
             $server3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider ENABLE")

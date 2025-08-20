@@ -7,6 +7,7 @@ on:
    paths-ignore:
      - '**/*.md'
      - '**/*.json'
+     - '!.github/dbatools-library-version.json'
      - 'docs/**'
      - '.github/FUNDING.yml'
      - '.github/ISSUE_TEMPLATE/**'
@@ -67,7 +68,7 @@ jobs:
         run: |
           Import-Module dbatools
           Set-DbatoolsInsecureConnection
-          Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+          Install-DbaSqlPackage
 
       - name:  Setup docker images
         run: |

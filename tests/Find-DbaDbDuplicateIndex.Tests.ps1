@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -20,9 +17,6 @@ Describe $CommandName -Tag UnitTests {
                 "IncludeOverlapping",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -86,15 +80,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Gets back some results" {
-        BeforeAll {
+        It "return at least two results" {
             $splatFind = @{
                 SqlInstance = $TestConfig.instance1
                 Database    = "dbatools_dupeindex"
             }
             $results = @(Find-DbaDbDuplicateIndex @splatFind)
-        }
-
-        It "return at least two results" {
             $results.Status.Count | Should -BeGreaterOrEqual 2
         }
     }

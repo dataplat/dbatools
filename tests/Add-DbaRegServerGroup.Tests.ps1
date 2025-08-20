@@ -1,14 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaRegServerGroup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaRegServerGroup" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -19,34 +19,54 @@ Describe "Add-DbaRegServerGroup" -Tag "UnitTests" {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Add-DbaRegServerGroup" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Set variables. They are available in all the It blocks.
         $group = "dbatoolsci-group1"
         $group2 = "dbatoolsci-group2"
         $description = "group description"
         $descriptionUpdated = "group description updated"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Cleanup all created objects.
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When adding a registered server group" {
         It "adds a registered server group" {
-            $results = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group
+            $splatAddGroup = @{
+                SqlInstance = $TestConfig.instance1
+                Name        = $group
+            }
+            $results = Add-DbaRegServerGroup @splatAddGroup
             $results.Name | Should -Be $group
             $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
 
         It "adds a registered server group with extended properties" {
-            $results = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group2 -Description $description
+            $splatAddGroupExtended = @{
+                SqlInstance = $TestConfig.instance1
+                Name        = $group2
+                Description = $description
+            }
+            $results = Add-DbaRegServerGroup @splatAddGroupExtended
             $results.Name | Should -Be $group2
             $results.Description | Should -Be $description
             $results.SqlInstance | Should -Not -BeNullOrEmpty
@@ -60,19 +80,29 @@ Describe "Add-DbaRegServerGroup" -Tag "IntegrationTests" {
                 Add-DbaRegServerGroup -Name dbatoolsci-second |
                 Add-DbaRegServerGroup -Name dbatoolsci-third |
                 Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
-            $results.Group | Should -Be 'dbatoolsci-first\dbatoolsci-second\dbatoolsci-third'
+            $results.Group | Should -Be "dbatoolsci-first\dbatoolsci-second\dbatoolsci-third"
         }
     }
 
     Context "When adding nested groups" {
         It "adds a registered server group and sub-group when not exists" {
-            $results = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name "$group\$group2" -Description $description
+            $splatAddNested = @{
+                SqlInstance = $TestConfig.instance1
+                Name        = "$group\$group2"
+                Description = $description
+            }
+            $results = Add-DbaRegServerGroup @splatAddNested
             $results.Name | Should -Be $group2
             $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
 
         It "updates description of sub-group when it already exists" {
-            $results = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name "$group\$group2" -Description $descriptionUpdated
+            $splatUpdateNested = @{
+                SqlInstance = $TestConfig.instance1
+                Name        = "$group\$group2"
+                Description = $descriptionUpdated
+            }
+            $results = Add-DbaRegServerGroup @splatUpdateNested
             $results.Name | Should -Be $group2
             $results.Description | Should -Be $descriptionUpdated
             $results.SqlInstance | Should -Not -BeNullOrEmpty

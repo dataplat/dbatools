@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -32,9 +29,6 @@ Describe $CommandName -Tag UnitTests {
                 "ScriptingOptionsObject",
                 "ExcludeGoBatchSeparator"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -147,25 +141,25 @@ Describe $CommandName -Tag IntegrationTests {
         It "Excludes database context" {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
-            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2
             $results = Get-Content -Path $outputFile2 -Raw
-            $results | Should -Not -BeLike ("*USE `[" + $dbname + "`]*")
+            $results | Should -Not -Match ([regex]::Escape("USE [$dbname]"))
             Remove-Item -Path $outputFile2 -ErrorAction SilentlyContinue
         }
 
         It "Includes database context" {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $true
-            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2
             $results = Get-Content -Path $outputFile2 -Raw
-            $results | Should -BeLike ("*USE `[" + $dbname + "`]*")
+            $results | Should -Match ([regex]::Escape("USE [$dbname]"))
             Remove-Item -Path $outputFile2 -ErrorAction SilentlyContinue
         }
 
         It "Defaults to include database context" {
-            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $outputFile2
             $results = Get-Content -Path $outputFile2 -Raw
-            $results | Should -BeLike ("*USE `[" + $dbname + "`]*")
+            $results | Should -Match ([regex]::Escape("USE [$dbname]"))
             Remove-Item -Path $outputFile2 -ErrorAction SilentlyContinue
         }
 
@@ -198,13 +192,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Check if the output scripts were self-contained" {
-        BeforeAll {
+        It "Contains the CREATE ROLE and ALTER ROLE statements for its own roles" {
             # Clean up the output folder
             Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
             $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -Path $outputPath
-        }
-
-        It "Contains the CREATE ROLE and ALTER ROLE statements for its own roles" {
             Get-ChildItem $outputPath | Where-Object Name -like ("*" + $user01 + "*") | ForEach-Object {
                 $content = Get-Content -Path $PSItem.FullName -Raw
                 $content | Should -BeLike "*CREATE ROLE [[]$role01]*"

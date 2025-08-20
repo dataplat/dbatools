@@ -1,46 +1,62 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbMail",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Set variables. They are available in all the It blocks.
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailSettings = @{
-            AccountRetryAttempts           = '1'
-            AccountRetryDelay              = '60'
-            DatabaseMailExeMinimumLifeTime = '600'
-            DefaultAttachmentEncoding      = 'MIME'
-            LoggingLevel                   = '2'
-            MaxFileSize                    = '1000'
-            ProhibitedExtensions           = 'exe,dll,vbs,js'
+            AccountRetryAttempts           = "1"
+            AccountRetryDelay              = "60"
+            DatabaseMailExeMinimumLifeTime = "600"
+            DefaultAttachmentEncoding      = "MIME"
+            LoggingLevel                   = "2"
+            MaxFileSize                    = "1000"
+            ProhibitedExtensions           = "exe,dll,vbs,js"
         }
         foreach ($m in $mailSettings.GetEnumerator()) {
             $server.query("exec msdb.dbo.sysmail_configure_sp '$($m.key)','$($m.value)';")
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     Context "Gets DbMail Settings" {
-        $results = Get-DbaDbMail -SqlInstance $TestConfig.instance2
-        It "Gets results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $results = Get-DbaDbMail -SqlInstance $TestConfig.instance2
         }
-        Foreach ($row in $($results.ConfigurationValues)) {
-            It "Should have ConfiguredValues of $($row.name)" {
-                $row.name | Should Bein $mailSettings.keys
-            }
-            It "Should have ConfiguredValues settings for $($row.name) of $($row.value)" {
-                $row.value | Should Bein $mailSettings.values
+
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have the expected mail settings" {
+            foreach ($row in $results.ConfigurationValues) {
+                $row.name | Should -BeIn $mailSettings.Keys
+                $row.value | Should -BeIn $mailSettings.Values
             }
         }
     }

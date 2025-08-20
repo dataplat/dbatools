@@ -1,31 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Watch-DbaXESession",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'InputObject', 'Raw', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Session",
+                "InputObject",
+                "Raw",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Command functions as expected" {
         BeforeAll {
-            Stop-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health -EnableException -Confirm:$false
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Stop-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
+
         AfterAll {
-            Start-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health -EnableException -Confirm:$false
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Start-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
         }
 
         # This command is special and runs infinitely so don't actually try to run it
         It "warns if XE session is not running" {
             $results = Watch-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health -WarningAction SilentlyContinue -WarningVariable warn
-            $warn | Should -Match 'system_health is not running'
+            $warn | Should -Match "system_health is not running"
         }
     }
 }

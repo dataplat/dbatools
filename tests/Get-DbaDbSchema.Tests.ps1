@@ -1,20 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbSchema",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Schema', 'SchemaOwner', 'IncludeSystemDatabases', 'IncludeSystemSchemas', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Schema",
+                "SchemaOwner",
+                "IncludeSystemDatabases",
+                "IncludeSystemSchemas",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -27,7 +43,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         $userName = "user_$random"
         $userName2 = "user2_$random"
-        $password = 'MyV3ry$ecur3P@ssw0rd'
+        $password = "MyV3ry$ecur3P@ssw0rd"
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $logins = New-DbaLogin -SqlInstance $server1, $server2 -Login $userName, $userName2 -Password $securePassword -Force
 
@@ -38,15 +54,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newDbs[0].Schemas.Refresh()
         $newDbs[1].Query("CREATE SCHEMA $schemaName2 AUTHORIZATION [$userName2]")
         $newDbs[1].Schemas.Refresh()
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = $newDbs | Remove-DbaDatabase -Confirm:$false
         $null = $logins | Remove-DbaLogin -Confirm:$false
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "commands work as expected" {
-
         It "get all schemas from all databases including system dbs and schemas" {
             $schemas = Get-DbaDbSchema -SqlInstance $server1 -IncludeSystemDatabases -IncludeSystemSchemas
             $schemas.Count | Should -BeGreaterThan 1

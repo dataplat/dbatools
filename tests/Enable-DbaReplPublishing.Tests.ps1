@@ -1,37 +1,23 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Enable-DbaReplPublishing",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Add-ReplicationLibrary
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Enable-DbaReplPublishing
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "SnapshotShare",
                 "PublisherSqlLogin",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        foreach ($param in $expected) {
-            It "Has parameter: $param" {
-                $command | Should -HaveParameter $param
-            }
-        }
-
-        It "Should have exactly the expected parameters" {
-            $hasParameters = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }

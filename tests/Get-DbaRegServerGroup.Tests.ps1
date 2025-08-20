@@ -1,21 +1,34 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaRegServerGroup",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Group', 'ExcludeGroup', 'Id', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Group",
+                "ExcludeGroup",
+                "Id",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup" {
+Describe $CommandName -Tag IntegrationTests {
+    Context "Registered Server Group operations" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $server = Connect-DbaInstance $TestConfig.instance1
             $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbStore = $regStore.DatabaseEngineServerGroup
@@ -84,15 +97,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $subGroupServer.Description = $subGroupRegSrvDesc
             $subGroupServer.Create()
         }
+
         AfterAll {
-            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
         }
 
         It "Should return one group" {
             $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group
             $results.Count | Should -Be 1
         }
+
         It "Should allow searching subgroups" {
             $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group "$group\$subGroup"
             $results.Count | Should -Be 1

@@ -1,66 +1,107 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaLastGoodCheckDb",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database master
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $splatConnection = @{
+            SqlInstance = $TestConfig.instance1
+            Database    = "master"
+        }
+        $server = Connect-DbaInstance @splatConnection
         $server.Query("DBCC CHECKDB")
         $dbname = "dbatoolsci_]_$(Get-Random)"
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname -Owner sa
+
+        $splatDatabase = @{
+            SqlInstance = $TestConfig.instance1
+            Name        = $dbname
+            Owner       = "sa"
+        }
+        $db = New-DbaDatabase @splatDatabase
         $db.Query("DBCC CHECKDB")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
     }
+
     Context "Command actually works" {
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -Database master
+        BeforeAll {
+            $masterResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -Database master
+            $allResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
+            $dbResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -Database $dbname
+        }
+
         It "LastGoodCheckDb is a valid date" {
-            $results.LastGoodCheckDb -ne $null | Should Be $true
-            $results.LastGoodCheckDb -is [datetime] | Should Be $true
+            $masterResults.LastGoodCheckDb -ne $null | Should -Be $true
+            $masterResults.LastGoodCheckDb -is [datetime] | Should -Be $true
         }
 
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
         It "returns more than 3 results" {
-            ($results).Count -gt 3 | Should Be $true
+            $allResults.Count -gt 3 | Should -Be $true
         }
 
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -Database $dbname
         It "LastGoodCheckDb is a valid date for database with embedded ] characters" {
-            $results.LastGoodCheckDb -ne $null | Should Be $true
-            $results.LastGoodCheckDb -is [datetime] | Should Be $true
+            $dbResults.LastGoodCheckDb -ne $null | Should -Be $true
+            $dbResults.LastGoodCheckDb -is [datetime] | Should -Be $true
         }
     }
 
     Context "Piping works" {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $results = $server | Get-DbaLastGoodCheckDb -Database $dbname, master
-        It "LastGoodCheckDb accepts piped input from Connect-DbaInstance" {
-            ($results).Count -eq 2 | Should Be $true
+        BeforeAll {
+            $serverConnection = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $serverPipeResults = $serverConnection | Get-DbaLastGoodCheckDb -Database $dbname, master
+
+            $databases = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, master
+            $databasePipeResults = $databases | Get-DbaLastGoodCheckDb
         }
 
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, master
-        $results = $db | Get-DbaLastGoodCheckDb
+        It "LastGoodCheckDb accepts piped input from Connect-DbaInstance" {
+            $serverPipeResults.Count -eq 2 | Should -Be $true
+        }
+
         It "LastGoodCheckDb accepts piped input from Get-DbaDatabase" {
-            ($results).Count -eq 2 | Should Be $true
+            $databasePipeResults.Count -eq 2 | Should -Be $true
         }
     }
 
     Context "Doesn't return duplicate results" {
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database $dbname
+        BeforeAll {
+            $duplicateResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database $dbname
+        }
+
         It "LastGoodCheckDb doesn't return duplicates when multiple servers are passed in" {
-            ($results | Group-Object SqlInstance, Database | Where-Object Count -gt 1) | Should BeNullOrEmpty
+            ($duplicateResults | Group-Object SqlInstance, Database | Where-Object Count -gt 1) | Should -BeNullOrEmpty
         }
     }
 }
