@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not take system databases offline or change their status." {
             foreach ($db in $dbs) {
                 $db1 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db
-                Remove-DbaDatabase SqlInstance $TestConfig.instance1 -Database $db
+                Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db
                 $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db
                 $db2.Status | Should -Be $db1.Status
                 $db2.IsAccessible | Should -Be $db1.IsAccessible

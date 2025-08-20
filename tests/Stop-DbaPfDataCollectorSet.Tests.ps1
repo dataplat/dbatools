@@ -24,31 +24,24 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Command execution and functionality" {
-        BeforeAll {
+    Context -Skip:(-not (Get-DbaPfDataCollectorSet -CollectorSet RTEvents)) "Verifying command works" {
+        AfterAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            # We only run this on Azure as there is this collector set running:
+            $null = Start-DbaPfDataCollectorSet -CollectorSet RTEvents
 
-            foreach ($set in Get-DbaPfDataCollectorSet) {
-                write-warning -Message "DbaPfDataCollectorSet: $($set.Name) is $($set.State)"
-            }
-            $set = Get-DbaPfDataCollectorSet | Where-Object State -eq 'Running' | Select-Object -First 1
-            $set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-            Start-Sleep 2
-
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        AfterAll {
-            $set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-        }
+        It "returns a result with the right computername and name is not null" {
+            $results = Stop-DbaPfDataCollectorSet -CollectorSet RTEvents
 
-        It "Should return a result with the right computername and name is not null" {
-            $results = $set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-            if (-not $WarnVar) {
-                $results.ComputerName | Should -Be $env:COMPUTERNAME
-                $results.Name | Should -Not -BeNullOrEmpty
-            }
+            $WarnVar | Should -BeNullOrEmpty
+            $results.ComputerName | Should -Be $env:COMPUTERNAME
+            $results.Name | Should -Not -BeNullOrEmpty
         }
     }
 }

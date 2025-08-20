@@ -90,7 +90,6 @@ Describe $CommandName -Tag IntegrationTests {
 Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "verify command functions" {
         BeforeAll {
-            $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance. This is being used because the 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
             $random = Get-Random
 
             # Create the new password
@@ -252,7 +251,8 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordPolicyEnforced | Should -Be $false
         }
 
-        It -Skip:$SkipLocalTest "Unlock" {
+        # TODO: The 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
+        It -Skip "Unlock" {
             $results = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
