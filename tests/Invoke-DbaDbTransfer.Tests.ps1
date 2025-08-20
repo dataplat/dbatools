@@ -1,41 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaDbTransfer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = @(
-            'SqlInstance',
-            'SqlCredential',
-            'DestinationSqlInstance',
-            'DestinationSqlCredential',
-            'Database',
-            'DestinationDatabase',
-            'BatchSize',
-            'BulkCopyTimeOut',
-            'InputObject',
-            'EnableException',
-            'CopyAllObjects',
-            'CopyAll',
-            'SchemaOnly',
-            'DataOnly',
-            'ScriptingOption',
-            'ScriptOnly'
-        )
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "DestinationSqlInstance",
+                "DestinationSqlCredential",
+                "Database",
+                "DestinationDatabase",
+                "BatchSize",
+                "BulkCopyTimeOut",
+                "InputObject",
+                "CopyAllObjects",
+                "CopyAll",
+                "SchemaOnly",
+                "DataOnly",
+                "ScriptingOption",
+                "ScriptOnly",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $dbName = 'dbatools_transfer'
         $source = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $destination = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
         $source.Query("CREATE DATABASE $dbName")
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
         $null = $db.Query("CREATE TABLE dbo.transfer_test (id int);
@@ -60,7 +63,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         } catch {
             $null = 1
         }
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
     }
     Context "Testing scripting invocation" {
         It "Should script all objects" {
