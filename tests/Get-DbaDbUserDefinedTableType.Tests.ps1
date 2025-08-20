@@ -41,6 +41,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = $server.Query("DROP TYPE $tabletypename", "tempdb")
         $null = $server.Query("DROP TYPE $tabletypename1", "tempdb")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets a Db User Defined Table Type" {

@@ -41,15 +41,15 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
         $null = $db.Query("CREATE PROCEDURE dbo.dbatoolsci_procedure_example @p1 [INT] = 0 AS BEGIN SET NOCOUNT OFF; SELECT TestColumn = @p1; END")
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         try {
             $null = $db.Query("DROP PROCEDURE dbo.dbatoolsci_procedure_example")
@@ -60,6 +60,8 @@ Describe $CommandName -Tag IntegrationTests {
             $null = 1
         }
         Remove-Item ".\hellorelative.sql" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     It "supports pipable instances" {
         $results = $TestConfig.instance2, $TestConfig.instance3 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn"

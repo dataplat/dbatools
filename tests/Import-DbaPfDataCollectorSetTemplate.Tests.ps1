@@ -55,6 +55,8 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command returns all the required results with pipe" {

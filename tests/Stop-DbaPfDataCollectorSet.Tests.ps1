@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return a result with the right computername and name is not null" {
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
             $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
             $script:set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
             Start-Sleep 2

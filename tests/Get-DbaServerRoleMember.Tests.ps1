@@ -95,5 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         Remove-DbaLogin -SqlInstance $server2 -Login $testLogin -Force -ErrorAction SilentlyContinue
         Remove-DbaLogin -SqlInstance $server1 -Login $testLogin -Force -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 }

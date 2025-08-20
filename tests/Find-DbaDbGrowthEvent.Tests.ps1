@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $random = Get-Random
@@ -55,11 +55,11 @@ DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
             $null = $db1.Query($sqlGrowthAndShrink)
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $db1 | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
 

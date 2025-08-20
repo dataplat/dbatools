@@ -40,6 +40,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Invoke-DbaQuery -SqlInstance $server -Query "DROP CREDENTIAL proxyCred;"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     BeforeEach {

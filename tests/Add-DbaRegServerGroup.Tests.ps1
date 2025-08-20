@@ -27,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables. They are available in all the It blocks.
         $group = "dbatoolsci-group1"
@@ -36,12 +36,12 @@ Describe $CommandName -Tag IntegrationTests {
         $descriptionUpdated = "group description updated"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false

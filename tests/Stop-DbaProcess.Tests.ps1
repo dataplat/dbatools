@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command execution and functionality" {
         BeforeAll {
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "kills only this specific process" {

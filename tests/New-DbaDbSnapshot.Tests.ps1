@@ -88,6 +88,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -Confirm:$false -ErrorAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Skips over offline databases nicely" {

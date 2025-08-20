@@ -37,7 +37,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Create a directory for test output files
         $AltExportPath = "$env:USERPROFILE\Documents"
@@ -58,12 +58,12 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $server.Query("GRANT VIEW ANY DATABASE TO [$svRole]")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
         $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole

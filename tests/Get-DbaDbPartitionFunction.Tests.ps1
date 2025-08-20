@@ -25,21 +25,23 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $tempguid = [guid]::newguid()
         $PFName = "dbatoolssci_$($tempguid.guid)"
         $CreateTestPartitionFunction = "CREATE PARTITION FUNCTION [$PFName] (int) AS RANGE LEFT FOR VALUES (1, 100, 1000, 10000, 100000);"
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestPartitionFunction -Database master
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $DropTestPartitionFunction = "DROP PARTITION FUNCTION [$PFName];"
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestPartitionFunction -Database master -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Partition Functions are correctly located" {

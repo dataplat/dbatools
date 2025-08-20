@@ -56,6 +56,8 @@ Describe $CommandName -Tag IntegrationTests {
             $server.Query("RECONFIGURE WITH OVERRIDE")
             #$null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName DefaultTraceEnabled -Value $false
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Test Check Default Trace" {

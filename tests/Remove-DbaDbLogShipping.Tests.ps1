@@ -59,6 +59,8 @@ Describe $CommandName -Tag UnitTests {
         Remove-Item -Path $localPath -Recurse -ErrorAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -ErrorAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "$($dbName)_LS" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Remove database from log shipping without removing secondary database" {

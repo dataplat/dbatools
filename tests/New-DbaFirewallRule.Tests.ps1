@@ -47,6 +47,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     # If remote DAC is enabled, also creates rule for DAC.

@@ -50,6 +50,8 @@ exec sp_addrolemember 'userrole','bob';
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "returns results" {
@@ -86,7 +88,10 @@ exec sp_addrolemember 'userrole','bob';
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should not warn about collation conflict" {

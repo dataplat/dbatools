@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # TODO: Maybe remove "-EnableException:$false -WarningAction SilentlyContinue" when we can rely on the setting beeing 0 when entering the test
         $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name "Database Mail XPs" -Value 1 -EnableException:$false -WarningAction SilentlyContinue
@@ -54,16 +54,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = New-DbaDbMailProfile @splatProfile
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profileName';"
 
         $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name "Database Mail XPs" -Value 0
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying DbMail" {

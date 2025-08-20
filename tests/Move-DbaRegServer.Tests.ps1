@@ -68,6 +68,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName, $regSrvName2, $regSrvName3, $regSrvNameHR, $regSrvNameFinance | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $testGroupHR, $testGroupFinance | Remove-DbaRegServerGroup -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "moves a piped server" {

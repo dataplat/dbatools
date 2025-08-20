@@ -57,6 +57,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $userName -Confirm:$false
         $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -Name ContainmentEnabled -Value $dbContainmentSpValue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Test error handling" {
         It "Tries to create the user with an invalid default schema" {
@@ -110,6 +112,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbs -Confirm:$false
             $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $loginName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         It "Should add login to all databases provided" {
             $results = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Login $loginName -Database $dbs -Force -EnableException

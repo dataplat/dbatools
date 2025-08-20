@@ -92,6 +92,8 @@ Describe $CommandName -Tag IntegrationTests {
         $removedDBOwner = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBOwner -Confirm:$false -ErrorAction SilentlyContinue
         $removedUser1 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser1 -Confirm:$false -ErrorAction SilentlyContinue
         $removedUser2 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser2 -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "parameters work" {

@@ -61,6 +61,8 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_job_1_$random", "dbatoolsci_job_2_$random", "dbatoolsci_job_3_$random" -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have the right name and description" {

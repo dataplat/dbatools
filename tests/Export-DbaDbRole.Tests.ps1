@@ -37,7 +37,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $altExportPath = "$env:USERPROFILE\Documents"
         $outputFile1 = "$altExportPath\Dbatoolsci_DbRole_CustomFile1.sql"
@@ -63,11 +63,11 @@ Describe $CommandName -Tag IntegrationTests {
             # Ignore setup errors for now
         }
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         try {
             Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
@@ -77,6 +77,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         Remove-Item -Path $resourcesToCleanup -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Check if output file was created" {

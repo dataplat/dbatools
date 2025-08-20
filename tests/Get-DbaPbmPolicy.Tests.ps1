@@ -76,6 +76,8 @@ Describe $CommandName -Tag IntegrationTests {
         $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$global:policyid")
         $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_object_set @object_set_id=$global:objectsetid")
         $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$global:conditionid")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When retrieving PBM policies" {

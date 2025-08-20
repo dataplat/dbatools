@@ -45,6 +45,8 @@ Describe $CommandName -Tag IntegrationTests {
             if (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily) {
                 Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily -Confirm:$false
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have deleted job: dbatoolsci_testjob" {
@@ -79,6 +81,8 @@ Describe $CommandName -Tag IntegrationTests {
             if (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly) {
                 Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly -Confirm:$false
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have deleted job: dbatoolsci_testjob_schedule" {
@@ -106,6 +110,8 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $server.Query("delete from sysjobhistory where job_id = '$jobId'", "msdb")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have deleted job: dbatoolsci_testjob_history" {

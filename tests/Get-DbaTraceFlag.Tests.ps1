@@ -47,6 +47,8 @@ Describe $CommandName -Tag IntegrationTests {
             if ($startingTfs.TraceFlag -notcontains $safeTraceFlag) {
                 $server.Query("DBCC TRACEOFF($safeTraceFlag,-1)")
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Has the right default properties" {

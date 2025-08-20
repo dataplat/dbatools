@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Can create a database certificate" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
             $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
@@ -65,12 +65,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $null = $testDatabases | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
             if ($masterKey) {

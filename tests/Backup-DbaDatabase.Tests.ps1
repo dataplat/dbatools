@@ -54,7 +54,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
         $DestBackupDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
@@ -64,12 +64,12 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues['Backup-DbaDatabase:Path'] = $DestBackupDir
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $PSDefaultParameterValues.Remove('Backup-DbaDatabase:Path')
 
         # Remove the backup directory.

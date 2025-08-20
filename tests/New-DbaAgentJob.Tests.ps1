@@ -55,6 +55,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup and ignore all output
         Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "New Agent Job is added properly" {

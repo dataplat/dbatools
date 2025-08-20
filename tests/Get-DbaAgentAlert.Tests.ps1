@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatAddAlert = @{
             SqlInstance = $TestConfig.instance2
@@ -33,11 +33,11 @@ Describe $CommandName -Tag IntegrationTests {
         $server = Connect-DbaInstance @splatAddAlert
         $server.Query("EXEC msdb.dbo.sp_add_alert @name=N'dbatoolsci test alert',@message_id=0,@severity=6,@enabled=1,@delay_between_responses=0,@include_event_description_in=0,@category_name=N'[Uncategorized]',@job_id=N'00000000-0000-0000-0000-000000000000'")
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatDeleteAlert = @{
             SqlInstance = $TestConfig.instance2
@@ -45,6 +45,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $server = Connect-DbaInstance @splatDeleteAlert
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'dbatoolsci test alert'")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When getting agent alerts" {

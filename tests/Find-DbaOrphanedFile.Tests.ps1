@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Orphaned files are correctly identified" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $dbname = "dbatoolsci_orphanedfile_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -69,11 +69,11 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-Item -Path $tmpBackupPath3 -ItemType Directory
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase -Confirm:$false
             Remove-Item $tmpdir -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item $tmpdir2 -Recurse -Force -ErrorAction SilentlyContinue

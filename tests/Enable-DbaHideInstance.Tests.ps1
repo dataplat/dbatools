@@ -34,6 +34,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Disable-DbaHideInstance -SqlInstance $testInstance -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "Returns an object with HideInstance property set to true" {

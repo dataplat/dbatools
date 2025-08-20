@@ -63,6 +63,8 @@ Describe $CommandName -Tag IntegrationTests {
         GO
         RECONFIGURE;
         GO" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Can get an external process" {

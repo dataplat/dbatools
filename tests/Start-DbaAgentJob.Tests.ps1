@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Start a job" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $jobNames = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)"
             $jobName1, $jobName2, $jobName3 = $jobNames
@@ -47,11 +47,11 @@ Describe $CommandName -Tag IntegrationTests {
             $global:startJobResults = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1 | Start-DbaAgentJob
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobNames -Confirm:$false
         }

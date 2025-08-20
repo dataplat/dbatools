@@ -46,6 +46,8 @@ Describe $CommandName -Tag IntegrationTests {
         } catch {
             $null = 1
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Validate standard output" {

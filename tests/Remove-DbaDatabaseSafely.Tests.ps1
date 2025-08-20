@@ -60,6 +60,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $TestConfig.instance2 -Job "Rationalised Database Restore Script for dbatoolsci_safely" -ErrorAction SilentlyContinue
         $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $TestConfig.instance3 -Job "Rationalised Database Restore Script for dbatoolsci_safely_otherInstance" -ErrorAction SilentlyContinue
         Remove-Item -Path "$($TestConfig.Temp)\$global:db1*", "$($TestConfig.Temp)\$global:db2*" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Command actually works" {
         It "Should have database name of $global:db1" {

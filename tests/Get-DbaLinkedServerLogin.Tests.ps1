@@ -136,6 +136,8 @@ Describe $CommandName -Tag IntegrationTests {
             Confirm         = $false
         }
         Remove-DbaLogin @splatRemoveRemoteLogin -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When testing linked server login functionality" {

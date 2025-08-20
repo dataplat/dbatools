@@ -49,6 +49,8 @@ END
 
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command works" {

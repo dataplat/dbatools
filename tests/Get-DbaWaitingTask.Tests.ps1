@@ -55,6 +55,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
         Get-Job -Name $global:waitingTaskJobName -ErrorAction SilentlyContinue | Remove-Job -Force -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command functionality with waiting task" {

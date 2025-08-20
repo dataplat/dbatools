@@ -96,6 +96,8 @@ Describe $CommandName -Tag IntegrationTests {
             $subGroupServer.ServerName = $subGroupSrvName
             $subGroupServer.Description = $subGroupRegSrvDesc
             $subGroupServer.Create()
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {

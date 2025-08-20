@@ -88,6 +88,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
             Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should return multiple objects" {
