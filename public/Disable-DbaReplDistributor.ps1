@@ -1,10 +1,10 @@
 function Disable-DbaReplDistributor {
     <#
     .SYNOPSIS
-        Disables replication distribution for the target SQL instances.
+        Removes SQL Server replication distribution configuration from target instances.
 
     .DESCRIPTION
-        Disables replication distribution for the target SQL instances.
+        Removes the distribution database and configuration from SQL Server instances currently acting as replication distributors. This command terminates active connections to distribution databases and uninstalls the distributor role completely. Use this when decommissioning replication, troubleshooting distribution issues, or reconfiguring your replication topology. The Force parameter allows removal even when dependent objects or remote publishers cannot be contacted.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

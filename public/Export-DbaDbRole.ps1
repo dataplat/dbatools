@@ -1,10 +1,10 @@
 function Export-DbaDbRole {
     <#
     .SYNOPSIS
-        Exports database roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.
+        Generates T-SQL scripts for database role definitions with their complete permission sets and schema ownership
 
     .DESCRIPTION
-        Exports database roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.
+        Creates executable T-SQL scripts that fully define database roles including CREATE ROLE statements, granular object permissions, and schema ownership assignments. The output captures every permission granted to custom roles across all database securables like tables, schemas, assemblies, and certificates so you can recreate identical security configurations in other environments. This is particularly useful for migrating role-based security between development, test, and production databases, or documenting security configurations for compliance audits.
 
         This command is based off of John Eisbrener's post "Fully Script out a MSSQL Database Role"
         Reference:  https://dbaeyes.wordpress.com/2013/04/19/fully-script-out-a-mssql-database-role/

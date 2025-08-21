@@ -1,12 +1,10 @@
 function Enable-DbaFilestream {
     <#
     .SYNOPSIS
-        Enables FileStream on specified SQL Server instances
+        Configures FILESTREAM feature at both instance and server levels on SQL Server
 
     .DESCRIPTION
-        Connects to the specified SQL Server instances, and Enables the FileStream feature to the required value
-
-        To perform the action, the SQL Server instance must be restarted. By default we will prompt for confirmation for this action, this can be overridden with the -Force switch
+        Configures SQL Server's FILESTREAM feature by setting the FilestreamAccessLevel at the instance level and enabling the Windows service component at the server level. The function supports three access levels: T-SQL only, T-SQL with I/O streaming, or T-SQL with I/O streaming and remote client access. FILESTREAM allows storing large binary data like documents, images, and videos directly on the file system while maintaining transactional consistency with the database. SQL Server requires a restart after enabling FILESTREAM, and the function will prompt for confirmation unless the -Force parameter is used.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.

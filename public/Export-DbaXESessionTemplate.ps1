@@ -1,10 +1,13 @@
 function Export-DbaXESessionTemplate {
     <#
     .SYNOPSIS
-        Exports an XESession XML Template using XE Session(s) output by Get-DbaXESession
+        Exports Extended Events sessions as reusable XML templates for SSMS
 
     .DESCRIPTION
-        Exports an XESession XML Template either from the Target SQL Server or XE Session(s) output by Get-DbaXESession. Exports to "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" by default
+        Converts existing Extended Events sessions into XML template files that can be imported and reused in SQL Server Management Studio.
+        This lets you standardize XE session configurations across multiple environments without manually recreating session definitions.
+        Templates are saved to the SSMS XEvent templates folder by default, making them immediately available in the SSMS template browser.
+        Accepts sessions directly from SQL Server instances or from Get-DbaXESession pipeline output.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

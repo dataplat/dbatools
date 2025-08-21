@@ -1,12 +1,14 @@
 function Find-DbaDatabase {
     <#
     .SYNOPSIS
-        Find database/s on multiple servers that match criteria you input
+        Searches multiple SQL Server instances for databases matching name, owner, or Service Broker GUID patterns
 
     .DESCRIPTION
-        Allows you to search SQL Server instances for database that have either the same name, owner or service broker guid.
+        Performs database discovery and inventory across multiple SQL Server instances by searching for databases that match specific criteria. You can search by database name (using regex patterns), database owner, or Service Broker GUID to locate databases across environments.
 
-        There a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000.
+        This is particularly useful for tracking databases across development, test, and production environments, finding databases by ownership for security audits, or identifying databases with matching Service Broker GUIDs. The function returns detailed information including database size, object counts (tables, views, stored procedures), and creation details.
+
+        Service Broker GUIDs can become mismatched on restored databases when using ALTER DATABASE...NEW_BROKER or when Service Broker is disabled, which resets the GUID to all zeros. This function helps identify such scenarios during database migrations and troubleshooting.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Export-DbaXESession {
     <#
     .SYNOPSIS
-        Exports Extended Events creation script to a T-SQL file or console.
+        Generates T-SQL creation scripts for Extended Events sessions to files or console
 
     .DESCRIPTION
-        Exports script to create Extended Events Session to sql file  or console.
+        Generates T-SQL scripts that can recreate your Extended Events sessions, making it easy to migrate monitoring configurations between environments or create backups of your XE session definitions. This is particularly useful when moving sessions from development to production, creating deployment scripts, or documenting your current monitoring setup for compliance purposes. The function connects to your SQL Server instances, retrieves the session definitions, and outputs the complete CREATE EVENT SESSION statements with all events, actions, targets, and configuration settings intact.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.

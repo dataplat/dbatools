@@ -1,10 +1,14 @@
 function Export-DbaUser {
     <#
     .SYNOPSIS
-        Exports users creation and its permissions to a T-SQL file or host.
+        Generates T-SQL scripts to recreate database users with their complete security context including roles and permissions
 
     .DESCRIPTION
-        Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.
+        Creates comprehensive T-SQL scripts that fully recreate database users along with their security assignments and permissions. The generated scripts include user creation statements, role memberships, database-level permissions (like CONNECT, SELECT, INSERT), and granular object-level permissions for tables, views, stored procedures, functions, and other database objects.
+
+        This function is essential for migrating users between environments, documenting security configurations for compliance audits, creating deployment scripts for application users, or preparing disaster recovery procedures. Each exported script is self-contained and includes all necessary role creation statements to avoid dependency issues during execution.
+
+        The function examines the complete security context for each user, including custom database roles, explicit permissions granted at the database level, and specific object permissions across all supported SQL Server object types (tables, views, procedures, functions, assemblies, certificates, schemas, and Service Broker objects).
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. SQL Server 2000 and above supported.

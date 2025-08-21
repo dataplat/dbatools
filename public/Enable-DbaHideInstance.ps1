@@ -1,12 +1,14 @@
 function Enable-DbaHideInstance {
     <#
     .SYNOPSIS
-        Enables the Hide Instance setting of the SQL Server network configuration.
+        Enables the Hide Instance setting to prevent SQL Server Browser service from advertising the instance.
 
     .DESCRIPTION
-        Enables the Hide Instance setting of the SQL Server network configuration.
+        Enables the Hide Instance setting in the SQL Server network configuration registry, which prevents the instance from responding to SQL Server Browser service enumeration requests. This security setting makes the instance invisible to network discovery tools and requires clients to specify the exact port number or use a SQL Server alias to connect.
 
-        This setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration > Protocols for "InstanceName".
+        The function modifies the HideInstance registry value in HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\[InstanceName]\MSSQLServer\SuperSocketNetLib. This is commonly used in security-hardened environments to reduce the attack surface by hiding instance details from network scanning tools.
+
+        This setting requires Windows administrative access to modify the registry and does not require SQL Server permissions. The change takes effect immediately for new connections, but existing connections remain unaffected.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

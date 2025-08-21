@@ -1,10 +1,10 @@
 function Export-DbaSpConfigure {
     <#
     .SYNOPSIS
-        Exports advanced sp_configure global configuration options to sql file.
+        Generates SQL script containing all sp_configure settings for SQL Server instance configuration replication and documentation.
 
     .DESCRIPTION
-        Exports advanced sp_configure global configuration options to sql file.
+        Creates a complete SQL script file with EXEC sp_configure statements for all server configuration options, including advanced settings. This script can be executed on another SQL Server instance to replicate the exact same configuration settings, making it invaluable for environment standardization, disaster recovery preparation, or compliance documentation. The function temporarily enables 'show advanced options' if needed to capture all available settings, then restores the original setting.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.

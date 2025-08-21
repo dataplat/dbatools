@@ -1,11 +1,10 @@
 function Enable-DbaAgHadr {
     <#
     .SYNOPSIS
-        Enables the Hadr service setting on the specified SQL Server.
+        Enables HADR service setting on SQL Server instances to allow Availability Group creation.
 
     .DESCRIPTION
-        In order to build an AG a cluster has to be built and then the Hadr enabled for the SQL Server
-        service. This function enables that feature for the SQL Server service.
+        Configures the High Availability Disaster Recovery (HADR) service setting on SQL Server instances, which is a required prerequisite before you can create Availability Groups. This setting must be enabled at the instance level and requires a service restart to take effect. Use this command when preparing SQL Server instances for Availability Group participation after your Windows Server Failover Cluster is already configured.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
