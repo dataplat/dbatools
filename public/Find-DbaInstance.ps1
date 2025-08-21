@@ -1,31 +1,30 @@
 function Find-DbaInstance {
     <#
     .SYNOPSIS
-        Search for SQL Server Instances.
+        Discovers SQL Server instances across networks using multiple scanning methods
 
     .DESCRIPTION
-        This function searches for SQL Server Instances.
+        This function performs comprehensive SQL Server instance discovery across your network infrastructure using multiple detection methods. Perfect for creating complete SQL Server inventories, compliance auditing, and finding forgotten or undocumented instances that might pose security risks.
 
-        It supports a variety of scans for this purpose which can be separated in two categories:
-        - Discovery
-        - Scan
+        The function combines two distinct phases to systematically locate SQL Server instances:
 
-        Discovery:
-        This is where it compiles a list of computers / addresses to check.
-        It supports several methods of generating such lists (including Active Directory lookup or IP Ranges), but also supports specifying a list of computers to check.
-        - For details on discovery, see the documentation on the '-DiscoveryType' parameter
-        - For details on explicitly providing a list, see the documentation on the '-ComputerName' parameter
+        Discovery Phase:
+        Compiles target lists using several methods: Active Directory SPN lookups (finds registered SQL services), SQL Instance Enumeration (same method SSMS uses for browsing), IP address range scanning (scans entire subnets), and Domain Server searches (targets all Windows servers in AD).
+        You can specify explicit computer lists via -ComputerName or use automated discovery via -DiscoveryType.
 
-        Scan:
-        Once a list of computers has been provided, this command will execute a variety of actions to determine any instances present for each of them.
-        This is described in more detail in the documentation on the '-ScanType' parameter.
-        Additional parameters allow more granular control over individual scans (e.g. Credentials to use).
+        Scan Phase:
+        Tests each discovered target using multiple verification methods: Browser service queries, WMI/CIM SQL service enumeration, TCP port connectivity testing (default 1433), DNS resolution checks, ping tests, and optional SQL connection attempts.
+        Results include confidence levels (High/Medium/Low) based on scan success combinations.
 
-        Note on logging and auditing:
-        The Discovery phase is un-problematic since it is non-intrusive, however during the scan phase, all targeted computers may be accessed repeatedly.
-        This may cause issues with security teams, due to many logon events and possibly failed authentication.
-        This action constitutes a network scan, which may be illegal depending on the nation you are in and whether you own the network you scan.
-        If you are unsure whether you may use this command in your environment, check the detailed description on the '-ScanType' parameter and contact your IT security team for advice.
+        Common DBA scenarios:
+        - Audit all SQL instances before migrations or compliance reviews
+        - Discover shadow IT databases that bypass standard deployment processes  
+        - Inventory instances across acquired companies or merged networks
+        - Validate disaster recovery documentation against actual running instances
+        - Identify instances running on non-standard ports or with unusual configurations
+
+        Security considerations:
+        The Discovery phase is non-intrusive, but the Scan phase generates network traffic and authentication attempts across your infrastructure. This creates audit logs and may trigger security monitoring systems. Some scan types require elevated privileges for WMI access or SQL connections. Always coordinate with your security team before running network-wide scans, especially in regulated environments.
 
     .PARAMETER ComputerName
         The computer to scan. Can be a variety of input types, including text or the output of Get-ADComputer.
