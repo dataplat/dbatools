@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database            = "master"
                 DestinationDatabase = "Dbatoolsci_DestinationDB"
             }
-            $results = Measure-DbaDiskSpaceRequirement @global:splatMeasure
+            $results = Measure-DbaDiskSpaceRequirement @splatMeasure
         }
 
         It "Should have information" {
