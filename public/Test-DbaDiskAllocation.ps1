@@ -85,9 +85,6 @@ function Test-DbaDiskAllocation {
 
             try {
                 Write-Message -Level Verbose -Message "Getting disk information from $computer."
-
-                # $query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
-                # $disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
                 $disks = Get-CimInstance -CimSession $CIMsession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
             } catch {
                 Stop-Function -Message "Can't connect to WMI on $computer."
@@ -106,9 +103,9 @@ function Test-DbaDiskAllocation {
                     Write-Message -Level Verbose -Message "Found instance $instanceName."
 
                     if ($instance -eq 'MSSQLSERVER') {
-                        $SqlInstances += $ipaddr
+                        $SqlInstances += $computer
                     } else {
-                        $SqlInstances += "$ipaddr\$instance"
+                        $SqlInstances += "$computer\$instance"
                     }
                 }
                 $sqlcount = $SqlInstances.Count
@@ -182,7 +179,6 @@ function Test-DbaDiskAllocation {
         foreach ($computer in $ComputerName) {
 
             $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
-            $ipaddr = $computer.IpAddress
             $Computer = $computer.FullComputerName
 
             if (!$Computer) {
