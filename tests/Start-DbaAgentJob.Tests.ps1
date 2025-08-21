@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName -StepName "step3" -StepId 3 -Subsystem TransactSql -Command "SELECT 1"
             }
 
-            $global:startJobResults = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1 | Start-DbaAgentJob
+            $startJobResults = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1 | Start-DbaAgentJob
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -59,11 +59,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns a CurrentRunStatus of not Idle and supports pipe" {
-            $global:startJobResults.CurrentRunStatus -ne "Idle" | Should -Be $true
+            $startJobResults.CurrentRunStatus -ne "Idle" | Should -Be $true
         }
 
         It "returns a CurrentRunStatus of not null and supports pipe" {
-            $global:startJobResults.CurrentRunStatus -ne $null | Should -Be $true
+            $startJobResults.CurrentRunStatus -ne $null | Should -Be $true
         }
 
         It "does not run all jobs" {

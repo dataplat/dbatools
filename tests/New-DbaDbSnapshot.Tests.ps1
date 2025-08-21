@@ -30,16 +30,6 @@ Describe $CommandName -Tag UnitTests {
 
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        $global:TestConfig = Get-TestConfig
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
     Context "Parameter validation" {
         It "Stops if no Database or AllDatabases" {
             { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should -Throw "*You must specify*"

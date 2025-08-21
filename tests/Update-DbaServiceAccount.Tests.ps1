@@ -106,20 +106,20 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Set new service account for SQL Services" {
         BeforeAll {
-            $global:errVar = $global:warnVar = $null
+            $errVar = $warnVar = $null
             $cred = New-Object System.Management.Automation.PSCredential($login, $securePassword)
-            $global:results = Update-DbaServiceAccount -ComputerName $computerName -ServiceName $services.ServiceName -ServiceCredential $cred -ErrorVariable global:errVar -WarningVariable global:warnVar
+            $results = Update-DbaServiceAccount -ComputerName $computerName -ServiceName $services.ServiceName -ServiceCredential $cred -ErrorVariable global:errVar -WarningVariable global:warnVar
         }
 
         It "Should return something" {
-            $global:results | Should -Not -Be $null
+            $results | Should -Not -Be $null
         }
         It -Skip "Should have no errors or warnings" {
-            $global:errVar | Should -Be $null
-            $global:warnVar | Should -Be $null
+            $errVar | Should -Be $null
+            $warnVar | Should -Be $null
         }
         It "Should be successful" {
-            foreach ($result in $global:results) {
+            foreach ($result in $results) {
                 $result.Status | Should -Be "Successful"
                 $result.State | Should -Be "Running"
                 $result.StartName | Should -Be ".\$login"
@@ -132,19 +132,19 @@ Describe $CommandName -Tag IntegrationTests {
             #Change the password
             ([adsi]"WinNT://$computerName/$login,user").SetPassword($newPassword)
 
-            $global:errVarPw = $global:warnVarPw = $null
-            $global:resultsPw = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable global:errVarPw -WarningVariable global:warnVarPw
+            $errVarPw = $warnVarPw = $null
+            $resultsPw = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable global:errVarPw -WarningVariable global:warnVarPw
         }
 
         It "Password change should return something" {
-            $global:resultsPw | Should -Not -Be $null
+            $resultsPw | Should -Not -Be $null
         }
         It -Skip "Should have no errors or warnings" {
-            $global:errVarPw | Should -Be $null
-            $global:warnVarPw | Should -Be $null
+            $errVarPw | Should -Be $null
+            $warnVarPw | Should -Be $null
         }
         It "Should be successful" {
-            foreach ($result in $global:resultsPw) {
+            foreach ($result in $resultsPw) {
                 $result.Status | Should -Be "Successful"
                 $result.State | Should -Be "Running"
             }
@@ -152,14 +152,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Service restart validation" {
             BeforeAll {
-                $global:resultsRestart = Get-DbaService -ComputerName $computerName -ServiceName $services.ServiceName | Restart-DbaService
+                $resultsRestart = Get-DbaService -ComputerName $computerName -ServiceName $services.ServiceName | Restart-DbaService
             }
 
             It "Service restart should return something" {
-                $global:resultsRestart | Should -Not -Be $null
+                $resultsRestart | Should -Not -Be $null
             }
             It "Service restart should be successful" {
-                foreach ($result in $global:resultsRestart) {
+                foreach ($result in $resultsRestart) {
                     $result.Status | Should -Be "Successful"
                     $result.State | Should -Be "Running"
                 }
@@ -169,19 +169,19 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Change agent service account to local system" {
         BeforeAll {
-            $global:errVarAgent = $global:warnVarAgent = $null
-            $global:resultsAgent = $services | Where-Object { $PSItem.ServiceType -eq "Agent" } | Update-DbaServiceAccount -Username "NT AUTHORITY\LOCAL SYSTEM" -ErrorVariable global:errVarAgent -WarningVariable global:warnVarAgent
+            $errVarAgent = $warnVarAgent = $null
+            $resultsAgent = $services | Where-Object { $PSItem.ServiceType -eq "Agent" } | Update-DbaServiceAccount -Username "NT AUTHORITY\LOCAL SYSTEM" -ErrorVariable global:errVarAgent -WarningVariable global:warnVarAgent
         }
 
         It "Should return something" {
-            $global:resultsAgent | Should -Not -Be $null
+            $resultsAgent | Should -Not -Be $null
         }
         It -Skip "Should have no errors or warnings" {
-            $global:errVarAgent | Should -Be $null
-            $global:warnVarAgent | Should -Be $null
+            $errVarAgent | Should -Be $null
+            $warnVarAgent | Should -Be $null
         }
         It "Should be successful" {
-            foreach ($result in $global:resultsAgent) {
+            foreach ($result in $resultsAgent) {
                 $result.Status | Should -Be "Successful"
                 $result.State | Should -Be "Running"
                 $result.StartName | Should -Be "LocalSystem"
@@ -190,19 +190,19 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Revert SQL Agent service account changes ($currentAgentUser)" {
         BeforeAll {
-            $global:errVarRevertAgent = $global:warnVarRevertAgent = $null
-            $global:resultsRevertAgent = $services | Where-Object { $PSItem.ServiceType -eq "Agent" } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable global:errVarRevertAgent -WarningVariable global:warnVarRevertAgent
+            $errVarRevertAgent = $warnVarRevertAgent = $null
+            $resultsRevertAgent = $services | Where-Object { $PSItem.ServiceType -eq "Agent" } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable global:errVarRevertAgent -WarningVariable global:warnVarRevertAgent
         }
 
         It "Should return something" {
-            $global:resultsRevertAgent | Should -Not -Be $null
+            $resultsRevertAgent | Should -Not -Be $null
         }
         It -Skip "Should have no errors or warnings" {
-            $global:errVarRevertAgent | Should -Be $null
-            $global:warnVarRevertAgent | Should -Be $null
+            $errVarRevertAgent | Should -Be $null
+            $warnVarRevertAgent | Should -Be $null
         }
         It "Should be successful" {
-            foreach ($result in $global:resultsRevertAgent) {
+            foreach ($result in $resultsRevertAgent) {
                 $result.Status | Should -Be "Successful"
                 $result.State | Should -Be "Running"
                 $result.StartName | Should -Be $currentAgentUser
@@ -211,19 +211,19 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Revert SQL Engine service account changes ($currentEngineUser)" {
         BeforeAll {
-            $global:errVarRevertEngine = $global:warnVarRevertEngine = $null
-            $global:resultsRevertEngine = $services | Where-Object { $PSItem.ServiceType -eq "Engine" } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable global:errVarRevertEngine -WarningVariable global:warnVarRevertEngine
+            $errVarRevertEngine = $warnVarRevertEngine = $null
+            $resultsRevertEngine = $services | Where-Object { $PSItem.ServiceType -eq "Engine" } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable global:errVarRevertEngine -WarningVariable global:warnVarRevertEngine
         }
 
         It "Should return something" {
-            $global:resultsRevertEngine | Should -Not -Be $null
+            $resultsRevertEngine | Should -Not -Be $null
         }
         It -Skip "Should have no errors or warnings" {
-            $global:errVarRevertEngine | Should -Be $null
-            $global:warnVarRevertEngine | Should -Be $null
+            $errVarRevertEngine | Should -Be $null
+            $warnVarRevertEngine | Should -Be $null
         }
         It "Should be successful" {
-            foreach ($result in $global:resultsRevertEngine) {
+            foreach ($result in $resultsRevertEngine) {
                 $result.Status | Should -Be "Successful"
                 $result.State | Should -Be "Running"
                 $result.StartName | Should -Be $currentEngineUser

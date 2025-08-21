@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate installs of each version" {
         BeforeAll {
-            $global:cred = [PSCredential]::new("foo", (ConvertTo-SecureString "bar" -Force -AsPlainText))
+            $cred = [PSCredential]::new("foo", (ConvertTo-SecureString "bar" -Force -AsPlainText))
         }
 
         It "Should install SQL<version> with all features enabled" -TestCases @(
@@ -134,8 +134,8 @@ Describe $CommandName -Tag IntegrationTests {
                 Version                       = $version
                 Path                          = "TestDrive:"
                 Configuration                 = $params
-                EngineCredential              = $global:cred
-                SaCredential                  = $global:cred
+                EngineCredential              = $cred
+                SaCredential                  = $cred
                 Port                          = 1337
                 PerformVolumeMaintenanceTasks = $true
                 AdminAccount                  = "local\foo", "local\bar"
@@ -156,7 +156,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
             $result.InstanceName | Should -Be NewInstance
             $result.Version | Should -Be $canonicVersion
-            $result.SACredential.GetNetworkCredential().Password | Should -Be $global:cred.GetNetworkCredential().Password
+            $result.SACredential.GetNetworkCredential().Password | Should -Be $cred.GetNetworkCredential().Password
             $result.Port | Should -Be 1337
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $false

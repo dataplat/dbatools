@@ -35,7 +35,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $global:PesterOutputPath = "TestDrive:$commandName"
+        $PesterOutputPath = "TestDrive:$commandName"
         $database = "dbatoolsci_frk_$(Get-Random)"
         $database2 = "dbatoolsci_frk_$(Get-Random)"
         $database3 = "dbatoolsci_frk_$(Get-Random)"
@@ -55,10 +55,10 @@ Describe $CommandName -Tag IntegrationTests {
                 end")
         }
 
-        Remove-Item $global:PesterOutputPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item $PesterOutputPath -Recurse -ErrorAction SilentlyContinue
     }
     AfterEach {
-        Remove-Item $global:PesterOutputPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item $PesterOutputPath -Recurse -ErrorAction SilentlyContinue
     }
 
     Context "verifying output when running queries" {
@@ -108,23 +108,23 @@ Describe $CommandName -Tag IntegrationTests {
     Context "verifying output when exporting queries as files instead of running" {
 
         It "exports queries to sql files without running" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2 -ExportQueries -QueryName 'Memory Clerk Usage' -OutputPath $global:PesterOutputPath
-            @(Get-ChildItem -path $global:PesterOutputPath -filter *.sql).Count | Should -Be 1
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2 -ExportQueries -QueryName 'Memory Clerk Usage' -OutputPath $PesterOutputPath
+            @(Get-ChildItem -path $PesterOutputPath -filter *.sql).Count | Should -Be 1
         }
 
         It "exports single database specific query against single database" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database -OutputPath $global:PesterOutputPath
-            @(Get-ChildItem -path $global:PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)" }).Count | Should -Be 1
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database -OutputPath $PesterOutputPath
+            @(Get-ChildItem -path $PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)" }).Count | Should -Be 1
         }
 
         It "exports a database specific query foreach specific database provided" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $global:PesterOutputPath
-            @(Get-ChildItem -path $global:PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)|($database2)" }).Count | Should -Be 2
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $PesterOutputPath
+            @(Get-ChildItem -path $PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)|($database2)" }).Count | Should -Be 2
         }
 
         It "exports database specific query when multiple specific databases are referenced" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $global:PesterOutputPath
-            @(Get-ChildItem -path $global:PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)|($database2)" }).Count | Should -Be 2
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $PesterOutputPath
+            @(Get-ChildItem -path $PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)|($database2)" }).Count | Should -Be 2
         }
 
     }

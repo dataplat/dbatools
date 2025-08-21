@@ -27,7 +27,6 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Testing if schema changes are discovered" {
         BeforeAll {
-            $testConfig = Get-TestConfig
             $schemaChangeDb = Get-DbaDatabase -SqlInstance $testConfig.instance1 -Database tempdb
             $schemaChangeDb.Query("CREATE TABLE dbatoolsci_schemachange (id int identity)")
             $schemaChangeDb.Query("EXEC sp_rename 'dbatoolsci_schemachange', 'dbatoolsci_schemachange1'")
@@ -36,7 +35,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $testConfig = Get-TestConfig
             $cleanupDb = Get-DbaDatabase -SqlInstance $testConfig.instance1 -Database tempdb
             $cleanupDb.Query("DROP TABLE dbo.dbatoolsci_schemachange1")
         }

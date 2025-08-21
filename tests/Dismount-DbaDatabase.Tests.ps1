@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Remove-DbaDatabase -Confirm:$false
         $database = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
 
-        $global:fileStructure = New-Object System.Collections.Specialized.StringCollection
+        $fileStructure = New-Object System.Collections.Specialized.StringCollection
         foreach ($file in (Get-DbaDbFile -SqlInstance $TestConfig.instance3 -Database $dbName).PhysicalName) {
             $null = $fileStructure.Add($file)
         }

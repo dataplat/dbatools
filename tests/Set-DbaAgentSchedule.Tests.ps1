@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $null = Set-DbaAgentSchedule @splatSetSchedule
-            $global:renameScheduleResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $renameScheduleResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
         }
 
         AfterAll {
@@ -91,10 +91,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have Results" {
-            $global:renameScheduleResults | Should -Not -BeNullOrEmpty
+            $renameScheduleResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $global:renameScheduleResults) {
+        foreach ($r in $renameScheduleResults) {
             It "$($r.name) Should have different name" {
                 $r.name | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).name)"
             }
@@ -139,7 +139,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
 
-            $global:staticFrequencyResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $staticFrequencyResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
         }
 
         AfterAll {
@@ -149,10 +149,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have Results" {
-            $global:staticFrequencyResults | Should -Not -BeNullOrEmpty
+            $staticFrequencyResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $global:staticFrequencyResults) {
+        foreach ($r in $staticFrequencyResults) {
             It "$($r.name) Should have a frequency of OnIdle" {
                 $r.FrequencyTypes | Should -Be "OnIdle"
             }
@@ -204,7 +204,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
 
-            $global:calendarFrequencyResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $calendarFrequencyResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
         }
 
         AfterAll {
@@ -214,10 +214,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have Results" {
-            $global:calendarFrequencyResults | Should -Not -BeNullOrEmpty
+            $calendarFrequencyResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $global:calendarFrequencyResults) {
+        foreach ($r in $calendarFrequencyResults) {
             It "$($r.name) Should have a frequency of MonthlyRelative" {
                 $r.FrequencyTypes | Should -Be "MonthlyRelative"
             }
@@ -267,7 +267,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
 
-            $global:subdayTypeResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $subdayTypeResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
         }
 
         AfterAll {
@@ -277,10 +277,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have Results" {
-            $global:subdayTypeResults | Should -Not -BeNullOrEmpty
+            $subdayTypeResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $global:subdayTypeResults) {
+        foreach ($r in $subdayTypeResults) {
             It "$($r.name) Should have different EndDate" {
                 $r.EndDate | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).EndDate)"
             }
@@ -325,7 +325,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
 
-            $global:relativeIntervalResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $relativeIntervalResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
         }
 
         AfterAll {
@@ -335,10 +335,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have Results" {
-            $global:relativeIntervalResults | Should -Not -BeNullOrEmpty
+            $relativeIntervalResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $global:relativeIntervalResults) {
+        foreach ($r in $relativeIntervalResults) {
             It "$($r.name) Should have different EndTime" {
                 $r.EndTime | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).EndTime)"
             }

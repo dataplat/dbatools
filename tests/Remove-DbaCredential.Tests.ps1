@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         $credentialName4 = "dbatoolsci_test_$(Get-Random)"
 
         # Track all credentials created during tests for cleanup
-        $global:createdCredentials = @()
+        $createdCredentials = @()
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

@@ -28,40 +28,40 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Should Measure Disk Space Required" {
         BeforeAll {
-            $server1 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance1
-            $server2 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance2
+            $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
-            $global:splatMeasure = @{
-                Source              = $global:TestConfig.instance1
-                Destination         = $global:TestConfig.instance2
+            $splatMeasure = @{
+                Source              = $TestConfig.instance1
+                Destination         = $TestConfig.instance2
                 Database            = "master"
                 DestinationDatabase = "Dbatoolsci_DestinationDB"
             }
-            $global:results = Measure-DbaDiskSpaceRequirement @global:splatMeasure
+            $results = Measure-DbaDiskSpaceRequirement @global:splatMeasure
         }
 
         It "Should have information" {
-            $global:results | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should be sourced from Master" {
-            $global:results[0].SourceDatabase | Should -Be $global:splatMeasure.Database
+            $results[0].SourceDatabase | Should -Be $splatMeasure.Database
         }
 
-        It "Should be sourced from the instance $($global:TestConfig.instance1)" {
-            $global:results[0].SourceSqlInstance | Should -Be $server1.SqlInstance
+        It "Should be sourced from the instance $($TestConfig.instance1)" {
+            $results[0].SourceSqlInstance | Should -Be $server1.SqlInstance
         }
 
         It "Should be destined for Dbatoolsci_DestinationDB" {
-            $global:results[0].DestinationDatabase | Should -Be $global:splatMeasure.DestinationDatabase
+            $results[0].DestinationDatabase | Should -Be $splatMeasure.DestinationDatabase
         }
 
-        It "Should be destined for the instance $($global:TestConfig.instance2)" {
-            $global:results[0].DestinationSqlInstance | Should -Be $server2.SqlInstance
+        It "Should be destined for the instance $($TestConfig.instance2)" {
+            $results[0].DestinationSqlInstance | Should -Be $server2.SqlInstance
         }
 
         It "Should have files on source" {
-            $global:results[0].FileLocation | Should -Be "Only on Source"
+            $results[0].FileLocation | Should -Be "Only on Source"
         }
     }
 }

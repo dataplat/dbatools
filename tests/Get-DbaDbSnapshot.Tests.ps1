@@ -32,12 +32,12 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-            $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $global:db1 = "dbatoolsci_GetSnap"
-            $global:db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
-            $global:db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
-            $global:db2 = "dbatoolsci_GetSnap2"
-            $global:db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $db1 = "dbatoolsci_GetSnap"
+            $db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
+            $db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
+            $db2 = "dbatoolsci_GetSnap2"
+            $db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
             Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -Confirm:$false
             Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
             $server.Query("CREATE DATABASE $db1")

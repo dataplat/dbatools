@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
-            $global:delmasterkey = $true
+            $delmasterkey = $true
             $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
         }
 
@@ -42,11 +42,11 @@ Describe $CommandName -Tag IntegrationTests {
             Select-Object -First 1
 
         if (-not $mastercert) {
-            $global:delmastercert = $true
+            $delmastercert = $true
             $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
         }
 
-        $global:testDb = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $testDb = New-DbaDatabase -SqlInstance $TestConfig.instance2
         $testDb | New-DbaDbMasterKey -SecurePassword $passwd
         $testDb | New-DbaDbCertificate
         $testDb | New-DbaDbEncryptionKey -Force

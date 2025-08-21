@@ -76,12 +76,12 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
 
     Context "When repairing orphaned users" {
         BeforeAll {
-            $global:repairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
+            $repairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
         }
 
         It "Finds two orphans" {
-            $global:repairResults.Count | Should -Be 2
-            foreach ($user in $global:repairResults) {
+            $repairResults.Count | Should -Be 2
+            foreach ($user in $repairResults) {
                 $user.User | Should -BeIn @("dbatoolsci_orphan1", "dbatoolsci_orphan2")
                 $user.DatabaseName | Should -Be "dbatoolsci_orphan"
                 $user.Status | Should -Be "Success"
@@ -89,7 +89,7 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         }
 
         It "has the correct properties" {
-            $result = $global:repairResults[0]
+            $result = $repairResults[0]
             $expectedProps = "ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status".Split(",")
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
@@ -97,8 +97,8 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
 
     Context "When running repair again" {
         It "does not find any other orphan" {
-            $global:secondRepairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
-            $global:secondRepairResults | Should -BeNullOrEmpty
+            $secondRepairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
+            $secondRepairResults | Should -BeNullOrEmpty
         }
     }
 }

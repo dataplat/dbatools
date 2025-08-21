@@ -175,36 +175,36 @@ Describe $CommandName -Tag UnitTests {
     # These are groups by major release (aka "Name")
     Context "Properties Check for major releases" {
         BeforeAll {
-            $global:OrderedKeys = $OrderedKeys
-            $global:Groups = $Groups
+            $OrderedKeys = $OrderedKeys
+            $Groups = $Groups
         }
 
-        foreach ($g in $global:OrderedKeys) {
+        foreach ($g in $OrderedKeys) {
             Context "Properties Check, for major release $g" {
                 BeforeAll {
-                    $global:Versions = $global:Groups[$g]
+                    $Versions = $Groups[$g]
                 }
                 It "has the first element with a Name" {
-                    $global:Versions[0].Name | Should -BeLike "20*"
+                    $Versions[0].Name | Should -BeLike "20*"
                 }
                 It "No multiple Names around" {
-                    ($global:Versions.Name | Where-Object { $PSItem }).Count | Should -Be 1
+                    ($Versions.Name | Where-Object { $PSItem }).Count | Should -Be 1
                 }
                 # Skip for now bc a prerelease has been added
                 It -Skip "has one version tagged as RTM" {
-                    ($global:Versions.SP -eq "RTM").Count | Should -Be 1
+                    ($Versions.SP -eq "RTM").Count | Should -Be 1
                 }
                 It "SP Property is formatted correctly" {
-                    $global:Versions.SP | Where-Object { $PSItem } | Should -Match "^RTM$|^SP[\d]+$|^RC"
+                    $Versions.SP | Where-Object { $PSItem } | Should -Match "^RTM$|^SP[\d]+$|^RC"
                 }
                 It "CU Property is formatted correctly" {
-                    $CUMatch = $global:Versions.CU | Where-Object { $PSItem }
+                    $CUMatch = $Versions.CU | Where-Object { $PSItem }
                     if ($CUMatch) {
                         $CUMatch | Should -Match "^CU[\d]+$"
                     }
                 }
                 It "SPs are ordered correctly" {
-                    $SPs = $global:Versions.SP | Where-Object { $PSItem }
+                    $SPs = $Versions.SP | Where-Object { $PSItem }
                     ($SPs | Select-Object -First 1) | Should -BeIn "RTM", "RC"
                     $ActualSPs = $SPs | Where-Object { $PSItem -match "^SP[\d]+$" }
                     $OrderedActualSPs = $ActualSPs | Sort-Object
@@ -212,7 +212,7 @@ Describe $CommandName -Tag UnitTests {
                 }
                 # see https://github.com/dataplat/dbatools/pull/2466
                 It "KBList has only numbers on it" {
-                    $NotNumbers = $global:Versions.KBList | Where-Object { $PSItem } | Where-Object { $PSItem -notmatch "^[\d]+$" }
+                    $NotNumbers = $Versions.KBList | Where-Object { $PSItem } | Where-Object { $PSItem -notmatch "^[\d]+$" }
                     if ($NotNumbers.Count -ne 0) {
                         foreach ($Nn in $NotNumbers) {
                             $Nn | Should -Be "Composed by integers"
@@ -240,9 +240,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Test retrieving version from instances" {
         It "Should return an exact match" {
-            $global:results = Get-DbaBuild -SqlInstance $TestConfig.instance1, $TestConfig.instance2
-            $global:results | Should -Not -BeNullOrEmpty
-            foreach ($r in $global:results) {
+            $results = Get-DbaBuild -SqlInstance $TestConfig.instance1, $TestConfig.instance2
+            $results | Should -Not -BeNullOrEmpty
+            foreach ($r in $results) {
                 $r.MatchType | Should -Be "Exact"
                 $buildMatch = Get-DbaBuild -Build $r.BuildLevel
                 $buildMatch | Should -Not -BeNullOrEmpty

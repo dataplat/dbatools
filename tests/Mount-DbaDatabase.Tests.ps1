@@ -52,19 +52,19 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Attaches a single database and tests to ensure the alias still exists" {
         BeforeAll {
-            $global:results = Mount-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach
+            $results = Mount-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach
         }
 
         It "Should return success" {
-            $global:results.AttachResult | Should -Be "Success"
+            $results.AttachResult | Should -Be "Success"
         }
 
         It "Should return that the database is only Database" {
-            $global:results.Database | Should -Be "detachattach"
+            $results.Database | Should -Be "detachattach"
         }
 
         It "Should return that the AttachOption default is None" {
-            $global:results.AttachOption | Should -Be "None"
+            $results.AttachOption | Should -Be "None"
         }
     }
 }
