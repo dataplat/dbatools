@@ -288,7 +288,7 @@ function Install-DbaAgentAdminAlert {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the alert $name")) {
                         try {
                             # Supply either a non-zero message ID, non-zero severity, non-null performance condition, or non-null WMI namespace and query.
-                            $null = New-DbaAgentAlert @parms -EnableException:$EnableException
+                            $null = New-DbaAgentAlert @parms -EnableException
                         } catch {
                             Stop-Function -Message "Something went wrong creating the alert $name on $instance" -Target $name -Continue -ErrorRecord $_
                         }
