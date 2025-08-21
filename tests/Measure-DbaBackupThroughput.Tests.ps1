@@ -53,6 +53,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Returns output for single database" {

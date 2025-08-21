@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Can get a database certificate" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Check and create master key if needed
             if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
@@ -44,12 +44,12 @@ Describe $CommandName -Tag IntegrationTests {
             $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup all created objects
             $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false

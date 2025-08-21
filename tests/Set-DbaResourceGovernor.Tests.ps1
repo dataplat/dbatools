@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $classifierFunction = "dbatoolsci_fnRGClassifier"
             $qualifiedClassifierFunction = "[dbo].[$classifierFunction]"
@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
             Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Disabled -Confirm:$false
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "enables resource governor" {
@@ -68,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $dropUDFQuery = "DROP FUNCTION $qualifiedClassifierFunction;"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $dropUDFQuery -Database "master" -ErrorAction SilentlyContinue

@@ -58,6 +58,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:dbs | Remove-DbaDatabase -Confirm:$false
         Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $global:dbs | Remove-DbaDatabase -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Apply to multiple instances" {

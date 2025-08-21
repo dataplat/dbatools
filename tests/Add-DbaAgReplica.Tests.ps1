@@ -101,6 +101,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Cleanup all created objects.
             $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $replicaAgName -Confirm:$false -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Returns results with proper data" {

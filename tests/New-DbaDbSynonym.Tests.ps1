@@ -51,6 +51,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 -Confirm:$false
         $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {

@@ -34,8 +34,6 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
         $endpointName = "dbatoolsci_MirroringEndpoint"
     }
 
@@ -43,12 +41,12 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -EndPoint $endpointName -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When creating database mirroring endpoints" {
         BeforeAll {
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
             $results = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Role Partner -Name $endpointName -Confirm:$false | Start-DbaEndpoint -Confirm:$false
         }
 

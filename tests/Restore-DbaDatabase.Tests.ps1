@@ -92,6 +92,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Remove temporary directories
         Remove-Item -Path "C:\temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Properly restores a database on the local drive using Path" {

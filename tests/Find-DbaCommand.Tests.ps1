@@ -26,11 +26,6 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Command finds jobs using all parameters" {
-        BeforeAll {
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-        }
-
         It "Should find more than 5 snapshot commands" {
             $results = @(Find-DbaCommand -Pattern "snapshot")
             $results.Count | Should -BeGreaterThan 5

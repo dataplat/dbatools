@@ -52,6 +52,8 @@ Describe $CommandName -Tag IntegrationTests {
                 DROP SERVER AUDIT LoginAudit"
         $server.Query($sql)
         Remove-Item -Path "C:\temp\LoginAudit*sqlaudit" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command output" {

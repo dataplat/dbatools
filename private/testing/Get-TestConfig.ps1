@@ -7,11 +7,11 @@ function Get-TestConfig {
         CommonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
         Defaults         = [System.Management.Automation.DefaultParameterDictionary]@{
             # We want the tests as readable as possible so we want to set Confirm globally to $false.
-            '*:Confirm'         = $false
+            '*-Dba*:Confirm'         = $false
             # We use a global warning variable so that we can always test
             # that the command does not write a warning
             # or that the command does write the expected warning.
-            '*:WarningVariable' = 'WarnVar'
+            '*-Dba*:WarningVariable' = 'WarnVar'
         }
         # We want all the tests to only write to this location.
         # When testing a remote SQL Server instance this must be a network share

@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When changing TCP port configuration" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Get the current port before making any changes
             $originalPortInfo = Get-DbaTcpPort -SqlInstance $TestConfig.instance2
@@ -36,16 +36,18 @@ Describe $CommandName -Tag IntegrationTests {
             $instance = [DbaInstance]$TestConfig.instance2
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Restore the original port configuration
             $null = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $originalPort -Confirm:$false -WarningAction SilentlyContinue
             $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should change the port" {

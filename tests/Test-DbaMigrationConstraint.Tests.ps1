@@ -48,6 +48,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database $global:db1, $global:db2 -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When setup is successful" {

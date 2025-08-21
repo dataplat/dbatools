@@ -53,6 +53,8 @@ Describe $CommandName -Tag IntegrationTests {
         foreach ($operatorName in $operatorsToCleanup) {
             $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorName -ErrorAction SilentlyContinue
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Remove Agent Operator is removed properly" {

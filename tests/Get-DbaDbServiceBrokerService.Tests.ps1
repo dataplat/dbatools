@@ -50,6 +50,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $global:testServer.Query("DROP SERVICE $global:testServiceName", "tempdb")
         $null = $global:testServer.Query("DROP QUEUE $global:testQueueName", "tempdb")
         $null = $global:testServer.Query("DROP PROCEDURE $global:testProcName", "tempdb")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets the service broker service" {

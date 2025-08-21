@@ -38,7 +38,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName | Remove-DbaDatabase -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should find the new database file" {

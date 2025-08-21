@@ -32,7 +32,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $global:server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
@@ -74,11 +74,11 @@ Describe $CommandName -Tag IntegrationTests {
                 END;"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
         Get-DbaDatabase -SqlInstance $global:server -Database $global:dbnameSimpleModel, $global:dbnameFullModel, $global:dbnameBulkLoggedModel | Remove-DbaDatabase
@@ -86,6 +86,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Remove backup files.
         Remove-Item -Path "$($TestConfig.Temp)\$global:dbnameFullModel*", "$($TestConfig.Temp)\$global:dbnameBulkLoggedModel*" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Param validation" {

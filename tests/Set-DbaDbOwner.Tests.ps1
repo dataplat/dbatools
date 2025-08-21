@@ -48,6 +48,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnametwo -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $owner, $ownertwo -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Should set the database owner" {
         It "Sets the database owner on a specific database" {

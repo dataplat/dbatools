@@ -98,6 +98,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase @splatRemoveDb -ErrorAction SilentlyContinue
 
         Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command works" {

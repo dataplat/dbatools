@@ -27,8 +27,6 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command execution and functionality" {
         It -Skip "Should stop an agent job and return CurrentRunStatus of Idle" {
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
             $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL' | Start-DbaAgentJob | Stop-DbaAgentJob
             $results.CurrentRunStatus | Should -Be 'Idle'
         }

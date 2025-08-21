@@ -67,6 +67,8 @@ Describe $CommandName -Tag IntegrationTests {
         $results, $results2, $results3 | Remove-Item -ErrorAction SilentlyContinue
 
         Remove-Item $newDirectory -ErrorAction SilentlyContinue -Recurse -Force
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "should create an xml file" {

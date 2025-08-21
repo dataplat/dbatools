@@ -62,6 +62,8 @@ Describe $CommandName -Tag IntegrationTests {
         if ($delmasterkey) {
             $masterKeyExists | Remove-DbaDbMasterKey
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {

@@ -64,6 +64,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database master -Query "DROP PROCEDURE [dbo].[sp_WhoIsActive];" -ErrorAction SilentlyContinue
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "DROP PROCEDURE [dbo].[sp_WhoIsActive];" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Should have SPWhoisActive installed correctly" {
         It "Should be installed to master" {

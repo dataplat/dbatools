@@ -75,6 +75,8 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created databases.
         $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $randomDb.Name, $newDbName, $newDb1Name, $newDb2Name, $bug6780DbName, $collationDbName, $simpleRecoveryModelDbName, $fullRecoveryModelDbName, $bulkLoggedRecoveryModelDbName -Confirm:$false -ErrorAction SilentlyContinue
         $null = Remove-DbaDatabase -SqlInstance $instance3 -Database $newDbName, $newDb1Name, $newDb2Name, $secondaryFileTestDbName, $secondaryFileCountTestDbName, $primaryFileGroupDbName, $secondaryFileGroupDbName -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When creating databases" {

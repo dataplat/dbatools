@@ -60,6 +60,8 @@ Describe $CommandName -Tag IntegrationTests {
         $cleanupServer2.NumberOfLogFiles = $originalLogFiles2
         $cleanupServer2.ErrorLogSizeKb = $originalLogSize2
         $cleanupServer2.Alter()
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Apply LogCount to multiple instances" {

@@ -88,6 +88,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName
         $credential.Drop()
         $agentProxyInstance2.Drop()
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "command works" {
         It "Change the job step name" {

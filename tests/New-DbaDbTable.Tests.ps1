@@ -1,20 +1,84 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbTable",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'AnsiNullsStatus', 'ChangeTrackingEnabled', 'DataSourceName', 'Durability', 'ExternalTableDistribution', 'FileFormatName', 'FileGroup', 'FileStreamFileGroup', 'FileStreamPartitionScheme', 'FileTableDirectoryName', 'FileTableNameColumnCollation', 'FileTableNamespaceEnabled', 'HistoryTableName', 'HistoryTableSchema', 'IsExternal', 'IsFileTable', 'IsMemoryOptimized', 'IsSystemVersioned', 'Location', 'LockEscalation', 'Owner', 'PartitionScheme', 'QuotedIdentifierStatus', 'RejectSampleValue', 'RejectType', 'RejectValue', 'RemoteDataArchiveDataMigrationState', 'RemoteDataArchiveEnabled', 'RemoteDataArchiveFilterPredicate', 'RemoteObjectName', 'RemoteSchemaName', 'RemoteTableName', 'RemoteTableProvisioned', 'ShardingColumnName', 'TextFileGroup', 'TrackColumnsUpdatedEnabled', 'HistoryRetentionPeriod', 'HistoryRetentionPeriodUnit', 'DwTableDistribution', 'RejectedRowLocation', 'OnlineHeapOperation', 'LowPriorityMaxDuration', 'DataConsistencyCheck', 'LowPriorityAbortAfterWait', 'MaximumDegreeOfParallelism', 'IsNode', 'IsEdge', 'IsVarDecimalStorageFormatEnabled', 'Passthru', 'InputObject', 'EnableException'
-
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Name",
+                "Schema",
+                "ColumnMap",
+                "ColumnObject",
+                "AnsiNullsStatus",
+                "ChangeTrackingEnabled",
+                "DataSourceName",
+                "Durability",
+                "ExternalTableDistribution",
+                "FileFormatName",
+                "FileGroup",
+                "FileStreamFileGroup",
+                "FileStreamPartitionScheme",
+                "FileTableDirectoryName",
+                "FileTableNameColumnCollation",
+                "FileTableNamespaceEnabled",
+                "HistoryTableName",
+                "HistoryTableSchema",
+                "IsExternal",
+                "IsFileTable",
+                "IsMemoryOptimized",
+                "IsSystemVersioned",
+                "Location",
+                "LockEscalation",
+                "Owner",
+                "PartitionScheme",
+                "QuotedIdentifierStatus",
+                "RejectSampleValue",
+                "RejectType",
+                "RejectValue",
+                "RemoteDataArchiveDataMigrationState",
+                "RemoteDataArchiveEnabled",
+                "RemoteDataArchiveFilterPredicate",
+                "RemoteObjectName",
+                "RemoteSchemaName",
+                "RemoteTableName",
+                "RemoteTableProvisioned",
+                "ShardingColumnName",
+                "TextFileGroup",
+                "TrackColumnsUpdatedEnabled",
+                "HistoryRetentionPeriod",
+                "HistoryRetentionPeriodUnit",
+                "DwTableDistribution",
+                "RejectedRowLocation",
+                "OnlineHeapOperation",
+                "LowPriorityMaxDuration",
+                "DataConsistencyCheck",
+                "LowPriorityAbortAfterWait",
+                "MaximumDegreeOfParallelism",
+                "IsNode",
+                "IsEdge",
+                "IsVarDecimalStorageFormatEnabled",
+                "Passthru",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
         $tablename = "dbatoolssci_$(Get-Random)"
@@ -22,11 +86,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $tablename3 = "dbatoolssci2_$(Get-Random)"
         $tablename4 = "dbatoolssci2_$(Get-Random)"
         $tablename5 = "dbatoolssci2_$(Get-Random)"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query "drop table $tablename, $tablename2"
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     Context "Should create the table" {
         BeforeEach {
             $map = @{

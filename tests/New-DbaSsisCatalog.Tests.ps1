@@ -62,6 +62,8 @@ Describe $CommandName -Tag IntegrationTests {
             if ($shouldRunTests -and $database) {
                 Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.ssisserver -Database $database -ErrorAction SilentlyContinue
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "uses the specified database" -Skip:(-not $shouldRunTests) {

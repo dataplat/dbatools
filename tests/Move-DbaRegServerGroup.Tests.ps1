@@ -52,6 +52,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When moving registered server groups" {

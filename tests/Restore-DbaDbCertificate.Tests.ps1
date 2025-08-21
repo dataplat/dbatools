@@ -50,6 +50,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = $masterkey | Remove-DbaDbMasterKey
             $null = Remove-Item -Path $backup.ExportPath, $backup.ExportKey -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "restores the db cert when passing in a .cer file" {

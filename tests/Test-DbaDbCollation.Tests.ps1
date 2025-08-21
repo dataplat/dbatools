@@ -40,6 +40,8 @@ Describe $CommandName -Tags IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.Instance1 -Name $dbName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "confirms the db is the same collation as the server" {

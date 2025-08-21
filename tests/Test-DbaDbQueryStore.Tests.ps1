@@ -45,6 +45,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $global:dbname -Confirm:$false
         $null = Disable-DbaTraceFlag -SqlInstance $TestConfig.instance2 -TraceFlag 7745
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Function works as expected" {

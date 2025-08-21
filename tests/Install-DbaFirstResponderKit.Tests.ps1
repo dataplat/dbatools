@@ -45,6 +45,8 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Installs to specified database: $database" {
@@ -98,6 +100,8 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Installs to specified database: $database" {

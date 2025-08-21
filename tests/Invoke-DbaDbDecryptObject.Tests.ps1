@@ -222,6 +222,8 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         # Set the original configuration
         Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteDacConnectionsEnabled -Value $config.ConfiguredValue -WarningAction SilentlyContinue
         Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -ConfigName RemoteDacConnectionsEnabled -Value $instance2Config.ConfiguredValue -WarningAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     # these tests are marked as skip to ensure the AppVeyor sql instances are not impacted negatively. These tests can be run locally.

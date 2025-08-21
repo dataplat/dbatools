@@ -57,6 +57,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $global:login1, $global:login2 -Confirm:$false
         $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $global:customServerRole -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {

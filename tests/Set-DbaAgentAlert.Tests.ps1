@@ -49,6 +49,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $server = Connect-DbaInstance @splatConnection
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'dbatoolsci test alert NEW'")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When modifying agent alerts" {

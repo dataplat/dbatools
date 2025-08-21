@@ -25,8 +25,6 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
         $testCategory1 = "CategoryTest1"
         $testCategory2 = "CategoryTest2"
         $categoriesToCleanup = @()
@@ -34,14 +32,13 @@ Describe $CommandName -Tag IntegrationTests {
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1, $testCategory2 -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "New Agent Job Category is added properly" {
-        BeforeAll {
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
         It "Should have the right name and category type" {
             $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1
             $results.Name | Should -Be $testCategory1

@@ -24,23 +24,24 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Command execution and functionality" {
+    Context -Skip:(-not (Get-DbaPfDataCollectorSet -CollectorSet RTEvents)) "Verifying command works" {
         AfterAll {
-            $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # We only run this on Azure as there is this collector set running:
+            $null = Start-DbaPfDataCollectorSet -CollectorSet RTEvents
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Should return a result with the right computername and name is not null" {
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-            $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
-            $script:set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-            Start-Sleep 2
+        It "returns a result with the right computername and name is not null" {
+            $results = Stop-DbaPfDataCollectorSet -CollectorSet RTEvents
 
-            $results = $script:set | Select-Object -First 1 | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
-            if (-not $warn) {
-                $results.ComputerName | Should -Be $env:COMPUTERNAME
-                $results.Name | Should -Not -Be $null
-            }
+            $WarnVar | Should -BeNullOrEmpty
+            $results.ComputerName | Should -Be $env:COMPUTERNAME
+            $results.Name | Should -Not -BeNullOrEmpty
         }
     }
 }

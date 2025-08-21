@@ -1,19 +1,29 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaAgentAlert",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Alert', 'ExcludeAlert', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Alert",
+                "ExcludeAlert",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe $CommandName -Tag IntegrationTests {
     BeforeEach {
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -28,27 +38,27 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "removes a SQL Agent alert" {
             (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName ) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentAlert -SqlInstance $server -Alert $alertName -Confirm:$false
+            Remove-DbaAgentAlert -SqlInstance $server -Alert $alertName
             (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName ) | Should -BeNullOrEmpty
         }
 
         It "supports piping SQL Agent alert" {
             (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName ) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentAlert -SqlInstance $server -Alert $alertName | Remove-DbaAgentAlert -Confirm:$false
+            Get-DbaAgentAlert -SqlInstance $server -Alert $alertName | Remove-DbaAgentAlert
             (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName ) | Should -BeNullOrEmpty
         }
 
         It "removes all SQL Agent alerts but excluded" {
             (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName2 ) | Should -Not -BeNullOrEmpty
             (Get-DbaAgentAlert -SqlInstance $server -ExcludeAlert $alertName2 ) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentAlert -SqlInstance $server -ExcludeAlert $alertName2 -Confirm:$false
+            Remove-DbaAgentAlert -SqlInstance $server -ExcludeAlert $alertName2
             (Get-DbaAgentAlert -SqlInstance $server -ExcludeAlert $alertName2 ) | Should -BeNullOrEmpty
             (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName2 ) | Should -Not -BeNullOrEmpty
         }
 
         It "removes all SQL Agent alerts" {
             (Get-DbaAgentAlert -SqlInstance $server ) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentAlert -SqlInstance $server -Confirm:$false
+            Remove-DbaAgentAlert -SqlInstance $server
             (Get-DbaAgentAlert -SqlInstance $server ) | Should -BeNullOrEmpty
         }
     }
