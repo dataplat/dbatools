@@ -55,10 +55,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance3 -Database $db1 -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $TestConfig.instance2 -Job "Rationalised Database Restore Script for dbatoolsci_safely" -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $TestConfig.instance3 -Job "Rationalised Database Restore Script for dbatoolsci_safely_otherInstance" -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $db1 -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "Rationalised Database Restore Script for dbatoolsci_safely" -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "Rationalised Database Restore Script for dbatoolsci_safely_otherInstance" -ErrorAction SilentlyContinue
         Remove-Item -Path "$($TestConfig.Temp)\$db1*", "$($TestConfig.Temp)\$db2*" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

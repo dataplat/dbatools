@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName
         }
 
         It "Successfully gets job when not using Job param" {

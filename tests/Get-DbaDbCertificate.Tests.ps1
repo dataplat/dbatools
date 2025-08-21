@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Check and create master key if needed
             if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             }
 
             $certificateName1 = "Cert_$(Get-Random)"

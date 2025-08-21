@@ -96,35 +96,35 @@ Describe $CommandName -Tag IntegrationTests {
             $result | Should -BeNullOrEmpty
             $warn | Should -BeLike "*You must specify either -Table or -DeleteSql.*"
 
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -DeleteSql "DELETE TOP (10) FROM dbo.Test" -Confirm:$false -WarningAction SilentlyContinue -WarningVariable warn
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -DeleteSql "DELETE TOP (10) FROM dbo.Test" -WarningAction SilentlyContinue -WarningVariable warn
             $result | Should -BeNullOrEmpty
             $warn | Should -BeLike "*You must specify either -Table or -DeleteSql, but not both.*"
         }
 
         It "-BatchSize cannot be used when -DeleteSql is specified" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test" -BatchSize 10 -Confirm:$false -WarningAction SilentlyContinue -WarningVariable warn
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test" -BatchSize 10 -WarningAction SilentlyContinue -WarningVariable warn
             $result | Should -BeNullOrEmpty
             $warn | Should -BeLike "*When using -DeleteSql the -BatchSize param cannot be used.*"
         }
 
         It "Invalid -Table value is provided" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table InvalidTableName -Confirm:$false -WarningAction SilentlyContinue
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table InvalidTableName -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
 
         It "Invalid -DeleteSql due to missing DELETE keyword (i.e. user has not passed in a DELETE statement)" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "SELECT TOP (10) FROM dbo.Test" -Confirm:$false -WarningAction SilentlyContinue
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "SELECT TOP (10) FROM dbo.Test" -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
 
         It "Invalid -DeleteSql due to missing TOP (N) clause" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE FROM dbo.Test" -Confirm:$false -WarningAction SilentlyContinue -WarningVariable warn
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE FROM dbo.Test" -WarningAction SilentlyContinue -WarningVariable warn
             $result | Should -BeNullOrEmpty
             $warn | Should -BeLike "*To use the -DeleteSql param you must specify the TOP (N) clause in the DELETE statement.*"
         }
 
         It "Invalid SQL used to test the error handling and reporting" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test WHERE 1/0 = 1" -Confirm:$false -WarningAction SilentlyContinue
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test WHERE 1/0 = 1" -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
 
@@ -141,7 +141,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "-DeleteSql param is used to specify a delete based on a join" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -DeleteSql "DELETE TOP (10) deleteFromTable FROM dbo.Test deleteFromTable LEFT JOIN dbo.Test2 b ON deleteFromTable.Id = b.Id" -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -DeleteSql "DELETE TOP (10) deleteFromTable FROM dbo.Test deleteFromTable LEFT JOIN dbo.Test2 b ON deleteFromTable.Id = b.Id"
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
             $result.LogBackups.Count | Should -Be 0
@@ -151,7 +151,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "-DeleteSql param is used to specify an order by clause for the delete" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -DeleteSql "WITH ToDelete AS (SELECT TOP (10) Id FROM dbo.Test WHERE Id >= 50 ORDER BY Id DESC) DELETE FROM ToDelete" -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -DeleteSql "WITH ToDelete AS (SELECT TOP (10) Id FROM dbo.Test WHERE Id >= 50 ORDER BY Id DESC) DELETE FROM ToDelete"
             $result.TotalIterations | Should -Be 5
             $result.TotalRowsDeleted | Should -Be 50
             $result.LogBackups.Count | Should -Be 0
@@ -167,7 +167,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes Data for a specified database" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table dbo.Test -BatchSize 10 -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table dbo.Test -BatchSize 10
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
             $result.LogBackups.Count | Should -Be 0
@@ -184,7 +184,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes Data for a specified database" {
             $bulkLoggedServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database $dbnameBulkLoggedModel -NonPooledConnection
-            $result = Remove-DbaDbTableData -SqlInstance $bulkLoggedServer -Database $dbnameBulkLoggedModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $bulkLoggedServer -Database $dbnameBulkLoggedModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
             $result.LogBackups.Count | Should -Be 10
@@ -200,7 +200,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It 'Removes Data for a specified database and specifies LogBackupTimeStampFormat' {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -LogBackupTimeStampFormat "yyMMddHHmm" -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -LogBackupTimeStampFormat "yyMMddHHmm"
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
             $result.LogBackups.Count | Should -Be 10
@@ -210,7 +210,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "The LogBackupPath param is not specified so no log backups are taken" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
             $result.LogBackups.Count | Should -Be 0
@@ -220,7 +220,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Test with an invalid LogBackupPath location" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath "C:\dbatools\$(Get-Random)" -Confirm:$false -WarningAction SilentlyContinue
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath "C:\dbatools\$(Get-Random)" -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
     }
@@ -232,7 +232,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes Data from multiple databases via the Database param" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameBulkLoggedModel, $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameBulkLoggedModel, $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath
 
             $result[0].TotalIterations | Should -Be 10
             $result[0].TotalRowsDeleted | Should -Be 100
@@ -257,7 +257,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes Data from multiple databases via pipeline" {
-            $result = (Get-DbaDatabase -SqlInstance $server -Database $dbnameBulkLoggedModel, $dbnameFullModel | Remove-DbaDbTableData -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -Confirm:$false)
+            $result = (Get-DbaDatabase -SqlInstance $server -Database $dbnameBulkLoggedModel, $dbnameFullModel | Remove-DbaDbTableData -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath)
 
             $result[0].TotalIterations | Should -Be 10
             $result[0].TotalRowsDeleted | Should -Be 100
@@ -282,7 +282,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes Data from multiple servers via pipeline" {
-            $result = ([DbaInstanceParameter[]]$server.Name, $server2 | Remove-DbaDbTableData -Database $dbnameSimpleModel -Table dbo.Test -BatchSize 10 -Confirm:$false)
+            $result = ([DbaInstanceParameter[]]$server.Name, $server2 | Remove-DbaDbTableData -Database $dbnameSimpleModel -Table dbo.Test -BatchSize 10)
 
             $result[0].TotalIterations | Should -Be 10
             $result[0].TotalRowsDeleted | Should -Be 100

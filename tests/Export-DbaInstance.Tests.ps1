@@ -74,11 +74,11 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addmessage 250001, 16, N'Sample error message2'"
 
         # credentials
-        New-DbaCredential -SqlInstance $testServer -Name "dbatools1$random" -Identity "dbatools1$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force) -Confirm:$false
-        New-DbaCredential -SqlInstance $testServer -Name "dbatools2$random" -Identity "dbatools2$random" -SecurePassword (ConvertTo-SecureString -String "dbatools2" -AsPlainText -Force) -Confirm:$false
+        New-DbaCredential -SqlInstance $testServer -Name "dbatools1$random" -Identity "dbatools1$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force)
+        New-DbaCredential -SqlInstance $testServer -Name "dbatools2$random" -Identity "dbatools2$random" -SecurePassword (ConvertTo-SecureString -String "dbatools2" -AsPlainText -Force)
 
         # logins
-        New-DbaLogin -SqlInstance $testServer -Login "dbatools$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force) -Confirm:$false
+        New-DbaLogin -SqlInstance $testServer -Login "dbatools$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force)
 
         # backup device
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addumpdevice 'disk', 'backupdevice$random', '$($TestConfig.Temp)\backupdevice$random.bak'"
@@ -150,8 +150,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     AfterAll {
         # registered server and group
-        Get-DbaRegServer -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServer -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer
+        Get-DbaRegServerGroup -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup
 
         # custom error message
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_dropmessage 250000"
@@ -162,7 +162,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "DROP CREDENTIAL [dbatools2$random]"
 
         # logins
-        Remove-DbaLogin -SqlInstance $testServer -Login "dbatools$random" -Confirm:$false
+        Remove-DbaLogin -SqlInstance $testServer -Login "dbatools$random"
 
         # backup devices
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_dropdevice 'backupdevice$random'"
@@ -185,7 +185,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "ALTER SERVER AUDIT [Audit_$random] WITH (STATE = OFF); DROP SERVER AUDIT [Audit_$random];"
 
         # endpoint
-        Remove-DbaEndpoint -SqlInstance $testServer -EndPoint dbatoolsci_$random -Confirm:$false
+        Remove-DbaEndpoint -SqlInstance $testServer -EndPoint dbatoolsci_$random
 
         # policies
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$policyId;
@@ -193,7 +193,7 @@ Describe $CommandName -Tag IntegrationTests {
                                                                                   EXEC msdb.dbo.sp_syspolicy_delete_object_set @object_set_id=$objectSetId;"
 
         # last step to remove sample db
-        Remove-DbaDatabase -SqlInstance $testServer -Database $dbName -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $testServer -Database $dbName
 
         # remove export dir
         Remove-Item -Path $exportDir -Recurse -Force -ErrorAction SilentlyContinue

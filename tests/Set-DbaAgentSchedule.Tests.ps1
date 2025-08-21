@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $altend = (Get-Date).AddDays(5).ToString("yyyyMMdd")
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_setschedule1", "dbatoolsci_setschedule2" -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_setschedule1", "dbatoolsci_setschedule2"
     }
     Context "Should rename schedule" {
         BeforeAll {
@@ -87,7 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object Name -like "dbatools*" |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
         }
 
         It "Should have Results" {
@@ -145,7 +145,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object Name -like "dbatools*" |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
         }
 
         It "Should have Results" {
@@ -210,7 +210,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object Name -like "dbatools*" |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
         }
 
         It "Should have Results" {
@@ -273,7 +273,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object Name -like "dbatools*" |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
         }
 
         It "Should have Results" {
@@ -331,7 +331,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object Name -like "dbatools*" |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
         }
 
         It "Should have Results" {

@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         $testAlertNames = @("Test Alert", "Another Alert")
 
         # Clean up any existing test alerts before starting
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up all test alerts created during testing
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Creating a new SQL Server Agent alert" {
         BeforeEach {
             # Clean up alerts before each test to ensure clean state
-            Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+            Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
         }
 
         It "Should create a new alert with severity" {

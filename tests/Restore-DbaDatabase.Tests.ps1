@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up any remaining databases
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
 
         # Remove temporary directories
         Remove-Item -Path "C:\temp\*" -Recurse -Force -ErrorAction SilentlyContinue
@@ -98,7 +98,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Properly restores a database on the local drive using Path" {
         BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
         }
 
         It "Should Return the proper backup file location" {
@@ -130,9 +130,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped" {
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database singlerestore
+            $results = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database singlerestore
             $null = Get-DbaProcess $TestConfig.instance2 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database singlerestore
+            $results = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database singlerestore
             $results.Status -eq "Dropped" -or $results.Status -eq $null
         }
     }
@@ -166,7 +166,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped" {
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database singlerestore
+            $results = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database singlerestore
             $results.Status | Should -Be "Dropped"
         }
     }
@@ -232,7 +232,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped" {
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database singlerestore
+            $results = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database singlerestore
             $results.Status | Should -Be "Dropped"
         }
     }
@@ -263,7 +263,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Database is properly removed (name change)" {
         It "Should say the status was dropped" {
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database pestering
+            $results = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database pestering
             $results.Status | Should -Be "Dropped"
         }
     }
@@ -274,8 +274,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering -Confirm:$false
-            $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $restoreAsUser -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $restoreAsUser
         }
 
         It "Should Not be owned by SA this time" {
@@ -284,7 +284,7 @@ Describe $CommandName -Tag IntegrationTests {
             $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
             $db.owner | Should -Not -Be "sa"
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
         }
 
         It "Should throw a warning if login doesn't exist" {
@@ -298,12 +298,12 @@ Describe $CommandName -Tag IntegrationTests {
             $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
             $db.owner | Should -Be "sa"
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
         }
 
         It "Should be owned by $restoreAsUser this time" {
             New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $restoreAsUser -SecurePassword (ConvertTo-SecureString "P@ssw0rdl!ng" -AsPlainText -Force) -force
-            Add-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole sysadmin -Login $restoreAsUser -confirm:$false
+            Add-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole sysadmin -Login $restoreAsUser
             $results = Get-ChildItem "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs $restoreAsUser
             $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
             $db2.owner | Should -Be "$restoreAsUser"
@@ -359,7 +359,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Database is properly removed again after folder options tests" {
         It "Should say the status was dropped" {
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database singlerestore
+            $results = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database singlerestore
             $results.Status | Should -Be "Dropped"
         }
     }
@@ -405,7 +405,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped" {
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database singlerestore
+            $results = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database singlerestore
             $results.Status | Should -Be "Dropped"
         }
     }
@@ -448,9 +448,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped or null" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             $null = Get-DbaProcess $TestConfig.instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
 
             foreach ($result in $results) {
                 $result.Status -eq "Dropped" -or $result.Status -eq $null
@@ -477,7 +477,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped" -Skip {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             $results | ForEach-Object { $PSItem.Status | Should -Be "Dropped" }
         }
     }
@@ -521,7 +521,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -553,7 +553,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "All user databases are removed" {
         It "Should say the status was dropped post point in time test" -Skip {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -585,7 +585,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "All user databases are removed" {
         It "Should say the status was dropped post point in time test" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -598,7 +598,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
         }
 
         It "The test can run" {
@@ -686,7 +686,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
         }
 
         It "The test can run" {
@@ -759,7 +759,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Continue Restore with Differentials" {
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
         }
 
         It "Should Have restored the database cleanly" {
@@ -787,7 +787,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Continue Restore with Differentials and rename " {
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
         }
 
         It "Should Have restored the database cleanly" {
@@ -815,7 +815,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Continue Restore with multiple databases" {
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
         }
 
         It "Should Have restored the database cleanly" {
@@ -863,7 +863,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "All user databases are removed post continue test" {
         It "Should say the status was dropped" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -890,7 +890,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -910,7 +910,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should say the status was dropped" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -1025,7 +1025,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "All user databases are removed post port test" {
         It "Should say the status was dropped" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -1049,11 +1049,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName | Remove-DbaDatabase
         }
 
         It "Should only output a script" {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName | Remove-DbaDatabase
             $server = Connect-DbaInstance $TestConfig.instance2
             $server.Query("CREATE DATABASE $databaseName")
             $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $databaseName -OutputScriptOnly -WithReplace
@@ -1062,7 +1062,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Doesn't change the status of the existing database" {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName | Remove-DbaDatabase
             $server = Connect-DbaInstance $TestConfig.instance2
             $server.Query("CREATE DATABASE $databaseName")
             $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $databaseName -OutputScriptOnly -WithReplace
@@ -1073,7 +1073,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "All user databases are removed post Output script test" {
         It "Should say the status was dropped" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -1106,7 +1106,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "All user databases are removed post Output vs Input test" {
         It "Should say the status was dropped" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             Foreach ($db in $results) { $db.Status | Should -Be "Dropped" }
         }
     }
@@ -1136,7 +1136,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Page level restores" {
         BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName PageRestore -DestinationFilePrefix PageRestore
             $sql = @"
 alter database PageRestore set Recovery Full
@@ -1210,7 +1210,7 @@ use master
 
     Context "Testing Backup to Restore piping" {
         It "Should backup and restore cleanly" {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName PipeTest -DestinationFilePrefix PipeTest
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pipetest -BackupDirectory c:\temp -CopyOnly -WarningAction SilentlyContinue -WarningVariable bwarnvar -ErrorAction SilentlyContinue -ErrorVariable berrvar | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName restored -ReplaceDbNameInFile -WarningAction SilentlyContinue -WarningVariable rwarnvar -ErrorAction SilentlyContinue -ErrorVariable rerrvar
             $results.RestoreComplete | Should -Be $true
@@ -1219,10 +1219,10 @@ use master
 
     Context "Check we restore striped database" {
         It "Should backup and restore cleanly" {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\RestoreTimeStripe" -DatabaseName StripeTest -DestinationFilePrefix StripeTest
             ($results | Where-Object RestoreComplete -eq $true).count | Should -Be $results.count
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StripeTest -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StripeTest
         }
     }
 
@@ -1246,16 +1246,16 @@ use master
 
     Context "Test restoring a Backup encrypted with Certificate" {
         BeforeAll {
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name EncRestTest -Confirm:$false
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name EncRestTest
             $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
-            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master -SecurePassword $securePass -confirm:$false
+            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master -SecurePassword $securePass
             $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database Master -Name RestoreTestCert -Subject RestoreTestCert
         }
 
         AfterAll {
-            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database Master -Certificate RestoreTestCert -Confirm:$false
-            $null = Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master -confirm:$false
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database EncRestTest, certEncRestTest -confirm:$false
+            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database Master -Certificate RestoreTestCert
+            $null = Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database EncRestTest, certEncRestTest
         }
 
         It "Should encrypt the backup" {
@@ -1266,7 +1266,7 @@ use master
 
         It "Should have restored the backup" {
             $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database EncRestTest -EncryptionAlgorithm AES128 -EncryptionCertificate RestoreTestCert -FilePath "$($TestConfig.Temp)\EncRestTest.bak"
-            $results = $encBackupResults | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -TrustDbBackupHistory -RestoredDatabaseNamePrefix cert -DestinationFilePrefix cert -confirm:$false
+            $results = $encBackupResults | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -TrustDbBackupHistory -RestoredDatabaseNamePrefix cert -DestinationFilePrefix cert
             $results.RestoreComplete | Should -Be $true
         }
     }
@@ -1277,7 +1277,7 @@ use master
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Recover
             $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
             $sqlOut.ms | Should -Be 9876
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2 -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2
         }
     }
 
@@ -1287,7 +1287,7 @@ use master
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Recover
             $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
             $sqlOut.ms | Should -Be 8764
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2 -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2
         }
     }
 
@@ -1297,7 +1297,7 @@ use master
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Recover
             $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
             $sqlOut.ms | Should -Be 29876
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2 -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2
         }
     }
 
@@ -1305,7 +1305,7 @@ use master
         It "Should return a warning" {
             $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" -OutputScriptOnly -VerifyOnly -WarningVariable warnvar
             $warnvar | Should -BeLike "*The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping"
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2 -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2
         }
     }
 
@@ -1331,7 +1331,7 @@ use master
             }
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $server.Query("DROP CREDENTIAL [$TestConfig.azureblob]")
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase
         }
 
         It "Should restore cleanly" {
@@ -1367,7 +1367,7 @@ use master
             }
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $server.Query("DROP CREDENTIAL [$TestConfig.azureblob]")
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase
         }
 
         It "Should restore cleanly" {
@@ -1386,7 +1386,7 @@ use master
                 Set-TestInconclusive -Message "Azure legacy password not available"
                 return
             }
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             if (Get-DbaCredential -SqlInstance $TestConfig.instance2 -name dbatools_ci) {
                 $sql = "DROP CREDENTIAL dbatools_ci"
@@ -1403,7 +1403,7 @@ use master
             }
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $server.Query("DROP CREDENTIAL dbatools_ci")
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase
         }
 
         It "supports legacy credential setups" -Skip {

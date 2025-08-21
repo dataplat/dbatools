@@ -28,13 +28,13 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
+        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
 
         # Create firewall rules and get results for testing
-        $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
+        $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.instance2
         $resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
-        $resultsRemoveBrowser = $resultsGet | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule -Confirm:$false
-        $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Type AllInstance -Confirm:$false
+        $resultsRemoveBrowser = $resultsGet | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule
+        $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Type AllInstance
 
         $instanceName = ([DbaInstanceParameter]$TestConfig.instance2).InstanceName
 
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
+        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

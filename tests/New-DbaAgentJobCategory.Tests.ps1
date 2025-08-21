@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1, $testCategory2 -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1, $testCategory2 -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -86,12 +86,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Testing object transfer" {
         BeforeEach {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
             $destination.Query("CREATE DATABASE $dbname")
             $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
         }
         It "Should transfer all tables" {
             $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.instance2 -DestinationSqlInstance $TestConfig.instance3 -Database $dbName -CopyAll Tables

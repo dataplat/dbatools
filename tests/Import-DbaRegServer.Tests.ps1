@@ -53,13 +53,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     BeforeEach {
-        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup
     }
 
     AfterEach {
-        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup
         $results, $results2, $results3 | Remove-Item -ErrorAction SilentlyContinue
     }
 

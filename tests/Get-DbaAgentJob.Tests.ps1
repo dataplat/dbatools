@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
         }
 
         It "Should get 2 dbatoolsci jobs" {
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
         }
 
         It "Should return only enabled jobs" {
@@ -68,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
         }
 
         It "Should not return excluded job" {
@@ -85,9 +85,9 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat2 -Category "Cat2"
         }
         AfterAll {
-            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1", "Cat2" -Confirm:$false
+            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1", "Cat2"
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2 -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2
         }
 
         It "Should not return excluded job" {
@@ -110,7 +110,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName2 -StepName "TSQL-z" -Subsystem TransactSql -Database "master"
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1, $jobName2 -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1, $jobName2
         }
 
         It "Returns result with single database" {

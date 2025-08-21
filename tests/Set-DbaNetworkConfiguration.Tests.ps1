@@ -45,13 +45,13 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Restore original configuration
         $originalNetConfPiped.TcpIpProperties.KeepAlive = 30000
-        $null = $originalNetConfPiped | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+        $null = $originalNetConfPiped | Set-DbaNetworkConfiguration -WarningAction SilentlyContinue
 
         # Restore Named Pipes to original state
         if ($originalNetConfCommandline.NamedPipesEnabled) {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -WarningAction SilentlyContinue
         } else {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -WarningAction SilentlyContinue
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $netConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
             $netConfPiped.TcpIpProperties.KeepAlive = 60000
-            $pipedResults = $netConfPiped | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+            $pipedResults = $netConfPiped | Set-DbaNetworkConfiguration -WarningAction SilentlyContinue
         }
 
         It "Should Return a Result" {
@@ -77,9 +77,9 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $netConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
             if ($netConfCommandline.NamedPipesEnabled) {
-                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -WarningAction SilentlyContinue
             } else {
-                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -WarningAction SilentlyContinue
             }
         }
 

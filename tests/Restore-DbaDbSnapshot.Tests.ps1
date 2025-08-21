@@ -29,15 +29,15 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $db1 = "dbatoolsci_RestoreSnap1"
         $db1_snap1 = "dbatoolsci_RestoreSnap1_snapshotted1"
         $db1_snap2 = "dbatoolsci_RestoreSnap1_snapshotted2"
         $db2 = "dbatoolsci_RestoreSnap2"
         $db2_snap1 = "dbatoolsci_RestoreSnap2_snapshotted1"
-        Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -Confirm:$false
-        Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
+        Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2
+        Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 | Remove-DbaDatabase
         $server.Query("CREATE DATABASE $db1")
         $server.Query("ALTER DATABASE $db1 MODIFY FILE ( NAME = N'$($db1)_log', SIZE = 13312KB )")
         $server.Query("CREATE DATABASE $db2")
@@ -52,8 +52,8 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -Confirm:$false -ErrorAction SilentlyContinue
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
+        Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -73,16 +73,16 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2 -Name $db2_snap1 -ErrorAction SilentlyContinue
         }
         AfterEach {
-            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
         }
 
         It "Honors the Database parameter, restoring only snapshots of that database" {
-            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2 -Confirm:$false -EnableException -Force
+            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2 -EnableException -Force
             $result.Status | Should -Be "Normal"
             $result.Name | Should -Be $db2
 
             $server.Query("INSERT INTO [$db1].[dbo].[Example] values ('sample2')")
-            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false -Force
+            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1 -Force
             $result.Name | Should -Be $db1
 
             # the other snapshot has been dropped
@@ -95,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Honors the Snapshot parameter" {
-            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1 -Confirm:$false -EnableException -Force
+            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1 -EnableException -Force
             $result.Name | Should -Be $db1
             $result.Status | Should -Be "Normal"
 
@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Stops if multiple snapshot for the same db are passed" {
-            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1, $db1_snap2 -Confirm:$false *> $null
+            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1, $db1_snap2 *> $null
             $result | Should -Be $null
         }
 

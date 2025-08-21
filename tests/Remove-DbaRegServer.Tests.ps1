@@ -63,20 +63,20 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created registered servers.
-        Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName, $regSrvName2 | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName, $regSrvName2 | Remove-DbaRegServer -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing registered servers" {
         It "supports dropping via the pipeline" {
-            $results = $newServer | Remove-DbaRegServer -Confirm:$false
+            $results = $newServer | Remove-DbaRegServer
             $results.Name | Should -Be $regSrvName
             $results.Status | Should -Be "Dropped"
         }
 
         It "supports dropping manually" {
-            $results = Remove-DbaRegServer -Confirm:$false -SqlInstance $TestConfig.instance1 -Name $regSrvName2
+            $results = Remove-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName2
             $results.Name | Should -Be $regSrvName2
             $results.Status | Should -Be "Dropped"
         }

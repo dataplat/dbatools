@@ -37,17 +37,17 @@ Describe $CommandName -Tag IntegrationTests {
         # setup for implicit 'control' permission at the db level (dbo user and db_owner role assignment)
         $loginNameDBO = "dbo_$random"
         $loginNameDBOwner = "db_owner_$random"
-        $loginDBO = New-DbaLogin -SqlInstance $server -Login $loginNameDBO -Password $securePassword -Confirm:$false
-        $loginDBOwner = New-DbaLogin -SqlInstance $server -Login $loginNameDBOwner -Password $securePassword -Confirm:$false
+        $loginDBO = New-DbaLogin -SqlInstance $server -Login $loginNameDBO -Password $securePassword
+        $loginDBOwner = New-DbaLogin -SqlInstance $server -Login $loginNameDBOwner -Password $securePassword
         $dbName = "dbatoolsci_DB_$random"
-        $testDb = New-DbaDatabase -SqlInstance $server -Owner $loginNameDBO -Name $dbName -Confirm:$false
-        $newUserDBOwner = New-DbaDbUser -SqlInstance $server -Database $dbName -Login $loginNameDBOwner -Confirm:$false
-        $roleMember = Add-DbaDbRoleMember -SqlInstance $server -Database $dbName -Role db_owner -User $loginNameDBOwner -Confirm:$false
+        $testDb = New-DbaDatabase -SqlInstance $server -Owner $loginNameDBO -Name $dbName
+        $newUserDBOwner = New-DbaDbUser -SqlInstance $server -Database $dbName -Login $loginNameDBOwner
+        $roleMember = Add-DbaDbRoleMember -SqlInstance $server -Database $dbName -Role db_owner -User $loginNameDBOwner
 
         # setup for basic table-level explicit permissions
         $loginNameUser1 = "dbatoolsci_user1_$random"
-        $loginUser1 = New-DbaLogin -SqlInstance $server -Login $loginNameUser1 -Password $securePassword -Confirm:$false
-        $newUser1 = New-DbaDbUser -SqlInstance $server -Database $dbName -Login $loginNameUser1 -Confirm:$false
+        $loginUser1 = New-DbaLogin -SqlInstance $server -Login $loginNameUser1 -Password $securePassword
+        $newUser1 = New-DbaDbUser -SqlInstance $server -Database $dbName -Login $loginNameUser1
 
         $tableName1 = "dbatoolsci_table1_$random"
         $tableSpec1 = @{
@@ -63,8 +63,8 @@ Describe $CommandName -Tag IntegrationTests {
                                    "
         # setup for the schema 'control' implicit permission check
         $loginNameUser2 = "dbatoolsci_user2_$random"
-        $loginUser2 = New-DbaLogin -SqlInstance $server -Login $loginNameUser2 -Password $securePassword -Confirm:$false
-        $newUser2 = New-DbaDbUser -SqlInstance $server -Database $dbName -Login $loginNameUser2 -Confirm:$false
+        $loginUser2 = New-DbaLogin -SqlInstance $server -Login $loginNameUser2 -Password $securePassword
+        $newUser2 = New-DbaDbUser -SqlInstance $server -Database $dbName -Login $loginNameUser2
 
         $schemaNameForTable2 = "dbatoolsci_schema_$random"
         $tableName2 = "dbatoolsci_table2_$random"
@@ -87,11 +87,11 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $removedDb = Remove-DbaDatabase -SqlInstance $server -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
-        $removedDBO = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBO -Confirm:$false -ErrorAction SilentlyContinue
-        $removedDBOwner = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBOwner -Confirm:$false -ErrorAction SilentlyContinue
-        $removedUser1 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser1 -Confirm:$false -ErrorAction SilentlyContinue
-        $removedUser2 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser2 -Confirm:$false -ErrorAction SilentlyContinue
+        $removedDb = Remove-DbaDatabase -SqlInstance $server -Database $dbName -ErrorAction SilentlyContinue
+        $removedDBO = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBO -ErrorAction SilentlyContinue
+        $removedDBOwner = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBOwner -ErrorAction SilentlyContinue
+        $removedUser1 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser1 -ErrorAction SilentlyContinue
+        $removedUser2 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser2 -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

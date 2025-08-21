@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
             $random = Get-Random
             $dbName = "dbatoolsci_$random"
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
             $newDB = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
 
             $indexName = "dbatoolsci_index_$random"
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
         }
 
         It "Should find the 'unused' index on each test sql instance" {

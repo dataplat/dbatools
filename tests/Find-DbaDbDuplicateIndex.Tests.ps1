@@ -72,7 +72,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatRemove = @{
             SqlInstance = $TestConfig.instance1
             Database    = "dbatools_dupeindex"
-            Confirm     = $false
         }
         Remove-DbaDatabase @splatRemove -ErrorAction SilentlyContinue
 

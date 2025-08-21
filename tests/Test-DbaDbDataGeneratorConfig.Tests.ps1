@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
         Remove-Item -Path "$($TestConfig.Temp)\datageneration" -Recurse
     }
 

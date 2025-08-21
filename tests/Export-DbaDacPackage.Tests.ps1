@@ -87,7 +87,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatRemoveDb = @{
             SqlInstance = $TestConfig.instance1
             Database    = $dbname, $dbName2
-            Confirm     = $false
         }
         Remove-DbaDatabase @splatRemoveDb
 
@@ -134,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Path | Should -Not -BeNullOrEmpty
             Test-Path $results.Path | Should -BeTrue
             if (($results).Path) {
-                Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                Remove-Item -Path ($results).Path -ErrorAction SilentlyContinue
             }
         }
 
@@ -159,7 +158,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Path | Should -Be $expectedPath
             Test-Path $results.Path | Should -BeTrue
             if (($results).Path) {
-                Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                Remove-Item -Path ($results).Path -ErrorAction SilentlyContinue
             }
         }
 
@@ -174,7 +173,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Path | Should -Not -BeNullOrEmpty
             Test-Path $results.Path | Should -BeTrue
             if (($results).Path) {
-                Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                Remove-Item -Path ($results).Path -ErrorAction SilentlyContinue
             }
         }
     }
@@ -201,7 +200,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Path | Should -Not -BeNullOrEmpty
             Test-Path $results.Path | Should -BeTrue
             if (($results).Path) {
-                Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                Remove-Item -Path ($results).Path -ErrorAction SilentlyContinue
             }
         }
 
@@ -219,7 +218,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Path | Should -Be $expectedPath
             Test-Path $results.Path | Should -BeTrue
             if (($results).Path) {
-                Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                Remove-Item -Path ($results).Path -ErrorAction SilentlyContinue
             }
         }
 
@@ -235,7 +234,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Path | Should -Not -BeNullOrEmpty
             Test-Path $results.Path | Should -BeTrue
             if (($results).Path) {
-                Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                Remove-Item -Path ($results).Path -ErrorAction SilentlyContinue
             }
         }
     }

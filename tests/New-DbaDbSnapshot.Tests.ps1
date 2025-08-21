@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $server = Connect-DbaInstance @splatConnection
 
-            Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+            Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
 
             $db1 = "dbatoolsci_SnapMe"
             $db2 = "dbatoolsci_SnapMe2"
@@ -76,8 +76,8 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -Confirm:$false -ErrorAction SilentlyContinue
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -ErrorAction SilentlyContinue
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }

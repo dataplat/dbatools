@@ -32,10 +32,10 @@ Describe $CommandName -Tag IntegrationTests {
         $db2 = "dbatoolsci_mirroring_db2"
 
         # Clean up any existing processes and databases
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Where-Object Program -Match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
 
-        Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 -Confirm:$false
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
+        Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 | Remove-DbaDatabase
 
         # Create test databases
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -51,14 +51,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 | Remove-DbaDbMirror -Confirm:$false
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 -ErrorAction SilentlyContinue
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 | Remove-DbaDbMirror
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "returns more than one database" -Skip:$true {
-        $null = Invoke-DbaDbMirroring -Primary $TestConfig.instance2 -Mirror $TestConfig.instance3 -Database $db1, $db2 -Confirm:$false -Force -SharedPath $TestConfig.Temp -WarningAction Continue
+        $null = Invoke-DbaDbMirroring -Primary $TestConfig.instance2 -Mirror $TestConfig.instance3 -Database $db1, $db2 -Force -SharedPath $TestConfig.Temp -WarningAction Continue
         @(Get-DbaDbMirror -SqlInstance $TestConfig.instance3).Count | Should -Be 2
     }
 

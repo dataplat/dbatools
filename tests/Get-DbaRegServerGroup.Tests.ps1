@@ -101,8 +101,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
-            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
+            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -ErrorAction SilentlyContinue
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
         }
 
         It "Should return one group" {

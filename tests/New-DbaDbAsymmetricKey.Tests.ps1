@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
         It "Should create new key in master called test1" {
             if (!(Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master )) {
-                New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -SecurePassword $tPassword -Confirm:$false
+                New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -SecurePassword $tPassword
             }
             $keyname1 = "test1"
             $key1 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname1
@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Handles pre-existing key" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database master -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database master -ErrorAction SilentlyContinue
         }
 
         It "Should Warn that they key test1 already exists" {
@@ -78,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Handles Algorithm changes" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname3 -Database master -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname3 -Database master -ErrorAction SilentlyContinue
         }
 
         It "Should Create new key in master called test2" {
@@ -95,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Non master database" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname4 -Database $database4 -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname4 -Database $database4 -ErrorAction SilentlyContinue
         }
 
         It "Should Create new key in enctest called test4" {
@@ -107,7 +107,7 @@ Describe $CommandName -Tag IntegrationTests {
             $database4 = "enctest"
 
             New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database4
-            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database4 -SecurePassword $tPassword -Confirm:$false
+            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database4 -SecurePassword $tPassword
             New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $database4 -UserName $dbuser4
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -124,7 +124,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Sets owner correctly" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname5 -Database $database5 -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname5 -Database $database5 -ErrorAction SilentlyContinue
         }
 
         It "Should Create new key in enctest called test3" {
@@ -144,7 +144,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Create new key loaded from a keyfile" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname6 -Database $database6 -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname6 -Database $database6 -ErrorAction SilentlyContinue
         }
 
         It "Should Create new key in enctest called filekey" {
@@ -170,7 +170,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Failed key creation from a missing keyfile" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname7 -Database $database7 -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname7 -Database $database7 -ErrorAction SilentlyContinue
         }
 
         It "Should not Create new key in enctest called filekeybad" {

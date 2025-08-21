@@ -41,7 +41,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-                Confirm     = $false
             }
             Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase
 
@@ -82,7 +81,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveDbCleanup = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-                Confirm     = $false
             }
             Remove-DbaDatabase @splatRemoveDbCleanup -ErrorAction SilentlyContinue
 

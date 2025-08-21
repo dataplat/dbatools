@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDatabase -SqlInstance $testInstance -Database $testDatabase
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -74,7 +74,6 @@ Describe $CommandName -Tag IntegrationTests {
                 Database       = $testDatabase
                 SecurePassword = $masterKeyPass
                 Path           = $backupPath
-                Confirm        = $false
             }
             $results = Backup-DbaDbMasterKey @splatBackup
             $results | Should -Not -BeNullOrEmpty
@@ -93,7 +92,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SecurePassword = $masterKeyPass
                 Path           = $backupPath
                 FileBaseName   = "dbatoolscli_dbmasterkey_$random"
-                Confirm        = $false
             }
             $results = Backup-DbaDbMasterKey @splatBackupWithName
             $results | Should -Not -BeNullOrEmpty

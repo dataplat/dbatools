@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "ACTION=""Install"""
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
 
-            $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Confirm:$false -Feature All
+            $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Feature All
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
@@ -140,7 +140,7 @@ Describe $CommandName -Tag IntegrationTests {
                 PerformVolumeMaintenanceTasks = $true
                 AdminAccount                  = "local\foo", "local\bar"
             }
-            $result = Install-DbaInstance @splatInstall -EnableException -Confirm:$false
+            $result = Install-DbaInstance @splatInstall -EnableException
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
@@ -193,7 +193,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Path              = "TestDrive:"
                 ConfigurationFile = "TestDrive:\Configuration.ini"
             }
-            $result = Install-DbaInstance @splatConfig -EnableException -Confirm:$false
+            $result = Install-DbaInstance @splatConfig -EnableException
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
@@ -223,7 +223,7 @@ Describe $CommandName -Tag IntegrationTests {
             @{ version = "2017"; canonicVersion = "14.0"; mainNode = "OPTIONS" }
         ) {
             param($version, $canonicVersion, $mainNode)
-            $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Confirm:$false -UpdateSourcePath TestDrive:
+            $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -UpdateSourcePath TestDrive:
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
@@ -256,7 +256,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Path    = "TestDrive:"
                 Restart = $true
             }
-            $result = Install-DbaInstance @splatRestart -EnableException -Confirm:$false
+            $result = Install-DbaInstance @splatRestart -EnableException
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
@@ -293,7 +293,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Path    = "TestDrive:"
                 Feature = "Tools"
             }
-            $result = Install-DbaInstance @splatTools -EnableException -Confirm:$false
+            $result = Install-DbaInstance @splatTools -EnableException
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
@@ -332,8 +332,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "fails when update execution has failed" {
             #override default mock
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
-            { Install-DbaInstance -Version 2008 -EnableException -Path "TestDrive:" -Confirm:$false } | Should -Throw -ExpectedMessage "*Installation failed with exit code 12345*"
-            $result = Install-DbaInstance -Version 2008 -Path "TestDrive:" -Confirm:$false -WarningVariable warVar 3>$null
+            { Install-DbaInstance -Version 2008 -EnableException -Path "TestDrive:" } | Should -Throw -ExpectedMessage "*Installation failed with exit code 12345*"
+            $result = Install-DbaInstance -Version 2008 -Path "TestDrive:" -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
             $result.Version | Should -Be ([version]"10.0")
             $result.Successful | Should -Be $false

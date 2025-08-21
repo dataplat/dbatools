@@ -39,12 +39,12 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterEach {
-        $null = Remove-DbaDbRole -SqlInstance $instance -Database $dbname -Role $roleExecutor, $roleSPAccess -Confirm:$false
+        $null = Remove-DbaDbRole -SqlInstance $instance -Database $dbname -Role $roleExecutor, $roleSPAccess
     }
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $instance -Database $dbname -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $instance -Database $dbname
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

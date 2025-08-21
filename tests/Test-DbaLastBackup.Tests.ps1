@@ -95,14 +95,14 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created object.
         # these for sure
         $dbs += "bigtestrest", "smalltestrest"
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Remove-DbaDatabase
         # those just in case test-dbalastbackup didn't cooperate
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Where-Object Name -like "dbatools-testrestore-dbatoolsci_*" | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Where-Object Name -like "dbatools-testrestore-dbatoolsci_*" | Remove-DbaDatabase
         # see "Restores using a specific path"
         Get-ChildItem -Path C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore* | Remove-Item -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -168,7 +168,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest | Remove-DbaDatabase
         }
 
         It "Should have skipped bigtestrest and tested smalltestrest" {

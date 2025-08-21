@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        Remove-DbaCmConnection -ComputerName $env:COMPUTERNAME -Confirm:$false
+        Remove-DbaCmConnection -ComputerName $env:COMPUTERNAME
     }
 
     Context "Returns DbaCmConnection" {

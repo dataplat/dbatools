@@ -25,14 +25,14 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database model | Stop-DbaProcess -Confirm:$false
+        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database model | Stop-DbaProcess
         $sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sqlCn.Refresh()
         $dbNameNotMatches = "dbatoolscliCompatibilityLevelNotMatch_$(Get-Random -Minimum 600 -Maximum 1100)"
         $instanceLevel = $sqlCn.Databases["master"].CompatibilityLevel
         <# create a database that is one level down from instance level, any version tested against supports the prior level        #>
         $previousCompatLevel = [int]($instanceLevel.ToString().Trim("Version")) - 10
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database model | Stop-DbaProcess -Confirm:$false
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database model | Stop-DbaProcess
         $queryNot = "CREATE DATABASE $dbNameNotMatches"
         #$null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbNameNotMatches
         $sqlCn.Query($queryNot)
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     AfterAll {
         $sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        Remove-DbaDatabase -SqlInstance $sqlCn -Database $dbNameNotMatches -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $sqlCn -Database $dbNameNotMatches -ErrorAction SilentlyContinue
         $sqlCn.ConnectionContext.Disconnect()
     }
     Context "Instance Compatibility Level" {

@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Password $password
         $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Password $password
         $null = New-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Owner sa
-        Add-DbaServerRoleMember -SqlInstance $server -ServerRole $fixedServerRoles[0] -Login $login1, $login2 -Confirm:$false
+        Add-DbaServerRoleMember -SqlInstance $server -ServerRole $fixedServerRoles[0] -Login $login1, $login2
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -55,15 +55,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1, $login2 -Confirm:$false
-        $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1, $login2
+        $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
         It "Removes Login from Role" {
-            Remove-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole $fixedServerRoles[0] -Login $login1 -Confirm:$false
+            Remove-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole $fixedServerRoles[0] -Login $login1
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
 
             $roleAfter.Role | Should -Be $fixedServerRoles[0]
@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes Login from Multiple Roles" {
             $serverRoles = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles
-            Remove-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole $serverRoles -Login $login1 -Confirm:$false
+            Remove-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole $serverRoles -Login $login1
 
             $roleDBAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles
             $roleDBAfter.Count | Should -Be $serverRoles.Count
@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes Custom Server-Level Role Membership" {
-            Remove-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Role $fixedServerRoles[-1] -Confirm:$false
+            Remove-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Role $fixedServerRoles[-1]
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[-1]
 
             $roleAfter.Role | Should -Be $fixedServerRoles[-1]
@@ -91,7 +91,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes Login from Roles via piped input from Get-DbaServerRole" {
             $serverRole = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
-            $serverRole | Remove-DbaServerRoleMember -Login $login2 -Confirm:$false
+            $serverRole | Remove-DbaServerRoleMember -Login $login2
 
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
             $roleAfter.EnumMemberNames().Contains($login2) | Should -Be $false

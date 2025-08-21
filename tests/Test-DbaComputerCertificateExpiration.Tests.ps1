@@ -29,11 +29,11 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "tests a certificate" {
         AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint "29C469578D6C6211076A09CEE5C5797EEA0C2713" -Confirm:$false
+            Remove-DbaComputerCertificate -Thumbprint "29C469578D6C6211076A09CEE5C5797EEA0C2713"
         }
 
         It "reports that the certificate is expired" {
-            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
+            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
             $results = Test-DbaComputerCertificateExpiration -Thumbprint $thumbprint
             $results | Select-Object -ExpandProperty Note | Should -Be "This certificate has expired and is no longer valid"

@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Clean up any remaining test credentials
         $existingCredentials = Get-DbaCredential -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatoolsci_test_*"
         if ($existingCredentials) {
-            $existingCredentials | Remove-DbaCredential -Confirm:$false -ErrorAction SilentlyContinue
+            $existingCredentials | Remove-DbaCredential -ErrorAction SilentlyContinue
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -78,7 +78,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatCleanup = @{
                 SqlInstance = $TestConfig.instance2
                 Credential  = @($credentialName, $credentialName2, $credentialName3, $credentialName4)
-                Confirm     = $false
             }
             Remove-DbaCredential @splatCleanup -ErrorAction SilentlyContinue
         }
@@ -93,7 +92,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveCredential = @{
                 SqlInstance = $TestConfig.instance2
                 Credential  = $credentialName
-                Confirm     = $false
             }
             Remove-DbaCredential @splatRemoveCredential
 
@@ -107,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             (Get-DbaCredential @splatGetCredential) | Should -Not -BeNullOrEmpty
 
-            Get-DbaCredential @splatGetCredential | Remove-DbaCredential -Confirm:$false
+            Get-DbaCredential @splatGetCredential | Remove-DbaCredential
             (Get-DbaCredential @splatGetCredential) | Should -BeNullOrEmpty
         }
 
@@ -134,7 +132,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveExcluded = @{
                 SqlInstance       = $TestConfig.instance2
                 ExcludeCredential = $credentialName2
-                Confirm           = $false
             }
             Remove-DbaCredential @splatRemoveExcluded
 
@@ -157,7 +154,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatRemoveAll = @{
                 SqlInstance = $TestConfig.instance2
-                Confirm     = $false
             }
             Remove-DbaCredential @splatRemoveAll
 

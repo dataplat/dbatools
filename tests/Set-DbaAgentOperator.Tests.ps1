@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator new -Confirm:$false
+        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator new
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

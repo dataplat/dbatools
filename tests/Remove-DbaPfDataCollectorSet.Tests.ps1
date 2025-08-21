@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up any remaining data collector sets
-        $null = Remove-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "removes the data collector set" {
-            $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet -Confirm:$false
+            $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
             $results.Name | Should -Be "Long Running Queries"
             $results.Status | Should -Be "Removed"
         }
@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns no results" {
-            $null = Remove-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" -Confirm:$false
+            $null = Remove-DbaPfDataCollectorSet -CollectorSet "Long Running Queries"
             $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries"
             $results.Name | Should -Be $null
         }

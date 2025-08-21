@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname = "dbatoolsci_decrypt_$random"
 
         # Remove the database if it exists
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
 
         # Create the database
         $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
             $instance2SqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.instance2SQLUserName, $instance2SecurePassword
         }
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname
         $instance2Db = New-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Name $dbname
 
         # test object for usage with sql credential
@@ -216,8 +216,8 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Remove the database if it exists
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname
 
         # Set the original configuration
         Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteDacConnectionsEnabled -Value $config.ConfiguredValue -WarningAction SilentlyContinue

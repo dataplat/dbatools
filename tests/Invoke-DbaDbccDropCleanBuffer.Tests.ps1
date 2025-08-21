@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
             "Cmd",
             "Output"
         )
-        $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.instance1 -Confirm:$false
+        $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.instance1
     }
 
     Context "Validate standard output" {
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns the right results for -NoInformationalMessages" {
-            $noInfoResult = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.instance1 -NoInformationalMessages -Confirm:$false
+            $noInfoResult = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.instance1 -NoInformationalMessages
             $noInfoResult.Cmd -match "DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS" | Should -Be $true
             $noInfoResult.Output -eq $null | Should -Be $true
         }

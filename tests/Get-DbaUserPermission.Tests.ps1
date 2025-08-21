@@ -49,7 +49,7 @@ exec sp_addrolemember 'userrole','bob';
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -89,7 +89,7 @@ exec sp_addrolemember 'userrole','bob';
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }

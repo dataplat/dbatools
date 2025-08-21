@@ -86,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
             $db2QSOptions.DataFlushIntervalInSeconds | Should -Be ($originalQSOptionValue + 1)
 
             # Cleanup for this test
-            $db1, $db2 | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+            $db1, $db2 | Remove-DbaDatabase -ErrorAction SilentlyContinue
         }
 
         It "Apply to all databases except db4" {
@@ -147,7 +147,7 @@ Describe $CommandName -Tag IntegrationTests {
             $db4QSOptions.DataFlushIntervalInSeconds | Should -Be $originalQSOptionValue
 
             # Cleanup for this test
-            $db1, $db2, $db3, $db4 | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+            $db1, $db2, $db3, $db4 | Remove-DbaDatabase -ErrorAction SilentlyContinue
         }
     }
 }

@@ -57,7 +57,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatSetStartup = @{
                 SqlInstance = $defaultInstance, $namedInstance
                 TraceFlag   = 3226
-                Confirm     = $false
             }
             $result = Set-DbaStartupParameter @splatSetStartup
 
@@ -81,7 +80,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatSetInstance = @{
                 SqlInstance = $namedInstance
                 TraceFlag   = 3226
-                Confirm     = $false
             }
             $result = Set-DbaStartupParameter @splatSetInstance
 

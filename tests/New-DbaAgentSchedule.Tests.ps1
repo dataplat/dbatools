@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule'
     }
 
     Context "Should create schedules based on frequency type" {
@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
             Remove-Variable -Name results
         }
 
@@ -132,7 +132,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
             Remove-Variable -Name results
         }
 
@@ -192,7 +192,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
             Remove-Variable -Name results
         }
 
@@ -250,7 +250,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
             Remove-Variable -Name results
         }
 

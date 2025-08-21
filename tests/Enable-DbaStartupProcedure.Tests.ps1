@@ -55,7 +55,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatEnable = @{
                 SqlInstance      = $TestConfig.Instance2
                 StartupProcedure = $startupProc
-                Confirm          = $false
             }
             $result = Enable-DbaStartupProcedure @splatEnable
         }
@@ -74,7 +73,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatAlreadyEnabled = @{
                 SqlInstance      = $TestConfig.Instance2
                 StartupProcedure = $startupProc
-                Confirm          = $false
             }
             $result = Enable-DbaStartupProcedure @splatAlreadyEnabled
         }
@@ -93,7 +91,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatNonExistent = @{
                 SqlInstance      = $TestConfig.Instance2
                 StartupProcedure = "Unknown.NotHere"
-                Confirm          = $false
                 WarningVariable  = "warn"
                 WarningAction    = "SilentlyContinue"
             }
@@ -113,7 +110,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatInvalidFormat = @{
                 SqlInstance      = $TestConfig.Instance2
                 StartupProcedure = "Four.Part.Schema.Name"
-                Confirm          = $false
                 WarningVariable  = "warn"
                 WarningAction    = "SilentlyContinue"
             }
