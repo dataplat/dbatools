@@ -1,10 +1,10 @@
 function Backup-DbaDatabase {
     <#
     .SYNOPSIS
-        Backup one or more SQL Server databases from a single SQL Server SqlInstance.
+        Creates database backups with flexible destination options and enterprise backup features.
 
     .DESCRIPTION
-        Performs a backup of a specified type of 1 or more databases on a single SQL Server Instance. These backups may be Full, Differential or Transaction log backups.
+        Creates full, differential, or transaction log backups for SQL Server databases with support for local file systems, Azure blob storage, and advanced backup features like compression, encryption, and striping. Handles backup validation, automatic path creation, and flexible file naming conventions to support both automated and manual backup workflows. Integrates with SQL Server's native backup infrastructure while providing PowerShell-friendly output for backup monitoring and compliance reporting. Replaces manual T-SQL backup commands with a single cmdlet that manages backup destinations, validates paths, and returns detailed backup metadata.
 
     .PARAMETER SqlInstance
         The SQL Server instance hosting the databases to be backed up.

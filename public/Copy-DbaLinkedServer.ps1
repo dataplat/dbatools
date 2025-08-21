@@ -1,12 +1,14 @@
 function Copy-DbaLinkedServer {
     <#
     .SYNOPSIS
-        Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+        Migrates linked servers and their authentication credentials from one SQL Server instance to another
 
     .DESCRIPTION
-        By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
+        Migrates SQL Server linked servers including all authentication credentials and connection settings from a source instance to one or more destination instances. The function preserves usernames and passwords by using password decryption techniques, eliminating the need to manually recreate linked server configurations and re-enter sensitive credentials.
 
-        Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+        This is particularly useful during server migrations, disaster recovery scenarios, or when consolidating environments where maintaining external data connections is critical. The function handles various provider types and can optionally upgrade older SQL Client providers to current versions during migration.
+
+        Credit: Password decryption techniques provided by Antti Rantasaari (NetSPI, 2014) - https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
     .PARAMETER Source
         Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.

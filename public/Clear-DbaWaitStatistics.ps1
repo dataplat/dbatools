@@ -1,10 +1,10 @@
 function Clear-DbaWaitStatistics {
     <#
     .SYNOPSIS
-        Clears wait statistics
+        Resets SQL Server wait statistics to establish a clean monitoring baseline
 
     .DESCRIPTION
-        Reset the aggregated statistics - basically just executes DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR)
+        Clears all accumulated wait statistics from sys.dm_os_wait_stats by executing DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR). This is essential for performance troubleshooting when you need to establish a new baseline for wait analysis. DBAs commonly clear wait stats after resolving performance issues, during maintenance windows, or when beginning focused monitoring periods to isolate specific workload patterns without historical noise.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

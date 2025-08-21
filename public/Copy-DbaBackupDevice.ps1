@@ -1,12 +1,12 @@
 function Copy-DbaBackupDevice {
     <#
     .SYNOPSIS
-        Copies backup devices one by one. Copies both SQL code and the backup file itself.
+        Migrates SQL Server backup devices between instances including both device definitions and physical files
 
     .DESCRIPTION
-        Backups are migrated using Admin shares. If the destination directory does not exist, SQL Server's default backup directory will be used.
-
-        If a backup device with same name exists on destination, it will not be dropped and recreated unless -Force is used.
+        Copies SQL Server backup devices from one instance to another, handling both the logical device definition and the physical backup files. This simplifies server migrations and disaster recovery setup by ensuring backup devices are available on target instances.
+        
+        Physical backup files are transferred using admin shares, and if the original directory structure doesn't exist on the destination, files are automatically placed in SQL Server's default backup directory. Existing backup devices are skipped unless -Force is specified to overwrite them.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

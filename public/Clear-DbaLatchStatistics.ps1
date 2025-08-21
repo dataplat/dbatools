@@ -1,10 +1,12 @@
 function Clear-DbaLatchStatistics {
     <#
     .SYNOPSIS
-        Clears Latch Statistics
+        Resets SQL Server latch statistics counters to establish a fresh performance baseline
 
     .DESCRIPTION
-        Reset the aggregated statistics - basically just executes DBCC SQLPERF (N'sys.dm_os_latch_stats', CLEAR)
+        Clears all accumulated latch statistics from the sys.dm_os_latch_stats dynamic management view by executing DBCC SQLPERF (N'sys.dm_os_latch_stats', CLEAR). This resets counters for latch types like BUFFER, ACCESS_METHODS_DATASET_PARENT, and others to zero values.
+        
+        Use this when troubleshooting latch contention to get a clean baseline before running your workload, or during performance testing to measure the impact of specific queries or operations. After clearing statistics, you can monitor sys.dm_os_latch_stats to see which latch types are experiencing the most waits and timeouts in your current workload.
 
     .PARAMETER SqlInstance
         Allows you to specify a comma separated list of servers to query.

@@ -1,10 +1,10 @@
 function Backup-DbaServiceMasterKey {
     <#
     .SYNOPSIS
-        Backs up specified service master key.
+        Exports SQL Server Service Master Key to an encrypted backup file for disaster recovery.
 
     .DESCRIPTION
-        Backs up specified service master key.
+        Creates an encrypted backup of the SQL Server Service Master Key (SMK), which sits at the top of SQL Server's encryption hierarchy. The Service Master Key encrypts Database Master Keys and certificates, making its backup critical for disaster recovery scenarios where encrypted databases need to be restored or moved between servers. The backup file is password-protected and can be stored in the default backup directory or a custom location. This prevents the need to manually recreate encryption keys and certificates when rebuilding servers or migrating encrypted databases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

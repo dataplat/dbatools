@@ -1,12 +1,12 @@
 function Copy-DbaEndpoint {
     <#
     .SYNOPSIS
-        Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.
+        Copies SQL Server endpoints from source instance to destination instances for migration scenarios.
 
     .DESCRIPTION
-        By default, all endpoints are copied.
-
-        If the endpoint already exists on the destination, it will be skipped unless -Force is used.
+        Migrates user-defined endpoints (excluding system endpoints) from a source SQL Server to one or more destination servers. This includes Service Broker, Database Mirroring, and Availability Group endpoints that are essential for high availability configurations. 
+        
+        Existing endpoints on the destination are skipped by default to prevent conflicts, but can be overwritten using the -Force parameter. The function scripts the complete endpoint definition from the source and recreates it on each destination server.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

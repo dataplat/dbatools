@@ -1,10 +1,10 @@
 function Add-DbaDbRoleMember {
     <#
     .SYNOPSIS
-        Adds a Database User to a database role for each instance(s) of SQL Server.
+        Adds database users or roles as members to database roles across SQL Server instances
 
     .DESCRIPTION
-        The Add-DbaDbRoleMember adds users in a database to a database role or roles for each instance(s) of SQL Server.
+        Manages database security by adding users or roles as members to database roles, automating what would otherwise require manual T-SQL commands or SQL Server Management Studio clicks. This function handles membership validation to ensure the user or role exists in the database before attempting to add them, and checks existing membership to prevent duplicate assignments. You can add multiple users to multiple roles across multiple databases and instances in a single operation, making it ideal for bulk security configuration or automated permission management workflows.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

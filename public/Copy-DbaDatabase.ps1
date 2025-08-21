@@ -1,12 +1,16 @@
 function Copy-DbaDatabase {
     <#
     .SYNOPSIS
-        Migrates SQL Server databases from one SQL Server to another.
+        Migrates SQL Server databases between instances using backup/restore or detach/attach methods.
 
     .DESCRIPTION
-        This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and SQL Server Express Edition.
+        Moves user databases from one SQL Server instance to another, supporting both on-premises and Azure SQL Managed Instance destinations. Ideal for server migrations, environment refreshes, disaster recovery testing, and cloud migrations where you need to relocate entire databases with their data and structure intact.
 
-        By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
+        Offers two migration methods: backup/restore (safer, supports cross-version migrations) and detach/attach (faster, requires same SQL Server version). The backup/restore method creates copy-only backups to avoid breaking your existing backup chain, while detach/attach physically moves database files via administrative shares.
+
+        Automatically handles file path mapping, preserves database properties like ownership chaining and trustworthy settings, and includes safety checks for Availability Groups, mirroring, and replication. By default, databases are placed in the destination server's default data and log directories, but you can preserve the original folder structure.
+
+        Works with named instances, clusters, SQL Server Express Edition, and Azure blob storage for cloud scenarios. Supports multiple destination servers, database renaming, and batch operations for migrating multiple databases efficiently.
 
         If you are experiencing issues with Copy-DbaDatabase, please use Backup-DbaDatabase | Restore-DbaDatabase instead.
 

@@ -1,10 +1,10 @@
 function Backup-DbaComputerCertificate {
     <#
     .SYNOPSIS
-        Backs up a computer certificate - useful for older systems and backing up remote certs to local disk.
+        Exports computer certificates to disk for SQL Server network encryption backup and disaster recovery.
 
     .DESCRIPTION
-        Backs up a computer certificate - useful for older systems and backing up remote certs to local disk.
+        Exports computer certificates from the local or remote certificate store to files on disk. This is essential for backing up certificates used for SQL Server network encryption before server migrations, certificate renewals, or disaster recovery scenarios. The function works with certificate objects from Get-DbaComputerCertificate and supports multiple export formats including standard .cer files and password-protected .pfx files for complete private key backup.
 
     .PARAMETER InputObject
         The target certificate object. Accepts input from Get-DbaComputerCertificate.

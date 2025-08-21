@@ -1,12 +1,14 @@
 function Copy-DbaInstanceTrigger {
     <#
     .SYNOPSIS
-        Copy-DbaInstanceTrigger migrates server triggers from one SQL Server to another.
+        Copies server-level triggers between SQL Server instances for migration or standardization
 
     .DESCRIPTION
-        By default, all triggers are copied. The -ServerTrigger parameter is auto-populated for command-line completion and can be used to copy only specific triggers.
+        Migrates server-level triggers from a source SQL Server instance to one or more destination instances. This is essential during server migrations, disaster recovery setup, or when standardizing security and audit triggers across your environment.
 
-        If the trigger already exists on the destination, it will be skipped unless -Force is used.
+        Server triggers fire in response to server-level events like logons, DDL changes, or server startup. This function scripts out the complete trigger definition from the source and recreates it on the destination, maintaining all trigger properties and logic.
+
+        By default, all server triggers are copied, but you can specify particular triggers with -ServerTrigger or exclude specific ones with -ExcludeServerTrigger. Existing triggers on the destination are skipped unless -Force is used to drop and recreate them.
 
     .PARAMETER Source
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.

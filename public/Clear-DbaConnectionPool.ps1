@@ -1,12 +1,14 @@
 function Clear-DbaConnectionPool {
     <#
     .SYNOPSIS
-        Resets (or empties) the connection pool.
+        Clears all SQL Server connection pools on the specified computer to resolve connection issues.
 
     .DESCRIPTION
-        This command resets (or empties) the connection pool.
+        Clears all SQL Server connection pools managed by the .NET SqlClient on the target computer. This forces any pooled connections to be discarded and recreated on the next connection attempt.
 
-        If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.
+        Connection pools can sometimes retain stale or problematic connections that cause intermittent connectivity issues, authentication failures, or performance problems. This command helps resolve these issues by forcing a clean slate for all SQL Server connections from that computer.
+
+        Active connections are marked for disposal and will be discarded when closed, rather than returned to the pool. New connections will be created fresh from the pool after clearing.
 
         Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
 

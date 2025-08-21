@@ -1,12 +1,12 @@
 function Add-DbaAgDatabase {
     <#
     .SYNOPSIS
-        Adds database(s) to an Availability Group on a SQL Server instance.
+        Adds databases to an Availability Group with automated backup, restore, and synchronization handling.
 
     .DESCRIPTION
-        Adds database(s) to an Availability Group on a SQL Server instance.
+        Adds databases to an Availability Group and handles the complete process from backup through synchronization. This command eliminates the manual steps typically required when expanding Availability Groups with new databases, automatically managing seeding modes, backup/restore operations, and replica synchronization.
 
-        After checking for prerequisites, the commands runs these five steps for every database:
+        The command executes a comprehensive five-step process for each database:
         * Step 1: Setting seeding mode if needed.
           - If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.
           - The seeding mode will not be changed back but stay in this mode.
@@ -21,11 +21,9 @@ function Add-DbaAgDatabase {
           - This step is skipped for those replicas, where the database is already joined to the Availability Group.
         * Step 5: Wait for the database to finish joining the Availability Group on the secondary replicas.
 
-        Use Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.
+        Use Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met before running this command.
 
-        If you have special requirements for the setup for the database at the replicas,
-        perform the backup and restore part with Backup-DbaDatabase and Restore-DbaDatabase in advance.
-        Please make sure that the last log backup has been restored before running Add-DbaAgDatabase.
+        For custom backup and restore requirements, perform those operations with Backup-DbaDatabase and Restore-DbaDatabase in advance, ensuring the last log backup has been restored before running Add-DbaAgDatabase.
 
     .PARAMETER SqlInstance
         The primary replica of the Availability Group. Server version must be SQL Server version 2012 or higher.

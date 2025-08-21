@@ -1,14 +1,14 @@
 function ConvertTo-DbaTimeline {
     <#
     .SYNOPSIS
-        Converts InputObject to a html timeline using Google Chart
+        Generates interactive HTML timeline visualizations from SQL Server job history and backup history data
 
     .DESCRIPTION
-        This function accepts input as pipeline from the following dbatools functions:
-        Get-DbaAgentJobHistory
-        Get-DbaDbBackupHistory
-        (more to come...)
-        And generates Bootstrap based, HTML file with Google Chart Timeline
+        Transforms SQL Server job execution and backup operation data into visual timeline reports for analysis and troubleshooting. Takes piped output from Get-DbaAgentJobHistory and Get-DbaDbBackupHistory and generates a complete HTML file with an interactive Google Charts timeline.
+
+        Perfect for analyzing job schedules, identifying backup windows, troubleshooting overlapping operations, or creating visual reports for management. The timeline shows execution duration, status, and timing relationships across multiple instances, with hover tooltips displaying detailed information including start/end times and duration calculations.
+
+        Output is a self-contained HTML file that can be viewed in any browser, emailed to stakeholders, or archived for historical analysis. Supports both single and multi-instance scenarios with automatic labeling and color-coded status indicators.
 
     .PARAMETER InputObject
 

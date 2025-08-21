@@ -1,12 +1,14 @@
 function Copy-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Copy-DbaAgentOperator migrates operators from one SQL Server to another.
+        Copies SQL Server Agent operators between instances for migration and standardization.
 
     .DESCRIPTION
-        By default, all operators are copied. The -Operators parameter is auto-populated for command-line completion and can be used to copy only specific operators.
+        Copies SQL Server Agent operators from a source instance to one or more destination instances, preserving all operator properties including email addresses, pager numbers, and notification schedules. This is essential during server migrations, environment standardization, or when setting up identical alerting configurations across multiple instances.
 
-        If the associated credentials for the operator do not exist on the destination, it will be skipped. If the operator already exists on the destination, it will be skipped unless -Force is used.
+        All operators are copied by default, but you can target specific operators or exclude certain ones. Existing operators on the destination are skipped unless you use -Force to overwrite them. The function protects failsafe operators from being accidentally dropped during forced operations.
+
+        Each operator is scripted from the source using SQL Management Objects and recreated on the destination, ensuring all configuration details are preserved exactly as configured on the source instance.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

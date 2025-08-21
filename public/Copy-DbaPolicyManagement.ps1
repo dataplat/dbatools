@@ -1,12 +1,12 @@
 function Copy-DbaPolicyManagement {
     <#
     .SYNOPSIS
-        Migrates SQL Policy Based Management Objects, including both policies and conditions.
+        Copies Policy-Based Management policies, conditions, and categories between SQL Server instances
 
     .DESCRIPTION
-        By default, all policies and conditions are copied. If an object already exist on the destination, it will be skipped unless -Force is used.
-
-        The -Policy and -Condition parameters are auto-populated for command-line completion and can be used to copy only specific objects.
+        Transfers your entire Policy-Based Management framework from one SQL Server instance to another, including custom policies, conditions, and categories. This streamlines environment standardization and disaster recovery scenarios where you need identical compliance policies across multiple servers.
+        
+        By default, all non-system policies and conditions are copied. Existing objects on the destination are skipped unless -Force is used to overwrite them. You can selectively copy specific policies or conditions using the include/exclude parameters, which provide auto-completion from the source server.
 
     .PARAMETER Source
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
