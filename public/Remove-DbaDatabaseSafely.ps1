@@ -365,7 +365,7 @@ function Remove-DbaDatabaseSafely {
 
                     ## Create a Job Category
                     if (!(Get-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationSqlCredential -Category $categoryname)) {
-                        New-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationSqlCredential -Category $categoryname -EnableException
+                        $null = New-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationSqlCredential -Category $categoryname -EnableException
                     }
 
                     try {
