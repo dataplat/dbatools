@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $keyname1 = "test1"
             $key1 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname1
-            $results1 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname1 -Database master -WarningVariable global:warnvar1
+            $results1 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname1 -Database master -WarningVariable warnvar1
             $warnvar1 | Should -BeNullOrEmpty
             $results1.database | Should -Be "master"
             $results1.name | Should -Be $keyname1
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should Warn that they key test1 already exists" {
             $keyname2 = "test1"
-            $key2 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database master -WarningVariable global:warnvar2 3> $null
+            $key2 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database master -WarningVariable warnvar2 3> $null
             $warnvar2 | Should -BeLike "*already exists in master on*"
         }
     }
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should Create new key in master called test2" {
             $keyname3 = "test2"
             $algorithm3 = "Rsa4096"
-            $key3 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname3 -Algorithm $algorithm3 -WarningVariable global:warnvar3
+            $key3 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname3 -Algorithm $algorithm3 -WarningVariable warnvar3
             $results3 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname3 -Database master
             $warnvar3 | Should -BeNullOrEmpty
             $results3.database | Should -Be "master"
@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $key4 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database4 -Name $keyname4 -Owner keyowner -Algorithm $algorithm4 -WarningVariable global:warnvar4
+            $key4 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database4 -Name $keyname4 -Owner keyowner -Algorithm $algorithm4 -WarningVariable warnvar4
             $results4 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname4 -Database $database4
             $warnvar4 | Should -BeNullOrEmpty
             $results4.database | Should -Be $database4
@@ -132,7 +132,7 @@ Describe $CommandName -Tag IntegrationTests {
             $algorithm5 = "Rsa4096"
             $dbuser5 = "keyowner"
             $database5 = "enctest"
-            $key5 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname5 -Owner keyowner -Database $database5 -Algorithm $algorithm5 -WarningVariable global:warnvar5
+            $key5 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname5 -Owner keyowner -Database $database5 -Algorithm $algorithm5 -WarningVariable warnvar5
             $results5 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname5 -Database $database5
             $warnvar5 | Should -BeNullOrEmpty
             $results5.database | Should -Be $database5
@@ -155,7 +155,7 @@ Describe $CommandName -Tag IntegrationTests {
             $path6 = "$($($TestConfig.appveyorlabrepo))\keytests\keypair.snk"
 
             if (Test-Path -Path $path6) {
-                $key6 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database6 -Name $keyname6 -Owner keyowner -WarningVariable global:warnvar6 -KeySourceType File -KeySource $path6
+                $key6 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database6 -Name $keyname6 -Owner keyowner -WarningVariable warnvar6 -KeySourceType File -KeySource $path6
                 $results6 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname6 -Database $database6
                 $warnvar6 | Should -BeNullOrEmpty
                 $results6.database | Should -Be $database6
@@ -178,7 +178,7 @@ Describe $CommandName -Tag IntegrationTests {
             $dbuser7 = "keyowner"
             $database7 = "enctest"
             $path7 = "$($($TestConfig.appveyorlabrepo))\keytests\keypair.bad"
-            $key7 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database7 -Name $keyname7 -Owner keyowner -WarningVariable global:warnvar7 -KeySourceType File -KeySource $path7 3> $null
+            $key7 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database7 -Name $keyname7 -Owner keyowner -WarningVariable warnvar7 -KeySourceType File -KeySource $path7 3> $null
             $results7 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname7 -Database $database7
             $warnvar7 | Should -Not -BeNullOrEmpty
             $results7 | Should -BeNullOrEmpty

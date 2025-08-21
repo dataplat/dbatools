@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $errVar = $warnVar = $null
             $cred = New-Object System.Management.Automation.PSCredential($login, $securePassword)
-            $results = Update-DbaServiceAccount -ComputerName $computerName -ServiceName $services.ServiceName -ServiceCredential $cred -ErrorVariable global:errVar -WarningVariable global:warnVar
+            $results = Update-DbaServiceAccount -ComputerName $computerName -ServiceName $services.ServiceName -ServiceCredential $cred -ErrorVariable errVar -WarningVariable warnVar
         }
 
         It "Should return something" {
@@ -133,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
             ([adsi]"WinNT://$computerName/$login,user").SetPassword($newPassword)
 
             $errVarPw = $warnVarPw = $null
-            $resultsPw = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable global:errVarPw -WarningVariable global:warnVarPw
+            $resultsPw = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable errVarPw -WarningVariable warnVarPw
         }
 
         It "Password change should return something" {
@@ -170,7 +170,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Change agent service account to local system" {
         BeforeAll {
             $errVarAgent = $warnVarAgent = $null
-            $resultsAgent = $services | Where-Object { $PSItem.ServiceType -eq "Agent" } | Update-DbaServiceAccount -Username "NT AUTHORITY\LOCAL SYSTEM" -ErrorVariable global:errVarAgent -WarningVariable global:warnVarAgent
+            $resultsAgent = $services | Where-Object { $PSItem.ServiceType -eq "Agent" } | Update-DbaServiceAccount -Username "NT AUTHORITY\LOCAL SYSTEM" -ErrorVariable errVarAgent -WarningVariable warnVarAgent
         }
 
         It "Should return something" {
@@ -191,7 +191,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Revert SQL Agent service account changes ($currentAgentUser)" {
         BeforeAll {
             $errVarRevertAgent = $warnVarRevertAgent = $null
-            $resultsRevertAgent = $services | Where-Object { $PSItem.ServiceType -eq "Agent" } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable global:errVarRevertAgent -WarningVariable global:warnVarRevertAgent
+            $resultsRevertAgent = $services | Where-Object { $PSItem.ServiceType -eq "Agent" } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable errVarRevertAgent -WarningVariable warnVarRevertAgent
         }
 
         It "Should return something" {
@@ -212,7 +212,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Revert SQL Engine service account changes ($currentEngineUser)" {
         BeforeAll {
             $errVarRevertEngine = $warnVarRevertEngine = $null
-            $resultsRevertEngine = $services | Where-Object { $PSItem.ServiceType -eq "Engine" } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable global:errVarRevertEngine -WarningVariable global:warnVarRevertEngine
+            $resultsRevertEngine = $services | Where-Object { $PSItem.ServiceType -eq "Engine" } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable errVarRevertEngine -WarningVariable warnVarRevertEngine
         }
 
         It "Should return something" {

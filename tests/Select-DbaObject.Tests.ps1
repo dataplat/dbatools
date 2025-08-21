@@ -37,20 +37,20 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $script:object = [PSCustomObject]@{
+        $object = [PSCustomObject]@{
             Foo  = 42
             Bar  = 18
             Tara = 21
         }
 
-        $script:object2 = [PSCustomObject]@{
+        $object2 = [PSCustomObject]@{
             Foo = 42000
             Bar = 23
         }
 
-        $script:list = @()
-        $script:list += $script:object
-        $script:list += [PSCustomObject]@{
+        $list = @()
+        $list += $object
+        $list += [PSCustomObject]@{
             Foo  = 23
             Bar  = 88
             Tara = 28
@@ -58,24 +58,24 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "renames Bar to Bar2" {
-        ($script:object | Select-DbaObject -Property "Foo", "Bar as Bar2").PSObject.Properties.Name | Should -Be "Foo", "Bar2"
+        ($object | Select-DbaObject -Property "Foo", "Bar as Bar2").PSObject.Properties.Name | Should -Be "Foo", "Bar2"
     }
 
     It "changes Bar to string" {
-        ($script:object | Select-DbaObject -Property "Bar to string").Bar.GetType().FullName | Should -Be "System.String"
+        ($object | Select-DbaObject -Property "Bar to string").Bar.GetType().FullName | Should -Be "System.String"
     }
 
     It "converts numbers to sizes" {
-        ($script:object2 | Select-DbaObject -Property "Foo size KB:1").Foo | Should -Be 41
-        ($script:object2 | Select-DbaObject -Property "Foo size KB:1:1").Foo | Should -Be "41 KB"
+        ($object2 | Select-DbaObject -Property "Foo size KB:1").Foo | Should -Be 41
+        ($object2 | Select-DbaObject -Property "Foo size KB:1:1").Foo | Should -Be "41 KB"
     }
 
     It "picks values from other variables" {
-        ($script:object2 | Select-DbaObject -Property "Tara from object").Tara | Should -Be 21
+        ($object2 | Select-DbaObject -Property "Tara from object").Tara | Should -Be 21
     }
 
     It "picks values from the properties of the right object in a list" {
-        ($script:object2 | Select-DbaObject -Property "Tara from List where Foo = Bar").Tara | Should -Be 28
+        ($object2 | Select-DbaObject -Property "Tara from List where Foo = Bar").Tara | Should -Be 28
     }
 
     It "sets the correct properties to show in whitelist mode" {
