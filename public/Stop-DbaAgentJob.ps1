@@ -1,10 +1,13 @@
 function Stop-DbaAgentJob {
     <#
     .SYNOPSIS
-        Stops a running SQL Server Agent Job.
+        Stops running SQL Server Agent jobs by calling their Stop() method.
 
     .DESCRIPTION
-        This command stops a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+        Stops currently executing SQL Server Agent jobs and returns the job objects for verification after the stop attempt.
+        Perfect for halting runaway jobs during maintenance windows, stopping jobs that are causing blocking or performance issues, or clearing job queues before scheduled operations.
+        The function automatically skips jobs that are already idle and can optionally wait until jobs have completely finished stopping before returning results.
+        Works with individual job names, exclusion filters, or accepts piped job objects from Get-DbaAgentJob and other dbatools commands.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

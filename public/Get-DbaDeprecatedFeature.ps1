@@ -5,9 +5,9 @@ function Get-DbaDeprecatedFeature {
 
     .DESCRIPTION
         Queries the sys.dm_os_performance_counters system view to identify which deprecated SQL Server features have been used on your instances and how frequently they've been accessed. This information is essential for upgrade planning, as deprecated features may be removed in future SQL Server versions and could cause application failures.
-        
+
         The function returns only features that have been used (usage count greater than zero), helping you prioritize which code needs to be modernized before upgrading SQL Server. Common deprecated features include old JOIN syntax, legacy data types, and obsolete T-SQL functions.
-        
+
         More information: https://learn.microsoft.com/en-us/sql/relational-databases/performance-monitor/sql-server-deprecated-features-object
 
     .PARAMETER SqlInstance

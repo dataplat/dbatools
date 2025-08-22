@@ -4,8 +4,8 @@ function Remove-DbaCmConnection {
         Removes cached Windows Management and CIM connections from the dbatools connection cache.
 
     .DESCRIPTION
-        Clears cached connection objects that dbatools uses for remote computer management operations like accessing Windows services, registry, and file systems on SQL Server instances. 
-        When you run dbatools commands against remote servers, these connections are automatically created and cached to improve performance and reduce authentication overhead. 
+        Clears cached connection objects that dbatools uses for remote computer management operations like accessing Windows services, registry, and file systems on SQL Server instances.
+        When you run dbatools commands against remote servers, these connections are automatically created and cached to improve performance and reduce authentication overhead.
         This function lets you remove specific cached connections or clear the entire cache, which is useful when credentials change, connections become stale, or you need to force fresh authentication for troubleshooting.
 
     .PARAMETER ComputerName

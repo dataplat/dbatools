@@ -6,7 +6,7 @@ function Remove-DbaDbSequence {
     .DESCRIPTION
         Removes sequence objects from SQL Server databases, freeing up schema namespace and cleaning up unused database objects.
         Sequences are commonly used for generating unique numeric values and may need removal during application changes or database cleanup.
-        
+
         When used without a pipeline, the function will first retrieve matching sequences using Get-DbaDbSequence with the provided parameters, then remove them.
         Pipeline input from Get-DbaDbSequence allows for selective removal after review or filtering.
 

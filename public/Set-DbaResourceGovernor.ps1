@@ -5,9 +5,9 @@ function Set-DbaResourceGovernor {
 
     .DESCRIPTION
         Configures Resource Governor settings at the SQL Server instance level to control CPU, memory, and I/O resource allocation for different workloads. Resource Governor requires both being enabled on the instance and having an optional classifier function that determines which resource pool and workload group incoming sessions should use based on login properties, application name, or other criteria.
-        
+
         This function handles the two-step Resource Governor setup process: enabling the feature and optionally assigning a classifier function. The classifier function must be a user-defined function in the master database that returns a workload group name or ID. Without a classifier function, all sessions use the default workload group.
-        
+
         Commonly used when implementing resource management policies to prevent resource-intensive queries from impacting critical applications, or to allocate guaranteed resources to specific users or applications during peak usage periods.
 
     .PARAMETER SqlInstance

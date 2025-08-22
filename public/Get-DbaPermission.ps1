@@ -5,17 +5,17 @@ function Get-DbaPermission {
 
     .DESCRIPTION
         Retrieves comprehensive permission information from SQL Server instances and databases, including both explicit permissions and implicit permissions from fixed roles.
-        
+
         This function queries sys.server_permissions and sys.database_permissions to capture all granted, denied, and revoked permissions across server and database levels.
         Perfect for security audits, compliance reporting, troubleshooting access issues, and planning permission migrations between environments.
-        
+
         The output includes permission state (GRANT/DENY/REVOKE), permission type (SELECT, CONNECT, EXECUTE, etc.), grantee information, and the specific securable being protected.
         Also captures implicit CONTROL permissions for dbo users, db_owner role members, and schema owners that aren't explicitly stored in system tables.
         Each result includes ready-to-use GRANT and REVOKE statements for easy permission replication or cleanup.
-        
+
         Permissions link principals (logins, users, roles) to securables (servers, databases, schemas, objects).
         Principals exist at Windows, instance, and database levels, while securables exist at instance and database levels.
-        
+
         See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information about SQL Server permissions
 
     .PARAMETER SqlInstance

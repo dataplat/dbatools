@@ -4,7 +4,7 @@ function Get-DbaDbForeignKey {
         Retrieves foreign key constraints from SQL Server database tables
 
     .DESCRIPTION
-        Retrieves all foreign key constraint definitions from tables across one or more SQL Server databases. 
+        Retrieves all foreign key constraint definitions from tables across one or more SQL Server databases.
         Essential for documenting referential integrity relationships, analyzing table dependencies before migrations, and troubleshooting cascade operations.
         Returns detailed foreign key properties including referenced tables, schema information, and constraint status (enabled/disabled, checked/unchecked).
         Supports filtering by database and excluding system tables to focus on user-defined constraints.

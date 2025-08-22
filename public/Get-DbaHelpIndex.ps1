@@ -5,9 +5,9 @@ function Get-DbaHelpIndex {
 
     .DESCRIPTION
         This function queries SQL Server DMVs to return detailed index and statistics information for performance analysis, index maintenance planning, and identifying optimization opportunities. You can target all indexes in a database or focus on a specific table to analyze index usage patterns, sizes, and fragmentation levels.
-        
+
         Essential for DBAs performing index tuning, this command helps identify unused indexes for removal, oversized indexes consuming storage, and indexes requiring maintenance based on fragmentation or usage statistics. The data combines structural information (key columns, include columns, filters) with runtime metrics (reads, updates, last used) to provide a complete index health picture.
-        
+
         Uses SQL Server DMVs and system tables, requiring SQL Server 2005 or later. For performance reasons, certain statistics details are limited in SQL Server 2005 unless you specify a specific table with the ObjectName parameter.
 
         The data includes:

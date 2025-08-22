@@ -1,10 +1,10 @@
 function Start-DbaPfDataCollectorSet {
     <#
     .SYNOPSIS
-        Starts Performance Monitor Data Collector Set.
+        Starts Windows Performance Monitor Data Collector Sets on local or remote computers.
 
     .DESCRIPTION
-        Starts Performance Monitor Data Collector Set.
+        Starts Performance Monitor Data Collector Sets that have been configured to gather system performance data. This is useful for SQL Server performance troubleshooting when you need to collect OS-level metrics like CPU, memory, disk I/O, and network statistics alongside your SQL Server monitoring. The function checks the collector set status before starting and will skip sets that are already running or disabled.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

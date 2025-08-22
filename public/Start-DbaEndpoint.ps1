@@ -1,10 +1,10 @@
 function Start-DbaEndpoint {
     <#
     .SYNOPSIS
-        Starts endpoints on a SQL Server instance.
+        Starts stopped SQL Server endpoints for Database Mirroring, Service Broker, and other network services.
 
     .DESCRIPTION
-        Starts endpoints on a SQL Server instance.
+        Starts stopped SQL Server endpoints that are required for Database Mirroring, Service Broker, SOAP, and custom TCP connections. Endpoints must be in a started state to accept network connections and facilitate features like Availability Groups, database mirroring partnerships, and Service Broker message routing. This function is commonly used after maintenance windows, server restarts, or when troubleshooting connectivity issues where endpoints were inadvertently stopped.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

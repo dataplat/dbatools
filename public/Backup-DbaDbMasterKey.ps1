@@ -4,10 +4,10 @@ function Backup-DbaDbMasterKey {
         Exports database master keys to encrypted backup files for disaster recovery and compliance.
 
     .DESCRIPTION
-        Creates encrypted backup files of database master keys from one or more SQL Server databases. Database master keys are essential for Transparent Data Encryption (TDE), column-level encryption, and other SQL Server encryption features. 
-        
+        Creates encrypted backup files of database master keys from one or more SQL Server databases. Database master keys are essential for Transparent Data Encryption (TDE), column-level encryption, and other SQL Server encryption features.
+
         This function is critical for disaster recovery planning since losing a database master key makes encrypted data permanently inaccessible. The exported keys are password-protected and can be restored using Restore-DbaDbMasterKey or T-SQL commands.
-        
+
         Works with databases that contain master keys and saves backup files to the server's default backup directory or a specified path. Each backup file uses a unique naming convention to prevent overwrites during multiple exports.
 
     .PARAMETER SqlInstance

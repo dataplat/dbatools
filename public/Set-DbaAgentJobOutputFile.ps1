@@ -18,14 +18,14 @@ function Set-DbaAgentJobOutputFile {
 
     .PARAMETER Job
         The name of the job to process.
-        
+
         This parameter is not officially mandatory, but you will always be asked to provide a job if you have not.
 
     .PARAMETER Step
         The name of the Agent Job Step to provide Output File Path for.
-        
+
         Within a job, step names are unique so this is a safe way to select steps.
-        
+
         Also available dynamically. If you do not specify this parameter and the target job has only one step, then we use that step. If it has more than one, then a GUI will be used to make you pick steps. If that GUI does not work, then we use all steps.
 
     .PARAMETER OutputFile

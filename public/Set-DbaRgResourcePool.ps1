@@ -4,8 +4,8 @@ function Set-DbaRgResourcePool {
         Modifies CPU, memory, and IOPS limits for existing SQL Server Resource Governor pools.
 
     .DESCRIPTION
-        Modifies resource allocation settings for existing Resource Governor pools to control how much CPU, memory, and disk I/O different workloads can consume. 
-        This lets you adjust performance limits after analyzing workload patterns or when server capacity changes. 
+        Modifies resource allocation settings for existing Resource Governor pools to control how much CPU, memory, and disk I/O different workloads can consume.
+        This lets you adjust performance limits after analyzing workload patterns or when server capacity changes.
         Works with both internal pools (for SQL Server queries) and external pools (for R Services, Python, or other external processes).
         The Resource Governor is automatically reconfigured to apply changes immediately unless you skip reconfiguration.
 

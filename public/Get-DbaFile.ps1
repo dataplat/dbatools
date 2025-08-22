@@ -193,14 +193,14 @@ function Get-DbaFile {
                     foreach ($type in $FileTypeComparison) {
                         if ($row.filename.ToLowerInvariant().EndsWith(".$type")) {
                             $fullpath = $row.fullpath.Replace("\", $separator)
-                            
+
                             # Replacing all instances of '\\' with single backslashes '\', and maintain the leading SMB share path represented by the initial '\\'.
                             $is_smb_share_path = $fullpath.SubString(0, 2) -eq "\\"
                             $fullpath = $fullpath.Replace("\\", "\")
                             if ($is_smb_share_path) {
                                 $fullpath = $fullpath -replace "^\\", "\\"
                             }
-                            
+
                             $fullpath = $fullpath.Replace("//", "/")
                             [PSCustomObject]@{
                                 ComputerName   = $server.ComputerName

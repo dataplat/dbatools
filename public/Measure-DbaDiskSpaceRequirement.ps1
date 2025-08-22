@@ -5,9 +5,9 @@ function Measure-DbaDiskSpaceRequirement {
 
     .DESCRIPTION
         Analyzes database files on source and destination instances to calculate space requirements before migration. Shows file size differences, mount points, and identifies potential overwrites when copying databases between SQL Server instances.
-        
+
         The function compares data and log files from the source database against existing files on the destination, accounting for scenarios where files exist only on source, only on destination, or on both sides. This prevents migration failures due to insufficient disk space and helps plan storage allocation.
-        
+
         Accepts pipeline input with Source, Database, and Destination properties, making it ideal for bulk migration planning from CSV files, SQL queries, or PowerShell objects.
 
     .PARAMETER Source

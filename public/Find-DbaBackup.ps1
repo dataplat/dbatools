@@ -5,9 +5,9 @@ function Find-DbaBackup {
 
     .DESCRIPTION
         Recursively scans specified directories to locate SQL Server backup files (.bak, .trn, .dif, etc.) older than your defined retention period. Returns file objects that can be piped to removal commands or processed for cleanup workflows.
-        
+
         This function replaces manual directory searches when managing backup retention policies. You can filter results to only include files that have been archived (using the Archive bit check) to ensure backups are safely stored elsewhere before cleanup.
-        
+
         Commonly used in automated maintenance scripts to identify backup files ready for deletion based on your organization's retention requirements.
 
     .PARAMETER Path

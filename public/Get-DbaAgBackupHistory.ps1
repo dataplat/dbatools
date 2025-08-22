@@ -4,8 +4,8 @@ function Get-DbaAgBackupHistory {
         Retrieves backup history from msdb across all replicas in a SQL Server Availability Group
 
     .DESCRIPTION
-        Queries the msdb backup history tables across all replicas in an Availability Group and aggregates the results into a unified view. This function automatically discovers all replicas (either through a listener or by querying individual replicas) and combines their backup history data, which is essential since backups can be taken from any replica but are only recorded in the local msdb. 
-        
+        Queries the msdb backup history tables across all replicas in an Availability Group and aggregates the results into a unified view. This function automatically discovers all replicas (either through a listener or by querying individual replicas) and combines their backup history data, which is essential since backups can be taken from any replica but are only recorded in the local msdb.
+
         This solves the common AG challenge where DBAs need to piece together backup history from multiple replicas for compliance reporting, recovery planning, or troubleshooting backup strategies. You can filter by backup type, date ranges, or get just the latest backups, and the function adds availability group context to help identify which replica performed each backup.
 
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html

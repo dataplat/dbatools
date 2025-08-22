@@ -4,7 +4,7 @@ function Get-DbaErrorLog {
         Retrieves SQL Server error log entries for troubleshooting and monitoring
 
     .DESCRIPTION
-        Retrieves entries from SQL Server error logs across all available log files (0-99, where 0 is current and 99 is oldest). 
+        Retrieves entries from SQL Server error logs across all available log files (0-99, where 0 is current and 99 is oldest).
         Essential for troubleshooting SQL Server issues, monitoring login failures, tracking system events, and compliance auditing.
         Supports filtering by log number, source type, text patterns, and date ranges to quickly locate specific errors or events.
         Reads from all available error logs by default, so you don't have to check each log file manually.

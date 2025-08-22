@@ -5,9 +5,9 @@ function ConvertTo-DbaDataTable {
 
     .DESCRIPTION
         Converts PowerShell objects into .NET DataTable objects with proper column types and database-compatible data formatting. This is essential for bulk operations like importing data into SQL Server tables using Write-DbaDataTable or other bulk insert methods.
-        
+
         The function automatically detects and converts data types to SQL Server-compatible formats, handling special dbatools types like DbaSize (file sizes) and DbaTimeSpan objects. You can control how these special types are converted - for example, converting TimeSpan objects to total milliseconds, seconds, or string representations.
-        
+
         Common scenarios include taking results from Get-DbaDatabase, Get-DbaBackupHistory, or other dbatools commands and preparing them for storage in custom reporting tables. The function handles complex object arrays, null values, and provides both strongly-typed and raw string conversion modes.
 
         Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
@@ -232,7 +232,7 @@ function ConvertTo-DbaDataTable {
                     return [System.DateTime]$Value.DateTime
                 }
                 'String' {
-                    return ($Value | Foreach-Object { $_.ToString() }) -Join ', '
+                    return ($Value | ForEach-Object { $_.ToString() }) -Join ', '
                 }
             }
         }

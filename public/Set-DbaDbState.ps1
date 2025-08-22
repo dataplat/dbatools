@@ -5,15 +5,15 @@ function Set-DbaDbState {
 
     .DESCRIPTION
         Modifies database access modes and availability states through ALTER DATABASE commands, eliminating the need to write T-SQL manually for common database administration tasks.
-        
+
         This function handles three categories of database state changes:
         - Read/Write access: Sets databases to READ_ONLY for reporting scenarios or READ_WRITE for normal operations
         - Online status: Brings databases ONLINE, takes them OFFLINE for maintenance, or sets EMERGENCY mode for corruption recovery
         - User access: Restricts database access to SINGLE_USER for maintenance, RESTRICTED_USER for admin-only access, or MULTI_USER for normal operations
         - Database detachment: Safely detaches databases by first removing them from Availability Groups and breaking mirroring relationships when -Force is specified
-        
+
         The -Force parameter rolls back open transactions immediately, allowing state changes to proceed even when active connections exist. Without -Force, operations use NO_WAIT and may fail if connections are blocking the change.
-        
+
         Returns an object with SqlInstance, Database, RW, Status, Access, and Notes properties. The Notes field contains error details when state changes fail.
 
     .PARAMETER SqlInstance

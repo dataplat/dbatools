@@ -4,7 +4,7 @@ function Get-DbaDatabase {
         Retrieves database objects and metadata from SQL Server instances with advanced filtering and usage analytics.
 
     .DESCRIPTION
-        Retrieves detailed database information from one or more SQL Server instances, returning rich database objects instead of basic metadata queries. 
+        Retrieves detailed database information from one or more SQL Server instances, returning rich database objects instead of basic metadata queries.
         This command provides comprehensive filtering options for database status, access type, recovery model, backup history, and encryption status, making it essential for database inventory, compliance auditing, and maintenance planning.
         Unlike querying sys.databases directly, this returns full SMO database objects with calculated properties for backup status, usage statistics from DMVs, and consistent formatting across SQL Server versions.
         Supports both on-premises SQL Server (2000+) and Azure SQL Database with automatic compatibility handling.

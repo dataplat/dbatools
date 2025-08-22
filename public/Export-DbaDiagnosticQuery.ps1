@@ -4,7 +4,7 @@ function Export-DbaDiagnosticQuery {
         Converts diagnostic query results from Invoke-DbaDiagnosticQuery into CSV or Excel files
 
     .DESCRIPTION
-        Processes the PowerShell objects returned by Glenn Berry's diagnostic queries and saves them as CSV files or Excel worksheets for analysis, reporting, and sharing with vendors. 
+        Processes the PowerShell objects returned by Glenn Berry's diagnostic queries and saves them as CSV files or Excel worksheets for analysis, reporting, and sharing with vendors.
         Automatically extracts execution plans as separate .sqlplan files and query text as .sql files, which can be opened directly in SQL Server Management Studio.
         This is useful when you need file-based output for compliance documentation, performance analysis, or when working with teams that prefer traditional file formats over PowerShell objects.
         CSV output creates individual files per query while Excel output consolidates results into worksheets within a single workbook.

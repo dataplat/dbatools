@@ -4,9 +4,9 @@ function Get-DbaDependency {
         Maps SQL Server object dependencies and generates creation scripts in proper deployment order
 
     .DESCRIPTION
-        This function discovers SQL Server object dependencies using SMO (SQL Server Management Objects) and returns detailed information including creation scripts and deployment order. 
+        This function discovers SQL Server object dependencies using SMO (SQL Server Management Objects) and returns detailed information including creation scripts and deployment order.
         By default, it finds all objects that depend on your input object - perfect for impact analysis before making changes or understanding what might break if you modify something.
-        
+
         The function returns objects in hierarchical tiers, showing you exactly which objects need to be created first when deploying to a new environment.
         Each result includes the T-SQL creation script, so you can generate deployment scripts in the correct dependency order without manually figuring out prerequisites.
 

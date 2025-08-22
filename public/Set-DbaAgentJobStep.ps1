@@ -4,7 +4,7 @@ function Set-DbaAgentJobStep {
         Modifies properties of existing SQL Agent job steps or creates new ones with Force parameter.
 
     .DESCRIPTION
-        Modifies SQL Agent job step properties including commands, subsystems, retry logic, success/failure actions, and execution context. Updates existing job steps by name or creates new steps when using the -Force parameter, eliminating the need to manually edit job steps through SSMS. 
+        Modifies SQL Agent job step properties including commands, subsystems, retry logic, success/failure actions, and execution context. Updates existing job steps by name or creates new steps when using the -Force parameter, eliminating the need to manually edit job steps through SSMS.
 
         Common use cases include changing job step commands during deployments, updating database contexts when moving jobs between environments, modifying retry settings for intermittent failures, and adjusting success/failure flow logic. The function supports all major subsystems including T-SQL, PowerShell, SSIS, CmdExec, and Analysis Services commands.
 

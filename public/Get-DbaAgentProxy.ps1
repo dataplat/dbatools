@@ -4,8 +4,8 @@ function Get-DbaAgentProxy {
         Retrieves SQL Server Agent proxy accounts and their associated credentials from target instances.
 
     .DESCRIPTION
-        Retrieves SQL Server Agent proxy accounts which allow job steps to execute under different security contexts than the SQL Agent service account. 
-        This function is essential for security auditing, compliance reporting, and troubleshooting job step execution permissions. 
+        Retrieves SQL Server Agent proxy accounts which allow job steps to execute under different security contexts than the SQL Agent service account.
+        This function is essential for security auditing, compliance reporting, and troubleshooting job step execution permissions.
         Returns detailed information including proxy names, associated credentials, descriptions, and enabled status across multiple SQL Server instances.
 
     .PARAMETER SqlInstance

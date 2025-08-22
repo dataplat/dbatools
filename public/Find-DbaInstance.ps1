@@ -18,7 +18,7 @@ function Find-DbaInstance {
 
         Common DBA scenarios:
         - Audit all SQL instances before migrations or compliance reviews
-        - Discover shadow IT databases that bypass standard deployment processes  
+        - Discover shadow IT databases that bypass standard deployment processes
         - Inventory instances across acquired companies or merged networks
         - Validate disaster recovery documentation against actual running instances
         - Identify instances running on non-standard ports or with unusual configurations
@@ -37,32 +37,32 @@ function Find-DbaInstance {
         - SQL Instance Enumeration ('DataSourceEnumeration'; same as SSMS uses)
         - IP Address range ('IPRange'; all IP Addresses will be scanned)
         - Domain Server lookup ('DomainServer'; from Active Directory)
-        
+
         ---
 
         - SPN Lookup
-            
+
             The function tries to connect active directory to look up all computers with registered SQL Instances.
             Not all instances need to be registered properly, making this not 100% reliable.
             By default, your nearest Domain Controller is contacted for this scan.
             However it is possible to explicitly state the DC to contact using its DistinguishedName and the '-DomainController' parameter.
             If credentials were specified using the '-Credential' parameter, those same credentials are used to perform this lookup, allowing the scan of other domains.
-        
+
         - SQL Instance Enumeration
-            
+
             This uses the default UDP Broadcast based instance enumeration used by SSMS to detect instances.
             Note that the result from this is not used in the actual scan, but only to compile a list of computers to scan.
             To enable the same results for the scan, ensure that the 'Browser' scan is enabled.
-        
+
         - IP Address range:
-            
+
             This 'Discovery' uses a range of IPAddresses and simply passes them on to be tested.
             See the 'Description' part of help on security issues of network scanning.
             By default, it will enumerate all ethernet network adapters on the local computer and scan the entire subnet they are on.
             By using the '-IpAddress' parameter, custom network ranges can be specified.
-        
+
         - Domain Server:
-            
+
             This will discover every single computer in Active Directory that is a Windows Server and enabled.
             By default, your nearest Domain Controller is contacted for this scan.
             However it is possible to explicitly state the DC to contact using its DistinguishedName and the '-DomainController' parameter.
@@ -83,7 +83,7 @@ function Find-DbaInstance {
         The scans are the individual methods used to retrieve information about the scanned computer and any potentially installed instances.
         This parameter is optional, by default all scans except for establishing an actual SQL connection are performed.
         Scans can be specified in any arbitrary combination, however at least one instance detecting scan needs to be specified in order for data to be returned.
-        
+
         Scans:
         - Browser
           - Tries discovering all instances via the browser service

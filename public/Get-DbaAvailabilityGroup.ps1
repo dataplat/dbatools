@@ -4,8 +4,8 @@ function Get-DbaAvailabilityGroup {
         Retrieves Availability Group configuration and status information from SQL Server instances.
 
     .DESCRIPTION
-        Retrieves detailed Availability Group information including replica roles, cluster configuration, database membership, and listener details from SQL Server 2012+ instances. 
-        
+        Retrieves detailed Availability Group information including replica roles, cluster configuration, database membership, and listener details from SQL Server 2012+ instances.
+
         This command helps DBAs monitor AG health, identify primary replicas for failover planning, and generate inventory reports for compliance or troubleshooting. The default view shows essential properties like replica roles, primary replica location, and cluster type, while the full object contains comprehensive AG configuration details.
 
     .PARAMETER SqlInstance

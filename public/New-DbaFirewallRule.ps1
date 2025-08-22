@@ -6,7 +6,7 @@ function New-DbaFirewallRule {
     .DESCRIPTION
         Creates inbound Windows firewall rules for SQL Server instances, Browser service, and Dedicated Admin Connection (DAC) to allow network connectivity.
         This automates the tedious post-installation task of configuring firewall access for SQL Server, eliminating the need to manually determine ports and create rules through Windows Firewall GUI or netsh commands.
-        
+
         The function intelligently detects whether instances use static or dynamic ports and creates appropriate rules.
         For static ports, it creates port-based rules; for dynamic ports, it creates program-based rules targeting sqlservr.exe.
         When instances use non-default ports, it automatically includes a Browser service rule so clients can discover the instance.

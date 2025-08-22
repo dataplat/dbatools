@@ -6,22 +6,22 @@ function Rename-DbaDatabase {
     .DESCRIPTION
         Systematically renames all database components using template-based naming conventions to enforce consistent standards across your SQL Server environment.
         This function addresses the common challenge of standardizing database naming when inheriting inconsistent systems or implementing new naming policies.
-        
+
         The renaming process follows SQL Server's object hierarchy and executes in this order:
         - Database name is changed (optionally forcing users out)
-        - Filegroup names are changed accordingly  
+        - Filegroup names are changed accordingly
         - Logical file names are changed accordingly
         - Physical file names are changed accordingly
         - If Move is specified, the database goes offline for file operations, then back online
         - If Move is not specified, the database remains online (unless SetOffline), and you handle file moves manually
-        
+
         The function uses powerful template placeholders like <DBN> for database name, <FGN> for filegroup name, <DATE> for current date, and <FT> for file type.
         When naming conflicts occur, automatic counters are appended to ensure uniqueness.
         If any step fails, the entire process stops to prevent partial renames that could leave your database in an inconsistent state.
-        
+
         Always backup your databases before using this function, and take a full backup of master after completion.
         The function returns detailed objects showing all completed renames, with hidden properties providing human-readable summaries.
-        
+
         Store results in a variable for troubleshooting: "$result = Rename-DbaDatabase ....."
         Use the -Preview parameter first to see exactly what changes would occur: "Rename-DbaDatabase .... -Preview | Select-Object *"
 

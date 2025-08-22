@@ -129,7 +129,7 @@ function New-DbaSqlParameter {
     $param = New-Object Microsoft.Data.SqlClient.SqlParameter
 
     try {
-        
+
         if (Test-Bound -ParameterName CompareInfo) {
             $param.CompareInfo = $CompareInfo
         }

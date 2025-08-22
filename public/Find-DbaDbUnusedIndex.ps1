@@ -4,10 +4,10 @@ function Find-DbaDbUnusedIndex {
         Identifies database indexes with low usage statistics that may be candidates for removal
 
     .DESCRIPTION
-        Analyzes index usage statistics from sys.dm_db_index_usage_stats to identify indexes with minimal activity that consume storage space and slow down data modifications without providing query performance benefits. 
-        
+        Analyzes index usage statistics from sys.dm_db_index_usage_stats to identify indexes with minimal activity that consume storage space and slow down data modifications without providing query performance benefits.
+
         This function helps DBAs optimize database performance by finding indexes that are rarely or never used, so you can safely remove them to reduce maintenance overhead, speed up INSERT/UPDATE/DELETE operations, and free up disk space. The function uses customizable thresholds for seeks, scans, and lookups to define what constitutes "unused," with safety checks to ensure SQL Server has been running long enough (7+ days) for reliable statistics.
-        
+
         Supports clustered and non-clustered indexes on SQL Server 2005 and higher, with additional data compression information available on SQL Server 2008+. Results include index size, row count, and detailed usage patterns to help prioritize which indexes to drop first.
 
     .PARAMETER SqlInstance

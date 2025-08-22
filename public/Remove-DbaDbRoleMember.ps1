@@ -5,7 +5,7 @@ function Remove-DbaDbRoleMember {
 
     .DESCRIPTION
         Removes database users from specified database roles, supporting both built-in roles (like db_datareader, db_datawriter, db_owner) and custom database roles. This function streamlines user access management when you need to revoke permissions during employee transitions, security reviews, or role-based access cleanup.
-        
+
         Handles user removal from multiple roles simultaneously and works across multiple databases and instances. Particularly useful for bulk permission changes, compliance requirements, or when migrating users between different security models. The function validates that users are actually members of the specified roles before attempting removal, preventing unnecessary errors.
 
     .PARAMETER SqlInstance

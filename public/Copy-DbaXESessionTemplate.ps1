@@ -4,7 +4,7 @@ function Copy-DbaXESessionTemplate {
         Copies Extended Event session templates from dbatools repository to SSMS template directory for GUI access.
 
     .DESCRIPTION
-        Installs curated Extended Event session templates into SQL Server Management Studio's template directory so you can access them through the SSMS GUI. 
+        Installs curated Extended Event session templates into SQL Server Management Studio's template directory so you can access them through the SSMS GUI.
         The templates include common monitoring scenarios like deadlock detection, query performance tracking, connection monitoring, and database health checks.
         Only copies non-Microsoft templates, preserving any custom templates already in your SSMS directory while adding the community-contributed ones from the dbatools collection.
 

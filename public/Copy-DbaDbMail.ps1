@@ -5,9 +5,9 @@ function Copy-DbaDbMail {
 
     .DESCRIPTION
         Migrates the complete Database Mail setup from a source SQL Server to one or more destination servers. This includes mail profiles (which group accounts for specific purposes), mail accounts (SMTP configurations), mail servers (SMTP server details and credentials), and global configuration values like account retry attempts and maximum file size.
-        
+
         Database Mail is commonly used for automated alerts, backup notifications, job failure reports, and maintenance notifications. This function saves significant manual configuration time when setting up new servers, standardizing mail configurations across environments, or migrating to new hardware.
-        
+
         The function preserves all SMTP authentication details including encrypted passwords, handles name conflicts with optional force replacement, and can enable Database Mail on the destination if it's enabled on the source. You can migrate specific component types or the entire configuration in one operation.
 
     .PARAMETER Source
