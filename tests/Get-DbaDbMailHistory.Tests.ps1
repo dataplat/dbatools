@@ -1,20 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbMailHistory",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Since', 'Status', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Since",
+                "Status",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("INSERT INTO msdb.[dbo].[sysmail_profile]
            ([name]
@@ -59,49 +71,76 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
            ($profile_id,'dbatoolssci@dbatools.io',NULL,NULL,'Test Job',NULL,NULL,'A Test Job failed to run','TEXT','Normal','Normal',NULL,'MIME',NULL,NULL,
           0,1,256,'',0,0,'2018-12-9 11:44:32.600','dbatools\dbatoolssci',1,1,'2018-12-9 11:44:33.000','2018-12-9 11:44:33.273','sa')"
         )
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server.Query("DELETE FROM msdb.dbo.sysmail_profile WHERE profile_id = '$profile_id'")
         $server.Query("DELETE FROM msdb.dbo.sysmail_mailitems WHERE profile_id = '$profile_id'")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets Db Mail History" {
-        $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 | Where-Object {$_.Subject -eq 'Test Job'}
-        It "Gets results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 | Where-Object { $PSItem.Subject -eq "Test Job" }
         }
+
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
         It "Should have created subject" {
-            $results.subject | Should be 'Test Job'
+            $results.subject | Should -Be "Test Job"
         }
+
         It "Should have recipient of dbatoolssci@dbatools.io" {
-            $results.recipients | Should be 'dbatoolssci@dbatools.io'
+            $results.recipients | Should -Be "dbatoolssci@dbatools.io"
         }
     }
+
     Context "Gets Db Mail History using -Status" {
-        $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 -Status Sent
+        BeforeAll {
+            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 -Status Sent
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have a Normal Importance" {
-            $results.Importance | Should be 'Normal'
+            $results.Importance | Should -Be "Normal"
         }
+
         It "Should have a Normal Sensitivity" {
-            $results.sensitivity | Should be 'Normal'
+            $results.sensitivity | Should -Be "Normal"
         }
+
         It "Should have SentStatus of Sent" {
-            $results.SentStatus | Should be 'Sent'
+            $results.SentStatus | Should -Be "Sent"
         }
     }
+
     Context "Gets Db Mail History using -Since" {
-        $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 -Since '2018-01-01'
+        BeforeAll {
+            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 -Since "2018-01-01"
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have a SentDate greater than 2018-01-01" {
-            $results.SentDate | Should Begreaterthan '2018-01-01'
+            $results.SentDate | Should -BeGreaterThan "2018-01-01"
         }
+
         It "Should have a SendRequestDate greater than 2018-01-01" {
-            $results.SendRequestDate | Should Begreaterthan '2018-01-01'
+            $results.SendRequestDate | Should -BeGreaterThan "2018-01-01"
         }
     }
 }

@@ -1,14 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Set-DbatoolsConfig",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'FullName', 'Module', 'Name', 'Value', 'PersistedValue', 'PersistedType', 'Description', 'Validation', 'Handler', 'Hidden', 'Default', 'Initialize', 'SimpleExport', 'ModuleExport', 'DisableValidation', 'DisableHandler', 'PassThru', 'Register', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "FullName",
+                "Module",
+                "Name",
+                "Value",
+                "PersistedValue",
+                "PersistedType",
+                "Description",
+                "Validation",
+                "Handler",
+                "Hidden",
+                "Default",
+                "Initialize",
+                "SimpleExport",
+                "ModuleExport",
+                "DisableValidation",
+                "DisableHandler",
+                "PassThru",
+                "Register",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
@@ -18,10 +41,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     for more guidence
 #>
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    It "impacts the connection timeout" {
-        $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 60
-        $results = New-DbaConnectionString -SqlInstance test -Database dbatools -ConnectTimeout ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)
-        $results | Should -Match 'Connect Timeout=60'
+Describe $CommandName -Tag IntegrationTests {
+    Context "When setting configuration values" {
+        It "impacts the connection timeout" {
+            $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 60
+            $results = New-DbaConnectionString -SqlInstance test -Database dbatools -ConnectTimeout ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)
+            $results | Should -Match "Connect Timeout=60"
+        }
     }
 }

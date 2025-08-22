@@ -1,42 +1,112 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Set-DbaAgReplica",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'SessionTimeout', 'EndpointUrl', 'ReadonlyRoutingConnectionUrl', 'ReadOnlyRoutingList', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "AvailabilityGroup",
+                "Replica",
+                "AvailabilityMode",
+                "FailoverMode",
+                "BackupPriority",
+                "ConnectionModeInPrimaryRole",
+                "ConnectionModeInSecondaryRole",
+                "SeedingMode",
+                "SessionTimeout",
+                "EndpointUrl",
+                "ReadonlyRoutingConnectionUrl",
+                "ReadOnlyRoutingList",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $agname = "dbatoolsci_arepgroup"
-        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Explain what needs to be set up for the test:
+        # To modify an availability group replica, we need an availability group with a primary replica.
+
+        # Set variables. They are available in all the It blocks.
+        $agName = "dbatoolsci_arepgroup"
+
+        # Create the availability group.
+        $splatAvailabilityGroup = @{
+            Primary      = $TestConfig.instance3
+            Name         = $agName
+            ClusterType  = "None"
+            FailoverMode = "Manual"
+            Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
+        }
+        $ag = New-DbaAvailabilityGroup @splatAvailabilityGroup
         $replicaName = $ag.PrimaryReplica
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
-    Context "sets ag properties" {
-        It "returns modified results" {
-            $results = Set-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Replica $replicaName -BackupPriority 100 -Confirm:$false
-            $results.AvailabilityGroup | Should -Be $agname
+
+    Context "Sets AG properties" {
+        It "Returns modified results when setting BackupPriority" {
+            $splatBackupPriority = @{
+                SqlInstance       = $TestConfig.instance3
+                AvailabilityGroup = $agName
+                Replica           = $replicaName
+                BackupPriority    = 100
+                Confirm           = $false
+            }
+            $results = Set-DbaAgReplica @splatBackupPriority
+            $results.AvailabilityGroup | Should -Be $agName
             $results.BackupPriority | Should -Be 100
         }
-        It "returns modified results" {
-            $results = Set-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Replica $replicaName -SeedingMode Automatic -Confirm:$false
-            $results.AvailabilityGroup | Should -Be $agname
-            $results.SeedingMode | Should -Be Automatic
+
+        It "Returns modified results when setting SeedingMode" {
+            $splatSeedingMode = @{
+                SqlInstance       = $TestConfig.instance3
+                AvailabilityGroup = $agName
+                Replica           = $replicaName
+                SeedingMode       = "Automatic"
+                Confirm           = $false
+            }
+            $results = Set-DbaAgReplica @splatSeedingMode
+            $results.AvailabilityGroup | Should -Be $agName
+            $results.SeedingMode | Should -Be "Automatic"
         }
-        It "attempts to add a ReadOnlyRoutingList" {
-            $null = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname | Select-Object -First 1 | Set-DbaAgReplica -ReadOnlyRoutingList nondockersql -WarningAction SilentlyContinue -WarningVariable warn -Confirm:$false
-            $warn | Should -match "does not exist. Only availability"
+
+        It "Attempts to add a ReadOnlyRoutingList" {
+            $splatRoutingList = @{
+                ReadOnlyRoutingList = "nondockersql"
+                WarningAction       = "SilentlyContinue"
+                WarningVariable     = "warn"
+                Confirm             = $false
+            }
+            $null = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName | Select-Object -First 1 | Set-DbaAgReplica @splatRoutingList
+            $warn | Should -Match "does not exist. Only availability"
         }
     }
 } #$TestConfig.instance2 for appveyor
-

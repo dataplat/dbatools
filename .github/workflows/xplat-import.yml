@@ -1,5 +1,19 @@
 name: Cross Platform Import
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.json'
+      - '!.github/dbatools-library-version.json'
+      - 'docs/**'
+      - '.github/FUNDING.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.aider/**'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - 'bin/**'
+      - 'en-us/**'
 
 jobs:
   build:
@@ -14,6 +28,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Show pwsh version
+      shell: pwsh
+      run: pwsh --version
 
     - name: Read dbatools.library version
       id: get-version

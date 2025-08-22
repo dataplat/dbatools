@@ -1,56 +1,94 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Set-DbaNetworkConfiguration",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'EnableProtocol', 'DisableProtocol', 'DynamicPortForIPAll', 'StaticPortForIPAll', 'IpAddress', 'RestartService', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "Credential",
+                "EnableProtocol",
+                "DisableProtocol",
+                "DynamicPortForIPAll",
+                "StaticPortForIPAll",
+                "IpAddress",
+                "RestartService",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Command works with piped input" {
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
-        $netConf.TcpIpProperties.KeepAlive = 60000
-        $results = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        It "Should Return a Result" {
-            $results.ComputerName | Should -Be $netConf.ComputerName
-        }
+        # Store original configuration for restoration after tests
+        $global:originalNetConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+        $global:originalNetConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
 
-        It "Should Return a Change" {
-            $results.Changes | Should -Match "Changed TcpIpProperties.KeepAlive to 60000"
-        }
-
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
-        $netConf.TcpIpProperties.KeepAlive = 30000
-        $null = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Command works with commandline input" {
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
-        if ($netConf.NamedPipesEnabled) {
-            $results = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
-        } else {
-            $results = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
-        }
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        It "Should Return a Result" {
-            $results.ComputerName | Should -Be $netConf.ComputerName
-        }
+        # Restore original configuration
+        $global:originalNetConfPiped.TcpIpProperties.KeepAlive = 30000
+        $null = $global:originalNetConfPiped | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
 
-        It "Should Return a Change" {
-            $results.Changes | Should -Match "Changed NamedPipesEnabled to"
-        }
-
-        if ($netConf.NamedPipesEnabled) {
+        # Restore Named Pipes to original state
+        if ($global:originalNetConfCommandline.NamedPipesEnabled) {
             $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
         } else {
             $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+        }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Command works with piped input" {
+        BeforeAll {
+            $netConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+            $netConfPiped.TcpIpProperties.KeepAlive = 60000
+            $pipedResults = $netConfPiped | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+        }
+
+        It "Should Return a Result" {
+            $pipedResults.ComputerName | Should -Be $netConfPiped.ComputerName
+        }
+
+        It "Should Return a Change" {
+            $pipedResults.Changes | Should -Match "Changed TcpIpProperties.KeepAlive to 60000"
+        }
+    }
+
+    Context "Command works with commandline input" {
+        BeforeAll {
+            $netConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+            if ($netConfCommandline.NamedPipesEnabled) {
+                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            } else {
+                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            }
+        }
+
+        It "Should Return a Result" {
+            $commandlineResults.ComputerName | Should -Be $netConfCommandline.ComputerName
+        }
+
+        It "Should Return a Change" {
+            $commandlineResults.Changes | Should -Match "Changed NamedPipesEnabled to"
         }
     }
 }

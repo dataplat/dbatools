@@ -1,21 +1,49 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbBackupHistory",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeCopyOnly', 'Force', 'Since', 'RecoveryFork', 'Last', 'LastFull', 'LastDiff', 'LastLog', 'DeviceType', 'Raw', 'LastLsn', 'Type', 'EnableException', 'IncludeMirror', 'AgCheck', 'IgnoreDiffBackup', 'LsnSort'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IncludeCopyOnly",
+                "Force",
+                "Since",
+                "RecoveryFork",
+                "Last",
+                "LastFull",
+                "LastDiff",
+                "LastLog",
+                "DeviceType",
+                "Raw",
+                "LastLsn",
+                "Type",
+                "EnableException",
+                "IncludeMirror",
+                "AgCheck",
+                "IgnoreDiffBackup",
+                "LsnSort"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $DestBackupDir = 'C:\Temp\backups'
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $DestBackupDir = "$($TestConfig.Temp)\backups"
         if (-Not (Test-Path $DestBackupDir)) {
             New-Item -ItemType Container -Path $DestBackupDir
         }
@@ -25,7 +53,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
         $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $dbname -DestinationFilePrefix $dbname
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        $server.Databases["master"].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
@@ -33,26 +61,42 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir -BackupFileName CopyOnly.bak -CopyOnly
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
+        Remove-Item -Path $DestBackupDir -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Get last history for single database" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -Last
+        BeforeAll {
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -Last
+        }
+
         It "Should be 4 backups returned" {
-            $results.count | Should Be 4
+            $results.count | Should -Be 4
         }
+
         It "First backup should be a Full Backup" {
-            $results[0].Type | Should be "Full"
+            $results[0].Type | Should -Be "Full"
         }
+
         It "Duration should be meaningful" {
-            ($results[0].end - $results[0].start).TotalSeconds | Should Be $results[0].Duration.TotalSeconds
+            ($results[0].end - $results[0].start).TotalSeconds | Should -Be $results[0].Duration.TotalSeconds
         }
+
         It "Last Backup Should be a log backup" {
-            $results[-1].Type | Should Be "Log"
+            $results[-1].Type | Should -Be "Log"
         }
+
         It "DatabaseId is returned" {
             $results[0].Database | Should -Be $dbname
             $results[0].DatabaseId | Should -Be $db.Id
@@ -60,46 +104,60 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Get last history for all databases" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1
+        BeforeAll {
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1
+        }
+
         It "Should be more than one database" {
-            ($results | Where-Object Database -match "master").Count | Should BeGreaterThan 0
+            ($results | Where-Object Database -match "master").Count | Should -BeGreaterThan 0
         }
     }
 
     Context "ExcludeDatabase is honored" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase 'master'
         It "Should not report about excluded database master" {
-            ($results | Where-Object Database -match "master").Count | Should Be 0
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase "master"
+            ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
-        $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase 'master' -Type Full
-        It "Should not report about excluded database master" {
-            ($results | Where-Object Database -match "master").Count | Should Be 0
+
+        It "Should not report about excluded database master with Type Full" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase "master" -Type Full
+            ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
-        $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase 'master' -LastFull
-        It "Should not report about excluded database master" {
-            ($results | Where-Object Database -match "master").Count | Should Be 0
+
+        It "Should not report about excluded database master with LastFull" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase "master" -LastFull
+            ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
     }
 
     Context "LastFull should work with multiple databases" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname, master -lastfull
+        BeforeAll {
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname, master -lastfull
+        }
+
         It "Should return 2 records" {
-            $results.count | Should Be 2
+            $results.count | Should -Be 2
         }
     }
 
     Context "Testing IncludeCopyOnly with LastFull" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -LastFull -Database $dbname
-        $resultsCo = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -LastFull -IncludeCopyOnly -Database $dbname
+        BeforeAll {
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -LastFull -Database $dbname
+            $resultsCo = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -LastFull -IncludeCopyOnly -Database $dbname
+        }
+
         It "Should return the CopyOnly Backup" {
-            ($resultsCo.BackupSetID -ne $Results.BackupSetID) | Should Be $True
+            ($resultsCo.BackupSetID -ne $Results.BackupSetID) | Should -Be $True
         }
     }
 
     Context "Testing IncludeCopyOnly with Last" {
-        $resultsCo = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Last -IncludeCopyOnly -Database $dbname
+        BeforeAll {
+            $resultsCo = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Last -IncludeCopyOnly -Database $dbname
+        }
+
         It "Should return just the CopyOnly Full Backup" {
-            ($resultsCo | Measure-Object).count | Should Be 1
+            ($resultsCo | Measure-Object).count | Should -Be 1
         }
     }
 
@@ -107,7 +165,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "supports large numbers" {
             $historyObject = New-Object Dataplat.Dbatools.Database.BackupHistory
             $server = Connect-DbaInstance $TestConfig.instance1
-            $cast = $server.Query('select cast(1000000000000000 as numeric(20,0)) AS TotalSize')
+            $cast = $server.Query("select cast(1000000000000000 as numeric(20,0)) AS TotalSize")
             $historyObject.TotalSize = $cast.TotalSize
             ($historyObject.TotalSize.Byte) | Should -Be 1000000000000000
         }
@@ -150,13 +208,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Testing IgnoreDiff parameter for #6914" {
-        $noIgnore = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname
-        $Ignore = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -IgnoreDiffBackup
+        BeforeAll {
+            $noIgnore = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname
+            $Ignore = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -IgnoreDiffBackup
+        }
+
         It "Should return one less backup" {
             $noIgnore.count - $Ignore.count | Should -Be 1
         }
+
         It "Should return no Diff backups" {
-            ($Ignore | Where-Object Type -like '*diff*').count | Should -Be 0
+            ($Ignore | Where-Object Type -like "*diff*").count | Should -Be 0
         }
     }
 

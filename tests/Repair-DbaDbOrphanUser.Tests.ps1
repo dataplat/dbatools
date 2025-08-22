@@ -1,69 +1,104 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Repair-DbaDbOrphanUser",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Users', 'RemoveNotExisting', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Users",
+                "RemoveNotExisting",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $loginsq = @'
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $loginSql = @"
 CREATE LOGIN [dbatoolsci_orphan1] WITH PASSWORD = N'password1', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE DATABASE dbatoolsci_orphan;
-'@
+"@
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
-        $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
-        $usersq = @'
+        $null = Invoke-DbaQuery -SqlInstance $server -Query $loginSql
+        $userSql = @"
 CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
 CREATE USER [dbatoolsci_orphan2] FROM LOGIN [dbatoolsci_orphan2];
 CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
-'@
-        Invoke-DbaQuery -SqlInstance $server -Query $usersq -Database dbatoolsci_orphan
+"@
+        Invoke-DbaQuery -SqlInstance $server -Query $userSql -Database dbatoolsci_orphan
         $dropOrphan = "DROP LOGIN [dbatoolsci_orphan1];DROP LOGIN [dbatoolsci_orphan2];"
         Invoke-DbaQuery -SqlInstance $server -Query $dropOrphan
-        $loginsq = @'
+        $recreateLoginSql = @"
 CREATE LOGIN [dbatoolsci_orphan1] WITH PASSWORD = N'password1', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
-'@
-        Invoke-DbaQuery -SqlInstance $server -Query $loginsq
+"@
+        Invoke-DbaQuery -SqlInstance $server -Query $recreateLoginSql
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     It "shows time taken for preparation" {
         1 | Should -Be 1
     }
-    $results = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
-    It "Finds two orphans" {
-        $results.Count | Should -Be 2
-        foreach ($user in $Users) {
-            $user.User | Should -BeIn @('dbatoolsci_orphan1', 'dbatoolsci_orphan2')
-            $user.DatabaseName | Should -Be 'dbatoolsci_orphan'
-            $user.Status | Should -Be 'Success'
+
+    Context "When repairing orphaned users" {
+        BeforeAll {
+            $global:repairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
+        }
+
+        It "Finds two orphans" {
+            $global:repairResults.Count | Should -Be 2
+            foreach ($user in $global:repairResults) {
+                $user.User | Should -BeIn @("dbatoolsci_orphan1", "dbatoolsci_orphan2")
+                $user.DatabaseName | Should -Be "dbatoolsci_orphan"
+                $user.Status | Should -Be "Success"
+            }
+        }
+
+        It "has the correct properties" {
+            $result = $global:repairResults[0]
+            $expectedProps = "ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status".Split(",")
+            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
     }
-    It "has the correct properties" {
-        $result = $results[0]
-        $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status'.Split(',')
-        ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-    }
-    $results = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
-    It "does not find any other orphan" {
-        $results | Should -BeNullOrEmpty
+
+    Context "When running repair again" {
+        It "does not find any other orphan" {
+            $global:secondRepairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
+            $global:secondRepairResults | Should -BeNullOrEmpty
+        }
     }
 }

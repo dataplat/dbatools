@@ -1,32 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Set-DbaDefaultPath",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Type', 'Path', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Type",
+                "Path",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $oldBackupDirectory = (Connect-DbaInstance -SqlInstance $TestConfig.instance1).BackupDirectory
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $oldBackupDirectory
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     Context "returns proper information" {
-        $results = Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path C:\temp
-        It "Data returns a value that contains :\" {
-            $results.Data -match "\:\\"
-        }
-        It "Log returns a value that contains :\" {
-            $results.Log -match "\:\\"
-        }
-        It "Backup returns a value that contains :\" {
-            $results.Backup -match "\:\\"
-        }
-        It "ErrorLog returns a value that contains :\" {
-            $results.ErrorLog -match "\:\\"
+        It "Backup returns the correct value" {
+            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $TestConfig.Temp
+            $results.Backup | Should -BeExactly $TestConfig.Temp
         }
     }
 }

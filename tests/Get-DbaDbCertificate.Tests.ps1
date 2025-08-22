@@ -1,54 +1,80 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbCertificate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Certificate', 'Subject', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Certificate",
+                "Subject",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Can get a database certificate" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Check and create master key if needed
             if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
                 $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
 
+            # Create test objects
             $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $certificateName1 = "Cert_$(Get-Random)"
             $certificateName2 = "Cert_$(Get-Random)"
             $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName1 -Confirm:$false
-            $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName2 -Database "tempdb" -Confirm:$false
+            $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
+
         AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Cleanup all created objects
             $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
             $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false
             if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false }
             if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $certificateName1
-        It "returns database certificate created in default, master database" {
-            "$($cert.Database)" -match 'master' | Should Be $true
+        It "Returns database certificate created in default, master database" {
+            $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $certificateName1
+            "$($cert.Database)" -match "master" | Should -BeTrue
             $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master).Id
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database tempdb
-        It "returns database certificate created in tempdb database, looked up by certificate name" {
-            "$($cert.Name)" -match $certificateName2 | Should Be $true
+        It "Returns database certificate created in tempdb database, looked up by certificate name" {
+            $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database tempdb
+            "$($cert.Name)" -match $certificateName2 | Should -BeTrue
             $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb).Id
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -ExcludeDatabase master
-        It "returns database certificates excluding those in the master database" {
-            "$($cert.Database)" -notmatch 'master' | Should Be $true
+        It "Returns database certificates excluding those in the master database" {
+            $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -ExcludeDatabase master
+            "$($cert.Database)" -notmatch "master" | Should -BeTrue
         }
-
     }
 }

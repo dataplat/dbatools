@@ -1,20 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbForeignKey",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemTable', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "ExcludeSystemTable",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
@@ -25,40 +38,109 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $server.Query("CREATE TABLE $tableName (idTbl1 INT PRIMARY KEY)", $dbname)
         $server.Query("CREATE TABLE $tableName2 (idTbl2 INT, idTbl1 INT)", $dbname)
         $server.Query("ALTER TABLE $tableName2 ADD CONSTRAINT $fkName FOREIGN KEY (idTbl1) REFERENCES $tableName (idTbl1) ON UPDATE NO ACTION ON DELETE NO ACTION ", $dbname)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {
         It "returns no foreign keys from excluded DB with -ExcludeDatabase" {
             $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
-            $results.where( { $_.Database -eq 'master' }).count | Should Be 0
+            ($results | Where-Object Database -eq "master").Count | Should -BeExactly 0
         }
+
         It "returns only foreign keys from selected DB with -Database" {
             $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname
-            $results.where( { $_.Database -ne 'master' }).count | Should Be 1
+            ($results | Where-Object Database -ne "master").Count | Should -BeExactly 1
         }
-        It "Should include test foreign keys: $ckName" {
+
+        It "Should include test foreign keys: $fkName" {
             $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeSystemTable
-            ($results | Where-Object Name -eq $ckName).Name | Should Be $ckName
+            ($results | Where-Object Name -eq $fkName).Name | Should -Be $fkName
         }
+
         It "Should exclude system tables" {
             $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database master -ExcludeSystemTable
-            ($results | Where-Object Name -eq 'spt_fallback_db') | Should Be $null
+            ($results | Where-Object Name -eq "spt_fallback_db") | Should -BeNullOrEmpty
         }
     }
 
     Context "Parameters are returned correctly" {
-        $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
-        It "Has the correct default properties" {
-            $expectedStdProps = 'ComputerName,CreateDate,Database,DateLastModified,ID,InstanceName,IsChecked,IsEnabled,Name,NotForReplication,ReferencedKey,ReferencedTable,ReferencedTableSchema,SqlInstance,Schema,Table'.split(',')
-            ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedStdProps | Sort-Object)
+        BeforeAll {
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
         }
+
+        It "Has the correct default properties" {
+            $expectedStdProps = @(
+                "ComputerName",
+                "CreateDate",
+                "Database",
+                "DateLastModified",
+                "ID",
+                "InstanceName",
+                "IsChecked",
+                "IsEnabled",
+                "Name",
+                "NotForReplication",
+                "ReferencedKey",
+                "ReferencedTable",
+                "ReferencedTableSchema",
+                "SqlInstance",
+                "Schema",
+                "Table"
+            )
+            ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedStdProps | Sort-Object)
+        }
+
         It "Has the correct properties" {
-            $ExpectedProps = "Columns,ComputerName,CreateDate,Database,DatabaseEngineEdition,DatabaseEngineType,DateLastModified,DeleteAction,ExecutionManager,ExtendedProperties,ID,InstanceName,IsChecked,IsDesignMode,IsEnabled,IsFileTableDefined,IsMemoryOptimized,IsSystemNamed,Name,NotForReplication,Parent,ParentCollection,Properties,ReferencedKey,ReferencedTable,ReferencedTableSchema,ScriptReferencedTable,ScriptReferencedTableSchema,ServerVersion,SqlInstance,State,Schema,Table,UpdateAction,Urn,UserData".split(',')
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $expectedProps = @(
+                "Columns",
+                "ComputerName",
+                "CreateDate",
+                "Database",
+                "DatabaseEngineEdition",
+                "DatabaseEngineType",
+                "DateLastModified",
+                "DeleteAction",
+                "ExecutionManager",
+                "ExtendedProperties",
+                "ID",
+                "InstanceName",
+                "IsChecked",
+                "IsDesignMode",
+                "IsEnabled",
+                "IsFileTableDefined",
+                "IsMemoryOptimized",
+                "IsSystemNamed",
+                "Name",
+                "NotForReplication",
+                "Parent",
+                "ParentCollection",
+                "Properties",
+                "ReferencedKey",
+                "ReferencedTable",
+                "ReferencedTableSchema",
+                "ScriptReferencedTable",
+                "ScriptReferencedTableSchema",
+                "ServerVersion",
+                "SqlInstance",
+                "State",
+                "Schema",
+                "Table",
+                "UpdateAction",
+                "Urn",
+                "UserData"
+            )
+            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
     }
 }

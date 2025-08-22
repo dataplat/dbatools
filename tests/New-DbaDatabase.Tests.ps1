@@ -1,24 +1,55 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDatabase",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Collation', 'Recoverymodel', 'Owner', 'DataFilePath', 'LogFilePath', 'PrimaryFilesize', 'PrimaryFileGrowth', 'PrimaryFileMaxSize', 'LogSize', 'LogGrowth', 'LogMaxSize', 'SecondaryFilesize', 'SecondaryFileGrowth', 'SecondaryFileMaxSize', 'SecondaryFileCount', 'DefaultFileGroup', 'EnableException', 'SecondaryDataFileSuffix', 'LogFileSuffix', 'DataFileSuffix'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Collation",
+                "Recoverymodel",
+                "Owner",
+                "DataFilePath",
+                "LogFilePath",
+                "PrimaryFilesize",
+                "PrimaryFileGrowth",
+                "PrimaryFileMaxSize",
+                "LogSize",
+                "LogGrowth",
+                "LogMaxSize",
+                "SecondaryFilesize",
+                "SecondaryFileGrowth",
+                "SecondaryFileMaxSize",
+                "SecondaryFileCount",
+                "DefaultFileGroup",
+                "EnableException",
+                "SecondaryDataFileSuffix",
+                "LogFileSuffix",
+                "DataFileSuffix"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
 
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $randomDb = New-DbaDatabase -SqlInstance $instance2
         $newDbName = "dbatoolsci_newdb_$random"
         $newDb1Name = "dbatoolsci_newdb1_$random"
@@ -32,14 +63,23 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $bulkLoggedRecoveryModelDbName = "dbatoolsci_bulklogged_$random"
         $primaryFileGroupDbName = "dbatoolsci_primary_filegroup_$random"
         $secondaryFileGroupDbName = "dbatoolsci_secondary_filegroup_$random"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $randomDb.Name, $newDbName, $newDb1Name, $newDb2Name, $bug6780DbName, $collationDbName, $simpleRecoveryModelDbName, $fullRecoveryModelDbName, $bulkLoggedRecoveryModelDbName -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $instance3 -Database $newDbName, $newDb1Name, $newDb2Name, $secondaryFileTestDbName, $secondaryFileCountTestDbName, $primaryFileGroupDbName, $secondaryFileGroupDbName -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created databases.
+        $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $randomDb.Name, $newDbName, $newDb1Name, $newDb2Name, $bug6780DbName, $collationDbName, $simpleRecoveryModelDbName, $fullRecoveryModelDbName, $bulkLoggedRecoveryModelDbName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $instance3 -Database $newDbName, $newDb1Name, $newDb2Name, $secondaryFileTestDbName, $secondaryFileCountTestDbName, $primaryFileGroupDbName, $secondaryFileGroupDbName -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "commands work as expected" {
+    Context "When creating databases" {
 
         It "creates one new randomly named database" {
             $randomDb.Name | Should -Match random
@@ -54,32 +94,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $instance2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Size | Should -Be 65536
             $instance2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].MaxSize | Should -Be 524288
             $instance2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Growth | Should -Be 65536
-            $instance2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be 'KB'
+            $instance2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be "KB"
 
             $instance2.Databases[$newDbName].LogFiles["$($newDbName)_log"].Size | Should -Be 32768
             $instance2.Databases[$newDbName].LogFiles["$($newDbName)_log"].MaxSize | Should -Be 524288
             $instance2.Databases[$newDbName].LogFiles["$($newDbName)_log"].Growth | Should -Be 32768
-            $instance2.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be 'KB'
+            $instance2.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be "KB"
 
             $instance2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Size | Should -Be 65536
             $instance2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].MaxSize | Should -Be 524288
             $instance2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Growth | Should -Be 65536
-            $instance2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].GrowthType | Should -Be 'KB'
+            $instance2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].GrowthType | Should -Be "KB"
 
             $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Size | Should -Be 65536
             $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].MaxSize | Should -Be 524288
             $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Growth | Should -Be 65536
-            $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be 'KB'
+            $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be "KB"
 
             $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].Size | Should -Be 32768
             $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].MaxSize | Should -Be 524288
             $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].Growth | Should -Be 32768
-            $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be 'KB'
+            $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be "KB"
 
             $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Size | Should -Be 65536
             $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].MaxSize | Should -Be 524288
             $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Growth | Should -Be 65536
-            $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].GrowthType | Should -Be 'KB'
+            $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].GrowthType | Should -Be "KB"
         }
 
         It "creates two new databases on two servers" {
@@ -108,7 +148,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "collation is validated" {
-            $collationDb = New-DbaDatabase -SqlInstance $instance2 -Name $collationDbName -Collation "invalid_collation"
+            $collationDb = New-DbaDatabase -SqlInstance $instance2 -Name $collationDbName -Collation "invalid_collation" -WarningAction SilentlyContinue
             $collationDb | Should -BeNull
 
             $collationDb = New-DbaDatabase -SqlInstance $instance2 -Name $collationDbName -Collation $instance2.Databases["model"].Collation

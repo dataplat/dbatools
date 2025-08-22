@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaAgentAlert",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaAgentAlert" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaAgentAlert
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -18,32 +19,28 @@ Describe "Copy-DbaAgentAlert" -Tag "UnitTests" {
                 "ExcludeAlert",
                 "IncludeDefaults",
                 "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Copy-DbaAgentAlert" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $alert1 = 'dbatoolsci test alert'
-        $alert2 = 'dbatoolsci test alert 2'
-        $operatorName = 'Dan the man Levitan'
-        $operatorEmail = 'levitan@dbatools.io'
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert1)',
+        # Set variables for test alerts and operator
+        $alert1 = "dbatoolsci test alert"
+        $alert2 = "dbatoolsci test alert 2"
+        $operatorName = "Dan the man Levitan"
+        $operatorEmail = "levitan@dbatools.io"
+
+        # Connect to instance and create test objects
+        $serverInstance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
+
+        $serverInstance2.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert1)',
         @message_id=0,
         @severity=6,
         @enabled=1,
@@ -52,7 +49,7 @@ Describe "Copy-DbaAgentAlert" -Tag "IntegrationTests" {
         @category_name=N'[Uncategorized]',
         @job_id=N'00000000-0000-0000-0000-000000000000';")
 
-        $server.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert2)',
+        $serverInstance2.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert2)',
         @message_id=0,
         @severity=10,
         @enabled=1,
@@ -60,64 +57,74 @@ Describe "Copy-DbaAgentAlert" -Tag "IntegrationTests" {
         @include_event_description_in=0,
         @job_id=N'00000000-0000-0000-0000-000000000000';")
 
-        $server.Query("EXEC msdb.dbo.sp_add_operator
+        $serverInstance2.Query("EXEC msdb.dbo.sp_add_operator
         @name = N'$operatorName',
         @enabled = 1,
         @email_address = N'$operatorEmail' ;")
-        $server.Query("EXEC msdb.dbo.sp_add_notification   @alert_name = N'$($alert2)',
+
+        $serverInstance2.Query("EXEC msdb.dbo.sp_add_notification   @alert_name = N'$($alert2)',
         @operator_name = N'$operatorName',
         @notification_method = 1 ;")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
-        $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
-        $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert2)'")
-        $server.Query("EXEC msdb.dbo.sp_delete_operator @name = '$($operatorName)'")
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
-        $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
+        # Clean up test objects
+        $serverCleanup2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
+        $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
+        $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert2)'")
+        $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_operator @name = '$($operatorName)'")
+
+        $serverCleanup3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
+        $serverCleanup3.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying alerts" {
         It "Copies the sample alert" {
-            $splat = @{
+            $splatCopyAlert = @{
                 Source      = $TestConfig.instance2
                 Destination = $TestConfig.instance3
                 Alert       = $alert1
             }
-            $results = Copy-DbaAgentAlert @splat
-            $results.Name | Should -Be 'dbatoolsci test alert', 'dbatoolsci test alert'
-            $results.Type | Should -Be 'Agent Alert', 'Agent Alert Notification'
-            $results.Status | Should -Be 'Successful', 'Successful'
+            $results = Copy-DbaAgentAlert @splatCopyAlert
+            $results.Name | Should -Be "dbatoolsci test alert", "dbatoolsci test alert"
+            $results.Type | Should -Be "Agent Alert", "Agent Alert Notification"
+            $results.Status | Should -Be "Successful", "Successful"
         }
 
         It "Skips alerts where destination is missing the operator" {
-            $splatDupe = @{
+            $splatCopySkip = @{
                 Source        = $TestConfig.instance2
                 Destination   = $TestConfig.instance3
                 Alert         = $alert2
-                WarningAction = 'SilentlyContinue'
+                WarningAction = "SilentlyContinue"
             }
-            $results = Copy-DbaAgentAlert @splatDupe
-            $results.Status | Should -Be Skipped
-            $results.Type | Should -Be 'Agent Alert'
+            $results = Copy-DbaAgentAlert @splatCopySkip
+            $results.Status | Should -Be "Skipped"
+            $results.Type | Should -Be "Agent Alert"
         }
 
         It "Doesn't overwrite existing alerts" {
-            $splat = @{
+            $splatCopyExisting = @{
                 Source      = $TestConfig.instance2
                 Destination = $TestConfig.instance3
                 Alert       = $alert1
             }
-            $results = Copy-DbaAgentAlert @splat
-            $results.Name | Should -Be 'dbatoolsci test alert'
-            $results.Status | Should -Be 'Skipped'
+            $results = Copy-DbaAgentAlert @splatCopyExisting
+            $results.Name | Should -Be "dbatoolsci test alert"
+            $results.Status | Should -Be "Skipped"
         }
 
         It "The newly copied alert exists" {
             $results = Get-DbaAgentAlert -SqlInstance $TestConfig.instance2
-            $results.Name | Should -Contain 'dbatoolsci test alert'
+            $results.Name | Should -Contain "dbatoolsci test alert"
         }
     }
 }

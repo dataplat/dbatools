@@ -1,37 +1,31 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "ConvertTo-DbaXESession",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command ConvertTo-DbaXESession
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "InputObject",
                 "Name",
                 "OutputScriptOnly",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "ConvertTo-DbaXESession" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $sql = @"
 -- Create a Queue
 declare @rc int
@@ -111,26 +105,52 @@ exec sp_trace_setstatus @TraceID, 1
 -- display trace id for future references
 select TraceID=@TraceID
 "@
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $splatConnect = @{
+            SqlInstance = $TestConfig.instance2
+        }
+        $server = Connect-DbaInstance @splatConnect
         $traceid = ($server.Query($sql)).TraceID
-        $TestConfig.name = "dbatoolsci-session"
+        $sessionName = "dbatoolsci-session"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $null = Remove-DbaXESession -SqlInstance $TestConfig.instance2 -Session $TestConfig.name
-        $null = Remove-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $splatRemoveSession = @{
+            SqlInstance = $TestConfig.instance2
+            Session     = $sessionName
+        }
+        $null = Remove-DbaXESession @splatRemoveSession
+        $splatRemoveTrace = @{
+            SqlInstance = $TestConfig.instance2
+            Id          = $traceid
+        }
+        $null = Remove-DbaTrace @splatRemoveTrace
         Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Test Trace Conversion" {
         BeforeAll {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid |
-                       ConvertTo-DbaXESession -Name $TestConfig.name |
-                       Start-DbaXESession
+            $splatGetTrace = @{
+                SqlInstance = $TestConfig.instance2
+                Id          = $traceid
+            }
+            $null = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
+            $splatStartSession = @{
+                SqlInstance = $TestConfig.instance2
+                Session     = $sessionName
+            }
+            $results = Start-DbaXESession @splatStartSession
         }
 
         It "Returns the right results" {
-            $results.Name | Should -Be $TestConfig.name
+            $results.Name | Should -Be $sessionName
             $results.Status | Should -Be "Running"
             $results.Targets.Name | Should -Be "package0.event_file"
         }

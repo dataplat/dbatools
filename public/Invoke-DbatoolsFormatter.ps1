@@ -33,6 +33,7 @@ function Invoke-DbatoolsFormatter {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
+        [alias("FullName)")]
         [object[]]$Path,
         [switch]$EnableException
     )
@@ -104,18 +105,9 @@ function Invoke-DbatoolsFormatter {
                 }
             }
             $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-            $correctCase = @(
-                'DbaInstanceParameter'
-                'PSCredential'
-                'PSCustomObject'
-                'PSItem'
-            )
             $realContent = @()
+            #trim whitespace lines
             foreach ($line in $content.Split("`n")) {
-                foreach ($item in $correctCase) {
-                    $line = $line -replace $item, $item
-                }
-                #trim whitespace lines
                 $realContent += $line.Replace("`t", "    ").TrimEnd()
             }
             [System.IO.File]::WriteAllText($realPath, ($realContent -Join "$OSEOL"), $Utf8NoBomEncoding)

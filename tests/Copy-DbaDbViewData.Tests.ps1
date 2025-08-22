@@ -1,21 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaDbViewData",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'AutoCreateTable', 'BatchSize', 'bulkCopyTimeOut', 'CheckConstraints', 'Database', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'DestinationTable', 'EnableException', 'FireTriggers', 'InputObject', 'KeepIdentity', 'KeepNulls', 'NoTableLock', 'NotifyAfter', 'Query', 'SqlCredential', 'SqlInstance', 'Truncate', 'View'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "AutoCreateTable",
+                "BatchSize",
+                "BulkCopyTimeOut",
+                "CheckConstraints",
+                "Database",
+                "Destination",
+                "DestinationDatabase",
+                "DestinationSqlCredential",
+                "DestinationTable",
+                "EnableException",
+                "FireTriggers",
+                "InputObject",
+                "KeepIdentity",
+                "KeepNulls",
+                "NoTableLock",
+                "NotifyAfter",
+                "Query",
+                "SqlCredential",
+                "SqlInstance",
+                "Truncate",
+                "View"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         function Remove-TempObjects {
             param ($dbs)
             function Remove-TempObject {
@@ -42,6 +69,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 Remove-TempObject $d dbo.dbatoolsci_view_example4_table
             }
         }
+
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
         $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
         Remove-TempObjects $db, $db2
@@ -65,75 +93,84 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             INSERT dbo.dbatoolsci_view_example4
             SELECT top 13 2
             FROM sys.objects")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Remove-TempObjects $db, $db2
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "copies the view data" {
         $null = Copy-DbaDbViewData -SqlInstance $TestConfig.instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
-        $table1count.Count | Should -Be $table2count.Count
+        $table1count.Status.Count | Should -Be $table2count.Status.Count
     }
 
     It "copies the view data to another instance" {
         $null = Copy-DbaDbViewData -SqlInstance $TestConfig.instance1 -Destination $TestConfig.instance2 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_example3
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db2.Query("select id from dbo.dbatoolsci_view_example3")
-        $table1count.Count | Should -Be $table2count.Count
+        $table1count.Status.Count | Should -Be $table2count.Status.Count
     }
 
     It "supports piping" {
         $null = Get-DbaDbView -SqlInstance $TestConfig.instance1 -Database tempdb -View dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example2 -Truncate
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
-        $table1count.Count | Should -Be $table2count.Count
+        $table1count.Status.Count | Should -Be $table2count.Status.Count
     }
 
     It "supports piping more than one view" {
         $results = Get-DbaDbView -SqlInstance $TestConfig.instance1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example3
-        $results.Count | Should -Be 2
-        $results.RowsCopied | Measure-Object -Sum | Select -Expand Sum | Should -Be 20
+        $results.Status.Count | Should -Be 2
+        $results.RowsCopied | Measure-Object -Sum | Select-Object -ExpandProperty Sum | Should -Be 20
     }
 
     It "opens and closes connections properly" {
         #regression test, see #3468
-        $results = Get-DbaDbView -SqlInstance $TestConfig.instance1 -Database tempdb -View 'dbo.dbatoolsci_view_example', 'dbo.dbatoolsci_view_example4' | Copy-DbaDbViewData -Destination $TestConfig.instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
-        $results.Count | Should -Be 2
+        $results = Get-DbaDbView -SqlInstance $TestConfig.instance1 -Database tempdb -View "dbo.dbatoolsci_view_example", "dbo.dbatoolsci_view_example4" | Copy-DbaDbViewData -Destination $TestConfig.instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
+        $results.Status.Count | Should -Be 2
         $table1dbcount = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table4dbcount = $db2.Query("select id from dbo.dbatoolsci_view_example4")
         $table1db2count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table4db2count = $db2.Query("select id from dbo.dbatoolsci_view_example4")
-        $table1dbcount.Count | Should -Be $table1db2count.Count
-        $table4dbcount.Count | Should -Be $table4db2count.Count
+        $table1dbcount.Status.Count | Should -Be $table1db2count.Status.Count
+        $table4dbcount.Status.Count | Should -Be $table4db2count.Status.Count
         $results[0].RowsCopied | Should -Be 10
         $results[1].RowsCopied | Should -Be 13
         $table4db2check = $db2.Query("select id from dbo.dbatoolsci_view_example4 where id = 1")
-        $table4db2check.Count | Should -Be 13
+        $table4db2check.Status.Count | Should -Be 13
     }
 
     It "Should warn and return nothing if Source and Destination are same" {
         $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instance1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning 3> $null
         $result | Should -Be $null
-        $tablewarning | Should -match "Cannot copy dbatoolsci_view_example into itself"
+        $tablewarning | Should -Match "Cannot copy dbatoolsci_view_example into itself"
     }
 
     It "Should warn if the destination table doesn't exist" {
         $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instance1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning 3> $null
         $result | Should -Be $null
-        $tablewarning | Should -match Auto
+        $tablewarning | Should -Match Auto
     }
 
     It "automatically creates the table" {
         $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_will_exist -AutoCreateTable
-        $result.DestinationTable | Should -Be 'dbatoolsci_view_will_exist'
+        $result.DestinationTable | Should -Be "dbatoolsci_view_will_exist"
     }
 
     It "Should warn if the source database doesn't exist" {
         $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instance2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
         $result | Should -Be $null
-        $tablewarning | Should -match "Failure"
+        $tablewarning | Should -Match "Failure"
     }
 
     It "Copy data using a query that relies on the default source database" {

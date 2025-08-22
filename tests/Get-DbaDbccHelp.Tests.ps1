@@ -1,42 +1,59 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbccHelp",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Statement', 'IncludeUndocumented', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Statement",
+                "IncludeUndocumented",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
-    $props = 'Operation', 'Cmd', 'Output'
-    $result = Get-DbaDbccHelp -SqlInstance $TestConfig.instance2 -Statement FREESYSTEMCACHE
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $props = @("Operation", "Cmd", "Output")
+        $result = Get-DbaDbccHelp -SqlInstance $TestConfig.instance2 -Statement FREESYSTEMCACHE
+    }
 
     Context "Validate standard output" {
-        foreach ($prop in $props) {
-            $p = $result.PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
+        It "Should return property: Operation" {
+            $result.PSObject.Properties["Operation"].Name | Should -Be "Operation"
+        }
+
+        It "Should return property: Cmd" {
+            $result.PSObject.Properties["Cmd"].Name | Should -Be "Cmd"
+        }
+
+        It "Should return property: Output" {
+            $result.PSObject.Properties["Output"].Name | Should -Be "Output"
         }
     }
 
     Context "Works correctly" {
         It "returns the right results for FREESYSTEMCACHE" {
-            $result.Operation | Should Be 'FREESYSTEMCACHE'
-            $result.Cmd | Should Be 'DBCC HELP(FREESYSTEMCACHE)'
-            $result.Output | Should Not Be $null
+            $result.Operation | Should -Be "FREESYSTEMCACHE"
+            $result.Cmd | Should -Be "DBCC HELP(FREESYSTEMCACHE)"
+            $result.Output | Should -Not -BeNullOrEmpty
         }
 
         It "returns the right results for PAGE" {
-            $result = Get-DbaDbccHelp -SqlInstance $TestConfig.instance2 -Statement PAGE -IncludeUndocumented
-            $result.Operation | Should Be 'PAGE'
-            $result.Cmd | Should Be 'DBCC HELP(PAGE)'
-            $result.Output | Should Not Be $null
+            $pageResult = Get-DbaDbccHelp -SqlInstance $TestConfig.instance2 -Statement PAGE -IncludeUndocumented
+            $pageResult.Operation | Should -Be "PAGE"
+            $pageResult.Cmd | Should -Be "DBCC HELP(PAGE)"
+            $pageResult.Output | Should -Not -BeNullOrEmpty
         }
     }
 }

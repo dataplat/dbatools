@@ -1,29 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Find-DbaDbUnusedIndex",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IgnoreUptime', 'InputObject', 'EnableException', 'Seeks', 'Scans', 'Lookups'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IgnoreUptime",
+                "Seeks",
+                "Scans",
+                "Lookups",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
-            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex testing connection to $($TestConfig.instance2)"
             Test-DbaConnection -SqlInstance $TestConfig.instance2
 
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -31,7 +37,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $random = Get-Random
             $dbName = "dbatoolsci_$random"
 
-            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex setting up the new database $dbName"
             Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
             $newDB = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
 
@@ -48,7 +53,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         AfterAll {
-            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex removing the database $dbName"
             Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
         }
 
@@ -61,10 +65,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             foreach ($row in $results) {
                 if ($row["IndexName"] -eq $indexName) {
-                    Write-Message -Level Debug -Message "$($indexName) was found on $($TestConfig.instance2) in database $($dbName)"
                     $testSQLinstance = $true
-                } else {
-                    Write-Message -Level Warning -Message "$($indexName) was not found on $($TestConfig.instance2) in database $($dbName)"
                 }
             }
 
@@ -73,7 +74,38 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 
         It "Should return the expected columns on each test sql instance" {
-            [object[]]$expectedColumnArray = 'CompressionDescription', 'ComputerName', 'Database', 'DatabaseId', 'IndexId', 'IndexName', 'IndexSizeMB', 'InstanceName', 'LastSystemLookup', 'LastSystemScan', 'LastSystemSeek', 'LastSystemUpdate', 'LastUserLookup', 'LastUserScan', 'LastUserSeek', 'LastUserUpdate', 'ObjectId', 'RowCount', 'Schema', 'SqlInstance', 'SystemLookup', 'SystemScans', 'SystemSeeks', 'SystemUpdates', 'Table', 'TypeDesc', 'UserLookups', 'UserScans', 'UserSeeks', 'UserUpdates'
+            $expectedColumnArray = @(
+                "CompressionDescription",
+                "ComputerName",
+                "Database",
+                "DatabaseId",
+                "IndexId",
+                "IndexName",
+                "IndexSizeMB",
+                "InstanceName",
+                "LastSystemLookup",
+                "LastSystemScan",
+                "LastSystemSeek",
+                "LastSystemUpdate",
+                "LastUserLookup",
+                "LastUserScan",
+                "LastUserSeek",
+                "LastUserUpdate",
+                "ObjectId",
+                "RowCount",
+                "Schema",
+                "SqlInstance",
+                "SystemLookup",
+                "SystemScans",
+                "SystemSeeks",
+                "SystemUpdates",
+                "Table",
+                "TypeDesc",
+                "UserLookups",
+                "UserScans",
+                "UserSeeks",
+                "UserUpdates"
+            )
 
             $testSQLinstance = $false
 
@@ -87,18 +119,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($SqlInstance): $($results)"
                     $testSQLinstance = $false
                 }
 
                 if ($null -ne $row) {
-                    [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
+                    $columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $PSItem.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.instance2)"
                         $testSQLinstance = $true
-                    } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnList variable do not match these returned columns from $($TestConfig.instance2): $($columnNamesReturned)"
                     }
                 }
             }

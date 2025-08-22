@@ -75,9 +75,9 @@ If ($PSVersionTable.PSEdition -in "Desktop", $null) {
 }
 Write-ImportTime -Text "Checking for .NET"
 
-# Core needs to be at least 7.4.5
-if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion.Major -lt 7 -and $PSVersionTable.PSVersion.Minor -lt 4 -and $PSVersionTable.PSVersion.Build -lt 5) {
-    throw "dbatools requires at least PowerShell 7.4.5 when running on Core. Please update your PowerShell."
+# Core needs to be at least 7.4.0
+if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion -lt [version]"7.4.0") {
+    throw "dbatools requires at least PowerShell 7.4.0 when running on Core. Please update your PowerShell."
 }
 
 
@@ -566,8 +566,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'New-DbaAgentProxy',
         'Test-DbaDbLogShipStatus',
         'Get-DbaXESessionTarget',
-        'New-DbaXESmartTargetResponse',
-        'New-DbaXESmartTarget',
         'Get-DbaDbVirtualLogFile',
         'Get-DbaBackupInformation',
         'Start-DbaXESession',
@@ -597,11 +595,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaXESession',
         'New-DbaXESession',
         'Get-DbaXEStore',
-        'New-DbaXESmartTableWriter',
-        'New-DbaXESmartReplay',
-        'New-DbaXESmartEmail',
-        'New-DbaXESmartQueryExec',
-        'Start-DbaXESmartTarget',
         'Get-DbaDbOrphanUser',
         'Get-DbaOpenTransaction',
         'Get-DbaDbLogShipError',
@@ -616,13 +609,9 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaXEObject',
         'ConvertTo-DbaDataTable',
         'Find-DbaDbDisabledIndex',
-        'Get-DbaXESmartTarget',
-        'Remove-DbaXESmartTarget',
-        'Stop-DbaXESmartTarget',
         'Get-DbaRegServerGroup',
         'New-DbaDbUser',
         'Measure-DbaDiskSpaceRequirement',
-        'New-DbaXESmartCsvWriter',
         'Invoke-DbaXeReplay',
         'Find-DbaInstance',
         'Test-DbaDiskSpeed',
@@ -659,7 +648,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Invoke-DbatoolsRenameHelper',
         'Measure-DbatoolsImport',
         'Get-DbaDeprecatedFeature',
-        'Test-DbaDeprecatedFeature'
         'Get-DbaDbFeatureUsage',
         'Stop-DbaEndpoint',
         'Start-DbaEndpoint',
@@ -809,6 +797,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaBuild',
         'Update-DbaBuildReference',
         'Install-DbaFirstResponderKit',
+        'Install-DbaSqlPackage',
         'Install-DbaWhoIsActive',
         'Update-Dbatools',
         'Add-DbaServerRoleMember',
@@ -940,7 +929,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Add-DbaPfDataCollectorCounter',
         'Remove-DbaPfDataCollectorCounter',
         'Get-DbaPfAvailableCounter',
-        'Export-DbaXECsv',
         'Get-DbaOperatingSystem',
         'Get-DbaComputerSystem',
         'Set-DbaPrivilege',

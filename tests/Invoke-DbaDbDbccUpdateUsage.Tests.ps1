@@ -1,19 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaDbDbccUpdateUsage",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Index', 'NoInformationalMessages', 'CountRows', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Index",
+                "NoInformationalMessages",
+                "CountRows",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
@@ -23,38 +37,43 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $null = $db.Query("CREATE TABLE $tableName (id int)", $dbname)
         $null = $db.Query("CREATE CLUSTERED INDEX [PK_Id] ON $tableName ([id] ASC)", $dbname)
         $null = $db.Query("INSERT $tableName(id) SELECT object_id FROM sys.objects", $dbname)
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Validate standard output" {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output'
-        $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Confirm:$false
-
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+        BeforeAll {
+            $props = "ComputerName", "InstanceName", "SqlInstance", "Database", "Cmd", "Output"
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Confirm:$false
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
+        It "returns results" {
+            $result.Count -gt 0 | Should -BeTrue
+        }
+
+        It "Should return all required properties" {
+            foreach ($prop in $props) {
+                $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
             }
         }
     }
 
-    Context "Validate returns results " {
-        $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Database $dbname -Table $tableName -Confirm:$false
-
+    Context "Validate returns results" {
         It "returns results for table" {
-            $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Database $dbname -Table $tableName -Confirm:$false
+            $result.Output -match "DBCC execution completed. If DBCC printed error messages, contact your system administrator." | Should -BeTrue
         }
 
-        $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Database $dbname -Table $tableName -Index 1 -Confirm:$false
-
         It "returns results for index by id" {
-            $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Database $dbname -Table $tableName -Index 1 -Confirm:$false
+            $result.Output -match "DBCC execution completed. If DBCC printed error messages, contact your system administrator." | Should -BeTrue
         }
     }
 

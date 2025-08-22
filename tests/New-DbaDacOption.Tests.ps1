@@ -1,39 +1,55 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDacOption",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$commandname Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Type', 'Action', 'PublishXml', 'Property', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Type",
+                "Action",
+                "PublishXml",
+                "Property",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database whatever -Path C:\temp
+        $publishProfile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database whatever -Path C:\Temp
     }
+
     AfterAll {
-        Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
+        Remove-Item -Path $publishProfile.FileName -ErrorAction SilentlyContinue
     }
+
     It "Returns dacpac export options" {
         New-DbaDacOption -Action Export | Should -Not -BeNullOrEmpty
     }
+
     It "Returns bacpac export options" {
         New-DbaDacOption -Action Export -Type Bacpac | Should -Not -BeNullOrEmpty
     }
+
     It "Returns dacpac publish options" {
         New-DbaDacOption -Action Publish | Should -Not -BeNullOrEmpty
     }
+
     It "Returns dacpac publish options from an xml" {
-        New-DbaDacOption -Action Publish -PublishXml $publishprofile.FileName -EnableException | Should -Not -BeNullOrEmpty
+        New-DbaDacOption -Action Publish -PublishXml $publishProfile.FileName -EnableException | Should -Not -BeNullOrEmpty
     }
+
     It "Returns bacpac publish options" {
         New-DbaDacOption -Action Publish -Type Bacpac | Should -Not -BeNullOrEmpty
     }
+
     It "Properly sets a property value when specified" {
         (New-DbaDacOption -Action Export -Property @{CommandTimeout = 5 }).CommandTimeout | Should -Be 5
         (New-DbaDacOption -Action Export -Type Bacpac -Property @{CommandTimeout = 5 }).CommandTimeout | Should -Be 5

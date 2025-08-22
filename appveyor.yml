@@ -2,8 +2,27 @@
 image: Previous Visual Studio 2015
 configuration: "Debug"
 
+# skip PR builds when there's already a push build
+skip_branch_with_pr: true
+
+skip_commits:
+  files:
+    - '**/*.md'
+    - '**/*.json'
+    - '!.github/dbatools-library-version.json'
+    - 'docs/**'
+    - '.github/FUNDING.yml'
+    - '.github/ISSUE_TEMPLATE/**'
+    - '.github/PULL_REQUEST_TEMPLATE.md'
+    - '.aider/**'
+    - '.devcontainer/**'
+    - '.vscode/**'
+    - 'bin/**'
+    - 'en-us/**'
+  message: /\[skip ci\]/
+
 build_script:
- - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
+  - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
 
 version: 2.1.{build}
 
@@ -15,7 +34,7 @@ cache:
   - C:\Program Files\WindowsPowerShell\Modules\dbatools.library -> .github/dbatools-library-version.json
 
 #shallow_clone: true
-clone_depth: 100
+clone_depth: 20
 
 # Set build info
 environment:
@@ -88,10 +107,10 @@ before_test:
 
 test_script:
    # Test with native PS version
-  - ps: .\Tests\appveyor.pester.ps1 -IncludeCoverage
+  - ps: .\Tests\appveyor.pester.ps1
 
   # Collecting results
-  - ps: .\Tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
+  - ps: .\Tests\appveyor.pester.ps1 -Finalize
 
 after_test:
   - ps: .\Tests\appveyor.post.ps1

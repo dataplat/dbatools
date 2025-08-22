@@ -1,5 +1,19 @@
 name: Run Cross Platform Tests
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.json'
+      - '!.github/dbatools-library-version.json'
+      - 'docs/**'
+      - '.github/FUNDING.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.aider/**'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - 'bin/**'
+      - 'en-us/**'
 defaults:
   run:
     shell: pwsh
@@ -46,15 +60,11 @@ jobs:
       - name: Set encryption values
         run: |
           Import-Module ./dbatools.psd1 -Force
-          (Get-Module dbatools.library).Path | Write-Warning
-          Get-ChildItem /home/runner/.local/share/powershell/Modules/dbatools.library/core/lib/dac/linux | Write-Warning
+          Get-Module dbatools.library | Select-Object -ExpandProperty Path -OutVariable lib | Write-Warning
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
           mkdir /tmp/DbatoolsExport
-
-      - name: Ensure sqlpackage is executable
-        run: chmod +x /home/runner/.local/share/powershell/Modules/dbatools.library/core/lib/dac/linux/sqlpackage || true
 
       - name:  Setup docker images
         run: |
@@ -69,6 +79,12 @@ jobs:
         working-directory: /tmp
         run: |
           gh repo clone dataplat/appveyor-lab
+
+      - name: Install SqlPackage
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Install-DbaSqlPackage -Force -Verbose
 
       - name: Run tests
         env:
@@ -148,6 +164,12 @@ jobs:
           $PSDefaultParameterValues["*:SqlCredential"] = $cred
           Connect-DbaInstance
 
+      - name: Install SqlPackage
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Install-DbaSqlPackage -Force -Verbose
+
       - name: Run PowerShell tests
         env:
           TENANTID: ${{secrets.TENANTID}}
@@ -165,3 +187,62 @@ jobs:
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         shell: pwsh
         run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
+
+  macos-tests:
+    env:
+        SMODefaultModuleName: dbatools
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout dbatools repo
+        uses: actions/checkout@v3
+
+      - name: Read dbatools.library version
+        id: get-version
+        shell: pwsh
+        run: |
+          $versionConfig = Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json
+          $version = $versionConfig.version
+          $isPreview = $version -like "*preview*"
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "is_preview=$isPreview" >> $env:GITHUB_OUTPUT
+          Write-Output "Using dbatools.library version: $version"
+          Write-Output "Is preview version: $isPreview"
+
+      - name: Install and cache PowerShell modules (stable versions)
+        if: steps.get-version.outputs.is_preview == 'False'
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
+
+      - name: Install dbatools.library (preview versions)
+        if: steps.get-version.outputs.is_preview == 'True'
+        shell: pwsh
+        run: |
+          Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          ./.github/scripts/install-dbatools-library.ps1
+
+      - name: 👥 Clone appveyor repo
+        working-directory: /tmp
+        run: |
+          gh repo clone dataplat/appveyor-lab
+
+      - name: Install SqlPackage
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Install-DbaSqlPackage -Force -Verbose
+
+      - name: Run macOS tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+          CLIENT_GUID: ${{secrets.CLIENT_GUID}}
+          CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
+        shell: pwsh
+        run: |
+          $null = Import-Module ./dbatools.psd1 -Force
+          $null = Set-DbatoolsInsecureConnection
+          $null = Invoke-Pester .github/scripts/gh-macactions.ps1 -Output Detailed -PassThru

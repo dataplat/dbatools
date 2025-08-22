@@ -461,6 +461,7 @@ function Add-DbaAgDatabase {
                                 Write-Message -Level Verbose -Message $progress['CurrentOperation']
                                 Write-Progress @progress
 
+                                # DO NOT fix the typo in "JoinAvailablityGroup()" as it is a typo the SMO.
                                 $replicaAgDb.JoinAvailablityGroup()
                             } catch {
                                 $failure = $true

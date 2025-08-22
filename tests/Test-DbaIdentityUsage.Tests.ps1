@@ -1,82 +1,94 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-DbaIdentityUsage",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Threshold', 'ExcludeSystem', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Threshold",
+                "ExcludeSystem",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Verify Test Identity Usage on TinyInt" {
         BeforeAll {
-            $table = "TestTable_$(Get-random)"
-            $tableDDL = "CREATE TABLE $table (testId TINYINT IDENTITY(1,1),testData DATETIME2 DEFAULT getdate() )"
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $tableDDL -database TempDb
+            $global:table1 = "TestTable_$(Get-Random)"
+            $tableDDL = "CREATE TABLE $global:table1 (testId TINYINT IDENTITY(1,1),testData DATETIME2 DEFAULT getdate() )"
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $tableDDL -Database TempDb
 
+            $insertSql = "INSERT INTO $global:table1 (testData) DEFAULT VALUES"
+            for ($i = 1; $i -le 128; $i++) {
+                Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -Database TempDb
+            }
+            $global:results128 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $global:table1
+
+            for ($i = 1; $i -le 127; $i++) {
+                Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -Database TempDb
+            }
+            $global:results255 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $global:table1
         }
+
         AfterAll {
-            $cleanup = "Drop table $table"
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $cleanup -database TempDb
+            $cleanup = "Drop table $global:table1"
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $cleanup -Database TempDb
         }
-
-        $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
-        for ($i = 1; $i -le 128; $i++) {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -database TempDb
-        }
-        $results = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
         It "Identity column should have 128 uses" {
-            $results.NumberOfUses | Should Be 128
-        }
-        It "TinyInt identity column with 128 rows inserted should be 50.20% full" {
-            $results.PercentUsed | Should Be 50.20
+            $global:results128.NumberOfUses | Should -Be 128
         }
 
-        $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
-        for ($i = 1; $i -le 127; $i++) {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -database TempDb
+        It "TinyInt identity column with 128 rows inserted should be 50.20% full" {
+            $global:results128.PercentUsed | Should -Be 50.20
         }
-        $results = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
         It "Identity column should have 255 uses" {
-            $results.NumberOfUses | Should Be 255
-        }
-        It "TinyInt with 255 rows should be 100% full" {
-            $results.PercentUsed | Should Be 100
+            $global:results255.NumberOfUses | Should -Be 255
         }
 
+        It "TinyInt with 255 rows should be 100% full" {
+            $global:results255.PercentUsed | Should -Be 100
+        }
     }
 
     Context "Verify Test Identity Usage with increment of 5" {
         BeforeAll {
-            $table = "TestTable_$(Get-random)"
-            $tableDDL = "CREATE TABLE $table (testId tinyint IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $tableDDL -database TempDb
+            $global:table2 = "TestTable_$(Get-Random)"
+            $tableDDL = "CREATE TABLE $global:table2 (testId tinyint IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $tableDDL -Database TempDb
 
+            $insertSql = "INSERT INTO $global:table2 (testData) DEFAULT VALUES"
+            for ($i = 1; $i -le 25; $i++) {
+                Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -Database TempDb
+            }
+            $global:results25 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $global:table2
         }
+
         AfterAll {
-            $cleanup = "Drop table $table"
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $cleanup -database TempDb
+            $cleanup = "Drop table $global:table2"
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $cleanup -Database TempDb
         }
-
-        $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
-        for ($i = 1; $i -le 25; $i++) {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -database TempDb
-        }
-        $results = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
         It "Identity column should have 24 uses" {
-            $results.NumberOfUses | Should Be 24
+            $global:results25.NumberOfUses | Should -Be 24
         }
+
         It "TinyInt identity column with 25 rows using increment of 5 should be 47.06% full" {
-            $results.PercentUsed | Should Be 47.06
+            $global:results25.PercentUsed | Should -Be 47.06
         }
     }
 }

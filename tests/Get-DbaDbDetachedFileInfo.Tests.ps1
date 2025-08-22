@@ -1,26 +1,34 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbDetachedFileInfo",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $versionName = $server.GetSqlServerVersionName()
         $random = Get-Random
         $dbname = "dbatoolsci_detatch_$random"
         $server.Query("CREATE DATABASE $dbname")
-        $path = (Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database $dbname | Where-object {$_.PhysicalName -like '*.mdf'}).physicalname
+        $path = (Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object PhysicalName -like "*.mdf").PhysicalName
         Detach-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Force
     }
 
@@ -32,21 +40,28 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbDetachedFileInfo -SqlInstance $TestConfig.instance2 -Path $path
-        it "Gets Results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $TestConfig.instance2 -Path $path
         }
+
+        It "Gets Results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
         It "Should be created database" {
-            $results.name | Should Be $dbname
+            $results.Name | Should -Be $dbname
         }
+
         It "Should be the correct version" {
-            $results.version | Should Be $versionName
+            $results.Version | Should -Be $versionName
         }
+
         It "Should have Data files" {
-            $results.DataFiles | Should Not Be $null
+            $results.DataFiles | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Log files" {
-            $results.LogFiles | Should Not Be $null
+            $results.LogFiles | Should -Not -BeNullOrEmpty
         }
     }
 }

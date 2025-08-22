@@ -1,43 +1,77 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaSsisCatalog",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'SecurePassword', 'SsisCatalog', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Credential",
+                "SecurePassword",
+                "SsisCatalog",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Catalog is added properly" {
-        # database name is currently fixed
-        $database = "SSISDB"
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.ssisserver -Database $database
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        if (-not $db) {
-            $password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
-            $results = New-DbaSsisCatalog -SqlInstance $TestConfig.ssisserver -Password $password -WarningAction SilentlyContinue -WarningVariable warn
+            # database name is currently fixed
+            $database = "SSISDB"
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.ssisserver -Database $database
+            $results = $null
+            $shouldRunTests = $false
 
-            # Run the tests only if it worked (this could be more accurate but w/e, it's hard to test on appveyor)
-            if ($warn -match "not running") {
-                if (-not $env:APPVEYOR_REPO_BRANCH) {
-                    Write-Warning "$warn"
-                }
-            } else {
-                It "uses the specified database" {
-                    $results.SsisCatalog | Should Be $database
-                }
+            if (-not $db) {
+                $password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
+                $results = New-DbaSsisCatalog -SqlInstance $TestConfig.ssisserver -Password $password -WarningAction SilentlyContinue -WarningVariable warn
 
-                It "creates the catalog" {
-                    $results.Created | Should Be $true
+                # Run the tests only if it worked (this could be more accurate but w/e, it's hard to test on appveyor)
+                if ($warn -match "not running") {
+                    if (-not $env:APPVEYOR_REPO_BRANCH) {
+                        Write-Warning "$warn"
+                    }
+                    $shouldRunTests = $false
+                } else {
+                    $shouldRunTests = $true
                 }
-                Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.ssisserver -Database $database
             }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Cleanup the created catalog if it exists
+            if ($shouldRunTests -and $database) {
+                Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.ssisserver -Database $database -ErrorAction SilentlyContinue
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "uses the specified database" -Skip:(-not $shouldRunTests) {
+            $results.SsisCatalog | Should -Be $database
+        }
+
+        It "creates the catalog" -Skip:(-not $shouldRunTests) {
+            $results.Created | Should -Be $true
         }
     }
 }

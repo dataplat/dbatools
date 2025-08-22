@@ -1,20 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Export-DbaSysDbUserObject",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'IncludeDependencies', 'BatchSeparator', 'Path', 'FilePath', 'NoPrefix', 'ScriptingOptionsObject', 'NoClobber', 'PassThru', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "IncludeDependencies",
+                "BatchSeparator",
+                "Path",
+                "FilePath",
+                "NoPrefix",
+                "ScriptingOptionsObject",
+                "NoClobber",
+                "PassThru",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
         $random = Get-Random
         $tableName = "dbatoolsci_UserTable_$random"
         $viewName = "dbatoolsci_View_$random"
@@ -31,8 +54,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query("CREATE FUNCTION dbo.$tableFunctionName () RETURNS TABLE AS RETURN SELECT 1 as test", "master")
         $server.query("CREATE FUNCTION dbo.$scalarFunctionName (@int int) RETURNS INT AS BEGIN RETURN @int END", "master")
         $server.query("CREATE RULE dbo.$ruleName AS @range>= 1 AND @range <10;", "master")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -SqlCredential $SqlCredential
         $server.query("DROP TABLE dbo.$tableName", "master")
         $server.query("DROP VIEW dbo.$viewName", "master")
@@ -41,55 +71,72 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query("DROP FUNCTION dbo.$tableFunctionName", "master")
         $server.query("DROP FUNCTION dbo.$scalarFunctionName", "master")
         $server.query("DROP RULE dbo.$ruleName", "master")
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     Context "works as expected with passthru" {
-        $script = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -PassThru | Out-String
+        BeforeAll {
+            $script = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -PassThru | Out-String
+        }
+
         It "should export text matching table name '$tableName'" {
-            $script -match $tableName | Should be $true
+            $script -match $tableName | Should -Be $true
         }
         It "should export text matching view name '$viewName'" {
-            $script -match $viewName | Should be $true
+            $script -match $viewName | Should -Be $true
         }
         It "should export text matching stored procedure name '$procName'" {
-            $script -match $procName | Should be $true
+            $script -match $procName | Should -Be $true
         }
         It "should export text matching trigger name '$triggerName'" {
-            $script -match $triggerName | Should be $true
+            $script -match $triggerName | Should -Be $true
         }
         It "should export text matching table function name '$tableFunctionName'" {
-            $script -match $tableFunctionName | Should be $true
+            $script -match $tableFunctionName | Should -Be $true
         }
         It "should export text matching scalar function name '$scalarFunctionName'" {
-            $script -match $scalarFunctionName | Should be $true
+            $script -match $scalarFunctionName | Should -Be $true
         }
         It "should export text matching rule name '$ruleName'" {
-            $script -match $ruleName | Should be $true
+            $script -match $ruleName | Should -Be $true
         }
     }
 
     Context "works as expected with filename" {
-        $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -FilePath "C:\Temp\objects_$random.sql"
-        $file = get-content "C:\Temp\objects_$random.sql" | Out-String
+        BeforeAll {
+            $filePath = "$backupPath\objects_$random.sql"
+            $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -FilePath $filePath
+            $file = Get-Content $filePath | Out-String
+        }
+
+        AfterAll {
+            Remove-Item -Path $filePath -ErrorAction SilentlyContinue
+        }
+
         It "should export text matching table name '$tableName'" {
-            $file -match $tableName | Should be $true
+            $file -match $tableName | Should -Be $true
         }
         It "should export text matching view name '$viewName'" {
-            $file -match $viewName | Should be $true
+            $file -match $viewName | Should -Be $true
         }
         It "should export text matching stored procedure name '$procName'" {
-            $file -match $procName | Should be $true
+            $file -match $procName | Should -Be $true
         }
         It "should export text matching trigger name '$triggerName'" {
-            $file -match $triggerName | Should be $true
+            $file -match $triggerName | Should -Be $true
         }
         It "should export text matching table function name '$tableFunctionName'" {
-            $file -match $tableFunctionName | Should be $true
+            $file -match $tableFunctionName | Should -Be $true
         }
         It "should export text matching scalar function name '$scalarFunctionName'" {
-            $file -match $scalarFunctionName | Should be $true
+            $file -match $scalarFunctionName | Should -Be $true
         }
         It "should export text matching scalar function name '$ruleName'" {
-            $file -match $ruleName | Should be $true
+            $file -match $ruleName | Should -Be $true
         }
     }
 }

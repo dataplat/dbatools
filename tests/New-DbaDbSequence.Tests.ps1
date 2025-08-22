@@ -1,20 +1,42 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbSequence",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Sequence', 'Schema', 'IntegerType', 'StartWith', 'IncrementBy', 'MinValue', 'MaxValue', 'Cycle', 'CacheSize', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Sequence",
+                "Schema",
+                "IntegerType",
+                "StartWith",
+                "IncrementBy",
+                "MinValue",
+                "MaxValue",
+                "Cycle",
+                "CacheSize",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
 
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $newDbName = "dbatoolsci_newdb_$random"
@@ -23,24 +45,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newDb.Query("CREATE SCHEMA TestSchema")
         $newDb.Query("CREATE TYPE TestSchema.NonNullInteger FROM INTEGER NOT NULL")
         $newDb.Query("CREATE TYPE dbo.NonNullInteger FROM INTEGER NOT NULL")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = $newDb | Remove-DbaDatabase -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "commands work as expected" {
 
         It "validates required Database param" {
-            $sequence = New-DbaDbSequence -SqlInstance $server -Name SequenceTest -ErrorVariable error
+            $sequence = New-DbaDbSequence -SqlInstance $server -Name SequenceTest -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "Database is required when SqlInstance is specified"
             $sequence | Should -BeNullOrEmpty
-            $error | Should -Match "Database is required when SqlInstance is specified"
         }
 
         It "validates IncrementBy param cannot be 0" {
-            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name SequenceTest -IncrementBy 0 -ErrorVariable error
+            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name SequenceTest -IncrementBy 0 -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "cannot be zero"
             $sequence | Should -BeNullOrEmpty
-            $error.Exception | Should -Match "cannot be zero"
         }
 
         It "creates a new sequence" {
@@ -51,7 +81,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "tries to create a duplicate sequence" {
-            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "Sequence Sequence1_$random already exists in the Schema_$random schema in the database dbatoolsci_newdb_$random"
             $sequence | Should -BeNullOrEmpty
         }
 

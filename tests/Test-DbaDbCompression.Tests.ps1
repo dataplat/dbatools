@@ -1,22 +1,36 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-DbaDbCompression",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Schema', 'Table', 'ResultSize', 'Rank', 'FilterBy', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Schema",
+                "Table",
+                "ResultSize",
+                "Rank",
+                "FilterBy",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         Get-DbaProcess -SqlInstance $TestConfig.instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $dbname = "dbatoolsci_test_$(get-random)"
+        $dbname = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("Create Schema test", $dbname)
@@ -33,61 +47,59 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
     }
     Context "Command gets suggestions" {
-        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
         It "Should get results for $dbname" {
-            $results | Should Not Be $null
-        }
-        $results.foreach{
-            It "Should suggest ROW, PAGE or NO_GAIN for $($PSitem.TableName) - $($PSitem.IndexType) " {
-                $PSitem.CompressionTypeRecommendation | Should BeIn ("ROW", "PAGE", "NO_GAIN", "?")
-            }
-            It "Should have values for PercentScan and PercentUpdate  $($PSitem.TableName) - $($PSitem.IndexType) " {
-                $PSitem.PercentUpdate | Should Not BeNullOrEmpty
-                $PSitem.PercentScan | Should Not BeNullOrEmpty
+            $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
+            $results | Should -Not -Be $null
+            $results.foreach{
+                $PSItem.CompressionTypeRecommendation | Should -BeIn ("ROW", "PAGE", "NO_GAIN", "?")
+                $PSItem.PercentUpdate | Should -Not -BeNullOrEmpty
+                $PSItem.PercentScan | Should -Not -BeNullOrEmpty
             }
         }
     }
     Context "Command makes right suggestions" {
-        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
+        BeforeAll {
+            $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
+        }
         It "Should suggest PAGE compression for a table with no updates or scans" {
-            $($results | Where-Object { $_.TableName -eq "syscols" -and $_.IndexType -eq "HEAP"}).CompressionTypeRecommendation | Should Be "PAGE"
+            $($results | Where-Object { $_.TableName -eq "syscols" -and $_.IndexType -eq "HEAP" }).CompressionTypeRecommendation | Should -Be "PAGE"
         }
         It "Should suggest ROW compression for table with more updates" {
-            $($results | Where-Object { $_.TableName -eq "sysallparams"}).CompressionTypeRecommendation | Should Be "ROW"
+            $($results | Where-Object { $_.TableName -eq "sysallparams" }).CompressionTypeRecommendation | Should -Be "ROW"
         }
     }
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
-            $(Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname).Database | Should not Match $dbname
+            $(Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname).Database | Should -Not -Match $dbname
         }
     }
     Context "Command gets Schema suggestions" {
-        $schema = 'dbo'
-        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Schema $schema
         It "Should get results for Schema:$schema" {
-            $results | Should Not Be $null
+            $schema = 'dbo'
+            $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Schema $schema
+            $results | Should -Not -Be $null
         }
     }
     Context "Command gets Table suggestions" {
-        $table = 'syscols'
-        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Table $table
         It "Should get results for table:$table" {
-            $results | Should Not Be $null
+            $table = 'syscols'
+            $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Table $table
+            $results | Should -Not -Be $null
         }
     }
     Context "Command gets limited output" {
-        $resultCount = 2
-        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ResultSize $resultCount -Rank TotalPages -FilterBy Partition
         It "Should get only $resultCount results" {
-            $results.Count | Should Be $resultCount
+            $resultCount = 2
+            $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ResultSize $resultCount -Rank TotalPages -FilterBy Partition
+            $results.Count | Should -Be $resultCount
         }
     }
     Context "Returns result for empty table (see #9469)" {
-        $table = 'testtable'
-        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Table $table
         It "Should get results for table:$table" {
-            $results | Should Not Be $null
-            $results[0].CompressionTypeRecommendation | Should Be '?'
+            $table = 'testtable'
+            $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Table $table
+            $results | Should -Not -Be $null
+            $results[0].CompressionTypeRecommendation | Should -Be '?'
         }
     }
 }

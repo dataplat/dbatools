@@ -1,42 +1,60 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaServerRole",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "ServerRole",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $roleExecutor = "serverExecuter"
-        $null = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set variables. They are available in all the It blocks.
+        $testInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $testRoleExecutor = "serverExecuter"
+        $null = New-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        $null = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        $null = Remove-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     Context "Command actually works" {
         It "It returns info about server-role removed" {
-            $results = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor -Confirm:$false
-            $results.ServerRole | Should Be $roleExecutor
+            $results = Remove-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor -Confirm:$false
+            $results.ServerRole | Should -Be $testRoleExecutor
         }
 
         It "Should not return server-role" {
-            $results = Get-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor
-            $results | Should Be $null
+            $results = Get-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor
+            $results | Should -Be $null
         }
     }
 }

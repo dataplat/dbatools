@@ -1,30 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaKbUpdate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Name', 'Simple', 'Language', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Name",
+                "Simple",
+                "Language",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     It "successfully connects and parses link and title" {
         $results = Get-DbaKbUpdate -Name KB4057119
-        $results.Link -match 'download.windowsupdate.com'
-        $results.Title -match 'Cumulative Update'
+        $results.Link -match "download.windowsupdate.com"
+        $results.Title -match "Cumulative Update"
         $results.KBLevel | Should -Be 4057119
     }
 
     It "test with the -Simple param" {
         $results = Get-DbaKbUpdate -Name KB4577194 -Simple
-        $results.Link -match 'download.windowsupdate.com'
-        $results.Title -match 'Cumulative Update'
+        $results.Link -match "download.windowsupdate.com"
+        $results.Title -match "Cumulative Update"
         $results.KBLevel | Should -Be 4577194
     }
 
@@ -34,8 +42,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         $results = Get-DbaKbUpdate -Name KB4564903
         $results.KBLevel | Should -Be 4564903
-        $results.Link -match 'download.windowsupdate.com'
-        $results.Title -match 'Cumulative Update'
+        $results.Link -match "download.windowsupdate.com"
+        $results.Title -match "Cumulative Update"
     }
 
     It "Call with multiple KBs" {
@@ -56,14 +64,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     It "Call without specific language" {
         $results = Get-DbaKbUpdate -Name KB5003279
         $results.KBLevel | Should -Be 5003279
-        $results.Classification -match 'Service Packs'
-        $results.Link -match '-enu_'
+        $results.Classification -match "Service Packs"
+        $results.Link -match "-enu_"
     }
 
     It "Call with specific language" {
         $results = Get-DbaKbUpdate -Name KB5003279 -Language ja
         $results.KBLevel | Should -Be 5003279
-        $results.Classification -match 'Service Packs'
-        $results.Link -match '-jpn_'
+        $results.Classification -match "Service Packs"
+        $results.Link -match "-jpn_"
     }
 }

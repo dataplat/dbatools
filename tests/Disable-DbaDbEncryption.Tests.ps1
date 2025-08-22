@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Disable-DbaDbEncryption",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Disable-DbaDbEncryption" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Disable-DbaDbEncryption
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -17,20 +18,12 @@ Describe "Disable-DbaDbEncryption" -Tag "UnitTests" {
                 "NoEncryptionKeyDrop",
                 "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
@@ -78,7 +71,7 @@ Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
         }
 
         It "Should complete without warnings" {
-            $warn | Where-Object { $_ -NotLike '*Connect-DbaInstance*'} | Should -BeNullOrEmpty
+            $warn | Where-Object { $_ -NotLike "*Connect-DbaInstance*" } | Should -BeNullOrEmpty
         }
 
         It "Should disable encryption" {
@@ -93,13 +86,13 @@ Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
 
             $splatDisable = @{
                 SqlInstance = $TestConfig.instance2
-                Database = $testDb.Name
+                Database    = $testDb.Name
             }
             $results = Disable-DbaDbEncryption @splatDisable -WarningVariable warn 3> $null
         }
 
         It "Should complete without warnings" {
-            $warn | Where-Object { $_ -NotLike '*Connect-DbaInstance*'} | Should -BeNullOrEmpty
+            $warn | Where-Object { $_ -NotLike "*Connect-DbaInstance*" } | Should -BeNullOrEmpty
         }
 
         It "Should disable encryption" {

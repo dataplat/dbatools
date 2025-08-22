@@ -1,25 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaLinkedServerLogin",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LinkedServer', 'LocalLogin', 'RemoteUser', 'RemoteUserPassword', 'Impersonate', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "LinkedServer",
+                "LocalLogin",
+                "RemoteUser",
+                "RemoteUserPassword",
+                "Impersonate",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
-        $securePassword = ConvertTo-SecureString -String 'securePassword' -AsPlainText -Force
+        $securePassword = ConvertTo-SecureString -String "securePassword" -AsPlainText -Force
         $localLogin1Name = "dbatoolscli_localLogin1_$random"
         $localLogin2Name = "dbatoolscli_localLogin2_$random"
         $remoteLoginName = "dbatoolscli_remoteLogin_$random"
@@ -32,11 +48,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $linkedServer1 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
         $linkedServer2 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer2Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force
-        Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name -Confirm:$false
-        Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force -ErrorAction SilentlyContinue
+        Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "ensure command works" {
@@ -47,14 +71,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Check the validation for a linked server" {
-            $results = New-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable warnings
+            $results = New-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable warnings -WarningAction SilentlyContinue
             $warnings | Should -BeLike "*LinkedServer is required when SqlInstance is specified*"
             $results | Should -BeNullOrEmpty
         }
 
         It "Creates a linked server login with the local login to remote user mapping on two different linked servers" {
             $results = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin1Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-            $results.length | Should -Be 2
+            $results.Count | Should -Be 2
             $results.Parent.Name | Should -Be $linkedServer1Name, $linkedServer2Name
             $results.Name | Should -Be $localLogin1Name, $localLogin1Name
             $results.RemoteUser | Should -Be $remoteLoginName, $remoteLoginName
@@ -71,7 +95,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Ensure that LocalLogin is passed in" {
-            $results = $linkedServer1 | New-DbaLinkedServerLogin -Impersonate -WarningVariable warnings
+            $results = $linkedServer1 | New-DbaLinkedServerLogin -Impersonate -WarningVariable warnings -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
             $warnings | Should -BeLike "*LocalLogin is required in all scenarios*"
         }

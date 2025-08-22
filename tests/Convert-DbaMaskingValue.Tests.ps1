@@ -1,46 +1,39 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Convert-DbaMaskingValue",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Convert-DbaMaskingValue" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Convert-DbaMaskingValue
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Value",
                 "DataType",
                 "Nullable",
                 "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Convert-DbaMaskingValue" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Null values" {
         It "Should return a single 'NULL' value" {
             $value = $null
             $convertedValue = Convert-DbaMaskingValue -Value $value -Nullable:$true
-            $convertedValue.NewValue | Should -Be 'NULL'
+            $convertedValue.NewValue | Should -Be "NULL"
         }
 
         It "Should return multiple 'NULL' values" {
             $value = @($null, $null)
             $convertedValues = Convert-DbaMaskingValue -Value $value -Nullable:$true
-            $convertedValues[0].NewValue | Should -Be 'NULL'
-            $convertedValues[1].NewValue | Should -Be 'NULL'
+            $convertedValues[0].NewValue | Should -Be "NULL"
+            $convertedValues[1].NewValue | Should -Be "NULL"
         }
     }
 
@@ -106,7 +99,7 @@ Describe "Convert-DbaMaskingValue" -Tag "IntegrationTests" {
         It "Should return a NULL value and text value" {
             $value = @($null, "this is just text")
             $convertedValues = Convert-DbaMaskingValue -Value $value -Nullable:$true
-            $convertedValues[0].NewValue | Should -Be 'NULL'
+            $convertedValues[0].NewValue | Should -Be "NULL"
             $convertedValues[1].NewValue | Should -Be "'this is just text'"
         }
     }

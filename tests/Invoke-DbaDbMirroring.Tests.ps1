@@ -1,42 +1,77 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaDbMirroring",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$commandname Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Primary', 'PrimarySqlCredential', 'Mirror', 'MirrorSqlCredential', 'Witness', 'WitnessSqlCredential', 'Database', 'SharedPath', 'InputObject', 'UseLastBackup', 'Force', 'EnableException', 'EncryptionAlgorithm', 'EndpointEncryption'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Primary",
+                "PrimarySqlCredential",
+                "Mirror",
+                "MirrorSqlCredential",
+                "Witness",
+                "WitnessSqlCredential",
+                "Database",
+                "EndpointEncryption",
+                "EncryptionAlgorithm",
+                "SharedPath",
+                "InputObject",
+                "UseLastBackup",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set variables. They are available in all the It blocks.
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $db1 = "dbatoolsci_mirroring"
+        $dbName = "dbatoolsci_mirroring"
+        $endpointName = "dbatoolsci_MirroringEndpoint"
 
-        Remove-DbaDbMirror -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
-        $null = $server.Query("CREATE DATABASE $db1")
+        # Create the objects.
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name $endpointName -Type DatabaseMirroring -Port 5022 -Owner sa
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance3 -Name $endpointName -Type DatabaseMirroring -Port 5023 -Owner sa
 
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        New-DbaEndpoint -SqlInstance $TestConfig.instance3 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5023 -Owner sa
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        $null = Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1 -Confirm:$false
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1 -ErrorAction SilentlyContinue
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        $null = Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $dbName -Confirm:$false
+        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -EndPoint $endpointName -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "returns success" {
-        $results = Invoke-DbaDbMirroring -Primary $TestConfig.instance2 -Mirror $TestConfig.instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp -WarningVariable warn
-        $warn | Should -BeNullOrEmpty
-        $results.Status | Should -Be 'Success'
+        $splatMirroring = @{
+            Primary    = $TestConfig.instance2
+            Mirror     = $TestConfig.instance3
+            Database   = $dbName
+            Confirm    = $false
+            Force      = $true
+            SharedPath = $TestConfig.Temp
+        }
+        $results = Invoke-DbaDbMirroring @splatMirroring -WarningVariable WarnVar
+        $WarnVar | Should -BeNullOrEmpty
+        $results.Status | Should -Be "Success"
     }
 }

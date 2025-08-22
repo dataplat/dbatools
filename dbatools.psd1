@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.5.0'
+    ModuleVersion      = '2.7.1'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -30,8 +30,8 @@
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
-        ModuleName = 'dbatools.library';
-        ModuleVersion = '2025.7.19'
+        ModuleName    = 'dbatools.library';
+        ModuleVersion = '2025.8.17'
     }
 
     # Assemblies that must be loaded prior to importing this module
@@ -149,7 +149,6 @@
         'Export-DbaSysDbUserObject',
         'Export-DbatoolsConfig',
         'Export-DbaUser',
-        'Export-DbaXECsv',
         'Export-DbaXESession',
         'Export-DbaXESessionTemplate',
         'Find-DbaAgentJob',
@@ -409,7 +408,6 @@
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXESessionTemplate',
-        'Get-DbaXESmartTarget',
         'Get-DbaXEStore',
         'Grant-DbaAgPermission',
         'Import-DbaCsv',
@@ -423,6 +421,7 @@
         'Install-DbaInstance',
         'Install-DbaMaintenanceSolution',
         'Install-DbaMultiTool',
+        'Install-DbaSqlPackage',
         'Install-DbaSqlWatch',
         'Install-DbaWhoIsActive',
         'Invoke-DbaDbAzSqlTip',
@@ -515,11 +514,6 @@
         'New-DbaSqlParameter',
         'New-DbatoolsSupportPackage',
         'New-DbaXESession',
-        'New-DbaXESmartCsvWriter',
-        'New-DbaXESmartEmail',
-        'New-DbaXESmartQueryExec',
-        'New-DbaXESmartReplay',
-        'New-DbaXESmartTableWriter',
         'Publish-DbaDacPackage',
         'Read-DbaAuditFile',
         'Read-DbaBackupHeader',
@@ -578,7 +572,6 @@
         'Remove-DbaSpn',
         'Remove-DbaTrace',
         'Remove-DbaXESession',
-        'Remove-DbaXESmartTarget',
         'Rename-DbaDatabase',
         'Rename-DbaLogin',
         'Repair-DbaDbMirror',
@@ -649,7 +642,6 @@
         'Start-DbaService',
         'Start-DbaTrace',
         'Start-DbaXESession',
-        'Start-DbaXESmartTarget',
         'Stop-DbaAgentJob',
         'Stop-DbaEndpoint',
         'Stop-DbaExternalProcess',
@@ -658,7 +650,6 @@
         'Stop-DbaService',
         'Stop-DbaTrace',
         'Stop-DbaXESession',
-        'Stop-DbaXESmartTarget',
         'Suspend-DbaAgDbDataMovement',
         'Sync-DbaAvailabilityGroup',
         'Sync-DbaLoginPermission',
@@ -679,7 +670,6 @@
         'Test-DbaDbOwner',
         'Test-DbaDbQueryStore',
         'Test-DbaDbRecoveryModel',
-        'Test-DbaDeprecatedFeature',
         'Test-DbaDiskAlignment',
         'Test-DbaDiskAllocation',
         'Test-DbaDiskSpeed',

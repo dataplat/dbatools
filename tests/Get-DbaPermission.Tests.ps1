@@ -1,23 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaPermission",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeServerLevel', 'ExcludeSystemObjects', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IncludeServerLevel",
+                "ExcludeSystemObjects",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = $TestConfig.instance1
         $random = Get-Random
-        $password = 'MyV3ry$ecur3P@ssw0rd'
+        $password = "MyV3ry$ecur3P@ssw0rd"
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
 
         # setup for implicit 'control' permission at the db level (dbo user and db_owner role assignment)
@@ -64,55 +78,63 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $server -Database $dbName -Query "GRANT CONTROL ON Schema::$schemaNameForTable2 TO $loginNameUser2"
 
         $table2 = New-DbaDbTable -SqlInstance $server -Database $dbName -Name $tableName2 -Schema $schemaNameForTable2 -ColumnMap $tableSpec2
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $removedDb = Remove-DbaDatabase -SqlInstance $server -Database $dbName -Confirm:$false
-        $removedDBO = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBO -Confirm:$false
-        $removedDBOwner = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBOwner -Confirm:$false
-        $removedUser1 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser1 -Confirm:$false
-        $removedUser2 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser2 -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $removedDb = Remove-DbaDatabase -SqlInstance $server -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
+        $removedDBO = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBO -Confirm:$false -ErrorAction SilentlyContinue
+        $removedDBOwner = Remove-DbaLogin -SqlInstance $server -Login $loginNameDBOwner -Confirm:$false -ErrorAction SilentlyContinue
+        $removedUser1 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser1 -Confirm:$false -ErrorAction SilentlyContinue
+        $removedUser2 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser2 -Confirm:$false -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "parameters work" {
         It "returns server level permissions with -IncludeServerLevel" {
             $results = Get-DbaPermission -SqlInstance $server -IncludeServerLevel
-            $results.where( { $_.Database -eq '' }).count | Should BeGreaterThan 0
+            $results | Where-Object Database -eq "" | Should -Not -BeNullOrEmpty
         }
         It "returns no server level permissions without -IncludeServerLevel" {
             $results = Get-DbaPermission -SqlInstance $server
-            $results.where( { $_.Database -eq '' }).count | Should Be 0
+            $results | Where-Object Database -eq "" | Should -HaveCount 0
         }
         It "returns no system object permissions with -ExcludeSystemObjects" {
             $results = Get-DbaPermission -SqlInstance $server -ExcludeSystemObjects
-            $results.where( { $_.securable -like 'sys.*' }).count | Should Be 0
+            $results | Where-Object securable -like "sys.*" | Should -HaveCount 0
         }
         It "returns system object permissions without -ExcludeSystemObjects" {
             $results = Get-DbaPermission -SqlInstance $server
-            $results.where( { $_.securable -like 'sys.*' }).count | Should BeGreaterThan 0
+            $results | Where-Object securable -like "sys.*" | Should -Not -BeNullOrEmpty
         }
         It "db object level permissions for a user are returned correctly" {
-            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -eq $loginNameUser1 -and $_.SecurableType -ne "SCHEMA" }
-            $results.count | Should -Be 4
-            $results.where( { $_.Securable -eq "dbo.$tableName1" -and $_.PermState -eq 'DENY' -and $_.PermissionName -in ('DELETE', 'INSERT', 'UPDATE') }).count | Should -Be 3
-            $results.where( { $_.Securable -eq "dbo.$tableName1" -and $_.PermState -eq 'GRANT' -and $_.PermissionName -eq 'SELECT' }).count | Should -Be 1
+            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $PSItem.Grantee -eq $loginNameUser1 -and $PSItem.SecurableType -ne "SCHEMA" }
+            $results | Should -HaveCount 4
+            $results | Where-Object { $PSItem.Securable -eq "dbo.$tableName1" -and $PSItem.PermState -eq "DENY" -and $PSItem.PermissionName -in ("DELETE", "INSERT", "UPDATE") } | Should -HaveCount 3
+            $results | Where-Object { $PSItem.Securable -eq "dbo.$tableName1" -and $PSItem.PermState -eq "GRANT" -and $PSItem.PermissionName -eq "SELECT" } | Should -HaveCount 1
         }
     }
 
     # See https://github.com/dataplat/dbatools/issues/6744
     Context "Ensure implicit permissions are included in the result set" {
         It "the dbo user and db_owner users are returned in the result set with the CONTROL permission" {
-            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -in ($loginNameDBO, $loginNameDBOwner) }
-            $results.count | Should -Be 2
+            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object Grantee -in ($loginNameDBO, $loginNameDBOwner)
+            $results | Should -HaveCount 2
 
-            $results.where( { ($_.Grantee -eq $loginNameDBO -and $_.GranteeType -eq "DATABASE OWNER (dbo user)" -and $_.PermissionName -eq "CONTROL") -or ($_.Grantee -eq $loginNameDBOwner -and $_.GranteeType -eq "DATABASE OWNER (db_owner role)" -and $_.PermissionName -eq "CONTROL") }).count | Should -Be 2
+            $results | Where-Object { ($PSItem.Grantee -eq $loginNameDBO -and $PSItem.GranteeType -eq "DATABASE OWNER (dbo user)" -and $PSItem.PermissionName -eq "CONTROL") -or ($PSItem.Grantee -eq $loginNameDBOwner -and $PSItem.GranteeType -eq "DATABASE OWNER (db_owner role)" -and $PSItem.PermissionName -eq "CONTROL") } | Should -HaveCount 2
         }
 
         It "db schema level permissions are returned correctly" {
-            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -in ($loginNameUser1, $loginNameUser2) -and $_.SecurableType -eq "SCHEMA" }
-            $results.where( { $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" }).count | Should -Be 2
-            $results.where( { $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" -and $_.Grantee -eq $loginNameUser1 -and $_.GranteeType -eq "SCHEMA OWNER" }).count | Should -Be 1
-            $results.where( { $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" -and $_.Grantee -eq $loginNameUser2 -and $_.GranteeType -eq "SQL_USER" }).count | Should -Be 1
+            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $PSItem.Grantee -in ($loginNameUser1, $loginNameUser2) -and $PSItem.SecurableType -eq "SCHEMA" }
+            $results | Where-Object { $PSItem.Securable -eq "$schemaNameForTable2" -and $PSItem.PermissionName -eq "CONTROL" } | Should -HaveCount 2
+            $results | Where-Object { $PSItem.Securable -eq "$schemaNameForTable2" -and $PSItem.PermissionName -eq "CONTROL" -and $PSItem.Grantee -eq $loginNameUser1 -and $PSItem.GranteeType -eq "SCHEMA OWNER" } | Should -HaveCount 1
+            $results | Where-Object { $PSItem.Securable -eq "$schemaNameForTable2" -and $PSItem.PermissionName -eq "CONTROL" -and $PSItem.Grantee -eq $loginNameUser2 -and $PSItem.GranteeType -eq "SQL_USER" } | Should -HaveCount 1
 
         }
     }

@@ -1,20 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbMailLog",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Since', 'Type', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Since",
+                "Type",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("INSERT INTO msdb.[dbo].[sysmail_log]
         ([event_type]
@@ -27,45 +39,72 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         ,[last_mod_user])
         VALUES
         (1,'2018-12-09 12:18:14.920','DatabaseMail process is started',4890,NULL,NULL,'2018-12-09 12:18:14.920','dbatools\dbatoolssci')")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("DELETE FROM msdb.[dbo].[sysmail_log] WHERE last_mod_user = 'dbatools\dbatoolssci'")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets Db Mail Log" {
-        $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 | Where-Object {$_.Login -eq 'dbatools\dbatoolssci'}
-        It "Gets results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 | Where-Object Login -eq "dbatools\dbatoolssci"
         }
+
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
         It "Should have created Description" {
-            $results.description | Should be 'DatabaseMail process is started'
+            $results.description | Should -Be "DatabaseMail process is started"
         }
+
         It "Should have last modified user of dbatools\dbatoolssci " {
-            $results.lastmoduser | Should be 'dbatools\dbatoolssci'
+            $results.lastmoduser | Should -Be "dbatools\dbatoolssci"
         }
     }
+
     Context "Gets Db Mail Log using -Type" {
-        $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 -Type Information
+        BeforeAll {
+            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 -Type Information
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Log Id" {
-            $results.logid | Should not be $null
+            $results.logid | Should -Not -BeNullOrEmpty
         }
+
         It "Should have an Event Type of Information" {
-            $results.eventtype | Should be 'Information'
+            $results.eventtype | Should -Be "Information"
         }
     }
+
     Context "Gets Db Mail History using -Since" {
-        $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 -Since '2018-01-01'
+        BeforeAll {
+            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 -Since "2018-01-01"
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have a LogDate greater than 2018-01-01" {
-            $results.LogDate | Should Begreaterthan '2018-01-01'
+            $results.LogDate | Should -BeGreaterThan "2018-01-01"
         }
+
         It "Should have a LastModDate greater than 2018-01-01" {
-            $results.LastModDate | Should Begreaterthan '2018-01-01'
+            $results.LastModDate | Should -BeGreaterThan "2018-01-01"
         }
     }
 }

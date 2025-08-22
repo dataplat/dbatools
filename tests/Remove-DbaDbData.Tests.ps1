@@ -1,21 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaDbData",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'Path', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "InputObject",
+                "Path",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $dbname1 = "dbatoolsci_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname1 -Owner sa
@@ -37,9 +51,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Create View vw_emp as
         Select empid from emp;
         "
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
@@ -49,22 +71,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 insert into emp values (1);"
         }
 
-        It 'Removes Data for a specified database' {
+        It "Removes Data for a specified database" {
             Remove-DbaDbData -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
-            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept').rwCnt | Should Be 0
+            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 
-        $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
-        It 'Foreign Keys are recreated' {
-            $fkeys.Name | Should Be 'FK_dept'
+        It "Foreign Keys are recreated" {
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys.Name | Should -Be "FK_dept"
         }
 
-        It 'Foreign Keys are trusted' {
-            $fkeys.IsChecked | Should Be $true
+        It "Foreign Keys are trusted" {
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys.IsChecked | Should -Be $true
         }
 
-        It 'Views are recreated' {
-            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should Be 'vw_emp'
+        It "Views are recreated" {
+            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
         }
     }
 
@@ -75,22 +98,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 insert into emp values (1);"
         }
 
-        It 'Removes Data for a specified database' {
+        It "Removes Data for a specified database" {
             Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 | Remove-DbaDbData -Confirm:$false
-            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept').rwCnt | Should Be 0
+            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 
-        $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
-        It 'Foreign Keys are recreated' {
-            $fkeys.Name | Should Be 'FK_dept'
+        It "Foreign Keys are recreated" {
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys.Name | Should -Be "FK_dept"
         }
 
-        It 'Foreign Keys are trusted' {
-            $fkeys.IsChecked | Should Be $true
+        It "Foreign Keys are trusted" {
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys.IsChecked | Should -Be $true
         }
 
-        It 'Views are recreated' {
-            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should Be 'vw_emp'
+        It "Views are recreated" {
+            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
         }
     }
 
@@ -101,23 +125,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 insert into emp values (1);"
         }
 
-        It 'Removes Data for a specified database' {
+        It "Removes Data for a specified database" {
             Connect-DbaInstance -SqlInstance $TestConfig.instance2 | Remove-DbaDbData -Database $dbname1 -Confirm:$false
-            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept').rwCnt | Should Be 0
+            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 
-        $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
-        It 'Foreign Keys are recreated' {
-            $fkeys.Name | Should Be 'FK_dept'
+        It "Foreign Keys are recreated" {
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys.Name | Should -Be "FK_dept"
         }
 
-        It 'Foreign Keys are trusted' {
-            $fkeys.IsChecked | Should Be $true
+        It "Foreign Keys are trusted" {
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys.IsChecked | Should -Be $true
         }
 
-        It 'Views are recreated' {
-            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should Be 'vw_emp'
+        It "Views are recreated" {
+            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
         }
     }
 }
-

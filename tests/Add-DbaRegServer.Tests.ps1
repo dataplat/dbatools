@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaRegServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaRegServer" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaRegServer
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "ServerName",
@@ -22,35 +23,36 @@ Describe "Add-DbaRegServer" -Tag "UnitTests" {
                 "OtherParams",
                 "InputObject",
                 "ServerObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Add-DbaRegServer" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"
         $regSrvName = "dbatoolsci-server12"
         $regSrvDesc = "dbatoolsci-server123"
         $groupobject = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Get-DbaRegServer -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When adding a registered server" {
@@ -73,7 +75,7 @@ Describe "Add-DbaRegServer" -Tag "IntegrationTests" {
 
     Context "When adding a registered server with extended properties" {
         BeforeAll {
-            $splat = @{
+            $splatRegServer = @{
                 SqlInstance = $TestConfig.instance1
                 ServerName  = $regSrvName
                 Name        = $srvName
@@ -81,7 +83,7 @@ Describe "Add-DbaRegServer" -Tag "IntegrationTests" {
                 Description = $regSrvDesc
             }
 
-            $results2 = Add-DbaRegServer @splat
+            $results2 = Add-DbaRegServer @splatRegServer
         }
 
         It "Adds a registered server with correct server name" {

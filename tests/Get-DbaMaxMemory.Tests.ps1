@@ -1,52 +1,59 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaMaxMemory",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Unit Test" -Tags Unittest {
+Describe $CommandName -Tag UnitTests {
     InModuleScope dbatools {
-        Context 'Validate functionality ' {
-            It 'Server SqlInstance reported correctly' {
+        Context "Validate functionality" {
+            It "Server SqlInstance reported correctly" {
                 Mock Connect-DbaInstance {
                     return @{
-                        DomainInstanceName = 'ABC'
+                        DomainInstanceName = "ABC"
                     }
                 }
 
-                (Get-DbaMaxMemory -SqlInstance 'ABC').SqlInstance | Should be 'ABC'
+                (Get-DbaMaxMemory -SqlInstance "ABC").SqlInstance | Should -Be "ABC"
             }
 
-            It 'Server under-report by 1 the memory installed on the host' {
+            It "Server under-report by 1 the memory installed on the host" {
                 Mock Connect-DbaInstance {
                     return @{
                         PhysicalMemory = 1023
                     }
                 }
 
-                (Get-DbaMaxMemory -SqlInstance 'ABC').Total | Should be 1024
+                (Get-DbaMaxMemory -SqlInstance "ABC").Total | Should -Be 1024
             }
 
-            It 'Server reports correctly the memory installed on the host' {
+            It "Server reports correctly the memory installed on the host" {
                 Mock Connect-DbaInstance {
                     return @{
                         PhysicalMemory = 1024
                     }
                 }
 
-                (Get-DbaMaxMemory -SqlInstance 'ABC').Total | Should be 1024
+                (Get-DbaMaxMemory -SqlInstance "ABC").Total | Should -Be 1024
             }
 
-            It 'Memory allocated to SQL Server instance reported' {
+            It "Memory allocated to SQL Server instance reported" {
                 Mock Connect-DbaInstance {
                     return @{
                         Configuration = @{
@@ -57,22 +64,33 @@ Describe "$commandname Unit Test" -Tags Unittest {
                     }
                 }
 
-                (Get-DbaMaxMemory -SqlInstance 'ABC').MaxValue | Should be 2147483647
+                (Get-DbaMaxMemory -SqlInstance "ABC").MaxValue | Should -Be 2147483647
             }
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     Context "Connects to multiple instances" {
-        It 'Returns multiple objects' {
-            $results = Get-DbaMaxMemory -SqlInstance $TestConfig.instance1, $TestConfig.instance2
-            $results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
+        It "Returns multiple objects" {
+            # Suppressing warning on Azure: [Test-DbaMaxMemory] The memory calculation may be inaccurate as the following SQL components have also been detected: SSIS,SSAS
+            $results = Get-DbaMaxMemory -SqlInstance $TestConfig.Instance1, $TestConfig.Instance2 -WarningAction SilentlyContinue
+            $results.Count | Should -BeGreaterThan 1 # and ultimately not throw an exception
         }
-        It 'Returns the right amount of ' {
-            $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Max 1024
-            $results = Get-DbaMaxMemory -SqlInstance $TestConfig.instance1
-            $results.MaxValue | Should Be 1024
+
+        It "Returns the right amount of" {
+            # Suppressing warning on Azure: [Test-DbaMaxMemory] The memory calculation may be inaccurate as the following SQL components have also been detected: SSIS,SSAS
+            $null = Set-DbaMaxMemory -SqlInstance $TestConfig.Instance1, $TestConfig.Instance2 -Max 1024 -WarningAction SilentlyContinue
+            $results = Get-DbaMaxMemory -SqlInstance $TestConfig.Instance1
+            $results.MaxValue | Should -Be 1024
         }
     }
 }

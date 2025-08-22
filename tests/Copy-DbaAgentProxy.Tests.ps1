@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaAgentProxy",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaAgentProxy" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaAgentProxy
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -17,62 +18,72 @@ Describe "Copy-DbaAgentProxy" -Tag "UnitTests" {
                 "ProxyAccount",
                 "ExcludeProxyAccount",
                 "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Copy-DbaAgentProxy" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
-        $server.Query($sql)
-        $sql = "EXEC msdb.dbo.sp_add_proxy  @proxy_name = 'dbatoolsci_agentproxy', @enabled = 1, @credential_name = 'dbatoolsci_credential'"
-        $server.Query($sql)
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        # Set up test proxy on source instance
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
-        $server.Query($sql)
+        $sourceServer.Query($sql)
+        $sql = "EXEC msdb.dbo.sp_add_proxy  @proxy_name = 'dbatoolsci_agentproxy', @enabled = 1, @credential_name = 'dbatoolsci_credential'"
+        $sourceServer.Query($sql)
+
+        # Set up credential on destination instance
+        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
+        $destServer.Query($sql)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
-        $server.Query($sql)
-        $sql = "DROP CREDENTIAL dbatoolsci_credential"
-        $server.Query($sql)
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        # Clean up source instance
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
-        $server.Query($sql)
+        $sourceServer.Query($sql)
         $sql = "DROP CREDENTIAL dbatoolsci_credential"
-        $server.Query($sql)
+        $sourceServer.Query($sql)
+
+        # Clean up destination instance
+        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
+        $destServer.Query($sql)
+        $sql = "DROP CREDENTIAL dbatoolsci_credential"
+        $destServer.Query($sql)
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying agent proxy between instances" {
         BeforeAll {
-            $results = Copy-DbaAgentProxy -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -ProxyAccount dbatoolsci_agentproxy
+            $splatCopyProxy = @{
+                Source       = $TestConfig.instance2
+                Destination  = $TestConfig.instance3
+                ProxyAccount = "dbatoolsci_agentproxy"
+            }
+            $copyResults = Copy-DbaAgentProxy @splatCopyProxy
         }
 
         It "Should return one successful result" {
-            $results.Status.Count | Should -Be 1
-            $results.Status | Should -Be "Successful"
+            $copyResults.Status.Count | Should -Be 1
+            $copyResults.Status | Should -Be "Successful"
         }
 
         It "Should create the proxy on the destination" {
-            $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.instance3 -Proxy dbatoolsci_agentproxy
+            $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.instance3 -Proxy "dbatoolsci_agentproxy"
             $proxyResults.Name | Should -Be "dbatoolsci_agentproxy"
         }
     }

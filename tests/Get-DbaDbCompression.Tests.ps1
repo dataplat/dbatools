@@ -1,20 +1,33 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbCompression",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Table', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Table",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $dbname = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("Create Database [$dbname]")
@@ -22,39 +35,57 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                                 select * into sysallparams from sys.all_parameters
                                 create clustered index CL_sysallparams on sysallparams (object_id)
                                 create nonclustered index NC_syscols on syscols (precision) include (collation_name)", $dbname)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
-    }
-    $results = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
     Context "Command handles heaps and clustered indexes" {
+        BeforeAll {
+            $results = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        }
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
             $results.Database | Get-Unique | Should -Be $dbname
             $results.DatabaseId | Get-Unique | Should -Be $server.Query("SELECT database_id FROM sys.databases WHERE name = '$dbname'").database_id
         }
-        Foreach ($row in $results | Where-Object { $_.IndexId -le 1 }) {
-            It "Should return compression level for object $($row.TableName)" {
-                $row.DataCompression | Should BeIn ('None', 'Row', 'Page')
+        It "Should return compression level for heaps and clustered indexes" {
+            $heapAndClusteredResults = $results | Where-Object { $PSItem.IndexId -le 1 }
+            foreach ($row in $heapAndClusteredResults) {
+                $row.DataCompression | Should -BeIn @("None", "Row", "Page")
             }
         }
     }
     Context "Command handles nonclustered indexes" {
-        It "Gets results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $ncResults = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
         }
-        Foreach ($row in $results | Where-Object { $_.IndexId -gt 1 }) {
-            It "Should return compression level for nonclustered index $($row.IndexName)" {
-                $row.DataCompression | Should BeIn ('None', 'Row', 'Page')
+
+        It "Gets results" {
+            $ncResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should return compression level for nonclustered indexes" {
+            $nonclustered = $ncResults | Where-Object { $PSItem.IndexId -gt 1 }
+            foreach ($row in $nonclustered) {
+                $row.DataCompression | Should -BeIn @("None", "Row", "Page")
             }
         }
     }
 
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
-            $(Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname) | Should not Match $dbname
+            $excludeResults = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname
+            $excludeResults.Database | Should -Not -Contain $dbname
         }
     }
 }

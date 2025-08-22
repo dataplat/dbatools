@@ -1,45 +1,109 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbCertificate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Database', 'Subject', 'StartDate', 'ExpirationDate', 'ActiveForServiceBrokerDialog', 'SecurePassword', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Database",
+                "Subject",
+                "StartDate",
+                "ExpirationDate",
+                "ActiveForServiceBrokerDialog",
+                "SecurePassword",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Can create a database certificate" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Check if master key exists and create if needed
             if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+                $splatMasterKey = @{
+                    SqlInstance = $TestConfig.instance1
+                    Database    = "master"
+                    Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+                    Confirm     = $false
+                }
+                $masterkey = New-DbaDbMasterKey @splatMasterKey
             }
 
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
-            $certificateName1 = "Cert_$(Get-random)"
-            $certificateName2 = "Cert_$(Get-random)"
+            # Create tempdb master key for testing
+            $splatTempDbKey = @{
+                SqlInstance = $TestConfig.instance1
+                Database    = "tempdb"
+                Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+                Confirm     = $false
+            }
+            $tempdbmasterkey = New-DbaDbMasterKey @splatTempDbKey
+
+            # Generate unique certificate names
+            $certificateName1 = "Cert_$(Get-Random)"
+            $certificateName2 = "Cert_$(Get-Random)"
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
+
         AfterAll {
-            if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false }
-            if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Cleanup master keys
+            if ($tempdbmasterkey) {
+                $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false
+            }
+            if ($masterKey) {
+                $masterkey | Remove-DbaDbMasterKey -Confirm:$false
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName1 -Confirm:$false
         It "Successfully creates a new database certificate in default, master database" {
-            "$($cert1.name)" -match $certificateName1 | Should Be $true
+            $splatCert1 = @{
+                SqlInstance = $TestConfig.instance1
+                Name        = $certificateName1
+                Confirm     = $false
+            }
+            $cert1 = New-DbaDbCertificate @splatCert1
+
+            "$($cert1.name)" -match $certificateName1 | Should -Be $true
+
+            # Cleanup
+            $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
         }
 
-        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
         It "Successfully creates a new database certificate in the tempdb database" {
-            "$($cert2.Database)" -match "tempdb" | Should Be $true
-        }
+            $splatCert2 = @{
+                SqlInstance = $TestConfig.instance1
+                Name        = $certificateName2
+                Database    = "tempdb"
+                Confirm     = $false
+            }
+            $cert2 = New-DbaDbCertificate @splatCert2
 
-        $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
-        $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false
+            "$($cert2.Database)" -match "tempdb" | Should -Be $true
+
+            # Cleanup
+            $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false
+        }
     }
 }

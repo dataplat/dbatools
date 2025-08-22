@@ -1,46 +1,45 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Clear-DbaLatchStatistics",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Clear-DbaLatchStatistics" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Clear-DbaLatchStatistics
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Clear-DbaLatchStatistics" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     Context "Command executes properly and returns proper info" {
         BeforeAll {
             $splatClearLatch = @{
                 SqlInstance = $TestConfig.instance1
-                Confirm = $false
+                Confirm     = $false
             }
             $results = Clear-DbaLatchStatistics @splatClearLatch
         }
 
         It "Returns success" {
-            $results.Status | Should -Be 'Success'
+            $results.Status | Should -Be "Success"
         }
     }
 }

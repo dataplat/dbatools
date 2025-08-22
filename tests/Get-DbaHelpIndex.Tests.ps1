@@ -1,20 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaHelpIndex",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Write-host -Object "${script:instance2}" -ForegroundColor Cyan
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'ObjectName', 'IncludeStats', 'IncludeDataTypes', 'Raw', 'IncludeFragmentation', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "InputObject",
+                "ObjectName",
+                "IncludeStats",
+                "IncludeDataTypes",
+                "Raw",
+                "IncludeFragmentation",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $dbname = "dbatoolsci_$random"
@@ -27,78 +44,107 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query("create nonclustered index idx_1 on t1(c1) include(c3)", $dbname)
         $server.Query("create table t2(c1 int,c2 int,c3 int,c4 int)", $dbname)
         $server.Query("create nonclustered index idx_1 on t2(c1,c2) include(c3,c4)", $dbname)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Command works for indexes" {
-        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test
-        It 'Results should be returned' {
-            $results | Should Not BeNullOrEmpty
+        BeforeAll {
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test
         }
-        It 'Gets results for the test table' {
-            $results.object | Should Be '[dbo].[test]'
+
+        It "Results should be returned" {
+            $results | Should -Not -BeNullOrEmpty
         }
-        It 'Correctly returns IndexRows of 2' {
-            $results.IndexRows | Should Be 2
+
+        It "Gets results for the test table" {
+            $results.object | Should -Be "[dbo].[test]"
         }
-        It 'Should not return datatype for col1' {
-            $results.KeyColumns | Should Not Match 'varchar'
+
+        It "Correctly returns IndexRows of 2" {
+            $results.IndexRows | Should -Be 2
+        }
+
+        It "Should not return datatype for col1" {
+            $results.KeyColumns | Should -Not -Match "varchar"
         }
     }
     Context "Command works when including statistics" {
-        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $_.Statistics }
-        It 'Results should be returned' {
-            $results | Should Not BeNullOrEmpty
+        BeforeAll {
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $PSItem.Statistics }
         }
-        It 'Returns dbatools_stats from test object' {
-            $results.Statistics | Should Contain 'dbatools_stats'
+
+        It "Results should be returned" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns dbatools_stats from test object" {
+            $results.Statistics | Should -Contain "dbatools_stats"
         }
     }
     Context "Command output includes data types" {
-        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeDataTypes
-        It 'Results should be returned' {
-            $results | Should Not BeNullOrEmpty
+        BeforeAll {
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeDataTypes
         }
-        It 'Returns varchar for col1' {
-            $results.KeyColumns | Should Match 'varchar'
+
+        It "Results should be returned" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns varchar for col1" {
+            $results.KeyColumns | Should -Match "varchar"
         }
     }
     Context "Formatting is correct" {
-        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
-        It 'Formatted as strings' {
-            $results.IndexReads | Should BeOfType 'String'
-            $results.IndexUpdates | Should BeOfType 'String'
-            $results.Size | Should BeOfType 'String'
-            $results.IndexRows | Should BeOfType 'String'
-            $results.IndexLookups | Should BeOfType 'String'
-            $results.StatsSampleRows | Should BeOfType 'String'
-            $results.IndexFragInPercent | Should BeOfType 'String'
+        It "Formatted as strings" {
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
+            $results.IndexReads | Should -BeOfType "String"
+            $results.IndexUpdates | Should -BeOfType "String"
+            $results.Size | Should -BeOfType "String"
+            $results.IndexRows | Should -BeOfType "String"
+            $results.IndexLookups | Should -BeOfType "String"
+            $results.StatsSampleRows | Should -BeOfType "String"
+            $results.IndexFragInPercent | Should -BeOfType "String"
         }
     }
     Context "Formatting is correct for raw" {
-        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -raw -IncludeFragmentation
-        It 'Formatted as Long' {
-            $results.IndexReads | Should BeOfType 'Long'
-            $results.IndexUpdates | Should BeOfType 'Long'
-            $results.Size | Should BeOfType 'dbasize'
-            $results.IndexRows | Should BeOfType 'Long'
-            $results.IndexLookups | Should BeOfType 'Long'
+        BeforeAll {
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -raw -IncludeFragmentation
         }
-        It 'Formatted as Double' {
-            $results.IndexFragInPercent | Should BeOfType 'Double'
+
+        It "Formatted as Long" {
+            $results.IndexReads | Should -BeOfType "Long"
+            $results.IndexUpdates | Should -BeOfType "Long"
+            $results.Size | Should -BeOfType "dbasize"
+            $results.IndexRows | Should -BeOfType "Long"
+            $results.IndexLookups | Should -BeOfType "Long"
+        }
+
+        It "Formatted as Double" {
+            $results.IndexFragInPercent | Should -BeOfType "Double"
         }
     }
     Context "Result is correct for tables having the indexes with the same names" {
-        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname
-        It 'Table t1 has correct index key columns and included columns' {
-            $results.where({ $_.object -eq '[dbo].[t1]' }).KeyColumns | Should -be 'c1'
-            $results.where({ $_.object -eq '[dbo].[t1]' }).IncludeColumns | Should -be 'c3'
-        }
-        It 'Table t2 has correct index key columns and included columns' {
-            $results.where({ $_.object -eq '[dbo].[t2]' }).KeyColumns | Should -be 'c1, c2'
-            $results.where({ $_.object -eq '[dbo].[t2]' }).IncludeColumns | Should -be 'c3, c4'
+        BeforeAll {
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname
         }
 
+        It "Table t1 has correct index key columns and included columns" {
+            $results.where( { $PSItem.object -eq "[dbo].[t1]" }).KeyColumns | Should -Be "c1"
+            $results.where( { $PSItem.object -eq "[dbo].[t1]" }).IncludeColumns | Should -Be "c3"
+        }
+
+        It "Table t2 has correct index key columns and included columns" {
+            $results.where( { $PSItem.object -eq "[dbo].[t2]" }).KeyColumns | Should -Be "c1, c2"
+            $results.where( { $PSItem.object -eq "[dbo].[t2]" }).IncludeColumns | Should -Be "c3, c4"
+        }
     }
 }

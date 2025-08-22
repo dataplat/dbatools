@@ -52,3 +52,8 @@ allcommands.ps1
 .aider/aider.chat.history.md
 .aider/aider.input.history
 .aider/aider.llm.history
+/.aider/.aider
+/.aitools/.aider
+/.aitools/.aitools/.aider
+/.aitools
+.aider*

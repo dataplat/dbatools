@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaRegServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaRegServer" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaRegServer
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -17,60 +18,66 @@ Describe "Copy-DbaRegServer" -Tag "UnitTests" {
                 "Group",
                 "SwitchServerName",
                 "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Copy-DbaRegServer" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance $TestConfig.instance2
-        $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
-        $dbstore = $regstore.DatabaseEngineServerGroup
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $servername = "dbatoolsci-server1"
-        $group = "dbatoolsci-group1"
-        $regservername = "dbatoolsci-server12"
-        $regserverdescription = "dbatoolsci-server123"
+        # Set variables. They are available in all the It blocks.
+        $serverName = "dbatoolsci-server1"
+        $groupName = "dbatoolsci-group1"
+        $regServerName = "dbatoolsci-server12"
+        $regServerDesc = "dbatoolsci-server123"
 
-        $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbstore, $group)
-        $newgroup.Create()
-        $dbstore.Refresh()
+        # Create the objects.
+        $sourceServer = Connect-DbaInstance $TestConfig.instance2
+        $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceServer.ConnectionContext.SqlConnectionObject)
+        $dbStore = $regStore.DatabaseEngineServerGroup
 
-        $groupstore = $dbstore.ServerGroups[$group]
-        $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupstore, $regservername)
-        $newserver.ServerName = $servername
-        $newserver.Description = $regserverdescription
-        $newserver.Create()
+        $newGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbStore, $groupName)
+        $newGroup.Create()
+        $dbStore.Refresh()
+
+        $groupStore = $dbStore.ServerGroups[$groupName]
+        $newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore, $regServerName)
+        $newServer.ServerName = $serverName
+        $newServer.Description = $regServerDesc
+        $newServer.Create()
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $newgroup.Drop()
-        $server = Connect-DbaInstance $TestConfig.instance1
-        $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
-        $dbstore = $regstore.DatabaseEngineServerGroup
-        $groupstore = $dbstore.ServerGroups[$group]
-        $groupstore.Drop()
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        $newGroup.Drop()
+        $destServer = Connect-DbaInstance $TestConfig.instance1
+        $destRegStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destServer.ConnectionContext.SqlConnectionObject)
+        $destDbStore = $destRegStore.DatabaseEngineServerGroup
+        $destGroupStore = $destDbStore.ServerGroups[$groupName]
+        $destGroupStore.Drop()
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying registered servers" {
-        BeforeAll {
-            $results = Copy-DbaRegServer -Source $TestConfig.instance2 -Destination $TestConfig.instance1 -CMSGroup $group
-        }
-
         It "Should complete successfully" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance1
+                CMSGroup    = $groupName
+            }
+            $results = Copy-DbaRegServer @splatCopy
             $results.Status | Should -Be @("Successful", "Successful")
         }
     }

@@ -98,7 +98,7 @@ function Invoke-ManualPester {
         [switch]$ScriptAnalyzer
     )
     begin {
-        Remove-Module -Name Pester
+        Remove-Module -Name Pester -ErrorAction SilentlyContinue
         $stopProcess = $false
         function Get-CoverageIndications($Path, $ModuleBase) {
             # takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
@@ -140,8 +140,7 @@ function Invoke-ManualPester {
 
         function Get-PesterTestVersion($testFilePath) {
             $testFileContent = Get-Content -Path $testFilePath -Raw
-            if ($testFileContent -match '#Requires\s+-Module\s+@\{\s+ModuleName="Pester";\s+ModuleVersion="5\.')
-            {
+            if ($testFileContent -match '#Requires\s+-Module\s+@\{\s+ModuleName="Pester";\s+ModuleVersion="5\.') {
                 return '5'
             }
             return '4'
@@ -180,7 +179,7 @@ function Invoke-ManualPester {
             Write-Warning "     or go to https://github.com/PowerShell/PSScriptAnalyzer"
         } else {
             if ($invokeFormatterVersion -ne $ScriptAnalyzerCorrectVersion) {
-                Remove-Module PSScriptAnalyzer
+                Remove-Module PSScriptAnalyzer -ErrorAction SilentlyContinue
                 try {
                     Import-Module PSScriptAnalyzer -RequiredVersion $ScriptAnalyzerCorrectVersion -ErrorAction Stop
                 } catch {
@@ -214,7 +213,7 @@ function Invoke-ManualPester {
 
 
     }
-    process  {
+    process {
         if ($stopProcess) {
             return
         }
@@ -236,6 +235,9 @@ function Invoke-ManualPester {
         #imports the psm1 to be able to use internal functions in tests
         Write-DetailedMessage "Importing dbatools psm1"
         Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking -Force -NoClobber
+
+        Write-DetailedMessage "Reading test configuration"
+        $TestConfig = Get-TestConfig
 
         $ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 
@@ -293,11 +295,11 @@ function Invoke-ManualPester {
 
             if ($pesterVersionToUse -eq '5') {
                 Write-DetailedMessage "Running Pester 5 tests $($f.Name)"
-                Remove-Module -Name pester -ErrorAction SilentlyContinue
-                Import-Module pester -MinimumVersion 5.6.1 -ErrorAction Stop
+                Remove-Module -Name Pester -ErrorAction SilentlyContinue
+                Import-Module Pester -MinimumVersion 5.6.1 -ErrorAction Stop
                 $pester5Config = New-PesterConfiguration
                 $pester5Config.Run.Path = $f.FullName
-                if ($PassThru){
+                if ($PassThru) {
                     $pester5config.Run.PassThru = $passThru
                 }
                 $pester5config.Output.Verbosity = $show
@@ -309,9 +311,10 @@ function Invoke-ManualPester {
                     $pester5Config.Filter.ExcludeTag = "IntegrationTests"
                 }
                 Invoke-Pester -Configuration $pester5config
-            }
-            else {
+            } else {
                 Write-DetailedMessage "Running Pester 4 tests $($f.FullName)"
+                Remove-Module -Name Pester -ErrorAction SilentlyContinue
+                Import-Module Pester -MaximumVersion 4.99 -ErrorAction Stop
                 $pester4Show = 'Default'
                 switch ($Show) {
                     'None' { $pester4Show = 'None' }
@@ -324,8 +327,7 @@ function Invoke-ManualPester {
                     'Show'     = $pester4Show
                     'PassThru' = $passThru
                 }
-                if ($Coverage)
-                {
+                if ($Coverage) {
                     $PesterSplat['CodeCoverage'] = $CoverFilesPester
                 }
                 if (!($testInt)) {

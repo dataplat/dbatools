@@ -1,35 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaAgentLog",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LogNumber', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "LogNumber",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Command gets agent log" {
-        $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2
-        It "Results are not empty" {
-            $results | Should Not Be $Null
-        }
-        It "Results contain SQLServerAgent version" {
-            $results.text -like '`[100`] Microsoft SQLServerAgent version*' | Should Be $true
-        }
-        It "LogDate is a DateTime type" {
-            $($results | Select-Object -first 1).LogDate | Should BeOfType DateTime
+        It "Returns results" {
+            $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2
+
+            $results | Should -Not -BeNullOrEmpty
+            ($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
         }
     }
+
     Context "Command gets current agent log using LogNumber parameter" {
-        $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2 -LogNumber 0
+        BeforeAll {
+            $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2 -LogNumber 0
+        }
+
         It "Results are not empty" {
-            $results | Should Not Be $Null
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

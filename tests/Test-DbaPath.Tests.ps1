@@ -1,67 +1,78 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-DbaPath",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $trueTest = (Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database master)[0].PhysicalName
         if ($trueTest.Length -eq 0) {
-            It "has failed setup" {
-                Set-TestInconclusive -message "Setup failed"
-            }
+            $setupFailed = $true
+        } else {
+            $setupFailed = $false
         }
-        $falseTest = 'B:\FloppyDiskAreAwesome'
+        $falseTest = "B:\FloppyDiskAreAwesome"
         $trueTestPath = [System.IO.Path]::GetDirectoryName($trueTest)
     }
+
     Context "Command actually works" {
-        $result = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $trueTest
-        It "Should only return true if the path IS accessible to the instance" {
-            $result | Should Be $true
+        It "has failed setup" -Skip:(-not $setupFailed) {
+            Set-TestInconclusive -message "Setup failed"
         }
 
-        $result = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $falseTest
+        It "Should only return true if the path IS accessible to the instance" {
+            $result = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $trueTest
+            $result | Should -Be $true
+        }
+
         It "Should only return false if the path IS NOT accessible to the instance" {
-            $result | Should Be $false
+            $result = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $falseTest
+            $result | Should -Be $false
         }
-        $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $trueTest, $falseTest
+
         It "Should return multiple results when passed multiple paths" {
-            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should Be $true
-            ($results | Where-Object FilePath -eq $falseTest).FileExists | Should Be $false
+            $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $trueTest, $falseTest
+            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
+            ($results | Where-Object FilePath -eq $falseTest).FileExists | Should -Be $false
         }
-        $results = Test-DbaPath -SqlInstance $TestConfig.instance2, $TestConfig.instance1 -Path $falseTest
+
         It "Should return multiple results when passed multiple instances" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.instance2, $TestConfig.instance1 -Path $falseTest
             foreach ($result in $results) {
-                $result.FileExists | Should Be $false
+                $result.FileExists | Should -Be $false
             }
-            ($results.SqlInstance | Sort-Object -Unique).Count | Should Be 2
+            ($results.SqlInstance | Sort-Object -Unique).Count | Should -Be 2
         }
-        $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path @($trueTest)
-        It "Should return pscustomobject results when passed an array (even with one path)" {
-            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should Be $true
+
+        It "Should return PSCustomObject results when passed an array (even with one path)" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path @($trueTest)
+            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
         }
-        $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path @($trueTest, $trueTestPath)
-        It "Should return pscustomobject results indicating if the path is a file or a directory" {
-            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should Be $true
-            ($results | Where-Object FilePath -eq $trueTestPath).FileExists | Should Be $true
-            ($results | Where-Object FilePath -eq $trueTest).IsContainer | Should Be $false
-            ($results | Where-Object FilePath -eq $trueTestPath).IsContainer | Should Be $true
+
+        It "Should return PSCustomObject results indicating if the path is a file or a directory" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path @($trueTest, $trueTestPath)
+            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
+            ($results | Where-Object FilePath -eq $trueTestPath).FileExists | Should -Be $true
+            ($results | Where-Object FilePath -eq $trueTest).IsContainer | Should -Be $false
+            ($results | Where-Object FilePath -eq $trueTestPath).IsContainer | Should -Be $true
         }
     }
 }

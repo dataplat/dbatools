@@ -1,36 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbRecoveryModel",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'RecoveryModel', 'Database', 'ExcludeDatabase', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "RecoveryModel",
+                "Database",
+                "ExcludeDatabase",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Recovery model is correctly identified" {
-        $results = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database master
+        BeforeAll {
+            $masterResults = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database master
+            $allResults = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2
+        }
 
         It "returns a single database" {
-            $results.Count | Should Be 1
+            $masterResults.Status.Count | Should -BeExactly 1
         }
 
         It "returns the correct recovery model" {
-            $results.RecoveryModel -eq 'Simple' | Should Be $true
+            $masterResults.RecoveryModel -eq "Simple" | Should -BeTrue
         }
-
-        $results = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2
 
         It "returns accurate number of results" {
-            $results.Count -ge 4 | Should Be $true
+            $allResults.Status.Count -ge 4 | Should -BeTrue
         }
     }
+
     Context "RecoveryModel parameter works" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -38,17 +50,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Get-DbaDatabase -SqlInstance $server -Database $dbname | Remove-DbaDatabase -Confirm:$false
             $server.Query("CREATE DATABASE $dbname; ALTER DATABASE $dbname SET RECOVERY BULK_LOGGED WITH NO_WAIT;")
         }
+
         AfterAll {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
         }
 
         It "gets the newly created database with the correct recovery model" {
             $results = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database $dbname
-            $results.RecoveryModel -eq 'BulkLogged' | Should Be $true
+            $results.RecoveryModel -eq "BulkLogged" | Should -BeTrue
         }
+
         It "honors the RecoveryModel parameter filter" {
             $results = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel BulkLogged
-            $results.Name -contains $dbname | Should Be $true
+            $results.Name -contains $dbname | Should -BeTrue
         }
     }
 }

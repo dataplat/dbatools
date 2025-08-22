@@ -140,6 +140,9 @@ function Connect-DbaInstance {
     .PARAMETER AccessToken
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken or New-DbaAzAccessToken.
 
+        Supports both String (Azure PowerShell v13 and earlier) and SecureString (Azure PowerShell v14+) token formats.
+        The function automatically detects the token type and converts SecureString tokens to the required plain text format internally.
+
         Note that the token is valid for only one hour and cannot be renewed automatically.
 
         Note that the returned SMO is not a fully functional SMO. It can only be used in a limited list of commands like Invoke-DbaQuery, Import-DbaCsv or Write-DbaDbTableData.
@@ -268,7 +271,19 @@ function Connect-DbaInstance {
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.
+        Works with both Azure PowerShell v13 (string tokens) and v14+ (SecureString tokens).
         Note that the token is valid for only one hour and cannot be renewed automatically.
+
+    .EXAMPLE
+        PS C:\> # Azure PowerShell v14+ with SecureString token support
+        PS C:\> Connect-AzAccount
+        PS C:\> $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
+        PS C:\> $azureInstance = "YOUR-AZURE-SQL-MANAGED-INSTANCE.database.windows.net"
+        PS C:\> $server = Connect-DbaInstance -SqlInstance $azureInstance -Database "YOURDATABASE" -AccessToken $azureToken
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
+
+        Connect to an Azure SQL Managed Instance using Azure PowerShell v14+ where Get-AzAccessToken returns a SecureString.
+        The function automatically detects and converts the SecureString token to the required format.
 
     .EXAMPLE
         PS C:\> $token = New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred
@@ -913,14 +928,36 @@ function Connect-DbaInstance {
                 # If we have an AccessToken, we will build a SqlConnection
                 if ($AccessToken) {
                     # Check if token was created by New-DbaAzAccessToken or Get-AzAccessToken
-                    Write-Message -Level Debug -Message "AccessToken detected, checking for string or PsObjectIRenewableToken"
+                    Write-Message -Level Debug -Message "AccessToken detected, checking for string, SecureString, or PsObjectIRenewableToken"
                     if ($AccessToken | Get-Member | Where-Object Name -eq GetAccessToken) {
                         Write-Message -Level Debug -Message "Token was generated using New-DbaAzAccessToken, executing GetAccessToken()"
                         $AccessToken = $AccessToken.GetAccessToken()
                     }
                     if ($AccessToken | Get-Member | Where-Object Name -eq Token) {
                         Write-Message -Level Debug -Message "Token was generated using Get-AzAccessToken, getting .Token"
-                        $AccessToken = $AccessToken.Token
+                        $tokenValue = $AccessToken.Token
+                        # Check if the Token property is a SecureString (Azure PowerShell v14+)
+                        if ($tokenValue -is [System.Security.SecureString]) {
+                            Write-Message -Level Debug -Message "Token is SecureString (Azure PowerShell v14+), converting to plain text"
+                            try {
+                                $AccessToken = ConvertFrom-SecurePass -InputObject $tokenValue
+                                Write-Message -Level Debug -Message "Successfully converted SecureString token to plain text"
+                            } catch {
+                                Stop-Function -Target $instance -Message "Failed to convert SecureString AccessToken to plain text: $($_.Exception.Message)" -Continue
+                            }
+                        } else {
+                            Write-Message -Level Debug -Message "Token is plain text string (Azure PowerShell v13 and earlier)"
+                            $AccessToken = $tokenValue
+                        }
+                    } elseif ($AccessToken -is [System.Security.SecureString]) {
+                        # Handle direct SecureString AccessToken input
+                        Write-Message -Level Debug -Message "AccessToken is directly provided as SecureString, converting to plain text"
+                        try {
+                            $AccessToken = ConvertFrom-SecurePass -InputObject $AccessToken
+                            Write-Message -Level Debug -Message "Successfully converted direct SecureString AccessToken to plain text"
+                        } catch {
+                            Stop-Function -Target $instance -Message "Failed to convert SecureString AccessToken to plain text: $($_.Exception.Message)" -Continue
+                        }
                     }
                     Write-Message -Level Debug -Message "We have an AccessToken and build a SqlConnection with that token"
                     Write-Message -Level Debug -Message "But we remove 'Integrated Security=True;'"

@@ -1,43 +1,40 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaStartupProcedure",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaStartupProcedure" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaStartupProcedure
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                'Source',
-                'SourceSqlCredential',
-                'Destination',
-                'DestinationSqlCredential',
-                'Procedure',
-                'ExcludeProcedure',
-                'Force',
-                'EnableException',
-                'Confirm',
-                'WhatIf'
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Procedure",
+                "ExcludeProcedure",
+                "Force",
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Copy-DbaStartupProcedure" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set variables. They are available in all the It blocks.
         $procName = "dbatoolsci_test_startup"
+
+        # Create the objects.
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("CREATE OR ALTER PROCEDURE $procName
                         AS
                         SELECT @@SERVERNAME
@@ -45,23 +42,38 @@ Describe "Copy-DbaStartupProcedure" -Tag "IntegrationTests" {
         $server.Query("EXEC sp_procoption @ProcName = N'$procName'
                             , @OptionName = 'startup'
                             , @OptionValue = 'on'")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup"
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup" -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying startup procedures" {
         BeforeAll {
-            $results = Copy-DbaStartupProcedure -Source $TestConfig.instance2 -Destination $TestConfig.instance3
+            $splatCopy = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+            }
+            $results = Copy-DbaStartupProcedure @splatCopy
         }
 
         It "Should include test procedure: $procName" {
-            ($results | Where-Object Name -eq $procName).Name | Should -Be $procName
+            $copiedProc = $results | Where-Object Name -eq $procName
+            $copiedProc.Name | Should -Be $procName
         }
 
         It "Should be successful" {
-            ($results | Where-Object Name -eq $procName).Status | Should -Be 'Successful'
+            $copiedProc = $results | Where-Object Name -eq $procName
+            $copiedProc.Status | Should -Be "Successful"
         }
     }
 }

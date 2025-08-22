@@ -1,60 +1,83 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaComputerCertificate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'CaServer', 'CaName', 'ClusterInstanceName', 'SecurePassword', 'FriendlyName', 'CertificateTemplate', 'KeyLength', 'Store', 'Folder', 'Flag', 'Dns', 'SelfSigned', 'EnableException', "HashAlgorithm", "MonthsValid"
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "CaServer",
+                "CaName",
+                "ClusterInstanceName",
+                "SecurePassword",
+                "FriendlyName",
+                "CertificateTemplate",
+                "KeyLength",
+                "Store",
+                "Folder",
+                "Flag",
+                "Dns",
+                "SelfSigned",
+                "EnableException",
+                "HashAlgorithm",
+                "MonthsValid"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 #Tests do not run in appveyor
 if (-not $env:appveyor) {
-    Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-        Context "Can generate a new certificate" {
+    Describe $CommandName -Tag IntegrationTests {
+        Context "Can generate a new certificate with default settings" {
             BeforeAll {
-                $cert = New-DbaComputerCertificate -SelfSigned -EnableException
+                $defaultCert = New-DbaComputerCertificate -SelfSigned -EnableException
             }
+
             AfterAll {
-                Remove-DbaComputerCertificate -Thumbprint $cert.Thumbprint -Confirm:$false
+                Remove-DbaComputerCertificate -Thumbprint $defaultCert.Thumbprint -Confirm:$false
             }
-            It "returns the right EnhancedKeyUsageList" {
-                "$($cert.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' | Should Be $true
+
+            It "Returns the right EnhancedKeyUsageList" {
+                "$($defaultCert.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -BeTrue
             }
-            It "returns the right FriendlyName" {
-                "$($cert.FriendlyName)" -match 'SQL Server' | Should Be $true
+
+            It "Returns the right FriendlyName" {
+                "$($defaultCert.FriendlyName)" -match "SQL Server" | Should -BeTrue
             }
+
             It "Returns the right default encryption algorithm" {
-                "$(($cert |  select-object  @{n="SignatureAlgorithm";e={$_.SignatureAlgorithm.FriendlyName}})).SignatureAlgorithm)" -match 'sha1RSA' | Should Be $true
+                "$(($defaultCert | Select-Object @{n="SignatureAlgorithm";e={$PSItem.SignatureAlgorithm.FriendlyName}})).SignatureAlgorithm)" -match "sha1RSA" | Should -BeTrue
             }
+
             It "Returns the right default one year expiry date" {
-                $cert.NotAfter  -match ((Get-Date).Date).AddMonths(12) | Should Be $true
+                $defaultCert.NotAfter -match ((Get-Date).Date).AddMonths(12) | Should -BeTrue
             }
         }
-    }
-}
 
-
-#Tests do not run in appveyor
-if (-not $env:appveyor) {
-    Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-        Context "Can generate a new certificate with correct settings" {
+        Context "Can generate a new certificate with custom settings" {
             BeforeAll {
-                $cert = New-DbaComputerCertificate -SelfSigned -HashAlgorithm "Sha256" -MonthsValid 60 -EnableException
+                $customCert = New-DbaComputerCertificate -SelfSigned -HashAlgorithm "Sha256" -MonthsValid 60 -EnableException
             }
+
             AfterAll {
-                Remove-DbaComputerCertificate -Thumbprint $cert.Thumbprint -Confirm:$false
+                Remove-DbaComputerCertificate -Thumbprint $customCert.Thumbprint -Confirm:$false
             }
+
             It "Returns the right encryption algorithm" {
-                "$(($cert |  select-object  @{n="SignatureAlgorithm";e={$_.SignatureAlgorithm.FriendlyName}})).SignatureAlgorithm)" -match 'sha256RSA' | Should Be $true
+                "$(($customCert | Select-Object @{n="SignatureAlgorithm";e={$PSItem.SignatureAlgorithm.FriendlyName}})).SignatureAlgorithm)" -match "sha256RSA" | Should -BeTrue
             }
+
             It "Returns the right five year (60 month) expiry date" {
-                $cert.NotAfter  -match ((Get-Date).Date).AddMonths(60) | Should Be $true
+                $customCert.NotAfter -match ((Get-Date).Date).AddMonths(60) | Should -BeTrue
             }
         }
     }

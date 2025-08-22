@@ -82,7 +82,7 @@ function Copy-DbaSystemDbUserObject {
         function get-sqltypename ($type) {
             switch ($type) {
                 "VIEW" { "view" }
-                "SQL_TABLE_VALUED_FUNCTION" { "User table valued fsunction" }
+                "SQL_TABLE_VALUED_FUNCTION" { "User table valued function" }
                 "DEFAULT_CONSTRAINT" { "User default constraint" }
                 "SQL_STORED_PROCEDURE" { "User stored procedure" }
                 "RULE" { "User rule" }

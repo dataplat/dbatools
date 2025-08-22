@@ -1,39 +1,68 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-DbaWindowsLogin",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'ExcludeLogin', 'FilterBy', 'IgnoreDomains', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Login",
+                "ExcludeLogin",
+                "FilterBy",
+                "IgnoreDomains",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 <#
 Did not include these tests yet as I was unsure if AppVeyor was capable of testing domain logins. Included these for future use.
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
-        $results = Test-DbaWindowsLogin -SqlInstance $TestConfig.instance2
-        It "Should return correct properties" {
-            $ExpectedProps = 'AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,DisabledInSQLServer,Domain,Enabled,Found,LockedOut,Login,PasswordExpired,PasswordNeverExpires,PasswordNotRequired,Server,SmartcardLogonRequired,TrustedForDelegation,Type,UserAccountControl'.Split(',')
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+        BeforeAll {
+            $results = Test-DbaWindowsLogin -SqlInstance $TestConfig.instance2
         }
 
-        $Type = 'User'
-        It "Should return true if Account type is: $Type" {
-            ($results | Where-Object Type -match $Type) | Should Be $true
+        It "Should return correct properties" {
+            $expectedProps = @(
+                "AccountNotDelegated",
+                "AllowReversiblePasswordEncryption",
+                "CannotChangePassword",
+                "DisabledInSQLServer",
+                "Domain",
+                "Enabled",
+                "Found",
+                "LockedOut",
+                "Login",
+                "PasswordExpired",
+                "PasswordNeverExpires",
+                "PasswordNotRequired",
+                "Server",
+                "SmartcardLogonRequired",
+                "TrustedForDelegation",
+                "Type",
+                "UserAccountControl"
+            )
+            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
+
+        It "Should return true if Account type is User" {
+            $userAccounts = $results | Where-Object Type -match "User"
+            $userAccounts | Should -BeTrue
+        }
+
         It "Should return true if Account is Found" {
-            ($results | Where-Object Found).Found | Should Be $true
+            $foundAccounts = $results | Where-Object Found
+            $foundAccounts.Found | Should -BeTrue
         }
     }
 }#>

@@ -221,7 +221,6 @@ function Invoke-DbaDiagnosticQuery {
             }
 
             Write-Message -Level Verbose -Message "Collecting diagnostic query data from server: $instance"
-
             if ($server.VersionMinor -eq 50) {
                 $version = "2008R2"
             } else {
@@ -234,15 +233,21 @@ function Invoke-DbaDiagnosticQuery {
                     14 { "2017" }
                     15 { "2019" }
                     16 { "2022" }
+                    17 { "2025" }  # Add SQL Server 2025 support
                 }
             }
 
-            if ($version -eq "2016" -and $server.VersionMinor -gt 5026 ) {
-                $version = "2016SP2"
+            # Handle SQL Server 2016 SP versions
+            if ($version -eq "2016") {
+                if ($server.VersionMinor -gt 5026) {
+                    $version = "2016SP2"
+                } else {
+                    $version = "2016SP1"  # Default to SP1 since RTM file no longer exists
+                }
             }
 
             if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                $version = "AzureSQLDatabase"
+                $version = "AzureDatabase"  # Match the filename: SQLServerDiagnosticQueries_AzureDatabase.sql
             }
 
             if (!$instanceOnly) {

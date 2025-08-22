@@ -274,8 +274,11 @@ function Get-DbaDatabase {
                                 SUSER_SNAME(sid) AS [Owner]
                             FROM master.dbo.sysdatabases
                         ")
+                    } elseif ($server.VersionMajor -eq 9) {
+                        # CDC did not exist in version 9, but did afterwards.
+                        $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner]")
                     } else {
-                        $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner] FROM sys.databases")
+                        $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner], is_cdc_enabled FROM sys.databases")
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
@@ -376,6 +379,7 @@ function Get-DbaDatabase {
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -Value $lastusedinfo.last_read
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -Value $lastusedinfo.last_write
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name IsCdcEnabled -Value ($backed_info | Where-Object { $_.name -ceq $db.name }).is_cdc_enabled
                     Select-DefaultView -InputObject $db -Property $defaults
                 }
             } catch {

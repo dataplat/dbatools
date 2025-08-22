@@ -1,37 +1,67 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Install-DbaAgentAdminAlert",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Category', 'Database', 'Operator', 'OperatorEmail', 'DelayBetweenResponses', 'Disabled', 'EventDescriptionKeyword', 'EventSource', 'JobId', 'ExcludeSeverity', 'ExcludeMessageId', 'NotificationMessage', 'NotifyMethod', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Category",
+                "Database",
+                "Operator",
+                "OperatorEmail",
+                "DelayBetweenResponses",
+                "Disabled",
+                "EventDescriptionKeyword",
+                "EventSource",
+                "JobId",
+                "ExcludeSeverity",
+                "ExcludeMessageId",
+                "NotificationMessage",
+                "NotifyMethod",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+    }
+
     BeforeEach {
         Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false
     }
-    Context 'Creating a new SQL Server Agent alert' {
-        $parms = @{
-            SqlInstance           = $TestConfig.instance2
-            DelayBetweenResponses = 60
-            Disabled              = $false
-            NotifyMethod          = "NotifyEmail"
-            NotificationMessage   = "Test Notification"
-            Operator              = "Test Operator"
-            OperatorEmail         = "dba@ad.local"
-            ExcludeSeverity       = 0
-            EnableException       = $true
-        }
 
-        It 'Should create a bunch of new alerts' {
-            $alert = Install-DbaAgentAdminAlert @parms | Select-Object -First 1
+    AfterAll {
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+    }
+
+    Context "Creating a new SQL Server Agent alert" {
+        It "Should create a bunch of new alerts with specified parameters" {
+            $splatAlert1 = @{
+                SqlInstance           = $TestConfig.instance2
+                DelayBetweenResponses = 60
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                NotificationMessage   = "Test Notification"
+                Operator              = "Test Operator"
+                OperatorEmail         = "dba@ad.local"
+                ExcludeSeverity       = 0
+                EnableException       = $true
+            }
+
+            $alert = Install-DbaAgentAdminAlert @splatAlert1 | Select-Object -First 1
 
             # Assert
             $alert.Name | Should -Not -BeNullOrEmpty
@@ -39,14 +69,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $alert.IsEnabled | Should -Be $true
         }
 
-        $parms.SqlInstance = $TestConfig.instance3
-        $parms.ExcludeSeverity = 17
+        It "Should create alerts excluding specified severity level" {
+            $splatAlert2 = @{
+                SqlInstance           = $TestConfig.instance3
+                DelayBetweenResponses = 60
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                NotificationMessage   = "Test Notification"
+                Operator              = "Test Operator"
+                OperatorEmail         = "dba@ad.local"
+                ExcludeSeverity       = 17
+                EnableException       = $true
+            }
 
-        It 'Should create a bunch of new alerts' {
-            $alerts = Install-DbaAgentAdminAlert @parms
+            $alerts = Install-DbaAgentAdminAlert @splatAlert2
 
             # Assert
-            $alerts.Severity | Should -No -Contain 17
+            $alerts.Severity | Should -Not -Contain 17
 
             Get-DbaAgentAlert -SqlInstance $TestConfig.instance3 | Should -Not -BeNullOrEmpty
         }

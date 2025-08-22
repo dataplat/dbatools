@@ -1,29 +1,49 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaRgResourcePool",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Type', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Type",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Command actually works" {
-        $results = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2
-        it "Gets Results" {
-            $results | Should Not Be $null
+Describe $CommandName -Tag IntegrationTests {
+    Context "When getting resource pools" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $allResults = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Gets Results" {
+            $allResults | Should -Not -BeNullOrEmpty
         }
     }
-    Context "Command actually works using -Type" {
-        $results = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -Type Internal
-        it "Gets Results" {
-            $results | Should Not Be $null
+
+    Context "When getting resource pools using -Type parameter" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $typeResults = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -Type Internal
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Gets Results with Type filter" {
+            $typeResults | Should -Not -BeNullOrEmpty
         }
     }
 }

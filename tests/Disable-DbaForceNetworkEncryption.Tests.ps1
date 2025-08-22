@@ -1,41 +1,29 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Disable-DbaForceNetworkEncryption",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Disable-DbaForceNetworkEncryption" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Disable-DbaForceNetworkEncryption
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "Credential",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Disable-DbaForceNetworkEncryption" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "When disabling force network encryption" {
-        BeforeAll {
-            $results = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.instance1 -EnableException
-        }
-
         It "Returns results with ForceEncryption set to false" {
+            $results = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.instance1 -EnableException
             $results.ForceEncryption | Should -BeFalse
         }
     }

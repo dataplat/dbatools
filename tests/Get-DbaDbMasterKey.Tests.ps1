@@ -1,58 +1,63 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbMasterKey",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $dbname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $null = $server.Query("Create Database [$dbname]")
-        $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $dbname -Password (ConvertTo-SecureString -AsPlainText -Force -String 'ThisIsAPassword!') -Confirm:$false
-    }
-    AfterAll {
-        Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+        $dbname = "dbatoolsci_test_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
+        $splatMasterKey = @{
+            SqlInstance = $TestConfig.instance1
+            Database    = $dbname
+            Password    = (ConvertTo-SecureString -AsPlainText -Force -String "ThisIsAPassword!")
+        }
+        $null = New-DbaDbMasterKey @splatMasterKey
     }
 
-    Context "Gets DbMasterKey" {
-        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 | Where-Object {$_.Database -eq "$dbname"}
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        It "Should be the key on $dbname" {
-            $results.Database | Should Be $dbname
-        }
-        It "Should be encrypted by the server" {
-            $results.isEncryptedByServer | Should Be $true
-        }
+    AfterAll {
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
     }
-    Context "Gets DbMasterKey when using -database" {
+
+    It "Gets DbMasterKey" {
+        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 | Where-Object Database -eq $dbname
+
+        $results | Should -Not -BeNullOrEmpty
+        $results.Database | Should -BeExactly $dbname
+        $results.isEncryptedByServer | Should -BeTrue
+    }
+
+    It "Gets DbMasterKey when using -Database" {
         $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $dbname
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        It "Should be the key on $dbname" {
-            $results.Database | Should Be $dbname
-        }
-        It "Should be encrypted by the server" {
-            $results.isEncryptedByServer | Should Be $true
-        }
+
+        $results | Should -Not -BeNullOrEmpty
+        $results.Database | Should -BeExactly $dbname
+        $results.isEncryptedByServer | Should -BeTrue
     }
-    Context "Gets no DbMasterKey when using -ExcludeDatabase" {
-        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -ExcludeDatabase $dbname
-        It "Gets no results" {
-            $results | Should Be $null
-        }
+
+    It "Gets no DbMasterKey when using -ExcludeDatabase" {
+        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -ExcludeDatabase master, $dbname
+
+        $results | Should -BeNullOrEmpty
     }
 }

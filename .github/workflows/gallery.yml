@@ -2,8 +2,21 @@ name: Test version in Gallery
 on:
  workflow_dispatch:
  push:
-    branches:
-      - master
+   # branches:  # Removed to apply to all branches
+   #   - master
+   paths-ignore:
+     - '**/*.md'
+     - '**/*.json'
+     - '!.github/dbatools-library-version.json'
+     - 'docs/**'
+     - '.github/FUNDING.yml'
+     - '.github/ISSUE_TEMPLATE/**'
+     - '.github/PULL_REQUEST_TEMPLATE.md'
+     - '.aider/**'
+     - '.devcontainer/**'
+     - '.vscode/**'
+     - 'bin/**'
+     - 'en-us/**'
 defaults:
   run:
     shell: pwsh
@@ -55,7 +68,7 @@ jobs:
         run: |
           Import-Module dbatools
           Set-DbatoolsInsecureConnection
-          Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+          Install-DbaSqlPackage
 
       - name:  Setup docker images
         run: |

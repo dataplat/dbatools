@@ -1,49 +1,34 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaDbMirrorMonitor",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaDbMirrorMonitor" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaDbMirrorMonitor
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Add-DbaDbMirrorMonitor" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
-    }
-    AfterAll {
-        $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
-    }
-
+Describe $CommandName -Tag IntegrationTests {
     Context "When adding mirror monitor" {
-        BeforeAll {
-            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
+        AfterAll {
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
         }
 
         It "Adds the mirror monitor" {
-            $results.MonitorStatus | Should -Be 'Added'
+            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
+            $results.MonitorStatus | Should -Be "Added"
         }
     }
 }

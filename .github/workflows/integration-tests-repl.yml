@@ -1,5 +1,19 @@
 name: Run Replication Tests
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.json'
+      - '!.github/dbatools-library-version.json'
+      - 'docs/**'
+      - '.github/FUNDING.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.aider/**'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - 'bin/**'
+      - 'en-us/**'
 defaults:
   run:
     shell: pwsh

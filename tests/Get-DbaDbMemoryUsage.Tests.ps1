@@ -1,41 +1,52 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbMemoryUsage",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDb', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IncludeSystemDb",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
     }
+
     Context "Functionality" {
-        It 'Returns data' {
+        It "Returns data" {
             $result = Get-DbaDbMemoryUsage -SqlInstance $instance -IncludeSystemDb
-            $result.Count | Should -BeGreaterOrEqual 1
+            $result.Status.Count | Should -BeGreaterOrEqual 1
         }
 
-        It 'Accepts a list of databases' {
-            $result = Get-DbaDbMemoryUsage -SqlInstance $instance -Database 'ResourceDb' -IncludeSystemDb
+        It "Accepts a list of databases" {
+            $result = Get-DbaDbMemoryUsage -SqlInstance $instance -Database "ResourceDb" -IncludeSystemDb
 
             $uniqueDbs = $result.Database | Select-Object -Unique
-            $uniqueDbs | Should -Be 'ResourceDb'
+            $uniqueDbs | Should -Be "ResourceDb"
         }
 
-        It 'Excludes databases' {
-            $result = Get-DbaDbMemoryUsage -SqlInstance $instance -IncludeSystemDb -ExcludeDatabase 'ResourceDb'
+        It "Excludes databases" {
+            $result = Get-DbaDbMemoryUsage -SqlInstance $instance -IncludeSystemDb -ExcludeDatabase "ResourceDb"
 
             $uniqueDbs = $result.Database | Select-Object -Unique
-            $uniqueDbs | Should -Not -Contain 'ResourceDb'
-            $uniqueDbs | Should -Contain 'master'
+            $uniqueDbs | Should -Not -Contain "ResourceDb"
+            $uniqueDbs | Should -Contain "master"
         }
     }
 }

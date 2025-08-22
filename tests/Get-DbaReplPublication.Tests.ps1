@@ -1,84 +1,92 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaReplPublication",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'Type', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Name",
+                "Type",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 
     InModuleScope dbatools {
         Context "Code Validation" {
-
-            Mock Connect-ReplicationDB -MockWith {
-                [object]@{
-                    Name              = 'TestDB'
-                    TransPublications = @{
-                        Name         = 'TestDB_pub'
-                        Type         = 'Transactional'
-                        DatabaseName = 'TestDB'
+            BeforeAll {
+                Mock Connect-ReplicationDB -MockWith {
+                    [object] @{
+                        Name              = "TestDB"
+                        TransPublications = @{
+                            Name         = "TestDB_pub"
+                            Type         = "Transactional"
+                            DatabaseName = "TestDB"
+                        }
+                        MergePublications = @{ }
                     }
-                    MergePublications = @{}
                 }
-            }
 
-            Mock Connect-DbaInstance -MockWith {
-                [object]@{
-                    Name               = "MockServerName"
-                    ServiceName        = 'MSSQLSERVER'
-                    DomainInstanceName = 'MockServerName'
-                    ComputerName       = 'MockComputerName'
-                    Databases          = @{
-                        Name               = 'TestDB'
-                        #state
-                        #status
-                        ID                 = 5
-                        ReplicationOptions = 'Published'
-                        IsAccessible       = $true
-                        IsSystemObject     = $false
-                    }
-                    ConnectionContext  = @{
-                        SqlConnectionObject = 'FakeConnectionContext'
+                Mock Connect-DbaInstance -MockWith {
+                    [object] @{
+                        Name               = "MockServerName"
+                        ServiceName        = "MSSQLSERVER"
+                        DomainInstanceName = "MockServerName"
+                        ComputerName       = "MockComputerName"
+                        Databases          = @{
+                            Name               = "TestDB"
+                            #state
+                            #status
+                            ID                 = 5
+                            ReplicationOptions = "Published"
+                            IsAccessible       = $true
+                            IsSystemObject     = $false
+                        }
+                        ConnectionContext  = @{
+                            SqlConnectionObject = "FakeConnectionContext"
+                        }
                     }
                 }
             }
 
             It "Honors the SQLInstance parameter" {
                 $Results = Get-DbaReplPublication -SqlInstance MockServerName
-                $Results.SqlInstance.Name | Should Be "MockServerName"
+                $Results.SqlInstance.Name | Should -Be "MockServerName"
             }
 
             It "Honors the Database parameter" {
                 $Results = Get-DbaReplPublication -SqlInstance MockServerName -Database TestDB
-                $Results.DatabaseName | Should Be "TestDB"
+                $Results.DatabaseName | Should -Be "TestDB"
             }
 
             It "Honors the Type parameter" {
-
                 Mock Connect-ReplicationDB -MockWith {
-                    [object]@{
-                        Name              = 'TestDB'
+                    [object] @{
+                        Name              = "TestDB"
                         TransPublications = @{
-                            Name = 'TestDB_pub'
-                            Type = 'Snapshot'
+                            Name = "TestDB_pub"
+                            Type = "Snapshot"
                         }
-                        MergePublications = @{}
+                        MergePublications = @{ }
                     }
                 }
 
                 $Results = Get-DbaReplPublication -SqlInstance MockServerName -Database TestDB -Type Snapshot
-                $Results.Type | Should Be "Snapshot"
+                $Results.Type | Should -Be "Snapshot"
             }
 
             It "Stops if validate set for Type is not met" {
-
-                { Get-DbaReplPublication -SqlInstance MockServerName -Type NotAPubType } | should Throw
-
+                { Get-DbaReplPublication -SqlInstance MockServerName -Type NotAPubType } | Should -Throw
             }
         }
     }

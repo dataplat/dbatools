@@ -1,65 +1,155 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Find-DbaStoredProcedure",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Pattern', 'IncludeSystemObjects', 'IncludeSystemDatabases', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Pattern",
+                "IncludeSystemObjects",
+                "IncludeSystemDatabases",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Command finds Procedures in a System Database" {
         BeforeAll {
+            # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $ServerProcedure = @"
 CREATE PROCEDURE dbo.cp_dbatoolsci_sysadmin
 AS
-    SET NOCOUNT ON;
-    SELECT [sid],[loginname],[sysadmin]
-    FROM [master].[sys].[syslogins];
+SET NOCOUNT ON;
+SELECT [sid],[loginname],[sysadmin]
+FROM [master].[sys].[syslogins];
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $ServerProcedure
+            $splatCreateProc = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "Master"
+                Query       = $ServerProcedure
+            }
+            $null = Invoke-DbaQuery @splatCreateProc
+
+            # We want to run the test command without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
+
         AfterAll {
+            # Cleanup - We want to run all commands in the cleanup with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $DropProcedure
+            $splatDropProc = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "Master"
+                Query       = $DropProcedure
+            }
+            $null = Invoke-DbaQuery @splatDropProc
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
-        $results = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -IncludeSystemDatabases
+
         It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
-            $results.Name | Should Contain "cp_dbatoolsci_sysadmin"
-            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master).ID
+            $splatFind = @{
+                SqlInstance            = $TestConfig.instance2
+                Pattern                = "dbatools*"
+                IncludeSystemDatabases = $true
+            }
+            $results = Find-DbaStoredProcedure @splatFind
+            $results.Name | Should -Contain "cp_dbatoolsci_sysadmin"
         }
     }
+
     Context "Command finds Procedures in a User Database" {
         BeforeAll {
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_storedproceduredb'
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Set variables. They are available in all the It blocks.
+            $testDbName = "dbatoolsci_storedproceduredb"
+
+            # Create the database
+            $splatNewDb = @{
+                SqlInstance = $TestConfig.instance2
+                Name        = $testDbName
+            }
+            $null = New-DbaDatabase @splatNewDb
+
+            # Create stored procedure
             $StoredProcedure = @"
 CREATE PROCEDURE dbo.sp_dbatoolsci_custom
 AS
     SET NOCOUNT ON;
     PRINT 'Dbatools Rocks';
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_storedproceduredb' -Query $StoredProcedure
+            $splatCreateProc = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = $testDbName
+                Query       = $StoredProcedure
+            }
+            $null = Invoke-DbaQuery @splatCreateProc
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
+
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_storedproceduredb' -Confirm:$false
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveDb = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "dbatoolsci_storedproceduredb"
+                Confirm     = $false
+            }
+            $null = Remove-DbaDatabase @splatRemoveDb
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
-        $results = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -Database 'dbatoolsci_storedproceduredb'
+
         It "Should find a specific StoredProcedure named sp_dbatoolsci_custom" {
-            $results.Name | Should Contain "sp_dbatoolsci_custom"
-            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database dbatoolsci_storedproceduredb).ID
+            $splatFind = @{
+                SqlInstance = $TestConfig.instance2
+                Pattern     = "dbatools*"
+                Database    = "dbatoolsci_storedproceduredb"
+            }
+            $results = Find-DbaStoredProcedure @splatFind
+            $results.Name | Should -Contain "sp_dbatoolsci_custom"
         }
+
         It "Should find sp_dbatoolsci_custom in dbatoolsci_storedproceduredb" {
-            $results.Database | Should Contain "dbatoolsci_storedproceduredb"
+            $splatFind = @{
+                SqlInstance = $TestConfig.instance2
+                Pattern     = "dbatools*"
+                Database    = "dbatoolsci_storedproceduredb"
+            }
+            $results = Find-DbaStoredProcedure @splatFind
+            $results.Database | Should -Contain "dbatoolsci_storedproceduredb"
         }
-        $results = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -ExcludeDatabase 'dbatoolsci_storedproceduredb'
+
         It "Should find no results when Excluding dbatoolsci_storedproceduredb" {
-            $results | Should Be $null
+            $splatFind = @{
+                SqlInstance     = $TestConfig.instance2
+                Pattern         = "dbatools*"
+                ExcludeDatabase = "dbatoolsci_storedproceduredb"
+            }
+            $results = Find-DbaStoredProcedure @splatFind
+            $results | Should -BeNullOrEmpty
         }
     }
 }

@@ -1,26 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaAgentJob",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob_disabled
-        $sourcejobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance2
-        $destjobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance3
-    }
-    AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
-    }
-
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaAgentJob
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -31,19 +21,73 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
                 "DisableOnDestination",
                 "Force",
                 "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
+    }
+}
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
+        # Explain what needs to be set up for the test:
+        # To test copying agent jobs, we need to create test jobs on the source instance that can be copied to the destination
+
+        # Set variables. They are available in all the It blocks.
+        $sourceJobName = "dbatoolsci_copyjob"
+        $sourceJobDisabledName = "dbatoolsci_copyjob_disabled"
+
+        # Create the objects.
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $sourceJobName
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $sourceJobDisabledName
+        $sourcejobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance2
+        $destjobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance3
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false -ErrorAction SilentlyContinue
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $command = Get-Command $CommandName
+            $hasParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Job",
+                "ExcludeJob",
+                "DisableOnSource",
+                "DisableOnDestination",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 
@@ -63,12 +107,12 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
 
         It "disables jobs when requested" {
             $splatCopyJob = @{
-                Source = $TestConfig.instance2
-                Destination = $TestConfig.instance3
-                Job = "dbatoolsci_copyjob_disabled"
-                DisableOnSource = $true
+                Source               = $TestConfig.instance2
+                Destination          = $TestConfig.instance3
+                Job                  = "dbatoolsci_copyjob_disabled"
+                DisableOnSource      = $true
                 DisableOnDestination = $true
-                Force = $true
+                Force                = $true
             }
             $results = Copy-DbaAgentJob @splatCopyJob
 

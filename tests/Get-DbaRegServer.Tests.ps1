@@ -1,21 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaRegServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ServerName', 'Group', 'ExcludeGroup', 'Id', 'IncludeSelf', 'ResolveNetworkName', 'IncludeLocal', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "ServerName",
+                "Group",
+                "ExcludeGroup",
+                "Id",
+                "IncludeSelf",
+                "ResolveNetworkName",
+                "IncludeLocal",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "Setup" {
+Describe $CommandName -Tag IntegrationTests {
+    Context "Registered server operations" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $server = Connect-DbaInstance $TestConfig.instance1
             $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbStore = $regStore.DatabaseEngineServerGroup
@@ -59,15 +77,24 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newServer3.ServerName = $srvName3
             $newServer3.Description = $regSrvDesc3
             $newServer3.Create()
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
+
         AfterAll {
-            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should return multiple objects" {
             $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group $group
-            $results.Count | Should Be 2
+            $results.Count | Should -Be 2
             $results[0].ParentServer | Should -Not -BeNullOrEmpty
             $results[0].ComputerName | Should -Not -BeNullOrEmpty
             $results[0].InstanceName | Should -Not -BeNullOrEmpty
@@ -77,18 +104,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results[1].InstanceName | Should -Not -BeNullOrEmpty
             $results[1].SqlInstance | Should -Not -BeNullOrEmpty
         }
+
         It "Should allow searching subgroups" {
             $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group "$group\$group2"
-            $results.Count | Should Be 1
+            $results.Count | Should -Be 1
         }
+
         It "Should return the root server when excluding (see #3529)" {
             $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -ExcludeGroup "$group\$group2"
             @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
         }
+
         It "Should filter subgroups" {
             $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group $group -ExcludeGroup "$group\$group2"
-            $results.Count | Should Be 1
-            $results.Group | Should Be $group
+            $results.Count | Should -Be 1
+            $results.Group | Should -Be $group
         }
 
         # Property Comparisons will come later when we have the commands

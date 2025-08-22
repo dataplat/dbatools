@@ -1,35 +1,75 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaPfDataCollectorSetTemplate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'DisplayName', 'SchedulesEnabled', 'RootPath', 'Segment', 'SegmentMaxDuration', 'SegmentMaxSize', 'Subdirectory', 'SubdirectoryFormat', 'SubdirectoryFormatPattern', 'Task', 'TaskRunAsSelf', 'TaskArguments', 'TaskUserTextArguments', 'StopOnCompletion', 'Path', 'Template', 'Instance', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "DisplayName",
+                "SchedulesEnabled",
+                "RootPath",
+                "Segment",
+                "SegmentMaxDuration",
+                "SegmentMaxSize",
+                "Subdirectory",
+                "SubdirectoryFormat",
+                "SubdirectoryFormatPattern",
+                "Task",
+                "TaskRunAsSelf",
+                "TaskArguments",
+                "TaskUserTextArguments",
+                "StopOnCompletion",
+                "Path",
+                "Template",
+                "Instance",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $collectorSetName = "Long Running Queries"
+
+        # Clean up any existing collector sets before starting
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     BeforeEach {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
     }
+
     AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     Context "Verifying command returns all the required results with pipe" {
         It "returns only one (and the proper) template" {
-            $results = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate
-            $results.Name | Should Be 'Long Running Queries'
-            $results.ComputerName | Should Be $env:COMPUTERNAME
+            $results = Get-DbaPfDataCollectorSetTemplate -Template $collectorSetName | Import-DbaPfDataCollectorSetTemplate
+            $results.Name | Should -Be $collectorSetName
+            $results.ComputerName | Should -Be $env:COMPUTERNAME
         }
+
         It "returns only one (and the proper) template without pipe" {
-            $results = Import-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries'
-            $results.Name | Should Be 'Long Running Queries'
-            $results.ComputerName | Should Be $env:COMPUTERNAME
+            $results = Import-DbaPfDataCollectorSetTemplate -Template $collectorSetName
+            $results.Name | Should -Be $collectorSetName
+            $results.ComputerName | Should -Be $env:COMPUTERNAME
         }
     }
 }

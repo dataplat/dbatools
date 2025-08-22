@@ -1,37 +1,26 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Disable-DbaReplDistributor",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-
-Add-ReplicationLibrary
-
-Describe "Disable-DbaReplDistributor" -Tag "UnitTests" {
-    BeforeAll {
-        $command = Get-Command Disable-DbaReplDistributor
-        $expected = $TestConfig.CommonParameters
-        $expected += @(
-            "SqlInstance",
-            "SqlCredential",
-            "Force",
-            "EnableException",
-            "Confirm",
-            "WhatIf"
-        )
-    }
-
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
-
-    # Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1
 }
+
+# TODO: Is this needed? Add-ReplicationLibrary
+
+# Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1

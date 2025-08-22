@@ -1,39 +1,30 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaSystemDbUserObject",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaSystemDbUserObject" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaSystemDbUserObject
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
                 "DestinationSqlCredential",
                 "Force",
                 "Classic",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Copy-DbaSystemDbUserObject" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         #Function Scripts roughly From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql
         #Rule Scripts roughly from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-rule-transact-sql
@@ -48,7 +39,7 @@ BEGIN
           -DATEPART(wk,CAST(DATEPART(yy,@DATE) as CHAR(4))+'0104');
 --Special cases: Jan 1-3 may belong to the previous year
      IF (@ISOweek=0)
-          SET @ISOweek=dbo.ISOweek(CAST(DATEPART(yy,@DATE)-1
+          SET @ISOweek=dbo.dbatoolscs_ISOweek(CAST(DATEPART(yy,@DATE)-1
                AS CHAR(4))+'12'+ CAST(24+DATEPART(DAY,@DATE) AS CHAR(2)))+1;
 --Special case: Dec 29-31 may belong to the next year
      IF ((DATEPART(mm,@DATE)=12) AND
@@ -58,7 +49,7 @@ BEGIN
 END;
 GO
 SET DATEFIRST 1;
-SELECT dbo.ISOweek(CONVERT(DATETIME,'12/26/2004',101)) AS 'ISO Week';
+SELECT dbo.dbatoolscs_ISOweek(CONVERT(DATETIME,'12/26/2004',101)) AS 'ISO Week';
 "@
         $TableFunction = @"
 CREATE FUNCTION dbo.dbatoolsci_TableFunction (@pid int)
@@ -74,7 +65,7 @@ GO
         $Rule = @"
 CREATE RULE dbo.dbatoolsci_range_rule
 AS
-@range>= $1000 AND @range <$20000;
+@range>= 1000 AND @range <20000;
 "@
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $Function
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $TableFunction

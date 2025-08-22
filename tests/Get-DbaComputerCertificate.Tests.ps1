@@ -1,41 +1,55 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaComputerCertificate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Store', 'Folder', 'Path', 'Thumbprint', 'EnableException', 'Type'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "Store",
+                "Folder",
+                "Path",
+                "Thumbprint",
+                "EnableException",
+                "Type"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Can get a certificate" {
         BeforeAll {
             $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-        }
-        AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
+
+            # Get all certificates once for testing
+            $allCertificates = Get-DbaComputerCertificate
+            $specificCertificate = Get-DbaComputerCertificate -Thumbprint $thumbprint
         }
 
-        $cert = Get-DbaComputerCertificate -Thumbprint $thumbprint
+        AfterAll {
+            Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false -ErrorAction SilentlyContinue
+        }
 
         It "returns a single certificate with a specific thumbprint" {
-            $cert.Thumbprint | Should Be $thumbprint
+            $specificCertificate.Thumbprint | Should -Be $thumbprint
         }
-
-        $cert = Get-DbaComputerCertificate
 
         It "returns all certificates and at least one has the specified thumbprint" {
-            "$($cert.Thumbprint)" -match $thumbprint | Should Be $true
+            "$($allCertificates.Thumbprint)" -match $thumbprint | Should -Be $true
         }
+
         It "returns all certificates and at least one has the specified EnhancedKeyUsageList" {
-            "$($cert.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' | Should Be $true
+            "$($allCertificates.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -Be $true
         }
     }
 }

@@ -1,35 +1,77 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Set-DbaAgentAlert",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Alert', 'NewName', 'Enabled', 'Disabled', 'Force', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Alert",
+                "NewName",
+                "Enabled",
+                "Disabled",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $splatConnection = @{
+            SqlInstance = $TestConfig.instance2
+            Database    = "master"
+        }
+        $server = Connect-DbaInstance @splatConnection
         $server.Query("EXEC msdb.dbo.sp_add_alert @name=N'dbatoolsci test alert',@message_id=0,@severity=6,@enabled=1,@delay_between_responses=0,@include_event_description_in=0,@category_name=N'[Uncategorized]',@job_id=N'00000000-0000-0000-0000-000000000000'")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $splatConnection = @{
+            SqlInstance = $TestConfig.instance2
+            Database    = "master"
+        }
+        $server = Connect-DbaInstance @splatConnection
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'dbatoolsci test alert NEW'")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    $results = Set-DbaAgentAlert -SqlInstance $TestConfig.instance2 -Alert 'dbatoolsci test alert' -Disabled
-    It "changes new alert to disabled" {
-        $results.IsEnabled | Should Be 'False'
-    }
+    Context "When modifying agent alerts" {
+        It "Changes alert to disabled" {
+            $splatDisable = @{
+                SqlInstance = $TestConfig.instance2
+                Alert       = "dbatoolsci test alert"
+                Disabled    = $true
+            }
+            $results = Set-DbaAgentAlert @splatDisable
+            $results.IsEnabled | Should -Be "False"
+        }
 
-    $results = Set-DbaAgentAlert -SqlInstance $TestConfig.instance2 -Alert 'dbatoolsci test alert' -NewName 'dbatoolsci test alert NEW'
-    It "changes new alert name to dbatoolsci test alert NEW" {
-        $results.Name | Should Be 'dbatoolsci test alert NEW'
+        It "Changes alert name to new name" {
+            $splatRename = @{
+                SqlInstance = $TestConfig.instance2
+                Alert       = "dbatoolsci test alert"
+                NewName     = "dbatoolsci test alert NEW"
+            }
+            $results = Set-DbaAgentAlert @splatRename
+            $results.Name | Should -Be "dbatoolsci test alert NEW"
+        }
     }
 }

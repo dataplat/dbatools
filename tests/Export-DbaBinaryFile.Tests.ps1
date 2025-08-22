@@ -1,43 +1,112 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Export-DbaBinaryFile",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'FileNameColumn', 'BinaryColumn', 'Path', 'FilePath', 'Query', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Schema",
+                "FileNameColumn",
+                "BinaryColumn",
+                "Path",
+                "Query",
+                "FilePath",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeEach {
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
-        $null = $db.Query("CREATE TABLE [dbo].[BunchOFilezz]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-        $null = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilezz -FilePath "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
-        $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilezz
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        $exportPath = "$($TestConfig.Temp)\exports-$CommandName-$(Get-Random)"
+        $null = New-Item -Path $exportPath -ItemType Directory -Force
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
-    AfterEach {
-        try {
-            $null = $db.Query("DROP TABLE dbo.BunchOFilezz")
-            $null = Get-ChildItem -Path C:\temp\exports -File | Remove-Item -Confirm:$false -Force
-        } catch {
-            $null = 1
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Remove the export directory.
+        Remove-Item -Path $exportPath -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When exporting binary files from database" {
+        BeforeEach {
+            # We want to run all commands in the BeforeEach block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Set up test table and data for each test
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
+            $null = $db.Query("CREATE TABLE [dbo].[BunchOFilezz]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
+
+            $splatImportMain = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "tempdb"
+                Table       = "BunchOFilezz"
+                FilePath    = "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
+            }
+            $null = Import-DbaBinaryFile @splatImportMain
+
+            $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilezz
+
+            # We want to run all commands outside of the BeforeEach block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
-    }
 
-    It "exports the table data to file" {
-        $results = Export-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Path C:\temp\exports
-        $results.Name.Count | Should -Be 3
-        $results.Name | Should -Be @('adalsql.msi', 'localhost.crt', 'localhost.pfx')
-    }
+        AfterEach {
+            # We want to run all commands in the AfterEach block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-    It "exports the table data to file" {
-        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb | Export-DbaBinaryFile -Path C:\temp\exports
-        $results.Name.Count | Should -Be 3
-        $results.Name | Should -Be @('adalsql.msi', 'localhost.crt', 'localhost.pfx')
+            # Clean up test table
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
+            $null = $db.Query("DROP TABLE dbo.BunchOFilezz")
+
+            # Clean up exported files for this specific test
+            Remove-Item -Path "$exportPath\*" -Recurse -ErrorAction SilentlyContinue
+
+            # We want to run all commands outside of the AfterEach block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Exports the table data to file using SqlInstance" {
+            $splatExport = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "tempdb"
+                Path        = $exportPath
+            }
+            $results = Export-DbaBinaryFile @splatExport
+
+            $results.Name.Count | Should -BeExactly 3
+            $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
+        }
+
+        It "Exports the table data to file using pipeline from Get-DbaBinaryFileTable" {
+            $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb | Export-DbaBinaryFile -Path $exportPath
+
+            $results.Name.Count | Should -BeExactly 3
+            $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
+        }
     }
 }

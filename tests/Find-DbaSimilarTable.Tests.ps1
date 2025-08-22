@@ -1,41 +1,71 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Find-DbaSimilarTable",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'SchemaName', 'TableName', 'ExcludeViews', 'IncludeSystemDatabases', 'MatchPercentThreshold', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "SchemaName",
+                "TableName",
+                "ExcludeViews",
+                "IncludeSystemDatabases",
+                "MatchPercentThreshold",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Testing if similar tables are discovered" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
             $db.Query("CREATE TABLE dbatoolsci_table1 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
             $db.Query("CREATE TABLE dbatoolsci_table2 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
+
         AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
             $db.Query("DROP TABLE dbatoolsci_table1")
             $db.Query("DROP TABLE dbatoolsci_table2")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
+        It "returns at least two rows" {
+            # not an exact count because who knows
+            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
 
-        It "returns at least two rows" { # not an exact count because who knows
-            $results.Count -ge 2 | Should Be $true
+            $results.Status.Count -ge 2 | Should -Be $true
             $results.OriginalDatabaseId | Should -Be $db.ID, $db.ID
             $results.MatchingDatabaseId | Should -Be $db.ID, $db.ID
         }
 
-        foreach ($result in $results) {
-            It "matches 100% for the test tables" {
-                $result.MatchPercent -eq 100 | Should Be $true
+        It "matches 100% for the test tables" {
+            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
+
+            foreach ($result in $results) {
+                $result.MatchPercent -eq 100 | Should -Be $true
             }
         }
     }

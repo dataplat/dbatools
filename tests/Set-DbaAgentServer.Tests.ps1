@@ -1,29 +1,67 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Set-DbaAgentServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'AgentLogLevel', 'AgentMailType', 'AgentShutdownWaitTime', 'DatabaseMailProfile', 'ErrorLogFile', 'IdleCpuDuration', 'IdleCpuPercentage', 'CpuPolling', 'LocalHostAlias', 'LoginTimeout', 'MaximumHistoryRows', 'MaximumJobHistoryRows', 'NetSendRecipient', 'ReplaceAlertTokens', 'SaveInSentFolder', 'SqlAgentAutoStart', 'SqlAgentMailProfile', 'SqlAgentRestart', 'SqlServerRestart', 'WriteOemErrorLog', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "InputObject",
+                "AgentLogLevel",
+                "AgentMailType",
+                "AgentShutdownWaitTime",
+                "DatabaseMailProfile",
+                "ErrorLogFile",
+                "IdleCpuDuration",
+                "IdleCpuPercentage",
+                "CpuPolling",
+                "LocalHostAlias",
+                "LoginTimeout",
+                "MaximumHistoryRows",
+                "MaximumJobHistoryRows",
+                "NetSendRecipient",
+                "ReplaceAlertTokens",
+                "SaveInSentFolder",
+                "SqlAgentAutoStart",
+                "SqlAgentMailProfile",
+                "SqlAgentRestart",
+                "SqlServerRestart",
+                "WriteOemErrorLog",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $testServer = $TestConfig.instance2
         $random = Get-Random
         $mailProfileName = "dbatoolsci_$random"
         $mailProfile = New-DbaDbMailProfile -SqlInstance $testServer -Name $mailProfileName
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXECUTE msdb.dbo.sysmail_delete_profile_sp @profile_name = '$mailProfileName'"
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC msdb.dbo.sp_set_sqlagent_properties @local_host_server=N''"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "changes agent server job history properties to 10000 / 100" {
@@ -224,18 +262,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "set values outside of the expected ranges for MaximumHistoryRows" {
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 1000000
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 1000000 -WarningAction SilentlyContinue
+        $WarnVar | Should -Match "You must specify a MaximumHistoryRows value"
         $results | Should -BeNull
 
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 1
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 1 -WarningAction SilentlyContinue
+        $WarnVar | Should -Match "You must specify a MaximumHistoryRows value"
         $results | Should -BeNull
     }
 
     It "set values outside of the expected ranges for MaximumJobHistoryRows" {
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumJobHistoryRows 1000000
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumJobHistoryRows 1000000 -WarningAction SilentlyContinue
+        $WarnVar | Should -Match "You must specify a MaximumJobHistoryRows value"
         $results | Should -BeNull
 
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumJobHistoryRows 1
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumJobHistoryRows 1 -WarningAction SilentlyContinue
+        $WarnVar | Should -Match "You must specify a MaximumJobHistoryRows value"
         $results | Should -BeNull
     }
 
@@ -246,7 +288,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $validationError = $true
         }
-        $validationError | Should Be $true
+        $validationError | Should -Be $true
 
         $validationError = $false;
         try {
@@ -254,7 +296,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $validationError = $true
         }
-        $validationError | Should Be $true
+        $validationError | Should -Be $true
     }
 
     It "set values outside of the expected ranges for IdleCpuDuration" {
@@ -264,7 +306,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $validationError = $true
         }
-        $validationError | Should Be $true
+        $validationError | Should -Be $true
 
         $validationError = $false;
         try {
@@ -272,7 +314,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $validationError = $true
         }
-        $validationError | Should Be $true
+        $validationError | Should -Be $true
     }
 
     It "set values outside of the expected ranges for IdleCpuPercentage" {
@@ -282,7 +324,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $validationError = $true
         }
-        $validationError | Should Be $true
+        $validationError | Should -Be $true
 
         $validationError = $false;
         try {
@@ -290,7 +332,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $validationError = $true
         }
-        $validationError | Should Be $true
+        $validationError | Should -Be $true
     }
 
     It "set values outside of the expected ranges for LoginTimeout" {
@@ -300,7 +342,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $validationError = $true
         }
-        $validationError | Should Be $true
+        $validationError | Should -Be $true
 
         $validationError = $false;
         try {
@@ -308,6 +350,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $validationError = $true
         }
-        $validationError | Should Be $true
+        $validationError | Should -Be $true
     }
 }

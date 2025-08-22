@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaLinkedServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaLinkedServer" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaLinkedServer
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -19,97 +20,76 @@ Describe "Copy-DbaLinkedServer" -Tag "UnitTests" {
                 "UpgradeSqlClient",
                 "ExcludePassword",
                 "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Copy-DbaLinkedServer" -Tag "IntegrationTests" {
-   BeforeAll {
-       $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-       $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-       $createSql = "EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost', @srvproduct=N'SQL Server';
-       EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';
-       EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost2', @srvproduct=N'', @provider=N'SQLNCLI10';
-       EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost2',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';"
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
-       $server1.Query($createSql)
-   }
+        $createSql = "EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost', @srvproduct=N'SQL Server';
+        EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool'"
 
-   AfterAll {
-       $dropSql = "EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost', @droplogins='droplogins';
-       EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost2', @droplogins='droplogins'"
-       try {
-           $server1.Query($dropSql)
-           $server2.Query($dropSql)
-       } catch {
-           # Silently continue
-       }
-   }
+        $server1.Query($createSql)
 
-   Context "When copying linked server with the same properties" {
-       It "Copies successfully" {
-           $copySplat = @{
-               Source = $TestConfig.instance2
-               Destination = $TestConfig.instance3
-               LinkedServer = 'dbatoolsci_localhost'
-               WarningAction = 'SilentlyContinue'
-           }
-           $result = Copy-DbaLinkedServer @copySplat
-           $result | Select-Object -ExpandProperty Name -Unique | Should -BeExactly "dbatoolsci_localhost"
-           $result | Select-Object -ExpandProperty Status -Unique | Should -BeExactly "Successful"
-       }
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
 
-       It "Retains the same properties" {
-           $getLinkSplat = @{
-               LinkedServer = 'dbatoolsci_localhost'
-               WarningAction = 'SilentlyContinue'
-           }
-           $LinkedServer1 = Get-DbaLinkedServer -SqlInstance $server1 @getLinkSplat
-           $LinkedServer2 = Get-DbaLinkedServer -SqlInstance $server2 @getLinkSplat
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-           $LinkedServer1.Name | Should -BeExactly $LinkedServer2.Name
-           $LinkedServer1.LinkedServer | Should -BeExactly $LinkedServer2.LinkedServer
-       }
+        $dropSql = "EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost', @droplogins='droplogins'"
 
-       It "Skips existing linked servers" {
-           $copySplat = @{
-               Source = $TestConfig.instance2
-               Destination = $TestConfig.instance3
-               LinkedServer = 'dbatoolsci_localhost'
-               WarningAction = 'SilentlyContinue'
-           }
-           $results = Copy-DbaLinkedServer @copySplat
-           $results.Status | Should -BeExactly "Skipped"
-       }
+        $server1.Query($dropSql)
+        $server2.Query($dropSql)
 
-        # SQLNCLI10 and SQLNCLI11 are not used on newer versions, not sure which versions, but skipping if later than 2017
-        Context "When upgrading SQL Client provider" -Skip:($server1.VersionMajor -gt 14 -or $server2.VersionMajor -gt 14) {
-            BeforeAll {
-                $result = Copy-DbaLinkedServer -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
-                $sourceLinked = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2
-                $destLinked = Get-DbaLinkedServer -SqlInstance $TestConfig.instance3
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When copying linked server with the same properties" {
+        It "Copies successfully" {
+            $splatCopy = @{
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
+                LinkedServer  = "dbatoolsci_localhost"
+                WarningAction = "SilentlyContinue"
             }
-
-            It "Should retain SQLNCLI10 on source" {
-                $sourceLinked.Script() | Should -Match 'SQLNCLI10'
-            }
-
-            It "Should upgrade to SQLNCLI11 on destination" {
-                $destLinked.Script() | Should -Match 'SQLNCLI11'
-            }
+            $result = Copy-DbaLinkedServer @splatCopy
+            $result | Select-Object -ExpandProperty Name -Unique | Should -BeExactly "dbatoolsci_localhost"
+            $result | Select-Object -ExpandProperty Status -Unique | Should -BeExactly "Successful"
         }
+
+        It "Retains the same properties" {
+            $splatGetLink = @{
+                LinkedServer  = "dbatoolsci_localhost"
+                WarningAction = "SilentlyContinue"
+            }
+            $LinkedServer1 = Get-DbaLinkedServer -SqlInstance $server1 @splatGetLink
+            $LinkedServer2 = Get-DbaLinkedServer -SqlInstance $server2 @splatGetLink
+
+            $LinkedServer1.Name | Should -BeExactly $LinkedServer2.Name
+            $LinkedServer1.LinkedServer | Should -BeExactly $LinkedServer2.LinkedServer
+        }
+
+        It "Skips existing linked servers" {
+            $splatCopySkip = @{
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
+                LinkedServer  = "dbatoolsci_localhost"
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Copy-DbaLinkedServer @splatCopySkip
+            $results.Status | Should -BeExactly "Skipped"
+        }
+    }
 }

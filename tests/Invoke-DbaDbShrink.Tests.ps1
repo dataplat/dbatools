@@ -1,24 +1,56 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaDbShrink",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'PercentFreeSpace', 'ShrinkMethod', 'FileType', 'StepSize', 'StatementTimeout', 'ExcludeIndexStats', 'ExcludeUpdateUsage', 'EnableException', 'InputObject'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "AllUserDatabases",
+                "PercentFreeSpace",
+                "ShrinkMethod",
+                "FileType",
+                "StepSize",
+                "StatementTimeout",
+                "ExcludeIndexStats",
+                "ExcludeUpdateUsage",
+                "EnableException",
+                "InputObject"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $defaultPath = $server | Get-DbaDefaultPath
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     Context "Verifying Database is shrunk" {
-        BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $defaultPath = $server | Get-DbaDefaultPath
-        }
         BeforeEach {
             # Create Database with small size and grow it
             $db = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_shrinktest")
@@ -68,8 +100,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.FileGroups[0].Files[0].Size | Should Be $oldDataSize
-            $db.LogFiles[0].Size | Should BeLessThan $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -Be $oldDataSize
+            $db.LogFiles[0].Size | Should -BeLessThan $oldLogSize
         }
 
         It "Shrinks just the data file(s) when FileType is Data" {
@@ -81,8 +113,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
-            $db.LogFiles[0].Size | Should Be $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should -Be $oldLogSize
         }
 
         It "Shrinks the entire database when FileType is All" {
@@ -94,8 +126,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.LogFiles[0].Size | Should BeLessThan $oldLogSize
-            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should -BeLessThan $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
         }
 
         It "Shrinks just the data file(s) when FileType is Data and uses the StepSize" {
@@ -107,8 +139,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
-            $db.LogFiles[0].Size | Should Be $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should -Be $oldLogSize
         }
 
         It "Accepts pipelined databases (see #9495)" {
@@ -120,8 +152,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
-            $db.LogFiles[0].Size | Should Be $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should -Be $oldLogSize
         }
     }
 }

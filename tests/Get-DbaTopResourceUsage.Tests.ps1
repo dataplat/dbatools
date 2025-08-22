@@ -1,40 +1,78 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaTopResourceUsage",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Type', 'Limit', 'EnableException', 'ExcludeSystem'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Type",
+                "Limit",
+                "EnableException",
+                "ExcludeSystem"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    $results = Get-DbaTopResourceUsage -SqlInstance $TestConfig.instances -Type Duration -Database master
-    $resultsExcluded = Get-DbaTopResourceUsage -SqlInstance $TestConfig.instances -Type Duration -ExcludeDatabase master
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $splatDuration = @{
+            SqlInstance = $TestConfig.Instances
+            Type        = "Duration"
+            Database    = "master"
+        }
+        $results = Get-DbaTopResourceUsage @splatDuration
+
+        $splatExcluded = @{
+            SqlInstance     = $TestConfig.Instances
+            Type            = "Duration"
+            ExcludeDatabase = "master"
+        }
+        $resultsExcluded = Get-DbaTopResourceUsage @splatExcluded
+    }
+
     Context "Command returns proper info" {
         It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+            $results.Count -gt 0 | Should -Be $true
         }
 
-        foreach ($result in $results) {
-            It "only returns results from master" {
-                $result.Database -eq 'master' | Should Be $true
+        It "only returns results from master" {
+            foreach ($result in $results) {
+                $result.Database | Should -Be "master"
             }
         }
 
         # Each of the 4 -Types return slightly different information so this way, we can check to ensure only duration was returned
         It "Should have correct properties for Duration" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ObjectName,QueryHash,TotalElapsedTimeMs,ExecutionCount,AverageDurationMs,QueryTotalElapsedTimeMs,QueryText'.Split(',')
-            ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ObjectName",
+                "QueryHash",
+                "TotalElapsedTimeMs",
+                "ExecutionCount",
+                "AverageDurationMs",
+                "QueryTotalElapsedTimeMs",
+                "QueryText"
+            )
+            ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
         It "No results for excluded database" {
-            $resultsExcluded.Database -notcontains 'master' | Should Be $true
+            $resultsExcluded.Database -notcontains "master" | Should -Be $true
         }
     }
 }

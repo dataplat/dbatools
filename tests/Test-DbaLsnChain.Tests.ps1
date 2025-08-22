@@ -1,48 +1,60 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-. "$PSScriptRoot\..\private\functions\Test-DbaLsnChain.ps1"
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-DbaLsnChain",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'FilteredRestoreFiles', 'Continue', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "FilteredRestoreFiles",
+                "Continue",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
+Describe $CommandName -Tag IntegrationTests {
     InModuleScope dbatools {
         Context "General Diff restore" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
-            $header | Add-Member -Type NoteProperty -Name FullName -Value 1
+            BeforeAll {
+                $header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+                $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
-            $filteredFiles = $header | Select-DbaBackupInformation
+                $filteredFiles = $header | Select-DbaBackupInformation
+
+                $headerNoDiff = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+                $headerNoDiff = $headerNoDiff | Where-Object BackupTypeDescription -ne "Database Differential"
+                $headerNoDiff | Add-Member -Type NoteProperty -Name FullName -Value 1
+
+                $filteredFilesNoDiff = $headerNoDiff | Select-DbaBackupInformation
+            }
+
             It "Should Return 7" {
-                $FilteredFiles.count | Should be 7
+                $filteredFiles.count | Should -BeExactly 7
             }
-            It "Should return True" {
-                $Output = Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -WarningAction SilentlyContinue
-                $Output | Should be True
-            }
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
-            $header = $Header | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' }
-            $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
-            $FilteredFiles = $Header | Select-DbaBackupInformation
+            It "Should return True" {
+                $output = Test-DbaLsnChain -FilteredRestoreFiles $filteredFiles -WarningAction SilentlyContinue
+                $output | Should -BeExactly $true
+            }
+
             It "Should return true if we remove diff backup" {
-                $Output = Test-DbaLsnChain -WarningAction SilentlyContinue -FilteredRestoreFiles ($FilteredFiles | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' })
-                $Output | Should be True
+                $output = Test-DbaLsnChain -WarningAction SilentlyContinue -FilteredRestoreFiles ($filteredFilesNoDiff | Where-Object BackupTypeDescription -ne "Database Differential")
+                $output | Should -BeExactly $true
             }
 
             It "Should return False (faked lsn)" {
-                $FilteredFiles[4].FirstLsn = 2
-                $FilteredFiles[4].LastLsn = 1
-                $Output = Test-DbaLsnChain -WarningAction SilentlyContinue -FilteredRestoreFiles $FilteredFiles
-                $Output | Should be $False
+                $filteredFiles[4].FirstLsn = 2
+                $filteredFiles[4].LastLsn = 1
+                $output = Test-DbaLsnChain -WarningAction SilentlyContinue -FilteredRestoreFiles $filteredFiles
+                $output | Should -BeExactly $false
             }
         }
     }

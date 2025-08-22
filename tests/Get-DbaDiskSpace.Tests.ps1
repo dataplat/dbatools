@@ -1,29 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDiskSpace",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Unit', 'SqlCredential', 'ExcludeDrive', 'CheckFragmentation', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "Unit",
+                "SqlCredential",
+                "ExcludeDrive",
+                "CheckFragmentation",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Disks are properly retrieved" {
-        $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME
-        It "returns at least the system drive" {
-            $results.Name -contains "$env:SystemDrive\" | Should Be $true
+        BeforeAll {
+            $allResults = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME
+            $systemDrive = "$env:SystemDrive\"
+            $systemDriveResults = $allResults | Where-Object Name -eq $systemDrive
         }
 
-        $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME | Where-Object Name -eq "$env:SystemDrive\"
-        It "has some valid properties" {
-            $results.BlockSize -gt 0 | Should Be $true
-            $results.SizeInGB -gt 0 | Should Be $true
+        It "Returns at least the system drive" {
+            $allResults.Name -contains $systemDrive | Should -Be $true
+        }
+
+        It "Has valid BlockSize property" {
+            $systemDriveResults.BlockSize -gt 0 | Should -Be $true
+        }
+
+        It "Has valid SizeInGB property" {
+            $systemDriveResults.SizeInGB -gt 0 | Should -Be $true
         }
     }
 }

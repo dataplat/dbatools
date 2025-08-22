@@ -1,36 +1,55 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbEncryption",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDBs', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IncludeSystemDBs",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+Describe $CommandName -Tag IntegrationTests {
     Context "Test Retriving Certificate" {
         BeforeAll {
             $random = Get-Random
             $cert = "dbatoolsci_getcert$random"
             $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
-            New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $cert -password $password
+
+            $splatCertificate = @{
+                SqlInstance = $TestConfig.instance1
+                Name        = $cert
+                Password    = $password
+            }
+            New-DbaDbCertificate @splatCertificate
+
+            $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
         }
+
         AfterAll {
-            Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert | Remove-DbaDbCertificate -confirm:$false
+            $splatRemove = @{
+                SqlInstance = $TestConfig.instance1
+                Certificate = $cert
+            }
+            Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate
         }
-        $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
+
         It "Should find a certificate named $cert" {
-            ($results.Name -match 'dbatoolsci').Count -gt 0 | Should Be $true
+            ($results.Name -match "dbatoolsci").Count -gt 0 | Should -Be $true
         }
     }
 }

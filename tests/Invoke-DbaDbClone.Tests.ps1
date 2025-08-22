@@ -1,19 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaDbClone",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'CloneDatabase', 'ExcludeStatistics', 'ExcludeQueryStore', 'UpdateStatistics', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "InputObject",
+                "CloneDatabase",
+                "ExcludeStatistics",
+                "ExcludeQueryStore",
+                "UpdateStatistics",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Command functions as expected" {
         BeforeAll {
             $dbname = "dbatoolsci_clonetest"
@@ -28,35 +41,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Get-DbaDatabase -SqlInstance $server -Database $dbname, $clonedb, $clonedb2 | Remove-DbaDatabase -Confirm:$false
         }
 
-        It "warns if SQL instance version is not supported" {
-            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance1 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable versionwarn
-            $versionwarn = $versionwarn | Out-String
-            $versionwarn -match "required"
-        }
-
         It "warns if destination database already exists" {
-            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
-            $dbwarn = $dbwarn | Out-String
-            $dbwarn -match "exists"
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "exists"
         }
 
         It "warns if a system db is specified to clone" {
-            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
-            $systemwarn = $systemwarn | Out-String
-            $systemwarn -match "user database"
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "user database"
         }
-
-        $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
 
         It "returns 1 result" {
-            ($results).Count -eq 1
-        }
-
-        foreach ($result in $results) {
-            It "returns a rich database object with the correct name" {
-                $result.Name -in $clonedb, $clonedb2
-            }
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
+            $results | Should -HaveCount 1
+            $results.Name | Should -Be $clonedb
         }
     }
 }
-

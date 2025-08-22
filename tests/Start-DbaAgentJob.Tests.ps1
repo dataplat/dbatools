@@ -1,63 +1,90 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Start-DbaAgentJob",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'StepName', 'ExcludeJob', 'InputObject', 'AllJobs', 'Wait', 'Parallel', 'WaitPeriod', 'SleepPeriod', 'EnableException'
-
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "StepName",
+                "ExcludeJob",
+                "InputObject",
+                "AllJobs",
+                "Wait",
+                "Parallel",
+                "WaitPeriod",
+                "SleepPeriod",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Start a job" {
         BeforeAll {
-            $jobs = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)"
-            $jobName1, $jobName2, $jobName3 = $jobs
-            foreach ($job in $jobs) {
-                $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $job
-                $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $job -StepName "step1_$(Get-Random)" -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"
-                $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $job -StepName "step2" -StepId 2 -Subsystem TransactSql -Command "WAITFOR DELAY '00:00:01'"
-                $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $job -StepName "step3" -StepId 3 -Subsystem TransactSql -Command "SELECT 1"
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $jobNames = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)"
+            $jobName1, $jobName2, $jobName3 = $jobNames
+            foreach ($jobName in $jobNames) {
+                $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobName
+                $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobName -StepName "step1_$(Get-Random)" -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"
+                $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName -StepName "step2" -StepId 2 -Subsystem TransactSql -Command "WAITFOR DELAY '00:00:01'"
+                $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName -StepName "step3" -StepId 3 -Subsystem TransactSql -Command "SELECT 1"
             }
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1 | Start-DbaAgentJob
+            $global:startJobResults = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1 | Start-DbaAgentJob
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobs -Confirm:$false
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobNames -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "returns a CurrentRunStatus of not Idle and supports pipe" {
-            $results.CurrentRunStatus -ne 'Idle' | Should Be $true
+            $global:startJobResults.CurrentRunStatus -ne "Idle" | Should -Be $true
         }
 
         It "returns a CurrentRunStatus of not null and supports pipe" {
-            $results.CurrentRunStatus -ne $null | Should Be $true
+            $global:startJobResults.CurrentRunStatus -ne $null | Should -Be $true
         }
 
         It "does not run all jobs" {
             $null = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue -WarningVariable warn
-            $warn -match 'use one of the job' | Should Be $true
+            $warn -match "use one of the job" | Should -Be $true
         }
 
         It "returns on multiple server inputs" {
-            $results2 = Start-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobName2
-            ($results2.SqlInstance).Count | Should -Be 2
+            $multiServerResults = Start-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobName2
+            ($multiServerResults.SqlInstance).Count | Should -Be 2
         }
 
         It "starts job at specified step" {
-            $null = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName3 -StepName 'step3'
-            $results3 = Get-DbaAgentJobHistory -SqlInstance $TestConfig.instance2 -Job $jobName3
-            ($results3.SqlInstance).Count | Should -Be 2
+            $null = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName3 -StepName "step3"
+            $stepResults = Get-DbaAgentJobHistory -SqlInstance $TestConfig.instance2 -Job $jobName3
+            ($stepResults.SqlInstance).Count | Should -Be 2
         }
 
         It "do not start job if the step does not exist" {
-            $results4 = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName3 -StepName 'stepdoesnoteexist'
-            ($results4.SqlInstance).Count | Should -Be 0
+            $nonExistentStepResults = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName3 -StepName "stepdoesnoteexist"
+            ($nonExistentStepResults.SqlInstance).Count | Should -Be 0
         }
     }
 }

@@ -1,62 +1,79 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaServerRoleMember",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'ExcludeServerRole', 'Login', 'ExcludeFixedRole', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "ServerRole",
+                "ExcludeServerRole",
+                "Login",
+                "ExcludeFixedRole",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
-        $password1 = ConvertTo-SecureString 'password1' -AsPlainText -Force
-        $testLogin = 'getDbaInstanceRoleMemberLogin'
+        $password1 = ConvertTo-SecureString "password1" -AsPlainText -Force
+        $testLogin = "getDbaInstanceRoleMemberLogin"
         $null = New-DbaLogin -SqlInstance $server2 -Login $testLogin -Password $password1
-        $null = Set-DbaLogin -SqlInstance $server2 -Login $testLogin -AddRole 'dbcreator'
+        $null = Set-DbaLogin -SqlInstance $server2 -Login $testLogin -AddRole "dbcreator"
 
         $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $null = New-DbaLogin -SqlInstance $server1 -Login $testLogin -Password $password1
-        $null = Set-DbaLogin -SqlInstance $server1 -Login $testLogin -AddRole 'dbcreator'
+        $null = Set-DbaLogin -SqlInstance $server1 -Login $testLogin -AddRole "dbcreator"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
-        It 'Returns all role membership for server roles' {
+        It "Returns all role membership for server roles" {
             $result = Get-DbaServerRoleMember -SqlInstance $server2
 
             # should have at least $testLogin and a sysadmin
             $result.Count | Should -BeGreaterOrEqual 2
         }
 
-        It 'Accepts a list of roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $server2 -ServerRole 'sysadmin'
+        It "Accepts a list of roles" {
+            $result = Get-DbaServerRoleMember -SqlInstance $server2 -ServerRole "sysadmin"
 
             $uniqueRoles = $result.Role | Select-Object -Unique
-            $uniqueRoles | Should -Be 'sysadmin'
+            $uniqueRoles | Should -Be "sysadmin"
         }
 
-        It 'Excludes roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $server2 -ExcludeServerRole 'dbcreator'
+        It "Excludes roles" {
+            $result = Get-DbaServerRoleMember -SqlInstance $server2 -ExcludeServerRole "dbcreator"
 
             $uniqueRoles = $result.Role | Select-Object -Unique
-            $uniqueRoles | Should -Not -Contain 'dbcreator'
-            $uniqueRoles | Should -Contain 'sysadmin'
+            $uniqueRoles | Should -Not -Contain "dbcreator"
+            $uniqueRoles | Should -Contain "sysadmin"
         }
 
-        It 'Excludes fixed roles' {
+        It "Excludes fixed roles" {
             $result = Get-DbaServerRoleMember -SqlInstance $server2 -ExcludeFixedRole
             $uniqueRoles = $result.Role | Select-Object -Unique
-            $uniqueRoles | Should -Not -Contain 'sysadmin'
+            $uniqueRoles | Should -Not -Contain "sysadmin"
         }
 
-        It 'Filters by a specific login' {
+        It "Filters by a specific login" {
             $result = Get-DbaServerRoleMember -SqlInstance $server2 -Login $testLogin
 
             $uniqueLogins = $result.Name | Select-Object -Unique
@@ -64,7 +81,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $uniqueLogins | Should -Contain $testLogin
         }
 
-        It 'Returns results for all instances' {
+        It "Returns results for all instances" {
             $result = Get-DbaServerRoleMember -SqlInstance $server2, $server1 -Login $testLogin
 
             $uniqueInstances = $result.SqlInstance | Select-Object -Unique
@@ -73,7 +90,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
-        Remove-DbaLogin -SqlInstance $server2 -Login $testLogin -Force -Confirm:$false
-        Remove-DbaLogin -SqlInstance $server1 -Login $testLogin -Force -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Remove-DbaLogin -SqlInstance $server2 -Login $testLogin -Force -ErrorAction SilentlyContinue
+        Remove-DbaLogin -SqlInstance $server1 -Login $testLogin -Force -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 }

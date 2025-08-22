@@ -1,22 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaAgentSchedule",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Owner', 'Force', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "Schedule",
+                "Disabled",
+                "FrequencyType",
+                "FrequencyInterval",
+                "FrequencySubdayType",
+                "FrequencySubdayInterval",
+                "FrequencyRelativeInterval",
+                "FrequencyRecurrenceFactor",
+                "StartDate",
+                "EndDate",
+                "StartTime",
+                "EndTime",
+                "Owner",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
-        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $TestConfig.instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser sa
+        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $TestConfig.instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser dbo
 
         $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
@@ -27,7 +49,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should create schedules based on frequency type" {
         BeforeAll {
-            $results = @{}
+            $results = @{ }
 
             $scheduleOptions = @('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle')
 
@@ -67,13 +89,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $results[$key].JobCount | Should -Be 1
 
                 if ($key -in @('IdleComputer', 'OnIdle')) {
-                    $results[$key].FrequencyTypes   | Should -Be "OnIdle"
+                    $results[$key].FrequencyTypes | Should -Be "OnIdle"
                 } elseif ($key -in @('Once', 'OneTime')) {
-                    $results[$key].FrequencyTypes   | Should -Be "OneTime"
+                    $results[$key].FrequencyTypes | Should -Be "OneTime"
                 } elseif ($key -in @('AgentStart', 'AutoStart')) {
-                    $results[$key].FrequencyTypes   | Should -Be "AutoStart"
+                    $results[$key].FrequencyTypes | Should -Be "AutoStart"
                 } else {
-                    $results[$key].FrequencyTypes   | Should -Be $key
+                    $results[$key].FrequencyTypes | Should -Be $key
                 }
             }
         }
@@ -81,7 +103,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should create schedules with various frequency interval" {
         BeforeAll {
-            $results = @{}
+            $results = @{ }
 
             foreach ($frequencyinterval in ('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
                     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)) {
@@ -145,7 +167,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should create schedules with various frequency subday type" {
         BeforeAll {
-            $results = @{}
+            $results = @{ }
 
             $scheduleOptions = @('Time', 'Once', 'Second', 'Seconds', 'Minute', 'Minutes', 'Hour', 'Hours')
 
@@ -185,15 +207,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $results[$key].FrequencySubdayTypes | Should -BeIn $scheduleOptions
 
                 if ($key -in @('Second', 'Seconds')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Second"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Second"
                 } elseif ($key -in @('Minute', 'Minutes')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Minute"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Minute"
                 } elseif ($key -in @('Hour', 'Hours')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Hour"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Hour"
                 } elseif ($key -in @('Once', 'Time')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Once"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Once"
                 } else {
-                    $results[$key].FrequencySubdayTypes   | Should -Be $key
+                    $results[$key].FrequencySubdayTypes | Should -Be $key
                 }
             }
         }
@@ -201,7 +223,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should create schedules with various frequency relative interval" {
         BeforeAll {
-            $results = @{}
+            $results = @{ }
 
             # Unused (value of 0) is not valid for sp_add_jobschedule when using the MonthlyRelative frequency type, so 'Unused' has been removed from this test.
             $scheduleOptions = @('First', 'Second', 'Third', 'Fourth', 'Last')
@@ -240,8 +262,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $jobId = (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
-                $results[$key].FrequencyRelativeIntervals   | Should -BeIn $scheduleOptions
-                $results[$key].FrequencyRelativeIntervals   | Should -Be $key
+                $results[$key].FrequencyRelativeIntervals | Should -BeIn $scheduleOptions
+                $results[$key].FrequencyRelativeIntervals | Should -Be $key
             }
         }
     }

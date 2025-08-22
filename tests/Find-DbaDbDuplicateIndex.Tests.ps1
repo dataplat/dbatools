@@ -1,24 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Find-DbaDbDuplicateIndex",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'IncludeOverlapping', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "IncludeOverlapping",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set up test database and table with duplicate indexes
+        $dbName = "dbatools_dupeindex"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $sql = "create database [dbatools_dupeindex]"
+        $sql = "create database [$dbName]"
         $server.Query($sql)
-        $sql = "CREATE TABLE [dbatools_dupeindex].[dbo].[WABehaviorEvent](
+        $sql = "CREATE TABLE [$dbName].[dbo].[WABehaviorEvent](
                 [BehaviorEventId] [smallint] NOT NULL,
                 [ClickType] [nvarchar](50) NOT NULL,
                 [Description] [nvarchar](512) NOT NULL,
@@ -34,26 +48,45 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ) ON [PRIMARY]
 
 
-            CREATE UNIQUE NONCLUSTERED INDEX [IX_WABehaviorEvent_ClickType] ON [dbatools_dupeindex].[dbo].[WABehaviorEvent]
+            CREATE UNIQUE NONCLUSTERED INDEX [IX_WABehaviorEvent_ClickType] ON [$dbName].[dbo].[WABehaviorEvent]
             (
                 [ClickType] ASC
             )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 
-            ALTER TABLE [dbatools_dupeindex].[dbo].[WABehaviorEvent] ADD UNIQUE NONCLUSTERED
+            ALTER TABLE [$dbName].[dbo].[WABehaviorEvent] ADD UNIQUE NONCLUSTERED
             (
                 [ClickType] ASC
             )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
             "
         $server.Query($sql)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database dbatools_dupeindex -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup test database
+        $splatRemove = @{
+            SqlInstance = $TestConfig.instance1
+            Database    = "dbatools_dupeindex"
+            Confirm     = $false
+        }
+        Remove-DbaDatabase @splatRemove -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets back some results" {
-        $results = Find-DbaDbDuplicateIndex -SqlInstance $TestConfig.instance1 -Database dbatools_dupeindex
         It "return at least two results" {
-            $results.Count -ge 2 | Should Be $true
+            $splatFind = @{
+                SqlInstance = $TestConfig.instance1
+                Database    = "dbatools_dupeindex"
+            }
+            $results = @(Find-DbaDbDuplicateIndex @splatFind)
+            $results.Status.Count | Should -BeGreaterOrEqual 2
         }
     }
 }
