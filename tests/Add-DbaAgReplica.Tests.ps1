@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
-                    }
+        }
         $primaryAg = New-DbaAvailabilityGroup @splatPrimary
         $replicaName = $primaryAg.PrimaryReplica
 
