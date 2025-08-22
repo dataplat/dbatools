@@ -150,7 +150,7 @@ function Install-DbaAgentAdminAlert {
 
             if ($Operator) {
                 try {
-                    $newop = Get-DbaAgentOperator -SqlInstance $server
+                    $newop = Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
                     if (-not $newop -and $OperatorEmail) {
                         if ($PSCmdlet.ShouldProcess($instance, "Creating operator $Operator with email $OperatorEmail")) {
                             Write-Message -Level Verbose -Message "Creating operator $Operator with email $OperatorEmail on $instance"
@@ -160,13 +160,14 @@ function Install-DbaAgentAdminAlert {
                                 Email       = $OperatorEmail
                             }
                             $newop = New-DbaAgentOperator @parms
+                            $null = $server.JobServer.Operators.Refresh()
+                            $null = $server.JobServer.Refresh()
 
                             if (-not $newop) {
                                 $parms = @{
-                                    Message     = "Failed to create operator $Operator with email $OperatorEmail on $instance"
-                                    Target      = $instance
-                                    Continue    = $true
-                                    ErrorRecord = $PSItem
+                                    Message  = "Failed to create operator $Operator with email $OperatorEmail on $instance"
+                                    Target   = $instance
+                                    Continue = $true
                                 }
                                 Stop-Function @parms
                             }
@@ -191,10 +192,9 @@ function Install-DbaAgentAdminAlert {
 
                             if (-not $newcat) {
                                 $parms = @{
-                                    Message     = "Failed to create category $Category on $instance"
-                                    Target      = $instance
-                                    Continue    = $true
-                                    ErrorRecord = $PSItem
+                                    Message  = "Failed to create category $Category on $instance"
+                                    Target   = $instance
+                                    Continue = $true
                                 }
                                 Stop-Function @parms
                             }
@@ -288,7 +288,7 @@ function Install-DbaAgentAdminAlert {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the alert $name")) {
                         try {
                             # Supply either a non-zero message ID, non-zero severity, non-null performance condition, or non-null WMI namespace and query.
-                            $null = New-DbaAgentAlert @parms
+                            $null = New-DbaAgentAlert @parms -EnableException
                         } catch {
                             Stop-Function -Message "Something went wrong creating the alert $name on $instance" -Target $name -Continue -ErrorRecord $_
                         }

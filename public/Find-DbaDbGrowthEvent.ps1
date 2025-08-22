@@ -181,7 +181,6 @@ function Find-DbaDbGrowthEvent {
                         FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
                         WHERE
                             [EventClass] IN ($eventClassFilter)
-                            AND [ServerName] = @@SERVERNAME
                             AND [DatabaseName] IN (_DatabaseList_)
                         ORDER BY [StartTime] DESC;
                     END
