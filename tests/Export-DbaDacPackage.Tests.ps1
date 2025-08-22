@@ -35,24 +35,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Check if SqlPackage is available, skip tests if not found
-        $sqlPackagePath = Get-DbaSqlPackagePath
-        if (-not $sqlPackagePath) {
-            Write-Warning "SqlPackage.exe not found. Attempting to install..."
-            try {
-                Install-DbaSqlPackage -ErrorAction Stop
-                $sqlPackagePath = Get-DbaSqlPackagePath
-                if (-not $sqlPackagePath) {
-                    throw "SqlPackage installation failed"
-                }
-                Write-Host "SqlPackage installed successfully" -ForegroundColor Green
-            } catch {
-                Write-Warning "Could not install SqlPackage. Tests will be skipped. Error: $_"
-                return
-            }
-        } else {
-            Write-Host "SqlPackage found at: $sqlPackagePath" -ForegroundColor Green
-        }
+        # Install SqlPackage if needed.
+        $null = Install-DbaSqlPackage
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
         # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
@@ -60,20 +44,18 @@ Describe $CommandName -Tag IntegrationTests {
 
         $random = Get-Random
         $dbname = "dbatoolsci_exportdacpac_$random"
-        try {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $null = $server.Query("Create Database [$dbname]")
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
-            $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
-            INSERT dbo.example
-            SELECT top 100 object_id
-            FROM sys.objects")
-        } catch { } # No idea why appveyor can't handle this
-
         $dbName2 = "dbatoolsci:2_$random"
         $dbName2Escaped = "dbatoolsci`$2_$random"
+        $createTableSql = "CREATE TABLE dbo.example (id int, PRIMARY KEY (id))"
+        $createDataSql = "INSERT dbo.example SELECT top 100 object_id FROM sys.objects"
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $createTableSql
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $createDataSql
 
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName2
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname2 -Query $createTableSql
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname2 -Query $createDataSql
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -84,11 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created object.
-        $splatRemoveDb = @{
-            SqlInstance = $TestConfig.instance1
-            Database    = $dbname, $dbName2
-        }
-        Remove-DbaDatabase @splatRemoveDb
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbName2
 
         # Remove the backup directory.
         Remove-Item -Path $testFolder -Recurse -ErrorAction SilentlyContinue
@@ -99,15 +77,13 @@ Describe $CommandName -Tag IntegrationTests {
     # See https://github.com/dataplat/dbatools/issues/7038
     Context "Ensure the database name is part of the generated filename" {
         It "Database name is included in the output filename" {
-            $result = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname
+            $result = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -Path $testFolder
             $result.Path | Should -BeLike "*$($dbName)*"
         }
 
         It "Database names with invalid filesystem chars are successfully exported" {
-            $result = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname, $dbName2
-            $result.Path.Count | Should -BeExactly 2
-            $result.Path[0] | Should -BeLike "*$($dbName)*"
-            $result.Path[1] | Should -BeLike "*$($dbName2Escaped)*"
+            $result = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbName2 -Path $testFolder
+            $result.Path | Should -BeLike "*$($dbName2Escaped)*"
         }
     }
 
@@ -127,7 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
             $tableExists = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table example
         }
 
-        It "exports a dacpac" -Skip:(-not $tableExists) {
+        It "exports a dacpac" {
             # Sometimes appveyor bombs
             $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname
             $results.Path | Should -Not -BeNullOrEmpty
@@ -137,7 +113,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "exports to the correct directory" -Skip:(-not $tableExists) {
+        It "exports to the correct directory" {
             $relativePath = ".\"
             $expectedPath = (Resolve-Path $relativePath).Path
             $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -Path $relativePath
@@ -145,7 +121,7 @@ Describe $CommandName -Tag IntegrationTests {
             Test-Path $results.Path | Should -BeTrue
         }
 
-        It "exports dacpac with a table list" -Skip:(-not $tableExists) {
+        It "exports dacpac with a table list" {
             $relativePath = ".\extract.dacpac"
             $expectedPath = Join-Path (Get-Item .) "extract.dacpac"
             $splatExportTable = @{
@@ -162,7 +138,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "uses EXE to extract dacpac" -Skip:(-not $tableExists) {
+        It "uses EXE to extract dacpac" {
             $exportProperties = "/p:ExtractAllTableData=True"
             $splatExportExtended = @{
                 SqlInstance        = $TestConfig.instance1
@@ -194,7 +170,7 @@ Describe $CommandName -Tag IntegrationTests {
             $tableExists = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table example
         }
 
-        It "exports a bacpac" -Skip:(-not $tableExists) {
+        It "exports a bacpac" {
             # Sometimes appveyor bombs
             $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -Type Bacpac
             $results.Path | Should -Not -BeNullOrEmpty
@@ -204,7 +180,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "exports bacpac with a table list" -Skip:(-not $tableExists) {
+        It "exports bacpac with a table list" {
             $relativePath = ".\extract.bacpac"
             $expectedPath = Join-Path (Get-Item .) "extract.bacpac"
             $splatExportBacpac = @{
@@ -222,7 +198,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "uses EXE to extract bacpac" -Skip:(-not $tableExists) {
+        It "uses EXE to extract bacpac" {
             $exportProperties = "/p:TargetEngineVersion=Default"
             $splatExportBacpacExt = @{
                 SqlInstance        = $TestConfig.instance1
