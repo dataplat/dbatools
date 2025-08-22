@@ -777,7 +777,7 @@ use master
         It "Should backup and restore cleanly" {
             Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName PipeTest -DestinationFilePrefix PipeTest
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pipetest -BackupDirectory c:\temp -CopyOnly | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName restored -ReplaceDbNameInFile
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pipetest -BackupDirectory $backupPath -CopyOnly | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName restored -ReplaceDbNameInFile
             $results.RestoreComplete | Should -Be $true
         }
     }
