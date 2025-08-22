@@ -1,10 +1,10 @@
 function Test-DbaIdentityUsage {
     <#
     .SYNOPSIS
-        Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
+        Analyzes IDENTITY column seed consumption and calculates percentage of available range used.
 
     .DESCRIPTION
-        IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.
+        Scans IDENTITY columns across databases to calculate how much of the available seed range has been consumed based on data type limits (tinyint, smallint, int, bigint). This helps DBAs proactively identify tables approaching identity exhaustion before they hit maximum values and cause application failures. The function calculates percentage used by comparing current identity values against theoretical maximums, so you can plan remediation like reseeding or changing data types before problems occur.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

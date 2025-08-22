@@ -1,10 +1,10 @@
 function Write-DbaDbTableData {
     <#
     .SYNOPSIS
-        Writes data to a SQL Server table.
+        Performs high-speed bulk inserts of data into SQL Server tables using SqlBulkCopy.
 
     .DESCRIPTION
-        Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy.
+        Imports data from various sources (CSV files, DataTables, DataSets, PowerShell objects) into SQL Server tables using SqlBulkCopy for optimal performance. This command handles the heavy lifting of data type conversion from PowerShell to SQL Server, automatically creates missing tables when needed, and provides fine-grained control over bulk copy operations. Commonly used for data migration, ETL processes, and importing large datasets where INSERT statements would be too slow.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Test-DbaDbCollation {
     <#
     .SYNOPSIS
-        Compares Database Collations to Server Collation
+        Identifies databases with collations that differ from the SQL Server instance default collation
 
     .DESCRIPTION
-        Compares Database Collations to Server Collation
+        Compares each database's collation against the SQL Server instance's default collation to identify mismatches. Database collation mismatches can cause string comparison issues, join failures, and stored procedure errors when working across databases. This function helps you audit collation consistency across your databases, which is especially important before migrations, mergers, or when troubleshooting application issues related to character sorting and comparison behavior.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

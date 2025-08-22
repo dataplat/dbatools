@@ -1,10 +1,10 @@
 function Test-DbaOptimizeForAdHoc {
     <#
     .SYNOPSIS
-        Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.
+        Tests whether the SQL Server "optimize for ad-hoc workloads" configuration setting is enabled.
 
     .DESCRIPTION
-        When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.
+        Checks the current value of the "optimize for ad-hoc workloads" server configuration option and compares it against the recommended setting of 1 (enabled). This setting helps prevent plan cache bloat by storing only compiled plan stubs for single-use ad hoc queries instead of full execution plans. DBAs typically enable this on servers with high volumes of ad hoc queries to reduce memory pressure and improve overall performance. Returns the current configuration value, recommended value, and guidance notes for each SQL Server instance.
 
         More info: https://msdn.microsoft.com/en-us/library/cc645587.aspx
         http://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/

@@ -1,12 +1,14 @@
 function Stop-DbaExternalProcess {
     <#
     .SYNOPSIS
-        Stops an OS process created by SQL Server
+        Terminates operating system processes spawned by SQL Server instances
 
     .DESCRIPTION
-        Stops an OS process created by SQL Server
+        Terminates external processes that were created by SQL Server, such as those spawned by xp_cmdshell, BCP operations, SSIS packages, or external script executions. This function is designed to work with the output from Get-DbaExternalProcess to resolve specific performance issues.
 
-        Helps when killing hung sessions with External Wait Types
+        The primary use case is troubleshooting hung SQL Server sessions that display External Wait Types like WAITFOR_RESULTS or EXTERNAL_SCRIPT_NETWORK_IO. When SQL Server is waiting for an external process to complete and that process becomes unresponsive, this command provides a safe way to terminate the problematic process without affecting the SQL Server service itself.
+
+        This approach is much more targeted than killing SQL Server sessions directly, as it addresses the root cause (the stuck external process) rather than just terminating the database connection that's waiting for it.
 
         https://web.archive.org/web/20201027122300/http://vickyharp.com/2013/12/killing-sessions-with-external-wait-types/
 

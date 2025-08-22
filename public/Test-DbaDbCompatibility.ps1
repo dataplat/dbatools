@@ -1,10 +1,10 @@
 function Test-DbaDbCompatibility {
     <#
     .SYNOPSIS
-        Compares Database Compatibility level to Server Compatibility
+        Identifies databases running at lower compatibility levels than the SQL Server instance supports
 
     .DESCRIPTION
-        Compares Database Compatibility level to Server Compatibility
+        Compares each database's compatibility level against the SQL Server instance's maximum supported compatibility level. This helps identify databases that may not be leveraging newer SQL Server features and performance improvements available after an instance upgrade. Returns detailed comparison results showing which databases could benefit from compatibility level updates to match the server version.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

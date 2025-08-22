@@ -1,10 +1,10 @@
 function Test-DbaManagementObject {
     <#
     .SYNOPSIS
-        Tests to see if the SMO version specified exists on the computer.
+        Verifies if specific SQL Server Management Objects (SMO) library versions are installed on target computers.
 
     .DESCRIPTION
-        The Test-DbaManagementObject returns True if the Version is on the computer, and False if it does not exist.
+        Checks the Global Assembly Cache (GAC) for Microsoft.SqlServer.Smo assemblies of specified versions. This function helps DBAs ensure the required SMO libraries are available before executing scripts that depend on specific SQL Server client tool versions. Returns detailed results showing which versions exist on each target computer, preventing runtime errors when SMO-dependent automation runs against systems with missing or incompatible client libraries.
 
     .PARAMETER ComputerName
         The name of the target you would like to check

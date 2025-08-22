@@ -1,12 +1,14 @@
 function Test-DbaEndpoint {
     <#
     .SYNOPSIS
-        Performs a simple connectivity test for TCP and SSL enabled endpoints.
+        Tests network connectivity to SQL Server endpoint TCP listener ports.
 
     .DESCRIPTION
-        Performs a simple connectivity test for TCP and SSL enabled endpoints. Tests if port is accessible, not if endpoint is working.
+        Tests network connectivity to SQL Server endpoint TCP listener ports by attempting direct socket connections. This function validates that endpoint ports are accessible from the network level, which is essential for troubleshooting database mirroring, Service Broker, and availability group connectivity issues.
 
-        Note that if an endpoint does not have a tcp listener port, it will be skipped.
+        The function tests both standard TCP ports and SSL ports when configured, returning connection status rather than endpoint functionality. Endpoints without TCP listener ports (such as HTTP endpoints) are automatically skipped during testing.
+
+        Use this when diagnosing connectivity problems between SQL Server instances or validating firewall rules before setting up features that rely on endpoints.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

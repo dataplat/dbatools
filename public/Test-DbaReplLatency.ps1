@@ -1,11 +1,14 @@
 function Test-DbaReplLatency {
     <#
     .SYNOPSIS
-        Displays replication latency for all transactional publications for a server or database.
+        Measures transactional replication latency using tracer tokens across publisher, distributor, and subscriber instances.
 
     .DESCRIPTION
-        Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber
-        for all transactional publications for a server, database, or publication.
+        Creates tracer tokens in transactional replication publications and measures the time it takes for those tokens to travel from the publisher to the distributor, and from the distributor to each subscriber. This provides real-time latency measurements that help DBAs identify replication performance bottlenecks and validate that data changes are flowing through the replication topology within acceptable timeframes.
+
+        The function connects to both the publisher and distributor instances to inject tracer tokens and retrieve timing information. You can monitor latency for all publications on an instance, specific databases, or individual publications. The latency measurements include publisher-to-distributor time, distributor-to-subscriber time, and total end-to-end latency for each subscriber.
+
+        This is particularly useful when troubleshooting slow replication, validating replication performance after configuration changes, or establishing baseline performance metrics for replication monitoring.
 
         All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
         Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428

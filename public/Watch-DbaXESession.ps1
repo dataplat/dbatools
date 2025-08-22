@@ -1,10 +1,10 @@
 function Watch-DbaXESession {
     <#
     .SYNOPSIS
-        Watch live XEvent Data as it happens
+        Monitors Extended Events sessions in real-time, streaming live event data as it occurs
 
     .DESCRIPTION
-        Watch live XEvent Data as it happens. This command runs until you stop the session, kill the PowerShell session, or Ctrl-C.
+        Streams live event data from running Extended Events sessions, allowing real-time monitoring of database activity, performance issues, or security events. Each captured event is processed into a PowerShell object with organized columns for event name, timestamp, fields, and actions. This command runs continuously until you stop the XE session, terminate the PowerShell session, or press Ctrl-C, making it ideal for interactive troubleshooting and live analysis workflows.
 
         Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 

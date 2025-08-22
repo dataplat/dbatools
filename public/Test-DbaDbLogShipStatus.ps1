@@ -1,16 +1,17 @@
 function Test-DbaDbLogShipStatus {
     <#
     .SYNOPSIS
-        Test-DbaDbLogShipStatus returns the status of your log shipping databases
+        Retrieves log shipping status and health information from the monitoring instance
 
     .DESCRIPTION
-        Most of the time your log shipping "just works".
-        Checking your log shipping status can be done really easy with this function.
+        Queries the log shipping monitoring system to check the health of your log shipping configuration across primary and secondary instances.
+        This function connects to your log shipping monitoring instance and examines backup, copy, and restore operations to identify any issues or delays.
 
-        Make sure you're connecting to the monitoring instance of your log shipping infrastructure.
+        Make sure you're connecting to the monitoring instance of your log shipping infrastructure, as this is where SQL Server stores the consolidated monitoring data.
 
-        The function will return the status for a database. This can be one or more messages in a comma separated list.
-        If everything is OK with the database than you should only see the message "All OK".
+        The function analyzes timing thresholds for each operation and reports specific problems like missed backups, copy delays, or restore failures.
+        When everything is functioning normally, you'll see "All OK" in the status output.
+        Problem databases will show detailed messages about which operations are behind schedule or failing entirely.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

@@ -1,10 +1,10 @@
 function Suspend-DbaAgDbDataMovement {
     <#
     .SYNOPSIS
-        Suspends data movement for an availability group database on a SQL Server instance.
+        Suspends data synchronization for availability group databases to halt replication between replicas.
 
     .DESCRIPTION
-        Suspends data movement for an availability group database on a SQL Server instance.
+        Temporarily halts data movement between primary and secondary replicas for specified availability group databases. This stops transaction log records from being sent to secondary replicas, which is useful during maintenance windows, troubleshooting synchronization issues, or when preparing for manual failovers. While suspended, the secondary databases will fall behind the primary and cannot be failed over to until data movement is resumed.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

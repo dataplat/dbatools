@@ -1,12 +1,14 @@
 function Test-DbaComputerCertificateExpiration {
     <#
     .SYNOPSIS
-        Tests for certificates that are expiring soon
+        Identifies SSL/TLS certificates that are expired or expiring soon on SQL Server computers
 
     .DESCRIPTION
-        Tests for certificates that are expiring soon
+        Scans computer certificate stores to find certificates that are expired or will expire within a specified timeframe. This function focuses on certificates used for SQL Server network encryption, helping DBAs proactively identify potential connection failures before they occur.
 
-        By default, it tests candidates that are ideal for using with SQL Server's network encryption
+        By default, it examines certificates that are candidates for SQL Server's network encryption feature. You can also check certificates currently in use by SQL Server instances or scan all certificates in the specified store. The function compares each certificate's expiration date against a configurable threshold (30 days by default) and returns detailed information about any certificates requiring attention.
+
+        This is essential for maintaining secure SQL Server connections and preventing unexpected service disruptions caused by expired certificates.
 
     .PARAMETER ComputerName
         The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must specify the distinct nodes.

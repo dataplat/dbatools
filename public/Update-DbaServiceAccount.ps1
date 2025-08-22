@@ -1,12 +1,14 @@
 function Update-DbaServiceAccount {
     <#
     .SYNOPSIS
-        Changes service account (or just its password) of the SQL Server service.
+        Changes the service account or password for SQL Server Engine and Agent services.
 
     .DESCRIPTION
-        Reconfigure the service account or update the password of the specified SQL Server service. The service will be restarted in the event of changing the account.
+        Updates the service account credentials or changes just the password for SQL Server Engine and Agent services. When changing the service account, the affected service will be automatically restarted to apply the changes. Password-only updates don't require a restart unless you want the changes to take effect immediately.
 
-        The command is only supported for SQL Server engine and agent service of supported versions of SQL Server. It might fail for older versions or other services.
+        This function handles the complexities of SQL Server service management, including removing and reapplying network certificates during account changes to prevent SSL connection issues. It supports changing from local system accounts to domain accounts, rotating passwords for compliance, and updating multiple services across multiple instances.
+
+        Supports SQL Server Engine and Agent services on supported SQL Server versions. Other services like Reporting Services or Analysis Services are not supported and may cause the function to fail on older SQL Server versions.
 
     .PARAMETER ComputerName
         The target SQL Server instance or instances.

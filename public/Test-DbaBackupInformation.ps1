@@ -1,16 +1,22 @@
 function Test-DbaBackupInformation {
     <#
     .SYNOPSIS
-        Tests a dbatools backup history object is correct for restoring
+        Validates backup history objects to ensure successful database restoration
 
     .DESCRIPTION
-        Input is normally from a backup history object generated from `Format-DbaBackupInformation`. This is then parse to check that it's valid for restore. Tests performed include:
-          - Checking unbroken LSN chain
-          - If the target database exists and WithReplace has been provided
-          - If any files already exist, but owned by other databases
-          - Creates any new folders required
-          - That the backup files exists at the location specified, and can be seen by the Sql Instance
-          - If no errors are found then the objects for that database will me marked as Verified
+        Performs comprehensive pre-restore validation on backup history objects to prevent restore failures before they occur. Input is typically from Format-DbaBackupInformation and gets parsed to verify restore readiness.
+
+        This function runs critical validation tests including LSN chain integrity for transaction log backups, backup file accessibility by the SQL Server service account, database existence conflicts, and file path availability. It also creates necessary target directories and prevents file conflicts with existing databases.
+
+        Use this before running Restore-DbaDatabase to catch configuration issues early, saving time during maintenance windows or disaster recovery scenarios. Validated backup sets are marked with IsVerified = $True so you can easily filter successful candidates for restoration.
+
+        Tests performed include:
+          - Checking unbroken LSN chain for transaction log backups
+          - Verifying target database doesn't exist unless WithReplace is specified
+          - Ensuring backup files exist and are accessible by SQL Server service account
+          - Validating no file conflicts with existing databases
+          - Creating required target directories for database files
+          - Confirming backup files can be read from the specified locations
 
     .PARAMETER BackupHistory
         dbatools BackupHistory object. Normally this will have been process with `Select-` and then `Format-DbaBackupInformation`

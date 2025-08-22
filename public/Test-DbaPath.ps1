@@ -1,10 +1,10 @@
 function Test-DbaPath {
     <#
     .SYNOPSIS
-        Tests if file or directory exists from the perspective of the SQL Server service account.
+        Tests if files or directories are accessible to the SQL Server service account.
 
     .DESCRIPTION
-        Uses master.dbo.xp_fileexist to determine if a file or directory exists.
+        Verifies file and directory accessibility from SQL Server's perspective using the master.dbo.xp_fileexist extended stored procedure. This is essential before backup operations, restore tasks, or any SQL Server process that requires file system access. The function tests from the SQL Server service account's security context, which may differ from your user account's permissions. Returns detailed information about file existence and whether the path is a container (directory).
 
     .PARAMETER SqlInstance
         The SQL Server you want to run the test on.

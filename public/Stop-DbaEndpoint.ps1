@@ -1,10 +1,10 @@
 function Stop-DbaEndpoint {
     <#
     .SYNOPSIS
-        Stops endpoints on a SQL Server instance.
+        Stops SQL Server communication endpoints like Service Broker, Database Mirroring, or custom TCP endpoints.
 
     .DESCRIPTION
-        Stops endpoints on a SQL Server instance.
+        Stops specific or all SQL Server endpoints on target instances. Endpoints are communication channels that SQL Server uses for features like Service Broker messaging, Database Mirroring, Availability Groups, and custom applications. You might need to stop endpoints during maintenance windows, troubleshooting connectivity issues, or when decommissioning specific services. This command safely stops the endpoints without dropping them, so they can be restarted later with Start-DbaEndpoint.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

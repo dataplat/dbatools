@@ -1,12 +1,14 @@
 function Test-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Tests the health of an Availability Group and prerequisites for changing it.
+        Validates Availability Group replica connectivity and database prerequisites for AG operations
 
     .DESCRIPTION
-        Tests the health of an Availability Group.
+        Verifies that all replicas in an Availability Group are connected and communicating properly by checking ConnectionState across all replicas from the primary's perspective. This helps you identify connectivity issues that could impact failover capabilities or data synchronization.
 
-        Can also test whether all prerequisites for Add-DbaAgDatabase are met.
+        When used with the AddDatabase parameter, performs comprehensive prerequisite validation before adding databases to an AG. Checks that target databases have Full recovery model, Normal status, and proper backup history. Also validates seeding mode compatibility, tests connectivity to secondary replicas, and ensures database restore requirements can be met.
+
+        This prevents common AG setup failures by catching configuration issues early, so you don't have to troubleshoot failed Add-DbaAgDatabase operations later.
 
     .PARAMETER SqlInstance
         The primary replica of the Availability Group.

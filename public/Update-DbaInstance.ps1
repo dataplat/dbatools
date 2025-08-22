@@ -1,30 +1,28 @@
 function Update-DbaInstance {
     <#
     .SYNOPSIS
-        Invokes installation of SQL Server Service Packs and Cumulative Updates on local and remote servers.
+        Installs SQL Server Service Packs and Cumulative Updates across local and remote instances automatically.
 
     .DESCRIPTION
-        Starts an automated process of updating SQL Server installation to a specific version defined in the parameters.
-        The command will:
+        Automates the complete process of applying SQL Server patches to eliminate the manual effort of updating multiple instances. This function handles the entire patching workflow from detection through installation, replacing the tedious process of manually downloading, transferring, and applying updates across your SQL Server environment.
 
-        * Search for SQL Server installations in a remote registry
-        * Check if current settings are applicable to the current SQL Server versions
-        * Search for a KB executable in a folder specified in -Path
-        * Establish a PSRemote connection to the target machine if necessary
-        * Extract KB to a temporary folder in a current user's profile
-        * Run the installation from the temporary folder updating all instances on the computer at once
-        * Remove temporary files
-        * Restart the computer (if -Restart is specified)
-        * Repeat for each consequent KB and computer
+        The patching process includes:
+        * Discovering all SQL Server instances on target computers via registry scanning
+        * Validating current versions against target update requirements
+        * Locating appropriate KB installers in your patch repository
+        * Establishing secure remote connections using CredSSP or other protocols
+        * Extracting and executing patches from temporary directories
+        * Managing restarts and chaining multiple updates when needed
+        * Cleaning up temporary files after installation
+        * Processing multiple computers in parallel for faster deployment
 
-        The impact of this function is set to High, if you don't want to receive interactive prompts, set -Confirm to $false.
+        This replaces the manual process of RDP'ing to each server, copying patch files, running installers, and tracking which systems need which updates. Perfect for monthly patching cycles, emergency security updates, or bringing development environments up to production patch levels.
 
-        When using CredSSP authentication, this function will try to configure CredSSP authentication for PowerShell Remoting sessions.
-        If this is not desired (e.g.: CredSSP authentication is managed externally, or is already configured appropriately,)
-        it can be disabled by setting the dbatools configuration option 'commands.initialize-credssp.bypass' value to $true.
-        To be able to configure CredSSP, the command needs to be run in an elevated PowerShell session.
+        The impact of this function is set to High. Use -Confirm:$false to suppress interactive prompts for automated deployments.
 
-        Always backup databases and configurations prior to upgrade.
+        For CredSSP authentication, the function automatically configures PowerShell remoting when credentials are provided. This can be disabled by setting dbatools configuration 'commands.initialize-credssp.bypass' to $true. CredSSP configuration requires running from an elevated PowerShell session.
+
+        Always backup databases and configurations before applying any SQL Server updates.
 
     .PARAMETER ComputerName
         Target computer with SQL instance or instances.
