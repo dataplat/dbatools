@@ -1,10 +1,10 @@
 function Get-DbaPfDataCollectorCounterSample {
     <#
     .SYNOPSIS
-        Gets Performance Counter Samples.
+        Retrieves real-time performance counter samples from SQL Server systems for monitoring and troubleshooting.
 
     .DESCRIPTION
-        Gets Performance Counter Samples.
+        Collects performance counter data from Windows Performance Monitor collector sets and individual counters on SQL Server systems. This function wraps PowerShell's Get-Counter cmdlet to provide structured performance data that DBAs use for monitoring CPU, memory, disk I/O, and SQL Server-specific metrics. You can capture single snapshots for quick checks or continuous samples for ongoing monitoring during troubleshooting sessions. The output integrates seamlessly with Get-DbaPfDataCollectorCounter to build comprehensive performance monitoring workflows.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

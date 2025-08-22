@@ -1,10 +1,10 @@
 function Remove-DbaDbAsymmetricKey {
     <#
     .SYNOPSIS
-        Deletes specified asymmetric key
+        Removes asymmetric keys from SQL Server databases
 
     .DESCRIPTION
-        Deletes specified asymmetric key
+        Removes asymmetric keys from SQL Server databases by executing DROP ASYMMETRIC KEY commands. Asymmetric keys are part of SQL Server's cryptographic hierarchy used for encryption, digital signatures, and protecting symmetric keys or certificates. This function helps DBAs clean up unused encryption objects during security audits, decommission old encryption schemes, or remove keys that are no longer needed for compliance requirements. Supports both direct parameter input and pipeline input from Get-DbaDbAsymmetricKey for bulk operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,14 @@
 function Remove-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Removes an operator from an instance.
+        Removes SQL Server Agent operators from one or more instances.
 
     .DESCRIPTION
-        Drop an operator from SQL Agent.
+        Removes SQL Server Agent operators from specified instances, cleaning up notification contacts that are no longer needed. 
+        
+        Operators are notification contacts used by SQL Server Agent to send alerts about job failures, system issues, or other events. This function helps you remove outdated operator accounts when employees leave, contact information changes, or you need to consolidate notification lists.
+        
+        The function safely handles dependencies and provides detailed status output for each removal operation, making it suitable for both interactive cleanup and automated operator management scripts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

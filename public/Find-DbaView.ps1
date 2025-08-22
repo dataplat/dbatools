@@ -1,10 +1,10 @@
 function Find-DbaView {
     <#
     .SYNOPSIS
-        Returns all views that contain a specific case-insensitive string or regex pattern.
+        Searches database views for specific text patterns or regular expressions in their definitions.
 
     .DESCRIPTION
-        This function can either run against specific databases or all databases searching all user or user and system views.
+        Scans view definitions across one or more databases to locate specific text patterns, table references, or code constructs. This helps DBAs identify views that reference particular tables before schema changes, find views containing sensitive data patterns like email addresses or SSNs, or locate views with specific business logic during troubleshooting. The function searches the actual view definition text (TextBody) and returns the matching views along with line numbers showing exactly where the pattern was found, making it easy to understand the context of each match.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input

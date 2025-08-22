@@ -1,10 +1,10 @@
 function Get-DbaServerRole {
     <#
     .SYNOPSIS
-        Gets the list of server-level roles.
+        Retrieves server-level security roles and their members from SQL Server instances.
 
     .DESCRIPTION
-        Gets the list of server-level roles for SQL Server instance.
+        Retrieves all server-level security roles from SQL Server instances, including role members, creation dates, and ownership details. This function helps DBAs audit server-level permissions, identify role membership for compliance reporting, and distinguish between built-in fixed roles (like sysadmin, serveradmin) and custom user-defined roles. Supports filtering to specific roles or excluding fixed roles to focus on custom security configurations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2005 or higher.

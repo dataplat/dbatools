@@ -1,12 +1,14 @@
 function Get-DbaExternalProcess {
     <#
     .SYNOPSIS
-        Gets OS processes created by SQL Server
+        Retrieves operating system processes spawned by SQL Server instances
 
     .DESCRIPTION
-        Gets OS processes created by SQL Server
+        Identifies and returns all child processes created by SQL Server, such as those spawned by xp_cmdshell, BCP operations, SSIS packages, or other external utilities. 
 
-        Helps when finding hung sessions with External Wait Types
+        This is particularly useful when troubleshooting sessions with External Wait Types, where SQL Server is waiting for an external process to complete. When sessions appear hung with wait types like WAITFOR_RESULTS or EXTERNAL_SCRIPT_NETWORK_IO, this command helps identify the specific external processes that may be causing the delay.
+
+        The function queries WMI to find the SQL Server process (sqlservr.exe) and then locates all processes where SQL Server is the parent process, providing details about memory usage and resource consumption.
 
         https://web.archive.org/web/20201027122300/http://vickyharp.com/2013/12/killing-sessions-with-external-wait-types/
 

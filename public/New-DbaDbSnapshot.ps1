@@ -1,10 +1,12 @@
 function New-DbaDbSnapshot {
     <#
     .SYNOPSIS
-        Creates database snapshots
+        Creates database snapshots for point-in-time recovery and testing scenarios
 
     .DESCRIPTION
-        Creates database snapshots without hassles
+        Creates read-only database snapshots that capture the state of a database at a specific moment in time. Snapshots provide a fast way to revert databases to a previous state without restoring from backup files, making them ideal for pre-maintenance snapshots, testing scenarios, or quick rollback points.
+
+        The function automatically generates snapshot file names with timestamps and handles the underlying file structure creation. Snapshots share pages with the source database until changes occur, making them storage-efficient for short-term use. Note that snapshots are not a replacement for regular backups and should be dropped when no longer needed to avoid performance impacts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

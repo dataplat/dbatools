@@ -1,12 +1,14 @@
 function Measure-DbaDbVirtualLogFile {
     <#
     .SYNOPSIS
-        Returns calculations on the database virtual log files for database on a SQL instance.
+        Measures Virtual Log File (VLF) counts in transaction logs to identify performance bottlenecks
 
     .DESCRIPTION
-        Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.
+        Analyzes Virtual Log File (VLF) fragmentation across databases by counting total, active, and inactive VLFs in transaction logs. This function helps identify databases with excessive VLF counts that can severely impact performance.
 
-        Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
+        High VLF counts (typically over 50-100) cause transaction log backups to slow down, extend database recovery times, and in extreme cases can affect insert/update/delete operations. This commonly happens when transaction logs auto-grow frequently in small increments rather than being pre-sized appropriately.
+
+        The function returns VLF counts along with log file growth settings, making it easy to spot databases that need log file maintenance. Use this for regular health checks, performance troubleshooting, or before major maintenance windows.
 
         References:
         http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/

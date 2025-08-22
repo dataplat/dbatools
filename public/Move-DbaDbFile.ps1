@@ -1,11 +1,12 @@
 function Move-DbaDbFile {
     <#
     .SYNOPSIS
-        Moves database files from one local drive or folder to another.
+        Relocates database files to different drives or folders while maintaining database integrity.
 
     .DESCRIPTION
-        Moves database files from one local drive or folder to another.
-        It will put database offline, update metadata and set it online again.
+        Relocates database data and log files to new locations on the same SQL Server instance. The function takes the database offline, copies files to the new location, updates the database metadata with ALTER DATABASE commands, and brings the database back online.
+        
+        This is typically used when you need to move databases to faster storage, free up disk space, or reorganize your file layout without restoring from backup. The function handles both local and remote SQL Server instances, preserves file permissions, and optionally removes the original files after successful moves.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

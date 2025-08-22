@@ -1,10 +1,10 @@
 function New-DbaDbMailAccount {
     <#
     .SYNOPSIS
-        Creates a new database mail account
+        Creates a new Database Mail account for sending emails from SQL Server
 
     .DESCRIPTION
-        Creates a new database mail account
+        Creates a new Database Mail account on SQL Server instances to enable automated email notifications, alerts, and reports. Database Mail accounts define the email settings (SMTP server, sender address, authentication) that SQL Server uses when sending emails through stored procedures like sp_send_dbmail. This is essential for setting up automated maintenance notifications, job failure alerts, and scheduled report delivery.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

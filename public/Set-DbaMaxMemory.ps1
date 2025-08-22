@@ -1,10 +1,16 @@
 function Set-DbaMaxMemory {
     <#
     .SYNOPSIS
-        Sets SQL Server 'Max Server Memory' configuration setting to a new value then displays information this setting.
+        Configures SQL Server 'Max Server Memory' setting using calculated recommendations or explicit values
 
     .DESCRIPTION
-        Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings.
+        Modifies the SQL Server 'Max Server Memory' configuration to prevent SQL Server from consuming all available system memory. 
+        This setting controls how much memory SQL Server can allocate for its buffer pool and other memory consumers, leaving 
+        adequate memory for the operating system and other applications.
+
+        When no explicit value is provided, the function calculates an optimal recommendation using a proven formula that reserves 
+        memory based on total system RAM. This formula accounts for operating system overhead, scales appropriately for servers 
+        with different memory configurations, and can handle multiple SQL Server instances on the same server.
 
         Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to
         determine the default optimum RAM to use, then sets the SQL max value to that number.

@@ -1,12 +1,10 @@
 function Invoke-DbaDbccDropCleanBuffer {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC DROPCLEANBUFFERS
+        Clears SQL Server buffer pool cache and columnstore object pool for performance testing
 
     .DESCRIPTION
-        Allows execution of Database Console Command DBCC DROPCLEANBUFFERS
-
-        Removes all clean buffers from the buffer pool, and columnstore objects from the columnstore object pool.
+        Executes DBCC DROPCLEANBUFFERS to remove all clean data pages from the buffer pool and columnstore objects from memory. This forces SQL Server to read data from disk on subsequent queries, simulating a "cold cache" environment for accurate performance testing and query optimization scenarios. DBAs use this command when they need to test query performance without the benefit of cached data pages, ensuring consistent baseline measurements across multiple test runs.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-dropcleanbuffers-transact-sql

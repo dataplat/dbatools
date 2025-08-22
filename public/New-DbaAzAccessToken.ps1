@@ -1,10 +1,10 @@
 function New-DbaAzAccessToken {
     <#
     .SYNOPSIS
-        Simplifies the generation of Azure oauth2 tokens.
+        Generates OAuth2 access tokens for Azure SQL Database and other Azure services authentication.
 
     .DESCRIPTION
-        Generates an oauth2 access token. Currently supports Managed Identities, Service Principals and IRenewableToken.
+        Creates OAuth2 access tokens for connecting to Azure SQL Database and other Azure services without storing passwords in scripts. Supports Managed Identity authentication from Azure VMs, Service Principal authentication for applications, and renewable tokens for long-running connections. The generated tokens can be used directly with Connect-DbaInstance and other dbatools commands to establish secure, modern authentication to Azure resources.
 
         Want to know more about Access Tokens? This page explains it well: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re
 

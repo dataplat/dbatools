@@ -1,10 +1,12 @@
 function Get-DbaWsfcRole {
     <#
     .SYNOPSIS
-        Gets information about one or more clustered roles (resource groups) in a failover cluster.
+        Retrieves Windows Server Failover Cluster role status and ownership information for SQL Server monitoring
 
     .DESCRIPTION
-        Gets information about one or more clustered roles (resource groups) in a failover cluster.
+        Retrieves detailed information about Windows Server Failover Cluster roles (resource groups), including their current state, and which node currently owns them. This function helps DBAs monitor and troubleshoot SQL Server Failover Cluster Instances and Availability Groups by providing visibility into the underlying cluster roles that control SQL Server services and resources.
+
+        Use this command when you need to verify role health during maintenance windows, troubleshoot failover issues, or confirm which node is currently hosting specific SQL Server resources. The function translates numeric state codes into readable status values (Online, Offline, Failed, Pending) so you can quickly identify problematic roles.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 

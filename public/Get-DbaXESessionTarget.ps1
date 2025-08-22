@@ -1,10 +1,10 @@
 function Get-DbaXESessionTarget {
     <#
     .SYNOPSIS
-        Get a list of Extended Events Session Targets from the specified SQL Server instance(s).
+        Retrieves Extended Events session targets with their configurations and file locations.
 
     .DESCRIPTION
-        Retrieves a list of Extended Events Session Targets from the specified SQL Server instance(s).
+        Returns detailed information about Extended Events session targets including their properties, file paths, and current status. This function helps DBAs examine where Extended Events data is being captured, whether sessions are running or stopped, and provides both local and UNC file paths for easy access to target files. Use this when you need to locate XE log files, verify target configurations, or troubleshoot Extended Events sessions that aren't capturing data as expected.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

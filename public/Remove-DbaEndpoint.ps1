@@ -1,10 +1,10 @@
 function Remove-DbaEndpoint {
     <#
     .SYNOPSIS
-        Removes endpoints from a SQL Server instance.
+        Removes SQL Server endpoints including DatabaseMirroring, ServiceBroker, Soap, and TSql types.
 
     .DESCRIPTION
-        Removes endpoints from a SQL Server instance.
+        Removes SQL Server endpoints by executing DROP ENDPOINT commands against the target instance. This function handles DatabaseMirroring, ServiceBroker, Soap, and TSql endpoint types, making it useful for decommissioning unused services, cleaning up after failed deployments, or hardening SQL Server instances by removing unnecessary network entry points. You can target specific endpoints by name or remove all endpoints at once, with confirmation prompts to prevent accidental deletions.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

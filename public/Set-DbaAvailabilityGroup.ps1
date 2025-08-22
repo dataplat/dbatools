@@ -1,10 +1,10 @@
 function Set-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Sets availability group properties on a SQL Server instance.
+        Modifies availability group configuration settings including DTC support, backup preferences, and failover conditions
 
     .DESCRIPTION
-        Sets availability group properties on a SQL Server instance.
+        Modifies configuration properties of existing availability groups without requiring you to script out and recreate the entire AG setup. Commonly used to enable DTC support for distributed transactions, adjust automated backup preferences across replicas, configure failure condition levels for automatic failover, and set health check timeouts for monitoring. This saves time compared to using SQL Server Management Studio or T-SQL ALTER AVAILABILITY GROUP statements for routine configuration changes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

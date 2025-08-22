@@ -1,12 +1,14 @@
 function Read-DbaXEFile {
     <#
     .SYNOPSIS
-        Read XEvents from a *.xel or *.xem file.
+        Parses Extended Events trace files (.xel/.xem) into structured PowerShell objects for analysis
 
     .DESCRIPTION
-        Read XEvents from a *.xel or *.xem file.
+        Converts Extended Events trace files into PowerShell objects so you can analyze captured SQL Server events without needing SQL Server Management Studio. This function takes the raw XEvent data from .xel or .xem files and transforms it into structured objects with properties for each field and action in the trace.
 
-        The file that the XESession is currently writing to can not be accessed and will be skipped using pipeline input from Get-DbaXESession.
+        Perfect for post-incident analysis of deadlocks, performance issues, or security events that were captured by your Extended Events sessions. You can pipe the results to other PowerShell cmdlets for filtering, sorting, exporting to CSV, or building reports.
+
+        When using pipeline input from Get-DbaXESession, the function automatically skips the file currently being written to avoid access conflicts, and can read files from remote servers via admin shares.
 
     .PARAMETER Path
         The path to the *.xem or *.xem file. This is relative to the computer executing the command. UNC paths are supported.

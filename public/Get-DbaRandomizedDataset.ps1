@@ -1,12 +1,10 @@
 function Get-DbaRandomizedDataset {
     <#
     .SYNOPSIS
-        This function will generate a random data set based on a template
+        Generates random test data using predefined templates for development and testing scenarios
 
     .DESCRIPTION
-        Generates a random value based on a template.
-        The templates standardized in the templates folder and can be used to generate a data set.
-        There is also an option to point to a specific template
+        Generates random test datasets using JSON templates that define column names and data types. This function creates realistic sample data for database development, testing, and training environments without exposing production data. Templates can specify SQL Server data types (varchar, int, datetime) or semantic data types (Name.FirstName, Address.City, Person.DateOfBirth) for more realistic datasets. Built-in templates include PersonalData with common PII fields, and you can create custom templates for specific business scenarios.
 
     .PARAMETER Template
         The name of the template to use.

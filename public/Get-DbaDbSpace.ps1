@@ -1,10 +1,10 @@
 function Get-DbaDbSpace {
     <#
     .SYNOPSIS
-        Returns database file space information for database files on a SQL instance.
+        Retrieves detailed space usage metrics for all database files including used space, free space, and growth settings.
 
     .DESCRIPTION
-        This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY function to query and return information.
+        Queries sys.database_files and FILEPROPERTY to return comprehensive space information for data and log files across databases. Shows current usage, available free space, autogrowth configuration, and space remaining until maximum file size limits are reached. Essential for capacity planning, identifying files approaching size limits, and monitoring database storage consumption patterns.
 
         File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
 

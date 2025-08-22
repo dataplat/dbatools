@@ -1,10 +1,10 @@
 function New-DbaLogin {
     <#
     .SYNOPSIS
-        Creates a new SQL Server login
+        Creates SQL Server logins for authentication with configurable security policies and mapping options
 
     .DESCRIPTION
-        Creates a new SQL Server login with provided specifications
+        Creates new SQL Server logins supporting Windows Authentication, SQL Authentication, certificate-mapped, asymmetric key-mapped, and Azure AD authentication. Handles password policies, expiration settings, SID preservation for migration scenarios, and credential mapping. Can copy existing logins between instances while preserving or modifying security settings, making it essential for user provisioning, migration projects, and security standardization across environments.
 
     .PARAMETER SqlInstance
         The target SQL Server(s)

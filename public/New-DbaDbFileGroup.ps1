@@ -1,10 +1,10 @@
 function New-DbaDbFileGroup {
     <#
     .SYNOPSIS
-        Creates a new empty filegroup.
+        Creates new filegroups in SQL Server databases for custom data storage organization.
 
     .DESCRIPTION
-        Creates a new filegroup for the specified database(s). The filegroup properties cannot be set on an empty filegroup, so it is necessary to add one or more files and then use the Set-DbaDbFileGroup command to set the filegroup properties.
+        Creates a new filegroup for the specified database(s), supporting standard row data, FileStream, and memory-optimized storage types. This is useful when you need to separate table storage across different disk drives for performance optimization, implement compliance requirements, or organize data by department or function. The filegroup is created empty and requires adding data files with Add-DbaDbFile before it can store data. Use Set-DbaDbFileGroup to configure advanced properties like read-only status or default settings after files are added.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

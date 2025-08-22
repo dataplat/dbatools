@@ -1,10 +1,10 @@
 function Invoke-DbaDbDataGenerator {
     <#
     .SYNOPSIS
-        Invoke-DbaDbDataGenerator generates random data for tables
+        Generates realistic test data for SQL Server database tables using configuration-driven rules
 
     .DESCRIPTION
-        Invoke-DbaDbDataMasking is able to generate random data for tables.
+        Populates database tables with randomly generated but realistic test data based on JSON configuration files. Uses the Bogus library to create fake but believable data like names, addresses, phone numbers, and dates that respect column constraints and data types. Perfect for creating development environments, testing scenarios, or demo databases without using production data. Handles identity columns, unique indexes, nullable fields, and foreign key relationships while maintaining data integrity.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

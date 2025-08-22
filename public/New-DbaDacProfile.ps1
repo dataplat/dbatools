@@ -1,15 +1,18 @@
 function New-DbaDacProfile {
     <#
     .SYNOPSIS
-        Creates a new Publish Profile.
+        Creates DAC publish profile XML files for automated dacpac deployment to SQL Server databases.
 
     .DESCRIPTION
-        The New-DbaDacProfile command generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
-        This generates a standard template XML which is enough to dpeloy a dacpac but it is highly recommended that you add additional options to the publish profile.
-        If you use Visual Studio you can open a publish.xml file and use the ui to edit the file -
-        To create a new file, right click on an SSDT project, choose "Publish" then "Load Profile" and load your profile or create a new one.
-        Once you have loaded it in Visual Studio, clicking advanced shows you the list of options available to you.
-        For a full list of options that you can add to the profile, google "sqlpackage.exe command line switches" or (https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx)
+        The New-DbaDacProfile command generates standard publish profile XML files that control how DacFx deploys your dacpac files to SQL Server databases. These profile files define deployment settings like target database, connection details, and deployment options.
+        
+        The generated XML template includes basic deployment settings sufficient for most dacpac deployments, but you'll typically want to add additional deployment options to the publish profile for production scenarios.
+        
+        If you use Visual Studio with SSDT projects, you can enhance these profiles through the UI. Right-click on an SSDT project, choose "Publish", then "Load Profile" to load your generated profile. The Advanced button reveals the full list of available deployment options.
+        
+        For automation scenarios, these profiles work directly with SqlPackage.exe command-line deployments, eliminating the need to specify connection and deployment settings manually each time.
+        
+        For a complete list of deployment options you can add to profiles, search for "SqlPackage.exe command line switches" or visit https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Alternatively, you can provide a ConnectionString.

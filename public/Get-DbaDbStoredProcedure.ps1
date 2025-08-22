@@ -1,10 +1,10 @@
 function Get-DbaDbStoredProcedure {
     <#
     .SYNOPSIS
-        Gets database Stored Procedures
+        Retrieves stored procedures from SQL Server databases with detailed metadata and filtering options
 
     .DESCRIPTION
-        Gets database Stored Procedures
+        Retrieves stored procedures from one or more SQL Server databases, returning detailed information including schema, creation dates, and implementation details. This function helps DBAs inventory stored procedures across instances, analyze database objects for documentation or migration planning, and locate specific procedures by name or schema. You can filter results by database, schema, or procedure name, and exclude system stored procedures to focus on user-defined objects. Supports multi-part naming conventions for precise targeting of specific procedures.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

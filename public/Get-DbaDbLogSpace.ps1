@@ -1,12 +1,12 @@
 Function Get-DbaDbLogSpace {
     <#
     .SYNOPSIS
-        Gets information on the database transaction log usage for each instance(s) of SQL Server.
+        Retrieves transaction log space usage and capacity information from SQL Server databases.
 
     .DESCRIPTION
-        Returns transaction log size and space used for each database on the SQL Server instance(s).
-
-        This can be used to monitor how much of your allocated transaction log space is in use, and whether it is nearing the point where it will need to grow.
+        Collects detailed transaction log metrics including total size, used space percentage, and used space in bytes for databases across SQL Server instances. Uses the sys.dm_db_log_space_usage DMV on SQL Server 2012+ or DBCC SQLPERF(logspace) on older versions.
+        
+        Essential for proactive log space monitoring to prevent unexpected transaction log growth, identify databases approaching log capacity limits, and plan log file sizing. Helps DBAs avoid transaction failures caused by full transaction logs and optimize log file allocation strategies.
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

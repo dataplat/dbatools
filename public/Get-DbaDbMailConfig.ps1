@@ -1,10 +1,13 @@
 function Get-DbaDbMailConfig {
     <#
     .SYNOPSIS
-        Gets database mail configs from SQL Server
+        Retrieves Database Mail configuration settings from SQL Server instances
 
     .DESCRIPTION
-        Gets database mail configs from SQL Server
+        Retrieves all Database Mail configuration values from SQL Server, including settings like MaxFileSize, ProhibitedExtensions, DatabaseMailExeMinLifeTime, and LoggingLevel. 
+        This function helps DBAs audit current Database Mail configurations, troubleshoot email delivery issues, and verify compliance with organizational email policies.
+        You can retrieve all configuration settings or filter by specific configuration names to focus on particular settings.
+        The output includes the configuration name, current value, and description for each setting across your SQL Server environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

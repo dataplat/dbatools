@@ -1,11 +1,13 @@
 function New-DbaRgResourcePool {
     <#
     .SYNOPSIS
-        Creates a resource pool for use by the Resource Governor on the specified SQL Server.
+        Creates a Resource Governor resource pool to control CPU, memory, and I/O allocation for SQL Server workloads.
 
     .DESCRIPTION
-        Creates a resource pool for use by the Resource Governor on the specified SQL Server.
-        A resource pool represents a subset of the physical resources (memory, CPUs and IO) of an instance of the Database Engine.
+        Creates a new Resource Governor resource pool that defines specific limits for CPU, memory, and I/O resources on a SQL Server instance.
+        Resource pools let you isolate different workloads by setting minimum and maximum thresholds for system resources, preventing one application from consuming all server resources.
+        Supports both Internal pools (for SQL Server workloads) and External pools (for external processes like R Services).
+        The Resource Governor is automatically reconfigured after pool creation unless you specify otherwise.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

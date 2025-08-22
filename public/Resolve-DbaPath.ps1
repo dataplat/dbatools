@@ -1,12 +1,10 @@
 function Resolve-DbaPath {
     <#
     .SYNOPSIS
-        Resolves a path.
+        Validates and resolves file system paths with enhanced error handling and provider verification.
 
     .DESCRIPTION
-        Resolves a path.
-        Will try to resolve to paths including some basic path validation and resolution.
-        Will fail if the path cannot be resolved (so an existing path must be reached at).
+        Validates and resolves file system paths with additional safety checks beyond PowerShell's built-in Resolve-Path cmdlet. This function ensures paths exist and are accessible before performing database operations like backups, restores, or log file management. It provides enhanced error handling, provider validation (FileSystem, Registry, etc.), and supports both existing paths and parent directories for new file creation. DBAs can use this to validate backup destinations, database file locations, and script paths before running maintenance operations, preventing failures due to invalid or inaccessible paths.
 
     .PARAMETER Path
         The path to validate.

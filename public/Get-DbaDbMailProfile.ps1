@@ -1,10 +1,10 @@
 function Get-DbaDbMailProfile {
     <#
     .SYNOPSIS
-        Gets database mail profile(s) from SQL Server
+        Retrieves Database Mail profiles and their configuration details from SQL Server instances
 
     .DESCRIPTION
-        Gets database mail profile(s) from SQL Server
+        Retrieves Database Mail profiles from one or more SQL Server instances, returning detailed configuration information for each profile including ID, name, description, and status properties. This function is essential for auditing Database Mail configurations across your environment, troubleshooting email notification issues, and documenting mail profile setups for compliance or change management. You can target specific profiles by name or exclude certain profiles from the results, making it useful for both broad configuration reviews and focused troubleshooting scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

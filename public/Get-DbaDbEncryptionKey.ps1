@@ -1,10 +1,10 @@
 function Get-DbaDbEncryptionKey {
     <#
     .SYNOPSIS
-        Gets database encryption keys
+        Retrieves Transparent Data Encryption (TDE) database encryption keys from SQL Server databases
 
     .DESCRIPTION
-        Gets database encryption keys
+        Retrieves detailed information about Transparent Data Encryption (TDE) database encryption keys including encryption state, algorithm, and certificate details. This function helps DBAs audit encrypted databases, verify TDE configuration, and gather key information for compliance reporting or troubleshooting encryption issues. Returns comprehensive key properties like thumbprint, encryption type, and important dates for certificate rotation planning.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

@@ -1,23 +1,23 @@
 function New-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Automates the creation of availability groups.
+        Creates SQL Server availability groups with automated replica setup, database seeding, and listener configuration.
 
     .DESCRIPTION
-        Automates the creation of availability groups.
+        Creates availability groups with full automation, eliminating the manual multi-step process typically required through T-SQL or SSMS. This command handles the entire workflow from initial validation through final configuration, so you don't have to manually coordinate across multiple servers and troubleshoot common setup issues.
 
-        * Checks prerequisites
-        * Creates Availability Group and adds primary replica
-        * Grants cluster permissions if necessary
-        * Adds secondary replica if supplied
-        * Adds databases if supplied
-            * Performs backup/restore if seeding mode is manual
-            * Database has to be in full recovery mode (so at least one backup has been taken) if seeding mode is automatic
-        * Adds listener to primary if supplied
-        * Joins secondaries to availability group
-        * Grants endpoint connect permissions to service accounts
-        * Grants CreateAnyDatabase permissions if seeding mode is automatic
-        * Returns Availability Group object from primary
+        Perfect for setting up high availability environments, disaster recovery solutions, or read-scale deployments. Supports both traditional Windows Server Failover Cluster (WSFC) environments and modern cluster-less configurations for containers and Linux.
+
+        * Validates prerequisites across all instances
+        * Creates availability group and configures primary replica
+        * Sets up database mirroring endpoints with proper authentication
+        * Adds and joins secondary replicas automatically
+        * Seeds databases using backup/restore or direct seeding
+        * Configures listeners with static IP or DHCP
+        * Grants necessary cluster and endpoint permissions
+        * Enables AlwaysOn_health extended events sessions
+
+        The command handles the complex coordination between servers that trips up manual setups - endpoint permissions, service account access, database seeding modes, and cluster integration.
 
         NOTES:
         - If a backup / restore is performed, the backups will be left intact on the network share.

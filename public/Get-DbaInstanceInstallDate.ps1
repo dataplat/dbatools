@@ -1,12 +1,10 @@
 function Get-DbaInstanceInstallDate {
     <#
     .SYNOPSIS
-        Returns the install date of a SQL Instance and Windows Server.
+        Retrieves SQL Server installation dates by querying system tables for compliance auditing and infrastructure tracking.
 
     .DESCRIPTION
-        This command returns:
-        SqlInstallDate
-        WindowsInstallDate (use -IncludeWindows)
+        Queries system tables (sys.server_principals or sysservers) to determine when SQL Server was originally installed on each target instance. This information is essential for compliance auditing, license management, and tracking hardware refresh cycles. The function automatically handles different SQL Server versions using the appropriate system table, and can optionally retrieve the Windows OS installation date through WMI for complete infrastructure documentation. Returns structured data including computer name, instance name, and precise installation timestamps.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

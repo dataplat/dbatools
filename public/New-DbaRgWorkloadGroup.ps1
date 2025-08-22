@@ -1,11 +1,14 @@
 function New-DbaRgWorkloadGroup {
     <#
     .SYNOPSIS
-        Creates a Resource Governor workload group and associates the workload group with a Resource Governor resource pool.
+        Creates a Resource Governor workload group within a specified resource pool to control SQL Server resource allocation.
 
     .DESCRIPTION
-        Creates a Resource Governor workload group and associates the workload group with a Resource Governor resource pool.
-        A workload group represents a subset of the resources of a resource pool in instance of the Database Engine.
+        Creates a Resource Governor workload group within a specified resource pool, allowing you to define specific resource limits and priorities for different types of SQL Server workloads. Workload groups act as containers that classify incoming requests and apply resource policies like CPU time limits, memory grant percentages, and maximum degree of parallelism.
+
+        This is essential for DBAs managing multi-tenant environments, mixed workloads, or systems where you need to prevent resource-intensive queries from impacting critical applications. You can create separate workload groups for reporting queries, ETL processes, application traffic, or administrative tasks, each with tailored resource constraints.
+
+        The function supports both internal and external resource pools, handles existing workload group conflicts with optional force recreation, and automatically reconfigures Resource Governor to apply the changes immediately.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

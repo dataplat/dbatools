@@ -1,10 +1,10 @@
 function Get-DbaOleDbProvider {
     <#
     .SYNOPSIS
-        This command gets a list of all ole db providers available on a server.
+        Retrieves OLE DB provider configurations registered with SQL Server for linked servers and distributed queries
 
     .DESCRIPTION
-        This command gets a list of all ole db providers available on a server.
+        Returns the OLE DB providers that SQL Server knows about and can use for external data connections like linked servers, distributed queries, and OPENROWSET operations. This is essential for auditing your server's connectivity capabilities and troubleshooting linked server connection issues. The function shows provider details including security settings like AllowInProcess and DisallowAdHocAccess, which control how SQL Server can use each provider. Use this when setting up linked servers or diagnosing why certain external data sources aren't accessible.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,18 +1,16 @@
 function Import-DbaCsv {
     <#
     .SYNOPSIS
-        Efficiently imports very large (and small) CSV files into SQL Server.
+        Imports CSV files into SQL Server tables using high-performance bulk copy operations.
 
     .DESCRIPTION
-        Import-DbaCsv takes advantage of .NET's super fast SqlBulkCopy class to import CSV files into SQL Server.
+        Import-DbaCsv uses .NET's SqlBulkCopy class to efficiently load CSV data into SQL Server tables, handling files of any size from small datasets to multi-gigabyte imports. The function wraps the entire operation in a transaction, so any failure or interruption rolls back all changes automatically.
 
-        The entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
+        When the target table doesn't exist, you can use -AutoCreateTable to create it on the fly with basic nvarchar(max) columns. For production use, create your table first with proper data types and constraints. The function intelligently maps CSV columns to table columns by name, with fallback to ordinal position when needed.
 
-        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
+        Supports various CSV formats including custom delimiters, quoted fields, gzip compression (.csv.gz files), and multi-line values within quoted fields. Column mapping lets you import specific columns or rename them during import, while schema detection can automatically place data in the correct schema based on filename patterns.
 
-        This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
-
-        Able to read gzip compressed CSV files if the filename ends with ".csv.gz"
+        Perfect for ETL processes, data migrations, or loading reference data where you need reliable, fast imports with proper error handling and transaction safety.
 
     .PARAMETER Path
         Specifies path to the CSV file(s) to be imported. Multiple files may be imported at once.

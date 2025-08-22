@@ -1,10 +1,13 @@
 function Remove-DbaClientAlias {
     <#
     .SYNOPSIS
-        Removes a sql alias for the specified server - mimics cliconfg.exe
+        Removes SQL Server client aliases from Windows registry on local or remote computers
 
     .DESCRIPTION
-        Removes a sql alias for the specified server by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client - mimics cliconfg.exe.
+        Removes SQL Server client aliases from the Windows registry by deleting entries from both 32-bit and 64-bit registry locations.
+        Client aliases redirect SQL Server connection requests to different servers or instances, but outdated or incorrect aliases can cause connection failures.
+        This function provides a programmatic way to clean up these aliases when the deprecated cliconfg.exe utility is not available or when managing multiple computers remotely.
+        Commonly used when decommissioning servers, updating connection strings, or troubleshooting connectivity issues caused by stale alias configurations.
 
     .PARAMETER ComputerName
         The target computer where the alias will be created.

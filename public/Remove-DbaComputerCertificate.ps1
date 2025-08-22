@@ -1,10 +1,10 @@
 function Remove-DbaComputerCertificate {
     <#
     .SYNOPSIS
-        Removes a computer certificate - useful for removing easily certs from remote computers
+        Removes certificates from Windows certificate stores on local or remote computers
 
     .DESCRIPTION
-        Removes a computer certificate from a local or remote computer
+        Removes certificates from Windows certificate stores on local or remote computers using PowerShell remoting. This is essential for managing SSL/TLS certificates used by SQL Server instances for encrypted connections and authentication. DBAs commonly use this to clean up expired certificates, remove compromised certificates during security incidents, or manage certificate lifecycle during SQL Server migrations and decommissions. The function targets specific certificates by thumbprint and can work across multiple certificate stores and folders.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

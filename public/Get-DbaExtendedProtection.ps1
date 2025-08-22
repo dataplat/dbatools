@@ -1,12 +1,14 @@
 function Get-DbaExtendedProtection {
     <#
     .SYNOPSIS
-        Get the Extended Protection setting of the SQL Server network configuration.
+        Retrieves Extended Protection authentication settings from SQL Server network configuration.
 
     .DESCRIPTION
-        Get the Extended Protection setting of the SQL Server network configuration.
+        Retrieves the Extended Protection setting for SQL Server instances to help assess authentication security posture. Extended Protection is a Windows authentication enhancement that helps prevent credential relay attacks by validating channel binding and service principal names.
 
-        This setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration > Protocols for "InstanceName".
+        This function queries the Windows registry directly rather than connecting to SQL Server, so it requires Windows-level access to the target server. The setting corresponds to what you see in SQL Server Configuration Manager under Network Configuration > Protocols properties, but can be checked programmatically across multiple instances for compliance auditing.
+
+        Returns the current setting as both a numeric value (0, 1, 2) and descriptive text (Off, Allowed, Required) to help DBAs understand the security configuration and plan any necessary changes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

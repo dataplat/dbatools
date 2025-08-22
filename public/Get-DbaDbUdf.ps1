@@ -1,10 +1,10 @@
 function Get-DbaDbUdf {
     <#
     .SYNOPSIS
-        Gets database User Defined Functions
+        Retrieves User Defined Functions from SQL Server databases with filtering and metadata
 
     .DESCRIPTION
-        Gets database User Defined Functions
+        Retrieves all User Defined Functions (UDFs) from one or more SQL Server databases, returning detailed metadata including schema, creation dates, and data types. This function helps DBAs inventory custom database logic, analyze code dependencies during migrations, and audit user-created functions for security or performance reviews. You can filter results by database, schema, or function name, and exclude system functions to focus on custom business logic.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

@@ -1,10 +1,10 @@
 function Grant-DbaAgPermission {
     <#
     .SYNOPSIS
-        Grants endpoint and availability group permissions to a login.
+        Grants specific permissions to logins for availability groups and database mirroring endpoints.
 
     .DESCRIPTION
-        Grants endpoint and availability group permissions to a login. If the account is a Windows login and does not exist, it will be automatically added.
+        Grants permissions to SQL Server logins for availability groups (Alter, Control, TakeOwnership, ViewDefinition) and database mirroring endpoints (Connect, Alter, Control, and others). Essential for setting up high availability and disaster recovery scenarios where service accounts or users need access to manage or connect to availability group resources. Windows logins are automatically created if they don't exist on the target instance, simplifying multi-server availability group deployments.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

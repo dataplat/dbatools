@@ -1,10 +1,10 @@
 function Remove-DbaDbSynonym {
     <#
     .SYNOPSIS
-        Removes synonym(s) from database(s) / instance(s) of SQL Server.
+        Removes database synonyms from SQL Server databases
 
     .DESCRIPTION
-        The Remove-DbaDbSynonym removes synonym(s) from database(s) / instance(s) of SQL Server.
+        Removes one or more database synonyms from SQL Server databases by executing DROP SYNONYM commands. Synonyms are database objects that provide alternate names for tables, views, or other objects, often used to simplify complex object names or provide abstraction layers. This function helps clean up obsolete synonyms during database refactoring, migrations, or general maintenance activities, so you don't have to manually script DROP statements across multiple databases or instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

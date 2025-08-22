@@ -1,10 +1,10 @@
 function Remove-DbaServerRole {
     <#
     .SYNOPSIS
-        Deletes specified server-level role.
+        Removes custom server-level roles from SQL Server instances.
 
     .DESCRIPTION
-        Deletes specified server-level role.
+        Removes custom server-level roles that are no longer needed from SQL Server instances. This function helps clean up security configurations by permanently dropping user-defined server roles while preserving built-in system roles. Use this when decommissioning applications, consolidating permissions, or cleaning up after security audits. The operation requires confirmation due to its permanent nature and potential security impact.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

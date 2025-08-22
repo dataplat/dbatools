@@ -1,10 +1,10 @@
 function Remove-DbaLinkedServer {
     <#
     .SYNOPSIS
-        Removes a linked server.
+        Removes linked servers from SQL Server instances.
 
     .DESCRIPTION
-        Removes a linked server.
+        Removes one or more linked servers from target SQL Server instances. This function drops the linked server objects from the system catalog, effectively severing the connection between the local and remote servers. When using the -Force parameter, it also removes any associated linked server logins before dropping the linked server itself. This is useful for decommissioning legacy connections, cleaning up unused linked servers during server migrations, or removing connections for security compliance requirements.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

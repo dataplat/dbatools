@@ -1,10 +1,10 @@
 function Remove-DbaDbSnapshot {
     <#
     .SYNOPSIS
-        Removes database snapshots
+        Drops database snapshots from SQL Server instances
 
     .DESCRIPTION
-        Removes (drops) database snapshots from the server
+        Removes database snapshots by executing DROP DATABASE statements against the target SQL Server instances. Database snapshots are point-in-time, read-only copies of databases that consume minimal space through copy-on-write technology. This function helps DBAs clean up obsolete snapshots that are no longer needed for reporting, testing, or recovery purposes. The Force parameter can terminate active connections to snapshots that might otherwise prevent the drop operation from succeeding.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

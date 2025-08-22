@@ -1,11 +1,13 @@
 function Get-DbaAvailableCollation {
     <#
     .SYNOPSIS
-        Return available collations for a given SQL Server
+        Retrieves all available collations from SQL Server instances with detailed locale and code page information
 
     .DESCRIPTION
-        Returns the list of collations available on each SQL Server.
-        Only the connect permission is required to get this information.
+        Returns the complete list of collations supported by each SQL Server instance, along with their associated code page names, locale descriptions, and detailed properties.
+        This information is essential when creating new databases, changing database collations, or planning migrations where collation compatibility matters.
+        The function enhances the raw collation data with human-readable code page and locale descriptions to help DBAs make informed collation choices.
+        Only connect permission is required to retrieve this information.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Only connect permission is required.

@@ -1,13 +1,10 @@
 function Remove-DbaAgentSchedule {
     <#
     .SYNOPSIS
-        Removes job schedules.
+        Removes SQL Server Agent schedules from one or more instances.
 
     .DESCRIPTION
-        Removes the schedules that have passed through the pipeline.
-
-        If not used with a pipeline, Get-DbaAgentSchedule will be executed with the parameters provided
-        and the returned schedules will be removed.
+        Removes SQL Server Agent schedules from the msdb database, handling both unused schedules and those currently assigned to jobs. The function first removes schedule associations from any jobs using the schedule, then drops the schedule itself to prevent orphaned references. Use this when cleaning up unused schedules during maintenance, consolidating multiple schedules, or removing schedules as part of job reorganization. By default, schedules in use by jobs are protected and require the -Force parameter to remove.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

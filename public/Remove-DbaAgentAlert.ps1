@@ -1,12 +1,13 @@
 function Remove-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Removes SQL Agent agent alert(s).
+        Removes SQL Server Agent alerts from specified instances.
 
     .DESCRIPTION
-        Removes the SQL Agent alert(s) that have passed through the pipeline.
-        If not used with a pipeline, Get-DbaAgentAlert will be executed with the parameters provided
-        and the returned SQL Agent alert(s) will be removed.
+        Deletes SQL Server Agent alerts that monitor for specific errors, performance conditions, or system events.
+        Useful for cleaning up obsolete alerts, removing test configurations, or managing alert policies across multiple instances.
+        Can remove specific alerts by name, exclude certain alerts, or work with piped input from Get-DbaAgentAlert for selective removal.
+        Returns detailed results showing which alerts were successfully removed and any errors encountered.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

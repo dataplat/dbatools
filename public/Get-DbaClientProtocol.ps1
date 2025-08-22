@@ -1,12 +1,14 @@
 function Get-DbaClientProtocol {
     <#
     .SYNOPSIS
-        Gets the SQL Server related client protocols on a computer.
+        Retrieves SQL Server client network protocol configuration and status from local or remote computers.
 
     .DESCRIPTION
-        Gets the SQL Server related client protocols on one or more computers.
+        Retrieves the configuration and status of SQL Server client network protocols (Named Pipes, TCP/IP, Shared Memory, VIA) from local or remote computers. This function helps DBAs audit and troubleshoot client connectivity issues by showing which protocols are enabled, their order of precedence, and associated DLL files.
 
-        Requires Local Admin rights on destination computer(s).
+        The returned objects include Enable() and Disable() methods, allowing you to modify protocol settings directly without opening SQL Server Configuration Manager. This is particularly useful for standardizing client configurations across multiple servers or troubleshooting connectivity problems.
+
+        Requires Local Admin rights on destination computer(s) and SQL Server 2005 or later.
         The client protocols can be enabled and disabled when retrieved via WSMan.
 
     .PARAMETER ComputerName

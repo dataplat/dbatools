@@ -1,10 +1,14 @@
 function New-DbaReplCreationScriptOptions {
     <#
     .SYNOPSIS
-        Creates a new Microsoft.SqlServer.Replication.CreationScriptOptions enumeration object.
+        Creates replication article creation script options for controlling which database objects are replicated
 
     .DESCRIPTION
-        Creates a new Microsoft.SqlServer.Replication.CreationScriptOptions enumeration object that allows you to specify article options.
+        Creates a Microsoft.SqlServer.Replication.CreationScriptOptions object that controls which database objects and properties are included when replicating tables through SQL Server replication. This determines what gets scripted at the subscriber when articles are added to publications - things like indexes, constraints, triggers, and identity columns.
+
+        By default, includes the same options that SQL Server Management Studio uses when adding articles: primary objects, custom procedures, identity properties, timestamps, clustered indexes, primary keys, collation, unique keys, and constraint replication settings. Use -NoDefaults to start with a blank slate and specify only the options you want.
+
+        This object is typically used with Add-DbaReplArticle to precisely control what database schema elements are replicated to subscribers, avoiding common issues like missing indexes or constraints that can impact subscriber performance.
 
         See https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.replication.creationscriptoptions for more information
 

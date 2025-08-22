@@ -1,10 +1,19 @@
 function Install-DbaMultiTool {
     <#
     .SYNOPSIS
-        Installs or updates the DBA MultiTool stored procedures.
+        Installs five essential T-SQL stored procedures for database documentation, index optimization, and administrative tasks.
 
     .DESCRIPTION
-        Downloads, extracts and installs the DBA MultiTool stored procedures.
+        Downloads and installs the DBA MultiTool collection of T-SQL stored procedures into a specified database. This toolkit provides five key utilities that help DBAs with common documentation and optimization tasks that would otherwise require manual T-SQL scripting.
+
+        The installed procedures include:
+        • sp_helpme - Enhanced version of sp_help that provides detailed object information
+        • sp_doc - Generates comprehensive database documentation
+        • sp_sizeoptimiser - Analyzes and recommends optimal database file sizing
+        • sp_estindex - Estimates potential storage savings from index compression
+        • sp_help_revlogin - Creates scripts to recreate logins with their original SIDs and passwords
+
+        These procedures are particularly valuable for database migrations, compliance reporting, capacity planning, and general administrative documentation. The function automatically handles downloading the latest version from GitHub and can install across multiple instances simultaneously.
 
         DBA MultiTool links:
         https://dba-multitool.org

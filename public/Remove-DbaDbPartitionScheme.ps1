@@ -1,10 +1,14 @@
 function Remove-DbaDbPartitionScheme {
     <#
     .SYNOPSIS
-        Removes a database partition scheme(s) from each database and SQL Server instance.
+        Removes database partition schemes from SQL Server databases.
 
     .DESCRIPTION
-        Removes a database partition scheme(s), with supported piping from Get-DbaDbPartitionScheme.
+        Removes partition schemes from specified databases across one or more SQL Server instances. Partition schemes define how partitioned tables and indexes map to filegroups, and this function helps clean up unused schemes during database reorganization or migration projects.
+        
+        The function integrates seamlessly with Get-DbaDbPartitionScheme through pipeline support, allowing you to first identify partition schemes and then selectively remove them. This is particularly useful when consolidating databases or simplifying partition strategies.
+        
+        Each removal operation includes confirmation prompts by default to prevent accidental deletion of partition schemes that may still be referenced by tables or indexes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

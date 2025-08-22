@@ -1,10 +1,10 @@
 function Install-DbaDarlingData {
     <#
     .SYNOPSIS
-        Installs or updates Erik Darling's stored procedures.
+        Downloads and installs Erik Darling's performance monitoring stored procedures
 
     .DESCRIPTION
-        Downloads, extracts and installs Erik Darling's stored procedures. It does not install anything else from the repository. For example, the WhatsUpMemory view is not installed.
+        Downloads, extracts and installs Erik Darling's collection of performance monitoring stored procedures from the DarlingData GitHub repository. This gives you access to popular diagnostic tools like sp_HumanEvents for extended events analysis, sp_PressureDetector for memory pressure monitoring, sp_QuickieStore for Query Store analysis, and several others that help with SQL Server performance troubleshooting. The function handles version compatibility automatically (for example, skipping sp_QuickieStore on SQL Server versions below 2016) and only installs the stored procedures themselves, not other repository contents like views or documentation.
 
         DarlingData links:
         https://www.erikdarling.com

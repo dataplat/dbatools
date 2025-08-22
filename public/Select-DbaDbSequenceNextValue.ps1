@@ -1,10 +1,12 @@
 function Select-DbaDbSequenceNextValue {
     <#
     .SYNOPSIS
-        Selects the next value from a sequence.
+        Retrieves and increments the next value from a SQL Server sequence object.
 
     .DESCRIPTION
-        Selects the next value from a sequence.
+        Executes a SELECT NEXT VALUE FOR statement against the specified sequence, which increments the sequence counter and returns the next value in the series.
+        This is useful for testing sequence behavior, troubleshooting sequence issues, or retrieving sequence values for application logic.
+        Note that calling this function will permanently increment the sequence counter, so it's not just a read operation.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

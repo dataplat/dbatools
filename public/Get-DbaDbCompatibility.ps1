@@ -1,10 +1,10 @@
 function Get-DbaDbCompatibility {
     <#
     .SYNOPSIS
-        Displays the compatibility level for SQL Server databases.
+        Retrieves database compatibility levels from SQL Server instances for upgrade planning and compliance auditing.
 
     .DESCRIPTION
-        Get the current database compatibility level for all databases on a server or list of databases passed in to the function.
+        Returns the current compatibility level setting for each database, which determines what SQL Server language features and behaviors are available to that database. This is essential when planning SQL Server upgrades, as databases often retain older compatibility levels even after the instance is upgraded. The function helps identify which databases may need compatibility level updates to take advantage of newer SQL Server features or to maintain vendor application support requirements.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

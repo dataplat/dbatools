@@ -1,10 +1,12 @@
 function Get-DbaBinaryFileTable {
     <#
     .SYNOPSIS
-        Gets a table with binary columns which can be used with Export-DbaBinaryFile and Import-DbaBinaryFile.
+        Identifies tables containing binary columns and their associated filename columns for file extraction operations.
 
     .DESCRIPTION
-        Gets a table with binary columns which can be used with Export-DbaBinaryFile and Import-DbaBinaryFile.
+        Scans database tables to find those containing binary data columns (binary, varbinary, image) and automatically identifies potential filename columns for file extraction workflows. This function is essential when you need to extract files that have been stored as BLOBs in SQL Server tables but aren't sure which tables contain binary data or how the filenames are stored.
+
+        The function enhances table objects by adding BinaryColumn and FileNameColumn properties, making it easy to pipe results directly to Export-DbaBinaryFile for automated file extraction. This is particularly useful for legacy applications where files were stored in the database rather than the file system, or when you need to audit what binary content exists across your databases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.

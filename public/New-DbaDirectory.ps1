@@ -1,11 +1,10 @@
 function New-DbaDirectory {
     <#
     .SYNOPSIS
-        Creates new path as specified by the path variable
+        Creates directories on SQL Server machines using the SQL Server service account
 
     .DESCRIPTION
-        Uses master.dbo.xp_create_subdir to create the path
-        Returns $true if the path can be created, $false otherwise
+        Creates directories on local or remote SQL Server machines by executing the xp_create_subdir extended stored procedure. This is particularly useful when you need to create backup directories, log shipping paths, or database file locations where the SQL Server service account needs to have access. The function checks if the path already exists before attempting creation and returns the success status for each operation.
 
     .PARAMETER SqlInstance
         The SQL Server you want to run the test on.

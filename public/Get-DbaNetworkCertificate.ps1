@@ -1,10 +1,10 @@
 function Get-DbaNetworkCertificate {
     <#
     .SYNOPSIS
-        Gets the computer certificate enabled for the SQL Server instance's network encryption.
+        Retrieves the certificate currently configured for SQL Server network encryption.
 
     .DESCRIPTION
-        Gets the computer certificates that is assigned to the SQL Server instance for enabling network encryption.
+        Retrieves the specific computer certificate that SQL Server is configured to use for network encryption and SSL connections. This shows you which certificate from the local certificate store is actively being used by the SQL Server instance for encrypting client connections. Only returns instances that actually have a certificate configured - instances without certificates won't appear in the results. Useful for auditing SSL configurations, troubleshooting encrypted connection issues, and verifying certificate assignments across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to standard instance on localhost. If target is a cluster, you must specify the distinct nodes.

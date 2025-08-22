@@ -1,41 +1,12 @@
 function Set-DbaExtendedProperty {
     <#
     .SYNOPSIS
-        Set extended property values
+        Updates the value of existing extended properties on SQL Server database objects
 
     .DESCRIPTION
-        Set extended property values
+        Updates the value of existing extended properties on SQL Server database objects. Extended properties store custom metadata like application versions, documentation, or business rules directly with database objects. This function modifies the values of properties that already exist, making it useful for maintaining application version numbers, updating documentation, or batch-modifying metadata across multiple objects.
 
-        You can set extended properties on all these different types of objects:
-
-        Aggregate
-        Assembly
-        Column
-        Constraint
-        Contract
-        Database
-        Event Notification
-        Filegroup
-        Function
-        Index
-        Logical File Name
-        Message Type
-        Parameter
-        Partition Function
-        Partition Scheme
-        Procedure
-        Queue
-        Remote Service Binding
-        Route
-        Rule
-        Schema
-        Service
-        Synonym
-        Table
-        Trigger
-        Type
-        View
-        Xml Schema Collection
+        Works with extended properties on all SQL Server object types including databases, tables, views, stored procedures, functions, columns, indexes, schemas, and many others. The function accepts extended property objects from Get-DbaExtendedProperty through the pipeline, so you can easily filter and update specific properties across your environment.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaExtendedProperty

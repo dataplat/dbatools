@@ -1,22 +1,20 @@
 function Invoke-DbaDbLogShipRecovery {
     <#
     .SYNOPSIS
-        Invoke-DbaDbLogShipRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.
+        Brings log shipped secondary databases online for disaster recovery or planned migration scenarios
 
     .DESCRIPTION
-        By default all the databases for a particular instance are recovered.
-        If the database is in the right state, either standby or recovering, the process will try to recover the database.
+        Recovers log shipped secondary databases from standby or restoring state to normal operational state. This function is essential for disaster recovery scenarios when you need to bring secondary databases online after a primary server failure, or for planned migrations where you want to switch roles between primary and secondary servers.
 
-        At first the function will check if the backup source directory can still be reached.
-        If so it will look up the last transaction log backup for the database. If that backup file is not the last copied file the log shipping copy job will be started.
-        If the directory cannot be reached for the function will continue to the restoring process.
-        After the copy job check is performed the job is disabled to prevent the job to run.
+        The recovery process handles the complete workflow automatically. First, it checks if the backup source directory is still accessible. If so, it ensures all available transaction log backups are copied by running the log shipping copy job. If the source directory is unreachable (common in disaster scenarios), it proceeds with available backups.
 
-        For the restore the log shipping status is checked in the msdb database.
-        If the last restored file is not the same as the last file name found, the log shipping restore job will be executed.
-        After the restore job check is performed the job is disabled to prevent the job to run
+        Next, it runs the log shipping restore job to apply any remaining transaction log backups that haven't been restored yet. Both the copy and restore jobs are monitored until completion, then disabled to prevent them from running again.
 
-        The last part is to set the database online by restoring the databases with recovery
+        Finally, unless you specify -NoRecovery, the database is brought online by executing RESTORE DATABASE WITH RECOVERY. This makes the database fully accessible for reads and writes.
+
+        By default, all log shipped databases on the target instance are recovered. You can specify individual databases using the -Database parameter. The function requires that SQL Server Agent is running and will validate the service status before proceeding.
+
+        All operations are tracked through the msdb database log shipping tables to ensure consistency and proper sequencing of the recovery steps.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

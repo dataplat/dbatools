@@ -1,10 +1,10 @@
 function Set-DbaPrivilege {
     <#
     .SYNOPSIS
-        Adds the SQL Service account to local privileges on one or more computers.
+        Grants essential Windows privileges to SQL Server service accounts for optimal performance and security.
 
     .DESCRIPTION
-        Adds the SQL Service account to local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', 'Logon as a service' on one or more computers.
+        Configures critical Windows privileges for SQL Server service accounts including Lock Pages in Memory (LPIM), Instant File Initialization (IFI), Logon as Batch, Logon as Service, and Generate Security Audits. These privileges are essential for SQL Server performance optimization and proper service operation, eliminating the need to manually configure them through Local Security Policy. The function automatically discovers SQL service accounts on target computers or allows you to specify custom accounts, then uses secedit to update the local security policy.
 
         Requires Local Admin rights on destination computer(s).
 

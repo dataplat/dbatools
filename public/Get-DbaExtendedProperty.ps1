@@ -1,43 +1,16 @@
 function Get-DbaExtendedProperty {
     <#
     .SYNOPSIS
-        Gets extended properties
+        Retrieves custom metadata and documentation stored as extended properties on SQL Server objects
 
     .DESCRIPTION
-        Gets extended properties
+        Retrieves extended properties that contain custom metadata, documentation, and business descriptions attached to SQL Server objects. Extended properties are commonly used by DBAs and developers to store object documentation, version information, business rules, and compliance notes directly within the database schema.
 
-        This command works out of the box with databases but you can add or get extended properties from any object. Just pipe it in it'll grab the properties and print them out.
+        This function discovers what documentation and metadata exists across your database objects, making it invaluable for database documentation audits, compliance reporting, and understanding legacy systems. You can retrieve properties from databases by default, or pipe in any SQL Server object from other dbatools commands to examine its custom metadata.
 
-        You can get extended properties on all these different types of objects:
+        Works with all major SQL Server object types including databases, tables, columns, stored procedures, functions, views, indexes, schemas, triggers, and many others. The command handles both direct database queries and piped objects seamlessly, so you can easily incorporate extended property discovery into broader database analysis workflows.
 
-        Aggregate
-        Assembly
-        Column
-        Constraint
-        Contract
-        Database
-        Event Notification
-        Filegroup
-        Function
-        Index
-        Logical File Name
-        Message Type
-        Parameter
-        Partition Function
-        Partition Scheme
-        Procedure
-        Queue
-        Remote Service Binding
-        Route
-        Rule
-        Schema
-        Service
-        Synonym
-        Table
-        Trigger
-        Type
-        View
-        Xml Schema Collection
+        Perfect for discovering undocumented business logic, finding objects with compliance tags, or building comprehensive database documentation reports from existing metadata.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

@@ -1,10 +1,10 @@
 function Remove-DbaLinkedServerLogin {
     <#
     .SYNOPSIS
-        Removes a linked server login.
+        Removes linked server login mappings that define credential relationships between local and remote server logins.
 
     .DESCRIPTION
-        Removes a linked server login.
+        Removes linked server login mappings, which are the credential associations that determine how local SQL Server logins authenticate to remote servers through linked server connections. These mappings control which credentials are used when executing queries against remote servers, so removing them effectively blocks access through that linked server for the specified local login. This is commonly used when decommissioning user access, cleaning up security configurations, or removing entire linked server setups.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

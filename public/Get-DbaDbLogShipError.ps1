@@ -1,11 +1,13 @@
 function Get-DbaDbLogShipError {
     <#
     .SYNOPSIS
-        Get-DbaDbLogShipError returns all the log shipping errors that occurred
+        Retrieves log shipping error details from msdb to troubleshoot failed backup, copy, and restore operations
 
     .DESCRIPTION
-        When your log shipping fails it's sometimes hard to see why is fails.
-        Using this function you'll be able to find out what went wrong in a short amount of time.
+        Queries the log shipping monitor error detail table in msdb to return comprehensive error information when log shipping operations fail.
+        Identifies which specific action failed (backup on primary, copy, or restore on secondary) along with session details and error messages.
+        Saves time by consolidating error details from both primary and secondary instances into a single view, so you don't have to manually query multiple system tables.
+        Essential for troubleshooting log shipping failures and determining whether issues occurred during backup, file copy, or database restore phases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

@@ -1,13 +1,10 @@
 function Invoke-DbaDbDbccCheckConstraint {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC CHECKCONSTRAINTS
+        Validates constraint integrity by checking for constraint violations in SQL Server databases
 
     .DESCRIPTION
-        Executes the command DBCC CHECKCONSTRAINTS and returns results
-
-        Reports and corrects pages and row count inaccuracies in the catalog views.
-        These inaccuracies may cause incorrect space usage reports returned by the sp_spaceused system stored procedure.
+        Executes DBCC CHECKCONSTRAINTS to identify rows that violate CHECK, FOREIGN KEY, and other constraints in your databases. This command helps DBAs verify data integrity after bulk imports, constraint modifications, or when troubleshooting data quality issues. You can target specific tables, individual constraints, or scan entire databases for violations. The command returns detailed information about any rows that don't meet constraint requirements, including the table, constraint name, and violating data criteria.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkconstraints-transact-sql

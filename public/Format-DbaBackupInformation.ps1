@@ -1,11 +1,10 @@
 function Format-DbaBackupInformation {
     <#
     .SYNOPSIS
-        Transforms the data in a dbatools BackupHistory object for a restore
+        Modifies backup history metadata to prepare database restores with different names, paths, or locations
 
     .DESCRIPTION
-        Performs various mapping on Backup History, ready restoring
-        Options include changing restore paths, backup paths, database name and many others
+        Takes backup history objects from Select-DbaBackupInformation and transforms them for restore scenarios where you need to change database names, file locations, or backup paths. This is essential for disaster recovery situations where you're restoring to different servers, renaming databases, or moving files to new storage locations. The function handles all the metadata transformations needed so you don't have to manually edit restore paths and database references before running Restore-DbaDatabase.
 
     .PARAMETER BackupHistory
         A dbatools backupHistory object, normally this will have been created using Select-DbaBackupInformation

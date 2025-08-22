@@ -1,10 +1,10 @@
 function Import-DbaSpConfigure {
     <#
     .SYNOPSIS
-        Updates sp_configure settings on destination server.
+        Copies sp_configure settings between SQL Server instances or applies settings from a SQL file.
 
     .DESCRIPTION
-        Updates sp_configure settings on destination server.
+        Copies all sp_configure settings from a source SQL Server instance to a destination instance, or applies sp_configure settings from a SQL file to an instance. This function handles advanced options visibility, validates server versions for compatibility, and executes the necessary RECONFIGURE statements. Essential for maintaining consistent configuration across environments during migrations, standardization projects, or when applying saved configuration templates.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

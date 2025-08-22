@@ -1,10 +1,10 @@
 function Get-DbaRgResourcePool {
     <#
     .SYNOPSIS
-        Gets Resource Governor Pool objects, including internal or external
+        Retrieves SQL Server Resource Governor resource pools with their CPU, memory, and IOPS configuration settings
 
     .DESCRIPTION
-        Gets Resource Governor Pool objects, including internal or external
+        Retrieves detailed information about SQL Server Resource Governor resource pools, including both internal (CPU/memory) and external (R/Python) pools. Shows current configuration settings for minimum and maximum CPU percentages, memory percentages, and IOPS limits per volume. Essential for monitoring resource allocation, troubleshooting performance bottlenecks, and auditing resource governance policies across your SQL Server instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

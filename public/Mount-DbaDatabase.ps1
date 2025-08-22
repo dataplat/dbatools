@@ -1,10 +1,12 @@
 function Mount-DbaDatabase {
     <#
     .SYNOPSIS
-        Attach a SQL Server Database - aliased to Attach-DbaDatabase
+        Attaches detached database files to a SQL Server instance
 
     .DESCRIPTION
-        This command will attach a SQL Server database.
+        Attaches detached database files (.mdf, .ldf, .ndf) back to a SQL Server instance, making the database available for use again. When database files exist on disk but the database is not registered in the SQL Server instance, this command reconnects them using the SQL Server Management Objects (SMO) AttachDatabase method.
+
+        If you don't specify the file structure, the command attempts to determine the correct database files by examining backup history for the most recent full backup. This is particularly useful when restoring databases from file copies or moving databases between instances where the files already exist but need to be reattached.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

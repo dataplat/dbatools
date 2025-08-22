@@ -1,10 +1,10 @@
 function Remove-DbaPfDataCollectorSet {
     <#
     .SYNOPSIS
-        Removes a Performance Monitor Data Collector Set
+        Removes Windows Performance Monitor Data Collector Sets from local or remote computers
 
     .DESCRIPTION
-        Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.
+        Removes Windows Performance Monitor Data Collector Sets that are no longer needed for SQL Server performance monitoring. This is useful for cleaning up old monitoring configurations, freeing disk space, or standardizing performance monitoring setups across your SQL Server environment. The collector set must be stopped before removal - running collector sets will generate an error and must be stopped first using Stop-DbaPfDataCollectorSet. When removing collector sets from the local computer, administrator privileges are required.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

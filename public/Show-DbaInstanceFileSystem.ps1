@@ -1,12 +1,12 @@
 function Show-DbaInstanceFileSystem {
     <#
     .SYNOPSIS
-        Shows file system on remote SQL Server in a local GUI and returns the selected directory name
+        Displays a GUI tree view for browsing remote SQL Server file systems and returns the selected directory path
 
     .DESCRIPTION
-        Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server's file structure.
+        Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server's file structure. This replaces the need to manually type or guess directory paths when setting up backup locations, restore operations, or specifying data and log file paths.
 
-        Show-DbaInstanceFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
+        Show-DbaInstanceFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command. The function opens a Windows Presentation Framework GUI with a familiar tree view interface, complete with drive and folder icons, making it easy to navigate and select the correct directory path for your SQL Server operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.

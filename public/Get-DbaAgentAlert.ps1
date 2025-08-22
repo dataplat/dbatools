@@ -1,10 +1,10 @@
 function Get-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Returns SQL Agent alerts on a SQL Server Agent.
+        Retrieves SQL Server Agent alert configurations from one or more instances
 
     .DESCRIPTION
-        This function returns SQL Agent alerts.
+        Retrieves alert configurations from SQL Server Agent, including alert names, types, severity levels, message IDs, and notification settings. Use this to audit alert configurations across multiple servers, troubleshoot missing or misconfigured alerts, or gather information for compliance reporting. The function returns detailed alert properties like enabled status, last occurrence dates, and response delays, making it essential for monitoring your alerting infrastructure and ensuring critical system events are properly configured for notification.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

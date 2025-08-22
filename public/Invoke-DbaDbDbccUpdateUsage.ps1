@@ -1,13 +1,14 @@
 function Invoke-DbaDbDbccUpdateUsage {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC UPDATEUSAGE
+        Corrects page and row count inaccuracies in SQL Server catalog views using DBCC UPDATEUSAGE
 
     .DESCRIPTION
-        Executes the command DBCC UPDATEUSAGE and returns results
+        Executes the DBCC UPDATEUSAGE command to identify and fix metadata inconsistencies in catalog views that track space usage information. When these internal counters become inaccurate, system procedures like sp_spaceused return incorrect database and table size reports, making capacity planning and troubleshooting difficult.
 
-        Reports and corrects pages and row count inaccuracies in the catalog views.
-        These inaccuracies may cause incorrect space usage reports returned by the sp_spaceused system stored procedure.
+        This command is essential when you notice discrepancies between actual database file sizes and reported space usage, or when sp_spaceused shows unexpected results after bulk operations, index rebuilds, or database migrations. The function can target entire instances, specific databases, individual tables, or even single indexes depending on your troubleshooting needs.
+
+        Common scenarios include fixing space reports after large data imports, resolving inconsistencies following database restores, and correcting metadata after index maintenance operations. The command reads actual page allocations and updates the system catalog views to reflect accurate usage statistics.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-updateusage-transact-sql

@@ -1,10 +1,12 @@
 function Invoke-DbaDbUpgrade {
     <#
     .SYNOPSIS
-        Take a database and upgrades it to compatibility of the SQL Instance its hosted on and updates the target recovery time to the new default of 60 seconds.
+        Upgrades database compatibility level and performs post-upgrade maintenance tasks
 
     .DESCRIPTION
-        Updates compatibility level and target recovery time, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views.
+        Performs the essential steps needed after upgrading SQL Server or moving databases to a newer instance. Updates database compatibility level to match the hosting SQL Server version and sets target recovery time to 60 seconds for SQL Server 2016 and newer. 
+        
+        Executes critical post-upgrade maintenance including DBCC CHECKDB with DATA_PURITY to detect data corruption, DBCC UPDATEUSAGE to correct page counts, sp_updatestats to refresh statistics, and sp_refreshview to update all user views with new metadata. This automates the manual checklist DBAs typically follow after SQL Server upgrades to ensure databases function optimally on the new version.
 
         Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
 

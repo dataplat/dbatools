@@ -1,10 +1,14 @@
 function Invoke-DbaAgFailover {
     <#
     .SYNOPSIS
-        Failover an availability group.
+        Performs manual failover of an availability group to make the target instance the new primary replica.
 
     .DESCRIPTION
-        Failover an availability group.
+        Performs manual failover of an availability group to make the specified SQL Server instance the new primary replica. The function connects to the target instance (which must be a secondary replica) and promotes it to primary, while the current primary becomes secondary.
+
+        By default, performs a safe failover that waits for all committed transactions to be synchronized to the target replica, preventing data loss. When the -Force parameter is used, performs a forced failover that may result in data loss if transactions haven't been synchronized to the target replica.
+
+        This is commonly used during planned maintenance windows, disaster recovery scenarios, or when rebalancing availability group workloads across replicas. The target instance must already be configured as a secondary replica in the availability group.
 
     .PARAMETER SqlInstance
         The SQL Server instance. Server version must be SQL Server version 2012 or higher.

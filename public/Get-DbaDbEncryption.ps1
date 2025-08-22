@@ -1,10 +1,10 @@
 function Get-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Returns a summary of encryption used on databases passed to it.
+        Retrieves comprehensive encryption inventory from SQL Server databases including TDE status, certificates, and keys.
 
     .DESCRIPTION
-        Shows if a database has Transparent Data Encryption (TDE), any certificates, asymmetric keys or symmetric keys with details for each.
+        Audits database-level encryption across SQL Server instances by examining TDE encryption status, certificates, asymmetric keys, and symmetric keys within each database. Returns detailed information including key algorithms, lengths, owners, backup dates, and expiration dates for compliance reporting and security assessments. Particularly useful for encryption audits, certificate lifecycle management, and ensuring regulatory compliance across your SQL Server environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.

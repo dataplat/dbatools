@@ -1,25 +1,48 @@
 function Install-DbaInstance {
     <#
     .SYNOPSIS
-        This function will help you to quickly install a SQL Server instance.
+        Automates SQL Server instance installation across local and remote computers with customizable configuration.
 
     .DESCRIPTION
-        This function will help you to quickly install a SQL Server instance on one or many computers.
-        Some of the things this function will do for you:
-        * Add your login as an admin to the new instance
-        * Search for SQL Server installations in the specified file repository
-        * Generate SA password if needed
-        * Install specific features using 'Default' and 'All' templates or cherry-pick the ones you need
-        * Set number of tempdb files based on number of cores (SQL2016+)
-        * Activate .Net 3.5 feature for SQL2012/2014
-        * Restart the machine if needed after the installation is done
+        Orchestrates unattended SQL Server installations by generating configuration files and executing setup.exe remotely or locally. Automates the tedious process of creating proper configuration.ini files, handling service accounts, and managing installation prerequisites like pending reboots and authentication protocols.
 
-        Fully customizable installation parameters allow you to:
-        * Use existing Configuration.ini files for the installation
-        * Define service account credentials using native Powershell syntax
-        * Override any configurations by using -Configuration switch
-        * Change the TCP port after the installation is done
-        * Enable 'Perform volume maintenance tasks' for the SQL Server account
+        The function dynamically builds installation configurations based on your parameters, automatically configures optimal settings like tempdb file counts based on CPU cores (SQL 2016+), and handles authentication scenarios including CredSSP for network installations. It can install multiple instances in parallel and manages the complete installation lifecycle from prerequisite checks to post-installation TCP port configuration.
+
+        Key automation features include:
+        * Generates secure SA passwords for mixed authentication mode installations
+        * Automatically grants sysadmin rights to your account or specified administrators
+        * Configures tempdb file counts based on server CPU cores for optimal performance
+        * Handles service account credentials using native PowerShell credential objects
+        * Manages installation media location detection across network and local paths
+        * Performs prerequisite validation including pending reboot detection
+        * Supports parallel installation across multiple servers with throttling controls
+        * Configures TCP port settings post-installation when specified
+
+        Advanced configuration capabilities:
+        * Import existing Configuration.ini files or build configurations from scratch
+        * Override any SQL Server setup parameter using the -Configuration hashtable
+        * Support for specialized installations like failover cluster instances
+        * Enable instant file initialization (perform volume maintenance tasks) automatically
+        * Slipstream updates during installation using -UpdateSourcePath
+        * Install specific feature combinations using templates (Default, All) or individual components
+
+        Authentication and credential management:
+        * Automatically configures CredSSP authentication for network-based installations when needed
+        * Supports various authentication protocols (Kerberos, NTLM, Basic) with fallback options
+        * Handles domain service accounts, managed service accounts (MSAs), and local accounts
+        * Manages distinct service credentials for Database Engine, SQL Agent, Analysis Services, Integration Services, and other components
+
+        Installation media requirements:
+        * Requires extracted SQL Server installation media accessible to target servers
+        * Supports both local and network-based installation media repositories
+        * Automatically locates appropriate setup.exe files based on specified SQL Server version
+        * Falls back to Evaluation edition if no Product ID is provided in configuration
+
+        Remote execution considerations:
+        * Requires elevated privileges on target computers for SQL Server installation
+        * Automatically handles CredSSP configuration when installing from network shares
+        * Supports custom authentication protocols and credential delegation scenarios
+        * Can optionally restart target computers automatically when required by installation prerequisites
 
         Note that the downloaded installation media must be extracted and available to the server where the installation runs.
         NOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.

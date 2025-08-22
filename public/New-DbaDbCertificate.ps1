@@ -1,10 +1,10 @@
 function New-DbaDbCertificate {
     <#
     .SYNOPSIS
-        Creates a new database certificate
+        Creates a new database certificate for encryption and security purposes
 
     .DESCRIPTION
-        Creates a new database certificate. If no database is specified, the certificate will be created in master.
+        Creates a new database certificate within a specified database using SQL Server Management Objects. Database certificates are essential for implementing Transparent Data Encryption (TDE), encrypting stored procedures and functions, securing Service Broker dialogs, and enabling column-level encryption. The certificate can be password-protected or secured by the database master key, with configurable expiration dates and subject information. If no database is specified, the certificate will be created in the master database.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

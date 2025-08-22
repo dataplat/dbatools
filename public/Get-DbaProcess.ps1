@@ -1,10 +1,14 @@
 function Get-DbaProcess {
     <#
     .SYNOPSIS
-        This command displays SQL Server processes.
+        Retrieves active SQL Server processes and sessions with detailed connection and activity information.
 
     .DESCRIPTION
-        This command displays processes associated with a spid, login, host, program or database.
+        Displays comprehensive information about SQL Server processes including session details, connection properties, timing data, and the last executed SQL statement. This function combines data from multiple system views to provide a complete picture of current database activity.
+
+        Use this to monitor active connections, identify blocking processes, track application connections, troubleshoot performance issues, or audit database access patterns. The output includes connection timing, network transport details, authentication schemes, client information, and recent query activity.
+
+        You can filter results by login name, hostname, program name, database, or specific session IDs to focus on particular processes of interest. This is especially useful for identifying connection leaks, monitoring specific applications, or investigating security concerns.
 
         Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the query to get the last executed SQL statement, minutesasleep and host process ID.
 

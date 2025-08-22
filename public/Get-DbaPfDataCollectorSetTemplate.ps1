@@ -1,10 +1,12 @@
 function Get-DbaPfDataCollectorSetTemplate {
     <#
     .SYNOPSIS
-        Parses Perf Monitor templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\).
+        Retrieves Windows Performance Monitor templates designed for SQL Server monitoring and troubleshooting.
 
     .DESCRIPTION
-        Parses Perf Monitor XML templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\).
+        Retrieves information about predefined Windows Performance Monitor (PerfMon) templates specifically created for SQL Server performance analysis. These templates include counter sets for monitoring long-running queries, PAL (Performance Analysis of Logs) configurations for different SQL Server versions, and other SQL Server-focused performance scenarios.
+
+        The function parses XML template files and returns details like template names, descriptions, sources, and file paths. Use this to discover available monitoring templates before deploying them with Import-DbaPfDataCollectorSetTemplate, eliminating the need to manually browse template directories or guess what counters to collect for specific performance issues.
 
     .PARAMETER Path
         The path to the template directory. Defaults to the dbatools template repository (\bin\perfmontemplates\).

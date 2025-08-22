@@ -1,10 +1,10 @@
 function Get-DbaDbView {
     <#
     .SYNOPSIS
-        Gets database views for each SqlInstance.
+        Retrieves SQL Server database views with metadata for documentation and analysis.
 
     .DESCRIPTION
-        Gets database views for each SqlInstance.
+        Retrieves all database views from SQL Server instances along with their schema, creation dates, and modification timestamps. This helps DBAs document database architecture, analyze view dependencies, and audit database objects across multiple servers and databases. The function excludes system views by default when requested, making it useful for focusing on custom business logic views.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

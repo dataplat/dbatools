@@ -1,10 +1,10 @@
 function Move-DbaRegServer {
     <#
     .SYNOPSIS
-        Moves registered servers around SQL Server Central Management Server (CMS). Local Registered Servers not currently supported.
+        Moves registered servers between groups within SQL Server Central Management Server (CMS)
 
     .DESCRIPTION
-        Moves registered servers around SQL Server Central Management Server (CMS). Local Registered Servers not currently supported.
+        Moves registered server entries from one group to another within Central Management Server hierarchy. This helps reorganize CMS structure when server roles change or you need to restructure your server groupings for better management. The function updates the CMS database to reflect the new group membership while preserving all server connection details and properties.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

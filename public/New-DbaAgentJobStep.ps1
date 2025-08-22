@@ -1,10 +1,10 @@
 function New-DbaAgentJobStep {
     <#
     .SYNOPSIS
-        New-DbaAgentJobStep creates a new job step for a job
+        Creates a new step within an existing SQL Server Agent job with configurable execution options and flow control
 
     .DESCRIPTION
-        New-DbaAgentJobStep creates a new job in the SQL Server Agent for a specific job
+        Creates individual job steps within SQL Server Agent jobs, allowing you to build complex automation workflows without manually configuring each step through SSMS. Each step can execute different types of commands (T-SQL, PowerShell, SSIS packages, OS commands) and includes retry logic, success/failure branching, and output capture. When you need to add steps to existing jobs or build multi-step processes, this function handles the step ordering and dependency management automatically, including the ability to insert steps between existing ones without breaking the workflow sequence.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

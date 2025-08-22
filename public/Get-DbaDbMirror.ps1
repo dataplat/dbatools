@@ -1,10 +1,10 @@
 function Get-DbaDbMirror {
     <#
     .SYNOPSIS
-        Gets properties of database mirrors and mirror witnesses.
+        Retrieves database mirroring configuration and status for mirrored databases and their witness servers
 
     .DESCRIPTION
-        Gets properties of database mirrors and mirror witnesses.
+        This command collects detailed mirroring information from databases configured with SQL Server Database Mirroring, including partner servers, witness servers, safety levels, and synchronization status. It queries both the database properties and the sys.database_mirroring_witnesses system view to provide complete mirroring topology details. Use this when you need to audit your mirroring setup, troubleshoot mirroring issues, or verify mirroring configuration across multiple instances without manually checking each database's mirroring properties in SSMS.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

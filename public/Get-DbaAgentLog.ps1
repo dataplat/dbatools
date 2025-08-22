@@ -1,10 +1,10 @@
 function Get-DbaAgentLog {
     <#
     .SYNOPSIS
-        Gets the "SQL Agent Error Log" of an instance
+        Retrieves SQL Server Agent error log entries for troubleshooting and monitoring
 
     .DESCRIPTION
-        Gets the "SQL Agent Error Log" of an instance. Returns all 10 error logs by default.
+        Retrieves SQL Server Agent error log entries from the target instance, providing detailed information about agent service activity, job failures, and system events. This function accesses the agent's historical error logs (numbered 0-9, where 0 is the current log) so you don't have to manually navigate through SQL Server Management Studio or query system views. Essential for troubleshooting job failures, monitoring agent service health, and compliance auditing of automated processes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

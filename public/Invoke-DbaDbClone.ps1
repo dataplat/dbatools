@@ -1,12 +1,12 @@
 function Invoke-DbaDbClone {
     <#
     .SYNOPSIS
-        Clones a database schema and statistics
+        Creates lightweight database clones containing schema and statistics but no table data
 
     .DESCRIPTION
-        Clones a database schema and statistics.
+        Creates schema-only database clones using SQL Server's DBCC CLONEDATABASE command. The cloned database contains all database objects (tables, indexes, views, procedures) and statistics, but no actual table data.
 
-        This can be useful for testing query performance without requiring all the space needed for the data in the database.
+        This is particularly valuable for performance troubleshooting scenarios where you need to analyze query execution plans and optimizer behavior without the storage overhead of copying entire tables. DBAs commonly use this for reproducing performance issues in test environments or sharing database structures with vendors for support cases.
 
         Read more:
             - https://sqlperformance.com/2016/08/sql-statistics/expanding-dbcc-clonedatabase

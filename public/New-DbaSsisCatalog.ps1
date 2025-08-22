@@ -1,10 +1,10 @@
 function New-DbaSsisCatalog {
     <#
     .SYNOPSIS
-        Enables the SSIS Catalog on a SQL Server 2012+
+        Creates and enables the SSIS Catalog (SSISDB) database on SQL Server 2012+ instances
 
     .DESCRIPTION
-        After installing the SQL Server Engine and SSIS you still have to enable the SSIS Catalog. This function will enable the catalog and gives the option of supplying the password.
+        Creates the SSIS Catalog database (SSISDB) which is required before you can deploy, manage, or execute SSIS packages on the server. Installing SQL Server with SSIS doesn't automatically create this catalog - it's a separate post-installation step that requires CLR integration and a secure password for the master key. This function handles the entire setup process, including prerequisite validation, so you don't have to manually run SQL scripts or navigate through SQL Server Management Studio wizards.
 
     .PARAMETER SqlInstance
         SQL Server you wish to run the function on.

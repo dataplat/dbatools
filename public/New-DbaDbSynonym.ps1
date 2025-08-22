@@ -1,10 +1,10 @@
 function New-DbaDbSynonym {
     <#
     .SYNOPSIS
-        Create new synonym for each database(s) / instance(s) of SQL Server.
+        Creates database synonyms to provide alternate names for tables, views, procedures, and other database objects.
 
     .DESCRIPTION
-        The New-DbaDbSynonym creates new synonym on database(s) / instance(s) of SQL Server.
+        Creates database synonyms that serve as alternate names or aliases for database objects like tables, views, stored procedures, and functions. Synonyms simplify object references by providing shorter names, hiding complex schema structures, or creating abstraction layers for applications. You can create synonyms that reference objects in the same database, different databases, or even on linked servers, making cross-database and cross-server object access more manageable for applications and users.
 
    .PARAMETER SqlInstance
         The target SQL Server instance or instances.

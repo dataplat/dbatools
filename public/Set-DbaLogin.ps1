@@ -1,11 +1,10 @@
 function Set-DbaLogin {
     <#
     .SYNOPSIS
-        Set-DbaLogin makes it possible to make changes to one or more logins.
-        SQL Azure DB is not supported.
+        Modifies SQL Server login properties including passwords, permissions, roles, and account status
 
     .DESCRIPTION
-        Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It's also possible to add or remove server roles from the login.
+        Manages SQL Server login accounts by modifying passwords, account status, security settings, and server role memberships in a single operation. Handles common DBA tasks like unlocking accounts, resetting passwords with force-change requirements, and applying password policies for security compliance. Includes a special unlock feature that preserves existing passwords by temporarily disabling policy checks, eliminating the need to reset passwords when unlocking accounts. Works across multiple instances and logins simultaneously, making it ideal for bulk user management and security maintenance workflows.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

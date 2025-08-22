@@ -1,10 +1,10 @@
 function Remove-DbaXESession {
     <#
     .SYNOPSIS
-        Removes Extended Events sessions.
+        Removes Extended Events sessions from SQL Server instances.
 
     .DESCRIPTION
-        This script removes Extended Events sessions on a SQL Server instance.
+        Removes Extended Events sessions from SQL Server instances, giving you the option to target specific sessions by name or remove all user-created sessions at once. This function preserves critical system sessions (system_health, telemetry_xevents, and AlwaysOn_health) when using the AllSessions parameter, so you can safely clean up monitoring sessions without breaking SQL Server's built-in diagnostics. Useful for removing outdated monitoring configurations or cleaning up test sessions that are no longer needed.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

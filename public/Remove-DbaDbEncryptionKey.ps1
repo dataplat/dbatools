@@ -1,10 +1,10 @@
 function Remove-DbaDbEncryptionKey {
     <#
     .SYNOPSIS
-        Deletes specified database encryption key
+        Removes database encryption keys from SQL Server databases to disable Transparent Data Encryption
 
     .DESCRIPTION
-        Deletes specified database encryption key
+        Removes database encryption keys (DEK) from specified databases by executing DROP DATABASE ENCRYPTION KEY. This is typically used when disabling Transparent Data Encryption (TDE) on a database or during encryption key rotation workflows. The database must be unencrypted before the key can be removed, so run ALTER DATABASE [database] SET ENCRYPTION OFF first if TDE is currently active.
 
     .PARAMETER SqlInstance
         The SQL Server to create the encryption keys on.

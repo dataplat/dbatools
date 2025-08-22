@@ -1,10 +1,14 @@
 function Read-DbaBackupHeader {
     <#
     .SYNOPSIS
-        Reads and displays detailed information about a SQL Server backup.
+        Extracts backup metadata from SQL Server backup files without restoring them
 
     .DESCRIPTION
-        Reads full, differential and transaction log backups. An online SQL Server is required to parse the backup files and the path specified must be relative to that SQL Server.
+        Uses SQL Server's RESTORE HEADERONLY functionality to extract detailed metadata from backup files including database name, backup type, creation date, file lists, and backup size information. This lets you validate backups, plan restores, and audit backup inventory without actually performing a restore operation.
+        
+        The function can process full, differential, and transaction log backups from local file systems, network shares, and Azure blob storage. It requires an online SQL Server instance to parse the backup files since it leverages SQL Server's built-in backup reading capabilities.
+        
+        Supports multithreaded processing for improved performance when scanning multiple backup files. The backup file paths must be accessible from the target SQL Server instance, not your local workstation.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

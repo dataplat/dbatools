@@ -1,12 +1,10 @@
 function Get-DbatoolsError {
     <#
     .SYNOPSIS
-        Returns detailed dbatools-related error information
+        Retrieves detailed error information from failed dbatools commands for troubleshooting
 
     .DESCRIPTION
-        Returns detailed dbatools-related error information
-
-        By default, it only returns the most recent error ($error[0])
+        Retrieves detailed error information specifically from dbatools command failures, filtering the PowerShell error collection to show only dbatools-related errors. This provides comprehensive diagnostic details including exception messages, stack traces, and invocation information that help troubleshoot SQL Server connection issues, permission problems, or command syntax errors. By default, it returns only the most recent dbatools error, but can retrieve all historical dbatools errors for pattern analysis or support requests.
 
     .PARAMETER First
         Works like `Select-Object -First 1`

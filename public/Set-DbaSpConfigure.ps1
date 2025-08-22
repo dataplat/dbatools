@@ -1,12 +1,14 @@
 function Set-DbaSpConfigure {
     <#
     .SYNOPSIS
-        Changes the server level system configuration (sys.configuration/sp_configure) value for a given configuration
+        Modifies SQL Server instance-level configuration settings through sp_configure
 
     .DESCRIPTION
-        This function changes the configured value for sp_configure settings. If the setting is dynamic this setting will be used, otherwise the user will be warned that a restart of SQL is required.
-        This is designed to be safe and will not allow for configurations to be set outside of the defined configuration min and max values.
-        While it is possible to set below the min, or above the max this can cause serious problems with SQL Server (including startup failures), and so is not permitted.
+        This function safely modifies SQL Server instance-level configuration values that are normally changed through sp_configure. Use this when you need to adjust settings like max memory, xp_cmdshell, cost threshold for parallelism, or any other server configuration option.
+        
+        For dynamic settings, changes take effect immediately. For static settings, you'll receive a warning that SQL Server must be restarted before the new value becomes active.
+        
+        Built-in safety prevents setting values outside their defined minimum and maximum ranges, protecting against configuration errors that could prevent SQL Server from starting or cause performance issues.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a

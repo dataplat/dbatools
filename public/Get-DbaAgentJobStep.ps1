@@ -1,10 +1,10 @@
 function Get-DbaAgentJobStep {
     <#
     .SYNOPSIS
-        Gets SQL Agent Job Step information for each instance(s) of SQL Server.
+        Retrieves detailed SQL Agent job step information including execution status and configuration from SQL Server instances.
 
     .DESCRIPTION
-        The Get-DbaAgentJobStep returns connected SMO object for SQL Agent Job Step for each instance(s) of SQL Server.
+        Collects comprehensive details about SQL Agent job steps across one or more SQL Server instances. Returns information about each step's subsystem type, last execution date, outcome, and current state, which is essential for monitoring job performance and troubleshooting failed automation tasks. You can filter results by specific jobs, exclude disabled jobs, or process job objects from Get-DbaAgentJob to focus on particular maintenance routines or scheduled processes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

@@ -1,10 +1,10 @@
 function Get-DbaReplPublication {
     <#
     .SYNOPSIS
-        Displays all publications on a server.
+        Retrieves replication publications from SQL Server instances, including transactional, merge, and snapshot publications.
 
     .DESCRIPTION
-        Quickly find all transactional, merge, and snapshot publications on a server or filter by database, name or type.
+        Scans SQL Server instances to identify and return all replication publications configured as publishers. This function examines each database's replication options to locate published databases, then retrieves detailed information about their publications including associated articles and subscriptions. DBAs use this to audit replication topology, troubleshoot publication configuration issues, and document existing replication setup across their environment. Results can be filtered by specific databases, publication names, or publication types to focus on particular replication components.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Get-DbaDbTrigger {
     <#
     .SYNOPSIS
-        Get all existing database triggers on one or more SQL instances.
+        Retrieves database-level DDL triggers from SQL Server instances for security auditing and change tracking analysis.
 
     .DESCRIPTION
-        Get all existing database triggers on one or more SQL instances.
+        Retrieves all database-level DDL triggers from one or more SQL Server instances. Database triggers fire in response to DDL events like CREATE, ALTER, or DROP statements within a specific database, making them useful for change auditing and security monitoring. This function helps DBAs inventory these triggers for compliance reporting, troubleshooting performance issues, or documenting automated database change tracking mechanisms. Returns trigger details including name, enabled status, and last modification date.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

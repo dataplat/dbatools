@@ -1,13 +1,13 @@
 function Set-DbaCmConnection {
     <#
     .SYNOPSIS
-        Configures a connection object for use in remote computer management.
+        Configures remote computer connection settings for SQL Server host management.
 
     .DESCRIPTION
-        Configures a connection object for use in remote computer management.
-        This function will either create new records for computers that have no connection registered so far, or it will configure existing connections if already present.
+        Configures connection objects that dbatools uses to manage remote SQL Server host computers via CIM, WMI, and PowerShell remoting.
+        This function creates new connection records for computers not yet cached, or modifies existing connection settings for previously contacted hosts.
 
-        As such it can be handy in making bulk-edits on connections or manually adjusting some settings.
+        Use this to bulk-configure connection behavior, manage credential caching, or troubleshoot remote connection issues when dbatools functions need to access SQL Server host systems for tasks like service management, file operations, or system information gathering.
 
     .PARAMETER ComputerName
         The computer to build the connection object for.

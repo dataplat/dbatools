@@ -1,10 +1,12 @@
 function Get-DbaWaitingTask {
     <#
     .SYNOPSIS
-        Displays waiting task.
+        Retrieves detailed information about currently waiting sessions and their wait types from SQL Server dynamic management views.
 
     .DESCRIPTION
-        This command is based on waiting task T-SQL script published by Paul Randal.
+        Queries sys.dm_os_waiting_tasks and related DMVs to identify sessions that are currently waiting, along with comprehensive diagnostic information including wait types, durations, blocking sessions, SQL text, and query plans. This function helps DBAs quickly identify performance bottlenecks, troubleshoot blocking issues, and analyze what's causing slowdowns in real-time. The output includes helpful context like degree of parallelism for CXPACKET waits, resource descriptions, and direct links to SQLSkills wait type documentation for further analysis.
+
+        This command is based on the waiting task T-SQL script published by Paul Randal.
         Reference: https://www.sqlskills.com/blogs/paul/updated-sys-dm_os_waiting_tasks-script-2/
 
     .PARAMETER SqlInstance

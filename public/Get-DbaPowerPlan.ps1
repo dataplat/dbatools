@@ -1,11 +1,12 @@
 function Get-DbaPowerPlan {
     <#
     .SYNOPSIS
-        Gets the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.
+        Retrieves Windows Power Plan configuration from SQL Server hosts to verify High Performance settings.
 
     .DESCRIPTION
-        Gets the Power Plan settings on a computer against best practices recommendations.
-        To display all available Power Plans on a computer, use the parameter List.
+        Checks the active Windows Power Plan configuration on SQL Server host computers to ensure they follow performance best practices. SQL Server performance can be significantly impacted by power management settings that throttle CPU frequency or put processors to sleep during idle periods.
+        
+        By default, returns the currently active power plan for each specified computer. Use the -List parameter to view all available power plans and their status. Microsoft recommends using the "High Performance" power plan for SQL Server hosts to prevent CPU throttling and ensure consistent database performance.
 
     .PARAMETER ComputerName
         The server(s) to check Power Plan settings on.

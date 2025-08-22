@@ -1,11 +1,16 @@
 function Get-DbaAgentJobHistory {
     <#
     .SYNOPSIS
-        Gets execution history of SQL Agent Job on instance(s) of SQL Server.
+        Retrieves SQL Server Agent job execution history from msdb database for troubleshooting and compliance reporting.
 
     .DESCRIPTION
-        Get-DbaAgentJobHistory returns all information on the executions still available on each instance(s) of SQL Server submitted.
-        The cleanup of SQL Agent history determines how many records are kept.
+        Get-DbaAgentJobHistory queries the msdb database to retrieve detailed execution records for SQL Server Agent jobs, helping you troubleshoot failures, monitor performance trends, and generate compliance reports. This function accesses the same historical data you'd find in SQL Server Management Studio's Job Activity Monitor, but with powerful filtering and output options.
+
+        The function is essential when investigating why jobs failed, analyzing execution patterns over time, or preparing audit documentation. You can filter results by specific jobs, date ranges, or outcome types (failed, succeeded, retry, etc.), and optionally include job step details or just summary-level information.
+
+        Results include calculated fields like duration, formatted start/end dates, and readable status descriptions. When used with -WithOutputFile, it resolves SQL Agent token placeholders in output file paths, making it easier to locate job logs for further investigation.
+
+        Historical data availability depends on your SQL Agent history cleanup settings - older executions may have been purged based on your retention configuration.
 
         https://msdn.microsoft.com/en-us/library/ms201680.aspx
         https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.agent.jobhistoryfilter(v=sql.120).aspx

@@ -1,10 +1,10 @@
 function New-DbaLinkedServerLogin {
     <#
     .SYNOPSIS
-        Creates a new linked server login.
+        Creates authentication mappings between local and remote logins for linked server connections.
 
     .DESCRIPTION
-        Creates a new linked server login. See the Microsoft documentation for sp_addlinkedsrvlogin for more details on the parameters.
+        Creates linked server login mappings that define how local SQL Server logins authenticate to remote servers during distributed queries. You can either map specific local logins to remote credentials or configure impersonation where local logins use their own credentials. This eliminates the need to hardcode passwords in applications that query across linked servers and provides centralized authentication management for cross-server operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

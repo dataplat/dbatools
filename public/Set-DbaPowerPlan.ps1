@@ -1,12 +1,14 @@
 function Set-DbaPowerPlan {
     <#
     .SYNOPSIS
-        Sets the SQL Server OS's Power Plan.
+        Configures Windows power plan on SQL Server host computers to optimize database performance.
 
     .DESCRIPTION
-        Sets the SQL Server OS's Power Plan. Defaults to High Performance which is best practice.
+        Changes the Windows power plan on SQL Server host machines using WMI and PowerShell remoting. Defaults to High Performance, which prevents CPU throttling that can severely impact database query performance and response times.
 
-        If your organization uses a different power plan that is considered best practice, specify -PowerPlan.
+        Windows power plans control CPU frequency scaling, and the default "Balanced" plan can cause significant performance degradation under SQL Server workloads. This function ensures your SQL Server hosts are configured for optimal performance rather than power savings.
+
+        If your organization has a custom power plan considered best practice, you can specify it with -PowerPlan. The function will skip computers that already have the target power plan active.
 
         References:
         https://support.microsoft.com/en-us/kb/2207548

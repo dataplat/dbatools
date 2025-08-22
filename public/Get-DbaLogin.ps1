@@ -1,11 +1,10 @@
 function Get-DbaLogin {
     <#
     .SYNOPSIS
-        Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.
-        SQL Azure DB is not supported.
+        Retrieves SQL Server login accounts with filtering options for security audits and access management
 
     .DESCRIPTION
-        The Get-DbaLogin function returns an SMO Login object for the logins passed, if there are no users passed it will return all logins.
+        Returns detailed information about SQL Server login accounts, including authentication type, security status, and last login times. This function helps DBAs perform security audits by identifying locked, disabled, or expired accounts, and distinguish between Windows and SQL authentication logins. Use it to troubleshoot access issues, generate compliance reports, or review login configurations across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.

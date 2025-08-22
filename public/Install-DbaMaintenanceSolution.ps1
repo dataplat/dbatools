@@ -1,10 +1,10 @@
 function Install-DbaMaintenanceSolution {
     <#
     .SYNOPSIS
-        Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
+        Installs Ola Hallengren's Maintenance Solution stored procedures and optional SQL Agent jobs for automated database maintenance
 
     .DESCRIPTION
-        This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren
+        Deploys Ola Hallengren's comprehensive maintenance framework including DatabaseBackup, DatabaseIntegrityCheck, IndexOptimize, and CommandExecute stored procedures to automate backup, DBCC checks, and index maintenance tasks. Optionally creates pre-configured SQL Agent jobs with intelligent scheduling for daily, weekly, and log backup routines. Replaces manual maintenance scripting with industry-standard procedures used by thousands of SQL Server environments worldwide.
 
     .PARAMETER SqlInstance
         The target SQL Server instance onto which the Maintenance Solution will be installed.

@@ -2,10 +2,10 @@
 function Remove-DbaNetworkCertificate {
     <#
     .SYNOPSIS
-        Removes the network certificate for SQL Server instance
+        Removes the SSL certificate configuration from SQL Server network encryption settings
 
     .DESCRIPTION
-        Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.
+        Removes the certificate thumbprint from SQL Server's network encryption configuration by clearing the Certificate registry value in SuperSocketNetLib. This disables forced SSL encryption for client connections and returns the instance to unencrypted or optional encryption mode. Use this when decommissioning certificates, troubleshooting SSL connection issues, or when you need to reconfigure encryption settings from scratch.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)

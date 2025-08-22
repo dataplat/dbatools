@@ -1,10 +1,10 @@
 function New-DbaServerRole {
     <#
     .SYNOPSIS
-        Create new server-level roles.
+        Creates custom server-level roles on SQL Server instances for role-based access control.
 
     .DESCRIPTION
-        The New-DbaServerRole create new roles on instance(s) of SQL Server.
+        Creates new server-level roles on one or more SQL Server instances, allowing you to implement custom security frameworks without manually using SSMS or T-SQL. Server roles provide a way to group server-level permissions and assign them to logins, making it easier to manage security across your environment. The function checks for existing roles before creation and optionally allows you to specify a role owner other than the default dbo.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

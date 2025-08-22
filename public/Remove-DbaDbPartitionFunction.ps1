@@ -1,10 +1,10 @@
 function Remove-DbaDbPartitionFunction {
     <#
     .SYNOPSIS
-        Removes a database partition function(s) from each database and SQL Server instance.
+        Drops partition functions from SQL Server databases to clean up unused partitioning schemes.
 
     .DESCRIPTION
-        Removes a database partition function(s), with supported piping from Get-DbaDbPartitionFunction.
+        Removes partition functions from specified databases across one or more SQL Server instances. Partition functions define the value ranges used to split table data across multiple filegroups, and removing unused functions helps maintain a clean database schema. This command is commonly used during partition cleanup operations, schema migrations, or when decommissioning partitioned tables that no longer require their associated partition functions.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

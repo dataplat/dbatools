@@ -1,10 +1,10 @@
 function Get-DbaDbMailLog {
     <#
     .SYNOPSIS
-        Gets the DBMail log from a SQL instance
+        Retrieves Database Mail event logs from msdb for troubleshooting email delivery issues
 
     .DESCRIPTION
-        Gets the DBMail log from a SQL instance
+        Retrieves Database Mail event logs from the msdb.dbo.sysmail_event_log table, providing detailed information about email send attempts, failures, and system events. This function is essential for diagnosing Database Mail problems, monitoring email delivery status, and identifying configuration issues. You can filter results by date range and event type (Error, Warning, Success, Information, Internal) to focus on specific troubleshooting scenarios rather than manually querying the mail log tables.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

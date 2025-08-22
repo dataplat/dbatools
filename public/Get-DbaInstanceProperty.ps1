@@ -1,10 +1,10 @@
 function Get-DbaInstanceProperty {
     <#
     .SYNOPSIS
-        Gets SQL Server instance properties of one or more instance(s) of SQL Server.
+        Retrieves comprehensive SQL Server instance configuration properties for auditing and comparison
 
     .DESCRIPTION
-        The Get-DbaInstanceProperty command gets SQL Server instance properties from the SMO object sqlserver.
+        Retrieves all instance-level configuration properties from SQL Server's Information, UserOptions, and Settings collections via SMO. This gives you a complete inventory of server settings like default file paths, memory configuration, security options, and user defaults in a standardized format. Essential for configuration audits, compliance reporting, environment comparisons, and troubleshooting configuration-related issues across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

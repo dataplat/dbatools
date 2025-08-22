@@ -1,12 +1,14 @@
 function Remove-DbaDbUser {
     <#
     .SYNOPSIS
-        Drop database user
+        Removes database users from SQL Server databases with intelligent schema ownership handling
 
     .DESCRIPTION
-        If user is the owner of a schema with the same name and if if the schema does not have any underlying objects the schema will be
-        dropped.  If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be
-        changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
+        Safely removes database users from SQL Server databases while automatically handling schema ownership conflicts that would normally prevent user deletion. This eliminates the manual process of identifying and resolving schema ownership issues before removing users.
+
+        When a user owns schemas, the function intelligently manages the cleanup: schemas with the same name as the user are dropped (if empty), while other owned schemas have their ownership transferred to 'dbo'. If schemas contain objects, use -Force to allow ownership transfer and proceed with user removal.
+
+        The function works across multiple databases and instances, making it ideal for cleanup operations during user deprovisioning or database migrations where you need to remove users without leaving orphaned objects or broken ownership chains.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

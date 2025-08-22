@@ -1,10 +1,12 @@
 function Get-DbaPfDataCollector {
     <#
     .SYNOPSIS
-        Gets Performance Monitor Data Collectors.
+        Retrieves Windows Performance Monitor data collectors and their configuration details from local or remote computers.
 
     .DESCRIPTION
-        Gets Performance Monitor Data Collectors.
+        Retrieves detailed information about Windows Performance Monitor data collectors within collector sets, commonly used by DBAs to monitor SQL Server performance counters. This function parses the XML configuration of existing data collectors to show their settings, file locations, sample intervals, and the specific performance counters they collect.
+
+        Use this when you need to audit existing performance monitoring setups, verify collector configurations, or identify which performance counters are being captured for SQL Server baseline analysis and troubleshooting. The function works across multiple computers and integrates with Get-DbaPfDataCollectorSet for filtering specific collector sets.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

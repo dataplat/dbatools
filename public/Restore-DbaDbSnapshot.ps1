@@ -1,12 +1,14 @@
 function Restore-DbaDbSnapshot {
     <#
     .SYNOPSIS
-        Restores databases from snapshots
+        Restores SQL Server databases from database snapshots, reverting to the snapshot's point-in-time state
 
     .DESCRIPTION
-        Restores the database from the snapshot, discarding every modification made to the database
-        NB: Restoring to a snapshot will result in every other snapshot of the same database to be dropped
-        It also fixes some long-standing bugs in SQL Server when restoring from snapshots
+        Restores SQL Server databases to their exact state when a database snapshot was created, discarding all changes made since that point. This is particularly useful for quickly reverting development databases after testing, rolling back problematic changes, or returning to a known good state without restoring from backup files.
+
+        The function uses SQL Server's RESTORE DATABASE FROM DATABASE_SNAPSHOT command and automatically handles SQL Server's requirement that all other snapshots of the same database be dropped before restoration. It also fixes a SQL Server bug where log file growth settings get reset to their defaults during snapshot restoration.
+
+        When Force is specified, the command will terminate active connections to both the target database and snapshot to ensure the restore operation completes successfully.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

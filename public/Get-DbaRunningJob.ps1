@@ -1,10 +1,12 @@
 function Get-DbaRunningJob {
     <#
     .SYNOPSIS
-        Returns all non-idle Agent jobs running on the server
+        Retrieves SQL Server Agent jobs that are currently executing
 
     .DESCRIPTION
-        This function returns agent jobs that active on the SQL Server instance when calling the command
+        This function returns SQL Server Agent jobs that are actively running at the moment you call it, filtering out any jobs in idle state. 
+        Use this to monitor job execution during maintenance windows, troubleshoot performance issues by identifying resource-consuming jobs, or verify that no jobs are running before performing maintenance operations.
+        The function refreshes job status information to provide real-time execution details rather than cached data.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

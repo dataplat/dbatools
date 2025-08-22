@@ -1,11 +1,14 @@
 function Get-DbaSpConfigure {
     <#
     .SYNOPSIS
-        Returns all server level system configuration (sys.configuration/sp_configure) information
+        Retrieves SQL Server sp_configure settings with default value comparisons for configuration auditing
 
     .DESCRIPTION
-        This function returns server level system configuration (sys.configuration/sp_configure) information. The information is gathered through SMO Configuration.Properties.
-        The data includes the default value for each configuration, for quick identification of values that may have been changed.
+        Retrieves all SQL Server instance-level configuration settings accessible through sp_configure, using SMO to gather comprehensive details about each setting. This function compares current configured and running values against SQL Server defaults to quickly identify which settings have been customized from their out-of-box values.
+        
+        Essential for configuration auditing, compliance checks, and ensuring consistency across multiple SQL Server environments. The output includes advanced and basic settings, minimum/maximum allowed values, whether settings are dynamic (require restart), and flags non-default configurations for review.
+        
+        Particularly useful when documenting server configurations, troubleshooting performance issues related to memory or parallelism settings, or preparing for server migrations where you need to replicate custom configurations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input

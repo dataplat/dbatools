@@ -1,10 +1,10 @@
 function Join-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Joins a secondary replica to an availability group on a SQL Server instance.
+        Adds a SQL Server instance as a secondary replica to an existing availability group.
 
     .DESCRIPTION
-        Joins a secondary replica to an availability group on a SQL Server instance.
+        Adds a SQL Server instance as a secondary replica to an existing availability group that has already been created on the primary replica. This command is typically used after creating the availability group on the primary server and before adding databases to the group. The target instance must have the availability group feature enabled and be properly configured for high availability. For SQL Server 2017 and later, you can specify the cluster type (External, Wsfc, or None) to match your environment's configuration.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

@@ -1,10 +1,14 @@
 function Show-DbaDbList {
     <#
     .SYNOPSIS
-        Shows a list of databases in a GUI.
+        Displays available databases in an interactive selection window
 
     .DESCRIPTION
-        Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.
+        Creates a Windows Presentation Framework dialog that connects to a SQL Server instance and presents all databases in a visual tree view for selection. This eliminates the need to hardcode database names in scripts or remember exact database names when building interactive tools.
+
+        The function returns the name of the selected database as a string, making it ideal for building user-friendly maintenance scripts, allowing end users to choose databases without SQL Server Management Studio, or creating dynamic tools that work across different environments where database names may vary.
+
+        Clicking OK returns the selected database name, while Cancel returns null, allowing your scripts to handle user cancellation gracefully.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances..

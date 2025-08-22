@@ -1,10 +1,10 @@
 function Get-DbaAgReplica {
     <#
     .SYNOPSIS
-        Returns the availability group replica object found on the server.
+        Retrieves availability group replica configuration and status information from SQL Server instances.
 
     .DESCRIPTION
-        Returns the availability group replica object found on the server.
+        Retrieves detailed information about availability group replicas including their current role, connection state, synchronization status, and failover configuration. This function helps DBAs monitor replica health, verify failover readiness, and troubleshoot availability group issues without manually querying system views. Returns comprehensive replica properties like backup priority, endpoint URLs, session timeouts, and read-only routing lists for availability group management and compliance reporting.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

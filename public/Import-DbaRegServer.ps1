@@ -1,10 +1,10 @@
 function Import-DbaRegServer {
     <#
     .SYNOPSIS
-        Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
+        Imports registered servers and server groups into SQL Server Central Management Server from XML files, other CMS instances, or custom objects
 
     .DESCRIPTION
-        Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
+        Imports registered servers and server groups into a SQL Server Central Management Server (CMS) from multiple sources including exported XML files, other CMS instances, or custom objects like CSVs. The function automatically creates missing server groups during import and supports importing to specific group locations within the CMS hierarchy. This is essential for migrating CMS configurations between environments, consolidating server inventories from multiple sources, or bulk-loading server lists into a new CMS setup.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

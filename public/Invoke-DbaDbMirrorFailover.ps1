@@ -1,10 +1,10 @@
 function Invoke-DbaDbMirrorFailover {
     <#
     .SYNOPSIS
-        Failover a mirrored database
+        Fails over database mirroring configurations to the mirror server
 
     .DESCRIPTION
-        Failover a mirrored database
+        Performs a database mirroring failover by switching roles between the primary and mirror servers. For synchronous mirroring, sets safety level to Full and executes a clean failover without data loss. For asynchronous mirroring or emergency situations, use -Force to allow a forced failover that may result in data loss. This is essential for planned maintenance, disaster recovery scenarios, and testing your high availability setup.
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the primary SQL Server.

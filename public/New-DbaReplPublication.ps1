@@ -1,10 +1,12 @@
 function New-DbaReplPublication {
     <#
     .SYNOPSIS
-        Creates a publication for the database on the target SQL instances.
+        Creates a SQL Server replication publication for transactional, snapshot, or merge replication
 
     .DESCRIPTION
-        Creates a publication for the database on the target SQL instances.
+        Creates a new replication publication on a SQL Server instance that's already configured as a publisher. This function enables publishing on the specified database, creates necessary replication agents (Log Reader for transactional/snapshot, Snapshot Agent for all types), and establishes the publication object that defines what data will be replicated to subscribers.
+
+        Use this command when setting up the publisher side of SQL Server replication to distribute data across multiple servers. The publication acts as a container for the articles (tables, views, stored procedures) you want to replicate. After creating the publication, you'll typically add articles using Add-DbaReplArticle and create subscriptions on target servers.
 
         https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/create-a-publication?view=sql-server-ver16
 

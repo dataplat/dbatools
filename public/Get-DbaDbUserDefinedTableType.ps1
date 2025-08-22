@@ -1,10 +1,10 @@
 function Get-DbaDbUserDefinedTableType {
     <#
     .SYNOPSIS
-        Gets database user defined table types
+        Retrieves user-defined table types from SQL Server databases
 
     .DESCRIPTION
-        Gets database user defined table types
+        Retrieves user-defined table types from SQL Server databases, which are custom data types used as table-valued parameters in stored procedures and functions. This command helps DBAs audit these schema-bound objects, document their structure and usage, or identify dependencies before making database changes. Returns detailed information including column definitions, ownership, and creation dates across multiple databases and instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

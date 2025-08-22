@@ -1,10 +1,14 @@
 function Get-DbaOpenTransaction {
     <#
     .SYNOPSIS
-        Displays all open transactions.
+        Retrieves detailed information about open database transactions across SQL Server instances.
 
     .DESCRIPTION
-        This command is based on open transaction script published by Paul Randal.
+        Queries SQL Server dynamic management views to identify open transactions that may be causing blocking, consuming transaction log space, or impacting performance. Returns comprehensive details including session information, database context, transaction duration, log space usage, and the last executed query with its execution plan.
+        
+        This is particularly useful when troubleshooting blocking issues, investigating long-running transactions, or monitoring transaction log growth. The function helps DBAs quickly identify which sessions are holding transactions open and assess their potential impact on system performance.
+        
+        This command is based on the open transaction monitoring script published by Paul Randal.
         Reference: https://www.sqlskills.com/blogs/paul/script-open-transactions-with-text-and-plans/
 
     .PARAMETER SqlInstance

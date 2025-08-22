@@ -1,11 +1,10 @@
 function Get-DbaSchemaChangeHistory {
     <#
     .SYNOPSIS
-        Gets DDL changes logged in the system trace.
+        Retrieves DDL change history from the SQL Server default system trace
 
     .DESCRIPTION
-        Queries the default system trace for any DDL changes in the specified time frame
-        Only works with SQL 2005 and later, as the system trace didn't exist before then
+        Queries the default system trace to track CREATE, DROP, and ALTER operations performed on database objects, providing a complete audit trail of schema modifications. This helps DBAs identify who made changes, when they occurred, and which objects were affected without needing to manually parse trace files or enable custom auditing. Returns detailed information including login names, timestamps, application sources, and operation types for compliance reporting and troubleshooting. Only works with SQL Server 2005 and later, as the system trace didn't exist before then.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

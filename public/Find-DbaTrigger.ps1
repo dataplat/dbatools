@@ -1,11 +1,14 @@
 function Find-DbaTrigger {
     <#
     .SYNOPSIS
-        Returns all triggers that contain a specific case-insensitive string or regex pattern.
+        Searches trigger code across server, database, and object levels for specific text patterns or regex matches.
 
     .DESCRIPTION
-        This function search on Instance, Database and Object level.
-        If you specify one or more databases, search on Server level will not be preformed.
+        Searches through SQL Server trigger definitions to find specific text patterns, supporting both literal strings and regular expressions. Examines triggers at three levels: server-level triggers, database-level DDL triggers, and object-level DML triggers on tables and views.
+
+        This is particularly useful when you need to find triggers that reference specific objects before making schema changes, locate hardcoded values that need updating, or audit trigger code for compliance requirements. The function returns matching lines with line numbers, making it easy to pinpoint exactly where patterns occur in trigger code.
+
+        When you specify specific databases, server-level trigger searches are skipped to focus the search scope. The function uses efficient SQL queries against system catalog views to examine trigger definitions without loading all trigger objects into memory.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input

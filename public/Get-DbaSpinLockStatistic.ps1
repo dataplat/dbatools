@@ -1,20 +1,24 @@
 function Get-DbaSpinLockStatistic {
     <#
     .SYNOPSIS
-        Displays information from sys.dm_os_spinlock_stats.  Works on SQL Server 2008 and above.
+        Retrieves spinlock contention statistics from SQL Server's internal synchronization mechanisms
 
     .DESCRIPTION
-            This command is based off of Paul Randal's post "Advanced SQL Server performance tuning"
+        Queries sys.dm_os_spinlock_stats to return detailed statistics about SQL Server's spinlock usage and contention. Spinlocks are lightweight synchronization primitives that SQL Server uses internally for very brief waits when protecting critical code sections and memory structures.
 
-            Returns:
-                    SpinLockName
-                    Collisions
-                    Spins
-                    SpinsPerCollision
-                    SleepTime
-                    Backoffs
+        This information helps diagnose severe performance issues caused by spinlock contention, which typically manifests as high CPU usage with poor throughput. Common spinlock contention scenarios include tempdb allocation bottlenecks, excessive concurrent activity on specific database objects, or issues with SQL Server's internal data structures.
 
-            Reference:  https://www.sqlskills.com/blogs/paul/advanced-performance-troubleshooting-waits-latches-spinlocks/
+        Based on Paul Randal's advanced performance troubleshooting methodology, this data is essential when wait statistics show SOS_SCHEDULER_YIELD or other CPU-related waits that might indicate spinlock pressure.
+
+        Returns:
+                SpinLockName - The type of spinlock (e.g., LOCK_HASH, LOGCACHE_ACCESS)
+                Collisions - Number of times threads had to wait for the spinlock
+                Spins - Total number of spin cycles before acquiring the lock
+                SpinsPerCollision - Average spins per collision (efficiency indicator)
+                SleepTime - Total time spent sleeping when spins were exhausted
+                Backoffs - Number of times the thread backed off before retrying
+
+        Reference: https://www.sqlskills.com/blogs/paul/advanced-performance-troubleshooting-waits-latches-spinlocks/
 
     .PARAMETER SqlInstance
         The SQL Server instance. Server version must be SQL Server version 2008 or higher.

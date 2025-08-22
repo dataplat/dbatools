@@ -1,10 +1,10 @@
 function Publish-DbaDacPackage {
     <#
     .SYNOPSIS
-        The Publish-DbaDacPackage command takes a dacpac or bacpac and publishes it to a database.
+        Deploys DACPAC or BACPAC files to SQL Server databases using the DacFx framework
 
     .DESCRIPTION
-        Publishes the dacpac taken from SSDT project or Export-DbaDacPackage. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts) or bacpac.
+        Deploys database schema changes from DACPAC files created by SSDT projects or Export-DbaDacPackage, automatically updating target database structure and executing embedded pre/post deployment scripts. Also imports data from BACPAC files for complete database restoration scenarios. This replaces manual schema synchronization and deployment processes, making it essential for CI/CD pipelines and environment promotions. You can generate deployment scripts without applying changes for review, or use publish profiles to control deployment behavior and variable substitution.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Remove-DbaDatabase {
     <#
     .SYNOPSIS
-        Drops a user database, hopefully even the really stuck ones.
+        Removes user databases using multiple fallback methods to handle stuck or locked databases.
 
     .DESCRIPTION
-        Tries a bunch of different ways to remove a user created database or two or more.
+        Removes user databases by attempting three different drop methods in sequence until one succeeds. First tries the standard KillDatabase() method, then attempts to set the database to single-user mode with rollback immediate before dropping, and finally uses the SMO Drop() method. This approach handles databases that are stuck due to active connections, replication, mirroring, or other locks that prevent normal removal. System databases are automatically excluded from removal operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.

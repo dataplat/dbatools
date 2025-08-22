@@ -1,10 +1,10 @@
 function Get-DbaDbUser {
     <#
     .SYNOPSIS
-        Gets database users
+        Retrieves database user accounts and their associated login mappings from SQL Server databases
 
     .DESCRIPTION
-        Gets database users
+        Retrieves all database user accounts from one or more databases, showing their associated server logins, authentication types, and access states. This function is essential for security audits, user access reviews, and compliance reporting where you need to see who has database-level access and how their accounts are configured. You can filter results by specific users, logins, databases, or exclude system accounts to focus on custom user accounts that require regular review.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

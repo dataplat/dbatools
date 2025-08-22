@@ -1,10 +1,10 @@
 function New-DbaConnectionStringBuilder {
     <#
     .SYNOPSIS
-        Returns a Microsoft.Data.SqlClient.SqlConnectionStringBuilder with the string specified
+        Creates a SqlConnectionStringBuilder object for constructing properly formatted SQL Server connection strings
 
     .DESCRIPTION
-        Creates a Microsoft.Data.SqlClient.SqlConnectionStringBuilder from a connection string.
+        Creates a Microsoft.Data.SqlClient.SqlConnectionStringBuilder object from either an existing connection string or individual connection parameters. This allows you to programmatically build, modify, or validate connection strings without manually concatenating string values. The function handles authentication methods, encryption settings, connection pooling, and other SQL Server connection options, making it useful for scripts that need to connect to different SQL Server instances with varying configurations.
 
     .PARAMETER ConnectionString
         A Connection String

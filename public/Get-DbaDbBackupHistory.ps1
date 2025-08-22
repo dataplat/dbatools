@@ -1,14 +1,10 @@
 function Get-DbaDbBackupHistory {
     <#
     .SYNOPSIS
-        Returns backup history details for databases on a SQL Server.
+        Retrieves backup history records from MSDB for analysis and compliance reporting.
 
     .DESCRIPTION
-        Returns backup history details for some or all databases on a SQL Server.
-
-        You can even get detailed information (including file path) for latest full, differential and log files.
-
-        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present.
+        Queries the MSDB database backup tables to extract detailed backup history information including file paths, sizes, compression ratios, and LSN sequences. Essential for compliance auditing, disaster recovery planning, and troubleshooting backup issues without having to manually query system tables. The function automatically groups striped backup sets into single objects and excludes copy-only backups by default, making the output more practical for restoration scenarios. You can filter results by database name, backup type, date range, or retrieve only the most recent backup chains needed for point-in-time recovery.
 
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 

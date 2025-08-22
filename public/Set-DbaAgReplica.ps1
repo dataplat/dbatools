@@ -1,12 +1,12 @@
 function Set-DbaAgReplica {
     <#
     .SYNOPSIS
-        Sets the properties for a replica to an availability group on a SQL Server instance.
+        Modifies configuration properties of existing availability group replicas.
 
     .DESCRIPTION
-        Sets the properties for a replica to an availability group on a SQL Server instance.
+        Modifies configuration properties of existing availability group replicas such as availability mode, failover behavior, backup priority, and read-only routing settings. This function is used for ongoing management and tuning of availability groups after initial setup, allowing you to adjust replica behavior without recreating the availability group.
 
-        Automatically creates a database mirroring endpoint if required.
+        Common use cases include changing synchronous replicas to asynchronous for performance, adjusting backup priorities to control where backups run, configuring automatic failover settings, and setting up read-only routing for load balancing read workloads across secondary replicas.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

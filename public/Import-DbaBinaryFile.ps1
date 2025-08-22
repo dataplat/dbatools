@@ -1,12 +1,14 @@
 function Import-DbaBinaryFile {
     <#
     .SYNOPSIS
-        Imports binary files into SQL Server
+        Loads binary files from the filesystem into SQL Server database tables
 
     .DESCRIPTION
-        Imports binary files into SQL Server.
+        Reads binary files from disk and stores them in SQL Server tables with binary, varbinary, or image columns. This is useful for storing documents, images, executables, or any file type directly in the database for archival, content management, or application integration scenarios.
 
-        If specific filename and binary columns aren't specified, the command will guess based on the datatype (binary/image) for the binary column and a match for "name" as the filename column.
+        The command automatically detects the appropriate columns for storing file data - it looks for binary-type columns (binary, varbinary, image) for the file contents and columns containing "name" for the filename. You can also specify exact column names or provide a custom INSERT statement for more complex scenarios.
+
+        Files can be imported individually, from directories (with recursion), or piped in from Get-ChildItem. Each file is read as a byte array and inserted using parameterized queries to safely handle binary data of any size within SQL Server's limits.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.

@@ -1,10 +1,10 @@
 function Get-DbaCmConnection {
     <#
     .SYNOPSIS
-        Retrieves windows management connections from the cache
+        Retrieves cached Windows Management and CIM connections used by dbatools commands
 
     .DESCRIPTION
-        Retrieves windows management connections from the cache
+        Shows which remote computer connections are currently cached by dbatools for Windows Management and CIM operations. This helps you understand what authentication contexts are active and troubleshoot connection issues when running dbatools commands against remote SQL Server instances. Cached connections are automatically created when you run dbatools commands that need to access Windows services, registry, or file system on remote servers.
 
     .PARAMETER ComputerName
         The computername to ComputerName for.

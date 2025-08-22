@@ -1,12 +1,10 @@
 function New-DbaDbEncryptionKey {
     <#
     .SYNOPSIS
-        Creates a new database encryption key that is encrypted by the instance certificate
+        Creates database encryption keys for Transparent Data Encryption (TDE)
 
     .DESCRIPTION
-        Creates a new database encryption key. If no database is specified, the encryption key will be created in master.
-
-        In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
+        Creates database encryption keys (DEKs) required for Transparent Data Encryption, using certificates or asymmetric keys from the master database. This is the essential first step before enabling TDE on any database to encrypt data at rest. The function automatically validates that certificates have been backed up before creating encryption keys, preventing potential data loss scenarios. If no encryptor is specified, it will automatically select an appropriate certificate or asymmetric key from master database.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

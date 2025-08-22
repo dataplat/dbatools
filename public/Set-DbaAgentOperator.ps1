@@ -1,10 +1,10 @@
 function Set-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Updates/modifies agent operators on an instance.
+        Modifies existing SQL Agent operator contact details, pager schedules, and failsafe settings.
 
     .DESCRIPTION
-        Updates/modifies agent operators on an instance.
+        Modifies existing SQL Agent operators by updating their contact information, pager notification schedules, and failsafe operator configuration. This lets you change email addresses, pager contacts, net send addresses, and specify when pager notifications should be active without having to manually update operators through SQL Server Management Studio. You can also designate an operator as the failsafe operator that receives notifications when the primary assigned operators are unavailable.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

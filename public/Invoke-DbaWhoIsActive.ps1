@@ -1,10 +1,10 @@
 function Invoke-DbaWhoIsActive {
     <#
     .SYNOPSIS
-        Outputs results of Adam Machanic's sp_WhoIsActive DataTable
+        Retrieves real-time information about active SQL Server sessions and currently running queries
 
     .DESCRIPTION
-        Output results of Adam Machanic's sp_WhoIsActive
+        Executes Adam Machanic's sp_WhoIsActive stored procedure to display detailed information about currently running sessions, active queries, and their resource consumption. This is the go-to command for troubleshooting performance issues, identifying blocking chains, and monitoring SQL Server activity in real-time. Provides comprehensive session details including wait statistics, query plans, lock information, and transaction details that would otherwise require querying multiple DMVs manually.
 
         This command was built with Adam's permission. To read more about sp_WhoIsActive, please visit:
 

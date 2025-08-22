@@ -1,10 +1,12 @@
 function Get-DbaFile {
     <#
     .SYNOPSIS
-        Get-DbaFile finds files in any directory specified on a remote SQL Server
+        Enumerates files and directories on remote SQL Server instances using xp_dirtree
 
     .DESCRIPTION
-        This command searches all specified directories, allowing a DBA to see file information on a server without direct access
+        Searches directories on SQL Server machines remotely without requiring direct file system access or RDP connections. Uses the xp_dirtree extended stored procedure to return file listings that can be filtered by extension and searched recursively to specified depths. Defaults to the instance's data directory but accepts additional paths for comprehensive file system exploration.
+
+        Common use cases include locating orphaned database files, finding backup files for restores, auditing disk usage, and preparing for file migrations.
 
         You can filter by extension using the -FileType parameter. By default, the default data directory will be returned. You can provide and additional paths to search using the -Path parameter.
 

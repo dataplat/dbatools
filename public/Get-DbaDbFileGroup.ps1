@@ -1,10 +1,10 @@
 function Get-DbaDbFileGroup {
     <#
     .SYNOPSIS
-        Returns a summary of information on filegroups
+        Retrieves filegroup configuration and storage details from SQL Server databases
 
     .DESCRIPTION
-        Shows information around filegroups.
+        Retrieves detailed filegroup information from one or more databases, including filegroup type, size, and configuration details. This function helps DBAs analyze database storage organization, plan storage capacity, and document database structure for compliance or migration planning. Returns filegroup objects that can be filtered by database or specific filegroup names, making it useful for targeted storage analysis and troubleshooting performance issues related to data distribution.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.

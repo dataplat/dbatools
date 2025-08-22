@@ -1,17 +1,14 @@
 function Invoke-DbaAzSqlDbTip {
     <#
     .SYNOPSIS
-        Runs the get-sqldb-tips.sql script from the Microsoft SQL PM team against an Azure SQL Database.
+        Executes Microsoft's Azure SQL performance recommendations script against Azure SQL Database instances.
 
     .DESCRIPTION
-        Executes the get-sqldb-tips.sql script against an Azure SQL Database to collect tips for improving database
-        design, health and performance.
+        Executes Microsoft's Azure SQL Tips script against Azure SQL Database instances to identify performance optimization opportunities and design recommendations. This function runs the get-sqldb-tips.sql script developed by the Azure SQL Product Management team, which analyzes your database configuration, query patterns, and resource utilization to provide actionable improvement suggestions.
 
-        Tips are written by the Azure SQL PM team and you can get more details about what is included here:
-        https://github.com/microsoft/azure-sql-tips
+        The script examines database settings, index usage, query performance metrics, and configuration parameters to generate targeted recommendations with confidence percentages. Each tip includes detailed explanations and links to Microsoft documentation for implementation guidance.
 
-        By default the latest script will be downloaded from the Microsoft Github Repository,
-        if you prefer you can pass in a -LocalFile.
+        By default, the latest version of the tips script is automatically downloaded from the Microsoft GitHub repository at https://github.com/microsoft/azure-sql-tips. You can also specify a local copy using the -LocalFile parameter if you prefer to use a cached or customized version of the script.
 
     .PARAMETER SqlInstance
         The target Azure SQL instance or instances.

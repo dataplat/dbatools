@@ -1,22 +1,24 @@
 function Invoke-DbaDbMirroring {
     <#
     .SYNOPSIS
-        Automates the creation of database mirrors.
+        Creates and configures database mirroring between SQL Server instances with full validation and setup
 
     .DESCRIPTION
-        Automates the creation of database mirrors.
+        Creates database mirroring configurations between SQL Server instances, handling the complete end-to-end setup process that would normally require dozens of manual T-SQL commands and careful validation steps. This function eliminates the complexity and potential errors involved in manually configuring database mirroring partnerships.
 
-        * Verifies that a mirror is possible
-        * Sets the recovery model to Full if needed
-        * If the database does not exist on mirror, a backup/restore is performed
-        * Sets up endpoints if necessary
-        * Creates a login and grants permissions to service accounts if needed
-        * Starts endpoints if needed
-        * Sets up partner for mirror
-        * Sets up partner for primary
-        * Sets up witness if one is specified
+        The function performs comprehensive validation before setup and handles all the technical requirements:
+        * Verifies that mirroring is possible between the specified instances and databases
+        * Sets the recovery model to Full if needed (required for mirroring)
+        * Creates and restores full and log backups to initialize the mirror database if it doesn't exist
+        * Sets up database mirroring endpoints on all participating instances
+        * Creates logins and grants CONNECT permissions to service accounts on all endpoints
+        * Starts endpoints if they're not already running
+        * Establishes the mirroring partnership between primary and mirror
+        * Configures witness server if specified for automatic failover scenarios
 
-        NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
+        This saves DBAs significant time when setting up high availability solutions and reduces the risk of configuration errors that can cause mirroring setup failures. The function can work with existing backups or create fresh ones as needed.
+
+        NOTE: If backup/restore is performed, the backup files will remain on the network share for your records.
 
     .PARAMETER Primary
         SQL Server name or SMO object representing the primary SQL Server.

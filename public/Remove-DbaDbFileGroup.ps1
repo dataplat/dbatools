@@ -1,10 +1,10 @@
 function Remove-DbaDbFileGroup {
     <#
     .SYNOPSIS
-        Removes the specified filegroup(s).
+        Removes empty filegroups from SQL Server databases.
 
     .DESCRIPTION
-        Removes the specified filegroup(s). It is required that the filegroup is empty before it can be removed.
+        Removes one or more filegroups from SQL Server databases after validating they contain no data files. This command is useful for cleaning up unused filegroups after moving data to different filegroups or during database reorganization projects. The function performs safety checks to ensure filegroups are empty before removal and provides detailed error messages if removal fails due to dependencies or constraints.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

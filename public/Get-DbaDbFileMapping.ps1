@@ -1,10 +1,10 @@
 function Get-DbaDbFileMapping {
     <#
     .SYNOPSIS
-        Provides an easy way to build the FileMapping Hashtable for Restore-DbaDatabase from an existing database
+        Creates file mapping hashtable from existing database for use in restore operations
 
     .DESCRIPTION
-        Provides an easy way to build the FileMapping Hashtable for Restore-DbaDatabase from an existing database
+        Extracts the logical-to-physical file name mappings from an existing database and returns them in a hashtable format compatible with Restore-DbaDatabase. This eliminates the need to manually specify file paths when restoring databases to different servers or locations. The function reads both data files and log files from the database's file groups and creates a complete mapping that preserves the original file structure during restore operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.

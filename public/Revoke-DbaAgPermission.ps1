@@ -1,10 +1,10 @@
 function Revoke-DbaAgPermission {
     <#
     .SYNOPSIS
-        Revokes endpoint and availability group permissions to a login.
+        Revokes permissions from SQL Server logins on database mirroring endpoints or availability groups.
 
     .DESCRIPTION
-        Revokes endpoint and availability group permissions to a login.
+        Removes specific permissions from SQL Server logins on either database mirroring endpoints or availability groups. This is commonly needed when service accounts change roles, security policies require permission reductions, or during availability group maintenance and troubleshooting. For endpoints, you can revoke most standard permissions like Connect, Alter, and Control. For availability groups, only Alter, Control, TakeOwnership, and ViewDefinition permissions can be revoked.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
