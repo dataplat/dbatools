@@ -1,12 +1,14 @@
 function Test-DbaDbOwner {
     <#
     .SYNOPSIS
-        Checks database owners against a login to validate which databases do not match that owner.
+        Identifies databases with incorrect ownership for security compliance and best practice enforcement.
 
     .DESCRIPTION
-        This function will check all databases on an instance against a SQL login to validate if that
-        login owns those databases or not. By default, the function will check against 'sa' for
-        ownership, but the user can pass a specific login if they use something else.
+        This function compares the current owner of each database against a target login and returns only databases that do NOT match the expected owner. By default, it checks against 'sa' (or the renamed sysadmin account if 'sa' was changed), but you can specify any valid login.
+
+        This addresses a common security compliance requirement where databases should be owned by a specific account rather than individual user accounts. Mismatched ownership can cause issues with scheduled jobs, maintenance plans, and security policies.
+
+        The function automatically detects if the 'sa' account was renamed and uses the actual sysadmin login name. It returns detailed information including current owner, target owner, and ownership status for easy identification of databases requiring ownership changes.
 
         Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 

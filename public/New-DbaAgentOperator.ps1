@@ -1,10 +1,10 @@
 function New-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Creates a new operator on an instance.
+        Creates a new SQL Server Agent operator with notification settings for alerts and job failures.
 
     .DESCRIPTION
-        If the operator already exists on the destination, it will not be created unless -Force is used.
+        Creates SQL Server Agent operators who receive notifications when alerts fire or jobs fail. Operators are contacts that SQL Server Agent can notify via email, pager, or net send when specific events occur. You can configure pager schedules with different time windows for weekdays, weekends, and specific days to control when pager notifications are sent. This replaces the manual process of creating operators through SQL Server Management Studio and ensures consistent operator setup across multiple instances. If the operator already exists, it will not be created unless -Force is used to drop and recreate it.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

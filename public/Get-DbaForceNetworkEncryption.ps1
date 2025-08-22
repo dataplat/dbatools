@@ -1,12 +1,12 @@
 function Get-DbaForceNetworkEncryption {
     <#
     .SYNOPSIS
-        Gets Force Encryption settings for a SQL Server instance
+        Retrieves Force Network Encryption configuration from SQL Server's network settings
 
     .DESCRIPTION
-        Gets Force Encryption settings for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.
+        Retrieves the Force Network Encryption setting and associated certificate from SQL Server's network configuration stored in the Windows registry. This setting determines whether SQL Server requires all client connections to use encryption, preventing unencrypted communication.
 
-        This setting is found in Configuration Manager.
+        Useful for security audits and compliance checks to verify that network encryption policies are properly configured across your SQL Server estate. The function accesses the SuperSocketNetLib registry key where SQL Server stores its network security settings, requiring Windows-level access rather than SQL Server authentication.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.

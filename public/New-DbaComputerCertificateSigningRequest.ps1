@@ -1,12 +1,16 @@
 function New-DbaComputerCertificateSigningRequest {
     <#
     .SYNOPSIS
-        Creates a new computer certificate signing request. Useful for offline servers and Forcing Encryption.
+        Generates certificate signing requests for SQL Server instances to enable SSL/TLS encryption and connection security.
 
     .DESCRIPTION
-        Creates a new computer certificate signing request that is compatible with SQL Server.
+        Creates certificate signing requests (CSRs) that can be submitted to your Certificate Authority to obtain SSL/TLS certificates for SQL Server instances. This eliminates the manual process of creating certificate requests and ensures proper configuration for SQL Server's encryption requirements.
 
-        By default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.
+        The function generates both the certificate configuration file (.inf) and the signing request file (.csr) with proper Subject Alternative Names (SAN) to support SQL Server's certificate validation. This is essential when implementing Force Encryption, configuring encrypted connections, or meeting compliance requirements that mandate encrypted database communications.
+
+        Supports both standalone SQL Server instances and cluster configurations, automatically resolving FQDNs and configuring appropriate DNS entries. The generated certificates work with SQL Server's encryption features including encrypted client connections, mirroring, and backup encryption scenarios.
+
+        By default, creates RSA certificates with 1024-bit keys, though this can be customized for stronger encryption requirements. All certificates are configured as machine certificates with the Microsoft RSA SChannel Cryptographic Provider for compatibility with SQL Server's encryption stack.
 
     .PARAMETER ComputerName
         The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)

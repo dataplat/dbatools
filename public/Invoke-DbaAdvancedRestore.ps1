@@ -1,18 +1,18 @@
 function Invoke-DbaAdvancedRestore {
     <#
     .SYNOPSIS
-        Allows the restore of modified BackupHistory Objects
-        For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
+        Executes database restores from processed BackupHistory objects with advanced customization options
 
     .DESCRIPTION
-        This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from `Restore-DbaDatabase` via the following pipeline:
-        `Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore`
+        This is the final execution step in the dbatools restore pipeline. It takes pre-processed BackupHistory objects and performs the actual SQL Server database restoration with support for complex scenarios that aren't handled by the standard Restore-DbaDatabase command.
 
-        We have exposed these functions publicly to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
+        The typical pipeline flow is: Get-DbaBackupInformation | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
 
-        For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via `Format-DbaBackupInformation`
+        This function handles advanced restore scenarios including point-in-time recovery, page-level restores, Azure blob storage backups, custom file relocations, and specialized options like CDC preservation or standby mode. It can generate T-SQL scripts for review before execution, verify backup integrity, or perform the actual restore operations.
 
-        We would recommend ALWAYS pushing your input through `Test-DbaBackupInformation` just to make sure that it makes sense to us.
+        Most DBAs should use Restore-DbaDatabase for standard scenarios. This function is designed for situations requiring custom backup processing logic, complex migrations with file redirection, or when you need granular control over the restore process that isn't available in the simplified commands.
+
+        Always validate your BackupHistory objects with Test-DbaBackupInformation before using this function to ensure the restore chain is logically consistent.
 
     .PARAMETER BackupHistory
         The BackupHistory object to be restored.

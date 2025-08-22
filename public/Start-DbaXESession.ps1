@@ -1,10 +1,14 @@
 function Start-DbaXESession {
     <#
     .SYNOPSIS
-        Starts Extended Events sessions.
+        Starts Extended Events sessions on SQL Server instances for monitoring and troubleshooting.
 
     .DESCRIPTION
-        This script starts Extended Events sessions on a SQL Server instance.
+        Activates Extended Events sessions that have been created but are not currently running. Extended Events sessions are SQL Server's lightweight monitoring framework used for troubleshooting performance issues, security auditing, and capturing specific database activity patterns.
+
+        The function can start individual sessions by name, all user-created sessions at once, or sessions scheduled to start and stop at specific times. When using -AllSessions, it automatically excludes built-in system sessions (AlwaysOn_health, system_health, telemetry_xevents) so you don't accidentally interfere with SQL Server's internal monitoring.
+
+        For scheduled operations, the function creates temporary SQL Agent jobs that execute at the specified times and then delete themselves. This is particularly useful for capturing data during specific time windows or off-hours troubleshooting sessions.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

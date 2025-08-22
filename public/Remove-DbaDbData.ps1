@@ -1,10 +1,10 @@
 function Remove-DbaDbData {
     <#
     .SYNOPSIS
-        Removes all the data from a database(s) for each instance(s) of SQL Server.
+        Truncates all user tables in specified databases to remove all data while preserving table structure.
 
     .DESCRIPTION
-        This command truncates all the tables in a database. If there are foreign keys and/or views they are scripted out, then dropped before the truncate, and recreated after.
+        Removes all data from user tables by truncating each table in the specified databases. When foreign keys or views exist that would prevent truncation, the function automatically scripts them out, drops them temporarily, performs the truncation, then recreates the objects with their original definitions and permissions. This provides a fast way to clear databases for testing or development environments without having to rebuild schemas. The function excludes system databases and only processes user databases to prevent accidental damage to SQL Server internals.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

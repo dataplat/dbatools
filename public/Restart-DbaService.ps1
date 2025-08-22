@@ -1,10 +1,10 @@
 function Restart-DbaService {
     <#
     .SYNOPSIS
-        Restarts SQL Server services on a computer.
+        Restarts SQL Server services with proper dependency handling and service ordering.
 
     .DESCRIPTION
-        Restarts the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
+        Restarts SQL Server services across multiple computers while automatically managing service dependencies and restart order. This function performs a controlled stop-then-restart sequence, ensuring that dependent services like SQL Agent are properly handled when restarting the Database Engine. You can target specific service types (Engine, Agent, SSRS, SSAS, etc.) or restart all SQL Server services on a system, making it ideal for maintenance windows or applying configuration changes that require service restarts.
 
         Requires Local Admin rights on destination computer(s).
 

@@ -1,10 +1,10 @@
 function Get-DbaRandomizedDatasetTemplate {
     <#
     .SYNOPSIS
-        Gets the dataset templates
+        Retrieves JSON template files that define column structures for generating realistic test data
 
     .DESCRIPTION
-        Retrieves the templates from the default directory and if assigned custom directories
+        Retrieves JSON template files from default and custom directories that define how to generate realistic test datasets. These templates specify column names, data types, and semantic subtypes (like Name.FirstName, Address.City) for creating structured sample data for development and testing environments. The default templates include PersonalData with common fields like names, addresses, and birthdates, and you can specify custom template directories to include organization-specific data patterns.
 
     .PARAMETER Template
         The name of the template to use.

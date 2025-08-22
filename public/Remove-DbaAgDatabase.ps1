@@ -1,10 +1,10 @@
 function Remove-DbaAgDatabase {
     <#
     .SYNOPSIS
-        Removes a database from an availability group on a SQL Server instance.
+        Removes databases from availability groups on SQL Server instances.
 
     .DESCRIPTION
-        Removes a database from an availability group on a SQL Server instance.
+        Removes databases from availability groups, effectively stopping replication and high availability protection for those databases. This is commonly needed when decommissioning databases, reconfiguring availability group membership during maintenance windows, or troubleshooting replication issues. The function safely removes the database from all replicas in the availability group while preserving the actual database files on each replica. You can target specific databases and availability groups, or use pipeline input from Get-DbaAgDatabase to remove multiple databases efficiently.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

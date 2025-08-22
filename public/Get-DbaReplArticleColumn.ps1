@@ -1,10 +1,10 @@
 function Get-DbaReplArticleColumn {
     <#
     .SYNOPSIS
-        Gets the information about replicated article columns.
+        Retrieves column-level replication configuration details for SQL Server publication articles.
 
     .DESCRIPTION
-        This function enumerates column information for given articles.
+        Returns detailed information about which columns are included in replication articles, helping DBAs audit replication configurations and troubleshoot column-specific replication issues. This is particularly useful when working with vertical partitioning scenarios where only specific columns from source tables are replicated to subscribers, or when investigating why certain columns aren't appearing in replicated data.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

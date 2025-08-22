@@ -1,21 +1,22 @@
 function Test-DbaMaxDop {
     <#
     .SYNOPSIS
-        Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.
+        Tests SQL Server MAXDOP configuration against recommended values based on CPU cores and NUMA topology.
 
     .DESCRIPTION
-        Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator/),
-        this script displays a SQL Server's: max dop configured, and the calculated recommendation.
+        Analyzes your SQL Server's Max Degree of Parallelism (MAXDOP) settings and compares them against Microsoft's recommended values based on your server's hardware configuration. This function examines CPU cores, NUMA topology, and SQL Server version to calculate optimal MAXDOP settings for query performance.
 
-        For SQL Server 2016 shows:
-        - Instance max dop configured and the calculated recommendation
-        - max dop configured per database (new feature)
+        The function helps you identify instances where MAXDOP may be misconfigured, which can lead to poor query performance, excessive parallelism overhead, or CXPACKET waits. It automatically detects single vs multi-NUMA configurations and applies version-specific calculation rules.
+
+        For SQL Server 2016 and higher, the function also examines database-level MAXDOP settings, since these versions support per-database parallelism configuration that can override instance-level settings.
+
+        Results include current settings, recommended values, and guidance notes about whether changes should be considered. The recommendations follow Microsoft's official guidelines but include warnings for scenarios where custom MAXDOP values may be intentionally set for specific applications.
+
+        Inspired by Sakthivel Chidambaram's MAXDOP Calculator methodology and Microsoft's official guidance (KB 2806535).
 
         More info:
         https://support.microsoft.com/en-us/kb/2806535
         https://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/
-
-        These are just general recommendations for SQL Server and are a good starting point for setting the "max degree of parallelism" option.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

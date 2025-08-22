@@ -1,10 +1,10 @@
 function Remove-DbaPfDataCollectorCounter {
     <#
     .SYNOPSIS
-        Removes a Performance Data Collector Counter.
+        Removes specific performance counters from Windows Performance Monitor Data Collector Sets.
 
     .DESCRIPTION
-        Removes a Performance Data Collector Counter.
+        Removes performance counters from existing Data Collector Sets in Windows Performance Monitor. This allows you to clean up monitoring configurations by removing counters that are no longer needed, reducing resource consumption and focusing on relevant metrics. Commonly used when fine-tuning SQL Server performance monitoring setups or removing counters that were added for troubleshooting specific issues.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

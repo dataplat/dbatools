@@ -1,10 +1,10 @@
 function Export-DbaSysDbUserObject {
     <#
     .SYNOPSIS
-        Exports all user objects found in source SQL Server's master, msdb and model databases to the FilePath.
+        Discovers and exports user-created objects from SQL Server system databases (master, model, msdb) to SQL script files.
 
     .DESCRIPTION
-        Exports all user objects found in source SQL Server's master, msdb and model databases to the FilePath.
+        Scans the master, model, and msdb system databases to identify tables, views, stored procedures, functions, triggers, and other objects that were created by users rather than SQL Server itself. This function helps DBAs document custom objects that may have been inadvertently created in system databases, which is critical for server migrations, compliance audits, and maintaining clean system database environments. The exported SQL scripts can be used to recreate these objects on other instances or to review what custom code exists in your system databases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

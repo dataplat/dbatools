@@ -1,10 +1,10 @@
 function Set-DbaDbSequence {
     <#
     .SYNOPSIS
-        Modifies a sequence.
+        Modifies properties of existing SQL Server sequence objects
 
     .DESCRIPTION
-        Modifies a sequence in the database(s) specified.
+        Modifies existing SQL Server sequence objects by updating their properties such as increment value, restart point, minimum and maximum bounds, cycling behavior, and cache settings. This function is essential when you need to adjust sequence behavior after deployment, fix increment issues, or optimize performance without recreating the sequence and losing its current state.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

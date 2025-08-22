@@ -1,16 +1,16 @@
 function Copy-DbaAgentJobCategory {
     <#
     .SYNOPSIS
-        Copy-DbaAgentJobCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
+        Copies custom SQL Agent categories for jobs, alerts, and operators between SQL Server instances.
 
     .DESCRIPTION
-        By default, all SQL Agent categories for Jobs, Operators and Alerts are copied.
+        Migrates custom SQL Agent categories from a source SQL Server to one or more destination servers, so you don't have to manually recreate organizational structures during server migrations or environment setups.
+        This function copies only user-defined categories (ID >= 100), preserving built-in system categories on the destination.
+        Essential for maintaining consistent job categorization across multiple SQL Server instances in enterprise environments.
 
-        The -OperatorCategories parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
-        The -AgentCategories parameter is auto-populated for command-line completion and can be used to copy only specific agent categories.
-        The -JobCategories parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
-
-        If the category already exists on the destination, it will be skipped unless -Force is used.
+        You can copy all categories at once or filter by category type (Job, Alert, Operator) or specify individual category names.
+        Categories that already exist on the destination will be skipped unless you use -Force to drop and recreate them.
+        The function uses SQL Server Management Objects (SMO) to script category definitions and recreate them on the target server.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

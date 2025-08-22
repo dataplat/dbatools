@@ -1,11 +1,13 @@
 function Copy-DbaDbViewData {
     <#
     .SYNOPSIS
-        Copies data from a SQL Server view to a table.
+        Copies data from SQL Server views to destination tables using high-performance bulk copy operations.
 
     .DESCRIPTION
-        Copies data from a SQL Server view to a table using SQL Bulk Copy.
-        With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
+        Extracts data from SQL Server views and bulk copies it to destination tables, either on the same instance or across different servers.
+        Uses SqlBulkCopy for optimal performance when migrating view data, materializing view results, or creating data snapshots from complex views.
+        Supports custom queries against views, identity preservation, constraint checking, and automatic destination table creation.
+        Handles large datasets efficiently with configurable batch sizes and minimal resource overhead compared to traditional INSERT statements.
 
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.

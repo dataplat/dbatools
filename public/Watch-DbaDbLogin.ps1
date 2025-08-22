@@ -1,16 +1,14 @@
 function Watch-DbaDbLogin {
     <#
     .SYNOPSIS
-        Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
+        Monitors active connections across SQL Server instances and logs client details to a central tracking table
 
     .DESCRIPTION
-        Watch-DbaDbLogin uses SQL Server DMV's to track logins into a SQL Server table. This is helpful when you need to migrate a SQL Server and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance.
+        Watch-DbaDbLogin queries sys.dm_exec_sessions and sys.dm_exec_requests DMVs to capture real-time connection activity across multiple SQL Server instances. It records login names, client hostnames, application names, database usage, and timestamps into a central monitoring table. This solves the common problem of inadequate connection documentation when planning server migrations or application updates.
 
-        Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
+        The function automatically filters out local server connections and system databases to focus on external client activity. Running this every 5-10 minutes over several weeks builds a comprehensive picture of who connects to what, from where, and when.
 
-        Logins from the same server are excluded from the watched set.
-
-        The inputs for this command are either a Central Management Server (registered server repository), a flat file of server names, or to use pipeline input via Connect-DbaInstance. See the examples for more information.
+        You can monitor servers from a Central Management Server, a text file list, or pipe in pre-connected instances. The captured data helps identify forgotten applications, validate connection strings during migrations, and document actual database usage patterns rather than relying on incomplete documentation.
 
     .PARAMETER SqlInstance
         The SQL Server that stores the Watch database.

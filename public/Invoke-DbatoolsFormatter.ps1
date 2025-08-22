@@ -1,10 +1,10 @@
 function Invoke-DbatoolsFormatter {
     <#
     .SYNOPSIS
-        Helps formatting function files to dbatools' standards
+        Formats PowerShell function files to dbatools coding standards
 
     .DESCRIPTION
-        Uses PSSA's Invoke-Formatter to format the target files and saves it without the BOM.
+        Applies consistent code formatting to PowerShell files using PSScriptAnalyzer's Invoke-Formatter with OTBS (One True Brace Style) settings. This function standardizes indentation, brace placement, and whitespace handling across all dbatools module files, ensuring code consistency for contributors and maintainers. Files are saved without BOM encoding and with proper line ending handling for cross-platform compatibility.
 
     .PARAMETER Path
         The path to the ps1 file that needs to be formatted

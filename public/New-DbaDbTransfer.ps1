@@ -1,11 +1,13 @@
 function New-DbaDbTransfer {
     <#
     .SYNOPSIS
-        Creates a transfer object to clone objects from one database to another.
+        Creates a configured SMO Transfer object for copying database objects between SQL Server instances
 
     .DESCRIPTION
-        Returns an SMO Transfer object that controls the process of copying database objects from one database to another.
-        Does not perform any actions unless explicitly called with .TransferData() or piped into Invoke-DbaDbTransfer.
+        Returns a configured SMO Transfer object that defines what database objects to copy and how to copy them between SQL Server instances.
+        This function prepares the transfer configuration but does not execute the actual copy operation - you must call .TransferData() on the returned object or pipe it to Invoke-DbaDbTransfer to perform the transfer.
+        Useful for database migrations, environment refreshes, or selective object deployment where you need to copy specific tables, views, stored procedures, users, or other database objects.
+        Supports copying schema only, data only, or both, with configurable batch sizes and timeout values for large data transfers.
 
     .PARAMETER SqlInstance
         Source SQL Server instance name.

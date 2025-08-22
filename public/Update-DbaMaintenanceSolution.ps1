@@ -1,14 +1,14 @@
 function Update-DbaMaintenanceSolution {
     <#
     .SYNOPSIS
-        Download and Update SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
+        Updates existing Ola Hallengren Maintenance Solution stored procedures to the latest version
 
     .DESCRIPTION
-        This script will download and update the latest version of SQL Server Maintenance Solution created by Ola Hallengren.
-        Only the stored procedure will be updated. All tables and jobs will stay untouched.
+        Updates the stored procedures for Ola Hallengren's Maintenance Solution on SQL Server instances where it's already installed. This function downloads the latest version from GitHub and replaces only the procedure code, leaving all existing tables, jobs, and configurations intact.
 
-        So this can only be used until a new version of the procedures need a new version of the tables or jobs.
-        In this case you have to completely reinstall the SQL Server Maintenance Solution with Install-DbaMaintenanceSolution.
+        Use this when you need to get bug fixes or improvements in the maintenance procedures without disrupting your existing backup, integrity check, and index optimization jobs. The function checks for existing procedures before attempting updates and only updates what's currently installed.
+
+        This approach only works when the new procedure versions are compatible with your existing table structures and job configurations. If Ola releases changes that require schema modifications or new tables, you'll need to use Install-DbaMaintenanceSolution for a complete reinstallation instead.
 
     .PARAMETER SqlInstance
         The target SQL Server instance onto which the Maintenance Solution will be updated.

@@ -1,10 +1,10 @@
 function Get-DbaDbccSessionBuffer {
     <#
     .SYNOPSIS
-        Gets result of Database Console Command DBCC INPUTBUFFER  or DBCC OUTPUTBUFFER
+        Retrieves session input or output buffer contents using DBCC INPUTBUFFER or DBCC OUTPUTBUFFER
 
     .DESCRIPTION
-        Returns the results of DBCC INPUTBUFFER or DBCC OUTPUTBUFFER for input sessions
+        Executes DBCC INPUTBUFFER or DBCC OUTPUTBUFFER to examine what SQL statements a session is executing or what data is being returned to a client. InputBuffer shows the last SQL batch sent by a client session, which is essential for troubleshooting blocking, investigating suspicious activity, or understanding what commands are causing performance issues. OutputBuffer reveals the actual data being transmitted back to the client, useful for debugging connectivity problems or examining result sets. This replaces the need to manually run DBCC commands and parse their output, especially when investigating multiple sessions simultaneously.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-inputbuffer-transact-sql

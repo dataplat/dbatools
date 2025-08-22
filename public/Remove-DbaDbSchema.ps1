@@ -1,10 +1,10 @@
 function Remove-DbaDbSchema {
     <#
     .SYNOPSIS
-        Drops one or more schemas from the specified database(s).
+        Removes database schemas from one or more SQL Server databases.
 
     .DESCRIPTION
-        Drops one or more schemas from the specified database(s). As noted in the remarks section of the documentation for DROP SCHEMA there must not be any objects in the schema.
+        Removes database schemas from SQL Server databases using the DROP SCHEMA T-SQL command. This function is useful for cleaning up unused schemas during database maintenance, development environment resets, or application decommissioning. The schema must be completely empty before removal - any tables, views, functions, or other objects within the schema will prevent the drop operation from succeeding. You'll need to remove or relocate all schema objects first before running this command.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

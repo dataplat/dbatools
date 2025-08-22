@@ -1,11 +1,10 @@
 function Test-DbaLoginPassword {
     <#
     .SYNOPSIS
-        Test-DbaLoginPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login
+        Identifies SQL Server logins with weak passwords including empty, username-matching, or dictionary-based passwords
 
     .DESCRIPTION
-        The purpose of this function is to find SQL Server logins that have no password or the same password as login. You can add your own password to check for or add them to a csv file.
-        By default it will test for empty password and the same password as username.
+        Tests SQL Server authentication logins for common weak password patterns using the PWDCOMPARE() function to validate password hashes stored in sys.sql_logins. This security audit function helps identify authentication vulnerabilities by checking for empty passwords, passwords that match the username, and passwords from a custom dictionary you provide. Use this during security reviews to find logins that could be easily compromised and require immediate password changes.
 
     .PARAMETER SqlInstance
         The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

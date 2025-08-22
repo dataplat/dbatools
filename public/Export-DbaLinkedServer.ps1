@@ -1,12 +1,10 @@
 function Export-DbaLinkedServer {
     <#
     .SYNOPSIS
-        Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.
+        Generates T-SQL scripts to recreate linked server configurations with their login credentials.
 
     .DESCRIPTION
-        Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.
-
-        Requires remote Windows access if exporting the password.
+        Creates executable T-SQL scripts from existing linked server definitions, including remote login mappings and passwords. Perfect for migrating linked servers between environments, creating disaster recovery scripts, or documenting your linked server landscape. When passwords are included, the function accesses the local registry to decrypt stored credentials, so the generated scripts contain actual working passwords rather than placeholder values.
 
     .PARAMETER SqlInstance
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.

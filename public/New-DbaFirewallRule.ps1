@@ -1,17 +1,19 @@
 function New-DbaFirewallRule {
     <#
     .SYNOPSIS
-        Creates a new inbound firewall rule for a SQL Server instance and adds the rule to the target computer.
+        Creates Windows firewall rules for SQL Server instances to allow network connectivity
 
     .DESCRIPTION
-        Creates a new inbound firewall rule for a SQL Server instance and adds the rule to the target computer.
+        Creates inbound Windows firewall rules for SQL Server instances, Browser service, and Dedicated Admin Connection (DAC) to allow network connectivity.
+        This automates the tedious post-installation task of configuring firewall access for SQL Server, eliminating the need to manually determine ports and create rules through Windows Firewall GUI or netsh commands.
 
-        This is basically a wrapper around New-NetFirewallRule executed at the target computer.
-        So this only works if New-NetFirewallRule works on the target computer.
+        The function intelligently detects whether instances use static or dynamic ports and creates appropriate rules.
+        For static ports, it creates port-based rules; for dynamic ports, it creates program-based rules targeting sqlservr.exe.
+        When instances use non-default ports, it automatically includes a Browser service rule so clients can discover the instance.
 
-        Both DisplayName and Name are set to the same value, since DisplayName is required
-        but only Name uniquely defines the rule, thus avoiding duplicate rules with different settings.
-        The names and the group for all rules are fixed to be able to get them back with Get-DbaFirewallRule.
+        This is a wrapper around New-NetFirewallRule executed remotely on the target computer via Invoke-Command2.
+        Both DisplayName and Name are set to the same value to ensure unique rule identification and prevent duplicates.
+        All rules use the "SQL Server" group for easy management with Get-DbaFirewallRule.
 
         The functionality is currently limited. Help to extend the functionality is welcome.
 

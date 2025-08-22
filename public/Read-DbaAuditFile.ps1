@@ -1,10 +1,10 @@
 function Read-DbaAuditFile {
     <#
     .SYNOPSIS
-        Read Audit details from *.sqlaudit files.
+        Parses SQL Server audit files (.sqlaudit) into structured event data for security analysis and compliance reporting.
 
     .DESCRIPTION
-        Read Audit details from *.sqlaudit files.
+        Reads and parses SQL Server audit files (.sqlaudit) created by SQL Server Audit functionality, converting binary audit data into readable PowerShell objects. Each audit event is returned with its timestamp, event details, fields, and actions in a structured format that's easy to filter, export, or analyze. This is essential for security investigations, compliance reporting, and monitoring database access patterns since SQL Server audit files are stored in a proprietary binary format that can't be read directly. Works with local files, UNC paths, or can be piped from Get-DbaInstanceAudit to automatically locate and read audit files from remote instances.
 
     .PARAMETER Path
         The path to the *.sqlaudit file. This is relative to the computer executing the command. UNC paths are supported.

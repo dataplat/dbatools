@@ -1,10 +1,10 @@
 function Start-DbaTrace {
     <#
     .SYNOPSIS
-        Starts SQL Server traces
+        Starts existing SQL Server traces that are currently stopped
 
     .DESCRIPTION
-        Starts SQL Server traces
+        Starts SQL Server traces that have been defined but are not currently running. This function activates traces by setting their status to 1 using sp_trace_setstatus, allowing you to begin collecting trace data for performance monitoring, auditing, or troubleshooting. The default trace cannot be started with this function - use Set-DbaSpConfigure to enable it instead.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

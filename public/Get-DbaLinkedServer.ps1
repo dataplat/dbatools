@@ -1,10 +1,10 @@
 function Get-DbaLinkedServer {
     <#
     .SYNOPSIS
-        Gets all linked servers and a summary of information from the linked servers listed.
+        Retrieves linked server configurations and connection details from SQL Server instances.
 
     .DESCRIPTION
-        Retrieves information about each linked server on the instance(s).
+        Pulls complete linked server information from one or more SQL Server instances, including remote server names, authentication methods, and security settings. This helps DBAs audit cross-server connections for compliance reporting, troubleshoot connectivity issues, and document distributed database architectures. Returns details about the remote server, product type, impersonation settings, and login mappings for each configured linked server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

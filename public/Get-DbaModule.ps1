@@ -1,11 +1,13 @@
 function Get-DbaModule {
     <#
     .SYNOPSIS
-        Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
+        Retrieves database modules (stored procedures, functions, views, triggers) modified after a specified date
 
     .DESCRIPTION
-        Quickly find modules (Stored Procs, Functions, Views, Constraints, Rules, Triggers, etc) that have been modified in a database, or across all databases.
-        Results will exclude the module definition, but can be queried explicitly.
+        Queries sys.sql_modules and sys.objects to find database modules that have been modified within a specified timeframe, helping DBAs track recent code changes for troubleshooting, auditing, or deployment verification.
+        Essential for identifying which stored procedures, functions, views, or triggers were altered during maintenance windows or after application deployments.
+        Returns metadata including modification dates, schema names, and object types, with the actual module definition hidden by default but available when needed.
+        Supports filtering by specific module types and can exclude system objects to focus on user-created code changes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Get-DbaDbSynonym {
     <#
     .SYNOPSIS
-        Get the synonym(s) for database(s) / instance(s) of SQL Server.
+        Retrieves database synonyms and their target object mappings from SQL Server instances
 
     .DESCRIPTION
-        The Get-DbaDbSynonym returns the synonym(s) for database(s) / instance(s) of SQL Server.
+        Returns database synonym objects along with their target object details including base server, database, schema, and object name. Synonyms are database-scoped aliases that point to objects in the same or different databases, even on remote servers. This function helps DBAs document database dependencies, track cross-database references, and analyze synonym usage across their SQL Server environment. The output includes both the synonym definition and its underlying target, making it useful for impact analysis when planning database migrations or refactoring.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

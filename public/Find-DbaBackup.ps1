@@ -1,12 +1,14 @@
 function Find-DbaBackup {
     <#
     .SYNOPSIS
-        Finds SQL Server backups on disk.
+        Searches filesystem directories for SQL Server backup files based on age and extension criteria.
 
     .DESCRIPTION
-        Provides all of the same functionality for finding SQL backups to remove from disk as a standard maintenance plan would.
+        Recursively scans specified directories to locate SQL Server backup files (.bak, .trn, .dif, etc.) older than your defined retention period. Returns file objects that can be piped to removal commands or processed for cleanup workflows.
 
-        As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure backups have been archived to your archive location before removal.
+        This function replaces manual directory searches when managing backup retention policies. You can filter results to only include files that have been archived (using the Archive bit check) to ensure backups are safely stored elsewhere before cleanup.
+
+        Commonly used in automated maintenance scripts to identify backup files ready for deletion based on your organization's retention requirements.
 
     .PARAMETER Path
         Specifies the name of the base level folder to search for backup files.

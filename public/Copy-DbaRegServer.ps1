@@ -1,10 +1,10 @@
 function Copy-DbaRegServer {
     <#
     .SYNOPSIS
-        Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
+        Copies Central Management Server groups and registered server instances between SQL Server instances.
 
     .DESCRIPTION
-        Copy-DbaRegServer copies all groups, subgroups, and server instances from one SQL Server to another.
+        Migrates registered servers and server groups from a source Central Management Server to a destination CMS, preserving the hierarchical structure of groups and subgroups. This eliminates the need to manually recreate complex server organization structures when setting up new environments or consolidating server management. The function handles conflicts by either skipping existing items or dropping and recreating them when Force is specified.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

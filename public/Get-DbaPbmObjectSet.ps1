@@ -1,10 +1,10 @@
 function Get-DbaPbmObjectSet {
     <#
     .SYNOPSIS
-        Returns object sets from policy based management.
+        Retrieves Policy-Based Management object sets from SQL Server instances
 
     .DESCRIPTION
-        Returns object sets from policy based management.
+        Retrieves object sets from SQL Server's Policy-Based Management (PBM) feature, which define collections of SQL Server objects that policies can target for compliance monitoring. Object sets group related database objects like tables, stored procedures, or views based on specific criteria, allowing you to apply policies consistently across similar objects. This is essential for DBAs implementing standardized configurations and compliance rules across multiple databases and instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

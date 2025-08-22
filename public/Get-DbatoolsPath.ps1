@@ -1,15 +1,12 @@
 function Get-DbatoolsPath {
     <#
     .SYNOPSIS
-        Access a configured path.
+        Retrieves configured file paths used by dbatools functions for storing temporary files, logs, and output data.
 
     .DESCRIPTION
-        Access a configured path.
-        Paths can be configured using Set-DbatoolsPath or using the configuration system.
-        To register a path using the configuration system create a setting key named like this:
-        "Path.Managed.<PathName>"
-        For example the following setting points at the temp path:
-        "Path.Managed.Temp"
+        Retrieves file paths that have been configured for use by dbatools functions. These paths define where the module stores temporary files, exports, logs, and other data during SQL Server operations. DBAs can customize these paths to control where dbatools writes files, ensuring compliance with organizational file storage policies and avoiding permission issues.
+
+        Paths can be configured using Set-DbatoolsPath or directly through the configuration system by creating settings with the format "Path.Managed.<PathName>". Common predefined paths include Temp, LocalAppData, AppData, and ProgramData, but custom paths can be defined for specific workflows like backup file staging or export destinations.
 
     .PARAMETER Name
         Name of the path to retrieve.

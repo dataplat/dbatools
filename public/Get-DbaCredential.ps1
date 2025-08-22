@@ -1,10 +1,10 @@
 function Get-DbaCredential {
     <#
     .SYNOPSIS
-        Gets SQL Credential information for each instance(s) of SQL Server.
+        Retrieves SQL Server Credentials configured for external authentication and resource access.
 
     .DESCRIPTION
-        The Get-DbaCredential command gets SQL Credential information for each instance(s) of SQL Server.
+        Retrieves SQL Server Credentials that are stored securely on the server and used by SQL Server services to authenticate to external resources like file shares, web services, or other SQL Server instances. These credentials are essential for operations like backups to network locations, accessing external data sources, or running SQL Agent jobs that interact with external systems. The function returns detailed information about each credential including its name, associated identity, and provider configuration.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

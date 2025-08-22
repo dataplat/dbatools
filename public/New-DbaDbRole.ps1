@@ -1,10 +1,10 @@
 function New-DbaDbRole {
     <#
     .SYNOPSIS
-        Create new database roles for each database(s)/ instance(s) of SQL Server.
+        Creates new database roles in one or more SQL Server databases.
 
     .DESCRIPTION
-        The New-DbaDbRole create new roles on database(s)/ instance(s) of SQL Server.
+        Creates custom database roles for implementing role-based security in SQL Server databases. This function handles the creation of user-defined database roles that can later be granted specific permissions and have users or other roles assigned to them. You can create the same role across multiple databases for consistency, and optionally specify a custom owner instead of the default dbo. This eliminates the need to manually create roles through SSMS or T-SQL for each database.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Import-DbatoolsConfig {
     <#
     .SYNOPSIS
-        Imports a json configuration file into the configuration system.
+        Imports dbatools configuration settings from JSON files or default module paths.
 
     .DESCRIPTION
-        Imports a json configuration file into the configuration system.
+        Loads dbatools configuration settings from JSON files or retrieves module-specific settings from default configuration locations. This lets you restore saved dbatools preferences, share standardized settings across your team, or apply configuration baselines to multiple servers. You can import from local files, web URLs, or raw JSON strings, with optional filtering to selectively apply only the settings you need.
 
     .PARAMETER Path
         The path to the json file to import.

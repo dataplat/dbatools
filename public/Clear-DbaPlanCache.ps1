@@ -1,12 +1,14 @@
 function Clear-DbaPlanCache {
     <#
     .SYNOPSIS
-        Removes ad-hoc and prepared plan caches is single use plans are over defined threshold.
+        Clears SQL Server plan cache when single-use adhoc and prepared plans exceed memory threshold
 
     .DESCRIPTION
-        Checks ad-hoc and prepared plan cache for each database, if over 100 MBs removes from the cache.
+        Monitors your SQL Server's plan cache for single-use adhoc and prepared plans that consume excessive memory. When these plans exceed the specified threshold (default 100MB), the function clears the entire plan cache using DBCC FREESYSTEMCACHE('SQL Plans').
 
-        This command automates that process.
+        Single-use plans are a common cause of memory pressure in SQL Server environments with dynamic SQL or applications that don't use parameterized queries. Instead of manually checking sys.dm_exec_cached_plans and running DBCC commands, this function automates the detection and cleanup process.
+
+        Use this when you're experiencing memory pressure from plan cache bloat or as part of regular maintenance to prevent cache-related performance issues. The function only clears the cache when necessary, avoiding unnecessary disruption to your server's performance.
 
         References: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
 

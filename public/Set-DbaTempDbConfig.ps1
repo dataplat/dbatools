@@ -1,12 +1,14 @@
 function Set-DbaTempDbConfig {
     <#
     .SYNOPSIS
-        Sets tempdb data and log files according to best practices.
+        Configures tempdb database files according to Microsoft best practices for optimal performance
 
     .DESCRIPTION
-        Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user.
+        Configures tempdb database files to follow Microsoft's recommended best practices for performance optimization. This function calculates the optimal number of data files based on logical CPU cores (capped at 8) and distributes the specified total data file size evenly across those files. You must specify the target SQL Server instance and total data file size as mandatory parameters.
 
-        Other parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is "smaller" than what the function will size it to before running the function.
+        The function automatically determines the appropriate number of data files based on your server's logical cores, but you can override this behavior. It validates the current tempdb configuration to ensure it won't conflict with your desired settings - existing files must be smaller than the calculated target size and you cannot have more existing files than the target configuration.
+
+        Additional parameters let you customize file paths, log file size, and growth settings. The function generates ALTER DATABASE statements but does not shrink or delete existing files. If your current tempdb is larger than your target configuration, you'll need to shrink it manually before running this function. A SQL Server restart is required for tempdb changes to take effect.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

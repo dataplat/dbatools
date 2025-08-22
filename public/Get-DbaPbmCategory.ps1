@@ -1,10 +1,10 @@
 function Get-DbaPbmCategory {
     <#
     .SYNOPSIS
-        Returns policy categories from policy based management from an instance.
+        Retrieves Policy-Based Management categories from SQL Server instances for governance and compliance management.
 
     .DESCRIPTION
-        Returns policy categories from policy based management from an instance.
+        Retrieves all policy categories configured in SQL Server's Policy-Based Management (PBM) feature. Policy categories help organize and group related policies for easier management and selective enforcement across database environments. This function allows DBAs to inventory existing categories, audit category assignments, and understand which categories mandate database subscriptions for automatic policy evaluation.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

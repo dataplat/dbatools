@@ -1,12 +1,14 @@
 function Export-DbaDacPackage {
     <#
     .SYNOPSIS
-        Exports a dacpac from a server.
+        Creates DACPAC or BACPAC deployment packages from SQL Server databases using SqlPackage
 
     .DESCRIPTION
-        Using SQLPackage, export a dacpac from an instance of SQL Server.
+        Creates database deployment packages for version control, migrations, and schema distribution. Generates DACPAC files containing database schema definitions or BACPAC files that include both schema and data. This automates the SqlPackage utility so you don't have to remember complex command-line syntax or manage connection strings manually.
 
-        Note - Extract from SQL Server is notoriously flaky - for example if you have three part references to external databases it will not work.
+        Perfect for creating deployable packages from development databases, capturing schema snapshots for source control, or preparing migration artifacts for different environments. The function handles multiple databases in batch operations and provides flexible table filtering when you only need specific objects.
+
+        Uses Microsoft DAC Services under the hood with automatic SqlPackage installation if needed. Note that extraction can fail with three-part references to external databases or complex cross-database dependencies.
 
         For help with the extract action parameters and properties, refer to https://learn.microsoft.com/en-us/sql/tools/sqlpackage/sqlpackage-extract
 

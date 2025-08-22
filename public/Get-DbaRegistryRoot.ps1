@@ -1,10 +1,10 @@
 function Get-DbaRegistryRoot {
     <#
     .SYNOPSIS
-        Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
+        Discovers Windows registry root paths for SQL Server instances to enable direct registry configuration access
 
     .DESCRIPTION
-        Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
+        Queries SQL Server WMI to locate the exact Windows registry hive path where each SQL Server instance stores its configuration settings. This eliminates the guesswork when you need to manually edit registry keys for troubleshooting startup issues, modifying trace flags, or automating configuration changes that aren't exposed through T-SQL or SQL Server Configuration Manager. The function handles both standalone instances and failover cluster instances, returning PowerShell-ready registry paths you can immediately use with Get-ItemProperty or Set-ItemProperty commands.
 
     .PARAMETER ComputerName
         The target computer. This is not a SQL Server service, though if you pass a named SQL instance, it'll parse properly down to the computer name

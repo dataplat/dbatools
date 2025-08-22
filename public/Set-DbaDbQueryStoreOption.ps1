@@ -1,10 +1,12 @@
 function Set-DbaDbQueryStoreOption {
     <#
     .SYNOPSIS
-        Configure Query Store settings for a specific or multiple databases.
+        Configures Query Store settings to control query performance data collection and retention.
 
     .DESCRIPTION
-        Configure Query Store settings for a specific or multiple databases.
+        Modifies Query Store configuration options for one or more databases, allowing you to control how SQL Server captures, stores, and manages query execution statistics. Query Store acts as a performance data recorder, tracking query plans and runtime statistics over time for performance analysis and plan regression troubleshooting.
+
+        This function lets you set the operational state (enabled/disabled), adjust data collection intervals, configure storage limits, control which queries get captured, and manage data retention policies. You can also enable wait statistics capture and configure advanced custom capture policies in SQL Server 2019 and later.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

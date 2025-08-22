@@ -1,15 +1,17 @@
 function Save-DbaCommunitySoftware {
     <#
     .SYNOPSIS
-        Download and extract software from Github to update the local cached version of that software.
+        Downloads and caches popular SQL Server community tools from GitHub for use by dbatools installation commands
 
     .DESCRIPTION
-        Download and extract software from Github to update the local cached version of that software.
-        This command is run from inside of Install-Dba*, Update-Dba*, Invoke-DbaAzSqlDbTip commands to update the local cache if needed.
+        Downloads and extracts popular SQL Server community tools from GitHub repositories to maintain a local cache used by dbatools installation commands.
+        This function automatically manages the acquisition and versioning of essential DBA script collections, eliminating the need to manually download and organize multiple tool repositories.
+        It's called internally by Install-Dba*, Update-Dba*, and Invoke-DbaAzSqlDbTip commands when they need to access the latest versions of community tools.
 
-        In case you don't have internet access on the target computer, you can download the zip files from the following URLs
-        at another computer, transfer them to the target computer or place them on a network share and then use -LocalFile
-        to update the local cache:
+        Supports both online downloads directly from GitHub and offline installations using local zip files, making it suitable for restricted network environments.
+        The function handles version detection, directory structure normalization, and maintains consistent file organization across different tool repositories.
+
+        For environments without internet access, you can download zip files from the following URLs on another computer, transfer them to the target system, and use -LocalFile to update the local cache:
         * MaintenanceSolution: https://github.com/olahallengren/sql-server-maintenance-solution
         * FirstResponderKit: https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases
         * DarlingData: https://github.com/erikdarlingdata/DarlingData

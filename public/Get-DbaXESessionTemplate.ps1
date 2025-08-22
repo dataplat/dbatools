@@ -1,10 +1,14 @@
 function Get-DbaXESessionTemplate {
     <#
     .SYNOPSIS
-        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (/bin/XEtemplates/).
+        Retrieves metadata from Extended Event session templates to help you discover and select pre-built monitoring solutions.
 
     .DESCRIPTION
-        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (/bin/XEtemplates/).
+        Retrieves metadata from Extended Event session templates stored in XML format, showing you what pre-built Extended Event sessions are available before importing them to your SQL Server instances. This saves you from manually browsing template files or guessing what monitoring solutions exist for specific scenarios.
+
+        Use this command when you need to set up Extended Event monitoring but want to start with proven templates rather than building sessions from scratch. It's particularly helpful for discovering templates that monitor specific areas like performance, deadlocks, or security events.
+
+        The function parses templates and returns key information including the template name, category, source, SQL Server compatibility, and description. You can filter results by pattern matching or select specific templates by name.
 
         The default repository contains templates from:
         Microsoft's Templates that come with SSMS

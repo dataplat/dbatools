@@ -1,16 +1,14 @@
 function Remove-DbaBackup {
     <#
     .SYNOPSIS
-        Removes SQL Server backups from disk.
+        Removes SQL Server backup files from disk based on retention policies and file extension criteria.
 
     .DESCRIPTION
-        Removes SQL Server backups from disk.
+        Recursively searches backup directories and removes SQL Server backup files older than your specified retention period. This function automates the tedious process of manually cleaning up old backup files to free disk space and maintain storage compliance.
 
-        Provides all of the same functionality for removing SQL backups from disk as a standard maintenance plan would.
+        You can target specific backup types by extension (.bak, .trn, .dif) and define retention periods using flexible time units (hours, days, weeks, months). The Archive bit check ensures files are only deleted after they've been backed up to another location, preventing accidental loss of unarchived backups.
 
-        As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure backups have been archived to your archive location before removal.
-
-        Also included is the ability to remove empty folders as part of this cleanup activity.
+        Replaces the backup cleanup functionality found in SQL Server maintenance plans with more granular control and PowerShell automation. Optionally removes empty backup folders after file cleanup to keep your backup directory structure tidy.
 
     .PARAMETER Path
         Specifies the name of the base level folder to search for backup files. Deletion of backup files will be recursive from this location.

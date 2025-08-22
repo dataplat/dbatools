@@ -1,15 +1,14 @@
 function Get-DbaFirewallRule {
     <#
     .SYNOPSIS
-        Returns firewall rules for SQL Server instances from the target computer.
+        Retrieves Windows firewall rules for SQL Server components from target computers for network troubleshooting and security auditing.
 
     .DESCRIPTION
-        Returns firewall rules for SQL Server instances from the target computer.
-        As the group and the names of the firewall rules are fixed, this command
-        only works for rules created with New-DbaFirewallRule.
+        Retrieves Windows firewall rules for SQL Server components from target computers, helping DBAs troubleshoot connectivity issues and audit network security configurations. This command queries firewall rules for the SQL Server Engine, Browser service, and Dedicated Admin Connection (DAC) to identify which ports are open and what programs are allowed through the firewall.
 
-        This is basically a wrapper around Get-NetFirewallRule executed at the target computer.
-        So this only works if Get-NetFirewallRule works on the target computer.
+        Most useful when SQL Server connections are failing and you need to verify firewall rules are correctly configured, or when conducting security audits to document which SQL Server ports are exposed. The command only works with standardized firewall rules created by New-DbaFirewallRule, as it relies on specific group names and naming conventions.
+
+        This is a wrapper around Get-NetFirewallRule executed at the target computer, so the NetSecurity PowerShell module must be available on the remote system. The command returns detailed information including port numbers, protocols, and executable paths for each firewall rule.
 
         The functionality is currently limited. Help to extend the functionality is welcome.
 

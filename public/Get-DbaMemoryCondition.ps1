@@ -1,12 +1,14 @@
 function Get-DbaMemoryCondition {
     <#
     .SYNOPSIS
-        Determine the memory conditions from SQL Server ring buffers.
+        Retrieves memory pressure notifications and utilization metrics from SQL Server resource monitor ring buffers.
 
     .DESCRIPTION
-        The information from SQL Server ring buffers can be used to determine the memory conditions on the server when paging occurs.
+        Analyzes SQL Server's internal resource monitor ring buffers to identify memory pressure events and track memory utilization over time. This helps DBAs diagnose performance issues caused by insufficient memory, excessive paging, or memory pressure conditions that trigger automatic memory adjustments.
 
-        This command is based on a query provided by Microsoft support.
+        The function returns detailed memory statistics including physical memory usage, page file utilization, virtual address space consumption, and SQL Server-specific memory allocation metrics. Each record includes the exact timestamp when memory conditions were recorded, making it valuable for correlating memory pressure with performance degradation during specific time periods.
+
+        This command is based on a query provided by Microsoft support and queries the sys.dm_os_ring_buffers DMV to extract resource monitor notifications.
         Reference KB article: https://support.microsoft.com/en-us/help/918483/how-to-reduce-paging-of-buffer-pool-memory-in-the-64-bit-version-of-sq
 
     .PARAMETER SqlInstance

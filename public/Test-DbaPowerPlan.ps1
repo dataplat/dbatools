@@ -1,13 +1,16 @@
 function Test-DbaPowerPlan {
     <#
     .SYNOPSIS
-        Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.
+        Tests Windows Power Plan settings against SQL Server best practices and identifies non-compliant systems.
 
     .DESCRIPTION
-        Checks the Power Plan settings on a computer against best practices recommendations.
-        Each server's name, the active and the recommended Power Plan and an IsBestPractice field are returned.
+        Audits Windows Power Plan settings on SQL Server hosts to ensure compliance with Microsoft's performance recommendations. SQL Server runs optimally with the "High Performance" power plan, which prevents CPU throttling and ensures consistent performance under load.
 
-        If your organization uses a different Power Plan that is considered best practice, specify -PowerPlan.
+        This function compares the currently active power plan against the recommended "High Performance" plan (or a custom plan you specify) and returns a compliance report. This is essential for SQL Server environments where power management can significantly impact query performance and response times.
+
+        Returns detailed information including the active power plan, recommended plan, and a clear IsBestPractice indicator for each system tested. Use this for regular compliance audits, new server validations, or troubleshooting performance issues that might be related to power management settings.
+
+        If your organization uses a different Power Plan that is considered best practice, specify -PowerPlan to test against that instead.
 
         References:
         https://support.microsoft.com/en-us/kb/2207548

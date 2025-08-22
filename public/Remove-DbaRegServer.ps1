@@ -1,10 +1,12 @@
 function Remove-DbaRegServer {
     <#
     .SYNOPSIS
-        Removes registered servers found in SQL Server Central Management Server (CMS).
+        Removes registered servers from SQL Server Central Management Server or local registered server groups.
 
     .DESCRIPTION
-        Removes registered servers found in SQL Server Central Management Server (CMS).
+        Removes registered servers from SQL Server Central Management Server (CMS) or local registered server groups within SQL Server Management Studio. This command helps DBAs clean up outdated server registrations, remove decommissioned servers, or reorganize server inventory without manually navigating through SSMS interfaces.
+
+        You can remove servers by specifying individual server names, registered server display names, or entire groups. The function works with both CMS hierarchies and local registered server groups, but cannot modify Azure Data Studio registered servers.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

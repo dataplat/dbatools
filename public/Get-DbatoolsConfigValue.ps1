@@ -1,11 +1,10 @@
 function Get-DbatoolsConfigValue {
     <#
     .SYNOPSIS
-        Returns the configuration value stored under the specified name.
+        Retrieves a specific dbatools configuration value by its exact name.
 
     .DESCRIPTION
-        Returns the configuration value stored under the specified name.
-        It requires the full name (<Module>.<Name>) and is usually only called by functions.
+        Retrieves the actual value stored in a specific dbatools configuration setting using its full name (Module.Name format). This function is primarily used internally by dbatools functions to access their configuration settings, but can also be used by DBAs in custom scripts to retrieve specific module preferences like connection timeouts, default file paths, or email settings. Unlike Get-DbatoolsConfig which lists multiple configurations, this function returns the raw value of a single setting with optional fallback support.
 
     .PARAMETER FullName
         The full name (<Module>.<Name>) of the configured value to return.

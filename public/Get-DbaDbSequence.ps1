@@ -1,10 +1,10 @@
 function Get-DbaDbSequence {
     <#
     .SYNOPSIS
-        Finds a sequence.
+        Retrieves SQL Server sequence objects and their configuration details from specified databases.
 
     .DESCRIPTION
-        Finds a sequence in the database(s) specified.
+        Retrieves sequence objects from SQL Server databases, returning detailed information about each sequence including data type, start value, increment value, and schema location. Sequences provide a flexible alternative to IDENTITY columns for generating sequential numeric values, allowing values to be shared across multiple tables and offering more control over numbering behavior. This function helps DBAs inventory sequences across databases, verify sequence configurations, and identify sequences that may need maintenance or optimization.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

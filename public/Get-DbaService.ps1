@@ -1,10 +1,14 @@
 function Get-DbaService {
     <#
     .SYNOPSIS
-        Gets the SQL Server related services on a computer.
+        Retrieves SQL Server-related Windows services from local or remote computers.
 
     .DESCRIPTION
-        Gets the SQL Server related services on one or more computers.
+        Retrieves detailed information about SQL Server-related Windows services across one or more computers, including Database Engine, SQL Agent, Reporting Services, Analysis Services, Integration Services, and other SQL Server components. This function replaces manual service management tasks by providing a unified view of service status, startup modes, and service accounts across your SQL Server environment.
+
+        Particularly useful for inventory management, troubleshooting service issues, and performing bulk service operations across multiple servers. The function can filter by service type, instance name, or specific service names, and optionally includes advanced properties like SQL Server version and service pack levels.
+
+        Returns service objects with built-in methods for common operations like Start(), Stop(), Restart(), and ChangeStartMode(), eliminating the need to use separate service management commands.
 
         Requires Local Admin rights on destination computer(s).
 

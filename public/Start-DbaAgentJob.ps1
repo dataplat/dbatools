@@ -1,10 +1,10 @@
 function Start-DbaAgentJob {
     <#
     .SYNOPSIS
-        Starts a running SQL Server Agent Job.
+        Starts SQL Server Agent jobs and optionally waits for completion
 
     .DESCRIPTION
-        This command starts a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+        Starts one or more SQL Server Agent jobs that are currently idle. This function validates jobs are in an idle state before starting them and can optionally wait for job completion before returning results. You can start all jobs, specific jobs by name, or exclude certain jobs from execution. It also supports starting jobs at specific steps rather than from the beginning, which is useful for resuming failed jobs or testing individual job steps.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

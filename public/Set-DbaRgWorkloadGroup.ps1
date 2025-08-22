@@ -1,12 +1,13 @@
 function Set-DbaRgWorkloadGroup {
     <#
     .SYNOPSIS
-        Sets a workload group for use by the Resource Governor on the specified SQL Server.
+        Modifies Resource Governor workload group settings to control query resource consumption and limits.
 
     .DESCRIPTION
-        Sets a workload group for use by the Resource Governor on the specified SQL Server.
-        A workload group represents a subset of resources of an instance of the Database Engine.
-        When changing a plan affecting setting, the new setting will only take effect in previously cached plans after executing 'DBCC FREEPROCCACHE (pool_name);'.
+        Modifies configuration settings for Resource Governor workload groups, which control how SQL Server allocates CPU, memory, and parallelism resources to different categories of queries and connections.
+        Use this function to adjust resource limits for specific workload groups when you need to prioritize critical applications, limit resource-hungry queries, or enforce service level agreements through resource allocation policies.
+        Changes automatically trigger a Resource Governor reconfiguration unless skipped, and plan-affecting settings only apply to new query plans after clearing the procedure cache.
+        Supports both internal resource pools (standard workloads) and external resource pools (R/Python integration scenarios).
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

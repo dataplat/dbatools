@@ -1,10 +1,10 @@
 function Remove-DbaLogin {
     <#
     .SYNOPSIS
-        Drops a Login
+        Removes SQL Server logins from target instances
 
     .DESCRIPTION
-        Tries a bunch of different ways to remove a Login or two or more.
+        Removes one or more SQL Server logins from specified instances using the SMO Drop() method. This function handles the complete removal process including dependency checks and provides proper error handling when logins cannot be dropped due to existing sessions or database ownership. Use the -Force parameter to automatically terminate active sessions associated with the login before removal, which is useful when cleaning up test environments or decommissioning user accounts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

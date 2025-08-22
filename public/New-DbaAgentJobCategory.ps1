@@ -1,11 +1,10 @@
 function New-DbaAgentJobCategory {
     <#
     .SYNOPSIS
-        New-DbaAgentJobCategory creates a new job category.
+        Creates new SQL Server Agent job categories for organizing and managing jobs.
 
     .DESCRIPTION
-        New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.
-        It returns an array of the job categories created .
+        Creates custom job categories in SQL Server Agent to help organize and classify jobs by function, department, or priority level. Job categories provide a way to group related jobs together for easier management and reporting, replacing the need to manually create categories through SQL Server Management Studio. You can specify whether the category is for local jobs, multi-server jobs, or general use, with LocalJob being the default type.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

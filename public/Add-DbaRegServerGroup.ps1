@@ -1,10 +1,10 @@
 function Add-DbaRegServerGroup {
     <#
     .SYNOPSIS
-        Adds registered server groups to SQL Server Central Management Server (CMS)
+        Creates organizational server groups within SQL Server Central Management Server (CMS)
 
     .DESCRIPTION
-        Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexibility, look into Import-DbaRegServer which accepts multiple kinds of input and allows you to add reg servers and groups from different CMS.
+        Creates new server groups in SQL Server Central Management Server to organize registered servers into logical hierarchies. This allows DBAs to group servers by environment, application, location, or any other classification system for easier management at scale. Supports nested group structures using backslash notation (Group\SubGroup) and automatically creates parent groups if they don't exist. If you need to import existing groups and servers from other sources, use Import-DbaRegServer instead.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

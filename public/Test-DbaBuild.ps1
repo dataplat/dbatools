@@ -1,11 +1,10 @@
 function Test-DbaBuild {
     <#
     .SYNOPSIS
-        Returns SQL Server Build "compliance" level on a build.
+        Tests SQL Server build versions against patching compliance requirements
 
     .DESCRIPTION
-        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the "targeted compliance".
-        The build data used can be found here: https://dbatools.io/builds
+        Evaluates SQL Server instances or build versions against organizational patching policies to determine compliance status. Returns detailed build information including service pack level, cumulative update, reference KB, and end-of-support dates with a compliance flag. Helps DBAs audit patch levels across environments and identify instances that fall below minimum security or stability requirements. You can test against specific minimum builds, relative currency policies (like "no more than 1 SP behind"), or require the latest available build.
 
     .PARAMETER Build
         Instead of connecting to a real instance, pass a string identifying the build to get the info back.

@@ -1,12 +1,14 @@
 function Get-DbaSsisEnvironmentVariable {
     <#
     .SYNOPSIS
-        This command gets specified SSIS Environment and all its variables
+        Retrieves environment variables from SSIS Catalog with decrypted sensitive values
 
     .DESCRIPTION
-        This command gets all variables from specified environment from SSIS Catalog. All sensitive values are decrypted.
-        The function communicates directly with SSISDB database, "SQL Server Integration Services" service isn't queried there.
-        Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
+        Retrieves all variables from specified SSIS environments stored in the SSISDB catalog database. All sensitive values are automatically decrypted and returned in plaintext for configuration management and troubleshooting purposes.
+
+        This function queries the SSISDB database directly using symmetric keys and certificates to decrypt sensitive variable values, bypassing the standard SMO limitations that only return encrypted values. This is essential for SSIS environment configuration audits, parameter validation, and deployment verification.
+
+        The function communicates directly with SSISDB database - the SQL Server Integration Services service isn't queried. Each parameter (besides SqlInstance and SqlCredential) acts as a filter to include or exclude specific environments or folders.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

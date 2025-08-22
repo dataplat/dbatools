@@ -1,11 +1,13 @@
 function New-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        New-DbaAgentAlertCategory creates a new alert category.
+        Creates new SQL Agent alert categories for organizing and managing database alerts.
 
     .DESCRIPTION
-        New-DbaAgentAlertCategory makes it possible to create a Agent Alert category that can be used with Alerts.
-        It returns an array of the alert categories created .
+        Creates custom alert categories in SQL Server Agent to help organize and group related alerts for better management and monitoring.
+        Alert categories allow DBAs to logically group alerts by function, severity, or responsibility, making it easier to assign different categories to different teams or escalation procedures.
+        This is particularly useful in environments with many alerts where categorization helps with organization, reporting, and maintenance workflows.
+        Returns the newly created alert category objects that can be immediately used when configuring SQL Agent alerts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

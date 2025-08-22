@@ -1,10 +1,14 @@
 function New-DbaDbMaskingConfig {
     <#
     .SYNOPSIS
-        Generates a new data masking configuration file to be used with Invoke-DbaDbDataMasking
+        Scans database tables to detect sensitive data and creates a JSON configuration file for data masking
 
     .DESCRIPTION
-        Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.
+        Analyzes SQL Server database tables and columns to automatically detect potentially sensitive information (PII) and generates a JSON configuration file that defines how to mask each identified column. The function uses pattern matching against column names and data sampling to identify sensitive data like Social Security Numbers, email addresses, phone numbers, and other PII based on predefined patterns and known column naming conventions.
+
+        The generated configuration file is consumed by Invoke-DbaDbDataMasking to perform the actual data masking operations. This two-step process allows you to review and customize the masking strategy before applying changes to your data, making it safer for creating development and testing environments from production databases.
+
+        The function intelligently determines appropriate masking methods based on data type and detected PII category - for example, dates get randomized to past dates, monetary values use commerce pricing patterns, and strings get realistic fake data rather than simple scrambling. You can customize the detection process using your own pattern files and known name definitions to handle organization-specific sensitive data patterns.
 
         Note that the following column and data types are not currently supported:
         Identity

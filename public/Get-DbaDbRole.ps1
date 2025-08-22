@@ -1,10 +1,10 @@
 function Get-DbaDbRole {
     <#
     .SYNOPSIS
-        Get the database roles for each instance(s) of SQL Server.
+        Retrieves database roles from SQL Server instances for security auditing and permission analysis.
 
     .DESCRIPTION
-        The Get-DbaDbRole returns connected SMO object for database roles for each instance(s) of SQL Server.
+        Retrieves all database roles (both fixed and custom) from one or more SQL Server databases, returning detailed role information for security audits and compliance reporting. This function examines the roles collection in each accessible database, allowing you to identify custom roles, exclude built-in fixed roles, or focus on specific roles by name. Essential for documenting role structures across environments, troubleshooting permission issues, and ensuring consistent security configurations during migrations or standardization projects.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

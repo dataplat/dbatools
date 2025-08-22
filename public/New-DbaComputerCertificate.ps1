@@ -349,8 +349,8 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg "ProviderType = 12"
                 if ($SelfSigned) {
                     Add-Content $certCfg "RequestType = Cert"
-                    Add-Content $certCfg "NotBefore = $((get-date).ToShortDateString())"
-                    Add-Content $certCfg "NotAfter = $((get-date).AddMonths($MonthsValid).ToShortDateString())"
+                    Add-Content $certCfg "NotBefore = $((Get-Date).ToShortDateString())"
+                    Add-Content $certCfg "NotAfter = $((Get-Date).AddMonths($MonthsValid).ToShortDateString())"
                 } else {
                     Add-Content $certCfg "RequestType = PKCS10"
                 }

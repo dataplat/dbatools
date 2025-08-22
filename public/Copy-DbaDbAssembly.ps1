@@ -1,14 +1,14 @@
 function Copy-DbaDbAssembly {
     <#
     .SYNOPSIS
-        Copy-DbaDbAssembly migrates assemblies from one SQL Server to another.
+        Copies CLR assemblies from source databases to destination SQL Server instances
 
     .DESCRIPTION
-        By default, all assemblies are copied.
+        Migrates custom CLR assemblies from databases on a source SQL Server to corresponding databases on destination instances. This function scans all accessible databases for user-created assemblies and recreates them on the target servers, automatically handling security requirements like setting the TRUSTWORTHY property for external assemblies.
 
-        If the assembly already exists on the destination, it will be skipped unless -Force is used.
+        Designed for database migration scenarios where applications rely on custom .NET assemblies registered in SQL Server. If assemblies already exist on the destination, they're skipped unless you use -Force to drop and recreate them.
 
-        This script does not yet copy dependencies or dependent objects.
+        The function does not copy assembly dependencies or dependent objects like CLR stored procedures, functions, or user-defined types that reference the assemblies.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

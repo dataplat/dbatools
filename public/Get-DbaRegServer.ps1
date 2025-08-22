@@ -1,12 +1,14 @@
 function Get-DbaRegServer {
     <#
     .SYNOPSIS
-        Gets list of SQL Server objects stored in local registered groups, azure data studio and central management server.
+        Retrieves registered SQL Server instances from SSMS, Azure Data Studio, and Central Management Server
 
     .DESCRIPTION
-       Gets list of SQL Server objects stored in local registered groups, azure data studio and central management server.
+        Retrieves SQL Server instances from registered server configurations stored in SQL Server Management Studio (SSMS), Azure Data Studio, and Central Management Server (CMS). DBAs use registered servers to organize and quickly connect to multiple SQL Server instances across their environment.
 
-       Local Registered Servers and Azure Data Studio support alternative authentication (excluding MFA) but Central Management Studio does not.
+        When no SqlInstance is specified, returns local registered servers from SSMS and Azure Data Studio. When SqlInstance is provided, connects to that Central Management Server to retrieve its registered server inventory. This is essential for discovering what SQL Server instances are documented and organized in your environment.
+
+        Local Registered Servers and Azure Data Studio support alternative authentication (excluding MFA) but Central Management Server does not.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Remove-DbaRegServerGroup {
     <#
     .SYNOPSIS
-        Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
+        Removes server groups from SQL Server Central Management Server (CMS).
 
     .DESCRIPTION
-        Returns an array of Server Groups found in the CMS.
+        Deletes specified server groups from Central Management Server, including all nested subgroups and registered servers within those groups. This permanently removes the organizational structure you've built in CMS, so use with caution. The function works with both local registered servers and CMS-based groups, and supports piping from Get-DbaRegServerGroup for targeted removal operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

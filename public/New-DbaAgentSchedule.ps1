@@ -1,11 +1,10 @@
 function New-DbaAgentSchedule {
     <#
     .SYNOPSIS
-        New-DbaAgentSchedule creates a new schedule in the msdb database.
+        Creates a new SQL Server Agent schedule for automated job execution
 
     .DESCRIPTION
-        New-DbaAgentSchedule will help create a new schedule for a job.
-        If the job parameter is not supplied the schedule will not be attached to a job.
+        Creates a new schedule in the msdb database that defines when SQL Server Agent jobs should execute. Schedules can be created as standalone objects or immediately attached to existing jobs, allowing you to standardize timing across multiple jobs without recreating the same schedule repeatedly. This replaces the need to manually create schedules through SQL Server Management Studio or T-SQL, while providing comprehensive validation of schedule parameters and frequency options. Supports all SQL Server Agent scheduling options including one-time, daily, weekly, monthly, and relative monthly frequencies with full control over start/end dates, times, and recurrence patterns.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

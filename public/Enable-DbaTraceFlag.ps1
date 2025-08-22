@@ -1,11 +1,13 @@
 function Enable-DbaTraceFlag {
     <#
     .SYNOPSIS
-        Enable Global Trace Flag(s)
+        Enables one or more trace flags globally on SQL Server instances
 
     .DESCRIPTION
-        The function will set one or multiple trace flags on the SQL Server instance(s) listed.
-        These are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.
+        Activates trace flags at the global level using DBCC TRACEON, affecting all connections and sessions on the target SQL Server instances.
+        Commonly used for troubleshooting performance issues, enabling specific SQL Server behaviors, or applying recommended trace flags for your environment.
+        Changes take effect immediately but are lost after a SQL Server restart - use Set-DbaStartupParameter to make trace flags persistent across restarts.
+        The function automatically checks for already-enabled trace flags to prevent duplicate operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

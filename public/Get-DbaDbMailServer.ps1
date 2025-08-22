@@ -1,10 +1,10 @@
 function Get-DbaDbMailServer {
     <#
     .SYNOPSIS
-        Gets database mail servers from SQL Server
+        Retrieves SMTP server configurations from SQL Server Database Mail accounts
 
     .DESCRIPTION
-        Gets database mail servers from SQL Server
+        Retrieves detailed SMTP server configuration information from all Database Mail accounts on SQL Server instances. This function pulls the actual mail server settings including port numbers, SSL configuration, authentication methods, and connection details. Useful for auditing email infrastructure, troubleshooting delivery issues, and documenting Database Mail configurations across your environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

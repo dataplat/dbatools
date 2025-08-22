@@ -1,19 +1,20 @@
 function Test-DbaCmConnection {
     <#
     .SYNOPSIS
-        Tests over which paths a computer can be managed.
+        Tests remote computer management connectivity using multiple protocols and caches optimal connection methods
 
     .DESCRIPTION
-        Tests over which paths a computer can be managed.
+        Tests remote computer connectivity across four different management protocols to determine the most reliable connection method for SQL Server administration tasks.
 
-        This function tries out the connectivity for:
-        - Cim over WinRM
-        - Cim over DCOM
-        - Wmi
-        - PowerShellRemoting
-        Results will be written to the connectivity cache and will cause Get-DbaCmObject and Invoke-DbaCmMethod to connect using the way most likely to succeed. This way, it is likely the other commands will take less time to execute. These others too cache their results, in order to dynamically update connection statistics.
+        This function evaluates connectivity for:
+        - CIM over WinRM (Windows Remote Management)
+        - CIM over DCOM (Distributed Component Object Model)
+        - WMI (Windows Management Instrumentation)
+        - PowerShell Remoting
 
-        This function ignores global configuration settings limiting which protocols may be used.
+        Results are cached and automatically used by other dbatools commands like Get-DbaCmObject and Invoke-DbaCmMethod to optimize future connections. This eliminates the need to test connectivity repeatedly and ensures faster execution of subsequent operations. The connectivity cache is dynamically updated as other dbatools commands discover working or failing connection methods.
+
+        This function bypasses global configuration settings that might restrict certain protocols, allowing you to test all available connection types regardless of your dbatools configuration.
 
     .PARAMETER ComputerName
         The computer to test against.

@@ -1,10 +1,10 @@
 function Remove-DbaAgReplica {
     <#
     .SYNOPSIS
-        Removes availability group replicas from availability groups.
+        Removes secondary replicas from SQL Server Availability Groups
 
     .DESCRIPTION
-        Removes availability group replicas from availability groups.
+        Removes secondary replicas from Availability Groups by calling the Drop() method on the replica object. This is commonly used when decommissioning servers, scaling down your availability group topology, or removing failed replicas that cannot be recovered. The function accepts either direct SQL instance parameters or piped input from Get-DbaAgReplica for batch operations. All removal operations require explicit confirmation due to the high-impact nature of this change.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

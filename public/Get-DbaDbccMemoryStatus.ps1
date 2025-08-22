@@ -1,10 +1,10 @@
 function Get-DbaDbccMemoryStatus {
     <#
     .SYNOPSIS
-        Gets the results of DBCC MEMORYSTATUS.  Works on SQL Server 2000-2019.
+        Executes DBCC MEMORYSTATUS and returns memory usage details in a structured format
 
     .DESCRIPTION
-        This command is used to run the DBCC MEMORYSTATUS comand and collect results in a single usable recordset
+        Runs DBCC MEMORYSTATUS against SQL Server instances and parses the output into a structured PowerShell object for analysis. This replaces the need to manually execute DBCC MEMORYSTATUS and interpret its raw text output, making memory troubleshooting and monitoring much easier. The function organizes memory statistics by type (like Memory Manager, Buffer Manager, Resource Pool, etc.) and provides both the metric names and values in a consistent format across multiple instances. Useful for diagnosing memory pressure, understanding memory allocation patterns, and comparing memory usage across environments.
 
         Reference:
             - https://blogs.msdn.microsoft.com/timchapman/2012/08/16/how-to-parse-dbcc-memorystatus-via-powershell/

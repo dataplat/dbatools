@@ -1,15 +1,14 @@
 function Start-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Combo command that encrypts all instances on a database and backs up all keys and certs
+        Implements Transparent Data Encryption (TDE) on user databases with automated key infrastructure and backup management
 
     .DESCRIPTION
-        Combo command that encrypts all instances on a database and backs up all keys and certs
+        Automates the complete TDE implementation process from start to finish, handling all the complex key management steps that would otherwise require multiple manual commands. This function sets up the entire encryption infrastructure including master keys, certificates or asymmetric keys, database encryption keys, and automatically backs up all encryption components to protect against data loss.
 
-        * Ensures a database master key exists in the master database and backs it up
-        * Ensures a database certificate or asymmetric key exists in the master database and backs it up
-        * Creates a database encryption key in the target database and backs it up
-        * Enables database encryption on the target database and backs it up
+        The function performs these operations in sequence: ensures a service master key exists in the master database and backs it up, creates or validates a database certificate or asymmetric key in master and backs it up, creates a database encryption key in each target database, and finally enables encryption on the databases. This eliminates the tedious manual process of running separate commands for each TDE component and ensures you don't miss critical backup steps that could leave your encrypted databases unrecoverable.
+
+        Most valuable for compliance initiatives where you need to encrypt multiple databases quickly while maintaining proper key backup procedures. Also essential for disaster recovery planning since it ensures all encryption keys are properly backed up during the initial setup process.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

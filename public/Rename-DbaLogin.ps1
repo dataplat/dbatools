@@ -1,14 +1,14 @@
 function Rename-DbaLogin {
     <#
     .SYNOPSIS
-        Rename-DbaLogin will rename logins
+        Renames SQL Server logins and optionally their associated database users
 
     .DESCRIPTION
-        There are times where you might want to rename a login that was copied down, or if the name is not descriptive for what it does.
+        Renames SQL Server logins at the instance level, solving the common problem of needing to update login names after migrations, domain changes, or when improving naming conventions.
 
-        It can be a pain to update all of the mappings for a specific user, this does it for you.
+        When migrating logins between environments or standardizing naming conventions, manually updating login names and all their database user mappings is time-consuming and error-prone. This function handles both the login rename and optionally updates all associated database users in a single operation.
 
-        Rename-DbaLogin will rename logins and database mappings for a specified login if Force is specified.
+        By default, only the server-level login is renamed. Use the -Force parameter to also rename the corresponding database users across all databases where the login is mapped. If any database user rename fails, the function automatically rolls back the login name change to maintain consistency.
 
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.

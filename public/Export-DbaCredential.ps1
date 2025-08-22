@@ -1,12 +1,14 @@
 function Export-DbaCredential {
     <#
     .SYNOPSIS
-        Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.
+        Exports SQL Server credentials to executable T-SQL CREATE CREDENTIAL scripts
 
     .DESCRIPTION
-        Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.
+        Exports SQL Server credentials to T-SQL files containing CREATE CREDENTIAL statements that can recreate the credentials on another instance. By default, this includes decrypted passwords, making it perfect for migration scenarios where you need to move credentials between servers.
 
-        Requires remote Windows access if exporting the password.
+        The function generates executable T-SQL scripts that DBAs can run to recreate credentials during migrations, disaster recovery, or when setting up new environments. When passwords are included, the function requires sysadmin privileges and remote Windows registry access to decrypt the stored secrets.
+
+        Use the ExcludePassword parameter to export credential definitions without sensitive data for documentation or security-conscious scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

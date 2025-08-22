@@ -1,10 +1,10 @@
 Function Invoke-DbaAdvancedUpdate {
     <#
     .SYNOPSIS
-        Designed for internal use, implements parallel execution for Update-DbaInstance.
+        Installs SQL Server updates and patches on remote computers with automatic restart management
 
     .DESCRIPTION
-        Invokes an update process for a single computer and restarts it if needed
+        Executes SQL Server KB updates on a target computer by extracting patch files, running setup.exe with appropriate parameters, and managing system restarts as needed. This function handles the core installation logic for Update-DbaInstance, processing update actions for specific SQL Server instances or all instances on a machine. It automatically detects the drive with most free space for extraction, validates pending reboots, and coordinates restart sequences to ensure patches install successfully across multiple update cycles.
 
     .PARAMETER ComputerName
         Target computer with SQL instance or instances.

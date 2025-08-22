@@ -1,10 +1,10 @@
 function New-DbaDbUser {
     <#
     .SYNOPSIS
-        Creates a new user for the specified database(s).
+        Creates database users with support for SQL logins, contained users, and Azure AD authentication.
 
     .DESCRIPTION
-        Creates a new user for the specified database(s) with provided specifications.
+        Creates database users across one or more databases, supporting multiple authentication types including traditional SQL login mapping, contained users with passwords, and Azure Active Directory external provider authentication. This command handles the common DBA task of provisioning database access without requiring manual T-SQL scripts for each database. You can create users mapped to existing SQL logins, standalone contained users for partially contained databases, or Azure AD users for cloud environments. The function automatically validates that specified logins and schemas exist before attempting user creation.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

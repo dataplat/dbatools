@@ -1,14 +1,18 @@
 function Install-DbaWhoIsActive {
     <#
     .SYNOPSIS
-        Automatically installs or updates sp_WhoisActive by Adam Machanic.
+        Downloads and installs sp_WhoIsActive stored procedure for real-time SQL Server session monitoring
 
     .DESCRIPTION
-        This command downloads, extracts and installs sp_WhoisActive with Adam's permission. To read more about sp_WhoisActive, please visit http://whoisactive.com and http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx
+        Installs Adam Machanic's sp_WhoIsActive stored procedure, the most widely-used tool for monitoring active SQL Server sessions in real-time. This procedure provides detailed information about currently running queries, blocking chains, wait statistics, and resource consumption without the overhead of SQL Server Profiler.
+
+        The function automatically downloads the latest version from GitHub or uses a local file you specify. It handles installation to any database you choose, though master is recommended for server-wide availability. When sp_WhoIsActive already exists, the function performs an update instead.
+
+        This eliminates the manual process of downloading, extracting, and deploying the procedure across multiple SQL Server instances. Essential for DBAs who need to quickly troubleshoot performance issues, identify blocking sessions, or monitor query execution in production environments.
+
+        For more information about sp_WhoIsActive, visit http://whoisactive.com and http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx
 
         Please consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
-
-        Note that you will be prompted a bunch of times to confirm an action.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2005 or higher.

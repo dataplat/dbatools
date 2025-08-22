@@ -2,10 +2,10 @@
 function Test-DbaConnection {
     <#
     .SYNOPSIS
-        Tests the connection to a single instance.
+        Validates SQL Server connectivity and gathers comprehensive connection diagnostics
 
     .DESCRIPTION
-        Tests the ability to connect to an SQL Server instance outputting information about the server and instance.
+        Tests SQL Server instance connectivity while collecting detailed connection and environment information for troubleshooting. Returns authentication details, network configuration, TCP ports, and local PowerShell environment data. Essential for diagnosing connectivity issues before running automation scripts or validating access across multiple instances. Combines SQL connection testing with network diagnostics including ping status, PSRemoting access, and DNS resolution.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

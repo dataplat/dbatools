@@ -1,10 +1,10 @@
 function Get-DbaDbccUserOption {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC USEROPTIONS
+        Retrieves current session-level SET options and connection settings from SQL Server instances
 
     .DESCRIPTION
-        Returns the results of DBCC USEROPTIONS
+        Executes DBCC USEROPTIONS against SQL Server instances to display current session settings including ANSI options, isolation levels, date formats, language, and timeout values. This is particularly useful when troubleshooting application connection issues or verifying that session-level defaults match across environments. You can filter results to specific options or retrieve all current settings to compare against expected configurations during deployments or performance investigations.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-useroptions-transact-sql

@@ -1,10 +1,10 @@
 function Copy-DbaAgentServer {
     <#
     .SYNOPSIS
-        Copy SQL Server Agent from one server to another.
+        Copies all SQL Server Agent objects and server properties between instances.
 
     .DESCRIPTION
-        A wrapper function that calls the associated Copy command for each of the object types seen in SSMS under SQL Server Agent. This also copies all of the the SQL Agent properties (job history max rows, DBMail profile name, etc.).
+        Migrates complete SQL Server Agent configuration including jobs, operators, alerts, schedules, job categories, and proxies from one instance to another. This function handles the proper sequence of object creation and also copies server-level Agent properties like job history retention settings, error log locations, and database mail profiles. Essential for server migrations, disaster recovery setups, or standardizing Agent configurations across multiple environments without manually recreating dozens of objects.
 
         You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 

@@ -1,22 +1,20 @@
 function Test-DbaMigrationConstraint {
     <#
     .SYNOPSIS
-        Show if you can migrate the database(s) between the servers.
+        Validates database migration compatibility between SQL Server instances by checking for edition-specific features.
 
     .DESCRIPTION
-        When you want to migrate from a higher edition to a lower one there are some features that can't be used.
-        This function will validate if you have any of this features in use and will report to you.
-        The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
+        Prevents migration failures by identifying databases that use features incompatible with the destination SQL Server edition.
+        This function queries sys.dm_db_persisted_sku_features to detect enterprise-level features that would cause migration issues when moving from higher editions (Enterprise/Developer) to lower ones (Standard/Express).
 
-        This function only validate SQL Server 2008 versions or higher.
-        The editions supported by this function are:
-        - Enterprise
-        - Developer
-        - Evaluation
-        - Standard
-        - Express
+        Common migration scenarios this helps validate include moving databases from development environments running Developer edition to production Standard edition, or consolidating databases from Enterprise to Standard during license optimization.
+        The function also checks FILESTREAM configuration compatibility and validates that Change Data Capture (CDC) isn't used when migrating to Express edition, since Express lacks SQL Server Agent.
 
-        Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
+        Validation works on SQL Server 2008 and higher versions using the sys.dm_db_persisted_sku_features DMV.
+        Supported editions include Enterprise, Developer, Evaluation, Standard, and Express.
+
+        SQL Server 2016 SP1 introduced feature parity across editions for many capabilities, so this function accounts for those changes when validating post-SP1 destinations.
+        For more details see: https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 
         The -Database parameter is auto-populated for command-line completion.
 

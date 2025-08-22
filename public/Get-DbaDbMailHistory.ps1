@@ -1,10 +1,10 @@
 function Get-DbaDbMailHistory {
     <#
     .SYNOPSIS
-        Gets the history of mail sent from a SQL instance
+        Retrieves Database Mail history from SQL Server's msdb database for troubleshooting and compliance
 
     .DESCRIPTION
-        Gets the history of mail sent from a SQL instance
+        Retrieves comprehensive Database Mail history from the msdb.dbo.sysmail_allitems table, including delivery status, recipients, subject lines, and timestamps. This function helps DBAs troubleshoot email delivery issues, audit mail activity for compliance reporting, and monitor Database Mail performance. You can filter results by send date or delivery status (Sent, Failed, Unsent, Retrying) to focus on specific timeframes or problem emails.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Update-Dbatools {
     <#
     .SYNOPSIS
-        Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
+        Updates the dbatools PowerShell module to the latest version
 
     .DESCRIPTION
-        Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
+        Updates the dbatools module by removing the current installation and replacing it with the latest version from PowerShell Gallery or GitHub. This function has been deprecated in favor of PowerShell's native Install-Module and Update-Module commands which provide better dependency management and version control.
 
     .PARAMETER Development
         If this switch is enabled, the current development branch will be installed. By default, the latest official release is installed.

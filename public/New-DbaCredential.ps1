@@ -1,10 +1,10 @@
 function New-DbaCredential {
     <#
     .SYNOPSIS
-        Creates a new SQL Server credential
+        Creates a SQL Server credential for authentication to external resources
 
     .DESCRIPTION
-        Creates a new credential
+        Creates a SQL Server credential that stores authentication information for connecting to external resources like Azure storage accounts, network shares, or service accounts. Credentials are commonly used for backup to URL operations, SQL Agent job authentication, and accessing external data sources. The function supports various authentication methods including traditional username/password, Azure storage access keys, SAS tokens, and managed identities.
 
     .PARAMETER SqlInstance
         The target SQL Server(s)

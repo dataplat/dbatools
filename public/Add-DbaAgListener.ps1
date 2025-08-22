@@ -2,10 +2,14 @@
 function Add-DbaAgListener {
     <#
     .SYNOPSIS
-        Adds a listener to an availability group on a SQL Server instance.
+        Creates a network listener endpoint for an Availability Group to provide client connectivity
 
     .DESCRIPTION
-        Adds a listener to an availability group on a SQL Server instance.
+        Creates a network listener endpoint that provides a virtual network name and IP address for clients to connect to an Availability Group. The listener automatically routes client connections to the current primary replica, eliminating the need for applications to track which server is currently hosting the primary database.
+
+        This function supports both single-subnet and multi-subnet Availability Group configurations. You can specify static IP addresses for each subnet or use DHCP for automatic IP assignment. For multi-subnet deployments, specify multiple IP addresses and subnet masks to handle failover across geographically dispersed replicas.
+
+        Use this when setting up new Availability Groups or when adding listeners to existing groups that don't have client connectivity configured yet. Without a listener, applications must connect directly to replica server names, which breaks during failover scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

@@ -1,10 +1,10 @@
 function Export-DbaDbTableData {
     <#
     .SYNOPSIS
-        Exports data from tables
+        Generates INSERT statements from table data for migration and deployment scripts
 
     .DESCRIPTION
-        Exports data from tables
+        Creates executable INSERT statements from existing table data, making it easy to move data between SQL Server instances or environments. This is particularly useful for migrating reference tables, lookup data, or configuration tables where you need the actual data values rather than just the table structure. The generated scripts include proper USE database context and can be saved to files or piped to other commands for further processing.
 
     .PARAMETER InputObject
         Pipeline input from Get-DbaDbTable

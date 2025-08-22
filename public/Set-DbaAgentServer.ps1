@@ -1,10 +1,10 @@
 function Set-DbaAgentServer {
     <#
     .SYNOPSIS
-        Set-DbaAgentServer updates properties of a SQL Agent Server.
+        Configures SQL Server Agent service properties and operational settings
 
     .DESCRIPTION
-        Set-DbaAgentServer updates properties in the SQL Server Server with parameters supplied.
+        Modifies SQL Server Agent configuration settings including logging levels, mail profiles, CPU monitoring thresholds, job history retention, and service restart behaviors. Use this to standardize agent configurations across multiple instances, set up proper alerting and monitoring thresholds, or configure job history retention policies to prevent MSDB bloat.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

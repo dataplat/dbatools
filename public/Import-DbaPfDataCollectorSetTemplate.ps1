@@ -1,14 +1,14 @@
 function Import-DbaPfDataCollectorSetTemplate {
     <#
     .SYNOPSIS
-        Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
+        Creates Windows Performance Monitor data collector sets with SQL Server-specific performance counters from predefined templates.
 
     .DESCRIPTION
-        Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
-        When importing data collector sets from the local instance, Run As Admin is required.
+        Creates Windows Performance Monitor data collector sets using XML templates containing SQL Server performance counters. This eliminates the need to manually configure dozens of performance counters through the Performance Monitor GUI. The function can use built-in templates from the dbatools repository (like 'Long Running Query' or 'db_ola_health') or custom XML template files you specify.
 
-        Note: The included counters will be added for all SQL instances on the machine by default.
-        For specific instances in addition to the default, use -Instance.
+        Performance counters are automatically configured for all SQL Server instances detected on the target machine. When multiple instances exist, the function duplicates relevant counters for each instance so you get complete coverage across your SQL Server environment.
+
+        Requires local administrator privileges on the target computer when importing data collector sets.
 
         See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information
 

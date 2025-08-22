@@ -1,10 +1,10 @@
 function Get-DbaDbCompression {
     <#
     .SYNOPSIS
-        Gets tables and indexes size and current compression settings.
+        Retrieves compression settings, sizes, and row counts for tables and indexes across SQL Server databases.
 
     .DESCRIPTION
-        This function gets the current size and compression for all objects in the specified database(s), if no database is specified it will return all objects in all user databases.
+        This function analyzes data compression usage across your SQL Server databases by examining tables, indexes, and their physical partitions. It returns detailed information including current compression type (None, Row, Page, Columnstore), space usage, and row counts for each object. This is essential for compression optimization analysis, identifying candidates for compression to save storage space, and generating compliance reports on compression usage across your database environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

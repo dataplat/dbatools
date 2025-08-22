@@ -1,12 +1,14 @@
 function Read-DbaTraceFile {
     <#
     .SYNOPSIS
-        Reads SQL Server trace files
+        Parses SQL Server trace files and extracts events for security auditing and performance analysis
 
     .DESCRIPTION
-        Using the fn_trace_gettable function, a trace file is read and returned as a PowerShell object
+        Reads SQL Server trace files (.trc) using the fn_trace_gettable function and returns events as PowerShell objects for analysis. This function is essential for DBAs who need to investigate security incidents, audit database access, troubleshoot performance issues, or extract compliance data from trace files.
 
-        This function returns the whole of the trace file. The information is presented in the format that the trace subsystem uses.
+        The function can read both active trace files and archived trace files, including SQL Server's default trace that automatically captures configuration changes, login failures, and other critical events. You can filter results by database, login, application, event type, or use custom WHERE clauses to pinpoint specific activities.
+
+        Common use cases include analyzing failed login attempts for security breaches, identifying slow-running queries affecting performance, tracking schema changes for change management, and extracting audit trails for compliance reporting.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

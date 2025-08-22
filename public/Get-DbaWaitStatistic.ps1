@@ -1,10 +1,10 @@
 function Get-DbaWaitStatistic {
     <#
     .SYNOPSIS
-        Displays wait statistics
+        Retrieves SQL Server wait statistics for performance analysis and troubleshooting
 
     .DESCRIPTION
-        This command is based off of Paul Randal's post "Wait statistics, or please tell me where it hurts"
+        Analyzes SQL Server wait statistics from sys.dm_os_wait_stats to identify performance bottlenecks and resource contention issues. This function categorizes wait types, calculates timing metrics and percentages, and provides diagnostic explanations based on Paul Randal's methodology. Use this to pinpoint whether your SQL Server is waiting on disk I/O, memory pressure, locking issues, or other resource constraints that are slowing down query performance.
 
         Returns:
         WaitType

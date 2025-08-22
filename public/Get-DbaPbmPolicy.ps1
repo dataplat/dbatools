@@ -1,10 +1,10 @@
 function Get-DbaPbmPolicy {
     <#
     .SYNOPSIS
-        Returns policies from Policy-Based Management from an instance.
+        Retrieves Policy-Based Management policies from SQL Server instances for compliance auditing and configuration review.
 
     .DESCRIPTION
-        Returns details of policies with the option to filter on Category and SystemObjects.
+        Retrieves all Policy-Based Management policies configured on SQL Server instances, allowing DBAs to audit compliance configurations and review policy settings across their environment. This function connects to the PBM store and returns policy details including categories, conditions, and evaluation modes. Use this when you need to document existing policies, troubleshoot policy evaluations, or verify compliance configurations without manually navigating through SQL Server Management Studio's Policy-Based Management node.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

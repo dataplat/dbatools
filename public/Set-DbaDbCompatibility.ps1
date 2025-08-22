@@ -1,10 +1,10 @@
 function Set-DbaDbCompatibility {
     <#
     .SYNOPSIS
-        Sets the compatibility level for SQL Server databases.
+        Changes database compatibility levels to match SQL Server instance version or specified target level.
 
     .DESCRIPTION
-        Sets the current database compatibility level for all databases on a server or list of databases passed in to the function.
+        Updates database compatibility levels across one or more SQL Server instances. When no specific compatibility level is provided, automatically sets each database to match the SQL Server instance version it resides on. This is particularly useful after SQL Server upgrades when databases retain their original compatibility levels and need updating to take advantage of newer engine features and optimizations. The function processes only databases where the current compatibility level differs from the target level, making it safe to run repeatedly.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

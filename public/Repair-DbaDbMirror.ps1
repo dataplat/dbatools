@@ -1,14 +1,12 @@
 function Repair-DbaDbMirror {
     <#
     .SYNOPSIS
-        Attempts to repair a suspended or paused mirroring database.
+        Repairs suspended database mirroring sessions by restarting endpoints and resuming mirroring
 
     .DESCRIPTION
-        Attempts to repair a suspended mirroring database.
+        Restores database mirroring functionality when mirroring sessions become suspended due to network connectivity issues, log space problems, or other transient failures. This function performs the standard troubleshooting steps that DBAs typically execute manually: stops and restarts the database mirroring endpoints on the SQL Server instance, then resumes the mirroring session between the principal and mirror databases.
 
-        Restarts the endpoints then sets the partner to resume. See this article for more info:
-
-        http://www.sqlservercentral.com/blogs/vivekssqlnotes/2016/09/03/how-to-resume-suspended-database-mirroring-in-sql-server-/
+        When database mirroring is suspended, the mirror database stops receiving transaction log records from the principal database, creating a potential data loss risk. This command automates the common recovery process, eliminating the need to manually restart endpoints and issue ALTER DATABASE commands to resume mirroring.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

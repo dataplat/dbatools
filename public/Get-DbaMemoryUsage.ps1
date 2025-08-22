@@ -1,11 +1,12 @@
 function Get-DbaMemoryUsage {
     <#
     .SYNOPSIS
-        Get amount of memory in use by *all* SQL Server components and instances
+        Collects memory usage statistics from all SQL Server services using Windows performance counters
 
     .DESCRIPTION
-        Retrieves the amount of memory per performance counter. Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
-        SSAS and SSIS are included.
+        Collects detailed memory usage from SQL Server Database Engine, Analysis Services (SSAS), and Integration Services (SSIS) using Windows performance counters. This helps you troubleshoot memory pressure issues and understand how memory is allocated across different SQL Server components on the same server.
+
+        Gathers counters from Memory Manager (server memory, connection memory, lock memory), Plan Cache (procedure plans, ad-hoc plans), Buffer Manager (total pages, free pages, stolen pages), and service-specific memory usage. Each result shows the counter name, instance, page count where applicable, and memory in both KB and MB.
 
         SSRS does not have memory counters, only memory shrinks and memory pressure state.
 

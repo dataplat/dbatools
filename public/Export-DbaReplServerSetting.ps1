@@ -1,10 +1,12 @@
 function Export-DbaReplServerSetting {
     <#
     .SYNOPSIS
-        Exports replication server settings to file.
+        Generates T-SQL scripts to recreate SQL Server replication distributor and publication configurations
 
     .DESCRIPTION
-        Exports replication server settings to file.
+        Creates T-SQL scripts that can recreate your SQL Server replication setup, including distributor configuration, publications, subscriptions, and all related settings. The generated scripts include both creation commands and a distributor cleanup statement, making this perfect for disaster recovery planning, environment migrations, or replication topology documentation.
+
+        The function scripts out the complete replication configuration using SQL Server's replication management objects, so you can rebuild identical replication setups on different servers or restore replication after system failures.
 
         All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
         Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428

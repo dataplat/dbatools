@@ -1,10 +1,10 @@
 function Get-DbaLinkedServerLogin {
     <#
     .SYNOPSIS
-        Obtains linked server login(s).
+        Retrieves linked server login mappings and authentication configurations from SQL Server instances.
 
     .DESCRIPTION
-        Obtains linked server login(s).
+        Retrieves the login mappings configured for linked servers, showing how local SQL Server logins are mapped to remote server credentials. This function returns details about each login mapping including the local login name, remote user account, and whether impersonation is enabled. Use this to audit linked server security configurations, troubleshoot authentication issues between servers, or document cross-server login relationships for compliance purposes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

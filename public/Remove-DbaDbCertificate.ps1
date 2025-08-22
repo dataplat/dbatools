@@ -1,10 +1,10 @@
 function Remove-DbaDbCertificate {
     <#
     .SYNOPSIS
-        Deletes specified database certificate
+        Removes database certificates from SQL Server databases
 
     .DESCRIPTION
-        Deletes specified database certificate
+        Removes database certificates from specified SQL Server databases using the DROP CERTIFICATE statement. This function is commonly used during certificate rotation, security cleanup, or when decommissioning encryption features like Transparent Data Encryption (TDE) or Always Encrypted. Certificates can be targeted individually by name or removed in bulk using pipeline input from Get-DbaDbCertificate.
 
     .PARAMETER SqlInstance
         The SQL Server to create the certificates on.

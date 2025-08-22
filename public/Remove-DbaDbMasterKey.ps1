@@ -1,10 +1,10 @@
 function Remove-DbaDbMasterKey {
     <#
     .SYNOPSIS
-        Deletes specified database master key
+        Removes database master keys from SQL Server databases
 
     .DESCRIPTION
-        Deletes specified database master key
+        Removes database master keys from specified SQL Server databases by executing DROP MASTER KEY. Database master keys are used to encrypt other database-level encryption keys, including those for Transparent Data Encryption (TDE), Always Encrypted, and certificate private keys. This function is typically used when decommissioning database encryption, migrating to different encryption strategies, or cleaning up unused encryption infrastructure during database maintenance or compliance changes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

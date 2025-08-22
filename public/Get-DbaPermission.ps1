@@ -1,20 +1,22 @@
 function Get-DbaPermission {
     <#
     .SYNOPSIS
-        Get a list of Server and Database level permissions
+        Retrieves explicit and implicit permissions across SQL Server instances and databases for security auditing
 
     .DESCRIPTION
-        Retrieves a list of permissions
+        Retrieves comprehensive permission information from SQL Server instances and databases, including both explicit permissions and implicit permissions from fixed roles.
 
-        Permissions link principals to securables.
-        Principals exist on Windows, Instance and Database level.
-        Securables exist on Instance and Database level.
-        A permission state can be GRANT, DENY or REVOKE.
-        The permission type can be SELECT, CONNECT, EXECUTE and more.
-        The CONTROL permission is also returned for dbo users, db_owners, and schema owners.
-        To see server-level implicit permissions via fixed roles run the following command: Get-DbaServerRole -SqlInstance serverName | Select-Object *
+        This function queries sys.server_permissions and sys.database_permissions to capture all granted, denied, and revoked permissions across server and database levels.
+        Perfect for security audits, compliance reporting, troubleshooting access issues, and planning permission migrations between environments.
 
-        See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
+        The output includes permission state (GRANT/DENY/REVOKE), permission type (SELECT, CONNECT, EXECUTE, etc.), grantee information, and the specific securable being protected.
+        Also captures implicit CONTROL permissions for dbo users, db_owner role members, and schema owners that aren't explicitly stored in system tables.
+        Each result includes ready-to-use GRANT and REVOKE statements for easy permission replication or cleanup.
+
+        Permissions link principals (logins, users, roles) to securables (servers, databases, schemas, objects).
+        Principals exist at Windows, instance, and database levels, while securables exist at instance and database levels.
+
+        See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information about SQL Server permissions
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.

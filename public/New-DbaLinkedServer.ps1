@@ -1,10 +1,10 @@
 function New-DbaLinkedServer {
     <#
     .SYNOPSIS
-        Creates a new linked server.
+        Creates a new linked server connection to remote SQL Server instances or heterogeneous data sources.
 
     .DESCRIPTION
-        Creates a new linked server. See the Microsoft documentation for sp_addlinkedserver for more details on the parameters.
+        Creates a new linked server on a SQL Server instance, allowing you to query remote databases and heterogeneous data sources as if they were local tables. This replaces the need to manually configure linked servers through SSMS or T-SQL scripts, while providing consistent security context management for unmapped logins. The function uses SMO to create the linked server definition and automatically configures the default security mapping based on your specified security context.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

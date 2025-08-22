@@ -1,10 +1,12 @@
 function Set-DbaDbOwner {
     <#
     .SYNOPSIS
-        Sets database owners with a desired login if databases do not match that owner.
+        Changes database ownership to a specified login when current ownership doesn't match the target.
 
     .DESCRIPTION
-        This function will alter database ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa', but the function will allow the user to specify a different login for  ownership. The user can also apply this to all databases or only to a select list of databases (passed as either a comma separated list or a string array).
+        Changes database ownership to standardize who owns your databases across an instance. This is particularly useful for maintaining consistent ownership patterns after restoring databases from other environments, where databases may have orphaned owners or inconsistent ownership.
+
+        By default, the function sets ownership to 'sa' (or the renamed sysadmin account), but you can specify any valid login. The function only processes user databases and includes safety checks to ensure the target login exists, isn't a Windows group, and isn't already mapped as a user within the database. You can target all databases on an instance or filter to specific databases.
 
         Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 

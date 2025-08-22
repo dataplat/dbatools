@@ -1,26 +1,17 @@
 function Find-DbaDbDuplicateIndex {
     <#
     .SYNOPSIS
-        Find duplicate and overlapping indexes.
+        Identifies duplicate and overlapping indexes that waste storage space and degrade insert performance
 
     .DESCRIPTION
-        This command will help you to find duplicate and overlapping indexes on a database or a list of databases.
+        Scans database tables to identify indexes that have identical or overlapping column structures, which consume unnecessary storage space and slow down insert, update, and delete operations. Duplicate indexes have exactly the same key columns, included columns, and filter conditions, while overlapping indexes share some key columns but differ in others.
 
-        On SQL Server 2008 and higher, the IsFiltered property will also be checked
+        Use this during index maintenance to eliminate redundant indexes before they impact performance. The function analyzes sys.indexes and related catalog views to compare column structures, accounting for column order and sort direction. On SQL Server 2008 and higher, filtered indexes are properly differentiated using the IsFiltered property.
 
-        Only supports CLUSTERED and NONCLUSTERED indexes.
+        Supports both clustered and nonclustered indexes on user tables, excluding system objects. Returns comprehensive index details including size in MB, row counts, compression settings (2008+), and disabled/filtered status to help prioritize which duplicates to remove.
 
-        Output:
-        TableName
-        IndexName
-        KeyColumns
-        IncludedColumns
-        IndexSizeMB
-        IndexType
-        CompressionDescription (When 2008+)
-        [RowCount]
-        IsDisabled
-        IsFiltered (When 2008+)
+        Output includes:
+        TableName, IndexName, KeyColumns, IncludedColumns, IndexSizeMB, IndexType, CompressionDescription (2008+), RowCount, IsDisabled, IsFiltered (2008+)
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

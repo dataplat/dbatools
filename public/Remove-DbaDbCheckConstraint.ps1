@@ -1,10 +1,14 @@
 function Remove-DbaDbCheckConstraint {
     <#
     .SYNOPSIS
-        Removes a database check constraint(s) from each database and SQL Server instance.
+        Removes check constraints from SQL Server database tables
 
     .DESCRIPTION
-        Removes a database check constraint(s), with supported piping from Get-DbaDbCheckConstraint.
+        Removes check constraints from database tables across one or more SQL Server instances. Check constraints enforce data integrity by validating that column values meet specific criteria before allowing INSERT or UPDATE operations.
+
+        This function is useful when modifying table schemas, removing outdated business rules, or preparing databases for data migration where existing constraints might block bulk operations. You can target specific databases or remove constraints across multiple instances simultaneously.
+
+        Supports piping from Get-DbaDbCheckConstraint to remove only specific constraints that match your criteria, such as constraints containing particular patterns or on specific tables.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

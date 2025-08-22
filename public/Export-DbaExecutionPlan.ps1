@@ -1,10 +1,10 @@
 function Export-DbaExecutionPlan {
     <#
     .SYNOPSIS
-        Exports execution plans to disk.
+        Extracts execution plans from plan cache and saves them as .sqlplan files for analysis
 
     .DESCRIPTION
-        Exports execution plans to disk. Can pipe from Get-DbaExecutionPlan
+        Queries the SQL Server plan cache using dynamic management views and exports execution plans as XML files with .sqlplan extensions. These files can be opened directly in SQL Server Management Studio for detailed analysis and troubleshooting. The function retrieves both single statement plans and batch query plans from sys.dm_exec_query_stats, allowing you to analyze query performance patterns and identify optimization opportunities. You can filter results by database, creation time, or last execution time to focus on specific time periods or problematic queries. This eliminates the need to manually capture plans during query execution or dig through plan cache DMVs.
 
         Thanks to
         https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/

@@ -1,10 +1,10 @@
 function Set-DbaAgentJob {
     <#
     .SYNOPSIS
-        Set-DbaAgentJob updates a job.
+        Modifies existing SQL Server Agent job properties and notification settings.
 
     .DESCRIPTION
-        Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.
+        Updates various properties of SQL Server Agent jobs including job name, description, owner, enabled/disabled status, notification settings, and schedule assignments. This function lets you modify jobs without using SQL Server Management Studio, making it useful for standardizing job configurations across multiple instances or automating job maintenance tasks. You can update individual jobs or perform bulk changes across multiple jobs and SQL Server instances simultaneously.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

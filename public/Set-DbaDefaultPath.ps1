@@ -1,10 +1,12 @@
 function Set-DbaDefaultPath {
     <#
     .SYNOPSIS
-        Sets the default SQL Server paths for data, logs, and backups
+        Configures the default file paths for new databases and backups on SQL Server instances
 
     .DESCRIPTION
-        Sets the default SQL Server paths for data, logs, and backups
+        Modifies the server-level default paths that SQL Server uses when creating new databases or performing backups without specifying explicit locations. This eliminates the need to manually specify file paths for routine database operations and ensures consistent placement of files across your environment.
+
+        The function validates that the specified path is accessible to the SQL Server service account before making changes. When changing data or log paths, a SQL Server service restart is required for the changes to take effect. Backup path changes are immediate.
 
         To change the error log location, use Set-DbaStartupParameter
 

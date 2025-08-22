@@ -1,12 +1,10 @@
 function Copy-DbaAgentSchedule {
     <#
     .SYNOPSIS
-        Copy-DbaAgentSchedule migrates shared job schedules from one SQL Server to another.
+        Migrates SQL Agent shared job schedules between SQL Server instances for job schedule standardization.
 
     .DESCRIPTION
-        All shared job schedules are copied.
-
-        If the associated credential for the account does not exist on the destination, it will be skipped. If the shared job schedule already exists on the destination, it will be skipped unless -Force is used.
+        Copies shared job schedules (not job-specific schedules) from the source SQL Server Agent to one or more destination instances using T-SQL scripting. This is essential when standardizing job schedules across multiple servers or migrating Agent configurations to new instances. Existing schedules are skipped by default unless -Force is specified, and schedules with associated jobs cannot be overwritten even with Force to prevent breaking existing job assignments. Use this instead of manually recreating complex recurring schedules with specific timing requirements across your SQL Server environment.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

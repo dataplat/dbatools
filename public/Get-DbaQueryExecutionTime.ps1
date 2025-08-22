@@ -1,10 +1,14 @@
 function Get-DbaQueryExecutionTime {
     <#
     .SYNOPSIS
-        Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
+        Retrieves stored procedures and SQL statements with the highest CPU execution times from SQL Server instances.
 
     .DESCRIPTION
-        Quickly find slow query executions within a database.  Results will include stored procedures and individual SQL statements.
+        Analyzes SQL Server's query execution statistics to identify performance bottlenecks by examining CPU worker time data from dynamic management views. This function queries sys.dm_exec_procedure_stats for stored procedures and sys.dm_exec_query_stats for ad hoc statements, returning detailed execution metrics including average execution time, total executions, and maximum execution time.
+
+        Use this when troubleshooting performance issues, identifying resource-intensive queries during peak hours, or conducting routine performance audits. The results help pinpoint which stored procedures or SQL statements are consuming the most CPU resources across your databases, so you don't have to manually query DMVs or run expensive profiler traces.
+
+        By default, returns the top 100 results per database for queries executed at least 100 times with an average execution time of 500ms or higher. Results include the full SQL text for ad hoc statements and procedure names for stored procedures, along with execution statistics and timing data.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

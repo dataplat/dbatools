@@ -1,10 +1,10 @@
 function Measure-DbatoolsImport {
     <#
     .SYNOPSIS
-        Displays the import load times of the dbatools PowerShell module
+        Measures and displays detailed timing metrics for dbatools module import operations
 
     .DESCRIPTION
-        Displays the import load times of the dbatools PowerShell module
+        Returns performance data collected during the dbatools module import process, showing the duration of each import step. This function helps troubleshoot slow module loading times by identifying which components take the longest to initialize. The timing data includes loading the dbatools library, type aliases, internal commands, external commands, and other initialization steps. Only displays steps that took measurable time (greater than 00:00:00) to complete.
 
     .NOTES
         Tags: Module, Support

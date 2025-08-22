@@ -1,12 +1,10 @@
 function Get-DbaIoLatency {
     <#
     .SYNOPSIS
-        Displays IO subsystem latency statistics from sys.dm_io_virtual_file_stats.  Works on SQL Server 2005 and above.
+        Retrieves I/O latency metrics for all database files to identify storage performance bottlenecks
 
     .DESCRIPTION
-        This command is based off of Paul Randal's post "Advanced SQL Server performance tuning"
-
-        Returns both raw and aggregate information
+        Queries sys.dm_io_virtual_file_stats to collect detailed I/O performance statistics for every database file on the SQL Server instance. Returns calculated latency metrics including read latency, write latency, and overall latency in milliseconds, plus throughput statistics like average bytes per read and write operation. Essential for diagnosing slow database performance caused by storage bottlenecks, helping you identify which specific database files are experiencing high I/O wait times. Based on Paul Randal's SQL Server performance tuning methodology.
 
         Reference:  https://www.sqlskills.com/blogs/paul/how-to-examine-io-subsystem-latencies-from-within-sql-server/
                     https://www.sqlskills.com/blogs/paul/capturing-io-latencies-period-time/

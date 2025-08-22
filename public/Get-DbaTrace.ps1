@@ -1,10 +1,10 @@
 function Get-DbaTrace {
     <#
     .SYNOPSIS
-        Gets a list of trace(s) from specified SQL Server Instance
+        Retrieves SQL Server trace information including status, file paths, and configuration details
 
     .DESCRIPTION
-        This function returns a list of traces on a SQL Server instance and identifies the default trace file
+        Queries the sys.traces system view to return detailed information about active and configured traces on a SQL Server instance. This includes trace status, file locations, buffer settings, event counts, and timing data. Commonly used for monitoring trace activity, auditing trace configurations, and locating the default system trace file for troubleshooting and compliance purposes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

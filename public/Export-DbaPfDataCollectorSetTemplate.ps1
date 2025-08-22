@@ -1,10 +1,10 @@
 function Export-DbaPfDataCollectorSetTemplate {
     <#
     .SYNOPSIS
-        Exports a new Data Collector Set XML Template.
+        Exports Windows Performance Monitor Data Collector Set configurations as reusable XML templates.
 
     .DESCRIPTION
-        Exports a Data Collector Set XML Template from Get-DbaPfDataCollectorSet. Exports to "$home\Documents\Performance Monitor Templates" by default.
+        Exports Data Collector Set configurations from Windows Performance Monitor as XML template files that can be imported on other SQL Server hosts. This allows you to standardize performance monitoring across your SQL Server environment by saving custom counter collections, sampling intervals, and output settings as portable templates. Particularly useful for creating consistent performance baselines and troubleshooting configurations that can be quickly deployed when performance issues arise.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

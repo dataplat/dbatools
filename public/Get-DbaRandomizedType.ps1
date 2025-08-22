@@ -1,10 +1,10 @@
 function Get-DbaRandomizedType {
     <#
     .SYNOPSIS
-        Get the randomized types and sub types
+        Lists available data types and subtypes for generating realistic test data during database masking operations
 
     .DESCRIPTION
-        Retrieves the types and sub types available
+        Returns all available randomizer types and subtypes that can be used with Get-DbaRandomizedValue for data masking and test data generation. These types include realistic data patterns like Person names, Address components, Finance data, Internet values, and Random data types. This command helps you discover what fake data options are available when building data masking rules or generating test datasets for non-production environments.
 
     .PARAMETER RandomizedType
         Filter the randomized types

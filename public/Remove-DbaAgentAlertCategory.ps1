@@ -1,11 +1,13 @@
 function Remove-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        Remove-DbaAgentAlertCategory removes an alert category.
+        Removes SQL Server Agent alert categories from SQL Server instances.
 
     .DESCRIPTION
-        Remove-DbaAgentAlertCategory makes it possible to remove an alert category.
-        Insure that the category you want to remove is not used with any alerts. If an alert uses this category it will be get the category [Uncategorized].
+        Removes custom alert categories from SQL Server Agent, useful for cleaning up unused organizational structures or standardizing alert management across environments.
+        Any existing alerts that reference the removed category will automatically be reassigned to the [Uncategorized] category, so you don't need to manually update alert assignments before removal.
+        The function works with both individual category names and accepts pipeline input from Get-DbaAgentAlertCategory for bulk operations.
+        Returns detailed status information showing which categories were successfully removed and any that failed with error details.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

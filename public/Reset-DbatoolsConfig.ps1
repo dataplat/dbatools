@@ -1,11 +1,12 @@
 function Reset-DbatoolsConfig {
     <#
     .SYNOPSIS
-        Reverts a configuration item to its default value.
+        Resets dbatools module configuration settings back to their default values.
 
     .DESCRIPTION
-        This command can be used to revert a configuration item to the value it was initialized with.
-        Generally, this amounts to reverting it to its default value.
+        Restores dbatools configuration settings to their original default values, useful when troubleshooting connectivity issues, fixing misconfigured connection strings, or starting fresh after environment changes. This is particularly helpful when dbatools settings have been customized for specific environments and you need to restore the baseline behavior.
+
+        The function can reset individual configuration items, all settings within a specific module, or all dbatools configuration settings at once. This saves you from manually tracking down and reconfiguring individual settings.
 
         In order for a reset to be possible, two conditions must be met:
         - The setting must have been initialized.

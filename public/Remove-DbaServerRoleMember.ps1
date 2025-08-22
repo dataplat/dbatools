@@ -1,10 +1,10 @@
 function Remove-DbaServerRoleMember {
     <#
     .SYNOPSIS
-        Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.
+        Revokes server-level role membership from SQL Server logins and roles.
 
     .DESCRIPTION
-        Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.
+        Revokes membership from server-level roles by removing logins or nested roles from target roles like sysadmin, dbcreator, or custom server roles. This is essential for security management when you need to reduce user privileges or clean up role assignments after organizational changes. The function works with both fixed server roles (sysadmin, securityadmin, etc.) and user-defined server roles, supporting bulk operations across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

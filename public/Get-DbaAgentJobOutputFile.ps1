@@ -1,12 +1,10 @@
 function Get-DbaAgentJobOutputFile {
     <#
     .SYNOPSIS
-        Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if
-        required for one or more SQL Instances
+        Retrieves output file paths configured for SQL Agent job steps
 
     .DESCRIPTION
-        This function returns for one or more SQL Instances the output file value for each step of one or many agent job with the Job Names
-        provided dynamically. It will not return anything if there is no Output File
+        This function returns the file paths where SQL Agent job steps write their output logs. When troubleshooting failed jobs or reviewing execution history, DBAs often need to locate these output files to examine detailed error messages and execution details. The function returns both the local file path and the UNC path for remote access, but only displays job steps that have an output file configured.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

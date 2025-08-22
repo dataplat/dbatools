@@ -1,12 +1,12 @@
 function Get-DbaDbSharePoint {
     <#
     .SYNOPSIS
-        Returns databases that are part of a SharePoint Farm.
+        Identifies all databases belonging to a SharePoint farm by querying the SharePoint Configuration database.
 
     .DESCRIPTION
-        Returns databases that are part of a SharePoint Farm, as found in the SharePoint Configuration database.
+        Discovers and returns database objects for all databases that are part of a SharePoint farm by querying the SharePoint Configuration database's internal tables and stored procedures. This helps DBAs identify which databases on their SQL Server instance are actively used by SharePoint, eliminating guesswork when planning maintenance, migrations, or troubleshooting SharePoint connectivity issues.
 
-        By default, this command checks SharePoint_Config. To use an alternate database, use the ConfigDatabase parameter.
+        The function queries the SharePoint Configuration database to find registered SharePoint databases using SharePoint's internal proc_getObjectsByBaseClass stored procedure and Objects table. By default, this command checks SharePoint_Config. To use an alternate configuration database, use the ConfigDatabase parameter.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

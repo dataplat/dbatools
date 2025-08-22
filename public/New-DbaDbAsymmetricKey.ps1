@@ -1,10 +1,10 @@
 function New-DbaDbAsymmetricKey {
     <#
     .SYNOPSIS
-        Creates a new database asymmetric key
+        Creates RSA asymmetric keys in SQL Server databases for encryption and digital signing
 
     .DESCRIPTION
-        Creates a new database asymmetric key. If no database is specified, the asymmetric key will be created in master.
+        Creates asymmetric keys within SQL Server databases using RSA encryption algorithms (512-4096 bit). These keys are essential for database-level encryption features like Transparent Data Encryption (TDE), column-level encryption, and digital signing of assemblies or stored procedures. You can generate new key pairs directly on the server or import existing keys from files, executables, or assemblies. Keys can be password-protected or secured using the database master key, and ownership can be assigned to specific database users.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

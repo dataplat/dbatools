@@ -1,10 +1,10 @@
 function Get-DbaDbSchema {
     <#
     .SYNOPSIS
-        Finds the database schema SMO object(s) based on the given filter params.
+        Retrieves database schema objects from SQL Server instances for inventory, security auditing, and management tasks
 
     .DESCRIPTION
-        Finds the database schema SMO object(s) based on the given filter params.
+        Returns SQL Server Management Object (SMO) schema objects from one or more databases, allowing you to inspect schema ownership, enumerate database organization, and identify schema-level security configurations. This function is essential for database documentation, security auditing when you need to track who owns which schemas, and migration planning where schema ownership and structure must be preserved. You can filter results by specific schema names, schema owners, or databases, and optionally include system schemas like dbo, sys, and INFORMATION_SCHEMA which are excluded by default.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

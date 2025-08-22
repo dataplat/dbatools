@@ -1,14 +1,13 @@
 <#
     .SYNOPSIS
-        Remove-DbaDbLogShipping will remove one or more databases from log shipping
+        Dismantles SQL Server log shipping configurations and removes associated jobs and monitoring
 
     .DESCRIPTION
-        The command Remove-DbaDbLogShipping will remove one or more databases from log shipping
+        Completely removes log shipping setup from both primary and secondary instances by cleaning up all associated SQL Agent jobs, monitor configurations, and database relationships stored in msdb. This function calls the proper SQL Server system stored procedures (sp_delete_log_shipping_primary_secondary, sp_delete_log_shipping_primary_database, and sp_delete_log_shipping_secondary_database) to ensure clean removal without orphaned objects.
 
-        After running the command it will remove all the jobs, configurations set up for log shipping
+        Use this when migrating to different disaster recovery solutions, cleaning up failed log shipping setups, or decommissioning secondary servers. The function automatically discovers secondary server information from the log shipping configuration if not specified.
 
-        By default the secondary database will NOT be removed.
-        Use -RemoveSecondaryDatabase to make the command the secondary database
+        By default, the secondary database remains intact and accessible after log shipping removal. Use -RemoveSecondaryDatabase to completely drop the secondary database as part of the cleanup process.
 
     .PARAMETER PrimarySqlInstance
         Primary SQL Server instance which contains the primary database(s).

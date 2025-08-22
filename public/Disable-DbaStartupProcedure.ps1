@@ -1,12 +1,13 @@
 function Disable-DbaStartupProcedure {
     <#
     .SYNOPSIS
-        Disables the automatic execution of procedure(s) that are set to execute automatically each time the SQL Server service is started
+        Removes stored procedures from SQL Server's automatic startup execution list
 
     .DESCRIPTION
-         Used to revoke the designation of one or more stored procedures to automatically execute when the SQL Server service is started.
-         Equivalent to running the system stored procedure sp_procoption with @OptionValue = off
-         Returns the SMO StoredProcedure object for procedures affected.
+        Prevents stored procedures from automatically executing when the SQL Server service starts by clearing their startup designation in the master database.
+        This is essential when troubleshooting startup issues or removing procedures that were previously configured to run at service startup.
+        Equivalent to running sp_procoption with @OptionValue = off, but provides object-based management with detailed status reporting.
+        Returns enhanced SMO StoredProcedure objects showing the action results and current startup status.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

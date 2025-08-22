@@ -1,10 +1,10 @@
 function Get-DbaAgentSchedule {
     <#
     .SYNOPSIS
-        Returns all SQL Agent Shared Schedules on a SQL Server Agent.
+        Retrieves SQL Agent shared schedules with detailed timing and recurrence information.
 
     .DESCRIPTION
-        This function returns SQL Agent Shared Schedules.
+        Retrieves all shared schedules from SQL Server Agent along with human-readable descriptions of their timing patterns. These shared schedules can be reused across multiple jobs to standardize maintenance windows and reduce schedule management overhead. The function provides filtering options by schedule name, unique identifier, or numeric ID, making it useful for schedule auditing, documentation, and troubleshooting automated job execution patterns.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

@@ -1,10 +1,10 @@
 function Get-DbaAgentJob {
     <#
     .SYNOPSIS
-        Gets SQL Agent Job information for each instance(s) of SQL Server.
+        Retrieves SQL Server Agent job details and execution status from one or more instances.
 
     .DESCRIPTION
-        The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+        Retrieves detailed information about SQL Server Agent jobs including their configuration, status, schedules, and execution history. This function connects to SQL instances and queries the msdb database to return job properties like owner, category, last run outcome, and current execution status. Use this to monitor job health across your environment, audit job configurations before deployments, or identify jobs associated with specific databases for maintenance planning.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

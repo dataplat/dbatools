@@ -1,12 +1,16 @@
 function Copy-DbaResourceGovernor {
     <#
     .SYNOPSIS
-        Migrates Resource Pools
+        Copies SQL Server Resource Governor configuration including pools, workload groups, and classifier functions between instances
 
     .DESCRIPTION
-        By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used.
+        Migrates your entire SQL Server Resource Governor setup from one instance to another, including custom resource pools, workload groups, and classifier functions. This saves you from manually recreating complex Resource Governor configurations when setting up new servers or during migrations.
 
-        The -ResourcePool parameter is auto-populated for command-line completion and can be used to copy only specific objects.
+        The function copies all non-system resource pools (excludes the built-in "internal" and "default" pools) along with their associated workload groups and settings. It also migrates any custom classifier function you've configured to automatically assign incoming requests to appropriate resource pools.
+
+        If a resource pool already exists on the destination server, it will be skipped unless you use -Force to overwrite it. Resource Governor will be properly reconfigured after the migration to ensure all changes take effect.
+
+        Note that Resource Governor is only available in Enterprise, Datacenter, and Developer editions of SQL Server. The -ResourcePool parameter is auto-populated for command-line completion and can be used to copy only specific objects.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

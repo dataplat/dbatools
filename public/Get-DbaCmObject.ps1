@@ -1,17 +1,14 @@
 function Get-DbaCmObject {
     <#
     .SYNOPSIS
-        Retrieves Wmi/Cim-Style information from computers.
+        Retrieves Windows system information from SQL Server hosts using WMI/CIM with intelligent connection fallback.
 
     .DESCRIPTION
-        This function centralizes all requests for information retrieved from Get-WmiObject or Get-CimInstance.
-        It uses different protocols as available in this order:
-        - Cim over WinRM
-        - Cim over DCOM
-        - Wmi
-        - Wmi over PowerShell Remoting
-        It remembers channels that didn't work and will henceforth avoid them. It remembers invalid credentials and will avoid reusing them.
-        Much of its behavior can be configured using Test-DbaCmConnection.
+        Queries Windows Management Instrumentation (WMI) or Common Information Model (CIM) classes on SQL Server hosts to gather system-level information like hardware specs, operating system details, services, and performance counters. This function automatically tries multiple connection protocols in order of preference (CIM over WinRM, CIM over DCOM, WMI, then WMI over PowerShell Remoting) and remembers which methods work for each server to optimize future connections.
+
+        Essential for collecting host-level information that complements SQL Server monitoring, such as checking available memory, CPU utilization, disk space, or Windows service status across your SQL Server infrastructure. The intelligent credential and connection caching prevents repeated authentication failures and speeds up bulk operations across multiple servers.
+
+        Much of its behavior can be configured using Test-DbaCmConnection to pre-test and configure optimal connection methods for your environment.
 
     .PARAMETER ClassName
         The name of the class to retrieve.

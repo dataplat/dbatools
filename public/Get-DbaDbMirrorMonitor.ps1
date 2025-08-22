@@ -1,12 +1,14 @@
 function Get-DbaDbMirrorMonitor {
     <#
     .SYNOPSIS
-        Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.
+        Retrieves database mirroring performance metrics and monitoring history from SQL Server instances
 
     .DESCRIPTION
-        Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.
+        Retrieves detailed database mirroring performance statistics from the msdb monitoring tables, helping you track mirroring health and identify performance bottlenecks. This function executes sp_dbmmonitorresults to pull metrics like log generation rates, send rates, transaction delays, and recovery progress from both principal and mirror databases.
 
-        Basically executes sp_dbmmonitorresults.
+        Use this when troubleshooting mirroring performance issues, monitoring replication lag, or generating compliance reports for high availability configurations. You can optionally refresh the monitoring data before retrieval and filter results by time periods or row counts to focus on specific timeframes.
+
+        The function returns comprehensive metrics including unsent log size, recovery rates, average delays, and witness status - all the key indicators DBAs need to assess mirroring health without manually querying system tables.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

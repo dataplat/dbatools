@@ -1,10 +1,10 @@
 function Get-DbaDbPartitionFunction {
     <#
     .SYNOPSIS
-        Gets database Partition Functions.
+        Retrieves partition function definitions and metadata from SQL Server databases.
 
     .DESCRIPTION
-        Gets database Partition Functions.
+        Retrieves partition function definitions and their metadata from one or more SQL Server databases. Partition functions define how table or index data is distributed across multiple partitions based on the values of a partitioning column. This function returns details like creation date, function name, and number of partitions, making it useful for documenting partitioning schemes, analyzing partition distribution strategies, and auditing partitioned table configurations before maintenance operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

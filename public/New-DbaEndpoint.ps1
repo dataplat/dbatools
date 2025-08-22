@@ -1,10 +1,10 @@
 function New-DbaEndpoint {
     <#
     .SYNOPSIS
-        Creates endpoints on a SQL Server instance.
+        Creates SQL Server endpoints for database mirroring, Service Broker, SOAP, or T-SQL communication.
 
     .DESCRIPTION
-        Creates endpoints on a SQL Server instance.
+        Creates SQL Server endpoints that enable communication between instances for high availability features like availability groups and database mirroring. Database mirroring endpoints are the most common type, required for setting up availability groups and database mirroring partnerships. The function also supports Service Broker endpoints for message queuing, SOAP endpoints for web services, and T-SQL endpoints for remote connections. Automatically generates TCP ports if not specified and handles encryption settings to ensure secure communication between SQL Server instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

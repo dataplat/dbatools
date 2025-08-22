@@ -1,10 +1,10 @@
 function Get-DbaDbRoleMember {
     <#
     .SYNOPSIS
-        Get members of database roles for each instance(s) of SQL Server.
+        Retrieves all users and nested roles that are members of database roles across SQL Server instances
 
     .DESCRIPTION
-        The Get-DbaDbRoleMember returns connected SMO object for database roles for each instance(s) of SQL Server.
+        This function enumerates the membership of database roles, showing which users and nested roles belong to each role. Essential for security audits, permission troubleshooting, and compliance reporting, it reveals the complete role hierarchy within your databases. By default, system users are excluded to focus on business-relevant accounts, but you can include them for comprehensive security reviews. The function works across multiple instances and databases simultaneously, making it perfect for enterprise-wide role membership documentation and access reviews.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

@@ -1,10 +1,12 @@
 function Get-DbaWsfcSharedVolume {
     <#
     .SYNOPSIS
-        Gets information about Cluster Shared Volumes in a failover cluster.
+        Retrieves Cluster Shared Volume configuration and status from Windows Server Failover Clusters hosting SQL Server instances.
 
     .DESCRIPTION
-        Gets information about Cluster Shared Volumes in a failover cluster.
+        Retrieves detailed configuration and operational information about Cluster Shared Volumes (CSVs) from Windows Server Failover Clusters. CSVs provide the shared storage foundation for SQL Server Failover Cluster Instances (FCIs) and other clustered applications, making this function essential for monitoring storage health and troubleshooting cluster storage issues.
+
+        DBAs use this when validating CSV health before SQL Server installations, investigating storage-related performance problems in clustered environments, or documenting shared storage configurations for disaster recovery planning. The function returns CSV properties along with cluster context including state information and fully qualified cluster names.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 

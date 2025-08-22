@@ -1,13 +1,12 @@
 function Expand-DbaDbLogFile {
     <#
     .SYNOPSIS
-        This command will help you to automatically grow your transaction log file in a responsible way (preventing the generation of too many VLFs).
+        Grows transaction log files using calculated increment sizes to prevent excessive Virtual Log File (VLF) fragmentation.
 
     .DESCRIPTION
-        As you may already know, having a transaction log file with too many Virtual Log Files (VLFs) can hurt your database performance in many ways.
+        This function intelligently grows transaction log files to target sizes while minimizing Virtual Log File (VLF) fragmentation. It calculates optimal increment sizes based on your SQL Server version and target log size, then grows the log in controlled chunks instead of letting autogrowth create excessive VLFs.
 
-        Example:
-        Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even impact insert/update/delete performance.
+        Too many VLFs create serious performance problems: slow transaction log backups, delayed database recovery during startup, and in extreme cases, degraded insert/update/delete performance. This command helps you proactively size your log files or fix existing VLF fragmentation issues.
 
         References:
         http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/

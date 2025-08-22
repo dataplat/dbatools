@@ -1,12 +1,14 @@
 function New-DbaDatabase {
     <#
     .SYNOPSIS
-        Creates a new database
+        Creates new SQL Server databases with customizable file layout and growth settings
 
     .DESCRIPTION
-        This command creates a new database.
+        Creates new databases on SQL Server instances with full control over file placement, sizing, and growth settings. Rather than using T-SQL CREATE DATABASE statements manually, this function provides a structured approach to database creation with built-in best practices.
 
-        It allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth. The autogrowth settings are obtained from the modeldev file in the model database when not supplied as command line arguments.
+        The function automatically configures growth settings to use fixed MB increments instead of percentage-based growth, which prevents runaway autogrowth issues in production environments. When specific file sizes aren't provided, it inherits sensible defaults from the model database to ensure new databases start with appropriate baseline configurations.
+
+        Supports creating databases with secondary filegroups and multiple data files for performance optimization, making it useful for both simple development databases and complex production systems that require specific file layouts for optimal I/O distribution.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

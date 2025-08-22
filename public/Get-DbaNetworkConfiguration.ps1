@@ -1,12 +1,14 @@
 function Get-DbaNetworkConfiguration {
     <#
     .SYNOPSIS
-        Returns the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.
+        Retrieves SQL Server network protocols, TCP/IP settings, and SSL certificate configuration from SQL Server Configuration Manager
 
     .DESCRIPTION
-        Returns a PowerShell object with the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.
+        Collects comprehensive network configuration details for SQL Server instances, providing the same information visible in SQL Server Configuration Manager but in a scriptable PowerShell format. This function is essential for network connectivity troubleshooting, security audits, and compliance reporting across multiple SQL Server environments.
 
-        As we get information from SQL WMI and also from the registry, we use PS Remoting to run the core code on the target machine.
+        The function retrieves protocol status for Shared Memory, Named Pipes, and TCP/IP, along with detailed TCP/IP properties including port configurations, IP address bindings, and dynamic port settings. It also extracts SSL certificate information, encryption settings, and advanced security properties like SPNs and extended protection settings.
+
+        Since the function accesses SQL WMI and Windows registry data, it uses PowerShell remoting to execute on the target machine, requiring appropriate permissions on both the local and remote systems.
 
         For a detailed explanation of the different properties see the documentation at:
         https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration

@@ -1,11 +1,12 @@
 function Get-DbaNetworkActivity {
     <#
     .SYNOPSIS
-        Gets the Current traffic on every Network Interface on a computer.
+        Retrieves real-time network traffic statistics for all network interfaces on SQL Server host computers.
 
     .DESCRIPTION
-        Gets the Current traffic on every Network Interface on a computer.
-        See https://msdn.microsoft.com/en-us/library/aa394293(v=vs.85).aspx
+        Retrieves current network activity metrics including bytes received, sent, and total throughput per second for every network interface on target computers. This function helps DBAs monitor network performance and identify bandwidth bottlenecks that could impact SQL Server performance, especially during large data transfers, backup operations, or heavy replication traffic.
+
+        The function queries Windows performance counters via CIM/WMI and displays bandwidth utilization alongside interface capacity (10Gb, 1Gb, 100Mb, etc.) to quickly identify saturated network links. Essential for troubleshooting connectivity issues, monitoring backup network performance, or validating network capacity before major data migration operations.
 
         Requires Local Admin rights on destination computer(s).
 

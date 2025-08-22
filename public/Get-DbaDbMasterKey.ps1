@@ -1,10 +1,10 @@
 function Get-DbaDbMasterKey {
     <#
     .SYNOPSIS
-        Gets specified database master key
+        Retrieves database master key information from SQL Server databases
 
     .DESCRIPTION
-        Gets specified database master key
+        Retrieves database master key objects and their metadata from one or more SQL Server databases. Database master keys are used to encrypt sensitive data through features like Transparent Data Encryption (TDE), column-level encryption, and certificate-based encryption. This function helps DBAs inventory encryption keys across their environment for security audits, compliance reporting, and encryption management. Returns key details including creation date, last modified date, and server encryption status.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

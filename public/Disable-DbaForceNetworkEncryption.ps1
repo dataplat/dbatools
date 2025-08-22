@@ -2,12 +2,10 @@
 function Disable-DbaForceNetworkEncryption {
     <#
     .SYNOPSIS
-        Disables Force Encryption for a SQL Server instance
+        Disables Force Network Encryption setting in SQL Server Configuration Manager
 
     .DESCRIPTION
-        Disables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.
-
-        This setting is found in Configuration Manager.
+        Modifies the Windows registry to disable Force Network Encryption for SQL Server instances, allowing unencrypted client connections. This is useful when troubleshooting connectivity issues, working with legacy applications that don't support encryption, or when encryption is handled at the network level. Requires Windows administrator access to the target server and PowerShell remoting. SQL Server service must be restarted for changes to take effect.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.

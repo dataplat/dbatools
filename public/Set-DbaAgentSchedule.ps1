@@ -1,10 +1,10 @@
 function Set-DbaAgentSchedule {
     <#
     .SYNOPSIS
-        Set-DbaAgentSchedule updates a schedule in the msdb database.
+        Modifies properties of existing SQL Agent job schedules
 
     .DESCRIPTION
-        Set-DbaAgentSchedule will help update a schedule for a job. It does not attach the schedule to a job.
+        Modifies the timing, frequency, and other properties of existing SQL Agent job schedules without recreating them. You can update schedule frequency (daily, weekly, monthly), change start/end times and dates, enable or disable schedules, and rename them. The function works with schedules already attached to jobs and validates all timing parameters to prevent invalid configurations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

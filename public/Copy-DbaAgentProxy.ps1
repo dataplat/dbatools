@@ -1,12 +1,10 @@
 function Copy-DbaAgentProxy {
     <#
     .SYNOPSIS
-        Copy-DbaAgentProxy migrates proxy accounts from one SQL Server to another.
+        Copies SQL Server Agent proxy accounts from one instance to another.
 
     .DESCRIPTION
-        By default, all proxy accounts are copied. The -ProxyAccounts parameter is auto-populated for command-line completion and can be used to copy only specific proxy accounts.
-
-        If the associated credential for the account does not exist on the destination, it will be skipped. If the proxy account already exists on the destination, it will be skipped unless -Force is used.
+        Migrates SQL Server Agent proxy accounts between instances, enabling job steps to run under different security contexts than the SQL Agent service account. By default, all proxy accounts are copied, but you can specify individual accounts to migrate or exclude specific ones. The function requires that associated credentials already exist on the destination server before copying proxy accounts. If a proxy account already exists on the destination, it will be skipped unless you use -Force to overwrite it.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

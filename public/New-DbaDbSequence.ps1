@@ -1,10 +1,10 @@
 function New-DbaDbSequence {
     <#
     .SYNOPSIS
-        Creates a sequence.
+        Creates a new sequence object in SQL Server databases with configurable properties and data types.
 
     .DESCRIPTION
-        Creates a sequence in the database(s) specified. SQL Server 2012 and higher are supported.
+        Creates a new sequence object in one or more SQL Server databases, providing an alternative to IDENTITY columns for generating sequential numbers. This function allows you to configure all sequence properties including data type (system or user-defined), starting value, increment, min/max bounds, cycling behavior, and cache settings. Sequences are particularly useful when you need to share sequential numbers across multiple tables, require more control over number generation than IDENTITY provides, or need to reset or alter the sequence values. The function automatically creates the target schema if it doesn't exist and supports SQL Server 2012 and higher.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

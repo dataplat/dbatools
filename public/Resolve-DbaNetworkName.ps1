@@ -1,15 +1,14 @@
 function Resolve-DbaNetworkName {
     <#
     .SYNOPSIS
-        Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
+        Resolves network names and returns detailed network information for SQL Server connection troubleshooting and validation.
 
     .DESCRIPTION
-        Retrieves the IPAddress, ComputerName from one computer.
-        The object can be used to take action against its name or IPAddress.
+        Performs comprehensive network name resolution to gather detailed connection information for SQL Server instances and computers.
+        This function is essential when you need to verify connectivity, troubleshoot connection issues, or validate network configurations before connecting to SQL Server.
 
-        First ICMP is used to test the connection, and get the connected IPAddress.
-
-        Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
+        Uses multiple resolution methods including DNS lookups, ICMP ping tests, and WMI/CIM queries to ensure accurate results across different network configurations.
+        First tests connectivity using ICMP to identify the responding IP address, then gathers comprehensive network details through various protocols.
 
         Important: Remember that FQDN doesn't always match "ComputerName dot Domain" as AD intends.
         There are network setup (google "disjoint domain") where AD and DNS do not match.

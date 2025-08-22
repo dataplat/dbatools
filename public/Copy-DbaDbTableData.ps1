@@ -1,12 +1,14 @@
 function Copy-DbaDbTableData {
     <#
     .SYNOPSIS
-        Copies data between SQL Server tables.
+        Streams table data between SQL Server instances using high-performance bulk copy operations.
 
     .DESCRIPTION
-        Copies data between SQL Server tables using SQL Bulk Copy.
-        The same can be achieved also using Invoke-DbaQuery and Write-DbaDbTableData but it will buffer the contents of that table in memory of the machine running the commands.
-        This function prevents that by streaming a copy of the data in the most speedy and least resource-intensive way.
+        Copies data between SQL Server tables using SQL Bulk Copy for maximum performance and minimal memory usage.
+        Unlike Invoke-DbaQuery and Write-DbaDbTableData which buffer entire table contents in memory, this function streams data directly from source to destination.
+        This approach prevents memory exhaustion when copying large tables and provides the fastest data transfer method available.
+        Supports copying between different servers, databases, and schemas while preserving data integrity options like identity values, constraints, and triggers.
+        Can automatically create destination tables based on source table structure, making it ideal for data migration, ETL processes, and table replication tasks.
 
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.

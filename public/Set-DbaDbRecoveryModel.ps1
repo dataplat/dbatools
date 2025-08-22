@@ -1,10 +1,10 @@
 function Set-DbaDbRecoveryModel {
     <#
     .SYNOPSIS
-        Set-DbaDbRecoveryModel sets the Recovery Model.
+        Changes the recovery model for specified databases on SQL Server instances.
 
     .DESCRIPTION
-        Set-DbaDbRecoveryModel sets the Recovery Model for all databases except TEMPDB.
+        Changes the recovery model setting for one or more databases, allowing you to switch between Simple, Full, and BulkLogged recovery modes. This is commonly used when preparing databases for different backup strategies, reducing transaction log growth in development environments, or configuring production databases for point-in-time recovery. The function excludes tempdb and database snapshots automatically, and requires explicit database specification for safety.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

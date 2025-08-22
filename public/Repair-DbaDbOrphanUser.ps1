@@ -1,18 +1,14 @@
 function Repair-DbaDbOrphanUser {
     <#
     .SYNOPSIS
-        Finds orphan users with existing login and remaps them.
+        Repairs orphaned database users by remapping them to matching server logins or optionally removing them.
 
     .DESCRIPTION
-        An orphan user is defined by a user that does not have a matching login (Login property = "").
+        Identifies and repairs orphaned database users - users that exist in a database but are no longer associated with a server login. This commonly occurs after database restores, migrations, or when logins are recreated.
 
-        If the matching login exists it must be:
-        Enabled
-        Not a system object
-        Not locked
-        Have the same name that user
+        The function searches each database for users where the Login property is empty, then attempts to remap them to existing server logins with matching names. For a login to be eligible for remapping, it must be enabled, not a system object, not locked, and have the exact same name as the orphaned user.
 
-        You can drop users that does not have their matching login by specifying the parameter -RemoveNotExisting.
+        Uses modern ALTER USER syntax for SQL Server 2005+ or the legacy sp_change_users_login procedure for SQL Server 2000. Optionally removes orphaned users that have no matching server login when -RemoveNotExisting is specified.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

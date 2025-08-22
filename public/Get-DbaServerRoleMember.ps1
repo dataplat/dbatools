@@ -1,10 +1,10 @@
 function Get-DbaServerRoleMember {
     <#
     .SYNOPSIS
-        Get members of server roles for each instance(s) of SQL Server.
+        Retrieves server-level role memberships for security auditing and compliance reporting.
 
     .DESCRIPTION
-        The Get-DbaServerRoleMember returns connected SMO object for server roles for each instance(s) of SQL Server.
+        Returns detailed information about which logins are members of server-level roles like sysadmin, dbcreator, and securityadmin. Essential for security audits, compliance reviews, and troubleshooting permission issues. Shows both the role assignments and provides access to the underlying SMO objects for further analysis. Supports filtering by specific roles or logins to focus on particular security concerns.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

@@ -1,17 +1,10 @@
 function Test-DbaDiskSpeed {
     <#
     .SYNOPSIS
-        Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats
+        Analyzes database file I/O performance and identifies storage bottlenecks using SQL Server DMV statistics
 
     .DESCRIPTION
-        Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats:
-
-        https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-io-virtual-file-stats-transact-sql
-
-        This command uses a query from Rich Benner
-        https://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql
-
-        ...and also based on further adaptations referenced at https://github.com/dataplat/dbatools/issues/6551#issue-623216718
+        Queries sys.dm_io_virtual_file_stats to measure read/write latency, throughput, and overall I/O performance for database files. Returns performance ratings from "Very Good" to "Serious I/O Bottleneck" based on average stall times, helping you quickly identify storage issues that impact SQL Server performance. Can aggregate results by individual file, database, or disk level to pinpoint exactly where I/O problems exist. Essential for troubleshooting slow queries, validating storage upgrades, and proactive performance monitoring.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

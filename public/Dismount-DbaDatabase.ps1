@@ -1,10 +1,10 @@
 function Dismount-DbaDatabase {
     <#
     .SYNOPSIS
-        Detach a SQL Server Database.
+        Detaches one or more databases from a SQL Server instance with built-in safety checks and validation.
 
     .DESCRIPTION
-        This command detaches one or more SQL Server databases. If necessary, -Force can be used to break mirrors and remove databases from availability groups prior to detaching.
+        Safely detaches databases from SQL Server instances while performing comprehensive validation checks before detachment. This function automatically validates that databases aren't system databases, replicated, or have active snapshots, preventing common detachment failures. When databases are part of mirroring or Availability Groups, the -Force parameter allows automatic cleanup by breaking mirrors and removing databases from AGs before detaching. Active user connections can also be forcibly terminated when needed. This command is essential for database migration scenarios, decommissioning databases, or moving databases between instances without using backup/restore methods.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

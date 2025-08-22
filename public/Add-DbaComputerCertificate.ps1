@@ -1,10 +1,12 @@
 function Add-DbaComputerCertificate {
     <#
     .SYNOPSIS
-        Adds a computer certificate - useful for older systems.
+        Imports X.509 certificates into the Windows certificate store on local or remote computers.
 
     .DESCRIPTION
-        Adds a computer certificate from a local or remote computer.
+        Imports X.509 certificates (including password-protected .pfx files with private keys) into the specified Windows certificate store on one or more computers. This function is essential for SQL Server TLS/SSL encryption setup, Availability Group certificate requirements, and Service Broker security configurations.
+
+        The function handles both certificate files from disk and certificate objects from the pipeline, supports remote installation via PowerShell remoting, and allows you to control import behavior through various flags like exportable/non-exportable private keys. By default, certificates are installed to the LocalMachine\My (Personal) store with exportable and persistent private keys, which is the standard location for SQL Server service certificates.
 
     .PARAMETER ComputerName
         The target SQL Server instance or instances. Defaults to localhost.

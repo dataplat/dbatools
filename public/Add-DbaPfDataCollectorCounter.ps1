@@ -1,10 +1,10 @@
 function Add-DbaPfDataCollectorCounter {
     <#
     .SYNOPSIS
-        Adds a Performance Data Collector Counter.
+        Adds performance counters to existing Windows Performance Monitor Data Collector Sets for SQL Server monitoring.
 
     .DESCRIPTION
-        Adds a Performance Data Collector Counter.
+        Adds specific performance counters to existing Data Collector Sets within Windows Performance Monitor. This allows DBAs to customize their performance monitoring by adding SQL Server-specific counters like disk queue length, processor time, or SQL Server object counters to existing collection sets. The function modifies the Data Collector Set configuration and immediately applies the changes, so you can start collecting the additional performance metrics without recreating your monitoring setup.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

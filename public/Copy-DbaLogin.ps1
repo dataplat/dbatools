@@ -1,14 +1,14 @@
 function Copy-DbaLogin {
     <#
     .SYNOPSIS
-        Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and newer.
+        Copies SQL Server logins between instances with passwords, permissions, and role memberships intact
 
     .DESCRIPTION
-        SQL Server 2000: Migrates logins with SIDs, passwords, server roles and database roles.
+        Transfers SQL Server logins from one instance to another while preserving authentication details and security context. Essential for server migrations, disaster recovery setups, and environment synchronization where you need users to maintain the same access without recreating accounts manually.
 
-        SQL Server 2005 & newer: Migrates logins with SIDs, passwords, defaultdb, server roles & securables, database permissions & securables, login attributes (enforce password policy, expiration, etc.)
+        Handles both SQL Server and Windows Authentication logins, copying passwords (with original SIDs to prevent orphaned users), server roles, database permissions, and login properties like password policy enforcement. Includes smart conflict resolution - can drop and recreate existing logins, rename logins during copy, or generate new SIDs when copying to the same server.
 
-        The login hash algorithm changed in SQL Server 2012, and is not backwards compatible with previous SQL Server versions. This means that while SQL Server 2000 logins can be migrated to SQL Server 2012, logins created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
+        Version compatibility: SQL Server 2000-2008 R2 logins copy to any version, but SQL Server 2012+ logins (due to hash algorithm changes) only copy to SQL Server 2012 and newer. Automatically handles version-specific features and validates compatibility before attempting migration.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

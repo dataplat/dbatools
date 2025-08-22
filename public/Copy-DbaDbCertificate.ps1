@@ -1,12 +1,14 @@
 function Copy-DbaDbCertificate {
     <#
     .SYNOPSIS
-        Copy-DbaDbCertificate migrates certificates from one SQL Server to another.
+        Copies database-level certificates from source SQL Server to destination servers, including private keys and master key dependencies.
 
     .DESCRIPTION
-        By default, all certificates are copied.
+        Transfers database certificates between SQL Server instances by backing them up from source databases and restoring them to matching databases on destination servers. This function handles the complex certificate migration process that's essential when moving databases with Transparent Data Encryption (TDE) or other certificate-based security features.
 
-        If the certificate already exists on the destination, it will be skipped.
+        The function backs up each certificate with its private key to a shared network path accessible by both source and destination SQL Server service accounts. It automatically creates database master keys on the destination if they don't exist and you provide the MasterKeyPassword parameter. Existing certificates are skipped unless you use the Force parameter to overwrite them.
+
+        This is particularly useful for database migration projects, disaster recovery setup, and maintaining encryption consistency across environments where manual certificate management would be time-consuming and error-prone.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

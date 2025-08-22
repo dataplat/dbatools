@@ -1,10 +1,10 @@
 function Find-DbaStoredProcedure {
     <#
     .SYNOPSIS
-        Returns all stored procedures that contain a specific case-insensitive string or regex pattern.
+        Searches stored procedure definitions for specific text patterns or regex expressions across SQL Server databases.
 
     .DESCRIPTION
-        This function can either run against specific databases or all databases searching all user or user and system stored procedures.
+        Searches through stored procedure source code to find specific strings, patterns, or regex expressions within the procedure definitions. This is particularly useful for finding hardcoded values, deprecated function calls, security vulnerabilities, or specific business logic across your database environment. The function examines the actual T-SQL code stored in sys.sql_modules and can search across multiple databases simultaneously. Results include the matching line numbers and context, making it easy to locate exactly where patterns appear within each procedure. You can scope searches to specific databases and choose whether to include system stored procedures and system databases in the search.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input

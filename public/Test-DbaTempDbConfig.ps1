@@ -1,10 +1,12 @@
 function Test-DbaTempDbConfig {
     <#
     .SYNOPSIS
-        Evaluates tempdb against several rules to match best practices.
+        Tests tempdb configuration against SQL Server best practices and returns compliance status for each rule.
 
     .DESCRIPTION
-        Evaluates tempdb against a set of rules to match best practices. The rules are:
+        Performs a comprehensive audit of tempdb configuration against Microsoft's recommended best practices, returning detailed compliance results for each rule. This saves DBAs from manually checking multiple tempdb settings and provides clear guidance on which configurations need attention.
+
+        The function evaluates six critical areas of tempdb configuration:
 
         * TF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).
         * File Count - Does the count of data files in tempdb match the number of logical cores, up to 8?
@@ -13,7 +15,7 @@ function Test-DbaTempDbConfig {
         * File MaxSize Set (optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn't allowed to grow.
         * Data File Size Equal - Are the sizes of all the tempdb data files the same?
 
-        Other rules can be added at a future date.
+        Each rule returns the current setting, recommended setting, and whether the configuration follows best practices. This is particularly useful during SQL Server health checks, performance troubleshooting, or compliance audits where tempdb configuration directly impacts system performance.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. SQL Server 2005 and higher are supported.

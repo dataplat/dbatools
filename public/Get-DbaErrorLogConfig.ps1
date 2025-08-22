@@ -1,12 +1,10 @@
 function Get-DbaErrorLogConfig {
     <#
     .SYNOPSIS
-        Pulls the configuration for the ErrorLog on a given SQL Server instance
+        Retrieves SQL Server error log configuration settings including file count, size limits, and storage location
 
     .DESCRIPTION
-        Pulls the configuration for the ErrorLog on a given SQL Server instance.
-
-        Includes error log path, number of log files configured and size (SQL Server 2012+ only)
+        Retrieves current error log configuration from SQL Server instances, showing how many log files are retained, where they're stored, and size limits if configured. This information helps DBAs understand log retention policies and troubleshoot logging issues without connecting to SQL Server Management Studio. Log size information is only available on SQL Server 2012 and later versions.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

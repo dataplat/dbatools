@@ -1,10 +1,14 @@
 function Install-DbaFirstResponderKit {
     <#
     .SYNOPSIS
-        Installs or updates the First Responder Kit stored procedures.
+        Downloads and installs Brent Ozar's First Responder Kit diagnostic stored procedures.
 
     .DESCRIPTION
-        Downloads, extracts and installs the First Responder Kit stored procedures
+        Downloads and installs the First Responder Kit (FRK), a collection of stored procedures designed for SQL Server health checks, performance analysis, and troubleshooting. The FRK includes essential procedures like sp_Blitz for overall health assessment, sp_BlitzCache for query performance analysis, sp_BlitzIndex for index recommendations, and sp_BlitzFirst for real-time performance monitoring.
+
+        This function automatically downloads the latest version from GitHub, caches it locally, and installs the procedures into your specified database. You can install the complete toolkit or select specific procedures based on your needs. The function handles version compatibility automatically, skipping procedures that aren't supported on older SQL Server versions.
+
+        Perfect for DBAs who need standardized diagnostic tools across multiple SQL Server instances without manually downloading and deploying scripts.
 
         First Responder Kit links:
         http://FirstResponderKit.org

@@ -1,12 +1,12 @@
 function Copy-DbaInstanceAuditSpecification {
     <#
     .SYNOPSIS
-        Copy-DbaInstanceAuditSpecification migrates server audit specifications from one SQL Server to another.
+        Copies server audit specifications from one SQL Server instance to another for compliance standardization.
 
     .DESCRIPTION
-        By default, all audits are copied. The -AuditSpecification parameter is auto-populated for command-line completion and can be used to copy only specific audits.
+        Migrates server audit specifications between SQL Server instances, allowing DBAs to standardize audit configurations across environments or restore audit settings during disaster recovery. The function scripts existing audit specifications from the source server and recreates them on the destination, but only if the corresponding server audits already exist on the target instance.
 
-        If the audit specification already exists on the destination, it will be skipped unless -Force is used.
+        By default, all audit specifications are copied, but you can target specific ones using the -AuditSpecification parameter. Existing specifications on the destination are skipped unless -Force is used to drop and recreate them. This prevents accidental overwrites while enabling intentional updates to audit configurations.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

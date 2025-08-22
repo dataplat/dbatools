@@ -1,10 +1,10 @@
 function Get-DbaAgListener {
     <#
     .SYNOPSIS
-        Returns availability group listeners.
+        Retrieves availability group listener configurations including IP addresses and port numbers.
 
     .DESCRIPTION
-        Returns availability group listeners.
+        Retrieves availability group listener configurations from SQL Server instances, providing essential network details needed for client connections and troubleshooting. This function returns listener names, port numbers, IP configurations, and associated availability groups, which is crucial for validating listener setup and diagnosing connection issues. Use this when you need to document your AG infrastructure, verify listener configurations after setup, or troubleshoot client connectivity problems.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

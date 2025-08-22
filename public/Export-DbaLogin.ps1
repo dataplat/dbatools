@@ -1,10 +1,10 @@
 function Export-DbaLogin {
     <#
     .SYNOPSIS
-        Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
+        Generates T-SQL scripts to recreate SQL Server logins with their complete security context for migration and disaster recovery.
 
     .DESCRIPTION
-        Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
+        Creates executable T-SQL scripts that recreate SQL Server and Windows logins along with their complete security configuration. The export includes login properties (SID, hashed passwords, default database), server-level permissions and role memberships, database user mappings and roles, plus SQL Agent job ownership assignments. This addresses the common challenge where restoring databases doesn't restore the associated logins, leaving applications unable to connect. DBAs use this for server migrations, disaster recovery scenarios, and maintaining consistent security across environments.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. SQL Server 2000 and above supported.

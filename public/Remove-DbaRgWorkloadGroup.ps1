@@ -1,11 +1,13 @@
 function Remove-DbaRgWorkloadGroup {
     <#
     .SYNOPSIS
-        Removes a workload group from the Resource Governor on the specified SQL Server.
+        Removes workload groups from SQL Server Resource Governor
 
     .DESCRIPTION
-        Removes a workload group from the Resource Governor on the specified SQL Server.
-        A workload group represents a subset of the resources of an instance of the Database Engine.
+        Removes specified workload groups from SQL Server Resource Governor and automatically reconfigures the Resource Governor so changes take effect immediately.
+        Workload groups define resource allocation policies for incoming requests, and removing them eliminates those resource controls.
+        Useful for cleaning up test environments, removing deprecated resource policies, or simplifying Resource Governor configurations during performance tuning.
+        Works with both internal and external resource pools, and can process multiple workload groups through pipeline input from Get-DbaRgWorkloadGroup.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

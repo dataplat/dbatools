@@ -1,10 +1,10 @@
 function Copy-DbaSpConfigure {
     <#
     .SYNOPSIS
-        Copy-DbaSpConfigure migrates configuration values from one SQL Server to another.
+        Copies SQL Server configuration settings (sp_configure values) from source to destination instances.
 
     .DESCRIPTION
-        By default, all configuration values are copied. The -ConfigName parameter is auto-populated for command-line completion and can be used to copy only specific configs.
+        This function retrieves all sp_configure settings from the source SQL Server and applies them to one or more destination instances, ensuring consistent configuration across your environment. Only settings that differ between source and destination are updated, making it safe for standardizing existing servers. The function automatically handles settings that require a restart and provides detailed reporting of which configurations were changed, skipped, or failed. Use this when building new servers to match production standards, migrating instances, or ensuring consistent configuration across development and testing environments.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

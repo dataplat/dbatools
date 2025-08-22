@@ -2,10 +2,12 @@
 function Get-DbaPageFileSetting {
     <#
     .SYNOPSIS
-        Returns information on the page file configuration of the target computer.
+        Retrieves Windows page file configuration from SQL Server host computers for performance analysis.
 
     .DESCRIPTION
-        This command uses CIM (or other, related computer management tools) to detect the page file configuration of the target computer(s).
+        This command uses CIM to retrieve detailed Windows page file configuration from SQL Server host computers. Page file settings directly impact SQL Server performance during memory pressure scenarios, making this essential for capacity planning and troubleshooting performance issues.
+
+        The function returns comprehensive details including current usage, peak usage, initial and maximum sizes, and whether page files are automatically managed by Windows. This information helps DBAs identify potential memory bottlenecks and validate that page file configurations align with SQL Server best practices.
 
         Note that this may require local administrator privileges for the relevant computers.
 

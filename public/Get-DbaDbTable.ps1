@@ -1,10 +1,10 @@
 function Get-DbaDbTable {
     <#
     .SYNOPSIS
-        Returns a summary of information on the tables
+        Retrieves table metadata including space usage, row counts, and table features from SQL Server databases
 
     .DESCRIPTION
-        Shows table information around table row and data sizes and if it has any table type information.
+        Returns detailed table information including row counts, space usage (IndexSpaceUsed, DataSpaceUsed), and special table characteristics like memory optimization, partitioning, and FileTable status. Essential for database capacity planning, documentation, and finding tables with specific features across multiple databases. Supports complex three-part naming with special characters and can filter by database, schema, or specific table names.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.

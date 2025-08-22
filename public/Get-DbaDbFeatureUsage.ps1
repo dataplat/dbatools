@@ -1,14 +1,14 @@
 function Get-DbaDbFeatureUsage {
     <#
     .SYNOPSIS
-        Shows features that are enabled in the database but not supported on all editions of SQL Server. Basically checks for Enterprise feature usage.
+        Identifies Enterprise-edition features currently used in databases that prevent downgrading to Standard edition
 
     .DESCRIPTION
-        Shows features that are enabled in the database but not supported on all editions of SQL Server.
+        Queries the sys.dm_db_persisted_sku_features dynamic management view to identify SQL Server Enterprise features that are actively used in your databases. This is essential when planning to downgrade from Enterprise to Standard edition or migrating databases to environments with lower SQL Server editions.
 
-        Basically checks for Enterprise feature usage.
+        Enterprise features like columnstore indexes, table partitioning, or transparent data encryption must be removed or disabled before a database can be successfully migrated to Standard edition. This function helps you inventory these blocking features across one or more databases so you can plan the necessary remediation steps.
 
-        This feature must be removed before the database can be migrated to all available editions of SQL Server.
+        Returns feature ID, feature name, and database information for each Enterprise feature found, making it easy to identify which databases need attention before edition changes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

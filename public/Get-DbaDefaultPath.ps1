@@ -1,10 +1,10 @@
 function Get-DbaDefaultPath {
     <#
     .SYNOPSIS
-        Gets the default SQL Server paths for data, logs and backups
+        Retrieves default file paths for SQL Server data, log, backup, and error log directories
 
     .DESCRIPTION
-        Gets the default SQL Server paths for data, logs and backups
+        Retrieves the default directory paths that SQL Server uses for new database files, transaction logs, backups, and error logs. This information is essential for capacity planning, automated database provisioning, and understanding where SQL Server will place files when no explicit path is specified. The function uses multiple fallback methods to determine these paths, including server properties, system queries, and examining existing system databases when standard properties are unavailable.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,12 +1,14 @@
 function Get-DbaWaitResource {
     <#
     .SYNOPSIS
-        Returns the resource being waited upon
+        Translates wait resource strings into human-readable database object information for troubleshooting blocking and deadlocks
 
     .DESCRIPTION
-        Given a wait resource in the form of 'PAGE: 10:1:9180084' returns the database, data file and the system object which is being waited up.
+        Converts cryptic wait resource identifiers from sys.dm_exec_requests into readable database object details that DBAs can actually use for troubleshooting. When you're investigating blocking chains or deadlocks, you see wait_resource values like 'PAGE: 10:1:9180084' or 'KEY: 7:35457594073541168 (de21f92a1572)' in DMVs, but these don't tell you which actual table or index is involved.
 
-        Given a wait resource in the form of 'KEY: 7:35457594073541168 (de21f92a1572)', returns the database, object and index that is being waited on, With the -row switch the row data will also be returned.
+        For PAGE wait resources, this function uses DBCC PAGE internally to identify the specific database, data file, schema, and object that owns the contested page. For KEY wait resources, it queries system catalog views to determine the database, schema, table, and index being waited on. With the -Row parameter, you can also retrieve the actual data from the locked row, which is invaluable for understanding what specific record is causing contention.
+
+        This eliminates the manual detective work of decoding resource IDs and saves time when you need to quickly identify the root cause of blocking issues in production environments.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
