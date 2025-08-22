@@ -45,6 +45,9 @@ function Get-DbaProcess {
     .PARAMETER ExcludeSystemSpids
         If this switch is enabled, system Spids will be ignored.
 
+    .PARAMETER Intersect
+        If this switch is enabled, take the intersection of Spid, Login, Hostname, Program, and Database rather than the union.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -94,7 +97,8 @@ function Get-DbaProcess {
         [string[]]$Hostname,
         [string[]]$Program,
         [switch]$ExcludeSystemSpids,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [switch]$Intersect
     )
 
     process {
@@ -137,24 +141,49 @@ function Get-DbaProcess {
 
             $processes = $server.EnumProcesses()
 
-            if ($Login) {
-                $allSessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allSessions.Spid }
-            }
+            if ($Intersect -eq $true) {
+                $allSessions = $processes
 
-            if ($Spid) {
-                $allSessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allSessions.Spid }
-            }
+                if ($Login) {
+                    $allSessions = $allSessions | Where-Object { $_.Login -in $Login }
+                }
 
-            if ($Hostname) {
-                $allSessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allSessions.Spid }
-            }
+                if ($Spid) {
+                    $allSessions = $allSessions | Where-Object { $_.Spid -in $Spid -or $_.BlockingSpid -in $Spid }
+                }
 
-            if ($Program) {
-                $allSessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allSessions.Spid }
-            }
+                if ($Hostname) {
+                    $allSessions = $allSessions | Where-Object { $_.Host -in $Hostname }
+                }
 
-            if ($Database) {
-                $allSessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allSessions.Spid }
+                if ($Program) {
+                    $allSessions = $allSessions | Where-Object { $_.Program -in $Program }
+                }
+
+                if ($Database) {
+                    $allSessions = $allSessions | Where-Object { $Database -contains $_.Database }
+                }
+            }
+            else {
+                if ($Login) {
+                    $allSessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allSessions.Spid }
+                }
+
+                if ($Spid) {
+                    $allSessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allSessions.Spid }
+                }
+
+                if ($Hostname) {
+                    $allSessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allSessions.Spid }
+                }
+
+                if ($Program) {
+                    $allSessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allSessions.Spid }
+                }
+
+                if ($Database) {
+                    $allSessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allSessions.Spid }
+                }            
             }
 
             if (Test-Bound -not 'Login', 'Spid', 'ExcludeSpid', 'Hostname', 'Program', 'Database') {
