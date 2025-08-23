@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname1 = "dbatoolsci_restorehistory1_$random"
         $dbname2 = "dbatoolsci_restorehistory2_$random"
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase
 
         $splatRestore1 = @{
             SqlInstance           = $TestConfig.instance2
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase
         Remove-Item -Path $fullBackup.BackupPath -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $logBackup.BackupPath -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $diffBackup.BackupPath -Force -ErrorAction SilentlyContinue

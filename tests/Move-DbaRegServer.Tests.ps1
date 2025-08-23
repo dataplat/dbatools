@@ -66,8 +66,8 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName, $regSrvName2, $regSrvName3, $regSrvNameHR, $regSrvNameFinance | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $testGroupHR, $testGroupFinance | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName, $regSrvName2, $regSrvName3, $regSrvNameHR, $regSrvNameFinance | Remove-DbaRegServer
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $testGroupHR, $testGroupFinance | Remove-DbaRegServerGroup
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -40,10 +40,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Get-DbaProcess -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $global:singledb = "dbatoolsci_singledb"
-        $global:dbs = "dbatoolsci_lildb", "dbatoolsci_testMaxDop", $global:singledb
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $global:dbs | Remove-DbaDatabase -Confirm:$false
-        foreach ($db in $global:dbs) {
+        $singledb = "dbatoolsci_singledb"
+        $dbs = "dbatoolsci_lildb", "dbatoolsci_testMaxDop", $singledb
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbs | Remove-DbaDatabase
+        foreach ($db in $dbs) {
             Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $db"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "CREATE DATABASE $db"
         }
@@ -56,8 +56,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:dbs | Remove-DbaDatabase -Confirm:$false
-        Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $global:dbs | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Remove-DbaDatabase
+        Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbs | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Connects to 2016+ instance and apply configuration to single database" {
         It "Returns 4 for each database" {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 4 -Database $global:singledb
+            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 4 -Database $singledb
             foreach ($result in $results) {
                 $result.DatabaseMaxDop | Should -Be 4
             }
@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Connects to 2016+ instance and apply configuration to multiple databases" {
         It "Returns 8 for each database" {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 8 -Database $global:dbs
+            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 8 -Database $dbs
             foreach ($result in $results) {
                 $result.DatabaseMaxDop | Should -Be 8
             }

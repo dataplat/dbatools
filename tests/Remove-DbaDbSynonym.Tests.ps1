@@ -45,8 +45,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 -Confirm:$false
-        $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2
+        $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn1" -BaseObject "obj1"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn2" -BaseObject "obj2"
             $result1 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn1" -Confirm:$false
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn1"
             $result2 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
             $result1.Count | Should -BeGreaterThan $result2.Count
@@ -68,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn3" -BaseObject "obj3"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn4" -BaseObject "obj4"
             $result3 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Synonym "syn3", "syn4"
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn3", "syn4" -Confirm:$false
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn3", "syn4"
             $result4 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname
 
             $result3.Count | Should -BeGreaterThan $result4.Count
@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn5" -BaseObject "obj5"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn6" -BaseObject "obj6"
             $result5 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSynonym "syn5" -Confirm:$false
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSynonym "syn5"
             $result6 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
             $result5.Count | Should -BeGreaterThan $result6.Count
@@ -91,7 +91,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Accepts input from Get-DbaDbSynonym" {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn7" -BaseObject "obj7"
             $result7 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Synonym "syn5", "syn7"
-            $result7 | Remove-DbaDbSynonym -Confirm:$false
+            $result7 | Remove-DbaDbSynonym
             $result8 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
             $result7.Name | Should -Contain "syn5"
@@ -104,7 +104,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn10" -BaseObject "obj10"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn11" -BaseObject "obj11"
             $result11 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname2 -Confirm:$false
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname2
             $result12 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
             $result11.Count | Should -BeGreaterThan $result12.Count
@@ -117,7 +117,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn12" -BaseObject "obj12"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn13" -BaseObject "obj13" -Schema "sch2"
             $result13 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSchema "sch2" -Confirm:$false
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSchema "sch2"
             $result14 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
             $result13.Count | Should -BeGreaterThan $result14.Count
@@ -133,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn15" -BaseObject "obj15" -Schema "sch4"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn16" -BaseObject "obj15" -Schema "dbo"
             $result15 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Schema "sch3", "dbo" -Confirm:$false
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Schema "sch3", "dbo"
             $result16 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
             $result15.Count | Should -BeGreaterThan $result16.Count
@@ -146,7 +146,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn17" -BaseObject "obj17"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn18" -BaseObject "obj18"
             $result17 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 -Confirm:$false
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2
             $result18 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
             $result17.Count | Should -BeGreaterThan $result18.Count

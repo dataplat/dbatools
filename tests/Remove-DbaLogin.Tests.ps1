@@ -38,7 +38,6 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance = $TestConfig.instance1
             Login       = $testLogin
             Password    = $securePassword
-            Confirm     = $false
         }
         $newLogin = New-DbaLogin @splatLogin
 
@@ -51,14 +50,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up any remaining test login
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing a login" {
         It "Should successfully remove the login" {
-            $results = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin -Confirm:$false
+            $results = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin
             $results.Status | Should -Be "Dropped"
 
             # Verify the login was actually removed

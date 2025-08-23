@@ -35,7 +35,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatNewDatabase = @{
             SqlInstance = $TestConfig.instance2
             Name        = $testDbName
-            Confirm     = $false
         }
         $newdb = New-DbaDatabase @splatNewDatabase
 
@@ -51,7 +50,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatRemoveDatabase = @{
             SqlInstance = $TestConfig.instance2
             Database    = $testDbName
-            Confirm     = $false
         }
         Remove-DbaDatabase @splatRemoveDatabase
 

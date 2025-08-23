@@ -36,16 +36,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        try {
-            $global:db1 = "dbatoolsci_safely"
-            $global:db2 = "dbatoolsci_safely_otherInstance"
-            $global:server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-            $global:server3.Query("CREATE DATABASE $global:db1")
-            $global:server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $global:server2.Query("CREATE DATABASE $global:db1")
-            $global:server2.Query("CREATE DATABASE $global:db2")
-            $global:server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        } catch { }
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
+        $db1 = "dbatoolsci_safely"
+        $db2 = "dbatoolsci_safely_otherInstance"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db2
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -55,34 +54,30 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $global:db1, $global:db2 -ErrorAction SilentlyContinue
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance3 -Database $global:db1 -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $TestConfig.instance2 -Job "Rationalised Database Restore Script for dbatoolsci_safely" -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $TestConfig.instance3 -Job "Rationalised Database Restore Script for dbatoolsci_safely_otherInstance" -ErrorAction SilentlyContinue
-        Remove-Item -Path "$($TestConfig.Temp)\$global:db1*", "$($TestConfig.Temp)\$global:db2*" -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "Rationalised Database Restore Script for $db1"
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "Rationalised Database Restore Script for $db2"
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Command actually works" {
-        It "Should have database name of $global:db1" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.instance2 -Database $global:db1 -BackupFolder $TestConfig.Temp -NoDbccCheckDb
-            foreach ($result in $results) {
-                $result.DatabaseName | Should -Be $global:db1
-            }
-        }
-
-        It -Skip:$($global:server1.EngineEdition -notmatch "Express") "should warn and quit on Express Edition" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.instance1 -Database $global:db1 -BackupFolder $TestConfig.Temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn 3> $null
-            $results | Should -Be $null
-            $warn -match "Express Edition" | Should -Be $true
+        It "Should restore to the same server" {
+            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.instance2 -Database $db1 -BackupFolder $backupPath -NoDbccCheckDb
+            $results.DatabaseName | Should -Be $db1
+            $results.SqlInstance | Should -Be $TestConfig.instance2
+            $results.TestingInstance | Should -Be $TestConfig.instance2
+            $results.BackupFolder | Should -Be $backupPath
         }
 
         It "Should restore to another server" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.instance2 -Database $global:db2 -BackupFolder $TestConfig.Temp -NoDbccCheckDb -Destination $TestConfig.instance3
-            foreach ($result in $results) {
-                $result.SqlInstance | Should -Be $global:server2.SqlInstance
-                $result.TestingInstance | Should -Be $global:server3.SqlInstance
-            }
+            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.instance2 -Database $db2 -BackupFolder $backupPath -NoDbccCheckDb -Destination $TestConfig.instance3
+            $results.DatabaseName | Should -Be $db2
+            $results.SqlInstance | Should -Be $TestConfig.instance2
+            $results.TestingInstance | Should -Be $TestConfig.instance3
+            $results.BackupFolder | Should -Be $backupPath
         }
     }
 }

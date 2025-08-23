@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $server -Database $dbname, $clonedb, $clonedb2 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $server -Database $dbname, $clonedb, $clonedb2 | Remove-DbaDatabase
         }
 
         It "warns if destination database already exists" {

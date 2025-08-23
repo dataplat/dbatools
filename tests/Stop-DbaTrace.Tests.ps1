@@ -123,7 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

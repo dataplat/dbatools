@@ -106,7 +106,7 @@ exec sp_trace_setstatus @TraceID, 1
 select TraceID=@TraceID
 "@
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $global:traceid = ($server.Query($sql)).TraceID
+        $traceid = ($server.Query($sql)).TraceID
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -117,16 +117,16 @@ select TraceID=@TraceID
 
     Context "Test Removing Trace" {
         BeforeAll {
-            $global:results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $global:traceid | Remove-DbaTrace
+            $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Remove-DbaTrace
         }
 
         It "returns the right values" {
-            $global:results.Id | Should -Be $global:traceid
-            $global:results.Status | Should -Be "Stopped, closed and deleted"
+            $results.Id | Should -Be $traceid
+            $results.Status | Should -Be "Stopped, closed and deleted"
         }
 
-        It "doesn't return any result for trace file id $($global:traceid)" {
-            Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $global:traceid | Should -Be $null
+        It "doesn't return any result for trace file id $($traceid)" {
+            Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Should -Be $null
         }
     }
 }

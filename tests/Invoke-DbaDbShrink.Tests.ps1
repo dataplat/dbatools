@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
             $db.Checkpoint()
         }
         AfterEach {
-            $db | Remove-DbaDatabase -Confirm:$false
+            $db | Remove-DbaDatabase
         }
 
         It "Shrinks just the log file when FileType is Log" {

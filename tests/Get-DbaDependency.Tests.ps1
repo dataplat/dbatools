@@ -111,7 +111,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $createTableScript
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -ErrorAction SilentlyContinue
     }
 
     It "Test with a table that has no dependencies" {

@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $backupFile = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Path $tmpBackupPath -Type Full
             $backupFile2 = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname2 -Path $tmpBackupPath2 -Type Full
-            Copy-Item -Path $backupFile.BackupPath -Destination "C:\" -Confirm:$false
+            Copy-Item -Path $backupFile.BackupPath -Destination "C:\"
 
             $tmpBackupPath3 = Join-Path (Get-SqlDefaultPaths $server data) "dbatoolsci_$(Get-Random)"
             $null = New-Item -Path $tmpBackupPath3 -ItemType Directory
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase
             Remove-Item $tmpdir -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item $tmpdir2 -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item "C:\$($backupFile.BackupFile)" -Force -ErrorAction SilentlyContinue
@@ -113,7 +113,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir -Recurse
             $results.Filename.Count | Should -Be 1
 
-            Copy-Item -Path "$tmpdirInner\out.mdf" -Destination $tmpBackupPath3 -Confirm:$false
+            Copy-Item -Path "$tmpdirInner\out.mdf" -Destination $tmpBackupPath3
 
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir, $tmpdir2 -Recurse -FileType bak
             $results.Filename | Should -Contain $backupFile.BackupPath

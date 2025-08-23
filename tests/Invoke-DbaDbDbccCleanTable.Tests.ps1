@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Cmd",
                 "Output"
             )
-            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example" -Confirm:$false
+            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example"
         }
 
         It "Should return ComputerName property" {
@@ -101,7 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate BatchSize parameter" {
         BeforeAll {
-            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example" -BatchSize 1000 -Confirm:$false
+            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example" -BatchSize 1000
         }
 
         It "returns results for table" {
@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate NoInformationalMessages parameter" {
         BeforeAll {
-            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example" -NoInformationalMessages -Confirm:$false
+            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example" -NoInformationalMessages
         }
 
         It "returns results for table" {

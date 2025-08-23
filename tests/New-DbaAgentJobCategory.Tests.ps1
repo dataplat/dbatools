@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1, $testCategory2 -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1, $testCategory2 -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -43,14 +43,14 @@ Describe $CommandName -Tag IntegrationTests {
             $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1
             $results.Name | Should -Be $testCategory1
             $results.CategoryType | Should -Be "LocalJob"
-            $global:categoriesToCleanup += $testCategory1
+            $categoriesToCleanup += $testCategory1
         }
 
         It "Should have the right name and category type" {
             $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory2 -CategoryType MultiServerJob
             $results.Name | Should -Be $testCategory2
             $results.CategoryType | Should -Be "MultiServerJob"
-            $global:categoriesToCleanup += $testCategory2
+            $categoriesToCleanup += $testCategory2
         }
 
         It "Should actually for sure exist" {

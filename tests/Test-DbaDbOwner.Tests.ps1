@@ -291,7 +291,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = $server.Query("Create Database [$dbname]")
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
     }
 
     Context "Command actually works" {

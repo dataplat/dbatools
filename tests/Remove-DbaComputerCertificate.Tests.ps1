@@ -26,9 +26,9 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Can remove a certificate" {
         BeforeAll {
-            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
+            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-            $results = Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
+            $results = Remove-DbaComputerCertificate -Thumbprint $thumbprint
         }
 
         It "returns the store Name" {

@@ -71,7 +71,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatDatabase = @{
             SqlInstance = $TestConfig.instance2
             Name        = $dbName
-            Confirm     = $false
         }
         $null = New-DbaDatabase @splatDatabase
 
@@ -93,7 +92,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatRemoveDb = @{
             SqlInstance = $TestConfig.instance2
             Database    = $dbName
-            Confirm     = $false
         }
         $null = Remove-DbaDatabase @splatRemoveDb -ErrorAction SilentlyContinue
 
@@ -159,7 +157,6 @@ Describe $CommandName -Tag IntegrationTests {
                 FilePath    = $configFile.FullName
                 SqlInstance = $TestConfig.instance2
                 Database    = $dbName
-                Confirm     = $false
             }
             $results = @(Invoke-DbaDbDataMasking @splatMasking)
 

@@ -28,7 +28,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Can get a certificate" {
         BeforeAll {
-            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
+            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
 
             # Get all certificates once for testing
@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaComputerCertificate -Thumbprint $thumbprint -ErrorAction SilentlyContinue
         }
 
         It "returns a single certificate with a specific thumbprint" {

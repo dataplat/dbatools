@@ -37,7 +37,6 @@ Describe $CommandName -Tag IntegrationTests {
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
-            Confirm      = $false
         }
         $null = New-DbaAvailabilityGroup @splatAg
 

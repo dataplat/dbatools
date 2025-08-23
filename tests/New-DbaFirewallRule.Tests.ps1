@@ -28,15 +28,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
+        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
 
         # Create firewall rules and get results for testing
-        $global:resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
-        $global:resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
-        $global:resultsRemoveBrowser = $global:resultsGet | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule -Confirm:$false
-        $global:resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Type AllInstance -Confirm:$false
+        $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.instance2
+        $resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
+        $resultsRemoveBrowser = $resultsGet | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule
+        $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Type AllInstance
 
-        $global:instanceName = ([DbaInstanceParameter]$TestConfig.instance2).InstanceName
+        $instanceName = ([DbaInstanceParameter]$TestConfig.instance2).InstanceName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -46,56 +46,56 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
+        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     # If remote DAC is enabled, also creates rule for DAC.
     It "creates at least two firewall rules" {
-        $global:resultsNew.Count | Should -BeGreaterOrEqual 2
+        $resultsNew.Count | Should -BeGreaterOrEqual 2
     }
 
     It "creates first firewall rule for SQL Server instance" {
-        $global:resultsNew[0].Successful | Should -Be $true
-        $global:resultsNew[0].Type | Should -Be "Engine"
-        $global:resultsNew[0].DisplayName | Should -Be "SQL Server instance $global:instanceName"
-        $global:resultsNew[0].Status | Should -Be "The rule was successfully created."
+        $resultsNew[0].Successful | Should -Be $true
+        $resultsNew[0].Type | Should -Be "Engine"
+        $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+        $resultsNew[0].Status | Should -Be "The rule was successfully created."
     }
 
     It "creates second firewall rule for SQL Server Browser" {
-        $global:resultsNew[1].Successful | Should -Be $true
-        $global:resultsNew[1].Type | Should -Be "Browser"
-        $global:resultsNew[1].DisplayName | Should -Be "SQL Server Browser"
-        $global:resultsNew[1].Status | Should -Be "The rule was successfully created."
+        $resultsNew[1].Successful | Should -Be $true
+        $resultsNew[1].Type | Should -Be "Browser"
+        $resultsNew[1].DisplayName | Should -Be "SQL Server Browser"
+        $resultsNew[1].Status | Should -Be "The rule was successfully created."
     }
 
     # If remote DAC is enabled, also creates rule for DAC.
     It "returns at least two firewall rules" {
-        $global:resultsGet.Count | Should -BeGreaterOrEqual 2
+        $resultsGet.Count | Should -BeGreaterOrEqual 2
     }
 
     It "returns one firewall rule for SQL Server instance" {
-        $resultInstance = $global:resultsGet | Where-Object Type -eq "Engine"
+        $resultInstance = $resultsGet | Where-Object Type -eq "Engine"
         $resultInstance.Protocol | Should -Be "TCP"
     }
 
     It "returns one firewall rule for SQL Server Browser" {
-        $resultBrowser = $global:resultsGet | Where-Object Type -eq "Browser"
+        $resultBrowser = $resultsGet | Where-Object Type -eq "Browser"
         $resultBrowser.Protocol | Should -Be "UDP"
         $resultBrowser.LocalPort | Should -Be "1434"
     }
 
     It "removes firewall rule for Browser" {
-        $global:resultsRemoveBrowser.Type | Should -Be "Browser"
-        $global:resultsRemoveBrowser.IsRemoved | Should -Be $true
-        $global:resultsRemoveBrowser.Status | Should -Be "The rule was successfully removed."
+        $resultsRemoveBrowser.Type | Should -Be "Browser"
+        $resultsRemoveBrowser.IsRemoved | Should -Be $true
+        $resultsRemoveBrowser.Status | Should -Be "The rule was successfully removed."
     }
 
     # If remote DAC is enabled, removed Engine and DAC. Use foreach when moved to pester5.
     It "removes other firewall rules" {
-        $global:resultsRemove.Type | Should -Contain "Engine"
-        $global:resultsRemove.IsRemoved | Should -Contain $true
-        $global:resultsRemove.Status | Should -Contain "The rule was successfully removed."
+        $resultsRemove.Type | Should -Contain "Engine"
+        $resultsRemove.IsRemoved | Should -Contain $true
+        $resultsRemove.Status | Should -Contain "The rule was successfully removed."
     }
 }

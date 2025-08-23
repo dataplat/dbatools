@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsDownload = Install-DbaMultiTool -SqlInstance $TestConfig.instance2 -Database $database -Branch $branch -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -ErrorAction SilentlyContinue
         }
 
         It "Installs to specified database: $database" {
@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsLocalFile = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database -Branch $branch -LocalFile $fullOutfile -Force
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database -ErrorAction SilentlyContinue
         }
 
         It "Installs to specified database: $database" {

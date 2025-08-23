@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Clean up any remaining test categories
             $remainingCategories = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $testCategories, $randomCategoryName -ErrorAction SilentlyContinue
             if ($remainingCategories) {
-                $null = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $remainingCategories.Name -Confirm:$false
+                $null = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $remainingCategories.Name
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Remove the alert categories" {
-            Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $testCategories -Confirm:$false
+            Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $testCategories
 
             $newresults = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $testCategories
 
@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
             $categoryName = "dbatoolsci_test_$(Get-Random)"
             $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categoryName
             (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categoryName) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categoryName | Remove-DbaAgentAlertCategory -Confirm:$false
+            Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categoryName | Remove-DbaAgentAlertCategory
             (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categoryName) | Should -BeNullOrEmpty
         }
     }

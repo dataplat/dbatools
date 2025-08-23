@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

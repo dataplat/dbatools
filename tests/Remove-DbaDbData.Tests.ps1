@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes Data for a specified database" {
-            Remove-DbaDbData -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
+            Remove-DbaDbData -SqlInstance $TestConfig.instance2 -Database $dbname1
             (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes Data for a specified database" {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 | Remove-DbaDbData -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 | Remove-DbaDbData
             (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 
@@ -126,7 +126,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes Data for a specified database" {
-            Connect-DbaInstance -SqlInstance $TestConfig.instance2 | Remove-DbaDbData -Database $dbname1 -Confirm:$false
+            Connect-DbaInstance -SqlInstance $TestConfig.instance2 | Remove-DbaDbData -Database $dbname1
             (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 

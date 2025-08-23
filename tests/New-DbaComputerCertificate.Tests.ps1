@@ -43,7 +43,7 @@ if (-not $env:appveyor) {
             }
 
             AfterAll {
-                Remove-DbaComputerCertificate -Thumbprint $defaultCert.Thumbprint -Confirm:$false
+                Remove-DbaComputerCertificate -Thumbprint $defaultCert.Thumbprint
             }
 
             It "Returns the right EnhancedKeyUsageList" {
@@ -69,7 +69,7 @@ if (-not $env:appveyor) {
             }
 
             AfterAll {
-                Remove-DbaComputerCertificate -Thumbprint $customCert.Thumbprint -Confirm:$false
+                Remove-DbaComputerCertificate -Thumbprint $customCert.Thumbprint
             }
 
             It "Returns the right encryption algorithm" {

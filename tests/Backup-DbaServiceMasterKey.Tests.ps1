@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -68,7 +68,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance    = $TestConfig.instance1
                 SecurePassword = $securePassword
                 Path           = $backupPath
-                Confirm        = $false
             }
             $backupResults = Backup-DbaServiceMasterKey @splatBackup
             $backupResults.Status | Should -Be "Success"
@@ -82,7 +81,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SecurePassword = $securePassword
                 Path           = $backupPath
                 FileBaseName   = "smk($randomNum)"
-                Confirm        = $false
             }
             $fileBackupResults = Backup-DbaServiceMasterKey @splatFileBackup
             [IO.Path]::GetFileNameWithoutExtension($fileBackupResults.Path) | Should -Be "smk($randomNum)"

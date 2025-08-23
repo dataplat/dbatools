@@ -68,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $db.Query("DROP TABLE dbo.BunchOFilez")
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

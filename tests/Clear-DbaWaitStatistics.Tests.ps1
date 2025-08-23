@@ -33,7 +33,6 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatClearStats = @{
                 SqlInstance = $TestConfig.instance1
-                Confirm     = $false
             }
             $clearResults = Clear-DbaWaitStatistics @splatClearStats
         }

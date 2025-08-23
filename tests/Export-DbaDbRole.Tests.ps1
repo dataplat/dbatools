@@ -70,8 +70,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         try {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
-            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
+            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1
         } catch {
             # Ignore cleanup errors
         }
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $role = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Role $dbRole
             $null = $role | Export-DbaDbRole -FilePath $outputFile1
-            $global:results = $role | Export-DbaDbRole -Passthru
+            $results = $role | Export-DbaDbRole -Passthru
         }
 
         It "Exports results to one sql file" {
@@ -111,27 +111,27 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should include the defined BatchSeparator" {
-            $global:results -match "GO"
+            $results -match "GO"
         }
 
         It "should include the role" {
-            $global:results -match "CREATE ROLE [$dbRole]"
+            $results -match "CREATE ROLE [$dbRole]"
         }
 
         It "should include GRANT EXECUTE ON SCHEMA" {
-            $global:results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
+            $results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
         }
 
         It "should include GRANT SELECT ON SCHEMA" {
-            $global:results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
+            $results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
         }
 
         It "should include GRANT VIEW DEFINITION ON SCHEMA" {
-            $global:results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
+            $results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
         }
 
         It "should include ALTER ROLE ADD MEMBER" {
-            $global:results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
+            $results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
         }
     }
 }

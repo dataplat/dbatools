@@ -29,34 +29,43 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Can create a database certificate" {
         BeforeAll {
-            $global:TestConfig = Get-TestConfig
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+            # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+            $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $backupPath -ItemType Directory
+
+            $dbName = "certificate-$(Get-Random)"
             $masterKeyPassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
             $certificatePassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -Force
 
-            $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $masterKeyPassword
-            $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database tempdb
-            $backup = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database tempdb -EncryptionPassword $certificatePassword
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName
+
+            $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $dbName -Password $masterKeyPassword
+            $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $dbName
+            $backup = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database $dbName -EncryptionPassword $certificatePassword -Path $backupPath
             $cert | Remove-DbaDbCertificate
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterEach {
-            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database tempdb -ErrorAction SilentlyContinue
+            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database $dbName -ErrorAction SilentlyContinue
         }
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = $masterkey | Remove-DbaDbMasterKey
-            $null = Remove-Item -Path $backup.ExportPath, $backup.ExportKey -ErrorAction SilentlyContinue
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
+
+            # Remove the backup directory.
+            Remove-Item -Path $backupPath -Recurse
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "restores the db cert when passing in a .cer file" {
-            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $backup.ExportPath -Password $certificatePassword -Database tempdb -EncryptionPassword $certificatePassword
-            $results.Parent.Name | Should -Be "tempdb"
+            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $backup.ExportPath -Password $certificatePassword -Database $dbName -EncryptionPassword $certificatePassword
+            $results.Parent.Name | Should -Be $dbName
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "Password"
             $results | Remove-DbaDbCertificate
@@ -66,8 +75,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "restores the db cert when passing in a folder" {
             $folder = Split-Path $backup.ExportPath -Parent
-            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $folder -Password $certificatePassword -Database tempdb -EncryptionPassword $certificatePassword
-            $results.Parent.Name | Should -Be "tempdb"
+            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $folder -Password $certificatePassword -Database $dbName -EncryptionPassword $certificatePassword
+            $results.Parent.Name | Should -Be $dbName
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "Password"
             $results | Remove-DbaDbCertificate
@@ -75,8 +84,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "restores the db cert and encrypts with master key" {
             $folder = Split-Path $backup.ExportPath -Parent
-            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $folder -Password $certificatePassword -Database tempdb
-            $results.Parent.Name | Should -Be "tempdb"
+            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $folder -Password $certificatePassword -Database $dbName
+            $results.Parent.Name | Should -Be $dbName
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "MasterKey"
             $results | Remove-DbaDbCertificate

@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
     }
 
     Context "Verifying command returns all the required results" {

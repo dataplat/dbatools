@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
         $randomDb = New-DbaDatabase -SqlInstance $instance2
         $newDbName = "dbatoolsci_newdb_$random"
         $newDb1Name = "dbatoolsci_newdb1_$random"
@@ -73,8 +73,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created databases.
-        $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $randomDb.Name, $newDbName, $newDb1Name, $newDb2Name, $bug6780DbName, $collationDbName, $simpleRecoveryModelDbName, $fullRecoveryModelDbName, $bulkLoggedRecoveryModelDbName -Confirm:$false -ErrorAction SilentlyContinue
-        $null = Remove-DbaDatabase -SqlInstance $instance3 -Database $newDbName, $newDb1Name, $newDb2Name, $secondaryFileTestDbName, $secondaryFileCountTestDbName, $primaryFileGroupDbName, $secondaryFileGroupDbName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $randomDb.Name, $newDbName, $newDb1Name, $newDb2Name, $bug6780DbName, $collationDbName, $simpleRecoveryModelDbName, $fullRecoveryModelDbName, $bulkLoggedRecoveryModelDbName -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $instance3 -Database $newDbName, $newDb1Name, $newDb2Name, $secondaryFileTestDbName, $secondaryFileCountTestDbName, $primaryFileGroupDbName, $secondaryFileGroupDbName -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Get the source template name for later validation
             $sourceTemplate = (Get-DbaXESessionTemplate | Where-Object Source -ne "Microsoft").Path | Select-Object -First 1
             if ($sourceTemplate) {
-                $global:sourceTemplateName = $sourceTemplate.Name
+                $sourceTemplateName = $sourceTemplate.Name
             }
         }
 
@@ -42,8 +42,8 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Copy-DbaXESessionTemplate *>&1
             $templatePath = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
 
-            if ($global:sourceTemplateName) {
-                $copiedTemplate = Get-ChildItem -Path $templatePath | Where-Object Name -eq $global:sourceTemplateName
+            if ($sourceTemplateName) {
+                $copiedTemplate = Get-ChildItem -Path $templatePath | Where-Object Name -eq $sourceTemplateName
                 $copiedTemplate | Should -Not -BeNullOrEmpty
             }
         }

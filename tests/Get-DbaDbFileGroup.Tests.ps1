@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         $multifgdb = "dbatoolsci_multifgdb$random"
 
         # Remove any existing database before creating
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $multifgdb
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $multifgdb
 
         # Create the test database with multiple filegroups
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -53,10 +53,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $multifgdb -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $multifgdb -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

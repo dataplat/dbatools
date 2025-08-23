@@ -34,18 +34,18 @@ Describe $CommandName -Tag IntegrationTests {
         $server.Query("create database $dbname")
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupPath
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupPath -Type Log
-        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
-        $null = Get-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname | Resume-DbaAgDbDataMovement -Confirm:$false
+        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Certificate dbatoolsci_AGCert -UseLastBackup
+        $null = Get-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname | Resume-DbaAgDbDataMovement
     }
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname
         Remove-Item -Path $backupPath -Recurse
     }
     Context "Suspends data movement" {
         It "Should return suspended results" {
-            $results = Suspend-DbaAgDbDataMovement -SqlInstance $TestConfig.instance3 -Database $dbname -Confirm:$false
+            $results = Suspend-DbaAgDbDataMovement -SqlInstance $TestConfig.instance3 -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
             $results.SynchronizationState | Should -Be 'NotSynchronizing'

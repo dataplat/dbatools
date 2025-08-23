@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

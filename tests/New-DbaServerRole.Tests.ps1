@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         $owner = "sa"
     }
     AfterEach {
-        $null = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor, $roleMaster -Confirm:$false
+        $null = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor, $roleMaster
     }
 
     Context "Functionality" {
