@@ -18,34 +18,44 @@ function Set-DbaDbSequence {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies the target database containing the sequence to modify. Accepts multiple database names.
+        Required when using SqlInstance parameter to identify which database contains the sequence.
 
     .PARAMETER Sequence
-        The name of the new sequence
+        Specifies the name of the sequence object to modify. This is the sequence you want to update properties for.
+        Must be an existing sequence in the specified schema, otherwise the function will fail.
 
     .PARAMETER Schema
-        The name of the schema for the sequence. The default is dbo.
+        Specifies the schema containing the sequence to modify. Defaults to 'dbo' if not specified.
+        Use this when your sequence exists in a custom schema rather than the default dbo schema.
 
     .PARAMETER RestartWith
-        The first value for the sequence to restart with.
+        Sets the next value the sequence will return when NEXT VALUE FOR is called. Immediately resets the sequence to this value.
+        Use this to fix sequence gaps, realign sequences after data imports, or reset sequences for testing.
 
     .PARAMETER IncrementBy
-        The value to increment by.
+        Sets how much the sequence value increases (or decreases if negative) with each NEXT VALUE FOR call.
+        Common values are 1 for sequential numbering or larger values for reserving ranges. Cannot be zero.
 
     .PARAMETER MinValue
-        The minimum bound for the sequence.
+        Sets the lowest value the sequence can generate. Once reached, sequence behavior depends on the Cycle setting.
+        Use this to establish data range constraints or prevent sequences from going below business-required minimums.
 
     .PARAMETER MaxValue
-        The maximum bound for the sequence.
+        Sets the highest value the sequence can generate. Once reached, sequence behavior depends on the Cycle setting.
+        Use this to prevent sequences from exceeding data type limits or business-defined maximum values.
 
     .PARAMETER Cycle
-        Switch that indicates if the sequence should cycle the values
+        Enables the sequence to restart from MinValue after reaching MaxValue (or vice versa for negative increments).
+        Use this for scenarios like rotating through a fixed set of values or when sequences need to wrap around.
 
     .PARAMETER CacheSize
-        The integer size of the cache. To specify NO CACHE for a sequence use -CacheSize 0. As noted in the Microsoft documentation if the cache size is not specified the Database Engine will select a size.
+        Sets the number of sequence values SQL Server pre-allocates in memory for faster access.
+        Use 0 to disable caching (guarantees no gaps but slower performance), or specify a number for high-performance scenarios. Omit this parameter to let SQL Server choose an optimal cache size.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase via pipeline to modify sequences across multiple databases.
+        Use this for batch operations when you need to modify the same sequence in multiple databases.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

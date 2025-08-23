@@ -15,11 +15,14 @@ function Set-DbaPrivilege {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Type
-        Use this to choose the privilege(s) to which you want to add the SQL Service account.
-        Accepts 'IFI', 'LPIM', 'BatchLogon','SecAudit' and/or 'ServiceLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory', 'Logon as Batch','Generate Security Audits' and 'Logon as a service'.
+        Specifies which Windows privileges to grant to the SQL Server service accounts. Accepts one or more values: 'IFI' (Instant File Initialization), 'LPIM' (Lock Pages in Memory), 'BatchLogon' (Log on as a batch job), 'SecAudit' (Generate security audits), and 'ServiceLogon' (Log on as a service).
+        These privileges are essential for SQL Server performance and functionality - IFI speeds up database file operations, LPIM prevents memory paging for better performance, and the logon rights ensure services can start properly.
+        Multiple privileges can be specified together for comprehensive SQL Server optimization.
 
     .PARAMETER User
-        If provided, will add requested permissions to this account instead of the the account under which the SQL service is running.
+        Specifies a custom user account to receive the privileges instead of automatically discovering SQL Server service accounts.
+        Use this when you need to grant privileges to a specific account that will run SQL Server services, or when the automatic service account detection doesn't work in your environment.
+        Accepts domain accounts (DOMAIN\User) or local accounts - ensure the account exists and will be used by SQL Server services.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -11,7 +11,8 @@ function Get-DbaWsfcRole {
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a Role or the cluster name itself.
+        Specifies the cluster node name or cluster name to connect to for retrieving role information. Accepts multiple values for querying multiple clusters.
+        Use this when you need to check role status on remote clusters or when working with multiple cluster environments.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

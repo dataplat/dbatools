@@ -17,13 +17,16 @@ function Get-DbaDbFileGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for filegroup information. Accepts wildcards and multiple database names.
+        Use this when you need to focus on specific databases instead of scanning all databases on the instance, which is helpful for large environments or targeted storage analysis.
 
     .PARAMETER InputObject
-        Database object piped in from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase pipeline input for processing filegroups.
+        Use this when you want to chain database filtering with filegroup analysis, such as excluding system databases or filtering by database properties before examining storage structure.
 
     .PARAMETER FileGroup
-        Define a specific FileGroup  you would like to query.
+        Filters results to specific filegroups by name, such as 'PRIMARY' or custom filegroups.
+        Use this when troubleshooting storage issues with particular filegroups or when you need to verify configuration of specific data placement strategies.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

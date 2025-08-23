@@ -17,16 +17,9 @@ function Get-DbaXEObject {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Type
-        Used to specify the type. Valid types include:
-
-        Action
-        Event
-        Map
-        Message
-        PredicateComparator
-        PredicateSource
-        Target
-        Type
+        Filters the Extended Events objects by specific component types to help you find the XE building blocks you need.
+        Use this when planning XE sessions to focus on specific components rather than viewing all available objects.
+        Events capture SQL Server activities, Actions attach additional data to events, Targets define where to store captured data, and Predicates filter which events to capture.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -15,14 +15,17 @@ function Set-DbaPowerPlan {
         http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
 
     .PARAMETER ComputerName
-        The server(s) to set the Power Plan on.
+        Specifies the Windows host computers where SQL Server instances are running to configure the power plan.
+        Accepts multiple server names and connects via WMI and PowerShell remoting to change OS-level power settings.
+        Use the actual Windows computer names, not SQL Server instance names.
 
     .PARAMETER Credential
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
     .PARAMETER PowerPlan
-        If your organization uses a different Power Plan that's considered best practice, specify it here.
-        Use Get-DbaPowerPlan -List to get all available Power Plans on a computer.
+        Specifies the Windows power plan to set on the target computers. Defaults to "High Performance" when not specified.
+        Use this when your organization has a custom power plan or specific requirements beyond the default recommendation.
+        Run Get-DbaPowerPlan -ComputerName <server> -List to see all available power plans on each computer before setting.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

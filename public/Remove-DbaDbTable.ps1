@@ -17,13 +17,16 @@ function Remove-DbaDbTable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to target for table removal operations. Accepts multiple database names as an array.
+        Use this when you need to remove tables from specific databases rather than searching across all databases on the instance.
 
     .PARAMETER Table
-        The name(s) of the table(s).
+        Specifies the names of tables to remove from the target databases. Accepts multiple table names as an array.
+        Tables should be specified by name only (without schema prefix) as the function will find tables regardless of schema. Use Get-DbaDbTable for more complex filtering scenarios.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbTable.
+        Accepts table objects directly from Get-DbaDbTable for removal operations. This approach allows for advanced filtering and validation before deletion.
+        Use this parameter when you need to remove tables based on complex criteria like size, row count, or schema patterns that Get-DbaDbTable can filter.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

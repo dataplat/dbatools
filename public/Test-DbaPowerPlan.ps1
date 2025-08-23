@@ -17,13 +17,15 @@ function Test-DbaPowerPlan {
         http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
 
     .PARAMETER ComputerName
-        The server(s) to check Power Plan settings on.
+        Specifies the SQL Server host(s) where you want to test Windows Power Plan compliance. Accepts server names, IP addresses, or DbaInstance objects.
+        Use this to audit power settings across your SQL Server environment, especially important for performance-critical instances where CPU throttling can impact query response times.
 
     .PARAMETER Credential
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
     .PARAMETER PowerPlan
-        If your organization uses a different power plan that's considered best practice, specify it here.
+        Specifies a custom power plan name to test against instead of the default "High Performance" plan. Use exact name matching as it appears in Windows Power Options.
+        Useful when your organization has standardized on a specific custom power plan or when testing against plans like "Ultimate Performance" on Windows Server 2016+ or workstation operating systems.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

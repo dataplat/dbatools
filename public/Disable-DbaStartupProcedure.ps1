@@ -20,10 +20,12 @@ function Disable-DbaStartupProcedure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER StartupProcedure
-        The Procedure(s) to process.
+        Specifies the stored procedure names to remove from automatic startup execution. Accepts schema-qualified names like '[dbo].[MyStartupProc]'.
+        Use this when you know the specific procedure names that need their startup designation disabled.
 
-   .PARAMETER InputObject
-        Piped objects from Get-DbaStartup
+    .PARAMETER InputObject
+        Accepts stored procedure objects from Get-DbaStartupProcedure via pipeline input.
+        Use this when working with the results of Get-DbaStartupProcedure to disable multiple startup procedures at once.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

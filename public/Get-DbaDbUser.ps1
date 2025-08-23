@@ -17,19 +17,24 @@ function Get-DbaDbUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get users from specific database(s)
+        Specifies which databases to query for user accounts. Accepts multiple database names and supports wildcards.
+        Use this when you need to audit users in specific databases rather than scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Specifies databases to skip when retrieving user accounts. Useful for excluding system databases or databases you don't manage.
+        Common practice is to exclude tempdb, model, or development databases when focusing on production user access reviews.
 
     .PARAMETER ExcludeSystemUser
-        This switch removes all system objects from the user collection
+        Excludes built-in system users like 'dbo', 'guest', 'INFORMATION_SCHEMA', and other system-created accounts.
+        Use this switch during security audits to focus only on custom user accounts that require regular access review and management.
 
     .PARAMETER User
-        Specifies the name(s) of the user(s) to return.
+        Filters results to specific database user names. Accepts multiple user names for targeted queries.
+        Use this when investigating specific user accounts or verifying permissions for particular users during access reviews or troubleshooting.
 
     .PARAMETER Login
-        Specifies the name(s) of the login(s) to filter the user(s) returned.
+        Filters results to database users associated with specific server logins. Shows which databases a login has user accounts in.
+        Essential for understanding a login's database-level access across the instance, especially during user access audits or when removing departing employees.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

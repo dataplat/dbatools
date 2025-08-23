@@ -10,7 +10,9 @@ function New-DbaDirectory {
         The SQL Server you want to run the test on.
 
     .PARAMETER Path
-        The Path to tests. Can be a file or directory.
+        Specifies the full directory path to create on the SQL Server machine using the SQL Server service account.
+        Use this when you need to create backup directories, database file paths, or log shipping folders where SQL Server needs access.
+        The function will check if the path already exists and skip creation if it does.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).

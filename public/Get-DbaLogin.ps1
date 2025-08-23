@@ -17,37 +17,48 @@ function Get-DbaLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        The login(s) to process - this list is auto-populated from the server. If unspecified, all logins will be processed.
+        Specifies specific login names to retrieve instead of returning all logins from the instance.
+        Use this when you need information about particular accounts for troubleshooting access issues or security audits.
 
     .PARAMETER ExcludeLogin
-        The login(s) to exclude. Options for this list are auto-populated from the server.
+        Excludes specific login names from the results.
+        Useful when you want all logins except certain service accounts or system logins that you don't need to review.
 
     .PARAMETER IncludeFilter
-        A list of logins to include - accepts wildcard patterns
+        Includes only logins matching the specified wildcard patterns (supports * and ? wildcards).
+        Use this to find groups of related logins, such as all domain accounts from a specific organizational unit or service accounts with naming conventions.
 
     .PARAMETER ExcludeFilter
-        A list of logins to exclude - accepts wildcard patterns
+        Excludes logins matching the specified wildcard patterns (supports * and ? wildcards).
+        Commonly used to filter out system accounts or built-in logins when focusing on user accounts during security reviews.
 
     .PARAMETER ExcludeSystemLogin
-        A Switch to remove System Logins from the output.
+        Excludes built-in system logins like sa, BUILTIN\Administrators, and NT AUTHORITY accounts from results.
+        Use this when performing user access audits where you only want to see custom logins created for applications and users.
 
     .PARAMETER Type
-        Filters logins by their type. Valid options are Windows and SQL.
+        Filters results to show only Windows Authentication logins or SQL Server Authentication logins.
+        Use 'Windows' to review domain accounts and local Windows users, or 'SQL' to audit SQL Server native accounts that store passwords in the database.
 
     .PARAMETER Locked
-        A Switch to return locked Logins.
+        Returns only login accounts that are currently locked due to failed authentication attempts.
+        Use this to identify accounts that may need to be unlocked or investigate potential security incidents.
 
     .PARAMETER Disabled
-        A Switch to return disabled Logins.
+        Returns only login accounts that have been disabled but not dropped from the server.
+        Use this to identify inactive accounts that should be reviewed for cleanup or re-enabling for returning employees.
 
     .PARAMETER MustChangePassword
-        A Switch to return Logins that need to change password.
+        Returns only SQL Server logins that are flagged to change their password on next login.
+        Use this to identify accounts with temporary passwords or those requiring password updates due to security policies.
 
     .PARAMETER HasAccess
-        A Switch to return Logins that have access to the instance of SQL Server.
+        Returns only logins that currently have permission to connect to the SQL Server instance.
+        Use this to verify which accounts can actually access the server, as some logins may exist but be denied connection rights.
 
     .PARAMETER Detailed
-        A Switch to return additional information available from the LoginProperty function
+        Includes additional security-related properties like bad password count, password age, and lockout times.
+        Use this for comprehensive security audits when you need detailed information about password policies and authentication failures.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

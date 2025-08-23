@@ -27,10 +27,12 @@ function Copy-DbaAgentProxy {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ProxyAccount
-        Only migrate specific proxy accounts
+        Specifies which proxy accounts to copy from the source server. Accepts an array of proxy account names.
+        Use this when you only need to migrate specific proxy accounts instead of all available accounts on the source server.
 
     .PARAMETER ExcludeProxyAccount
-        Migrate all proxy accounts except the ones explicitly excluded
+        Specifies proxy accounts to skip during migration. Accepts an array of proxy account names to exclude.
+        Use this when you want to copy most proxy accounts but need to avoid migrating specific ones that may conflict or aren't needed on the destination.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -39,7 +41,8 @@ function Copy-DbaAgentProxy {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Operator will be dropped and recreated on Destination.
+        Forces overwriting of existing proxy accounts on the destination server by dropping and recreating them.
+        Use this when you need to update proxy accounts that already exist on the destination with the current configuration from the source server.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

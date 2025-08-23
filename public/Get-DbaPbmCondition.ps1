@@ -17,13 +17,16 @@ function Get-DbaPbmCondition {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Condition
-        Filters results to only show specific condition
+        Filters results to only return conditions that match the specified names. Accepts multiple condition names and supports wildcards.
+        Use this when you need to examine specific PBM conditions rather than retrieving all conditions from the instance.
 
     .PARAMETER IncludeSystemObject
-        By default system objects are filtered out. Use this parameter to include them.
+        Includes built-in system conditions in the results, which are filtered out by default. System conditions are predefined by SQL Server for common compliance scenarios.
+        Use this when you need to see all available conditions including Microsoft's built-in templates for policy creation.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaPbmStore
+        Accepts Policy-Based Management store objects from Get-DbaPbmStore via pipeline input. This allows you to chain commands and work with multiple PBM stores efficiently.
+        Use this when processing conditions from multiple instances or when working with previously retrieved PBM store objects.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

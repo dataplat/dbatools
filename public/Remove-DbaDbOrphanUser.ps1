@@ -28,18 +28,21 @@ function Remove-DbaDbOrphanUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for orphaned users. Accepts single database names, comma-separated lists, or arrays.
+        When omitted, all accessible, non-read-only databases on the instance are processed. Contained databases are automatically skipped since they cannot have orphaned users.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
+        Specifies databases to skip during orphaned user removal. Useful when you want to process most databases but avoid specific ones.
+        Commonly used to exclude system databases, databases undergoing maintenance, or databases where user cleanup should be handled separately.
 
     .PARAMETER User
-        Specifies the list of users to remove.
+        Specifies specific orphaned users to target for removal instead of processing all orphaned users found.
+        Use this when you need to remove only certain orphaned users rather than all orphans in the database. The function will verify these users are actually orphaned before removal.
 
     .PARAMETER Force
-        If this switch is enabled:
-        If exists any schema which owner is the User, this will force the change of the owner to 'dbo'.
-        If a login of the same name exists the drop will not be performed unless you specify this parameter.
+        Bypasses safety checks that normally prevent orphaned user removal in potentially problematic scenarios.
+        Required when the user owns schemas containing objects (ownership transfers to 'dbo') or when a matching login exists on the server (suggesting repair might be more appropriate than removal).
+        Use with caution as this can change schema ownership and remove users that could potentially be repaired instead.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

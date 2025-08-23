@@ -21,10 +21,12 @@ function Test-DbaNetworkLatency {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Query
-        Specifies the query to be executed. By default, "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" will be executed on master. To execute in other databases, use fully qualified object names.
+        Specifies the SQL query to execute for latency testing. Defaults to "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" which provides consistent results across all SQL Server versions.
+        Use a custom query when you need to test latency with queries similar to your actual workload, or when testing against specific databases using fully qualified object names.
 
     .PARAMETER Count
-        Specifies how many times the query should be executed. By default, the query is executed three times.
+        Specifies how many times the query should be executed to calculate average latency measurements. Defaults to 3 executions.
+        Increase this value when you need more precise average measurements or when testing intermittent network issues. Higher counts provide better statistical accuracy but take longer to complete.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

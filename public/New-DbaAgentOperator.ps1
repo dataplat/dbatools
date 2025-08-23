@@ -17,46 +17,56 @@ function New-DbaAgentOperator {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Operator
-        Name of the operator in SQL Agent.
+        Name of the SQL Server Agent operator to create. This becomes the operator name that shows up in SSMS and can be referenced by alerts and jobs for notifications.
+        Use descriptive names like 'DBA Team' or 'On-Call Admin' to identify who receives notifications.
 
     .PARAMETER EmailAddress
-        The email address the SQL Agent will use to email alerts to the operator.
+        Email address where SQL Server Agent sends alert notifications and job failure notifications. This is the primary notification method for most operators.
+        Specify a monitored email address or distribution list that reaches the appropriate support staff.
 
     .PARAMETER NetSendAddress
-        The net send address the SQL Agent will use for the operator to net send alerts.
+        Network address for receiving net send messages from SQL Server Agent. This is a legacy Windows messaging system rarely used in modern environments.
+        Most organizations use email notifications instead since net send requires specific network configurations and may not work across subnets.
 
     .PARAMETER PagerAddress
-        The pager email address the SQL Agent will use to send alerts to the oeprator.
+        Email address for pager notifications, typically used for SMS gateways or mobile alerts. This works with email-to-SMS services provided by cellular carriers.
+        Configure pager schedules with PagerDay and time parameters to control when these urgent notifications are sent.
 
     .PARAMETER PagerDay
-        Defines what days the pager portion of the operator will be used. The default is 'Everyday'. Valid parameters
-        are 'EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', and
-        'Saturday'.
+        Controls which days pager notifications are active for this operator. Use this to match on-call schedules or business hours when immediate alerts are needed.
+        Choose 'Weekdays' for business-hour coverage, 'EveryDay' for 24/7 support, or specific days like 'Monday' through 'Sunday' for rotation schedules.
 
     .PARAMETER SaturdayStartTime
-        This a string that takes the Saturday Pager Start Time.
+        Starting time for Saturday pager notifications in HHMMSS format (e.g., '080000' for 8:00 AM). Required when PagerDay includes Saturday, Weekend, or EveryDay.
+        Use '000000' for midnight start times or specify business hours to limit when urgent alerts are sent.
 
     .PARAMETER SaturdayEndTime
-        This a string that takes the Saturday Pager End Time.
+        Ending time for Saturday pager notifications in HHMMSS format (e.g., '180000' for 6:00 PM). Must be specified with SaturdayStartTime.
+        Use '235959' for end-of-day coverage or match your organization's Saturday support hours.
 
     .PARAMETER SundayStartTime
-        This a string that takes the Sunday Pager Start Time.
+        Starting time for Sunday pager notifications in HHMMSS format (e.g., '090000' for 9:00 AM). Required when PagerDay includes Sunday, Weekend, or EveryDay.
+        Configure based on your weekend support schedule or emergency-only coverage requirements.
 
     .PARAMETER SundayEndTime
-        This a string that takes the Sunday Pager End Time.
+        Ending time for Sunday pager notifications in HHMMSS format (e.g., '170000' for 5:00 PM). Must be specified with SundayStartTime.
+        Set to match your organization's weekend support availability or use '235959' for full-day coverage.
 
     .PARAMETER WeekdayStartTime
-        This a string that takes the Weekdays Pager Start Time.
+        Starting time for weekday pager notifications in HHMMSS format (e.g., '060000' for 6:00 AM). Required when PagerDay includes Weekdays or individual weekdays.
+        Typically set to business hours start time or earlier for critical production monitoring.
 
     .PARAMETER WeekdayEndTime
-        This a string that takes the Weekdays Pager End Time.
+        Ending time for weekday pager notifications in HHMMSS format (e.g., '190000' for 7:00 PM). Must be specified with WeekdayStartTime.
+        Configure to match business hours end time or extend for after-hours support coverage.
 
     .PARAMETER IsFailsafeOperator
-        If this switch is enabled, this operator will be your failsafe operator and replace the one that existed before.
+        Designates this operator as the failsafe operator for the SQL Server instance. The failsafe operator receives notifications when all other operators are unavailable.
+        Only one failsafe operator can exist per instance, and this setting replaces any existing failsafe operator configuration.
 
     .PARAMETER FailsafeNotificationMethod
-        Defines the notification method for the failsafe oeprator.  Value must be NotifyMail or NotifyPager.
-        The default is NotifyEmail.
+        Specifies how the failsafe operator receives notifications when used with IsFailsafeOperator. Choose 'NotifyEmail' for email notifications or 'NotifyPager' for pager alerts.
+        Defaults to 'NotifyEmail' which works with most modern notification systems and email-to-SMS gateways.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -65,10 +75,12 @@ function New-DbaAgentOperator {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        If this switch is enabled, the Operator will be dropped and recreated on instance.
+        Drops and recreates the operator if it already exists on the target instance. Without this switch, the function will skip existing operators to prevent accidental overwrites.
+        Use this when updating operator configurations or when you need to ensure consistent settings across multiple environments.
 
     .PARAMETER InputObject
-        SMO Server Objects (pipeline input from Connect-DbaInstance)
+        Accepts SQL Server Management Objects (SMO) server instances from Connect-DbaInstance via pipeline. This allows you to create operators on pre-authenticated server connections.
+        Use this when you have existing server connections or need to process multiple instances with specific connection properties.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -7,13 +7,15 @@ function Test-DbaManagementObject {
         Checks the Global Assembly Cache (GAC) for Microsoft.SqlServer.Smo assemblies of specified versions. This function helps DBAs ensure the required SMO libraries are available before executing scripts that depend on specific SQL Server client tool versions. Returns detailed results showing which versions exist on each target computer, preventing runtime errors when SMO-dependent automation runs against systems with missing or incompatible client libraries.
 
     .PARAMETER ComputerName
-        The name of the target you would like to check
+        Specifies the target computer(s) to check for SMO assemblies. Accepts pipeline input and defaults to the local computer.
+        Use this when verifying SMO library versions across multiple servers in your environment.
 
     .PARAMETER Credential
         This command uses Windows credentials. This parameter allows you to connect remotely as a different user.
 
     .PARAMETER VersionNumber
-        This is the specific version number you are looking for and the return will be True.
+        Specifies the major version number(s) of SQL Server SMO assemblies to verify in the Global Assembly Cache.
+        Common values include 11 (SQL 2012), 12 (SQL 2014), 13 (SQL 2016), 14 (SQL 2017), 15 (SQL 2019), and 16 (SQL 2022).
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

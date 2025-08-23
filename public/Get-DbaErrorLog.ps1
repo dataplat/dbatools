@@ -20,22 +20,25 @@ function Get-DbaErrorLog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LogNumber
-        An Int32 value that specifies the index number of the error log required.
-        Error logs are listed 0 through 99, where 0 is the current error log and 99 is potential oldest log file.
-
-        SQL Server errorlog rollover defaults to 6, but can be increased to 99. https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/scm-services-configure-sql-server-error-logs
+        Specifies which error log file to read by index number (0-99), where 0 is the current active log and higher numbers are older archived logs.
+        Use this to target specific log files when troubleshooting issues from a particular time period or to avoid reading all logs for performance.
+        SQL Server keeps 6 log files by default but can be configured up to 99 archived logs.
 
     .PARAMETER Source
-        Filter results based on the Source of the error (e.g. Logon, Server, etc.)
+        Filters log entries by the source component that generated the message, such as "Logon", "Server", "Backup", or "spid123".
+        Use this to focus on specific SQL Server subsystems when troubleshooting authentication issues, backup problems, or tracking activity from particular processes.
 
     .PARAMETER Text
-        Filter results based on a pattern of text (e.g. "login failed", "error: 12345").
+        Searches for log entries containing specific text patterns using wildcard matching (supports * wildcards).
+        Use this to find specific error messages, user names, database names, or any text string within log entries for targeted troubleshooting.
 
     .PARAMETER After
-        Filter the results based on datetime value.
+        Returns only log entries that occurred after the specified date and time.
+        Use this to focus on recent events or investigate issues that started after a known point in time, such as after a deployment or configuration change.
 
     .PARAMETER Before
-        Filter the results based on datetime value.
+        Returns only log entries that occurred before the specified date and time.
+        Use this to investigate historical issues, exclude recent events from analysis, or focus on problems that existed prior to a specific incident or change.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

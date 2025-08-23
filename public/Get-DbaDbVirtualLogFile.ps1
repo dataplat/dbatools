@@ -28,13 +28,16 @@ function Get-DbaDbVirtualLogFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for VLF information. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of checking all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies which databases to skip during VLF analysis. Accepts wildcards for pattern matching.
+        Use this to exclude problematic databases or those you don't need to monitor for VLF issues.
 
     .PARAMETER IncludeSystemDBs
-        If this switch is enabled, system database information will be displayed.
+        Include system databases (master, model, msdb, tempdb) in the VLF analysis.
+        By default, only user databases are checked since system database VLF counts are typically less critical for performance tuning.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

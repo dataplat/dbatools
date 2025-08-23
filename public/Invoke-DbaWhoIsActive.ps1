@@ -16,118 +16,109 @@ function Invoke-DbaWhoIsActive {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER Database
-        The database where sp_WhoIsActive is installed. Defaults to master. If the sp_WhoIsActive is not installed, the command will warn and exit.
+        Specifies the database where sp_WhoIsActive is installed. Defaults to master if not specified.
+        Use this when you've installed sp_WhoIsActive in a different database like a DBA utilities database.
 
     .PARAMETER Filter
-        FiltersBoth inclusive and exclusive
-        Set either filter to '' to disable
-        Session is a session ID, and either 0 or '' can be used to indicate "all" sessions
-        All other filter types support % or _ as wildcards
+        Filters results to include only sessions matching the specified criteria. Supports wildcards (% and _) for pattern matching.
+        Use this to focus on specific sessions, applications, databases, logins, or hosts when troubleshooting performance issues.
+        For session ID filtering, use 0 or an empty string to include all sessions.
 
     .PARAMETER FilterType
-        Valid filter types are: session, program, database, login, and host
+        Specifies what type of filtering to apply with the Filter parameter. Valid options: Session, Program, Database, Login, Host.
+        Use 'Program' to filter by application name, 'Login' to filter by SQL login, or 'Host' to filter by client machine name.
 
     .PARAMETER NotFilter
-        FiltersBoth inclusive and exclusive
-        Set either filter to '' to disable
-        Session is a session ID, and either 0 or '' can be used to indicate "all" sessions
-        All other filter types support % or _ as wildcards
+        Excludes sessions matching the specified criteria from results. Supports wildcards (% and _) for pattern matching.
+        Use this to exclude specific applications, databases, or users when you want to focus on everything else.
+        For session ID filtering, use 0 or an empty string to exclude no sessions.
 
     .PARAMETER NotFilterType
-        Valid filter types are: session, program, database, login, and host
+        Specifies what type of exclusion filtering to apply with the NotFilter parameter. Valid options: Session, Program, Database, Login, Host.
+        Use this in combination with NotFilter to exclude sessions by application name, database, login, or host.
 
     .PARAMETER ShowOwnSpid
-        Retrieve data about the calling session?
+        Includes the current session (the one running sp_WhoIsActive) in the results.
+        By default, your own session is excluded to reduce clutter in the output.
 
     .PARAMETER ShowSystemSpids
-        Retrieve data about system sessions?
+        Includes internal SQL Server system sessions in the results.
+        Use this when troubleshooting system-level performance issues or investigating background processes.
 
     .PARAMETER ShowSleepingSpids
-        Controls how sleeping SPIDs are handled, based on the idea of levels of interest
-        0 does not pull any sleeping SPIDs
-        1 pulls only those sleeping SPIDs that also have an open transaction
-        2 pulls all sleeping SPIDs
+        Controls which idle sessions to include based on their transaction status. 0 = no sleeping sessions, 1 = only sleeping sessions with open transactions, 2 = all sleeping sessions.
+        Use 1 when investigating blocking issues or long-running transactions, or 2 for comprehensive session auditing.
 
     .PARAMETER GetFullInnerText
-        If 1, gets the full stored procedure or running batch, when available
-        If 0, gets only the actual statement that is currently running in the batch or procedure
+        Retrieves the complete SQL batch or stored procedure text instead of just the current statement.
+        Use this when you need to see the full context of what's executing, not just the individual statement within a larger batch.
 
     .PARAMETER GetPlans
-        Get associated query plans for running tasks, if available
-        If 1, gets the plan based on the request's statement offset
-        If 2, gets the entire plan based on the request's plan_handle
+        Retrieves execution plans for active queries. 1 = plan for current statement only, 2 = entire plan for the batch or procedure.
+        Essential for performance troubleshooting to identify inefficient queries, missing indexes, and optimization opportunities.
 
     .PARAMETER GetOuterCommand
-        Get the associated outer ad hoc query or stored procedure call, if available
+        Captures the original command that initiated the current batch, including stored procedure calls with parameters.
+        Useful for understanding the full call stack when procedures call other procedures or dynamic SQL.
 
     .PARAMETER GetTransactionInfo
-        Enables pulling transaction log write info and transaction duration
+        Includes transaction log usage and duration information for active sessions.
+        Critical for identifying sessions with long-running transactions that may cause blocking or log space issues.
 
     .PARAMETER GetTaskInfo
-        Get information on active tasks, based on three interest levels
-        Level 0 does not pull any task-related information
-        Level 1 is a lightweight mode that pulls the top non-CXPACKET wait, giving preference to blockers
-        Level 2 pulls all available task-based metrics, including:
-        number of active tasks, current wait stats, physical I/O, context switches, and blocker information
+        Controls task and wait information collection. 0 = no task info, 1 = lightweight mode with primary waits and blockers, 2 = comprehensive task metrics including I/O and context switches.
+        Use level 1 for general troubleshooting or level 2 for detailed performance analysis when you need full wait statistics.
 
     .PARAMETER GetLocks
-        Gets associated locks for each request, aggregated in an XML format
+        Retrieves detailed lock information for each session in XML format.
+        Essential for troubleshooting blocking issues and understanding what resources sessions are waiting for or holding.
 
     .PARAMETER GetAverageTime
-        Get average time for past runs of an active query
-        (based on the combination of plan handle, sql handle, and offset)
+        Calculates the average execution time for the currently running query based on historical execution data.
+        Helps identify queries that are running longer than usual, indicating potential performance degradation.
 
     .PARAMETER GetAdditonalInfo
-        Get additional non-performance-related information about the session or request text_size, language, date_format, date_first, quoted_identifier, arithabort, ansi_null_dflt_on, ansi_defaults, ansi_warnings, ansi_padding, ansi_nulls, concat_null_yields_null, transaction_isolation_level, lock_timeout, deadlock_priority, row_count, command_type
-
-        If a SQL Agent job is running, an subnode called agent_info will be populated with some or all of the following: job_id, job_name, step_id, step_name, msdb_query_error (in the event of an error)
-
-        If @get_task_info is set to 2 and a lock wait is detected, a subnode called block_info will be populated with some or all of the following: lock_type, database_name, object_id, file_id, hobt_id, applock_hash, metadata_resource, metadata_class_id, object_name, schema_name
+        Includes session configuration details like ANSI settings, isolation level, language, and command type information.
+        Useful for troubleshooting application-specific issues where session settings affect query behavior or when investigating SQL Agent job activity.
 
     .PARAMETER FindBlockLeaders
-        Walk the blocking chain and count the number of
-        total SPIDs blocked all the way down by a given session
-        Also enables task_info Level 1, if @get_task_info is set to 0
+        Identifies the root cause sessions in blocking chains and counts how many sessions each one is blocking.
+        Critical for resolving blocking issues by showing you which sessions to focus on first when multiple blocking chains exist.
 
     .PARAMETER DeltaInterval
-        Pull deltas on various metrics
-        Interval in seconds to wait before doing the second data pull
+        Captures performance metrics at two points in time separated by the specified interval (in seconds) to show rate-of-change data.
+        Excellent for identifying which sessions are actively consuming CPU, I/O, or memory resources during the measurement period.
 
     .PARAMETER OutputColumnList
-        List of desired output columns, in desired order
-        Note that the final output will be the intersection of all enabled features and all columns in the list. Therefore, only columns associated with enabled features will actually appear in the output. Likewise, removing columns from this list may effectively disable features, even if they are turned on
-
-        Each element in this list must be one of the valid output column names. Names must be delimited by square brackets. White space, formatting, and additional characters are allowed, as long as the list contains exact matches of delimited valid column names.
+        Specifies which columns to include in the results and their display order using bracket-delimited column names.
+        Customize this to focus on specific metrics or reduce output complexity for your monitoring scenarios.
+        Only columns related to enabled features will actually appear in the output.
 
     .PARAMETER SortOrder
-        Column(s) by which to sort output, optionally with sort directions.
-        Valid column choices:
-        session_id, physical_io, reads, physical_reads, writes, tempdb_allocations,
-        tempdb_current, CPU, context_switches, used_memory, physical_io_delta,
-        reads_delta, physical_reads_delta, writes_delta, tempdb_allocations_delta,
-        tempdb_current_delta, CPU_delta, context_switches_delta, used_memory_delta,
-        tasks, tran_start_time, open_tran_count, blocking_session_id, blocked_session_count,
-        percent_complete, host_name, login_name, database_name, start_time, login_time
-
-        Note that column names in the list must be bracket-delimited. Commas and/or white space are not required.
+        Controls how results are sorted using bracket-delimited column names with optional ASC/DESC direction.
+        Sort by CPU, physical_io, or start_time to quickly identify the most resource-intensive or longest-running sessions.
+        Defaults to sorting by start_time in ascending order.
 
     .PARAMETER FormatOutput
-        Formats some of the output columns in a more "human readable" form
-        0 disables output format
-        1 formats the output for variable-width fonts
-        2 formats the output for fixed-width fonts
+        Controls output formatting for better readability. 0 = no formatting, 1 = variable-width fonts (default), 2 = fixed-width fonts.
+        Use 2 when displaying results in console windows or fixed-width displays for better column alignment.
 
     .PARAMETER DestinationTable
-        If set to a non-blank value, the script will attempt to insert into the specified destination table. Please note that the script will not verify that the table exists, or that it has the correct schema, before doing the insert. Table can be specified in one, two, or three-part format
+        Inserts results directly into a specified table instead of returning them to PowerShell.
+        Useful for automated monitoring scripts or building historical performance data repositories.
+        Table must already exist with the correct schema structure.
 
     .PARAMETER ReturnSchema
-        If set to 1, no data collection will happen and no result set will be returned; instead, a CREATE TABLE statement will be returned via the @schema parameter, which will match the schema of the result set that would be returned by using the same collection of the rest of the parameters. The CREATE TABLE statement will have a placeholder token of <table_name> in place of an actual table name.
+        Returns a CREATE TABLE statement showing the schema structure needed for the DestinationTable instead of collecting data.
+        Use this to generate the correct table structure before setting up automated data collection with DestinationTable.
 
     .PARAMETER Schema
-        If set to 1, no data collection will happen and no result set will be returned; instead, a CREATE TABLE statement will be returned via the @schema parameter, which will match the schema of the result set that would be returned by using the same collection of the rest of the parameters. The CREATE TABLE statement will have a placeholder token of <table_name> in place of an actual table name.
+        Alternative parameter name for ReturnSchema functionality.
+        Returns a CREATE TABLE statement for the result set structure instead of collecting actual data.
 
     .PARAMETER Help
-        Help! What do I do?
+        Returns detailed help information about sp_WhoIsActive parameters and their usage instead of executing the procedure.
+        Use this to understand all available options when you're unsure which parameters to use for your specific troubleshooting scenario.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -137,9 +128,8 @@ function Invoke-DbaWhoIsActive {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER As
-        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject'. Default is 'DataRow'.
-
-        PSObject output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
+        Specifies the PowerShell output format. Options: DataSet, DataTable, DataRow (default), PSObject.
+        Use PSObject for advanced scripting scenarios where you need better handling of null values and type conversion.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

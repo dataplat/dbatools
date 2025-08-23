@@ -25,22 +25,34 @@ function Get-DbaExecutionPlan {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Return execution plans and metadata for only specific databases.
+        Specifies which databases to include when retrieving execution plans from the plan cache.
+        Use this to focus performance analysis on specific databases instead of scanning all databases on the instance.
+        Accepts multiple database names and supports wildcards for pattern matching.
 
     .PARAMETER ExcludeDatabase
-        Return execution plans and metadata for all but these specific databases
+        Specifies which databases to exclude when retrieving execution plans from the plan cache.
+        Useful when you want to analyze most databases but skip system databases like tempdb or specific application databases.
+        Accepts multiple database names for flexible filtering.
 
     .PARAMETER SinceCreation
-        Datetime object used to narrow the results to a date
+        Filters execution plans to only those created on or after the specified date and time.
+        Use this to focus on recent query plan changes after deployments, index modifications, or statistics updates.
+        Helps identify new execution plans that may be causing performance issues.
 
     .PARAMETER SinceLastExecution
-        Datetime object used to narrow the results to a date
+        Filters execution plans to only those executed on or after the specified date and time.
+        Essential for identifying recently active queries when troubleshooting current performance problems.
+        Excludes older cached plans that are no longer being used by applications.
 
     .PARAMETER ExcludeEmptyQueryPlan
-        Exclude results with empty query plan
+        Excludes execution plans that have null or empty XML query plan data.
+        Use this to focus only on plans with complete execution plan information for detailed performance analysis.
+        Helps avoid incomplete results when you need the actual query plan XML for troubleshooting.
 
     .PARAMETER Force
-        Returns a ton of raw information about the execution plans
+        Returns all available columns from the Dynamic Management Views instead of the standard curated output.
+        Use this when you need access to additional execution statistics, compilation details, or other raw plan cache data.
+        Provides comprehensive information for advanced performance analysis and troubleshooting scenarios.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

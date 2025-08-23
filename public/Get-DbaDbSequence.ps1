@@ -18,16 +18,20 @@ function Get-DbaDbSequence {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to search for sequence objects. Accepts wildcards and multiple database names.
+        Use this when you need to limit the search to specific databases instead of scanning all databases on the instance.
 
     .PARAMETER Sequence
-        The name of the sequence.
+        Filters results to sequences with specific names. Accepts multiple sequence names and supports exact name matching.
+        Use this when you need to find specific sequences across databases rather than retrieving all sequences.
 
     .PARAMETER Schema
-        The name of the schema for the sequence. The default is dbo.
+        Filters results to sequences within specific schemas. Accepts multiple schema names for searching across different schemas.
+        Use this when you need to examine sequences in particular schemas, such as application-specific schemas or custom organizational structures.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase pipeline input, allowing you to target specific databases already retrieved.
+        Use this approach when you need to chain commands or work with databases that meet specific criteria from previous filtering operations.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -7,7 +7,8 @@ function Remove-DbaPfDataCollectorSet {
         Removes Windows Performance Monitor Data Collector Sets that are no longer needed for SQL Server performance monitoring. This is useful for cleaning up old monitoring configurations, freeing disk space, or standardizing performance monitoring setups across your SQL Server environment. The collector set must be stopped before removal - running collector sets will generate an error and must be stopped first using Stop-DbaPfDataCollectorSet. When removing collector sets from the local computer, administrator privileges are required.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computer(s) where Performance Monitor Data Collector Sets will be removed. Supports multiple computers for bulk operations.
+        Use this when removing collector sets from remote SQL Server hosts or when standardizing monitoring configurations across multiple servers.
 
     .PARAMETER Credential
         Allows you to login to the target computer using alternative credentials. To use:
@@ -15,10 +16,12 @@ function Remove-DbaPfDataCollectorSet {
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
     .PARAMETER CollectorSet
-        The name of the Collector Set to remove.
+        Specifies the exact name(s) of the Performance Monitor Data Collector Sets to remove. Accepts multiple collector set names for batch operations.
+        Use this when you need to remove specific monitoring configurations rather than all available collector sets on the target computer.
 
     .PARAMETER InputObject
-        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+        Accepts Data Collector Set objects from Get-DbaPfDataCollectorSet for pipeline operations. Enables chaining commands together for workflow automation.
+        Use this when you need to filter collector sets with Get-DbaPfDataCollectorSet first, then remove only the matching results.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

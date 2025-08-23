@@ -17,27 +17,39 @@ function Export-DbaRegServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER CredentialPersistenceType
-        Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
+        Controls how login credentials are stored in the exported registered server file.
+        Use 'PersistLoginName' to save usernames only, or 'PersistLoginNameAndPassword' to include passwords for automated connections.
+        Defaults to 'None' for security, requiring manual credential entry when connecting.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the directory where the exported registered server files will be saved.
+        Uses the dbatools default export directory if not specified, typically your user profile's Documents folder.
+        Automatically generates timestamped filenames when exporting multiple servers or groups.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file. The file must end with .xml or .regsrvr
+        Specifies the complete file path for the exported registered server file, including filename and extension.
+        Must end with .xml or .regsrvr extension to be compatible with SQL Server Management Studio imports.
+        When exporting multiple groups, the group name is automatically appended to avoid file conflicts.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaRegServer, Get-DbaRegServerGroup, CSVs and other objects.
-
-        If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
+        Accepts registered server or server group objects from Get-DbaRegServer, Get-DbaRegServerGroup, or custom objects via pipeline.
+        Use this to export specific servers or groups that have been filtered or modified before export.
+        For custom objects, requires a ServerName column with optional Name, Description, and Group columns.
 
     .PARAMETER Group
-        Specifies one or more groups to include.
+        Filters export to include only registered servers from the specified server group names.
+        Use this when you want to export servers from specific organizational groups like 'Production', 'Development', or 'QA'.
+        Accepts wildcards and multiple group names to export several groups in a single operation.
 
     .PARAMETER ExcludeGroup
-        Specifies one or more groups to exclude.
+        Excludes registered servers from the specified server group names during export.
+        Useful when exporting most groups but need to skip sensitive environments like 'Production' or 'Customer-Facing'.
+        Can be combined with the Group parameter to fine-tune which servers are included in the export.
 
     .PARAMETER Overwrite
-        Specifies to overwrite the output file (FilePath) if it already exists.
+        Allows the function to replace an existing file at the specified FilePath location.
+        Required when the target export file already exists, preventing accidental data loss.
+        Without this switch, the function will stop with an error if the destination file is found.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

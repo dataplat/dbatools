@@ -20,10 +20,14 @@ function Set-DbaTcpPort {
         Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager).
 
     .PARAMETER Port
-        TCPPort that SQLService should listen on.
+        Specifies the TCP port number for SQL Server to listen on, replacing any existing static or dynamic port configuration.
+        Use this to move SQL Server off the default port 1433 for security hardening or to configure custom ports for named instances.
+        Accepts any valid port number between 1 and 65535, with common choices being 1433 (default), 1434, or organization-specific port ranges.
 
     .PARAMETER IpAddress
-        Ip address to which the change should apply, if omitted AllIp (0.0.0.0) will be changed with the new port number.
+        Specifies which IP address should listen on the configured port instead of applying to all IP addresses.
+        Use this for multi-homed servers where you need SQL Server to listen only on specific network interfaces.
+        When omitted, the port change applies to all IP addresses (IPAll setting), which is the typical configuration for most servers.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -37,7 +41,9 @@ function Set-DbaTcpPort {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        Will restart SQL Server and SQL Server Agent service to apply the change.
+        Automatically restarts the SQL Server Database Engine service to apply the new port configuration immediately.
+        Use this when you need the port change to take effect right away instead of waiting for the next service restart.
+        Without this parameter, you must manually restart SQL Server before the new port settings become active.
 
     .NOTES
         Tags: Network, Connection, TCP, Configure

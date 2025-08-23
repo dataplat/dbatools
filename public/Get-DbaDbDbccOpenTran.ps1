@@ -26,9 +26,9 @@ function Get-DbaDbDbccOpenTran {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
-        The Name or Id of a database can be specified
-        Database names must comply with the rules for identifiers.
+        Specifies which databases to check for open transactions. Accepts database names or database IDs.
+        Use this when investigating transaction issues in specific databases rather than scanning all databases on the instance.
+        If omitted, DBCC OPENTRAN runs against all accessible databases, which may take longer on instances with many databases.
 
 
     .PARAMETER EnableException

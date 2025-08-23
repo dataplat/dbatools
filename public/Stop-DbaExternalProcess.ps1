@@ -13,13 +13,15 @@ function Stop-DbaExternalProcess {
         https://web.archive.org/web/20201027122300/http://vickyharp.com/2013/12/killing-sessions-with-external-wait-types/
 
     .PARAMETER ComputerName
-        The target SQL Server host computer
+        Specifies the Windows server hosting the SQL Server instance where external processes need to be terminated.
+        Use this when troubleshooting hung sessions with external wait types on remote SQL Server hosts.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
 
     .PARAMETER ProcessId
-        The process ID of the OS process to kill
+        Specifies the Windows process ID of the external process spawned by SQL Server that needs to be terminated.
+        Typically obtained from Get-DbaExternalProcess output when identifying processes causing EXTERNAL_SCRIPT_NETWORK_IO or WAITFOR_RESULTS wait types.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

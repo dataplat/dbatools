@@ -17,22 +17,28 @@ function New-DbaAgentAlert {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
-        The name of the alert to create
+        Specifies the name for the new SQL Server Agent alert. Must be unique within the SQL Server instance.
+        Use descriptive names that clearly identify the alert's purpose, such as 'High Severity Errors' or 'Database Full'.
 
     .PARAMETER Category
-        The name of the category for the alert
+        Assigns the alert to a specific category for organization and management purposes.
+        Categories help group related alerts together in SQL Server Management Studio and can be used for filtering in reports.
 
     .PARAMETER Database
-        The name of the database to which the alert applies
+        Restricts the alert to monitor events occurring only in the specified database.
+        Leave blank to monitor all databases on the instance, or specify a database name to limit scope and reduce false positives.
 
     .PARAMETER DelayBetweenResponses
-        The delay (in seconds) between responses to the alert
+        Sets the minimum time in seconds between alert notifications to prevent notification spam.
+        Use higher values like 300-900 seconds for recurring issues to avoid overwhelming operators with repeated alerts.
 
     .PARAMETER Disabled
-        Whether the alert is disabled
+        Creates the alert in a disabled state, preventing it from triggering until manually enabled.
+        Useful when setting up alerts during maintenance windows or when you need to configure notifications before activating monitoring.
 
     .PARAMETER EventDescriptionKeyword
-        The keyword to search for in the event description
+        Filters alert triggers to only events containing this keyword in the error message text.
+        Use this to create targeted alerts for specific error conditions like 'deadlock', 'timeout', or 'corruption' within broader error categories.
 
     .PARAMETER NotifyMethod
         The method to use to notify the user of the alert. Valid values are 'None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll'. It is NotifyAll by default.
@@ -42,31 +48,40 @@ function New-DbaAgentAlert {
         Avoid using these features in new development work, and plan to modify applications that currently use these features.
 
     .PARAMETER Operator
-        The name of the operator to use in the alert
+        Specifies which SQL Server Agent operators will receive notifications when this alert fires.
+        The operators must already exist and be configured with valid email addresses, pager numbers, or net send addresses.
 
     .PARAMETER EventSource
-        The source of the event
+        Identifies the source application or component for WMI event monitoring.
+        Required when creating WMI-based alerts to specify which system component's events should trigger the alert.
 
     .PARAMETER JobId
-        The GUID ID of the job to execute when the alert is triggered
+        Specifies the GUID of a SQL Server Agent job to automatically execute when the alert fires.
+        Use this for automated responses like running diagnostics, performing cleanup, or triggering failover procedures.
 
     .PARAMETER MessageId
-        The message ID for the alert
+        Creates an alert that triggers on a specific SQL Server error message number.
+        Use this for precise monitoring of known error conditions like message 9002 (transaction log full) or 825 (read-retry errors).
 
     .PARAMETER NotificationMessage
-        The message to send when the alert is triggered
+        Defines custom text to include in alert notifications sent to operators.
+        Use this to provide context, troubleshooting steps, or escalation procedures specific to this alert condition.
 
     .PARAMETER PerformanceCondition
-        The performance condition for the alert
+        Defines a performance counter condition that triggers the alert when threshold values are exceeded.
+        Specify conditions like 'SQLServer:General Statistics|Logins/sec|>|100' to monitor performance metrics and respond to resource issues.
 
     .PARAMETER Severity
-        The severity level for the alert. Valid values are 0-25
+        Sets the SQL Server error severity level that triggers this alert, ranging from 0-25.
+        Common values include 16-18 for user errors, 19-21 for resource issues, and 22-25 for system errors requiring immediate attention.
 
     .PARAMETER WmiEventNamespace
-        The namespace of the WMI event to use in the alert
+        Specifies the WMI namespace to monitor for events, typically 'root\cimv2' for system events.
+        Required when creating WMI-based alerts to monitor Windows system events, hardware failures, or application-specific WMI providers.
 
     .PARAMETER WmiEventQuery
-        The WMI query to use in the alert
+        Defines the WQL (WMI Query Language) query that determines which WMI events trigger the alert.
+        Use queries like 'SELECT * FROM Win32_VolumeChangeEvent' to monitor specific system events outside of SQL Server's direct control.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

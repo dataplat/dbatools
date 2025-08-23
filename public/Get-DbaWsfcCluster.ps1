@@ -11,7 +11,9 @@ function Get-DbaWsfcCluster {
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the target Windows Server Failover Cluster to query, either by cluster name or individual node name.
+        Use the cluster name when connecting to an active cluster, or specify a node name when the cluster service may be down.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

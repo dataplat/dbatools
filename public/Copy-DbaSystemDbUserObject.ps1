@@ -9,30 +9,28 @@ function Copy-DbaSystemDbUserObject {
         This function handles schemas, tables, views, stored procedures, functions, triggers, and other user-defined objects while preserving dependencies and permissions. It's particularly valuable during server migrations or when standardizing DBA tooling across multiple instances.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing the user objects to copy from system databases.
+        Requires sysadmin permissions to access master, msdb, and model databases for object extraction.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies credentials for connecting to the source SQL Server instance when Windows Authentication is not available.
+        Required when accessing source instances across domains or using SQL Server Authentication.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies one or more destination SQL Server instances where the user objects will be copied to.
+        Requires sysadmin permissions to modify master, msdb, and model databases on the destination servers.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies credentials for connecting to destination SQL Server instances when Windows Authentication is not available.
+        Required when accessing destination instances across domains or using SQL Server Authentication.
 
     .PARAMETER Classic
-        Perform the migration the old way
+        Uses the legacy migration method that copies all object types in bulk using SQL Server Management Objects Transfer class.
+        The default modern method provides better error handling and granular object control but this option may resolve compatibility issues with older SQL Server versions.
 
     .PARAMETER Force
-        Drop destination objects first. Has no effect if you use Classic. This doesn't work really well, honestly.
+        Drops existing objects on destination instances before creating new ones to resolve naming conflicts.
+        Only works with the default modern method, not with Classic mode, and may fail with objects that have dependencies.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

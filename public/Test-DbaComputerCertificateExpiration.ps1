@@ -17,26 +17,28 @@ function Test-DbaComputerCertificateExpiration {
         Allows you to login to $ComputerName using alternative credentials.
 
     .PARAMETER Store
-        Certificate store - defaults to LocalMachine
+        Specifies the certificate store to scan for certificates. Defaults to LocalMachine which contains system-wide certificates.
+        Use this when you need to check certificates in different stores like CurrentUser for user-specific certificates.
 
     .PARAMETER Folder
-        Certificate folder - defaults to My (Personal)
+        Specifies the certificate folder within the store to examine. Defaults to My (Personal) where SSL certificates are typically stored.
+        Common folders include My for personal certificates, Root for trusted root authorities, and CA for intermediate certificate authorities.
 
     .PARAMETER Path
-        The path to a certificate - basically changes the path into a certificate object
+        Specifies the file system path to a specific certificate file to examine instead of scanning certificate stores.
+        Use this when you have certificate files (.cer, .crt, .pfx) on disk that you want to check for expiration.
 
     .PARAMETER Type
-        The type of certificates to return. All, Service or SQL Server.
-
-        All is all certificates
-        Service is certificates that are candidates for SQL Server services (But may be for IIS, etc)
-        SQL Server is certificates currently in use by SQL Server
+        Determines which certificates to examine based on their intended use. Defaults to Service which finds certificates suitable for SQL Server.
+        Service finds certificates that meet SQL Server's requirements but may also be used by other services like IIS. SQL Server returns only certificates currently configured for use by SQL Server instances. All examines every certificate in the specified store regardless of suitability.
 
     .PARAMETER Thumbprint
-        Return certificate based on thumbprint
+        Filters results to certificates matching the specified thumbprint values. Accepts multiple thumbprints as an array.
+        Use this when you need to check specific certificates you've identified through other means or are monitoring for compliance.
 
     .PARAMETER Threshold
-        Number of days before expiration to warn. Defaults to 30.
+        Sets the number of days before expiration to trigger a warning. Defaults to 30 days.
+        Adjust this based on your certificate renewal process - use 90 days if you need longer lead times for procurement and testing.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

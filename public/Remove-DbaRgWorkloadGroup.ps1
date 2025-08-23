@@ -16,20 +16,24 @@ function Remove-DbaRgWorkloadGroup {
         Credential object used to connect to the Windows server as a different user.
 
     .PARAMETER WorkloadGroup
-        Name of the workload group to be removed.
+        Specifies the name of the workload group(s) to remove from Resource Governor.
+        Use this when you need to eliminate specific resource allocation policies or clean up deprecated workload configurations.
 
     .PARAMETER ResourcePool
-        Name of the resource pool the workload group is in.
+        Specifies the resource pool containing the workload group to be removed. Defaults to "default" pool.
+        Required when workload groups exist in custom resource pools rather than the default SQL Server resource pool.
 
     .PARAMETER ResourcePoolType
-        Internal or External.
+        Specifies whether to target Internal or External resource pools. Defaults to "Internal".
+        Use "External" when removing workload groups that manage external script execution resources like R or Python jobs.
 
     .PARAMETER SkipReconfigure
-        Resource Governor requires a reconfiguriation for workload group changes to take effect.
-        Use this switch to skip issuing a reconfigure for the Resource Governor.
+        Skips the automatic Resource Governor reconfiguration that makes workload group changes take effect immediately.
+        Use this when removing multiple workload groups in sequence to avoid repeated reconfigurations, but remember to manually reconfigure afterwards.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaRgWorkloadGroup.
+        Accepts workload group objects piped from Get-DbaRgWorkloadGroup for removal.
+        Use this approach when you need to filter workload groups first or when processing multiple groups across different resource pools.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

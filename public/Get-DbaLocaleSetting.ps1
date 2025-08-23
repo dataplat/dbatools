@@ -11,7 +11,8 @@ function Get-DbaLocaleSetting {
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the computer names where you want to retrieve Windows locale settings from the registry. Accepts SQL Server instance names but extracts only the computer portion.
+        Use this to audit regional configurations across your SQL Server environment, especially before installations or when troubleshooting locale-related issues with date formats, currency display, or collation behavior.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.

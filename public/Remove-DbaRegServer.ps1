@@ -19,16 +19,20 @@ function Remove-DbaRegServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        Specifies one or more names to include. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
+        Specifies registered server display names to remove from CMS or local registered servers.
+        Use this when you need to remove servers by their friendly names as shown in the SSMS Registered Servers pane rather than actual server instance names.
 
     .PARAMETER ServerName
-        Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
+        Specifies actual SQL Server instance names to remove from registered servers.
+        Use this when you need to remove servers by their connection strings or network names rather than display names, which is helpful when cleaning up instances that may have been registered with different friendly names.
 
     .PARAMETER Group
-        Specifies one or more groups to include from SQL Server Central Management Server.
+        Removes all registered servers from specified Central Management Server groups. Supports hierarchical paths using backslash notation (e.g., "Production\Database Servers").
+        Use this when you need to clean out entire groups during environment changes, server migrations, or organizational restructuring.
 
     .PARAMETER InputObject
-        Allows results from Get-DbaRegServer to be piped in
+        Accepts registered server objects from Get-DbaRegServer for targeted removal operations.
+        Use this for complex removal scenarios where you first query and filter servers, then pipe the results to remove specific servers based on properties or conditions.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

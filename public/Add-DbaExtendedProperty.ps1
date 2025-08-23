@@ -48,16 +48,20 @@ function Add-DbaExtendedProperty {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Add an extended property to a specific database
+        Specifies which databases to target when adding extended properties directly to database objects. Accepts wildcards for pattern matching.
+        Use this when you want to add metadata to entire databases rather than piping specific objects from Get-Dba* commands.
 
     .PARAMETER Name
-        The name of the extended property
+        Sets the name identifier for the extended property being created. Must be unique per object.
+        Common examples include "Version", "Owner", "Purpose", "DataClassification", or "LastModified" for documentation and compliance tracking.
 
     .PARAMETER Value
-        The value for the extended property
+        Defines the content stored in the extended property as a string value. Can contain any text including version numbers, descriptions, dates, or JSON data.
+        Keep values concise as they're stored in system catalogs and are visible in SQL Server Management Studio object properties.
 
     .PARAMETER InputObject
-        Enables piping from Get-Dba* commands
+        Accepts SQL Server objects from any Get-Dba* command that supports extended properties. Works with tables, views, procedures, functions, and many other object types.
+        This is the primary method for bulk-applying extended properties across multiple objects in your database environment.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

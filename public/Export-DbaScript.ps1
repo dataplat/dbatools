@@ -7,49 +7,57 @@ function Export-DbaScript {
         Takes any SQL Server Management Object from dbatools commands and converts it into executable T-SQL CREATE scripts using SMO scripting. This lets you script out database objects like tables, jobs, logins, stored procedures, and more for migration between environments or backup purposes. The function handles proper formatting with batch separators and supports custom scripting options to control what gets included in the output. Perfect for creating deployment scripts or documenting your SQL Server configurations without manual scripting.
 
     .PARAMETER InputObject
-        A SQL Management Object such as the one returned from Get-DbaLogin
+        Accepts any SQL Server Management Object (SMO) from dbatools commands like Get-DbaLogin, Get-DbaAgentJob, or Get-DbaDatabase.
+        Use this when you need to generate CREATE scripts for specific database objects, jobs, logins, or other SQL Server components.
+        The object type determines what kind of T-SQL script will be generated.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
-        Will default to Path.DbatoolsExport Configuration entry
+        Sets the directory where script files will be saved when FilePath is not specified.
+        Defaults to the configured dbatools export directory from your Path.DbatoolsExport setting.
+        Use this when you want scripts saved to a standard location with auto-generated filenames.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Sets the complete file path and name for the output script file.
+        Use this when you need the script saved to a specific location with a custom filename.
+        Overrides the Path parameter when specified.
 
     .PARAMETER Encoding
-        Specifies the file encoding. The default is UTF8.
-
-        Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+        Controls the character encoding used when writing script files to disk.
+        Default is UTF8 which handles international characters and is widely supported.
+        Use UTF8 for most scenarios, or ASCII if you need compatibility with older tools that don't support Unicode.
 
     .PARAMETER Passthru
-        Output script to console
+        Returns the generated T-SQL script as string output instead of writing to a file.
+        Use this when you need to capture the script in a variable for further processing or modification.
+        Commonly used in pipelines to transform scripts before saving.
 
     .PARAMETER ScriptingOptionsObject
-        An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
-        Options set in the ScriptingOptionsObject may override other parameter values
+        Accepts a customized SMO ScriptingOptions object created with New-DbaScriptingOption to control script generation.
+        Use this when you need specific formatting like including schema context, headers, or data along with object definitions.
+        Settings in this object override other Export-DbaScript parameters like BatchSeparator.
 
     .PARAMETER BatchSeparator
-        Specifies the Batch Separator to use. Uses the value from configuration Formatting.BatchSeparator by default. This is normally "GO"
+        Sets the batch terminator added between SQL statements in the output script.
+        Defaults to "GO" from your dbatools configuration, which is standard for SQL Server Management Studio.
+        Use a different separator if deploying to tools that require different batch terminators.
 
     .PARAMETER NoPrefix
-        Do not include a Prefix
+        Suppresses the header comment block that normally identifies when and by whom the script was generated.
+        Use this when you need clean scripts without metadata comments for automated deployments.
+        The prefix normally includes timestamp, username, and dbatools version information.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed
 
     .PARAMETER NoClobber
-        Do not overwrite file
+        Prevents overwriting existing files, causing the command to fail if the target file already exists.
+        Use this as a safety measure when you want to ensure you don't accidentally replace existing scripts.
+        Combine with -Append if you want to add to existing files instead.
 
     .PARAMETER Append
-        Append to file
+        Adds the generated script to the end of an existing file instead of overwriting it.
+        Use this when building consolidated deployment scripts by combining multiple objects into one file.
+        Particularly useful for scripting multiple databases or object types into a single migration script.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command

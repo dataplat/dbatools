@@ -21,46 +21,53 @@ function Remove-DbaDatabaseSafely {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        If specified, Agent jobs will be created on this server. By default, the jobs will be created on the server specified by SqlInstance. You must have sysadmin access and the server must be SQL Server 2000 or higher. The SQL Agent service will be started if it is not already running.
+        Specifies the SQL Server instance where the SQL Agent restore job will be created and executed. Defaults to the same server as SqlInstance if not specified.
+        Use this when you want to test database backups on a different server than where the original database exists, which is a best practice for backup validation.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the destination SQL Server instance when different from SqlCredential. Accepts PowerShell credentials (Get-Credential).
+        Use this when the destination server requires different authentication than the source server, common in cross-domain or different security context scenarios.
 
     .PARAMETER Database
-        Specifies one or more databases to remove.
+        Specifies one or more databases to safely remove with validated backups. Accepts multiple database names as an array.
+        Use this to target specific databases for removal, ensuring each gets a verified backup before deletion.
 
     .PARAMETER NoDbccCheckDb
-        If this switch is enabled, the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also allow you to create an Agent job that restores a database backup containing a corrupt database.
-
-        A second DBCC CHECKDB is performed on the restored database so you will still be notified BUT USE THIS WITH CARE.
+        Skips the initial DBCC CHECKDB integrity check before creating the backup, reducing processing time.
+        Use this only when you're confident about database integrity or when time constraints outweigh the risk of backing up a corrupt database.
+        The function still runs DBCC on the restored test database, but corruption detection happens after backup creation.
 
     .PARAMETER BackupFolder
-        Specifies the path to a folder where the final backups of the removed databases will be stored. If you are using separate source and destination servers, you must specify a UNC path such as  \\SERVER1\BACKUPSHARE\
+        Specifies the directory path where final database backups will be stored before deletion. Must be accessible by both source and destination server service accounts.
+        Use a UNC path (like \\SERVER1\BACKUPS\) when source and destination servers are different, or a local path when using the same server for both operations.
 
     .PARAMETER JobOwner
-        Specifies the name of the account which will own the Agent jobs. By default, sa is used.
+        Sets the owner account for the SQL Agent restore job that gets created. Defaults to the 'sa' login.
+        Specify a different owner when you need the job to run under specific security context or when 'sa' is disabled in your environment.
 
     .PARAMETER UseDefaultFilePaths
-        If this switch is enabled, the default file paths for the data and log files on the instance where the database is restored will be used. By default, the original file paths will be used.
+        Forces the restore operation to use the destination server's default file paths instead of the original database file locations.
+        Use this when the destination server has a different drive structure or when you want to follow the destination server's file organization standards.
 
     .PARAMETER CategoryName
-        Specifies the Category Name for the Agent job that is created for restoring the database(s). By default, the name is "Rationalisation".
+        Sets the SQL Agent job category for the restore jobs that are created. Defaults to 'Rationalisation'.
+        Use a custom category name to organize these restoration jobs separately from other maintenance jobs in SQL Agent.
 
     .PARAMETER BackupCompression
-        If this switch is enabled, compression will be used for the backup regardless of the SQL Server instance setting. By default, the SQL Server instance setting for backup compression is used.
+        Controls backup compression behavior with values: Default, On, or Off. Default uses the server's backup compression configuration setting.
+        Use 'On' to force compression for smaller backup files and reduced network traffic, or 'Off' when compression overhead outweighs benefits.
 
     .PARAMETER AllDatabases
-        If this switch is enabled, all user databases on the server will be removed. This is useful when decommissioning a server. You should use a Destination with this switch.
+        Removes all user databases from the source server, excluding system databases. Primarily used for server decommissioning scenarios.
+        Use with caution and always specify a different Destination server to avoid removing databases from the same server that will test their backups.
 
     .PARAMETER ReuseSourceFolderStructure
-        If this switch is enabled, the source folder structure will be used when restoring instead of using the destination instance default folder structure.
+        Maintains the original database file paths and folder structure during the test restore operation on the destination server.
+        Use this when you need to preserve specific drive layouts or when the destination server has matching drive structure to the source.
 
     .PARAMETER Force
-        If this switch is enabled, all actions will be performed even if DBCC errors are detected. An Agent job will be created with 'DBCCERROR' in the name and the backup file will have 'DBCC' in its name.
+        Continues the database removal process even when DBCC integrity checks detect corruption. Creates backups and jobs with 'DBCCERROR' naming to identify them.
+        Use this only in emergency situations when you must remove a corrupt database and accept the risk of having potentially unusable backups.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

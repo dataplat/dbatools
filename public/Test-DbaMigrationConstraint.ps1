@@ -19,30 +19,34 @@ function Test-DbaMigrationConstraint {
         The -Database parameter is auto-populated for command-line completion.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing databases to validate for migration compatibility.
+        Must be SQL Server 2008 or higher since the function uses sys.dm_db_persisted_sku_features DMV to detect edition-specific features.
+        Requires sysadmin access to query system views and database metadata.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for authenticating to the source SQL Server instance when Windows Authentication is not available.
+        Use this when running the function with a different account than your current Windows login, or when connecting to SQL instances that require SQL Authentication.
+        Create with Get-Credential or pass stored credential objects.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies the destination SQL Server instance where databases will be migrated to.
+        The function validates that database features are compatible with this target server's edition (Enterprise, Developer, Standard, or Express).
+        Must be SQL Server 2008 or higher and requires sysadmin access to check server edition and configuration settings like FileStream access level.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for authenticating to the destination SQL Server instance when Windows Authentication is not available.
+        Required when the destination server uses different authentication than your current context, or when testing migrations across domains.
+        Use Get-Credential to create or pass existing credential objects.
 
     .PARAMETER Database
-        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to validate for migration compatibility.
+        When omitted, checks all user databases on the source instance (excludes system databases master, msdb, tempdb).
+        Use this to focus validation on specific databases when planning selective migrations or troubleshooting particular database features.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. Options for this list are auto-populated from the server.
+        Specifies databases to skip during the migration validation process.
+        Useful when you know certain databases won't be migrated or when focusing validation efforts on a subset of databases.
+        Commonly used to exclude test databases, archived databases, or databases with known compatibility issues.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

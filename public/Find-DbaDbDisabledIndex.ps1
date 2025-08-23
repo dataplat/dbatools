@@ -17,16 +17,20 @@ function Find-DbaDbDisabledIndex {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to scan for disabled indexes. Accepts multiple database names and supports wildcards.
+        When not specified, all accessible user databases on the instance will be scanned.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Excludes specific databases from the disabled index scan. Useful when you want to scan most databases but skip certain ones like staging or temp databases.
+        Accepts multiple database names to exclude from the operation.
 
     .PARAMETER NoClobber
-        If this switch is enabled, the output file will not be overwritten.
+        Prevents overwriting existing output files when used with file export functionality.
+        Note: This parameter is currently not implemented in the function logic.
 
     .PARAMETER Append
-        If this switch is enabled, content will be appended to the output file.
+        Appends results to existing output files instead of overwriting them when used with file export functionality.
+        Note: This parameter is currently not implemented in the function logic.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

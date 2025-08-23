@@ -10,84 +10,83 @@ function Set-DbaCmConnection {
         Use this to bulk-configure connection behavior, manage credential caching, or troubleshoot remote connection issues when dbatools functions need to access SQL Server host systems for tasks like service management, file operations, or system information gathering.
 
     .PARAMETER ComputerName
-        The computer to build the connection object for.
+        Specifies the SQL Server host computer name to configure connection settings for. Accepts computer names, FQDNs, or IP addresses.
+        Use this when you need to pre-configure how dbatools connects to specific SQL Server host machines for service management, file operations, or system administration tasks.
 
     .PARAMETER Credential
         The credential to register.
 
     .PARAMETER UseWindowsCredentials
-        Whether using the default windows credentials is legit.
-        Not setting this will not exclude using windows credentials, but only not pre-confirm them as working.
+        Confirms that Windows credentials of the current user should be used for remote connections to the target computer.
+        Set this when you know the current user account has sufficient privileges on the remote SQL Server host and want to avoid credential prompts.
 
     .PARAMETER OverrideExplicitCredential
-        Setting this will enable the credential override.
-        The override will cause the system to ignore explicitly specified credentials, so long as known, good credentials are available.
+        Forces dbatools to use cached working credentials instead of explicitly provided credentials when available.
+        Enable this when you want the connection system to automatically use known-good credentials rather than failing with explicitly provided but incorrect credentials.
 
     .PARAMETER OverrideConnectionPolicy
-        Setting this will configure the connection policy override.
-        By default, global configurations enforce, which connection type is available at all and which is disabled.
+        Allows this connection to bypass global connection type restrictions configured in dbatools settings.
+        Use this when you need to enable specific connection methods (CIM, WMI, PowerShell remoting) for individual computers that are normally disabled globally.
 
     .PARAMETER DisabledConnectionTypes
-        Explicitly disable connection types.
-        These types will then not be used for connecting to the computer.
+        Specifies which connection protocols to disable for this computer (CIM, WMI, PowerShell remoting, or combinations).
+        Use this to block problematic connection methods on specific hosts while allowing others to work normally.
 
     .PARAMETER DisableBadCredentialCache
-        Will prevent the caching of credentials if set to true.
+        Prevents dbatools from remembering credentials that fail authentication for this computer.
+        Enable this when you're frequently changing credentials or troubleshooting authentication issues and don't want failed attempts cached.
 
     .PARAMETER DisableCimPersistence
-        Will prevent Cim-Sessions to be reused.
+        Forces dbatools to create new CIM sessions for each operation instead of reusing existing sessions.
+        Use this when experiencing issues with persistent CIM connections or when you need fresh authentication for each operation.
 
     .PARAMETER DisableCredentialAutoRegister
-        Will prevent working credentials from being automatically cached
+        Prevents successful credentials from being automatically saved to the connection cache for future use.
+        Enable this for security-sensitive environments where you don't want credentials stored in memory between operations.
 
     .PARAMETER EnableCredentialFailover
-        Will enable automatic failing over to known to work credentials, when using bad credentials.
-        By default, passing bad credentials will cause the Computer Management functions to interrupt with a warning (Or exception if in silent mode).
+        Allows dbatools to automatically try previously successful credentials when the provided credentials fail.
+        Use this to improve connection reliability by falling back to known working credentials when new ones don't authenticate properly.
 
     .PARAMETER WindowsCredentialsAreBad
-        Will prevent the windows credentials of the currently logged on user from being used for the remote connection.
+        Marks the current user's Windows credentials as non-functional for this remote computer.
+        Set this when you know Windows authentication won't work for the target host and want to prevent automatic attempts with current user credentials.
 
     .PARAMETER CimWinRMOptions
-        Specify a set of options to use when connecting to the target computer using CIM over WinRM.
-        Use 'New-CimSessionOption' to create such an object.
+        Specifies advanced WinRM session options for CIM connections, such as authentication methods, timeouts, or proxy settings.
+        Create this object using New-CimSessionOption and use when you need custom WinRM configuration for challenging network environments.
 
     .PARAMETER CimDCOMOptions
-        Specify a set of options to use when connecting to the target computer using CIM over DCOM.
-        Use 'New-CimSessionOption' to create such an object.
+        Specifies advanced DCOM session options for CIM connections, including authentication, impersonation levels, or DCOM-specific settings.
+        Create this object using New-CimSessionOption and use when connecting through firewalls or when WinRM isn't available.
 
     .PARAMETER AddBadCredential
-        Adds credentials to the bad credential cache.
-        These credentials will not be used when connecting to the target remote computer.
+        Adds specific credentials to the list of known non-working credentials for this computer.
+        Use this to prevent dbatools from attempting credentials you know will fail, improving performance and avoiding account lockouts.
 
     .PARAMETER RemoveBadCredential
-        Removes credentials from the bad credential cache.
+        Removes previously flagged credentials from the bad credential list for this computer.
+        Use this when credentials that previously failed have been updated or permissions have been granted.
 
     .PARAMETER ClearBadCredential
-        Clears the cache of credentials that didn't worked.
-        Will be applied before adding entries to the credential cache.
+        Removes all entries from the bad credential cache for this computer.
+        Use this when troubleshooting authentication issues or after bulk credential updates that might affect previously failed credentials.
 
     .PARAMETER ClearCredential
-        Clears the cache of credentials that worked.
-        Will be applied before adding entries to the credential cache.
+        Removes any cached working credentials for this computer, forcing fresh authentication on next connection.
+        Use this when credentials have changed or when you need to ensure the next connection uses newly provided credentials.
 
     .PARAMETER ResetCredential
-        Resets all credential-related caches:
-        - Clears bad credential cache
-        - Removes last working credential
-        - Un-Confirms the windows credentials as working
-        - Un-Confirms the windows credentials as not working
-
-        Automatically implies the parameters -ClearCredential and -ClearBadCredential. Using them together is redundant.
-        Will be applied before adding entries to the credential cache.
+        Performs a complete credential reset by clearing both working and failed credential caches and resetting Windows credential status.
+        Use this for comprehensive credential troubleshooting or when starting fresh with connection authentication for a host.
 
     .PARAMETER ResetConnectionStatus
-        Restores all connection status to default, as if no connection protocol had ever been tested.
+        Clears all connection protocol test results, marking CIM, WMI, and PowerShell remoting as untested for this computer.
+        Use this to force dbatools to re-test connection methods after network changes, firewall updates, or service configuration changes.
 
     .PARAMETER ResetConfiguration
-        Restores the configuration back to system default.
-        Configuration elements are the basic behavior controlling settings, such as whether to cache bad credentials, etc.
-        These can be configured globally using the dbatools configuration system and overridden locally on a per-connection basis.
-        For a list of all available settings, use "Get-DbatoolsConfig -Module ComputerManagement".
+        Restores all connection behavior settings to system defaults, removing any computer-specific overrides.
+        Use this to return a connection to standard behavior after testing custom settings or when troubleshooting connection issues.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

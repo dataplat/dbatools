@@ -17,13 +17,16 @@ function Get-DbaPbmCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        Filters results to only show specific condition
+        Filters results to only show specific policy categories by name. Accepts multiple category names for targeted retrieval.
+        Use this when you need to check specific categories rather than retrieving all configured PBM categories.
 
     .PARAMETER ExcludeSystemObject
-        By default system objects are include. Use this parameter to exclude them.
+        Excludes built-in system policy categories from the results, showing only user-created categories.
+        Use this when you want to focus on custom categories that you or your team have created, filtering out SQL Server's default categories.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaPbmStore
+        Accepts Policy-Based Management store objects from Get-DbaPbmStore for processing categories from specific stores.
+        Use this when you need to work with categories from a pre-filtered set of PBM stores or when chaining multiple PBM commands together.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

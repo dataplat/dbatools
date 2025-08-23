@@ -17,22 +17,28 @@ function Set-DbaAgentAlert {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
-        The name of the alert.
+        Specifies the name(s) of the SQL Agent alerts to modify. Accepts multiple alert names for bulk operations.
+        Use this when you need to update specific alerts by name across one or more instances.
 
     .PARAMETER NewName
-        The new name for the alert.
+        Sets a new name for the alert being modified. Only works when modifying a single alert.
+        Use this when standardizing alert names across environments or fixing naming conventions.
 
     .PARAMETER Enabled
-        Enabled the alert.
+        Enables the specified SQL Agent alert(s) by setting IsEnabled to true.
+        Use this to reactivate alerts after maintenance or to ensure critical alerts are active across all instances.
 
     .PARAMETER Disabled
-        Disabled the alert.
+        Disables the specified SQL Agent alert(s) by setting IsEnabled to false.
+        Use this during maintenance windows or to silence noisy alerts that are firing incorrectly.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Bypasses confirmation prompts by setting ConfirmPreference to 'none'.
+        Use this in automated scripts where you want to suppress interactive prompts.
 
     .PARAMETER InputObject
-        Enables piping alert objects
+        Accepts SQL Agent alert objects from the pipeline, typically from Get-DbaAgentAlert.
+        Use this when you want to filter alerts first, then modify the results in a pipeline operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

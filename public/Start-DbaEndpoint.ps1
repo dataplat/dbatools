@@ -17,13 +17,16 @@ function Start-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
-        Only start specific endpoints.
+        Specifies the names of specific endpoints to start on the target SQL Server instance.
+        Use this when you only need to start particular endpoints like Database Mirroring or Service Broker endpoints rather than all endpoints on the server.
 
     .PARAMETER AllEndpoints
-        Start all endpoints on an instance.
+        Starts all endpoints on the target SQL Server instance regardless of their current state or type.
+        This is required when using the SqlInstance parameter and you want to start all endpoints rather than specific ones.
 
     .PARAMETER InputObject
-        Enables piping from Get-Endpoint.
+        Accepts endpoint objects from the pipeline, typically from Get-DbaEndpoint cmdlet output.
+        Use this to start endpoints that have already been retrieved and filtered by other dbatools commands.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

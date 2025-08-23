@@ -11,7 +11,9 @@ function Get-DbaInstalledPatch {
         To test if your build is up to date, use Test-DbaBuild.
 
     .PARAMETER ComputerName
-        Allows you to specify a comma separated list of servers to query.
+        Specifies the target computers to query for SQL Server patch information. Accepts single computer names, comma-separated lists, or pipeline input from text files.
+        Use this to audit patch levels across multiple servers for compliance reporting or pre-upgrade planning.
+        Defaults to the local computer when not specified.
 
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user.

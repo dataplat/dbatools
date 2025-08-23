@@ -11,39 +11,39 @@ function Update-DbaServiceAccount {
         Supports SQL Server Engine and Agent services on supported SQL Server versions. Other services like Reporting Services or Analysis Services are not supported and may cause the function to fail on older SQL Server versions.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the SQL Server computers where service account changes will be applied. Accepts multiple computer names for bulk operations.
+        Use this when you need to update service accounts across multiple SQL Server instances in your environment.
 
     .PARAMETER Credential
         Windows Credential with permission to log on to the server running the SQL instance
 
     .PARAMETER InputObject
-        A collection of services. Basically, any object that has ComputerName and ServiceName properties. Can be piped from Get-DbaService.
+        Accepts service objects from Get-DbaService for pipeline operations. Must contain ComputerName and ServiceName properties.
+        Use this when you want to filter services first with Get-DbaService then update only specific services based on criteria like service type or instance name.
 
     .PARAMETER ServiceName
-        A name of the service on which the action is performed. E.g. MSSQLSERVER or SqlAgent$INSTANCENAME
+        Specifies the exact SQL Server service name to update, such as 'MSSQLSERVER' for default instances or 'MSSQL$INSTANCENAME' for named instances.
+        Use this when you need to target specific services rather than all SQL Server services on a computer. Supports SQL Server Agent services like 'SQLSERVERAGENT' or 'SQLAgent$INSTANCENAME'.
 
     .PARAMETER ServiceCredential
-        Windows Credential object under which the service will be setup to run. Cannot be used with -Username. For local service accounts use one of the following usernames with empty password:
-        LOCALSERVICE
-        NETWORKSERVICE
-        LOCALSYSTEM
+        Provides a PSCredential object containing the domain account and password for the SQL Server service. Cannot be combined with -Username parameter.
+        Use this when changing to a domain service account and you already have the credentials stored securely. For local system accounts, create credentials with usernames LOCALSERVICE, NETWORKSERVICE, or LOCALSYSTEM and empty passwords.
 
     .PARAMETER PreviousPassword
-        An old password of the service account. Optional when run under local admin privileges.
+        Specifies the current password of the service account when performing password-only changes. Required for non-admin users but optional for local administrators.
+        Use this when you're rotating passwords for compliance and need to provide the existing password to validate the change.
 
     .PARAMETER SecurePassword
-        New password of the service account. The function will ask for a password if not specified. MSAs and local system accounts will ignore the password.
+        Sets the new password for the service account as a SecureString object. If not provided, the function will prompt for password input.
+        Use this when changing passwords for domain service accounts. Managed Service Accounts (MSAs) and local system accounts automatically ignore this parameter since they don't require passwords.
 
     .PARAMETER Username
-        Username of the service account. Cannot be used with -ServiceCredential. For local service accounts use one of the following usernames omitting the -SecurePassword parameter:
-        LOCALSERVICE
-        NETWORKSERVICE
-        LOCALSYSTEM
+        Specifies the service account username in DOMAIN\\Username format for domain accounts. Cannot be combined with -ServiceCredential parameter.
+        Use this when you want to change to a specific domain account or local system account. For local system accounts, use LOCALSERVICE, NETWORKSERVICE, or LOCALSYSTEM without providing a password.
 
     .PARAMETER NoRestart
-        Do not immediately restart the service after changing the password.
-
-        **Note that the changes will not go into effect until you restart the SQL Services**
+        Prevents automatic restart of SQL Server services after account or password changes. Service changes will not take effect until services are manually restarted.
+        Use this when you need to schedule service restarts during planned maintenance windows to avoid unexpected downtime during business hours.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -17,21 +17,29 @@ function Find-DbaView {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to search for views containing the pattern. Accepts wildcards and multiple database names.
+        Use this when you need to limit the search scope to specific databases instead of scanning all databases on the instance.
+        Particularly useful for large instances where you only need to check certain application databases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during the view search operation. Accepts multiple database names.
+        Use this to exclude large databases that you know don't contain relevant views, speeding up the search process.
+        Common exclusions include development copies, archive databases, or third-party application databases.
 
     .PARAMETER Pattern
-        String pattern that you want to search for in the view text body
+        Specifies the text pattern or regular expression to search for within view definitions. Supports full regex syntax for complex pattern matching.
+        Use this to find views referencing specific tables before schema changes, locate sensitive data patterns like email addresses or SSNs, or identify views containing particular business logic.
+        Common patterns include table names, column references, function calls, or data validation expressions.
 
     .PARAMETER IncludeSystemObjects
-        By default, system views are ignored but you can include them within the search using this parameter.
-
-        Warning - this will likely make it super slow if you run it on all databases.
+        Includes system views in the search operation alongside user-created views. System views are excluded by default.
+        Use this when troubleshooting issues that might involve system view dependencies or when documenting complete database schemas.
+        Warning: Including system views significantly slows down the search, especially when scanning multiple databases or large instances.
 
     .PARAMETER IncludeSystemDatabases
-        By default system databases are ignored but you can include them within the search using this parameter
+        Includes system databases (master, model, msdb, tempdb) in the view search operation. System databases are excluded by default.
+        Use this when investigating SQL Server internals, troubleshooting replication issues, or documenting complete instance configurations.
+        Most DBA tasks focus on user databases, so this parameter is typically used for advanced troubleshooting scenarios.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

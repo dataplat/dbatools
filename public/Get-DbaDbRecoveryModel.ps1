@@ -17,13 +17,16 @@ function Get-DbaDbRecoveryModel {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
+        Specifies which databases to retrieve recovery model information for. Accepts database names, wildcards, or arrays.
+        Use this when you need to check recovery models for specific databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the recovery model check. Accepts database names, wildcards, or arrays.
+        Useful for skipping system databases or databases you don't manage when reviewing recovery model compliance.
 
     .PARAMETER RecoveryModel
-        Filters the output based on Recovery Model. Valid options are Simple, Full and BulkLogged
+        Filters results to show only databases using the specified recovery model (Simple, Full, or BulkLogged).
+        Use this to identify databases with incorrect recovery models for your backup strategy or to audit compliance with recovery model policies.
 
         Details about the recovery models can be found here:
         https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/recovery-models-sql-server

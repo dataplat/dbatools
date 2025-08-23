@@ -11,30 +11,28 @@ function Copy-DbaInstanceTrigger {
         By default, all server triggers are copied, but you can specify particular triggers with -ServerTrigger or exclude specific ones with -ExcludeServerTrigger. Existing triggers on the destination are skipped unless -Force is used to drop and recreate them.
 
     .PARAMETER Source
-        Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        Source SQL Server instance containing the server triggers to copy. Must be SQL Server 2005 or later.
+        Requires sysadmin privileges to access server-level triggers and their definitions.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the source SQL Server instance when Windows Authentication is not available.
+        Use this when copying triggers from instances in different domains or when using SQL Server authentication.
 
     .PARAMETER Destination
-        Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        Destination SQL Server instance(s) where server triggers will be created. Must be SQL Server 2005 or later.
+        Requires sysadmin privileges to create server-level triggers and cannot be a lower version than the source.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the destination SQL Server instance(s) when Windows Authentication is not available.
+        Use this when copying triggers to instances in different domains or when using SQL Server authentication.
 
     .PARAMETER ServerTrigger
-        The Server Trigger(s) to process - this list is auto-populated from the server. If unspecified, all Server Triggers will be processed.
+        Specific server trigger name(s) to copy from the source instance. Tab completion shows available triggers.
+        Use this when you need to copy only specific triggers instead of all server triggers.
 
     .PARAMETER ExcludeServerTrigger
-        The Server Trigger(s) to exclude - this list is auto-populated from the server
+        Server trigger name(s) to skip during the copy operation. Tab completion shows available triggers.
+        Use this when copying most triggers but need to exclude specific ones due to environment differences.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -43,7 +41,8 @@ function Copy-DbaInstanceTrigger {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        Drops and recreates the Trigger if it exists
+        Drops and recreates server triggers that already exist on the destination instance.
+        Without this switch, existing triggers are skipped to prevent accidental overwrites.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

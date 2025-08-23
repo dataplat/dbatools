@@ -19,10 +19,12 @@ function Get-DbaDbSharePoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ConfigDatabase
-        The name of the SharePoint Configuration database. Defaults to SharePoint_Config.
+        Specifies the name of the SharePoint Configuration database to query for farm database information. Defaults to SharePoint_Config.
+        Use this when your SharePoint farm uses a non-standard configuration database name, such as SharePoint_Config_2016 or when managing multiple SharePoint versions on the same SQL instance.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase to directly analyze specific SharePoint Configuration databases.
+        Use this when you want to target a specific configuration database without connecting to the SQL instance again, or when working with multiple SharePoint farms across different instances.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

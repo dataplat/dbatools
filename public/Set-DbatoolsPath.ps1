@@ -9,18 +9,24 @@ function Set-DbatoolsPath {
         Paths setup like this can be retrieved using Get-DbatoolsPath.
 
     .PARAMETER Name
-        Name the path should be stored under.
+        Specifies the alias name to associate with the path for easy retrieval.
+        Use descriptive names like 'backups', 'scripts', or 'logs' to organize commonly used directory paths.
+        The name can be referenced later with Get-DbatoolsPath to quickly access the stored path.
 
     .PARAMETER Path
-        The path that should be returned under the name.
+        Specifies the directory path to store under the given name.
+        Can be any valid file system path including network shares and mapped drives.
+        Use this to centralize path management for backup locations, script directories, or output folders.
 
     .PARAMETER Register
-        Registering a path in order for it to persist across sessions.
+        Persists the path configuration across PowerShell sessions and module reloads.
+        Without this switch, the path mapping only exists for the current session.
+        Essential when setting up permanent path aliases for team environments or automated scripts.
 
     .PARAMETER Scope
-        The configuration scope it should be registered under.
-        Defaults to UserDefault.
-        Configuration scopes are the default locations configurations are being stored at.
+        Determines where the persistent configuration is stored when using -Register.
+        UserDefault stores the setting for the current user only, while other scopes affect system-wide or module-level settings.
+        Choose the appropriate scope based on whether the path should be available to all users or just the current user.
 
     .LINK
         https://dbatools.io/Set-DbatoolsPath

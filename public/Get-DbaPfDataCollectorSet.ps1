@@ -7,7 +7,9 @@ function Get-DbaPfDataCollectorSet {
         Retrieves detailed information about Windows Performance Monitor Data Collector Sets, which are used to collect performance counters for SQL Server monitoring and troubleshooting. Data Collector Sets define what performance counters to collect, when to collect them, and where to store the collected data. This function helps DBAs inventory existing collector sets, check their status (running, stopped, scheduled), and review their configuration including output locations and schedules. Particularly useful when inheriting a SQL Server environment or auditing existing performance monitoring setup.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the Windows server(s) where you want to inventory Performance Monitor Data Collector Sets.
+        Use this when checking collector sets across multiple SQL Server hosts or when managing performance monitoring from a central location.
+        Accepts multiple computer names and defaults to the local computer.
 
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:
@@ -15,7 +17,9 @@ function Get-DbaPfDataCollectorSet {
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER CollectorSet
-        The Collector set name.
+        Specifies the name(s) of specific Data Collector Sets to retrieve instead of returning all collector sets.
+        Use this when you need to check the status or configuration of specific performance monitoring setups like 'SQL Server Default' or custom collector sets.
+        Accepts wildcards and multiple collector set names for targeted monitoring inventory.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

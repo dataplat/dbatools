@@ -29,16 +29,20 @@ function Get-DbaPermission {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for permissions. Accepts wildcards and multiple database names.
+        When omitted, all accessible databases on the instance are processed, which is useful for comprehensive security audits.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more database(s) to exclude from processing.
+        Excludes specific databases from permission analysis. Accepts wildcards and multiple database names.
+        Commonly used to skip system databases like TempDB or exclude sensitive databases from security reports.
 
     .PARAMETER IncludeServerLevel
-        If this switch is enabled, information about Server Level Permissions will be output.
+        Includes server-level permissions in the output, such as CONTROL SERVER, VIEW SERVER STATE, and fixed server roles like sysadmin.
+        Essential for complete security audits as it captures instance-wide permissions that affect all databases.
 
     .PARAMETER ExcludeSystemObjects
-        If this switch is enabled, permissions on system securables will be excluded.
+        Excludes permissions on system objects like system tables, views, and stored procedures from the output.
+        Use this when focusing on user-created objects to reduce noise in permission reports and compliance audits.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

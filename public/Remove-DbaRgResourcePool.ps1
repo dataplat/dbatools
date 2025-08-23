@@ -17,17 +17,20 @@ function Remove-DbaRgResourcePool {
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER ResourcePool
-        Name of the resource pool to be created.
+        Name of the resource pool to remove from Resource Governor configuration. Accepts multiple pool names.
+        Use this when you need to clean up specific unused pools or consolidate resource management by removing obsolete pools.
 
     .PARAMETER Type
-        Internal or External.
+        Specifies whether to remove Internal or External resource pools. Defaults to Internal.
+        Internal pools manage CPU and memory for regular SQL Server workloads, while External pools manage resources for R/Python/Java external scripts.
 
     .PARAMETER SkipReconfigure
-        Resource Governor requires a reconfiguriation for resource pool changes to take effect.
-        Use this switch to skip issuing a reconfigure for the Resource Governor.
+        Skips the automatic Resource Governor reconfiguration after removing resource pools. By default, Resource Governor is reconfigured to apply changes immediately.
+        Use this when removing multiple pools in batch operations to avoid repeated reconfigurations, then manually reconfigure once at the end.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaRgResourcePool.
+        Accepts resource pool objects piped from Get-DbaRgResourcePool for removal. Supports both Internal and External resource pool objects.
+        Use this for pipeline operations when you need to filter pools before removal or process multiple pools efficiently.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

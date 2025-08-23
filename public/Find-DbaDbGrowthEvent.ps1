@@ -23,23 +23,33 @@ function Find-DbaDbGrowthEvent {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to search for growth events. Accepts wildcards for pattern matching.
+        Use this to focus on specific databases when investigating growth patterns or troubleshooting performance issues.
+        If not specified, searches all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specified databases from the growth event search. Accepts wildcards for pattern matching.
+        Useful when you want to skip system databases like tempdb or exclude databases with known frequent growth events.
+        Commonly used with tempdb, master, model, and msdb to focus on user databases only.
 
     .PARAMETER EventType
-        Provide a filter on growth event type to filter the results.
+        Filters results to show only specific types of database size change events.
+        Use 'Growth' to identify when files expanded automatically, which can indicate undersized initial allocations or unexpected data volume increases.
+        Use 'Shrink' to find auto-shrink events that may be causing performance problems due to file fragmentation.
 
         Allowed values: Growth, Shrink
 
     .PARAMETER FileType
-        Provide a filter on file type to filter the results.
+        Filters results to show only data file or log file growth events.
+        Use 'Data' when investigating storage capacity issues or unexpected table growth patterns.
+        Use 'Log' when troubleshooting transaction log growth, often caused by long-running transactions or delayed log backups.
 
         Allowed values: Data, Log
 
     .PARAMETER UseLocalTime
-        Return the local time of the instance instead of converting to UTC.
+        Returns timestamps in the SQL Server instance's local time zone instead of converting to UTC.
+        Use this when correlating growth events with local application schedules, maintenance windows, or business hours.
+        By default, times are converted to UTC for consistency across multiple time zones.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

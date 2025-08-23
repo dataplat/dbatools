@@ -11,13 +11,15 @@ function Get-DbaComputerSystem {
         Use this command when documenting SQL Server environments, verifying system requirements before installations or upgrades, or investigating hardware-related performance bottlenecks.
 
     .PARAMETER ComputerName
-        Target computer(s). If no computer name is specified, the local computer is targeted
+        Specifies the target computer(s) to collect system information from. Defaults to the local computer when not specified.
+        Use this to inventory multiple SQL Server hosts at once or to gather system details from remote servers for capacity planning and troubleshooting.
 
     .PARAMETER Credential
         Alternate credential object to use for accessing the target computer(s).
 
     .PARAMETER IncludeAws
-        If computer is hosted in AWS Infrastructure as a Service (IaaS), additional information will be included.
+        Retrieves additional AWS EC2 metadata when the target computer is hosted on Amazon Web Services. Adds properties like AMI ID, instance type, availability zone, and IAM role information.
+        Use this switch when documenting cloud-hosted SQL Server environments or when you need AWS-specific details for compliance or cost management purposes.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -17,32 +17,40 @@ function Start-DbaAgentJob {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies the names of specific SQL Agent jobs to start. Accepts job names as strings and supports multiple job names in an array.
+        Use this when you need to start only certain jobs instead of all jobs on the server. Job names are case-sensitive and must match exactly.
 
     .PARAMETER StepName
-        The step name to start the job at, will default to the step configured by the job.
+        Specifies the job step name where job execution should begin instead of starting from the first step.
+        Use this to resume a failed job at a specific step or to test individual job steps without running the entire job sequence.
 
     .PARAMETER ExcludeJob
-        The job(s) to exclude - this list is auto-populated from the server.
+        Specifies job names to exclude from starting when using -AllJobs or when no specific jobs are specified.
+        Use this to start all jobs except certain ones, such as excluding maintenance jobs during business hours or problematic jobs that need special handling.
 
     .PARAMETER AllJobs
-        Retrieve all the jobs
+        Starts all SQL Agent jobs that are currently in an idle state on the target instance.
+        Use this switch when you need to start all available jobs, typically after server maintenance or during bulk job execution scenarios.
 
     .PARAMETER Wait
-        Wait for output until the job has started
+        Waits for each job to complete execution before returning results or proceeding to the next job.
+        Use this when you need to ensure job completion before continuing your script, or when jobs have dependencies that require sequential execution.
 
     .PARAMETER WaitPeriod
-        Wait period in seconds to use when -Wait is used
+        Sets the polling interval in seconds for checking job status when using the -Wait parameter. Defaults to 3 seconds.
+        Adjust this value based on your job duration - use shorter intervals for quick jobs or longer intervals for jobs that run for hours to reduce server load.
 
     .PARAMETER Parallel
-        Works in conjunction with the Wait switch.  Be default, when passing the Wait switch, each job is started one at a time and waits for completion
-        before starting the next job.  The Parallel switch will change the behavior to start all jobs at once, and wait for all jobs to complete .
+        Starts all specified jobs simultaneously and waits for all to complete, rather than starting and waiting for each job sequentially.
+        Use this when jobs can run concurrently without conflicts to reduce total execution time. Requires the -Wait parameter to function.
 
     .PARAMETER SleepPeriod
-        Period in milliseconds to wait after a job has started
+        Sets the initial wait time in milliseconds after starting a job before checking its status. Defaults to 300 milliseconds.
+        Increase this value if you experience issues with jobs not showing as started immediately, which can occur on heavily loaded servers.
 
     .PARAMETER InputObject
-        Internal parameter that enables piping
+        Accepts SQL Agent job objects from the pipeline, typically from Get-DbaAgentJob or other dbatools functions.
+        Use this when chaining dbatools commands together to start jobs that meet specific criteria, such as failed jobs or jobs with certain schedules.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

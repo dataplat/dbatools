@@ -20,8 +20,8 @@ function Invoke-DbaDbLogShipRecovery {
         The target SQL Server instance or instances.
 
     .PARAMETER Database
-        Database to perform the restore for. This value can also be piped enabling multiple databases to be recovered.
-        If this value is not supplied all databases will be recovered.
+        Specifies the log-shipped secondary databases to recover. Accepts multiple database names and wildcards for pattern matching.
+        Use this when you need to recover specific databases instead of all log-shipped databases on the instance. Without specifying -Database, you must use -Force to recover all log-shipped databases.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -31,11 +31,12 @@ function Invoke-DbaDbLogShipRecovery {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER NoRecovery
-        Allows you to choose to not restore the database to a functional state (Normal) in the final steps of the process.
-        By default the database is restored to a functional state (Normal).
+        Prevents the final RESTORE DATABASE WITH RECOVERY step that brings the database fully online. The database remains in restoring state after log shipping jobs complete.
+        Use this when you need to apply additional transaction logs manually or perform other operations before bringing the database online. By default, databases are fully recovered and made available for read-write operations.
 
     .PARAMETER InputObject
-        Allows piped input from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the pipeline. This allows you to filter databases using Get-DbaDatabase and pipe them directly to the recovery function.
+        Particularly useful when you need to recover databases based on specific criteria like database state or properties rather than just database names.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -43,11 +44,12 @@ function Invoke-DbaDbLogShipRecovery {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        Use this parameter to force the function to continue and perform any adjusting actions to successfully execute
+        Bypasses the safety requirement to specify individual databases and processes all log-shipped databases on the instance. Also sets confirmation preference to none.
+        Use this in disaster recovery scenarios when you need to quickly recover all log-shipped databases without interactive prompts. Without -Force, you must explicitly specify database names using -Database.
 
     .PARAMETER Delay
-        Set the delay in seconds to wait for the copy and/or restore jobs.
-        By default the delay is 5 seconds
+        Sets the polling interval in seconds to check if the log shipping copy and restore jobs have completed. The function waits this long between status checks.
+        Use a shorter delay for faster recovery monitoring or a longer delay to reduce system load during job execution. Default is 5 seconds, which balances responsiveness with system performance.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

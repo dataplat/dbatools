@@ -17,16 +17,20 @@ function Move-DbaRegServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        Specifies one or more reg servers to move. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
+        Specifies one or more registered servers to move by their display name as shown in SSMS CMS interface. This is the friendly name you see in the registered servers tree, which may differ from the actual server instance name.
+        Use this when you know the descriptive name assigned to servers in CMS but not necessarily their technical instance names.
 
     .PARAMETER ServerName
-        Specifies one or more reg servers to move. Server Name is the actual instance name (labeled Server Name)
+        Specifies one or more registered servers to move by their actual SQL Server instance name. This is the technical server\instance connection string used to connect to SQL Server.
+        Use this when you need to target servers by their network instance names rather than their CMS display names.
 
     .PARAMETER Group
-        The new group. If no new group is specified, the default root will used
+        Specifies the destination group where the registered servers will be moved. Use backslash notation for nested groups like 'Production\WebServers'.
+        If not specified, servers are moved to the root level of the CMS hierarchy. The target group must already exist in CMS.
 
     .PARAMETER InputObject
-        Allows results from Get-DbaRegServer to be piped in
+        Accepts registered server objects from the pipeline, typically from Get-DbaRegServer output. This allows you to filter servers first and then move the results.
+        Use this approach when you need complex filtering or when working with servers from multiple CMS instances.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

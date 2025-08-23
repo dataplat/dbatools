@@ -21,18 +21,20 @@ function Update-DbaMaintenanceSolution {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where Ola Hallengren's solution is currently installed. Defaults to master.
+        Specifies the database containing the existing Ola Hallengren maintenance solution stored procedures. Defaults to master.
+        Change this if you installed the maintenance solution in a different database like DBA or Admin.
 
     .PARAMETER Solution
-        Specifies which portion of the Maintenance solution to update. Valid values are All (full solution), Backup, IntegrityCheck and IndexOptimize.
-        Defaults to All, but only existing procedures will be replaced.
+        Controls which maintenance solution components to update. Valid options are All, Backup, IntegrityCheck, IndexOptimize, or CommandExecute.
+        Use this when you only want to update specific procedures instead of the entire solution. Only procedures that already exist will be updated.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install Ola's solution from. This *should* be the zip file as distributed by the maintainers.
-        If this parameter is not specified, the latest version will be downloaded from https://github.com/olahallengren/sql-server-maintenance-solution
+        Path to a local zip file containing Ola Hallengren's maintenance solution instead of downloading from GitHub.
+        Use this in environments without internet access or when you need to deploy a specific version that differs from the latest release.
 
     .PARAMETER Force
-        If this switch is enabled, the Ola's solution will be downloaded from the internet even if previously cached.
+        Forces download of the latest maintenance solution from GitHub even if a cached version exists locally.
+        Use this when you want to ensure you're getting the absolute latest version or if the cached version is corrupted.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

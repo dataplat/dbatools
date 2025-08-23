@@ -18,10 +18,12 @@ function Get-DbaDbAssembly {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all accessible databases will be processed.
+        Specifies which databases to scan for CLR assemblies. Accepts wildcards for pattern matching.
+        Use this when auditing assemblies in specific databases rather than scanning the entire instance.
 
     .PARAMETER Name
-        Specify an Assembly to be fetched. If not specified all Assemblies will be returned
+        Filters results to assemblies with matching names. Supports exact assembly name matching only.
+        Use this when investigating specific assemblies during security audits or troubleshooting CLR-related issues.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

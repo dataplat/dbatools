@@ -17,10 +17,12 @@ function Start-DbaTrace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
-        A list of trace ids
+        Specifies the numeric IDs of specific traces to start. When omitted, all stopped traces on the instance will be started.
+        Use this when you need to start only particular traces rather than all available stopped traces.
 
     .PARAMETER InputObject
-        Internal parameter for piping
+        Accepts trace objects from the pipeline, typically from Get-DbaTrace. This allows you to filter traces first, then start only the selected ones.
+        Use this parameter when piping trace objects or when you have trace objects from a previous Get-DbaTrace command.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

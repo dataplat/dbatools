@@ -9,39 +9,43 @@ function Copy-DbaAgentJob {
         The function intelligently skips jobs associated with maintenance plans and provides detailed validation messages for any missing dependencies. By default, existing jobs are preserved unless -Force is specified to overwrite them.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Source SQL Server instance containing the jobs to copy. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Use this when copying jobs from a specific instance rather than piping job objects with InputObject.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
+        Alternative credentials for connecting to the source SQL Server instance. Accepts PowerShell credentials (Get-Credential).
+        Use this when the source server requires different authentication than your current Windows session, such as SQL authentication or cross-domain scenarios.
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Destination SQL Server instance(s) where jobs will be created. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Supports multiple destinations to copy jobs to multiple servers simultaneously during migrations or DR setup.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
+        Alternative credentials for connecting to the destination SQL Server instance. Accepts PowerShell credentials (Get-Credential).
+        Use this when the destination server requires different authentication than your current Windows session, such as SQL authentication or cross-domain scenarios.
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        For MFA support, please use Connect-DbaInstance.
-
     .PARAMETER Job
-        The job(s) to process. This list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies which SQL Agent jobs to copy by name. Accepts wildcards and multiple job names.
+        Use this to copy specific jobs instead of all jobs, such as during selective migrations or when testing job deployments.
+        If unspecified, all jobs will be processed.
 
     .PARAMETER ExcludeJob
-        The job(s) to exclude. This list is auto-populated from the server.
+        Specifies which SQL Agent jobs to skip during the copy operation. Accepts wildcards and multiple job names.
+        Use this to exclude specific jobs from bulk operations, such as skipping environment-specific jobs or maintenance tasks that shouldn't be migrated.
 
     .PARAMETER DisableOnSource
-        If this switch is enabled, the job will be disabled on the source server.
+        Disables the job on the source server after successfully copying it to the destination.
+        Use this during server migrations or failover scenarios where you want to prevent the job from running on the old server while it runs on the new one.
 
     .PARAMETER DisableOnDestination
-        If this switch is enabled, the newly migrated job will be disabled on the destination server.
+        Creates the job on the destination server but leaves it disabled.
+        Use this when deploying jobs to test environments or when you need to review and modify job steps before enabling them in the new environment.
 
-     .PARAMETER InputObject
-        Piped in jobs from Get-DbaAgentJob
+    .PARAMETER InputObject
+        Accepts SQL Agent job objects from the pipeline, typically from Get-DbaAgentJob.
+        Use this to copy pre-filtered jobs or when combining with other job management cmdlets for complex workflows.
 
         .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -50,7 +54,8 @@ function Copy-DbaAgentJob {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Job will be dropped and recreated on Destination.
+        Overwrites existing jobs on the destination server and automatically sets missing job owners to the 'sa' login.
+        Use this when you need to replace existing jobs or when source job owners don't exist on the destination server during migrations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

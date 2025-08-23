@@ -17,7 +17,8 @@ function Remove-DbaDbEncryptionKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the encryption key will be removed.
+        Specifies the database(s) from which to remove the database encryption key (DEK).
+        Required when using SqlInstance parameter to target specific databases for encryption key removal.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -31,7 +32,8 @@ function Remove-DbaDbEncryptionKey {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER InputObject
-        Piped encryption key objects
+        Accepts database encryption key objects from Get-DbaDbEncryptionKey via pipeline.
+        Use this when you need to remove keys from a filtered set of databases or when chaining commands together.
 
     .NOTES
         Tags: Certificate, Security

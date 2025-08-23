@@ -17,13 +17,16 @@ function Remove-DbaAgReplica {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        The specific availability group to query.
+        Specifies the availability group(s) containing the replicas to remove. Accepts wildcards for pattern matching.
+        Use this to limit the removal operation to specific availability groups when you have multiple AGs on the instance.
 
     .PARAMETER Replica
-        The replica to remove.
+        Specifies the name(s) of the availability group replicas to remove from the AG configuration. Accepts wildcards for pattern matching.
+        This parameter is required when using SqlInstance and typically matches the server name hosting the replica you want to remove.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAgReplica.
+        Accepts availability group replica objects from the pipeline, typically from Get-DbaAgReplica output.
+        Use this for batch operations when you need to remove multiple replicas or want to filter replicas before removal.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

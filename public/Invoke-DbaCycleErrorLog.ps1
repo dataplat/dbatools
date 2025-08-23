@@ -17,8 +17,9 @@ function Invoke-DbaCycleErrorLog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Type
-        The log to cycle.
-        Accepts: instance or agent.
+        Specifies which error log to cycle: 'instance' for SQL Server instance log, 'agent' for SQL Agent log.
+        When omitted, cycles both logs simultaneously which is the typical maintenance approach.
+        Use specific values when you need to manage log sizes independently or troubleshoot specific services.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

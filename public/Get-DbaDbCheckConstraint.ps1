@@ -17,13 +17,16 @@ function Get-DbaDbCheckConstraint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get Checks from specific database(s)
+        Specifies which databases to search for check constraints. Accepts wildcards and multiple database names.
+        Use this when you need to examine constraints on specific databases rather than all accessible databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Excludes specific databases from the check constraint search. Accepts multiple database names.
+        Useful when you want to scan most databases but skip certain ones like development or temporary databases.
 
     .PARAMETER ExcludeSystemTable
-        This switch removes all system objects from the table collection
+        Excludes check constraints from system tables when searching through databases.
+        Use this to focus only on user-created tables and avoid system table constraints that are typically not relevant for DBA reviews.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

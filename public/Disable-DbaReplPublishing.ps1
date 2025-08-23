@@ -17,9 +17,9 @@ function Disable-DbaReplPublishing {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Force
-        Specifies whether the Publisher is uninstalled from the Distributor without verifying that Publisher has also uninstalled the Distributor, if the Publisher is on a separate server.
-        If true, all the replication objects associated with the Publisher are dropped even if the Publisher is on a remote server that cannot be reached.
-        If false, replication first verifies that the remote Publisher has uninstalled the Distributor.
+        Forces the removal of publisher configuration without verifying the distributor connection status.
+        Use this when the distributor server is unreachable or when you need to forcibly clean up orphaned replication objects.
+        Without this switch, the function will fail if it cannot communicate with the distributor to perform proper cleanup verification.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

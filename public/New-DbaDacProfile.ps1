@@ -25,18 +25,22 @@ function New-DbaDacProfile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database name you are targeting
+        Specifies the target database name where the dacpac will be deployed. This sets the TargetDatabaseName property in the generated publish profile.
+        Use this to define which database will receive the dacpac deployment when the profile is used with SqlPackage.exe or Visual Studio publishing.
 
     .PARAMETER ConnectionString
-        The connection string to the database you are upgrading.
-
-        Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connectionstring.
+        Provides a direct connection string for the target SQL Server instance and database. This becomes the TargetConnectionString in the generated publish profile.
+        Use this instead of SqlInstance when you need specific connection parameters, are connecting to non-standard instances like LocalDB, or when working in environments where Connect-DbaInstance may have limitations.
+        If you provide SqlInstance, the function will connect and generate the connection string automatically.
 
     .PARAMETER Path
-        The directory where you would like to save the profile xml file(s).
+        Specifies the directory where the publish profile XML files will be created. Defaults to your Documents folder if not specified.
+        Files are automatically named using the pattern "instancename-databasename-publish.xml" for easy identification and organization.
 
     .PARAMETER PublishOptions
-        Optional hashtable to set publish options. Key/value pairs in the hashtable get converted to strings of "<key>value</key>".
+        Specifies additional deployment options as a hashtable that will be embedded in the publish profile XML. Each key/value pair becomes a PropertyGroup element in the profile.
+        Use this to control dacpac deployment behavior like blocking data loss (BlockOnPossibleDataLoss), ignoring permissions (IgnorePermissions), or script generation options.
+        Common options include IgnoreUserSettingsObjects, GenerateDeploymentScript, and CreateNewDatabase. See SqlPackage.exe documentation for complete option list.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -11,7 +11,8 @@ function Copy-DbaDbMail {
         The function preserves all SMTP authentication details including encrypted passwords, handles name conflicts with optional force replacement, and can enable Database Mail on the destination if it's enabled on the source. You can migrate specific component types or the entire configuration in one operation.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing the Database Mail configuration to copy. The function reads all mail profiles, accounts, mail servers, and configuration values from this instance.
+        You must have sysadmin privileges to access the MSDB database where Database Mail settings are stored.
 
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -21,7 +22,8 @@ function Copy-DbaDbMail {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies one or more destination SQL Server instances where the Database Mail configuration will be copied. Accepts an array to migrate to multiple servers simultaneously.
+        You must have sysadmin privileges on each destination to create mail profiles, accounts, and server configurations in MSDB.
 
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -31,7 +33,8 @@ function Copy-DbaDbMail {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Type
-        Specifies the object type to migrate. Valid options are 'ConfigurationValues', 'Profiles', 'Accounts', and 'MailServers'. When Type is specified, all categories from the selected type will be migrated.
+        Limits migration to specific Database Mail component types instead of copying everything. Choose 'ConfigurationValues' for global settings like retry attempts and file size limits, 'Profiles' for mail profile definitions, 'Accounts' for SMTP account configurations, or 'MailServers' for SMTP server details.
+        Use this when you only need to sync specific components or when troubleshooting individual Database Mail layers.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -45,7 +48,8 @@ function Copy-DbaDbMail {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
+        Overwrites existing Database Mail objects on the destination that have matching names from the source. Without this switch, existing profiles, accounts, or mail servers are skipped to prevent accidental data loss.
+        Use this when updating existing Database Mail configurations or when you need to replace outdated settings with current ones from the source server.
 
     .NOTES
         Tags: Migration, Mail

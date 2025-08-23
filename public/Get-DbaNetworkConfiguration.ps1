@@ -20,23 +20,15 @@ function Get-DbaNetworkConfiguration {
         Credential object used to connect to the Computer as a different user.
 
     .PARAMETER OutputType
-        Defines what information is returned from the command.
-        Options include: Full, ServerProtocols, TcpIpProperties, TcpIpAddresses or Certificate. Full by default.
+        Controls which network configuration details are returned from SQL Server Configuration Manager.
+        Use this to focus on specific troubleshooting areas or reduce output when checking multiple instances.
+        Valid options: Full, ServerProtocols, TcpIpProperties, TcpIpAddresses, Certificate (defaults to Full).
 
-        Full returns one object per SqlInstance with information about the server protocols
-        and nested objects with information about TCP/IP properties and TCP/IP addresses.
-        It also outputs advanced properties including information about the used certificate.
-
-        ServerProtocols returns one object per SqlInstance with information about the server protocols only.
-
-        TcpIpProperties returns one object per SqlInstance with information about the TCP/IP protocol properties only.
-
-        TcpIpAddresses returns one object per SqlInstance and IP address.
-        If the instance listens on all IP addresses (TcpIpProperties.ListenAll), only the information about the IPAll address is returned.
-        Otherwise only information about the individual IP addresses is returned.
-        For more details see: https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-server-to-listen-on-a-specific-tcp-port
-
-        Certificate returns one object per SqlInstance with information about the configured network certificate and whether encryption is enforced.
+        Full provides complete network configuration including all protocols, TCP/IP settings, IP bindings, and SSL certificate details.
+        ServerProtocols shows only whether Shared Memory, Named Pipes, and TCP/IP protocols are enabled.
+        TcpIpProperties returns TCP/IP protocol settings like KeepAlive timeout and whether the instance listens on all IP addresses.
+        TcpIpAddresses displays port configurations and IP address bindings for connection troubleshooting.
+        Certificate outputs SSL certificate information and encryption enforcement settings for security audits.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -21,10 +21,12 @@ function Get-DbaDbExtentDiff {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for extent changes since the last full backup. Accepts multiple database names and supports wildcards.
+        Use this when you need to check specific databases rather than analyzing all databases on the instance, which is helpful for large environments or when focusing on particular applications.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during the extent change analysis. Accepts multiple database names and supports wildcards.
+        Use this to exclude system databases, read-only databases, or databases where you don't need backup planning analysis, reducing execution time and focusing on relevant databases.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

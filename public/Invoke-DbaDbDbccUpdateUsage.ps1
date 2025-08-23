@@ -24,26 +24,28 @@ function Invoke-DbaDbDbccUpdateUsage {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
-        The Name or Id of a database can be specified
-        Database names must comply with the rules for identifiers.
+        Specifies which databases to update usage statistics for. Accepts database names or IDs.
+        When omitted, DBCC UPDATEUSAGE runs against all accessible databases on the instance.
+        Use this to target specific databases when you know which ones have inaccurate space usage reports.
 
     .PARAMETER Table
-        The table or indexed view to process.
-        Table and view names must comply with the rules for identifiers
-        The Id of Table or View can be specified
-        If not specified, all tables or indexed views will be processed
+        Specifies a single table or indexed view to update usage statistics for. Accepts table names or object IDs.
+        When omitted, DBCC UPDATEUSAGE processes all tables and indexed views in the specified database(s).
+        Use this when sp_spaceused reports incorrect sizes for a specific table after bulk operations or index maintenance.
 
     .PARAMETER Index
-        The Index to process.
-        The Id of Index can be specified
-        If not specified, all indexes for the specified table or view will be processed.
+        Specifies a single index to update usage statistics for. Accepts index names or index IDs.
+        Requires the Table parameter to be specified and updates statistics only for that specific index.
+        Use this for targeted correction when you know a particular index has inaccurate metadata after rebuilds or reorganization.
 
     .PARAMETER NoInformationalMessages
-        Suppresses all informational messages.
+        Suppresses informational messages during DBCC UPDATEUSAGE execution using the NO_INFOMSGS option.
+        Use this in automated scripts or when processing many objects to reduce output volume and focus on actual problems.
 
     .PARAMETER CountRows
-        Specifies that the row count column is updated with the current count of the number of rows in the table or view.
+        Forces DBCC UPDATEUSAGE to recalculate and update row counts in addition to page counts using the COUNT_ROWS option.
+        Use this when sp_spaceused shows incorrect row counts, typically after bulk insert/delete operations or database restores.
+        Note that this option increases execution time as SQL Server must physically count all rows in affected tables.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

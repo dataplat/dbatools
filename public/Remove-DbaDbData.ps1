@@ -17,17 +17,20 @@ function Remove-DbaDbData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all user databases will be processed.
+        Specifies which databases to clear of data. Accepts wildcards for pattern matching.
+        When omitted, the function processes all user databases on the instance. System databases are always excluded for safety.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Excludes specific databases from data removal operations. Use this to protect important databases when clearing multiple databases.
+        Commonly used with production or reference databases that should remain untouched during development environment resets.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Accepts piped database objects from Get-DbaDatabase or server connections from Connect-DbaInstance.
+        Use this for pipeline operations when you need to filter databases with complex criteria before clearing data.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
-        Will default to Path.DbatoolsExport Configuration entry
+        Sets the temporary directory for storing drop and create scripts during the data removal process.
+        The function creates temporary SQL scripts for foreign keys and views, then automatically removes them when complete. Defaults to the configured dbatools export path.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

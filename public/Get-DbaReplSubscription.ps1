@@ -17,19 +17,24 @@ function Get-DbaReplSubscription {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
+        Specifies which publication databases to include when retrieving subscriptions. Accepts multiple database names and wildcards.
+        Use this to focus on subscriptions from specific databases instead of checking all replicated databases on the instance.
 
     .PARAMETER PublicationName
-        The name of the publication.
+        Filters results to subscriptions from specific publications by name. Accepts multiple publication names.
+        Use this when you need to check subscription status for particular publications rather than all publications on the server.
 
     .PARAMETER SubscriberName
-        The subscriber SQL Server instance name.
+        Filters results to subscriptions where data is being delivered to specific subscriber instances. Accepts multiple instance names.
+        Use this to monitor subscription health and activity for particular subscriber servers in your replication topology.
 
     .PARAMETER SubscriptionDatabase
-        The name of the subscription database.
+        Filters results to subscriptions where data is being delivered to specific databases on subscriber instances. Accepts multiple database names.
+        Use this to track how data flows to particular databases across your subscribers, especially when subscription databases have different names than source databases.
 
     .PARAMETER Type
-        Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot
+        Filters results to subscriptions of a specific delivery method (Push or Pull). Push subscriptions are managed by the publisher, while Pull subscriptions are managed by the subscriber.
+        Use this to separate subscription management tasks or troubleshoot issues specific to push or pull delivery mechanisms.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

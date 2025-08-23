@@ -23,15 +23,16 @@ function Set-DbaDbIdentity {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        Only one database should be specified when using a RESEED value
+        Specifies which databases to check for identity values. If not specified, all databases on the instance will be processed.
+        When using ReSeedValue, only a single database can be specified since reseeding requires targeting a specific table location.
 
     .PARAMETER Table
-        The table(s) for which to check the current identity value.
-        Only one table should be specified when using a RESEED value
+        Specifies which tables with identity columns to check or reseed. Use schema.table format for tables not in the default schema.
+        When using ReSeedValue, only a single table can be specified since each table's identity must be reseeded individually.
 
     .PARAMETER ReSeedValue
-        The new reseed value to be used to set as the current identity value.
+        Sets the next identity value that will be assigned to new rows in the specified table.
+        Use this after bulk operations, deletes, or imports that leave gaps in identity sequences or when the identity value needs correction.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

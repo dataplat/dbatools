@@ -17,9 +17,9 @@ function Enable-DbaReplDistributor {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DistributionDatabase
-        Name of the distribution database that will be created.
-
-        Default is 'distribution'.
+        Specifies the name of the distribution database that will be created to store replication metadata and transaction logs.
+        This database holds subscription information, publication details, and queued transactions for distribution to subscribers.
+        Defaults to 'distribution' if not specified, which is the standard convention for most replication configurations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

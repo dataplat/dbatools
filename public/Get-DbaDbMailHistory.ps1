@@ -17,10 +17,14 @@ function Get-DbaDbMailHistory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Since
-        Datetime object used to narrow the results to the send request date
+        Filters mail history to only include emails sent after the specified date and time.
+        Use this when troubleshooting recent delivery issues or generating reports for specific time periods.
+        Accepts standard PowerShell DateTime objects like (Get-Date).AddDays(-7) for the past week.
 
     .PARAMETER Status
-        Narrow the results by status. Valid values include Unsent, Sent, Failed and Retrying
+        Filters results to only show emails with the specified delivery status.
+        Use 'Failed' to identify delivery problems, 'Unsent' for queued messages, or 'Retrying' for current retry attempts.
+        Accepts multiple values: Unsent, Sent, Failed, and Retrying.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

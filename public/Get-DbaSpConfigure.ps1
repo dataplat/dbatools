@@ -21,10 +21,12 @@ function Get-DbaSpConfigure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        Return only specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
+        Return only specific configuration settings instead of all sp_configure values. Accepts either display names from sp_configure ('max server memory (MB)') or SMO property names ('MaxServerMemory').
+        Use this when you need to check specific settings like memory configuration, parallelism, or security options without retrieving the full list.
 
     .PARAMETER ExcludeName
-        Exclude specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
+        Exclude specific configuration settings from the results. Accepts either display names from sp_configure or SMO property names.
+        Useful when generating reports or comparisons where you want to hide standard settings and focus on custom configurations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

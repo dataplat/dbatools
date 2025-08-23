@@ -20,7 +20,8 @@ function Invoke-DbaDbccDropCleanBuffer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER NoInformationalMessages
-        Suppresses all informational messages.
+        Suppresses informational messages from the DBCC DROPCLEANBUFFERS command output.
+        Use this when running automated scripts where you only want to capture errors or when you need cleaner output for logging purposes.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

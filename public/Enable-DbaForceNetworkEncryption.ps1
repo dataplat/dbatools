@@ -14,7 +14,8 @@ function Enable-DbaForceNetworkEncryption {
         The target SQL Server instance or instances.
 
     .PARAMETER Credential
-        Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials
+        Windows credentials for connecting to the remote computer to modify registry settings. Required when the current user lacks administrative access to the target server.
+        This is used for Windows authentication to the computer, not SQL Server login credentials.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

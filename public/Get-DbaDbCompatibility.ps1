@@ -17,10 +17,12 @@ function Get-DbaDbCompatibility {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database or databases to process. If unspecified, all databases will be processed.
+        Specifies which databases to check for compatibility levels. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases rather than reviewing all databases on the instance.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase)
+        Accepts database objects from the pipeline to check their compatibility levels directly.
+        Use this when you already have database objects from Get-DbaDatabase or other dbatools commands and want to avoid additional server queries.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run

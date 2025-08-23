@@ -17,10 +17,12 @@ function Get-DbaAgentAlert {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
-        The name of the alerts to return. If null, will get all alerts from the server. Note - this parameter accepts wildcards.
+        Specifies the specific SQL Agent alert names to retrieve from the target instances. Accepts wildcards for pattern matching.
+        Use this when you need to check specific alerts like 'Severity 016*' or 'DB Mail*' instead of retrieving all alerts on the server.
 
     .PARAMETER ExcludeAlert
-        The name of the alerts to exclude. If not provided, no alerts will be excluded. Note - this parameter accepts wildcards.
+        Specifies SQL Agent alert names to exclude from the results. Accepts wildcards for pattern matching.
+        Use this to filter out unwanted alerts when auditing or when you need to focus on specific alert categories without built-in system alerts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

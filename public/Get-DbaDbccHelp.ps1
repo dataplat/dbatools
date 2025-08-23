@@ -20,13 +20,14 @@ function Get-DbaDbccHelp {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Statement
-        Is the name of the DBCC command for which to receive syntax information.
-        Provide only the part of the DBCC command that follows DBCC,
-            for example, CHECKDB instead of DBCC CHECKDB.
+        Specifies the DBCC command name to get syntax help for. Provide only the command portion after "DBCC" (e.g., CHECKDB, CHECKTABLE, SHRINKFILE).
+        Use this when you need to verify command syntax before running maintenance operations or troubleshooting database issues.
+        Common commands include CHECKDB for database integrity, SHRINKFILE for file management, or FREEPROCCACHE for memory management.
 
     .PARAMETER IncludeUndocumented
-        Allows getting help for undocumented DBCC commands. Requires Traceflag 2588
-        This only works for SQL Server 2005 or Higher
+        Enables access to help for undocumented DBCC commands by setting trace flag 2588 for the session.
+        Use this when troubleshooting advanced scenarios that require undocumented commands like WRITEPAGE or PAGE.
+        Only works on SQL Server 2005 and higher, and should be used with caution as undocumented commands can affect system stability.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

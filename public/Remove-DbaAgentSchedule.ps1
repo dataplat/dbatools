@@ -17,18 +17,24 @@ function Remove-DbaAgentSchedule {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Schedule
-        The name of the job schedule.
-
-        Please note that there can be several schedules with the same name. These differ then only in the Id or the ScheduleUid.
+        Specifies the name(s) of SQL Server Agent schedules to remove from the msdb database.
+        Use this when you know the schedule name but need to be aware that multiple schedules can share the same name.
+        When multiple schedules have identical names, you'll need to use -Id or -ScheduleUid to target a specific schedule.
 
     .PARAMETER ScheduleUid
-        The unique identifier of the schedule.
+        Specifies the unique GUID identifier of specific SQL Server Agent schedules to remove.
+        Use this when you need to target an exact schedule, especially when multiple schedules share the same name.
+        The ScheduleUid ensures you're removing the precise schedule without ambiguity.
 
     .PARAMETER Id
-        The Id of the schedule.
+        Specifies the numeric schedule ID(s) to remove from SQL Server Agent.
+        Use this when you have the specific schedule ID number, typically obtained from Get-DbaAgentSchedule output.
+        The ID provides an alternative to name-based removal when dealing with duplicate schedule names.
 
     .PARAMETER InputObject
-        A collection of schedules (such as returned by Get-DbaAgentSchedule), to be removed.
+        Accepts schedule objects from the pipeline, typically from Get-DbaAgentSchedule output.
+        Use this when you want to filter schedules first with Get-DbaAgentSchedule, then pipe the results for removal.
+        This approach allows for complex filtering and review before deletion.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -42,7 +48,9 @@ function Remove-DbaAgentSchedule {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        Remove the schedules even if they where used in one or more jobs.
+        Bypasses the protection that prevents removal of schedules currently assigned to jobs.
+        Without this parameter, schedules in use by jobs are protected and will not be removed.
+        Use this when you need to clean up schedules and automatically remove their job associations first.
 
     .NOTES
         Tags: Agent, Job, Schedule

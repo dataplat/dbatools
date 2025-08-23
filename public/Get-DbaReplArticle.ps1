@@ -19,16 +19,20 @@ function Get-DbaReplArticle {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to examine for replication articles. Only articles from publications in these databases will be returned.
+        Use this when you need to focus on replication articles within specific databases rather than scanning all databases on the instance.
 
     .PARAMETER Publication
-        Specifies one or more publication(s) to process. If unspecified, all publications will be processed.
+        Filters results to articles within specific replication publications. Only articles from these named publications will be returned.
+        Use this when troubleshooting a specific publication or when you need to audit articles within particular publications rather than all publications in the database.
 
-   .PARAMETER Schema
-        Specifies one or more schema(s) to process. If unspecified, all schemas will be processed.
+    .PARAMETER Schema
+        Filters articles by the schema of their source objects (tables, views, or procedures). Only articles whose source objects belong to these schemas will be returned.
+        Use this when you need to examine replication articles for objects within specific schemas, such as when troubleshooting schema-specific replication issues.
 
     .PARAMETER Name
-        Specify the name of one or more article(s) to process. If unspecified, all articles will be processed.
+        Filters results to articles with specific names. Only articles matching these exact names will be returned.
+        Use this when you need to examine specific replication articles by name, such as when troubleshooting issues with particular replicated objects.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

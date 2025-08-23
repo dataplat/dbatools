@@ -22,19 +22,24 @@ function New-DbaCustomError {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER MessageID
-        An integer between 50001 and 2147483647.
+        Specifies the unique identifier for the custom error message, ranging from 50001 to 2147483647. Choose an ID that doesn't conflict with existing custom messages in your environment.
+        Use sequential numbering for organization, such as 60000-60999 for application errors and 61000-61999 for stored procedure validation errors.
 
     .PARAMETER Severity
-        Severity level between 1 and 25.
+        Sets the severity level from 1 to 25, which determines how SQL Server handles the error when raised. Levels 1-10 are informational, 11-16 are user errors that can be corrected, 17-19 are non-fatal resource errors, and 20-25 are fatal system errors.
+        Most custom application errors use severity 16, while validation errors often use 11-15 depending on whether the application should continue processing.
 
     .PARAMETER MessageText
-        Error message text with max length of 255 characters.
+        Defines the error message text displayed when the custom error is raised, with a maximum length of 255 characters. Use clear, actionable language that helps developers and users understand what went wrong.
+        Include parameter placeholders using printf-style formatting (like %s, %d) when the message needs dynamic values at runtime.
 
     .PARAMETER Language
-        Language for this message. The valid values for Language are contained in the Name and Alias columns from sys.syslanguages.
+        Specifies the language for the error message using values from sys.syslanguages (Name or Alias columns). Defaults to 'English' if not specified.
+        Create the U.S. English version first before adding other languages, as SQL Server requires the English version to exist with the same severity level before non-English versions can be added.
 
     .PARAMETER WithLog
-        Always write this message to the Windows application log and the SQL Server Error Log when it occurs.
+        Enables automatic logging of this error message to both the Windows Application Log and SQL Server Error Log whenever the error is raised.
+        Use this for critical errors that require audit trails or monitoring alerts, but avoid for frequently occurring validation errors to prevent log flooding.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

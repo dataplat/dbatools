@@ -20,40 +20,52 @@ function Invoke-DbaDbPiiScan {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Databases to process through
+        Specifies the databases to scan for potential PII data. Required parameter - at least one database must be specified.
+        Use this to target specific databases rather than scanning entire SQL Server instances.
 
     .PARAMETER Table
-        Table(s) to process. By default all the tables will be processed
+        Limits the scan to specific tables within the target databases. Accepts multiple table names.
+        Use this when you need to focus PII scanning on known tables containing sensitive data rather than scanning all tables.
 
     .PARAMETER Column
-        Column(s) to process. By default all the columns will be processed
+        Restricts the scan to specific columns within the target tables. Accepts multiple column names.
+        Use this when you want to validate specific columns suspected of containing PII or to recheck previously identified columns.
 
     .PARAMETER Country
-        Filter out the patterns and known types for one or more countries
+        Filters PII pattern matching to specific countries using full country names (e.g., "United States", "Canada").
+        Use this when your data contains region-specific formats like phone numbers or postal codes that should only match certain countries.
 
     .PARAMETER CountryCode
-        Filter out the patterns and known types for one or more country code
+        Filters PII pattern matching to specific countries using ISO country codes (e.g., "US", "CA", "GB").
+        Use this for more precise regional filtering when you know the specific country codes for your data regions.
 
     .PARAMETER SampleCount
-        Amount of rows to sample to make an assessment. The default is 100
+        Sets the number of data rows to examine per column for pattern matching. Default is 100 rows.
+        Increase this value for more thorough scanning of large tables, or decrease it to speed up scans of tables with consistent data patterns.
 
     .PARAMETER KnownNameFilePath
-        Points to a file containing the custom known names. Custom scan definitions can be specified using the format seen in <dbatools module root>\bin\datamasking\pii-knownnames.json.
+        Specifies a JSON file path containing custom column name patterns that indicate PII data.
+        Use this to add organization-specific column naming conventions that should be flagged as potential PII beyond the default patterns.
 
     .PARAMETER PatternFilePath
-        Points to a file containing the custom patterns. Custom scan definitions can be specified using the format seen in <dbatools module root>\bin\datamasking\pii-patterns.json.
+        Specifies a JSON file path containing custom regex patterns for identifying PII data within column values.
+        Use this to add custom data patterns specific to your organization or industry that aren't covered by the default patterns.
 
     .PARAMETER ExcludeDefaultKnownName
-        Excludes the default known names
+        Disables the built-in column name patterns for PII detection, using only custom patterns if provided.
+        Use this when the default column name patterns generate too many false positives for your specific database schema conventions.
 
     .PARAMETER ExcludeDefaultPattern
-        Excludes the default patterns
+        Disables the built-in data value patterns for PII detection, using only custom patterns if provided.
+        Use this when the default data patterns don't match your data formats or generate excessive false positives.
 
     .PARAMETER ExcludeTable
-        Exclude certain tables
+        Prevents scanning of specified tables even if they would otherwise be included in the scan scope.
+        Use this to skip known system tables, staging tables, or tables confirmed to not contain PII data.
 
     .PARAMETER ExcludeColumn
-        Exclude certain columns
+        Prevents scanning of specified columns even if they would otherwise be included in the scan scope.
+        Use this to skip columns like timestamps, IDs, or other fields confirmed to not contain PII data.
 
     .PARAMETER Force
         Forcefully execute commands when needed

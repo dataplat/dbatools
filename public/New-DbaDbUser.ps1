@@ -17,33 +17,40 @@ function New-DbaDbUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all user databases will be processed.
+        Specifies which databases to create the user in. Accepts multiple database names separated by commas.
+        If not specified, the user will be created in all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more database(s) to exclude from processing.
+        Excludes specific databases from user creation when processing all databases on an instance.
+        Use this to skip databases where you don't want the user created, such as read-only or archived databases.
 
     .PARAMETER IncludeSystem
-        If this switch is enabled, also system databases will be processed.
+        Creates the user in system databases (master, model, msdb, tempdb) in addition to user databases.
+        Typically used when creating maintenance or administrative users that need access to system databases.
 
     .PARAMETER User
-        When specified, the user will have this name. If not specified but -Login is used, the user will have the same name as the login.
+        Sets the name of the database user to be created. Required for contained users, external provider users, and users without logins.
+        If not specified when using -Login, the user name will match the login name.
 
     .PARAMETER Login
-        When specified, the user will be associated to this SQL login.
+        Maps the database user to an existing SQL Server login for authentication.
+        The login must already exist on the instance before creating the user.
 
     .PARAMETER Password
-        When specified, the user will be created as a contained user.
-        Standalone databases partial containment should be turned on to succeed. By default, in Azure SQL databases this is turned on.
+        Creates a contained database user with the specified password, allowing authentication without a server-level login.
+        The database must have containment enabled (partial containment) for this to work. Azure SQL databases have this enabled by default.
 
     .PARAMETER ExternalProvider
-        When specified, the user will be created for Azure AD Authentication.
-        Equivalent to T-SQL: 'CREATE USER [claudio@********.onmicrosoft.com] FROM EXTERNAL PROVIDER`
+        Creates a user for Azure Active Directory authentication in Azure SQL databases or SQL Server with AAD integration.
+        The User parameter should contain the full AAD principal name (user@domain.com or groupname).
 
     .PARAMETER DefaultSchema
-        The default database schema for the user. If not specified this value will default to dbo.
+        Sets the default schema that will be used when the user creates objects without specifying a schema.
+        Defaults to 'dbo' if not specified. The schema must already exist in the target database.
 
     .PARAMETER Force
-        If user exists, drop and recreate.
+        Drops and recreates the user if it already exists in the database.
+        Use this when you need to reset a user's properties or when automation scripts need to ensure a clean user state.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

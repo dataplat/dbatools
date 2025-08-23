@@ -17,32 +17,40 @@ function Backup-DbaDbCertificate {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Certificate
-        Exports certificate that matches the name(s).
+        Specifies the names of specific certificates to export instead of backing up all certificates on the instance.
+        Use this when you only need to backup certain certificates, such as TDE certificates or specific application certificates.
 
     .PARAMETER Database
-        Exports the encryptor for specific database(s).
+        Limits the backup operation to certificates associated with specific databases only.
+        Use this when you need to backup certificates for particular databases, especially before database migrations or when creating targeted disaster recovery plans.
 
     .PARAMETER ExcludeDatabase
-        Database(s) to skip when exporting encryptors.
+        Specifies databases whose certificates should be excluded from the backup operation.
+        Use this to skip system databases or test databases when performing bulk certificate exports across the instance.
 
     .PARAMETER EncryptionPassword
-        A string value that specifies the secure password to encrypt the private key.
+        Secure password used to encrypt the private key (.pvk) file during export, enabling backup of both certificate and private key components.
+        Required when you need to backup the private key for disaster recovery scenarios where the certificate must be restored with the ability to decrypt data.
 
     .PARAMETER DecryptionPassword
-        Secure string used to decrypt the private key.
+        Password required to decrypt the certificate's existing private key before it can be re-encrypted for backup.
+        Use this when the certificate was created with a password or imported from another source that had password protection.
 
     .PARAMETER Path
-        The path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
+        Directory path on the SQL Server where certificate backup files will be saved, specified from the SQL Server's perspective.
+        Defaults to the instance's backup directory if not specified. Use UNC paths for network storage or local paths accessible by the SQL Server service account.
 
     .PARAMETER Suffix
-        The suffix of the filename of the exported certificate.
+        Text appended to the end of backup file names to help organize or identify different backup sets.
+        Use this to distinguish between different backup runs or environments, such as "Prod" or "DR-Test".
 
     .PARAMETER FileBaseName
-        Override the default naming convention with a fixed name for the certificate and private key file name, useful when exporting a single certificate.
-        ".cer" will be appended to the certificate file name and ".pvk" will be appended to the private key file name.
+        Custom base name for the backup files instead of the default "instance-database-certificate" naming format.
+        Use this when exporting a single certificate and you want specific file names for easier identification or scripted restore processes.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDbCertificate
+        Certificate objects piped from Get-DbaDbCertificate for processing specific certificates found by that command.
+        Use this parameter when you need to filter or validate certificates before backing them up.
 
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.

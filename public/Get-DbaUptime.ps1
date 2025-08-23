@@ -17,7 +17,8 @@ function Get-DbaUptime {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
+        Specifies Windows credentials to connect to the hosting server for retrieving Windows boot time and uptime information.
+        Use this when you need different credentials to access the Windows server than your current PowerShell session, such as when querying servers in different domains or when running under a service account that lacks WMI access.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

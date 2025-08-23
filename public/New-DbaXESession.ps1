@@ -17,7 +17,8 @@ function New-DbaXESession {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The Name of the session to be created.
+        Specifies the name for the new Extended Events session. Session names must be unique within the SQL Server instance and follow SQL Server identifier naming rules.
+        Choose descriptive names that indicate the monitoring purpose, such as "Query_Performance_Monitor" or "Security_Audit_Session".
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

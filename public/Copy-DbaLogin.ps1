@@ -31,37 +31,48 @@ function Copy-DbaLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
+        Specifies which SQL Server logins to copy from the source instance. Accepts wildcards and arrays of login names.
+        Use this when you need to copy specific logins rather than all logins, such as during application migrations or when setting up users for specific databases.
 
     .PARAMETER ExcludeLogin
-        The login(s) to exclude. Options for this list are auto-populated from the server.
+        Specifies which logins to skip during the copy operation. Accepts wildcards and arrays of login names.
+        Useful for excluding test accounts, service accounts that should remain environment-specific, or logins that already exist on the destination with different configurations.
 
     .PARAMETER ExcludeSystemLogins
-        If this switch is enabled, NT SERVICE accounts will be skipped.
+        Excludes NT SERVICE accounts and other system-generated logins from the copy operation.
+        Use this during server migrations when you don't want to copy OS-level service accounts that may differ between environments.
 
     .PARAMETER ExcludePermissionSync
-        Skips permission syncs
+        Skips copying server roles, database permissions, and security mappings for the login accounts.
+        Use this when you only need the login accounts created but plan to configure permissions separately, or when copying logins for testing purposes.
 
     .PARAMETER SyncSaName
-        If this switch is enabled, the name of the sa account will be synced between Source and Destination
+        Renames the destination sa account to match the source sa account name if they differ.
+        Use this during migrations when your organization has renamed the sa account for security purposes and you need consistent naming across instances.
 
     .PARAMETER OutFile
-        Calls Export-DbaLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
+        Exports login creation scripts to a T-SQL file instead of copying directly to a destination instance.
+        Use this to generate scripts for manual review, version control, or deployment through automated processes rather than performing immediate migration.
 
     .PARAMETER InputObject
-        Takes the parameters required from a Login object that has been piped into the command
+        Accepts login objects from Get-DbaLogin or other dbatools commands through the pipeline.
+        Use this when you want to filter or manipulate login objects before copying, such as selecting logins through Out-GridView or combining multiple sources.
 
     .PARAMETER NewSid
-        Ignore sids from the source login objects to generate new sids on the destination server. Useful when copying login onto the same server
+        Forces generation of new Security Identifiers (SIDs) for copied logins instead of preserving original SIDs.
+        Use this when copying logins to the same instance (login cloning) or when SID conflicts exist on the destination server.
 
     .PARAMETER LoginRenameHashtable
-        Pass a hash table into this parameter to create logins under different names based on hashtable mapping.
+        Renames logins during copy using a hashtable with old names as keys and new names as values.
+        Use this for login consolidation, environment-specific naming conventions, or when resolving naming conflicts during migrations.
 
     .PARAMETER ObjectLevel
-        Include object-level permissions for each user associated with copied login.
+        Copies granular object-level permissions (table, view, procedure permissions) in addition to database and server roles.
+        Use this for complete security replication when applications rely on specific object permissions rather than just role memberships.
 
     .PARAMETER KillActiveConnection
-        A login cannot be dropped when it has active connections on the instance. If this switch is enabled, all active connections and sessions on Destination will be killed.
+        Terminates active sessions for logins being replaced when using -Force, allowing the drop and recreate operation to proceed.
+        Use this during maintenance windows when you need to force login replacement despite active connections, but ensure users are notified of potential disruption.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -70,7 +81,8 @@ function Copy-DbaLogin {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
+        Drops and recreates existing logins on the destination server, transferring ownership of databases and SQL Agent jobs to 'sa' first.
+        Use this when you need to update login passwords or properties that can't be modified in place, but ensure job ownership changes are acceptable.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

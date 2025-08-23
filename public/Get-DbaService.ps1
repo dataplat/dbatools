@@ -13,10 +13,12 @@ function Get-DbaService {
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target computer(s).
+        Specifies the target computer(s) to retrieve SQL Server services from. Accepts computer names, IP addresses, or FQDN.
+        Use this when you need to check service status across multiple servers in your environment.
 
     .PARAMETER InstanceName
-        Only returns services that belong to the specific instances on all target computers.
+        Filters results to show only services belonging to the specified SQL Server instance names.
+        Use this when you need to focus on specific instances rather than all SQL Server services on the target computers.
 
     .PARAMETER SqlInstance
         Use a combination of computername and instancename to get the SQL Server related services for specific instances on specific computers.
@@ -27,16 +29,16 @@ function Get-DbaService {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Type
-        Use -Type to collect only services of the desired SqlServiceType.
-        Can be one of the following: "Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad"
+        Filters results to specific SQL Server service types such as Database Engine, SQL Agent, or Reporting Services.
+        Use this when troubleshooting specific service types or performing targeted service management operations. Can be one of the following: "Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad"
 
     .PARAMETER ServiceName
-        Can be used to specify service names explicitly, without looking for service types/instances.
+        Specifies exact Windows service names to retrieve, bypassing automatic service discovery.
+        Use this when you know the specific service names and want to avoid the overhead of scanning for all SQL Server services.
 
     .PARAMETER AdvancedProperties
-        Collect additional properties from the SqlServiceAdvancedProperty Namespace
-        This collects information about Version, Service Pack Level", SkuName, Clustered status and the Cluster Service Name
-        This adds additional overhead to the command.
+        Includes additional service properties such as SQL Server version, service pack level, SKU name, and cluster information.
+        Use this when you need detailed service information for inventory, compliance, or troubleshooting purposes. Note that this adds processing time to the command.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

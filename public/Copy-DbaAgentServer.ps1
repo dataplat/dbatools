@@ -9,33 +9,32 @@ function Copy-DbaAgentServer {
         You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Source SQL Server instance containing the Agent objects you want to copy. All jobs, schedules, operators, alerts, proxies, and server properties will be migrated from this instance.
+        Must have sysadmin access and be SQL Server 2000 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Authentication credentials for connecting to the Source SQL Server instance. Use this when you need SQL Server authentication instead of Windows authentication.
+        Create credentials using Get-Credential and pass them to this parameter. Common when source server is in different domain or requires SQL login.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Target SQL Server instance(s) where Agent objects will be copied. Accepts multiple instances to copy the same configuration to several servers at once.
+        Must have sysadmin access and be SQL Server 2000 or higher. Useful for standardizing Agent configurations across development, test, and production environments.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Authentication credentials for connecting to the Destination SQL Server instance(s). Use this when you need SQL Server authentication instead of Windows authentication.
+        Create credentials using Get-Credential and pass them to this parameter. Required when destination servers use different authentication than your current context.
 
     .PARAMETER DisableJobsOnDestination
-        If this switch is enabled, the jobs will be disabled on Destination after copying.
+        Disables all copied jobs on the destination instance after migration completes. Jobs will exist but won't run until manually enabled.
+        Use this when copying to test environments where you don't want production jobs running automatically, or during staged migrations where jobs should remain inactive initially.
 
     .PARAMETER DisableJobsOnSource
-        If this switch is enabled, the jobs will be disabled on Source after copying.
+        Disables all jobs on the source instance after copying them to destination. Jobs will exist but won't run until manually re-enabled.
+        Use this during server migrations when you want to prevent jobs from running on the old server after moving them to the new instance.
 
     .PARAMETER ExcludeServerProperties
-        Skips the migration of Agent Server Properties (job history log, service state restart preferences, error log location, etc)
+        Skips copying SQL Agent server-level configuration like job history retention settings, error log locations, database mail profiles, and service restart preferences.
+        Use this when you only want to copy jobs and schedules but keep the destination server's existing Agent configuration settings intact.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -49,7 +48,8 @@ function Copy-DbaAgentServer {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, existing objects on Destination with matching names from Source will be dropped, then copied.
+        Overwrites existing Agent objects on destination that have matching names from source. Objects are dropped first, then recreated with source configuration.
+        Use this when you want to ensure destination matches source exactly, replacing any existing jobs, operators, or schedules with conflicting names.
 
     .NOTES
         Tags: Migration, SqlServerAgent, SqlAgent

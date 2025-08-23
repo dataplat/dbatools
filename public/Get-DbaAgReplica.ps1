@@ -17,13 +17,16 @@ function Get-DbaAgReplica {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Specify the availability groups to query.
+        Specifies which availability groups to query for replica information. Accepts multiple values and wildcards for pattern matching.
+        Use this when you need to focus on specific availability groups instead of retrieving replicas from all AGs on the instance.
 
     .PARAMETER Replica
-        Return only specific replicas.
+        Filters results to return only the specified replica names. Accepts multiple values for querying specific replicas across availability groups.
+        Use this when troubleshooting specific replicas or when you only need information about particular secondary replicas in your environment.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup.
+        Accepts availability group objects piped from Get-DbaAvailabilityGroup, allowing for more efficient processing in pipeline scenarios.
+        Use this when chaining commands or when you already have availability group objects and want to retrieve their replica details without additional server queries.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

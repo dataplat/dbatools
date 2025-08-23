@@ -7,37 +7,32 @@ function Copy-DbaRegServer {
         Migrates registered servers and server groups from a source Central Management Server to a destination CMS, preserving the hierarchical structure of groups and subgroups. This eliminates the need to manually recreate complex server organization structures when setting up new environments or consolidating server management. The function handles conflicts by either skipping existing items or dropping and recreating them when Force is specified.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Source SQL Server instance containing the Central Management Server to copy from. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        This is where your existing CMS groups and registered servers are currently stored.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the source SQL Server instance when Windows Authentication is not available. Accepts PowerShell credentials (Get-Credential).
+        Use this when the source server requires SQL Authentication or different Windows credentials than your current session.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Destination SQL Server instance where CMS groups and registered servers will be copied to. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        This instance will become the new Central Management Server containing the migrated server registrations.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the destination SQL Server instance when Windows Authentication is not available. Accepts PowerShell credentials (Get-Credential).
+        Use this when the destination server requires SQL Authentication or different Windows credentials than your current session.
 
     .PARAMETER Group
-        This is an auto-populated array that contains your Central Management Server top-level groups on Source. You can specify one, many or none.
-
-        If Group is not specified, all groups in your Central Management Server will be copied.
+        Specifies which top-level CMS groups to copy from the source server. Accepts one or more group names as an array.
+        When omitted, all groups and their registered servers are copied. Use this to selectively migrate specific environments like 'Production' or 'Development' groups.
 
     .PARAMETER SwitchServerName
-        If this switch is enabled, all instance names will be changed from Source to Destination.
-
-        Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server.
+        Replaces source server name references with the destination server name during migration.
+        Use this when the source CMS server itself is registered within the groups and you want it renamed to the destination server name. Prevents conflicts since CMS cannot register itself as a managed server.
 
     .PARAMETER Force
-        If this switch is enabled, group(s) will be dropped and recreated if they already exists on destination.
+        Drops and recreates existing groups and registered servers at the destination instead of skipping them.
+        Use this to overwrite conflicting CMS configurations when consolidating multiple Central Management Servers or updating existing registrations.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

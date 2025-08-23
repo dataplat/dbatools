@@ -17,13 +17,16 @@ function Get-DbaAgListener {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Specify the availability groups to query.
+        Specifies which availability groups to include when retrieving listener information. Supports wildcards for pattern matching.
+        Use this when you only need listener details for specific availability groups rather than all groups on the instance.
 
     .PARAMETER Listener
-        Return only specific listeners.
+        Specifies which availability group listeners to return by name. Accepts multiple listener names for filtering results.
+        Use this when you need to examine specific listeners during troubleshooting or when documenting particular AG configurations.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline operations.
+        Use this when chaining commands to get listener details for specific availability groups you've already retrieved.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

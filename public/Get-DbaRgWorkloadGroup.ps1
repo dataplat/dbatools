@@ -17,7 +17,8 @@ function Get-DbaRgWorkloadGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaRgResourcePool
+        Accepts resource pool objects from Get-DbaRgResourcePool to retrieve workload groups from specific pools only.
+        Use this to filter workload groups when you need to examine groups within particular resource pools instead of all workload groups across the instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

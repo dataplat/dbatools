@@ -30,12 +30,14 @@ function Reset-DbaAdmin {
         Instead of using Login and SecurePassword, you can just pass in a credential object.
 
     .PARAMETER Login
-        By default, the Login parameter is "sa" but any other SQL or Windows account can be specified. If a login does not currently exist, it will be added.
-
-        When adding a Windows login to remote servers, ensure the SQL Server can add the login (ie, don't add WORKSTATION\Admin to remoteserver\instance. Domain users and Groups are valid input.
+        Specifies the login account to reset or create with sysadmin privileges. Defaults to "sa" if not specified.
+        Use this when you need to regain access through a specific account rather than the default sa login. Accepts both SQL authentication logins (like "sqladmin") and Windows authentication accounts (like "DOMAIN\User" or "DOMAIN\Group").
+        If the login doesn't exist, it will be created automatically. For Windows logins on remote servers, use domain accounts that the SQL Server can validate, not local machine accounts.
 
     .PARAMETER SecurePassword
-        By default, if a SQL Login is detected, you will be prompted for a password. Use this to securely bypass the prompt.
+        Provides the password for SQL authentication logins as a SecureString to avoid interactive prompts.
+        Use this when automating the reset process or when you don't want to be prompted to enter the password manually. Only required for SQL logins, not Windows authentication accounts.
+        The password will be applied during login creation or when resetting an existing SQL login's password.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -44,7 +46,9 @@ function Reset-DbaAdmin {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
+        Bypasses all confirmation prompts and proceeds with the service restart and login reset operations.
+        Use this when you need to automate the recovery process or when you're certain about proceeding without manual confirmation. This includes the high-impact confirmation for stopping and restarting SQL Server services.
+        Does not actually drop and recreate logins - the existing description appears to be incorrect for this function.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

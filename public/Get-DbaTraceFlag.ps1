@@ -17,7 +17,8 @@ function Get-DbaTraceFlag {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER TraceFlag
-        Use this switch to filter to a specific Trace Flag.
+        Specifies one or more trace flag numbers to filter the results. Only returns information for the specified trace flags if they are currently enabled.
+        Use this when you need to check the status of specific trace flags rather than reviewing all enabled flags on the instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

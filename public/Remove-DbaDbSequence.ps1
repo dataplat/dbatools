@@ -21,16 +21,20 @@ function Remove-DbaDbSequence {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to search for sequences to remove. Accepts wildcards for pattern matching.
+        Use this to limit sequence removal to specific databases instead of searching all databases on the instance.
 
     .PARAMETER Sequence
-        The name(s) of the sequence(s).
+        Specifies the name(s) of the sequences to remove. Accepts wildcards for pattern matching.
+        Use this when you know the exact sequence names or want to remove sequences matching a naming pattern.
 
     .PARAMETER Schema
-        The name(s) of the schema for the sequence(s).
+        Filters sequences to remove by schema name. Accepts wildcards for pattern matching.
+        Useful when you need to remove sequences from specific schemas only, such as during application module cleanup.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbSequence.
+        Accepts sequence objects piped from Get-DbaDbSequence for removal.
+        This allows you to first review sequences with Get-DbaDbSequence before selectively removing them.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

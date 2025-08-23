@@ -17,10 +17,13 @@ function Get-DbaLastBackup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to check for backup history. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases rather than scanning all databases on the instance.
+        Helpful for monitoring critical production databases or troubleshooting backup issues on particular databases.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more database(s) to exclude from processing.
+        Excludes specific databases from the backup history check. Commonly used to skip system databases or test databases.
+        Use this when you want to check most databases but exclude certain ones like tempdb, development databases, or databases with known backup exemptions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

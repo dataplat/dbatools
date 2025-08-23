@@ -17,7 +17,8 @@ function Get-DbaSuspectPage {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database to return. If unspecified, all records will be returned.
+        Filters suspect page results to a specific database name. When omitted, returns suspect pages from all databases on the instance.
+        Use this when investigating corruption issues in a particular database or when you need to focus troubleshooting efforts on a single database.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

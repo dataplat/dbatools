@@ -17,7 +17,9 @@ function Remove-DbaServerRole {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
-        The server-role that will be removed.
+        Specifies the name of the custom server-level role to remove from the SQL Server instance.
+        Only user-defined server roles can be removed - built-in roles like sysadmin or serveradmin are protected.
+        Use this when you need to clean up obsolete custom roles after application decommissioning or security reviews.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -31,7 +33,9 @@ function Remove-DbaServerRole {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER InputObject
-        Piped server-role objects.
+        Accepts server role objects from Get-DbaServerRole for pipeline operations.
+        Use this when you need to remove multiple roles or want to filter roles before removal.
+        Allows for more complex scenarios like removing all custom roles that match specific criteria.
 
     .NOTES
         Tags: Role, Login

@@ -18,25 +18,38 @@ function New-DbaLinkedServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LinkedServer
-        The name of the linked server.
+        Specifies the name for the new linked server object in SQL Server. This name must be unique on the SQL Server instance.
+        Use a descriptive name that identifies the remote data source or its purpose to help other DBAs understand the connection.
 
     .PARAMETER ServerProduct
-        The product name of the data source.
+        Specifies the product name of the remote data source as it appears in sys.servers.product column.
+        Common values include 'SQL Server' for SQL Server instances, 'Oracle' for Oracle databases, or custom names for other OLE DB data sources.
+        This is primarily used for documentation and identification purposes in system views.
 
     .PARAMETER Provider
-        The unique ID of the provider.
+        Specifies the OLE DB provider used to connect to the remote data source.
+        Common providers include 'SQLNCLI' or 'MSOLEDBSQL' for SQL Server, 'OraOLEDB.Oracle' for Oracle, or 'Microsoft.ACE.OLEDB.12.0' for Access databases.
+        The provider must be installed and registered on the SQL Server instance.
 
     .PARAMETER DataSource
-        The name of the data source.
+        Specifies the network name or connection string for the remote data source.
+        For SQL Server instances, this is typically the server name or server\instance format.
+        For other data sources, this could be a TNS name for Oracle or a file path for file-based sources.
 
     .PARAMETER Location
-        The location of the database.
+        Specifies the physical location information for the data source, typically used for documentation purposes.
+        This parameter is rarely required for most linked server configurations and is primarily used with specific OLE DB providers.
+        Leave empty unless specifically required by your data source provider.
 
     .PARAMETER ProviderString
-        The provider connection string.
+        Specifies additional connection properties passed directly to the OLE DB provider.
+        Use this for provider-specific settings like connection pooling, timeouts, or authentication options that cannot be set through other parameters.
+        The format and available options depend on the specific OLE DB provider being used.
 
     .PARAMETER Catalog
-        The catalog or default database.
+        Specifies the default database or catalog name to use when connecting to the remote data source.
+        For SQL Server linked servers, this sets the default database context for queries that don't specify a database name.
+        This is equivalent to the 'Initial Catalog' connection property in connection strings.
 
     .PARAMETER SecurityContext
         Specifies the security context option found on the SSMS Security tab of the linked server. This is a separate configuration from the mapping of a local login to a remote login. It specifies the connection behavior for a login that is not explicitly mapped. 'NoConnection' means that a connection will not be made. 'WithoutSecurityContext' means the connection will be made without using a security context. 'CurrentSecurityContext' means the connection will be made using the login's current security context. 'SpecifiedSecurityContext' means the specified username and password will be used. The default value is 'WithoutSecurityContext'. For more details see the Microsoft documentation for sp_addlinkedsrvlogin and also review the SSMS Security tab of the linked server.
@@ -48,7 +61,9 @@ function New-DbaLinkedServer {
         Specifies the remote login password. This param is used when SecurityContext is set to SpecifiedSecurityContext. To map a local login to a remote login use New-DbaLinkedServerLogin. NOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using this parameter.
 
     .PARAMETER InputObject
-        Allows piping from Connect-DbaInstance.
+        Accepts SQL Server SMO objects from the pipeline, typically from Connect-DbaInstance.
+        This allows you to create linked servers on multiple instances by piping server connections to this function.
+        Use this when you need to create the same linked server configuration across multiple SQL Server instances.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

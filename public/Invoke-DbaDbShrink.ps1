@@ -34,51 +34,48 @@ function Invoke-DbaDbShrink {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to shrink on the target instance. Accepts wildcard patterns and multiple database names.
+        Use this when you need to shrink specific databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server.
+        Excludes specific databases from the shrink operation when processing multiple databases. Accepts wildcard patterns.
+        Useful when shrinking all user databases but want to skip critical production databases or those with specific maintenance windows.
 
     .PARAMETER AllUserDatabases
-        Run command against all user databases.
+        Targets all user databases on the instance, excluding system databases (master, model, msdb, tempdb).
+        Use this for maintenance operations across an entire instance while preserving system database integrity.
 
     .PARAMETER PercentFreeSpace
-        Specifies how much free space to leave, defaults to 0.
+        Sets the percentage of free space to maintain in the database files after shrinking, ranging from 0-99. Defaults to 0.
+        Leave some free space (10-20%) to accommodate normal database growth and reduce the need for frequent auto-growth events.
 
     .PARAMETER ShrinkMethod
-        Specifies the method that is used to shrink the database
-        Default
-        Data in pages located at the end of a file is moved to pages earlier in the file. Files are truncated to reflect allocated space.
-        EmptyFile
-        Migrates all of the data from the referenced file to other files in the same filegroup. (DataFile and LogFile objects only).
-        NoTruncate
-        Data in pages located at the end of a file is moved to pages earlier in the file.
-        TruncateOnly
-        Data distribution is not affected. Files are truncated to reflect allocated space, recovering free space at the end of any file.
+        Controls how SQL Server performs the shrink operation. Default moves data pages and truncates files.
+        EmptyFile migrates all data to other files in the filegroup. NoTruncate moves pages but doesn't truncate. TruncateOnly reclaims space without moving data.
+        Use TruncateOnly when possible as it's the least resource-intensive and doesn't cause data movement or fragmentation.
 
     .PARAMETER StatementTimeout
-        Timeout in minutes. Defaults to infinity (shrinks can take a while).
+        Sets the command timeout in minutes for the shrink operation. Defaults to 0 (infinite timeout).
+        Large database shrinks can take hours to complete, so the default allows operations to run without timing out.
 
     .PARAMETER LogsOnly
         Deprecated. Use FileType instead.
 
     .PARAMETER FileType
-        Specifies the files types that will be shrunk
-        All - All Data and Log files are shrunk, using database shrink (Default)
-        Data - Just the Data files are shrunk using file shrink
-        Log - Just the Log files are shrunk using file shrink
+        Determines which database files to target for shrinking: All (data and log files), Data (only data files), or Log (only log files). Defaults to All.
+        Use Data when you only need to reclaim space from data files after large deletions. Use Log to specifically target transaction log files after maintenance operations.
 
     .PARAMETER StepSize
-        Measured in bits - but no worries! PowerShell has a very cool way of formatting bits. Just specify something like: 1MB or 10GB. See the examples for more information.
-
-        If specified, this will chunk a larger shrink operation into multiple smaller shrinks.
-        If shrinking a file by a large amount there are benefits of doing multiple smaller chunks.
+        Breaks large shrink operations into smaller chunks of the specified size. Use PowerShell size notation like 100MB or 1GB.
+        Chunked shrinks reduce resource contention and allow for better progress monitoring during large shrink operations. Recommended for databases being shrunk by several gigabytes.
 
     .PARAMETER ExcludeIndexStats
-        Exclude statistics about fragmentation.
+        Skips collecting index fragmentation statistics before and after the shrink operation.
+        Use this to speed up the shrink process when you don't need fragmentation analysis or are planning to rebuild indexes immediately afterward.
 
     .PARAMETER ExcludeUpdateUsage
-        Exclude DBCC UPDATE USAGE for database.
+        Skips running DBCC UPDATEUSAGE before the shrink operation to ensure accurate space usage statistics.
+        Use this to reduce operation time when space usage statistics are already current or when immediate shrinking is more important than precision.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run.
@@ -96,7 +93,8 @@ function Invoke-DbaDbShrink {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase)
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase output.
+        Use this for advanced filtering scenarios or when combining multiple database operations in a pipeline.
 
     .NOTES
         Tags: Shrink, Database

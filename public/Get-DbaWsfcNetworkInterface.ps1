@@ -11,7 +11,9 @@ function Get-DbaWsfcNetworkInterface {
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a Network or the cluster name itself.
+        Specifies the Windows Server Failover Cluster name or any cluster node name to query for network interface information.
+        Use this when troubleshooting SQL Server FCI connectivity issues or documenting cluster network topology.
+        Accepts cluster names, node names, or IP addresses of cluster resources.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

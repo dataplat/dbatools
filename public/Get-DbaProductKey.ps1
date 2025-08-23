@@ -7,7 +7,8 @@ function Get-DbaProductKey {
         Decodes SQL Server product keys from registry DigitalProductID entries across all installed instances on target computers. This is essential for license compliance auditing, asset inventory during migrations, and generating compliance reports for auditors. The command handles different SQL Server versions (2005+), supports clustered instances, and automatically identifies Express editions that don't require product keys. Works by connecting to each SQL instance to determine version and edition, then accessing registry data remotely to decode the binary product key information.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the SQL Server instances or computer names to retrieve product keys from. Accepts multiple values for bulk operations.
+        Use this when you need to audit license compliance across multiple servers or gather product key inventory during migrations.
 
     .PARAMETER Credential
         Login to the target Windows instance using alternative credentials. Windows Authentication supported. Accepts credential objects (Get-Credential)

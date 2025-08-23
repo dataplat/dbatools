@@ -17,13 +17,16 @@ function Get-DbaDbMailAccount {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Account
-        Specifies one or more account(s) to get. If unspecified, all accounts will be returned.
+        Specifies one or more Database Mail account names to retrieve. Accepts exact account names and supports multiple values.
+        Use this when you need to check specific mail accounts rather than retrieving all configured accounts on the instance.
 
     .PARAMETER ExcludeAccount
-        Specifies one or more account(s) to exclude.
+        Specifies one or more Database Mail account names to exclude from results. Accepts exact account names and supports multiple values.
+        Use this when you want to retrieve most accounts but skip specific ones, such as excluding test or deprecated accounts from auditing reports.
 
     .PARAMETER InputObject
-        Accepts pipeline input from Get-DbaDbMail.
+        Accepts SqlMail objects from the pipeline, typically from Get-DbaDbMail. Allows you to chain Database Mail commands together.
+        Use this when processing multiple instances through Get-DbaDbMail or when working with previously retrieved Database Mail configurations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

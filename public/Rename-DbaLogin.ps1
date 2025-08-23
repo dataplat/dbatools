@@ -13,9 +13,6 @@ function Rename-DbaLogin {
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-    .PARAMETER Destination
-        Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
@@ -24,13 +21,16 @@ function Rename-DbaLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        The current Login on the server - this list is auto-populated from the server.
+        Specifies the existing login name that you want to rename on the SQL Server instance.
+        This must be an exact match for a login that currently exists on the server.
 
     .PARAMETER NewLogin
-        The new Login that you wish to use. If it is a windows user login, then the SID must match.
+        Specifies the new name for the login after the rename operation.
+        For Windows logins, the new name must resolve to the same SID as the original login to maintain security mappings.
 
     .PARAMETER Force
-        Will attempt to rename any associated database users.
+        Renames corresponding database users across all databases where the login is mapped.
+        Without this parameter, only the server-level login is renamed, leaving database users unchanged. If any database user rename fails, the entire operation rolls back to maintain consistency.
 
     .PARAMETER Confirm
         Prompts to confirm actions

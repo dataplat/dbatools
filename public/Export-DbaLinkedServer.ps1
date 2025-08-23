@@ -20,22 +20,28 @@ function Export-DbaLinkedServer {
         Login to the target OS using alternative linked servers. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the directory where the linked server export file will be created. Defaults to the configured DbatoolsExport path.
+        Use this when you need the script saved to a specific folder location for organization or deployment purposes.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Specifies the complete file path and name for the exported T-SQL script, including the .sql extension.
+        Use this when you need precise control over the output filename and location, overriding the automatic naming from Path parameter.
 
     .PARAMETER LinkedServer
-        The linked server(s) to export. If unspecified, all linked servers will be processed.
+        Specifies one or more linked server names to export, supporting wildcards for pattern matching. If not specified, all linked servers on the instance will be exported.
+        Use this when you need to export specific linked servers rather than the entire linked server configuration from an instance.
 
     .PARAMETER InputObject
-        Allow credentials to be piped in from Get-DbaLinkedServer
+        Accepts linked server objects piped from Get-DbaLinkedServer, allowing you to filter and process specific linked servers before export.
+        Use this when you want to chain commands together, such as first getting linked servers with specific criteria then exporting only those results.
 
     .PARAMETER ExcludePassword
-        Exports the linked server without any sensitive information.
+        Excludes actual passwords from the exported script, replacing them with placeholder values for security purposes.
+        Use this when sharing scripts across environments or with team members where you need the linked server structure but want to protect sensitive credentials.
 
     .PARAMETER Append
-        Append to Path
+        Adds the exported linked server scripts to an existing file instead of overwriting it.
+        Use this when combining multiple linked server exports into a single deployment script or building comprehensive migration scripts over multiple runs.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

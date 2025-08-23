@@ -28,7 +28,8 @@ function Get-DbaLatchStatistic {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Threshold
-        Threshold, in percentage of all latch stats on the system. Default per Paul's post is 95%.
+        Specifies the cumulative percentage threshold for filtering which latch classes to return. Only returns latch classes that contribute to the specified percentage of total wait time.
+        Use this to focus on the most significant latch contention issues by excluding less impactful latch classes from the results. Default is 95% per Paul Randal's methodology.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

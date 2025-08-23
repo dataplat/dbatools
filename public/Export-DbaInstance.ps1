@@ -61,60 +61,49 @@ function Export-DbaInstance {
         Alternative Windows credentials for exporting Linked Servers and Credentials. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the root directory where export files will be created in a timestamped subfolder.
+        Defaults to the dbatools export path configuration setting, typically Documents\DbatoolsExport.
 
     .PARAMETER WithReplace
-        If this switch is used, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
+        Adds WITH REPLACE option to generated database restore scripts, allowing restore over existing databases.
+        Use this when you need the restore scripts to overwrite databases that already exist on the target server.
 
     .PARAMETER NoRecovery
-        If this switch is used, databases will be left in the No Recovery state to enable further backups to be added.
+        Generates database restore scripts with NORECOVERY option, leaving databases in restoring state.
+        Essential for log shipping scenarios or when you need to apply additional transaction log backups after the initial restore.
 
     .PARAMETER AzureCredential
-        Optional AzureCredential to connect to blob storage holding the backups
+        Specifies the Azure storage credential name for accessing backups stored in Azure Blob Storage.
+        Required when generating restore scripts for databases backed up to Azure storage containers.
 
     .PARAMETER IncludeDbMasterKey
-        Exports the db master key then logs into the server to copy it to the $Path
+        Exports database master keys from system databases and copies them to the export directory.
+        Critical for environments using Transparent Data Encryption (TDE) or encrypted backups where master keys are required for restoration.
 
     .PARAMETER Exclude
-        Exclude one or more objects to export
-
-        Databases
-        Logins
-        AgentServer
-        Credentials
-        LinkedServers
-        SpConfigure
-        CentralManagementServer
-        DatabaseMail
-        SysDbUserObjects
-        SystemTriggers
-        BackupDevices
-        Audits
-        Endpoints
-        ExtendedEvents
-        PolicyManagement
-        ResourceGovernor
-        ServerAuditSpecifications
-        CustomErrors
-        ServerRoles
-        AvailabilityGroups
-        ReplicationSettings
-        OleDbProvider
+        Skips specific object types from the export to reduce scope or avoid problematic areas.
+        Useful when you only need certain components or when specific features cause export issues in your environment.
+        Valid values: Databases, Logins, AgentServer, Credentials, LinkedServers, SpConfigure, CentralManagementServer, DatabaseMail, SysDbUserObjects, SystemTriggers, BackupDevices, Audits, Endpoints, ExtendedEvents, PolicyManagement, ResourceGovernor, ServerAuditSpecifications, CustomErrors, ServerRoles, AvailabilityGroups, ReplicationSettings, OleDbProvider.
 
     .PARAMETER BatchSeparator
-        Batch separator for scripting output. "GO" by default based on (Get-DbatoolsConfigValue -FullName 'formatting.batchseparator').
+        Defines the T-SQL batch separator used in generated scripts, defaults to "GO".
+        Change this if your deployment tools or target environment requires a different batch separator like semicolon or custom delimiter.
 
     .PARAMETER NoPrefix
-        If this switch is used, the scripts will not include prefix information containing creator and datetime.
+        Removes header comments from generated scripts that normally include creation timestamp and dbatools version.
+        Use this for cleaner scripts when feeding into version control systems or automated deployment pipelines that don't need metadata headers.
 
     .PARAMETER ExcludePassword
-        If this switch is used, the scripts will not include passwords for Credentials, LinkedServers or Logins.
+        Omits passwords from exported scripts for logins, credentials, and linked servers, replacing them with placeholder text.
+        Essential for security compliance when export scripts will be stored in version control or shared with other team members.
 
     .PARAMETER ScriptingOption
-        Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
+        Provides a Microsoft.SqlServer.Management.Smo.ScriptingOptions object to customize script generation behavior.
+        Use this to control advanced scripting options like check constraints, triggers, indexes, or permissions that aren't controlled by other parameters.
 
     .PARAMETER Force
-        Overwrite files in the location specified by -Path. Note: The Server Name is used when creating the folder structure.
+        Overwrites existing export files and uses a static folder name without timestamp.
+        Ideal for scheduled exports that always write to the same location, such as automated backup documentation or CI/CD integration.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

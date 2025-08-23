@@ -17,78 +17,108 @@ function Set-DbaAgentServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Enables piping agent server objects
+        Accepts SQL Server Agent JobServer objects from Get-DbaAgentServer for pipeline operations.
+        Use this when you need to configure multiple agent servers from a filtered list or modify settings on specific instances already retrieved.
 
     .PARAMETER AgentLogLevel
-        Specifies the agent log level.
-        Allowed values 1, "Errors", 2, "Warnings", 3, "Errors, Warnings", 4, "Informational", 5, "Errors, Informational", 6, "Warnings, Informational", 7, "All"
-        The text value can either be lowercase, uppercase or something in between as long as the text is correct.
+        Controls the verbosity of SQL Server Agent logging in the agent error log.
+        Use 'Errors' for production environments to minimize log size, 'Errors, Warnings' for standard monitoring, or 'All' when troubleshooting agent job failures.
+        Higher logging levels help diagnose job execution issues but increase log file growth.
 
     .PARAMETER AgentMailType
-        Specifies the agent mail type.
-        Allowed values 0, "SqlAgentMail", 1, "DatabaseMail"
-        The text value can either be lowercase, uppercase or something in between as long as the text is correct.
+        Specifies whether SQL Server Agent uses legacy SQL Agent Mail or the newer Database Mail for notifications.
+        Use 'DatabaseMail' for modern installations as SQL Agent Mail is deprecated and requires MAPI configuration.
+        Database Mail provides better security, reliability, and doesn't require Outlook or Exchange MAPI on the server.
 
     .PARAMETER AgentShutdownWaitTime
-        The Agent Shutdown Wait Time value of the server agent. The accepted value range is between 5 and 600.
+        Sets how long (in seconds) SQL Server waits for SQL Server Agent to shut down during service restart.
+        Increase this value if you have long-running jobs that need more time to complete gracefully during shutdown.
+        Default is typically 15 seconds; values between 5-600 seconds are supported.
 
     .PARAMETER DatabaseMailProfile
-        The Database Mail Profile to be used. Must exists on database mail profiles.
+        Specifies which Database Mail profile SQL Server Agent uses for sending job notifications and alerts.
+        The profile must already exist in the instance's Database Mail configuration before setting this value.
+        Use this to ensure agent notifications use the correct SMTP settings and sender address for your environment.
 
     .PARAMETER ErrorLogFile
-        Error log file location
+        Sets the file path where SQL Server Agent writes its error log.
+        Change this when you need agent logs stored in a specific location for centralized monitoring or compliance requirements.
+        Ensure the SQL Server Agent service account has write permissions to the specified path.
 
     .PARAMETER IdleCpuDuration
-        Idle CPU Duration value to be used. The accepted value range is between 20 and 86400.
+        Defines how long (in seconds) the CPU must remain below the idle threshold before SQL Server Agent considers the server idle.
+        Use this with CpuPolling to schedule jobs only when the server isn't busy with other workloads.
+        Values range from 20 seconds to 24 hours (86400 seconds); typical values are 600-1800 seconds for production servers.
 
     .PARAMETER IdleCpuPercentage
-        Idle CPU Percentage value to be used. The accepted value range is between 10 and 100.
+        Sets the CPU usage percentage threshold below which SQL Server Agent considers the server idle.
+        Configure this to prevent resource-intensive maintenance jobs from running during peak usage periods.
+        Values between 10-100 percent; commonly set to 10-25% for production servers to ensure adequate idle detection.
 
     .PARAMETER CpuPolling
-        Enable or Disable the Polling.
-        Allowed values Enabled, Disabled
+        Enables or disables CPU idle condition monitoring for job scheduling.
+        Enable this to allow jobs with idle CPU conditions to run only when server CPU usage is low.
+        Useful for scheduling maintenance tasks like index rebuilds or backups that should avoid peak usage periods.
 
     .PARAMETER LocalHostAlias
-        The value for Local Host Alias configuration
+        Specifies an alias that SQL Server Agent uses to refer to the local server in job steps and notifications.
+        Set this when the server has multiple network names or when you want job notifications to reference a specific hostname.
+        Commonly used in clustered environments or when the server is accessed by different DNS names.
 
     .PARAMETER LoginTimeout
-        The value for Login Timeout configuration. The accepted value range is between 5 and 45.
+        Sets the timeout (in seconds) for SQL Server Agent connections to SQL Server instances.
+        Increase this value if agent jobs frequently fail due to connection timeouts, especially in slow network environments.
+        Values range from 5-45 seconds; default is typically 30 seconds.
 
     .PARAMETER MaximumHistoryRows
-        Indicates the Maximum job history log size (in rows). The acceptable value range is between 2 and 999999. To turn off the job history limitations use the value -1 and specify 0 for MaximumJobHistoryRows. See the example listed below.
+        Controls the total number of job history rows retained in MSDB before old entries are purged.
+        Set this to prevent MSDB growth from excessive job history; typical values are 10000-100000 rows depending on job frequency.
+        Use -1 to disable limits (not recommended for production) or work with MaximumJobHistoryRows to control per-job retention.
 
     .PARAMETER MaximumJobHistoryRows
-        Indicates the Maximum job history rows per job. The acceptable value range is between 2 and 999999. To turn off the job history limitations use the value 0 and specify -1 for MaximumHistoryRows. See the example listed below.
+        Sets the maximum number of history rows retained per individual job.
+        Prevents any single job from consuming too much history space; typical values are 100-1000 rows per job.
+        Use 0 to disable per-job limits when MaximumHistoryRows is set to -1, or set both parameters to control overall history retention.
 
     .PARAMETER NetSendRecipient
-        The Net send recipient value
+        Specifies the network recipient for legacy net send notifications from SQL Server Agent.
+        This feature is deprecated and rarely used in modern environments; Database Mail is the preferred notification method.
+        Only configure this if you have legacy monitoring systems that still rely on net send messages.
 
     .PARAMETER ReplaceAlertTokens
-        Enable or Disable the Token replacement property.
-        Allowed values Enabled, Disabled
+        Controls whether SQL Server Agent replaces tokens in alert notification messages with actual values.
+        Enable this to include dynamic information like error details, job names, or server information in alert emails.
+        Tokens like $(ESCAPE_SQUOTE(A-ERR)) get replaced with actual error text when notifications are sent.
 
     .PARAMETER SaveInSentFolder
-        Enable or Disable the copy of the sent messages is save in the Sent Items folder.
-        Allowed values Enabled, Disabled
+        Controls whether copies of agent notification emails are saved to the Database Mail sent items.
+        Enable this for audit trails and troubleshooting notification delivery issues.
+        Disable to reduce Database Mail storage usage if you don't need to track sent notifications.
 
     .PARAMETER SqlAgentAutoStart
-        Enable or Disable the SQL Agent Auto Start.
-        Allowed values Enabled, Disabled
+        Controls whether SQL Server Agent service starts automatically when SQL Server starts.
+        Enable this on production servers to ensure scheduled jobs and monitoring continue after server restarts.
+        Disable only in development environments where automatic job execution isn't desired.
 
     .PARAMETER SqlAgentMailProfile
-        The SQL Server Agent Mail Profile to be used. Must exists on database mail profiles.
+        Specifies the legacy SQL Agent Mail profile for notifications (deprecated feature).
+        Only used when AgentMailType is set to 'SqlAgentMail'; DatabaseMailProfile is preferred for modern installations.
+        The profile must exist in the SQL Agent Mail configuration, which requires MAPI setup.
 
     .PARAMETER SqlAgentRestart
-        Enable or Disable the SQL Agent Restart.
-        Allowed values Enabled, Disabled
+        Controls whether SQL Server Agent automatically restarts if it stops unexpectedly.
+        Enable this on production servers to ensure continuous job scheduling and monitoring after agent failures.
+        The agent will attempt to restart itself if the service terminates abnormally.
 
     .PARAMETER SqlServerRestart
-        Enable or Disable the SQL Server Restart.
-        Allowed values Enabled, Disabled
+        Controls whether SQL Server Agent can restart the SQL Server service if it stops unexpectedly.
+        Enable this in environments where automatic SQL Server recovery is desired, but use caution on production systems.
+        This setting allows the agent to restart the database engine service automatically.
 
     .PARAMETER WriteOemErrorLog
-        Enable or Disable the Write OEM Error Log.
-        Allowed values Enabled, Disabled
+        Controls whether SQL Server Agent writes errors to the Windows Application Event Log.
+        Enable this to integrate agent errors with centralized Windows event monitoring and alerting systems.
+        Useful for environments that rely on Windows Event Log for monitoring and don't use SQL-specific monitoring tools.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

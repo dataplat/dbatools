@@ -21,16 +21,20 @@ function Invoke-DbaXEReplay {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The initial starting database.
+        Sets the initial database context for the replayed SQL statements. This determines which database sqlcmd connects to before executing the captured queries.
+        Use this when you need to replay workloads in a specific database context, especially when the captured queries don't include explicit database references.
 
     .PARAMETER Event
-        Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
+        Filters which Extended Event types to replay from the input stream. Defaults to sql_batch_completed and rcp_completed events.
+        Use this to replay only specific event types when you want to test particular workload patterns or exclude certain query types from the replay.
 
     .PARAMETER Raw
-        By dafault, the results of sqlcmd are collected, cleaned up and displayed. If you'd like to see all results immeidately, use Raw.
+        Shows all sqlcmd output immediately without cleanup or formatting. By default, results are collected, cleaned, and filtered for readability.
+        Use this when you need to see complete sqlcmd output including headers and formatting, or when troubleshooting query execution issues during replay.
 
     .PARAMETER InputObject
-        Accepts the object output of Read-DbaXESession.
+        Accepts Extended Event objects from Read-DbaXEFile or Read-DbaXESession containing captured SQL statements for replay.
+        This is typically piped from Read-DbaXEFile when processing Extended Event files or from Read-DbaXESession for live session data.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

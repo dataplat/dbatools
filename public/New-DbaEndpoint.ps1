@@ -17,67 +17,55 @@ function New-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The name of the endpoint. Defaults to hadr_endpoint if type is DatabaseMirroring, has to be provided for other types.
+        Specifies the name for the new endpoint. Defaults to hadr_endpoint for DatabaseMirroring endpoints.
+        Required when creating ServiceBroker, Soap, or TSql endpoints as these need unique names for identification.
 
     .PARAMETER Type
-        The type of endpoint. Defaults to DatabaseMirroring. Options: DatabaseMirroring, ServiceBroker, Soap, TSql
+        Defines the endpoint type to create. DatabaseMirroring endpoints enable availability groups and database mirroring.
+        ServiceBroker enables message queuing, Soap creates web service endpoints, and TSql allows remote connections. Defaults to DatabaseMirroring.
 
     .PARAMETER Protocol
-        The type of protocol. Defaults to tcp. Options: Tcp, NamedPipes, Http, Via, SharedMemory
+        Sets the communication protocol for the endpoint. TCP is standard for database mirroring and availability groups.
+        Use Http for SOAP endpoints, NamedPipes for local connections, or SharedMemory for same-machine communication. Defaults to Tcp.
 
     .PARAMETER Role
-        The type of role. Defaults to All. Options: All, None, Partner, Witness
+        Determines the database mirroring role this endpoint can serve. All allows the instance to act as principal, mirror, or witness.
+        Partner restricts to principal/mirror roles only, Witness allows witness-only, None disables mirroring roles. Defaults to All.
 
     .PARAMETER IPAddress
-        Specifies the IP address that the endpoint will listen on. The default is ALL. This means that the listener will accept a connection on any valid IP address.
-
-        Currently only IPv4 is supported by this command.
+        Sets which IP address the endpoint listens on for incoming connections. Use 0.0.0.0 to listen on all available interfaces.
+        Specify a particular IP address to restrict connections to that interface only, useful for multi-homed servers. Defaults to 0.0.0.0 (all interfaces).
 
     .PARAMETER Port
-        Port for TCP. If one is not provided, it will be auto-generated.
+        Specifies the TCP port number for the endpoint to listen on. Auto-generates a port starting from 5022 if not specified.
+        Use this when you need a specific port for firewall rules or standardization across instances.
 
     .PARAMETER SslPort
-        Port for SSL.
+        Sets the SSL port number for HTTPS endpoints when using HTTP protocol. Only applicable for Soap endpoints using HTTPS.
+        Required when creating secure web service endpoints that need encrypted communication over HTTP.
 
     .PARAMETER Certificate
-        Database certificate used for authentication.
+        Name of a database certificate to use for endpoint authentication instead of Windows authentication.
+        The certificate must already exist in the master database and provides certificate-based authentication for enhanced security.
 
     .PARAMETER EndpointEncryption
-        Used to specify the state of encryption on the endpoint. Defaults to required.
-        Disabled
-        Required
-        Supported
+        Controls whether encryption is enforced for endpoint connections. Required forces all connections to use encryption.
+        Supported allows both encrypted and unencrypted connections, Disabled prevents encryption. Defaults to Required for security.
 
     .PARAMETER EncryptionAlgorithm
-        Specifies an encryption algorithm used on an endpoint. Defaults to Aes.
-
-        Options are:
-        AesRC4
-        Aes
-        None
-        RC4
-        RC4Aes
+        Sets the encryption algorithm used to secure endpoint communications. AES provides the strongest security.
+        RC4 options are available for backward compatibility but are less secure. Use None only when encryption is disabled. Defaults to Aes.
 
     .PARAMETER AuthenticationOrder
-        The type of connection authentication required for connections to this endpoint. Defaults to Negotiate.
-
-        Options are:
-        Certificate
-        CertificateKerberos
-        CertificateNegotiate
-        CertificateNtlm
-        Kerberos
-        KerberosCertificate
-        Negotiate
-        NegotiateCertificate
-        Ntlm
-        NtlmCertificate
+        Defines the authentication methods and their priority order for endpoint connections. Negotiate automatically chooses the best available method.
+        Use certificate options when requiring certificate-based authentication, or specific methods like Kerberos for domain environments. Defaults to Negotiate.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Owner
-        Owner of the endpoint. Defaults to sa.
+        Sets the SQL Server login that owns the endpoint. The owner has full control permissions on the endpoint.
+        Defaults to the sa account if available, otherwise uses the current connection's login for ownership.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.

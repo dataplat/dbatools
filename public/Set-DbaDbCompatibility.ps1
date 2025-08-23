@@ -17,14 +17,17 @@ function Set-DbaDbCompatibility {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database or databases to process. If unspecified, all databases will be processed.
+        Specifies which databases to update compatibility levels for. Accepts wildcards for pattern matching.
+        When omitted, processes all user databases on the target instance, excluding system databases.
 
     .PARAMETER Compatibility
-        The target compatibility level version. Same format as returned by Get-DbaDbCompatibility
-        Availability values: https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.compatibilitylevel
+        Sets a specific target compatibility level for all processed databases. Must be a valid CompatibilityLevel enum value like Version160, Version150, etc.
+        When omitted, automatically updates each database to match its SQL Server instance version, which is typically desired after SQL Server upgrades.
+        Use this parameter when you need databases to remain at a specific compatibility level rather than matching the current server version.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase)
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase or other dbatools functions.
+        Use this when you need to apply compatibility level changes to a pre-filtered set of databases or when chaining multiple dbatools commands together.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run

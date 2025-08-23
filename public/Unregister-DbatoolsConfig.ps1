@@ -11,22 +11,24 @@ function Unregister-DbatoolsConfig {
         Note: This command only removes persisted settings and has no effect on configuration values currently loaded in PowerShell memory.
 
     .PARAMETER ConfigurationItem
-        A configuration object as returned by Get-DbatoolsConfig.
+        Specifies configuration objects to remove from persistent storage, as returned by Get-DbatoolsConfig.
+        Use this when you want to unregister specific settings already identified through Get-DbatoolsConfig.
 
     .PARAMETER FullName
-        The full name of the configuration setting to purge.
+        Specifies the complete name of the configuration setting to remove from persistent storage.
+        Use this when you know the exact setting name in the format 'module.category.setting'.
 
     .PARAMETER Module
-        The module, amongst which settings should be unregistered.
+        Specifies the module name to target for configuration removal.
+        Use this to remove all configuration settings belonging to a specific dbatools module or component.
 
     .PARAMETER Name
-        The name of the setting to unregister.
-        For use together with the module parameter, to limit the amount of settings that are unregistered.
+        Specifies the setting name pattern to match within the targeted module. Supports wildcards.
+        Use with the Module parameter to narrow down which settings to remove, defaults to '*' to match all settings.
 
     .PARAMETER Scope
-        Settings can be set to either default or enforced, for user or the entire computer.
-        By default, only DefaultSettings for the user are unregistered.
-        Use this parameter to choose the actual scope for the command to process.
+        Specifies which configuration storage locations to target for removal: user settings, computer-wide settings, or file-based configurations.
+        Defaults to UserDefault which removes settings from the current user's registry. Use SystemDefault to remove computer-wide settings (requires elevation).
 
     .NOTES
         Tags: Module

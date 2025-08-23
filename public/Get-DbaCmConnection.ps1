@@ -7,10 +7,12 @@ function Get-DbaCmConnection {
         Shows which remote computer connections are currently cached by dbatools for Windows Management and CIM operations. This helps you understand what authentication contexts are active and troubleshoot connection issues when running dbatools commands against remote SQL Server instances. Cached connections are automatically created when you run dbatools commands that need to access Windows services, registry, or file system on remote servers.
 
     .PARAMETER ComputerName
-        The computername to ComputerName for.
+        Filters cached connections by computer name or server name. Supports wildcards for pattern matching.
+        Use this to check connections to specific SQL Server hosts or to search for connections matching a pattern like "sql*prod*".
 
     .PARAMETER UserName
-        Username on credentials to look for. Will not find connections using the default windows credentials.
+        Filters cached connections by the username in the stored credentials. Supports wildcards for pattern matching.
+        Use this to find connections using specific service accounts or domain credentials. Will not match connections using integrated Windows authentication.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

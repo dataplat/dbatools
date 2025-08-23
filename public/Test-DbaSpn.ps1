@@ -15,7 +15,9 @@ function Test-DbaSpn {
         Use this function to troubleshoot Kerberos authentication issues, perform security audits, validate configurations before migrations, or as part of regular maintenance to ensure proper SPN setup across your SQL Server environment.
 
     .PARAMETER ComputerName
-        The computer you want to discover any SQL Server instances on. This parameter is required.
+        Specifies the target computer(s) to scan for SQL Server instances and validate their SPN configuration.
+        Accepts computer names, IP addresses, or fully qualified domain names and supports pipeline input for bulk operations.
+        The function will discover all SQL Server instances on each specified computer and check their required SPNs against Active Directory.
 
     .PARAMETER Credential
         The credential you want to use to connect to the remote server and active directory.

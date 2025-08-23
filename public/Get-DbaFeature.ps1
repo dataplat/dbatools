@@ -20,9 +20,9 @@ function Get-DbaFeature {
         lesser versions of SQL Server that are installed.
 
     .PARAMETER ComputerName
-        The target computer. If the target is not localhost, it must have PowerShell remoting enabled.
-
-        Note that this is not the SqlInstance, but rather the ComputerName
+        Specifies the Windows computer names where you want to discover SQL Server features and components. Accepts multiple computers for bulk discovery operations.
+        Use this when you need to inventory SQL Server installations across your environment for compliance auditing or license tracking.
+        Requires PowerShell remoting to be enabled on remote computers. Note that this targets the Windows host, not SQL instance names.
 
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:

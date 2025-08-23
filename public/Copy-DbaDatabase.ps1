@@ -15,124 +15,132 @@ function Copy-DbaDatabase {
         If you are experiencing issues with Copy-DbaDatabase, please use Backup-DbaDatabase | Restore-DbaDatabase instead.
 
     .PARAMETER Source
-        Source SQL Server.
+        Specifies the source SQL Server instance containing the databases to migrate.
+        Supports named instances, clusters, and SQL Server Express editions.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies credentials for connecting to the source SQL Server instance when Windows authentication is not available.
+        Use this when the source server requires SQL authentication or when running under a different security context.
 
     .PARAMETER Destination
-        Destination SQL Server. You may specify multiple servers.
-
-        Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -NoBackupCleanup).
-
-        When using -DetachAttach with multiple servers, -Reattach must be specified.
+        Specifies one or more destination SQL Server instances where databases will be migrated.
+        Supports on-premises instances and Azure SQL Managed Instances for cloud migrations.
+        When targeting multiple destinations, backups are performed once and shared across all targets.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies credentials for connecting to the destination SQL Server instance when Windows authentication is not available.
+        Required for Azure SQL Managed Instance destinations or when destination requires SQL authentication.
 
     .PARAMETER Database
-        Migrates only specified databases. This list is auto-populated from the server for tab completion. Multiple databases may be specified as a collection.
+        Specifies which user databases to migrate by name.
+        Use this when you need to migrate specific databases rather than all databases on the instance.
+        Supports tab completion from the source instance and accepts multiple database names.
 
     .PARAMETER ExcludeDatabase
-        Excludes specified databases when performing -AllDatabases migrations. This list is auto-populated from the Source for tab completion.
+        Specifies databases to exclude when using -AllDatabases.
+        Use this to skip problematic databases like those in use, under maintenance, or containing sensitive data.
 
     .PARAMETER AllDatabases
-        If this switch is enabled, all user databases will be migrated. System and support databases will not be migrated. Requires -BackupRestore or -DetachAttach.
+        Migrates all user databases from the source instance, excluding system databases (master, model, msdb, tempdb).
+        Use this for full server migrations or when moving all business databases to a new instance.
 
     .PARAMETER BackupRestore
-        If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify either -SharedPath or -UseLastBackup.
-
-        Backups will be immediately deleted after use unless -NoBackupCleanup is specified.
+        Uses backup and restore method for database migration, creating copy-only backups to preserve existing backup chains.
+        This is the safest method for cross-version migrations and works with Azure blob storage.
+        Requires either -SharedPath for backup location or -UseLastBackup to use existing backups.
 
     .PARAMETER AdvancedBackupParams
-        Provide additional parameters to the backup command as a hashtable.
+        Specifies additional parameters for the backup operation as a hashtable.
+        Use this to enable compression (@{CompressBackup = $true}), checksum verification, or other backup options.
 
     .PARAMETER SharedPath
-        Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.
-        Can be either a full path 'c:\backups', a UNC path '\\server\backups' or an Azure storage Account 'https://example.blob.core.windows.net/sql/'
+        Specifies the storage location accessible by both source and destination SQL Server instances.
+        Accepts local paths (C:\Backups), UNC shares (\\server\backups), or Azure blob storage URLs.
+        SQL Server service accounts on both instances must have read/write permissions to this location.
 
     .Parameter AzureCredential
-        The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
-        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl
+        Specifies the SQL Server credential name for Azure blob storage authentication.
+        Required when using storage access keys with Azure blob storage paths.
+        For SAS tokens, the credential name should match the Azure storage URL.
 
     .PARAMETER WithReplace
-        If this switch is enabled, the restore is executed with WITH REPLACE.
+        Overwrites existing databases at the destination with the same name.
+        Use this when refreshing existing databases or when you want to replace destination databases completely.
 
     .PARAMETER NoRecovery
-        If this switch is enabled, the restore is executed with WITH NORECOVERY. Ideal for staging.
+        Restores databases in NORECOVERY mode, leaving them ready for additional transaction log restores.
+        Use this for staging environments or when setting up log shipping scenarios.
 
     .PARAMETER NoBackupCleanup
-        If this switch is enabled, backups generated by this cmdlet will not be deleted after they are restored. The default behavior is to delete these backups.
+        Preserves backup files after migration instead of automatically deleting them.
+        Use this when you want to keep backups for additional restores or compliance requirements.
 
     .PARAMETER NumberFiles
-        Number of files to split the backup. Default is 3.
+        Specifies how many backup files to create for each database backup to improve performance.
+        Default is 3 files, which provides good parallelism for most databases.
+        Increase for very large databases or high-performance storage systems.
 
     .PARAMETER DetachAttach
-        If this switch is enabled, the detach/copy/attach method is used to perform database migrations. No files are deleted on Source. If Destination attachment fails, the Source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration.
+        Uses detach/copy/attach method for database migration by moving physical database files.
+        This method is faster than backup/restore but requires same SQL Server versions and administrative share access.
+        Source databases are automatically reattached if destination attachment fails.
 
     .PARAMETER Reattach
-        If this switch is enabled, all databases are reattached to Source after DetachAttach migration.
+        Reattaches databases to the source instance after successful detach/attach migration.
+        Required when using -DetachAttach with multiple destination servers to restore source functionality.
 
     .PARAMETER SetSourceReadOnly
-        If this switch is enabled, all migrated databases are set to ReadOnly on Source prior to detach/attach & backup/restore.
-
-        If -Reattach is used, databases are set to read-only after reattaching.
+        Sets source databases to read-only before migration to prevent data changes during the process.
+        Use this to ensure data consistency when databases must remain accessible at the source during migration.
 
     .PARAMETER ReuseSourceFolderStructure
-        If this switch is enabled, databases will be migrated to a data and log directory structure on Destination mirroring that used on Source. By default, the default data and log directories for Destination will be used when the databases are migrated.
-
-        The structure on Source  will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
-
-        To reuse Destination folder structure, use the -WithReplace switch.
+        Maintains the exact file path structure from the source instance on the destination.
+        Use this when destination servers have identical drive layouts or when preserving specific organizational folder structures.
+        The destination instance must have matching directory paths available.
 
     .PARAMETER IncludeSupportDbs
-        If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be copied if they exist on Source. A log file named $SOURCE-$destinstance-$date-Sqls.csv will be written to the current directory.
-
-        Use of this switch requires -BackupRestore or -DetachAttach as well.
+        Migrates SQL Server feature databases including ReportServer, ReportServerTempDB, SSISDB, and distribution databases.
+        Use this when migrating servers that host Reporting Services, Integration Services, or replication components.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase for migration.
+        Use this to migrate databases filtered by specific criteria like size, compatibility level, or other properties.
 
     .PARAMETER UseLastBackup
-        Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
+        Uses existing backups from backup history instead of creating new ones.
+        The most recent full, differential, and log backups must be accessible to all destination servers.
+        Useful for migration scenarios where fresh backups already exist.
 
     .PARAMETER Continue
-        If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackup
+        Continues restoration by applying transaction log backups to databases in RECOVERING or STANDBY states.
+        Use this with -UseLastBackup when resuming interrupted restore operations or applying additional log backups.
 
     .PARAMETER NoCopyOnly
-        If this switch is enabled, backups will be taken without COPY_ONLY. This will break the LSN backup chain, which will interfere with the restore chain of the database.
-
-        By default this switch is disabled, so backups will be taken with COPY_ONLY. This will preserve the LSN backup chain.
-
-        For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx
+        Creates regular backups instead of copy-only backups, which affects the database's backup chain.
+        Only use this when you want migration backups to be part of the regular backup sequence.
+        Default copy-only behavior preserves existing backup chains and is recommended for migrations.
 
     .PARAMETER NewName
-        If a single database is being copied, this will be used to rename the database during the copy process. Any occurrence of the original database name in the physical file names will be replaced with NewName
-        If specified with multiple databases a warning will be raised and the copy stopped
-
-        This option is mutually exclusive of Prefix
+        Renames the database during migration when copying a single database.
+        The database name and physical file names are updated to use the new name.
+        Cannot be used with multiple databases or together with -Prefix parameter.
 
     .PARAMETER Prefix
-        All copied database names and physical files will be prefixed with this string
-
-        This option is mutually exclusive of NewName
+        Adds a prefix to all migrated database names and their physical file names.
+        Use this to distinguish migrated databases (e.g., 'DEV_' prefix for development copies).
+        Cannot be used together with -NewName parameter.
 
     .PARAMETER SetSourceOffline
-        If this switch is enabled, the Source database will be set to Offline after being copied.
+        Sets source databases to offline status after successful migration.
+        Use this for cutover scenarios where source databases should be unavailable after migration.
 
     .PARAMETER KeepCDC
-        Indicates whether CDC information should be copied as part of the database
+        Preserves Change Data Capture (CDC) configuration and data during migration.
+        Use this when destination databases need to maintain CDC tracking for auditing or replication.
 
     .PARAMETER KeepReplication
-        Indicates whether replication configuration should be copied as part of the database copy operation
+        Preserves replication configuration during database migration.
+        Use this when migrating publisher or subscriber databases that participate in replication topologies.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -146,9 +154,9 @@ function Copy-DbaDatabase {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, existing databases on Destination with matching names from Source will be dropped.
-        If using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.
-        If using -SetSourceReadonly, this will instantly roll back any open transactions that may be stopping the process.
+        Forcibly overwrites existing databases at the destination and bypasses safety checks.
+        Breaks database mirroring, removes databases from Availability Groups, and rolls back blocking transactions.
+        Use with caution as this will permanently destroy existing destination databases.
 
     .NOTES
         Tags: Migration, Backup, Restore

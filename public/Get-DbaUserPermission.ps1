@@ -23,22 +23,28 @@ function Get-DbaUserPermission {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to audit for user permissions and role memberships. Accepts multiple database names and supports wildcards.
+        Use this when you need to focus the security audit on specific databases rather than scanning the entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during the security audit. Useful for excluding databases that don't require security review.
+        Common scenarios include excluding development databases or databases with known compliant configurations.
 
     .PARAMETER ExcludeSystemDatabase
-        Allows you to suppress output on system databases
+        Excludes system databases (master, model, msdb, tempdb) from the security audit. Focuses the output on user databases only.
+        Use this when compliance requirements only apply to application databases and not SQL Server system databases.
 
     .PARAMETER IncludePublicGuest
-        Allows you to include output for public and guest grants.
+        Includes permissions granted to the public database role and guest user account in the audit results.
+        Use this for complete security visibility, as public and guest permissions affect all users and can create unintended access paths.
 
     .PARAMETER IncludeSystemObjects
-        Allows you to include output on sys schema objects.
+        Includes permissions on system schema objects (sys, INFORMATION_SCHEMA) in the audit results.
+        Enable this when security policies require auditing access to metadata views and system functions that could expose sensitive information.
 
     .PARAMETER ExcludeSecurables
-        Allows you to exclude object-level permissions from the output, and only return role permission(s).
+        Excludes object-level permissions (tables, views, procedures, functions) from the audit and returns only role memberships.
+        Use this for high-level security reviews focused on role-based access rather than granular object permissions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

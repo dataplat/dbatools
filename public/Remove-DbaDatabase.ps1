@@ -17,10 +17,12 @@ function Remove-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies the user database(s) to remove from the SQL Server instance. Accepts multiple database names and supports wildcards for pattern matching.
+        Use this when you need to remove specific databases rather than all user databases. System databases (master, model, msdb, tempdb, resource) are automatically excluded and cannot be removed.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase), to be removed.
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase or other dbatools database commands.
+        Use this for pipeline operations when you want to filter databases first, then remove the filtered results. This provides more flexibility than specifying database names directly.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

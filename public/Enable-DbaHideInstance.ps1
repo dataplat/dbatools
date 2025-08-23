@@ -11,10 +11,14 @@ function Enable-DbaHideInstance {
         This setting requires Windows administrative access to modify the registry and does not require SQL Server permissions. The change takes effect immediately for new connections, but existing connections remain unaffected.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The target SQL Server instance or instances where you want to enable the Hide Instance setting.
+        This parameter accepts server names, server\instance combinations, or fully qualified domain names.
+        When not specified, defaults to the local computer's default instance (MSSQLSERVER).
 
     .PARAMETER Credential
-        Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials
+        Windows credentials used to connect to the target computer and modify the registry settings.
+        This is required when running against remote servers where your current Windows account lacks administrative access.
+        Note that this connects to the Windows computer, not the SQL Server instance itself.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

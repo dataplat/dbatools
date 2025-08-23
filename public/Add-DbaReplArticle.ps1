@@ -17,25 +17,28 @@ function Add-DbaReplArticle {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The publication database to apply the article configuration to be replicated.
+        Specifies the database containing both the publication and the object you want to add as an article.
+        This must be the same database where your replication publication was created.
 
     .PARAMETER Publication
-        The name of the publication.
+        Specifies the name of the existing replication publication to add the article to.
+        The publication must already exist and be configured for the type of replication you want (transactional, snapshot, or merge).
 
     .PARAMETER Schema
-        Schema where the article to be added is found.
-        Default is dbo.
+        Specifies the schema name of the object you want to add as an article.
+        Use this when your table or object exists in a schema other than dbo. Defaults to dbo if not specified.
 
     .PARAMETER Name
-        The name of the object to add as an article.
+        Specifies the name of the database object (typically a table) to add as an article to the publication.
+        This object will be replicated to all subscribers of the publication.
 
     .PARAMETER Filter
-        Sets the where clause used to filter the article horizontally, e.g., DiscontinuedDate IS NULL
-        E.g. City = 'Seattle'
+        Applies a WHERE clause condition to filter which rows get replicated from the article (horizontal filtering).
+        Use this when you only want to replicate specific rows, such as "City = 'Seattle'" or "Status = 'Active'". Do not include the word 'WHERE' in your filter expression.
 
     .PARAMETER CreationScriptOptions
-        Options for the creation script.
-        Use New-DbaReplCreationScriptOptions to create this object.
+        Controls which schema elements get created on the subscriber database when the article is replicated.
+        Use this to specify whether indexes, constraints, triggers, and other objects should be created on subscribers. Create this object using New-DbaReplCreationScriptOptions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -17,13 +17,19 @@ function Remove-DbaXESession {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
-        Specifies a list of Extended Events sessions to remove.
+        Specifies one or more Extended Events session names to remove from the target instance.
+        Use this when you want to selectively remove specific monitoring sessions rather than all user sessions.
+        Accepts session names as strings, with support for arrays to remove multiple sessions in one command.
 
     .PARAMETER AllSessions
-        If this switch is enabled, all Extended Events sessions will be removed except the packaged sessions AlwaysOn_health, system_health, telemetry_xevents.
+        Removes all user-created Extended Events sessions while preserving critical system sessions.
+        Use this for cleanup operations when you want to clear all monitoring sessions without breaking SQL Server's built-in diagnostics.
+        Automatically excludes system_health, telemetry_xevents, and AlwaysOn_health sessions to maintain server functionality.
 
     .PARAMETER InputObject
-        Accepts a collection of XEsession objects as output by Get-DbaXESession.
+        Accepts Extended Events session objects directly from Get-DbaXESession for pipeline operations.
+        Use this when you need to filter sessions with Get-DbaXESession first, then remove the filtered results.
+        Enables complex filtering scenarios and integration with other dbatools XE functions.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

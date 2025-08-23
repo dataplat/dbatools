@@ -17,16 +17,20 @@ function Get-DbaPbmPolicy {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Policy
-        Filters results to only show specific policy
+        Specifies one or more policy names to retrieve, filtering the results to only those policies. Supports exact name matching for targeted policy retrieval.
+        Use this when you need to examine specific policies rather than all policies on the instance.
 
     .PARAMETER Category
-        Filters results to only show policies in the category selected
+        Filters results to show only policies belonging to specific policy categories. Categories help organize policies by function or compliance framework.
+        Use this to focus on policies related to specific areas like security, performance, or maintenance checks.
 
     .PARAMETER IncludeSystemObject
-        By default system objects are filtered out. Use this parameter to INCLUDE them .
+        Includes Microsoft's built-in system policies in the results, which are excluded by default. System policies cover standard SQL Server best practices.
+        Use this when you need to review or document all policies including Microsoft's predefined compliance policies.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaPbmStore
+        Accepts PBM store objects from Get-DbaPbmStore via pipeline, allowing efficient processing of multiple instances. Enables chaining PBM commands together.
+        Use this when building complex PBM workflows or when you already have PBM store objects from previous commands.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

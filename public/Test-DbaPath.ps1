@@ -17,7 +17,9 @@ function Test-DbaPath {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        The Path to test. This can be a file or directory
+        Specifies the file or directory paths to test for accessibility from the SQL Server service account's perspective. Accepts single paths, arrays of paths, or pipeline input.
+        Use this to verify SQL Server can access backup destinations, restore source files, or any location needed for database operations.
+        Critical for pre-validating paths before backup, restore, or bulk operations that would otherwise fail with access denied errors.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

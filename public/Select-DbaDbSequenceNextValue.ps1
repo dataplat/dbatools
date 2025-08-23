@@ -20,16 +20,21 @@ function Select-DbaDbSequenceNextValue {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database.
+        Specifies the database containing the sequence object you want to increment.
+        Required when using SqlInstance parameter to identify which database contains the target sequence.
 
     .PARAMETER Sequence
-        The name of the sequence.
+        Specifies the name of the sequence object to increment and retrieve the next value from.
+        Accepts multiple sequence names when you need to get next values from several sequences in the same operation.
+        This will permanently increment each sequence's internal counter.
 
     .PARAMETER Schema
-        The name of the schema for the sequence. The default is dbo.
+        Specifies the schema that contains the sequence object. Defaults to 'dbo' if not specified.
+        Use this when your sequence is created in a custom schema other than the default dbo schema.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase via pipeline input.
+        Use this to chain database selection with sequence operations when working with multiple databases or complex filtering scenarios.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

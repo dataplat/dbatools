@@ -17,16 +17,20 @@ function Remove-DbaDbMasterKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the master key will be removed.
+        Specifies which databases to remove master keys from. Accepts multiple database names.
+        Use this when you need to remove encryption from specific databases during TDE decommissioning or security policy changes.
 
     .PARAMETER ExcludeDatabase
-        List of databases to exclude from clearing all master keys
+        Specifies databases to skip when using the -All parameter to remove master keys from all databases.
+        Use this to protect critical databases that must retain their encryption while cleaning up master keys from other databases on the instance.
 
     .PARAMETER All
-        Purge the master keys from all databases on an instance
+        Removes master keys from all user databases on the SQL Server instance.
+        Use this when decommissioning encryption across an entire instance or during major security architecture changes.
 
     .PARAMETER InputObject
-        Enables pipeline input from Get-DbaDatabase
+        Accepts master key objects from Get-DbaDbMasterKey through the pipeline.
+        Use this approach when you need to filter or inspect master keys before removing them, providing more control over the removal process.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

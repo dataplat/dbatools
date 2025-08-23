@@ -16,10 +16,14 @@ function Remove-DbaCustomError {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER MessageID
-        An integer between 50001 and 2147483647.
+        Specifies the custom error message ID to remove from the sys.messages catalog.
+        Must be between 50001 and 2147483647, which is the valid range for user-defined error messages.
+        Use this to target specific custom errors that applications have registered with SQL Server.
 
     .PARAMETER Language
-        Language for the message to be removed. The valid values for Language are contained in the Name and Alias columns from sys.syslanguages.
+        Specifies which language version of the custom error message to remove.
+        Accepts language names or aliases from sys.syslanguages (like 'English', 'French', 'Deutsch').
+        Use 'All' to remove all language versions of the message ID at once. Defaults to 'English'.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

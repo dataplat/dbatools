@@ -20,7 +20,9 @@ function Enable-DbaStartupProcedure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER StartupProcedure
-        The Procedure(s) to process.
+        Specifies the stored procedure(s) in the master database to enable for automatic startup execution. Accepts schema-qualified names like '[dbo].[MyStartupProc]' or simple names.
+        Use this when you need specific procedures to run automatically after SQL Server service restarts, such as initialization scripts, monitoring setup, or custom configuration procedures.
+        Multiple procedures can be specified as an array to enable several startup procedures in a single operation.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

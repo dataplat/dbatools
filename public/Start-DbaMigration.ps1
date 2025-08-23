@@ -34,117 +34,122 @@ function Start-DbaMigration {
         By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
     .PARAMETER Source
-        Source SQL Server.
+        Specifies the source SQL Server instance to migrate from. Accepts server name, server\instance, or connection string formats.
+        This is the instance where all databases, logins, and server objects currently exist.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies credentials to connect to the source SQL Server instance. Use when the current Windows account lacks sufficient permissions.
+        Accepts PowerShell credential objects created with Get-Credential for SQL Authentication or alternative Windows accounts.
 
     .PARAMETER Destination
-        Destination SQL Server. You may specify multiple servers.
-
-        Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end.
-
-        When using -DetachAttach with multiple servers, -Reattach must be specified.
+        Specifies one or more destination SQL Server instances to migrate to. Accepts server name, server\instance, or connection string formats.
+        When specifying multiple destinations, all objects will be migrated to each destination server.
+        Multiple destinations require -Reattach when using -DetachAttach method.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies credentials to connect to the destination SQL Server instance(s). Use when the current Windows account lacks sufficient permissions.
+        Accepts PowerShell credential objects created with Get-Credential for SQL Authentication or alternative Windows accounts.
 
     .PARAMETER BackupRestore
-        If this switch is enabled, the Copy-Only backup and restore method is used to perform database migrations. You must specify -SharedPath with a valid UNC format as well (\\server\share).
+        Uses backup and restore method to migrate databases instead of detach/attach. Creates copy-only backups to preserve existing backup chains.
+        Requires either -SharedPath for new backups or -UseLastBackup to restore from existing backup files.
+        This method is safer for production environments as it doesn't detach databases.
 
     .PARAMETER SharedPath
-        Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
+        Specifies the network path where backup files will be created and stored during migration. Must be a UNC path (\\server\share) or Azure Storage URL.
+        Both source and destination SQL Server service accounts require read/write permissions to this location.
+        Only used with -BackupRestore method when not using -UseLastBackup.
 
     .PARAMETER WithReplace
-        If this switch is enabled, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
+        Forces restore operations to overwrite existing databases with the same name on the destination.
+        Use this when you need to replace existing databases or when destination databases have different file paths than source.
+        Only applies to backup/restore method.
 
     .PARAMETER ReuseSourceFolderStructure
-        If this switch is enabled, the data and log directory structures on Source will be kept on Destination. Otherwise, databases will be migrated to Destination's default data and log directories.
-
-        Consider this if you're migrating between different versions and use part of Microsoft's default SQL structure (MSSQL12.INSTANCE, etc.).
+        Preserves the original file paths from the source server when restoring databases on the destination.
+        By default, databases are restored to the destination's default data and log directories.
+        Use this when you need to maintain specific drive letters or folder structures on the destination server.
 
     .PARAMETER DetachAttach
-        If this switch is enabled, the the detach/copy/attach method is used to perform database migrations. No files are deleted on Source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration.
+        Uses detach, copy, and attach method to migrate databases. Temporarily makes databases unavailable during the migration process.
+        Files are copied using BITS over administrative shares and databases are reattached if destination attachment fails.
+        This method is faster than backup/restore but requires downtime and breaks mirroring/replication.
 
     .PARAMETER Reattach
-        If this switch is enabled, all databases are reattached to Source after a DetachAttach migration is complete.
+        Reattaches all databases to the source server after a detach/attach migration completes.
+        Use this when you want to keep the source databases online after migration, such as for testing or gradual cutover scenarios.
+        Required when using -DetachAttach with multiple destination servers.
 
     .PARAMETER NoRecovery
-        If this switch is enabled, databases will be left in the No Recovery state to enable further backups to be added.
+        Restores databases in NORECOVERY mode, leaving them in a restoring state for additional log backups.
+        Use this when you plan to apply differential or transaction log backups after the initial restore.
+        Only applies to backup/restore method and prevents normal database access until recovered.
 
     .PARAMETER IncludeSupportDbs
-        If this switch is enabled, the ReportServer, ReportServerTempDb, SSIDb, and distribution databases will be migrated if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
+        Includes system support databases in the migration: ReportServer, ReportServerTempDB, SSISDB, and distribution databases.
+        By default, these databases are excluded to prevent conflicts with existing services.
+        Use this when migrating servers with SQL Server Reporting Services, Integration Services, or replication configured.
 
     .PARAMETER SetSourceReadOnly
-        If this switch is enabled, all migrated databases will be set to ReadOnly on the source instance prior to detach/attach & backup/restore. If -Reattach is specified, the database is set to read-only after reattaching.
+        Sets migrated databases to read-only mode on the source server before migration begins.
+        This prevents data changes during migration and helps ensure data consistency.
+        When combined with -Reattach, databases remain read-only after being reattached to the source.
 
     .PARAMETER AzureCredential
-        Name of the AzureCredential if SharedPath is Azure page blob
+        Specifies the name of a SQL Server credential for accessing Azure Storage when SharedPath points to an Azure Storage account.
+        The credential must already exist on both source and destination servers with proper access to the Azure Storage container.
+        Only needed when using Azure Storage URLs for the SharedPath parameter.
 
     .PARAMETER Exclude
-        Exclude one or more objects to migrate
-
-        Databases
-        Logins
-        AgentServer
-        Credentials
-        LinkedServers
-        SpConfigure
-        CentralManagementServer
-        DatabaseMail
-        SysDbUserObjects
-        SystemTriggers
-        BackupDevices
-        Audits
-        Endpoints
-        ExtendedEvents
-        PolicyManagement
-        ResourceGovernor
-        ServerAuditSpecifications
-        CustomErrors
-        DataCollector
-        StartupProcedures
-        AgentServerProperties
-        MasterCertificates
+        Specifies which migration components to skip during the migration process.
+        Use this to exclude specific object types when you only need partial migrations or when certain objects should remain on the source.
+        Valid values: Databases, Logins, AgentServer, Credentials, LinkedServers, SpConfigure, CentralManagementServer, DatabaseMail, SysDbUserObjects, SystemTriggers, BackupDevices, Audits, Endpoints, ExtendedEvents, PolicyManagement, ResourceGovernor, ServerAuditSpecifications, CustomErrors, DataCollector, StartupProcedures, AgentServerProperties, MasterCertificates.
 
     .PARAMETER ExcludeSaRename
-        If this switch is enabled, the sa account will not be renamed on the destination instance to match the source.
+        Prevents renaming the sa account on the destination to match the source server's sa account name.
+        By default, the destination sa account is renamed to match the source for consistency.
+        Use this when you want to maintain the destination server's original sa account name.
 
     .PARAMETER DisableJobsOnDestination
-        If this switch is enabled, migrated SQL Agent jobs will be disabled on the destination instance.
+        Disables all migrated SQL Agent jobs on the destination server after migration completes.
+        Use this to prevent jobs from running automatically on the destination until you're ready to activate them.
+        Helpful for staged migrations or when you need to update job schedules before activation.
 
     .PARAMETER DisableJobsOnSource
-        If this switch is enabled, SQL Agent jobs will be disabled on the source instance.
+        Disables all SQL Agent jobs on the source server during the migration process.
+        Use this to prevent jobs from running and potentially interfering with database migrations.
+        Jobs remain disabled on the source after migration completes.
 
     .PARAMETER UseLastBackup
-        Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
+        Uses existing backup files instead of creating new backups during database migration.
+        The function will locate the most recent full, differential, and log backups for each database.
+        Backup files must be accessible to all destination servers, typically on a network share.
 
     .PARAMETER Continue
-        If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackup
+        Attempts to apply additional transaction log backups to databases already in RESTORING or STANDBY states.
+        Use this to bring destination databases up-to-date when they were previously restored with NORECOVERY.
+        Only works with -UseLastBackup and requires databases to already exist in a restoring state.
 
     .PARAMETER KeepCDC
-        Indicates whether CDC information should be copied as part of the database
+        Preserves Change Data Capture (CDC) configuration and data during database migration.
+        By default, CDC information is not migrated to avoid potential conflicts with existing CDC configurations.
+        Use this when you need to maintain CDC functionality on the destination server.
 
     .PARAMETER KeepReplication
-        Indicates whether replication configuration should be copied as part of the database copy operation
+        Preserves replication configuration and metadata during database migration.
+        By default, replication settings are not migrated to prevent conflicts with existing replication topologies.
+        Use this when migrating databases that participate in replication and you want to maintain those settings.
 
     .PARAMETER MasterKeyPassword
-        The password to encrypt a master key if one is required. This must be a SecureString.
+        Specifies the password for creating or opening database master keys during certificate migration.
+        Required when migrating databases with encrypted objects or certificates that need master key protection.
+        Must be provided as a SecureString object for security.
 
     .PARAMETER Force
-        If migrating users, forces drop and recreate of SQL and Windows logins.
-        If migrating databases, deletes existing databases with matching names.
-        If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
-
-        For other migration objects, it will just drop existing items and readd, if -force is supported within the underlying function.
+        Overwrites existing objects on the destination server without prompting for confirmation.
+        For databases: drops existing databases with matching names before restoring.
+        For logins: drops and recreates existing logins instead of skipping them.
+        For DetachAttach method: breaks database mirroring and removes databases from Availability Groups.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

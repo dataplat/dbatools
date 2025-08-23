@@ -17,7 +17,8 @@ function Get-DbaStartupProcedure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER StartupProcedure
-        Use this filter to check if specific procedure(s) are set as startup procedures.
+        Filters results to check if specific stored procedures are configured as startup procedures. Accepts procedure names in 'schema.procedurename' format or just 'procedurename' for dbo schema.
+        Use this when auditing server configurations or verifying that critical initialization procedures are properly configured to run at startup.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

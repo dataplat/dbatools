@@ -11,33 +11,32 @@ function Copy-DbaAgentAlert {
         By default, all alerts are copied, but you can specify individual alerts with the -Alert parameter. Existing alerts are skipped unless -Force is used to overwrite them.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing the alerts to copy. Must be SQL Server 2000 or higher.
+        Use this to identify the server with the alert configurations you want to migrate or replicate.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies alternative credentials for connecting to the source SQL Server instance.
+        Use this when the current Windows credentials don't have access to the source server or when connecting with SQL Server authentication.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies one or more destination SQL Server instances where alerts will be copied. Must be SQL Server 2000 or higher.
+        Accepts multiple instances to copy alerts to several servers simultaneously during migrations or standardization efforts.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies alternative credentials for connecting to the destination SQL Server instances.
+        Use this when the current Windows credentials don't have access to destination servers or when connecting with SQL Server authentication.
 
     .PARAMETER Alert
-        The alert(s) to process. This list is auto-populated from the server. If unspecified, all alerts will be processed.
+        Specifies specific alert names to copy instead of copying all alerts from the source instance.
+        Use this when you only need to migrate particular alerts rather than the entire alert configuration.
 
     .PARAMETER ExcludeAlert
-        The alert(s) to exclude. This list is auto-populated from the server.
+        Specifies alert names to skip during the copy operation while processing all other alerts.
+        Use this when you want to copy most alerts but exclude specific ones that shouldn't be migrated.
 
     .PARAMETER IncludeDefaults
-        Copy SQL Agent defaults such as FailSafeEmailAddress, ForwardingServer, and PagerSubjectTemplate.
+        Copies SQL Server Agent system settings including FailSafeEmailAddress, ForwardingServer, and PagerSubjectTemplate.
+        Use this when migrating to a new server where you want to replicate the source server's Agent notification configuration.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -46,7 +45,8 @@ function Copy-DbaAgentAlert {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Alert will be dropped and recreated on Destination.
+        Drops and recreates alerts that already exist on the destination servers instead of skipping them.
+        Use this when you need to overwrite existing alerts with updated configurations from the source.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

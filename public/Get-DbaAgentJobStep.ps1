@@ -17,16 +17,20 @@ function Get-DbaAgentJobStep {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies which SQL Agent jobs to include by name when retrieving job steps. Accepts wildcards for pattern matching.
+        Use this when you need to examine steps for specific jobs like backup routines or maintenance tasks instead of processing all jobs on the instance.
 
     .PARAMETER ExcludeJob
-        The job(s) to exclude - this list is auto-populated from the server.
+        Specifies which SQL Agent jobs to exclude by name when retrieving job steps. Accepts wildcards for pattern matching.
+        Use this when you want to review most jobs but skip certain ones like test jobs or jobs that generate excessive output.
 
     .PARAMETER ExcludeDisabledJobs
-        Switch will exclude disabled jobs from the output.
+        Filters out disabled SQL Agent jobs from the results, showing only currently active jobs.
+        Use this when troubleshooting production issues or monitoring active automation to avoid reviewing steps from jobs that aren't currently running.
 
     .PARAMETER InputObject
-        Job objects to process. This can be piped from Get-DbaAgentJob.
+        Accepts SQL Agent job objects from the pipeline, typically from Get-DbaAgentJob output.
+        Use this when you want to process job steps for a pre-filtered set of jobs or when building complex pipelines that combine job filtering with step analysis.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

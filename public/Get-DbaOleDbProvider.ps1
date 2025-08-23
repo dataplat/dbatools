@@ -17,7 +17,8 @@ function Get-DbaOleDbProvider {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Provider
-        The name of the ole db provider.
+        Filters results to specific OLE DB provider names. Accepts an array of provider names for targeting multiple providers.
+        Use this when you need to check configuration for specific providers like SQLNCLI11 or MSDASQL instead of listing all available providers.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

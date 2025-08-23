@@ -17,127 +17,161 @@ function Backup-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to include in the backup operation. Accepts database names, wildcards, or arrays.
+        When omitted, all user databases are backed up (tempdb is automatically excluded).
+        Use this to target specific databases instead of backing up the entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Specifies which databases to exclude from the backup operation. Accepts database names, wildcards, or arrays.
+        Useful when you want to backup most databases but skip specific ones like test or temporary databases.
+        Combined with Database parameter, exclusions are applied after inclusions.
 
     .PARAMETER FilePath
-        The name of the file to backup to. This is only accepted for single database backups.
-        If no name is specified then the backup files will be named DatabaseName_yyyyMMddHHmm (i.e. "Database1_201714022131") with the appropriate extension.
-
-        If the same name is used repeatedly, SQL Server will add backups to the same file at an incrementing position.
-
-        SQL Server needs permissions to write to the specified location. Path names are based on the SQL Server (C:\ is the C drive on the SQL Server, not the machine running the script).
-
-        Passing in NUL as the FilePath will backup to the NUL: device
+        Specifies the complete backup file name including extension. Only valid for single database backups.
+        When omitted, files are auto-named as DatabaseName_yyyyMMddHHmm with appropriate extensions (.bak, .trn, .dif).
+        Repeated use appends to the same file at incrementing positions. Use 'NUL' to discard backup output for testing.
+        All paths are relative to the SQL Server instance, not the local machine running the command.
 
     .PARAMETER IncrementPrefix
-        If enabled, this will prefix backup files with an incrementing integer (ie; '1-', '2-'). Using this has been alleged to improved restore times on some Azure based SQL Database platforms
+        Prefixes backup files with incremental numbers (1-, 2-, etc.) when striping across multiple files.
+        Primarily used for Azure SQL Database platforms where this naming convention may improve restore performance.
+        Only applies when FileCount is greater than 1 or multiple paths are specified.
 
     .PARAMETER TimeStampFormat
-        By default the command timestamps backups using the format yyyyMMddHHmm. Using this parameter this can be overridden. The timestamp format should be defined using the Get-Date formats, illegal formats will cause an error to be thrown
+        Customizes the timestamp format used in auto-generated backup file names. Defaults to yyyyMMddHHmm.
+        Must use valid Get-Date format strings (e.g., 'yyyy-MM-dd_HH-mm-ss' for readable timestamps).
+        Applied when FilePath is not specified and ReplaceInName contains 'timestamp' placeholder.
 
     .PARAMETER Path
-        Path in which to place the backup files. If not specified, the backups will be placed in the default backup location for SqlInstance.
-        If multiple paths are specified, the backups will be striped across these locations. This will overwrite the FileCount option.
-
-        If the path does not exist, Sql Server will attempt to create it. Folders are created by the Sql Instance, and checks will be made for write permissions.
-
-        File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x ranges from 1 to y.
+        Sets the directory path where backup files will be created. Defaults to the instance's default backup location.
+        Multiple paths enable striping for improved performance and overrides FileCount parameter.
+        SQL Server creates missing directories automatically if it has permissions. Striped files are numbered x-of-y for set identification.
 
     .PARAMETER ReplaceInName
-        If this switch is set, the following list of strings will be replaced in the FilePath and Path strings:
-            instancename - will be replaced with the instance Name
-            servername - will be replaced with the server name
-            dbname - will be replaced with the database name
-            timestamp - will be replaced with the timestamp (either the default, or the format provided)
-            backuptype - will be replaced with Full, Log or Differential as appropriate
+        Enables dynamic token replacement in file paths and names for flexible backup naming schemes.
+        Replaces: instancename, servername, dbname, timestamp, backuptype with actual values.
+        Essential for standardized backup naming across environments and automated backup scripts with consistent file organization.
 
     .PARAMETER NoAppendDbNameInPath
-        A switch that will prevent to systematically appended dbname to the path when creating the backup file path
+        Prevents automatic database name folder creation when using CreateFolder parameter.
+        By default, CreateFolder adds a database-specific subdirectory for organization.
+        Use this when you want files directly in the specified path without database name folders.
 
     .PARAMETER CopyOnly
-        If this switch is enabled, CopyOnly backups will be taken. By default function performs a normal backup, these backups interfere with the restore chain of the database. CopyOnly backups will not interfere with the restore chain of the database.
-
-        For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx
+        Creates copy-only backups that don't break the restore chain or affect log backup sequences.
+        Essential for ad-hoc backups during maintenance, before major changes, or for moving databases to other environments.
+        Copy-only backups don't reset differential bases or interfere with scheduled backup strategies.
 
     .PARAMETER Type
-        The type of SQL Server backup to perform. Accepted values are "Full", "Log", "Differential", "Diff", "Database"
+        Specifies the backup type to perform: Full, Log, Differential, or Database (same as Full).
+        Log backups require full recovery model and prior full backup. Differential backups require prior full backup.
+        Choose based on your recovery objectives and backup strategy requirements.
 
     .PARAMETER FileCount
-        This is the number of striped copies of the backups you wish to create.    This value is overwritten if you specify multiple Backup Directories.
+        Specifies the number of files to stripe the backup across for improved performance.
+        Higher values increase backup speed but require more disk space and coordination during restores.
+        Automatically overridden when multiple Path values are provided. Typically use 2-4 files for optimal performance.
 
     .PARAMETER CreateFolder
-        If this switch is enabled, each database will be backed up into a separate folder on each of the paths specified by Path.
+        Creates a separate subdirectory for each database within the backup path for better organization.
+        Results in paths like 'BackupPath\DatabaseName\BackupFile.bak' instead of all files in one directory.
+        Particularly useful for multi-database backups and maintaining organized backup directory structures.
 
     .PARAMETER CompressBackup
-        If this switch is enabled, the function will try to perform a compressed backup if supported by the version and edition of SQL Server. Otherwise, this function will use the server(s) default setting for compression.
-
-        NOTE: Explicitly providing a value of false will disable backup compression.
+        Forces backup compression when supported by SQL Server edition and version (Enterprise/Standard 2008+).
+        Reduces backup file size by 50-80% but increases CPU usage during backup operations.
+        When omitted, uses server default compression setting. Explicitly false disables compression entirely.
 
     .PARAMETER MaxTransferSize
-        Sets the size of the unit of transfer. Values must be a multiple of 64kb.
+        Controls the size of each data transfer unit during backup operations. Must be a multiple of 64KB with 4MB maximum.
+        Larger values can improve performance for fast storage but may cause memory pressure.
+        Automatically set to 128KB for TDE-encrypted databases with compression to avoid conflicts.
 
     .PARAMETER Blocksize
-        Specifies the block size to use. Must be one of 0.5KB, 1KB, 2KB, 4KB, 8KB, 16KB, 32KB or 64KB. This can be specified in bytes.
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Sets the physical block size for backup devices. Must be 0.5KB, 1KB, 2KB, 4KB, 8KB, 16KB, 32KB, or 64KB.
+        Affects backup file structure and restore performance. Larger blocks may improve performance for fast storage.
+        Cannot be used with Azure page blob backups (when AzureCredential is specified).
 
     .PARAMETER BufferCount
-        Number of I/O buffers to use to perform the operation.
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Specifies the number of I/O buffers allocated for the backup operation.
+        More buffers can improve performance on fast storage but consume additional memory.
+        SQL Server calculates optimal values automatically, so specify only when performance tuning specific scenarios.
 
     .PARAMETER Checksum
-        If this switch is enabled, the backup checksum will be calculated.
+        Enables backup checksum calculation to detect backup corruption during creation and restore.
+        Adds minimal overhead but provides important data integrity verification for critical backups.
+        Recommended for production environments to ensure backup reliability and early corruption detection.
 
     .PARAMETER Verify
-        If this switch is enabled, the backup will be verified by running a RESTORE VERIFYONLY against the SqlInstance
+        Performs RESTORE VERIFYONLY after backup completion to confirm backup integrity and restorability.
+        Adds time to backup operations but ensures backups are usable before considering the job complete.
+        Critical for validating backups in automated processes and compliance requirements.
 
     .PARAMETER WithFormat
-        Formats the media as the first step of the backup operation. NOTE: This will set Initialize and SkipTapeHeader to $true.
+        Formats the backup media before writing, destroying any existing backup sets on the device.
+        Automatically enables Initialize and SkipTapeHeader options for complete media initialization.
+        Use when starting fresh backup sets or when media corruption requires reformatting.
 
     .PARAMETER Initialize
-        Initializes the media as part of the backup operation.
+        Overwrites existing backup sets on the media to start a new backup set.
+        Destroys all previous backups on the target files/devices but preserves media formatting.
+        Use when you want to replace old backups without formatting the entire media.
 
     .PARAMETER SkipTapeHeader
-        Initializes the media as part of the backup operation.
+        Skips tape header information during backup operations, primarily for compatibility.
+        Mainly relevant for tape devices and legacy backup scenarios.
+        Automatically enabled with WithFormat parameter for proper media initialization.
 
     .PARAMETER InputObject
-        Internal parameter
+        Accepts database objects from pipeline for backup operations.
+        Allows piping databases from Get-DbaDatabase or other dbatools commands.
+        Internal parameter primarily used for pipeline processing and automation scenarios.
 
     .PARAMETER AzureBaseUrl
-        The URL(s) to the base container of an Azure Storage account to write backups to.
-        If specifying the AzureCredential parameter you can only provide 1 value as page blobs do not support multiple URLs
-        If using Shared Access keys, you may specify as many URLs as you want, as long as a corresponding credential exists on the source server.
-        If specified, the only other parameters than can be used are "CopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
+        Specifies Azure blob storage container URLs for cloud backup destinations.
+        Single URL required for page blobs (with AzureCredential), multiple URLs supported for block blobs with SAS.
+        Requires corresponding SQL Server credentials for authentication. Limits other parameter usage to core backup options.
+        Essential for backing up to Azure storage for cloud-native or hybrid SQL Server deployments.
 
     .PARAMETER AzureCredential
-        The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
-        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl. As page blobs are used with this option we force the number of files to 1 and ignore any value passed in for BlockSize or MaxTransferSize
+        Specifies the SQL Server credential name for Azure storage access key authentication.
+        Creates page blob backups with automatic single-file restriction and ignores BlockSize/MaxTransferSize.
+        For SAS authentication, use credentials named to match the AzureBaseUrl. Required for Azure storage access key scenarios.
 
     .PARAMETER NoRecovery
-        This is passed in to perform a tail log backup if needed
+        Performs transaction log backup without truncating the log, leaving database in restoring state.
+        Essential for tail-log backups during disaster recovery or before restoring to a point in time.
+        Only applicable to log backups and prevents normal database operations until recovery is completed.
 
     .PARAMETER BuildPath
-        By default this command will not attempt to create missing paths, this switch will change the behaviour so that it will
+        Enables automatic creation of missing directory paths when SQL Server has permissions.
+        By default, the function expects backup paths to exist and will fail if they don't.
+        Useful for automated backup scripts where destination folders might not exist yet.
 
     .PARAMETER IgnoreFileChecks
-        This switch stops the function from checking for the validity of paths. This can be useful if SQL Server only has read access to the backup area.
-        Note, that as we cannot check the path you may well end up with errors.
+        Skips path validation checks before backup operations, useful when SQL Server has limited filesystem access.
+        Bypasses safety checks that normally prevent backup failures due to permissions or missing paths.
+        Use with caution as it may result in backup failures that could have been prevented.
 
     .PARAMETER OutputScriptOnly
-        Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do not exist
+        Generates and returns the T-SQL BACKUP commands without executing them.
+        Useful for reviewing backup commands, incorporating into scripts, or troubleshooting backup parameter combinations.
+        No actual backup operations occur and no paths are created when using this option.
 
     .PARAMETER EncryptionAlgorithm
-        Specified the Encryption Algorithm to used. Must be one of 'AES128','AES192','AES256' or 'TRIPLEDES'
-        Must specify one of EncryptionCertificate or EncryptionKey as well.
+        Specifies the encryption algorithm for backup encryption: AES128, AES192, AES256, or TRIPLEDES.
+        Requires either EncryptionCertificate or EncryptionKey for the encryption process.
+        AES256 recommended for maximum security, though it may impact backup performance on older hardware.
 
     .PARAMETER EncryptionCertificate
-        The name of the certificate to be used to encrypt the backups. The existence of the certificate will be checked, and will not proceed if it does not exist
-        Is mutually exclusive with the EncryptionKey option
+        Specifies the certificate name in the master database for backup encryption.
+        Certificate existence is validated before backup begins to prevent failures mid-operation.
+        Mutually exclusive with EncryptionKey. Essential for protecting sensitive data in backup files.
 
     .PARAMETER Description
-        The text describing the backup set like in BACKUP ... WITH DESCRITION = ''.
+        Adds a description to the backup set metadata for documentation and identification purposes.
+        Limited to 255 characters and stored in MSDB backup history for backup set identification.
+        Useful for tracking backup purposes, change sets, or special circumstances around the backup timing.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

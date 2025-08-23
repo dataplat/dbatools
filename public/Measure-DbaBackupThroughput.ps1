@@ -33,22 +33,28 @@ function Measure-DbaBackupThroughput {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for backup throughput statistics. Accepts wildcards for pattern matching.
+        Use this when you need to focus performance analysis on specific databases rather than analyzing all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. Options for this list are auto-populated from the server.
+        Specifies databases to exclude from throughput analysis. Accepts wildcards for pattern matching.
+        Use this to remove system databases or problematic databases from your performance analysis without affecting other databases.
 
     .PARAMETER Type
-        By default, this command measures the speed of Full backups. Valid options are "Full", "Log" and "Differential".
+        Specifies which backup type to analyze for throughput calculations. Valid options include "Full", "Log", "Differential", "File", "Differential File", "Partial Full", and "Partial Differential".
+        Use this to analyze specific backup types when troubleshooting performance issues or comparing different backup strategies. Defaults to "Full" backups.
 
     .PARAMETER Since
-        All backups taken on or after the point in time represented by this datetime object will be processed.
+        Filters backup history to analyze only backups taken on or after the specified date and time.
+        Use this to focus your throughput analysis on recent backups or compare performance before and after infrastructure changes. Accepts standard PowerShell datetime formats.
 
     .PARAMETER Last
-        If this switch is enabled, only the last backup will be measured.
+        Analyzes only the most recent backup for each database instead of processing the entire backup history.
+        Use this for quick performance checks or when you only need current backup throughput statistics rather than historical trends.
 
     .PARAMETER DeviceType
-        Specifies one or more DeviceTypes to use in filtering backup sets. Valid values are "Disk", "Permanent Disk Device", "Tape", "Permanent Tape Device", "Pipe", "Permanent Pipe Device" and "Virtual Device", as well as custom integers for your own DeviceTypes.
+        Filters analysis to specific backup device types such as "Disk", "Tape", "Virtual Device", or their permanent counterparts.
+        Use this to compare throughput performance between different backup destinations or troubleshoot specific backup infrastructure components. Accepts custom integer values for specialized backup devices.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

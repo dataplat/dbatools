@@ -31,14 +31,16 @@ function Invoke-DbaBalanceDataFiles {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process.
+        Specifies which databases to balance data files for. Only databases with multiple data files can be balanced.
+        This parameter is required since the function needs specific databases to process for data file balancing.
 
     .PARAMETER Table
-        The tables(s) of the database to process. If unspecified, all tables will be processed.
+        Specifies which tables to balance data for within the target databases. Only tables with clustered indexes in file groups containing multiple data files will be processed.
+        When omitted, all eligible tables in the database will be processed. Use this to target specific large tables that need data redistribution.
 
     .PARAMETER RebuildOffline
-        Will set all the indexes to rebuild offline.
-        This option is also needed when the server version is below 2005.
+        Forces all clustered index rebuilds to occur offline, which redistributes data between files but blocks table access during the operation.
+        Use this switch when you need to balance data files but can accept downtime, or when working with SQL Server editions that don't support online index operations (Standard, Express, Web).
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -52,8 +54,8 @@ function Invoke-DbaBalanceDataFiles {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        This will disable the check for enough disk space for the action to be successful.
-        Use this with caution!!
+        Bypasses the disk space validation check that ensures sufficient free space exists before balancing data files.
+        Use this when you're confident about available disk space or when working with non-Windows SQL Server instances where disk space checks may not work properly.
 
     .NOTES
         Tags: Database, FileManagement, File, Utility

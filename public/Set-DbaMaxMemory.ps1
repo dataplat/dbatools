@@ -29,10 +29,12 @@ function Set-DbaMaxMemory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Max
-        Specifies the max megabytes (MB)
+        Specifies the explicit maximum memory value in megabytes for SQL Server to use. When provided, this overrides the automatic memory recommendation calculation.
+        Use this when you need a specific memory allocation that differs from the calculated recommendation, such as reserving memory for other applications or setting conservative limits for shared servers.
 
     .PARAMETER InputObject
-        A InputObject returned by Test-DbaMaxMemory
+        Accepts output objects from Test-DbaMaxMemory containing memory analysis results for one or more SQL Server instances.
+        Use this to pipeline memory testing results directly into memory configuration, allowing you to review recommendations before applying changes.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -17,11 +17,12 @@ function Get-DbaAgentJobCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category to filter out. If no category is used all categories will be returned.
+        Specifies one or more job category names to return, filtering the results to only those categories. Accepts multiple values and supports built-in categories like 'Database Maintenance', 'Log Shipping', 'Replication', and custom categories created by DBAs.
+        Use this when you need to check specific categories for job assignments or verify custom organizational schemes. If not specified, all job categories are returned.
 
     .PARAMETER CategoryType
-        The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-        If no category is used all categories types will be returned.
+        Filters job categories by their deployment type: 'LocalJob' for single-instance jobs, 'MultiServerJob' for Master Server/Target Server (MSX/TSX) environments, or 'None' for uncategorized jobs.
+        Use this in MSX/TSX configurations to distinguish between locally managed jobs and multi-server jobs, or to identify jobs that haven't been assigned a proper category. If not specified, all category types are returned.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

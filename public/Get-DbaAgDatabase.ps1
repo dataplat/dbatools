@@ -19,13 +19,16 @@ function Get-DbaAgDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Specify the availability groups to query.
+        Specifies which availability groups to query for database information. Accepts multiple availability group names.
+        Use this to limit results to specific availability groups when you have multiple AGs on the same instance.
 
     .PARAMETER Database
-        Specify the database or databases to return. This list is auto-populated from the server for tab completion. Multiple databases can be specified. If none are specified all databases will be processed.
+        Specifies which availability group databases to return information for. Accepts multiple database names with tab completion.
+        Use this to focus on specific databases when troubleshooting AG issues or monitoring particular applications.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup via pipeline input.
+        Use this when you want to chain commands to get database details from already retrieved availability groups.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

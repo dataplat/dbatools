@@ -11,42 +11,44 @@ function Copy-DbaSsisCatalog {
         The parameters work hierarchically - specifying -Folder will only deploy projects and environments from within that folder, while -Project will deploy just that specific project from whichever folder contains it.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
+        Source SQL Server instance containing the SSISDB catalog to copy from. Requires sysadmin privileges and SQL Server 2012 or higher.
+        This instance must have Integration Services installed with an existing SSISDB catalog containing the folders, projects, and environments you want to migrate.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the source SQL Server instance. Use this when you need to connect with different credentials than your current Windows identity.
+        Accepts PowerShell credential objects created with Get-Credential and supports SQL Authentication, Windows Authentication, and Active Directory authentication modes.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2012 or higher.
+        Destination SQL Server instances where the SSISDB catalog will be copied to. Requires sysadmin privileges and SQL Server 2012 or higher.
+        If SSISDB doesn't exist on the destination, the function will offer to create it automatically including enabling CLR integration if needed.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the destination SQL Server instances. Use this when you need to connect with different credentials than your current Windows identity.
+        Accepts PowerShell credential objects created with Get-Credential and supports SQL Authentication, Windows Authentication, and Active Directory authentication modes.
 
     .PARAMETER Force
-        If this switch is enabled, the SSIS Catalog will be dropped and recreated on Destination if it already exists.
+        Drops and recreates existing folders, projects, and environments at the destination instead of skipping them. Use this when you need to overwrite existing SSIS objects during migrations.
+        Without this parameter, the function will skip objects that already exist at the destination and display warning messages.
 
     .PARAMETER Project
-        Specifies a source Project name.
+        Specifies a single SSIS project name to copy instead of migrating all projects. The project will be deployed from whichever source folder contains it.
+        Use this when you only need to migrate a specific Integration Services project rather than the entire catalog structure.
 
     .PARAMETER Folder
-        Specifies a source folder name.
+        Specifies a single SSISDB catalog folder to copy instead of migrating all folders. Only projects and environments from within this folder will be copied.
+        Use this to limit the migration scope when you only need to move contents of a specific organizational folder.
 
     .PARAMETER Environment
-        Specifies an environment to copy.
+        Specifies a single SSIS environment to copy instead of migrating all environments. The environment will be deployed from whichever source folder contains it.
+        Use this when you only need to migrate specific environment configurations that contain your parameter values and connection strings.
 
     .PARAMETER EnableSqlClr
-        If this switch is enabled and Destination does not have the SQL CLR configuration option enabled, user prompts for enabling it on Destination will be skipped. SQL CLR is required for SSISDB.
+        Automatically enables CLR integration on the destination without prompting for confirmation. CLR integration is required for SSISDB catalog functionality.
+        Use this in automated scenarios where you want to avoid interactive prompts when the destination server doesn't have CLR enabled.
 
     .PARAMETER CreateCatalogPassword
-        Specifies a secure string to use in creating an SSISDB catalog on Destination. If this is specified, prompts for the password will be skipped.
+        Password for creating a new SSISDB catalog on the destination as a SecureString object. Required when the destination doesn't have an existing SSISDB catalog.
+        Use this in automated scripts to avoid interactive password prompts during catalog creation. The password encrypts sensitive data within the SSISDB catalog.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -11,30 +11,28 @@ function Copy-DbaStartupProcedure {
         By default, all startup procedures are copied. Use -Procedure to copy specific procedures or -ExcludeProcedure to skip certain ones. Existing procedures on the destination are skipped unless -Force is used to overwrite them.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The source SQL Server instance containing startup procedures to copy from the master database. Requires sysadmin access to read stored procedure definitions and startup configuration.
+        Use this to specify which server has the startup procedures you want to migrate or standardize across your environment.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the source SQL Server instance when Windows authentication is not available or desired.
+        Use this when you need to connect with specific SQL login credentials or when running under a service account that lacks access to the source server.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        The destination SQL Server instance(s) where startup procedures will be copied to the master database. Requires sysadmin access to create procedures and modify startup configuration.
+        Accepts multiple destinations to deploy startup procedures across several servers simultaneously for standardization.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the destination SQL Server instance(s) when Windows authentication is not available or desired.
+        Use this when deploying to servers that require different authentication credentials or when your current context lacks destination access.
 
     .PARAMETER Procedure
-        The startup procedure(s) to process. This list is auto-populated from the server. If unspecified, all startup procedures will be processed.
+        Specifies which startup procedures to copy from the source server instead of copying all available startup procedures.
+        Use this when you only need specific procedures migrated, such as copying just monitoring or initialization procedures while leaving others behind.
 
     .PARAMETER ExcludeProcedure
-        The startup procedure(s) to exclude. This list is auto-populated from the server.
+        Specifies which startup procedures to skip during the copy operation while processing all others from the source.
+        Use this when most startup procedures should be copied but specific ones need to remain server-specific or are problematic.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -48,7 +46,8 @@ function Copy-DbaStartupProcedure {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, the custom error will be dropped and recreated if it already exists on Destination.
+        Overwrites existing startup procedures on the destination server instead of skipping them when name conflicts occur.
+        Use this when updating existing startup procedures with newer versions or when you need to ensure destination procedures match the source exactly.
 
     .NOTES
         Tags: Migration, Procedure, Startup, StartupProcedure

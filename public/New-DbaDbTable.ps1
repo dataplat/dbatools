@@ -17,169 +17,224 @@ function New-DbaDbTable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases where the table will be created
+        Specifies the database where the new table will be created. Accepts multiple database names to create the same table across several databases.
+        Use this when you need to deploy identical table structures to multiple databases in your environment.
 
     .PARAMETER Name
-        The name of the table
+        Specifies the name for the new table. Must be a valid SQL Server identifier.
+        Use standard naming conventions like avoiding spaces and reserved keywords for better maintainability.
 
     .PARAMETER Schema
-        The schema for the table, defaults to dbo
+        Specifies the schema where the table will be created. Defaults to 'dbo' if not specified.
+        Use this to organize tables by functional area or security requirements. The schema will be created automatically if it doesn't exist.
 
     .PARAMETER ColumnMap
-        Hashtable for easy column creation. See Examples for details
+        Defines table columns using PowerShell hashtables with properties like Name, Type, MaxLength, Nullable, Default, Identity, etc.
+        This is the primary method for specifying column structure when you need simple, declarative table creation. See examples for supported hashtable properties.
 
     .PARAMETER ColumnObject
-        If you want to get fancy, you can build your own column objects and pass them in
+        Accepts pre-built SMO Column objects for advanced scenarios requiring complex column configurations.
+        Use this when you need features not supported by ColumnMap hashtables, such as computed columns or advanced constraints.
 
     .PARAMETER InputObject
-        Allows piped input from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase for creating tables across multiple databases.
+        Use this in pipeline scenarios where you want to apply table creation to a filtered set of databases.
 
     .PARAMETER AnsiNullsStatus
-        No information provided by Microsoft
+        Controls ANSI_NULLS setting for the table, affecting how null comparisons are handled in queries.
+        Enable this to ensure ANSI-compliant null handling behavior, which is recommended for modern applications.
 
     .PARAMETER ChangeTrackingEnabled
-        No information provided by Microsoft
+        Enables SQL Server Change Tracking on the table to monitor data modifications.
+        Use this when you need to track which rows have been inserted, updated, or deleted for synchronization scenarios.
 
     .PARAMETER DataSourceName
-        No information provided by Microsoft
+        Specifies the external data source name for external tables in SQL Server 2016+ or Azure SQL.
+        Required when creating external tables that reference data in Hadoop, Azure Blob Storage, or other external systems.
 
     .PARAMETER Durability
-        No information provided by Microsoft
+        Sets the durability level for memory-optimized tables (SCHEMA_AND_DATA or SCHEMA_ONLY).
+        Use SCHEMA_ONLY for temporary data that doesn't need to persist across server restarts, or SCHEMA_AND_DATA for permanent memory-optimized tables.
 
     .PARAMETER ExternalTableDistribution
-        No information provided by Microsoft
+        Specifies the distribution method for external tables in Azure SQL Data Warehouse or Parallel Data Warehouse.
+        Choose between HASH, ROUND_ROBIN, or REPLICATE based on your query patterns and data size requirements.
 
     .PARAMETER FileFormatName
-        No information provided by Microsoft
+        Specifies the external file format name for external tables that read from files.
+        Required when creating external tables that reference structured files like CSV, Parquet, or ORC in external storage systems.
 
     .PARAMETER FileGroup
-        No information provided by Microsoft
+        Specifies the filegroup where the table data will be stored. Defaults to the database's default filegroup.
+        Use this to control storage placement for performance optimization or to separate tables across different storage devices.
 
     .PARAMETER FileStreamFileGroup
-        No information provided by Microsoft
+        Specifies the FILESTREAM filegroup for tables that store large binary data as files.
+        Required when creating tables with FILESTREAM columns for storing documents, images, or other large binary objects.
 
     .PARAMETER FileStreamPartitionScheme
-        No information provided by Microsoft
+        Specifies the partition scheme for FILESTREAM data in partitioned tables.
+        Use this when you need to partition FILESTREAM data across multiple filegroups for performance or maintenance benefits.
 
     .PARAMETER FileTableDirectoryName
-        No information provided by Microsoft
+        Sets the directory name for FileTable functionality, allowing Windows file system access to table data.
+        Specify a meaningful name that will appear as a folder in the Windows file system when accessing the table through the file share.
 
     .PARAMETER FileTableNameColumnCollation
-        No information provided by Microsoft
+        Specifies the collation for the name column in FileTable to control file name sorting and comparison.
+        Use a case-insensitive collation for Windows-compatible file name handling in FileTable scenarios.
 
     .PARAMETER FileTableNamespaceEnabled
-        No information provided by Microsoft
+        Enables the FileTable namespace, allowing file system access through Windows APIs.
+        Set to true when you want applications to access table data through standard file operations like copy, move, and delete.
 
     .PARAMETER HistoryTableName
-        No information provided by Microsoft
+        Specifies the name of the history table for system-versioned temporal tables.
+        Required when creating temporal tables that automatically track all data changes for point-in-time queries and auditing.
 
     .PARAMETER HistoryTableSchema
-        No information provided by Microsoft
+        Specifies the schema for the history table in system-versioned temporal tables.
+        Use this to organize history tables in a separate schema for better security and maintenance separation from current data.
 
     .PARAMETER IsExternal
-        No information provided by Microsoft
+        Creates an external table that references data stored outside SQL Server.
+        Use this for querying data in Azure Blob Storage, Hadoop, or other external systems without importing the data into SQL Server.
 
     .PARAMETER IsFileTable
-        No information provided by Microsoft
+        Creates a FileTable that combines relational data with Windows file system access.
+        Enable this when you need applications to store and manage documents through both T-SQL and standard Windows file operations.
 
     .PARAMETER IsMemoryOptimized
-        No information provided by Microsoft
+        Creates an In-Memory OLTP table stored entirely in memory for high-performance scenarios.
+        Use this for tables requiring extremely high transaction throughput with low latency, typically in OLTP workloads.
 
     .PARAMETER IsSystemVersioned
-        No information provided by Microsoft
+        Creates a temporal table that automatically tracks all data changes with system-generated timestamps.
+        Enable this for auditing requirements or when you need to query historical versions of data at any point in time.
 
     .PARAMETER Location
-        No information provided by Microsoft
+        Specifies the location path for external tables pointing to files or directories.
+        Required for external tables to define where the actual data files are stored in the external system.
 
     .PARAMETER LockEscalation
-        No information provided by Microsoft
+        Controls when SQL Server escalates row or page locks to table locks (TABLE, AUTO, or DISABLE).
+        Set to DISABLE for high-concurrency scenarios where table-level locks would cause blocking, or AUTO for default behavior.
 
     .PARAMETER Owner
-        No information provided by Microsoft
+        Specifies the table owner, typically a database user or role with appropriate permissions.
+        Use this to set explicit ownership for security or administrative purposes, though schema-contained objects are generally preferred.
 
     .PARAMETER PartitionScheme
-        No information provided by Microsoft
+        Specifies the partition scheme for horizontally partitioning large tables across multiple filegroups.
+        Use this for very large tables to improve query performance and enable parallel maintenance operations on partition boundaries.
 
     .PARAMETER QuotedIdentifierStatus
-        No information provided by Microsoft
+        Controls QUOTED_IDENTIFIER setting for the table, affecting how double quotes are interpreted in queries.
+        Enable this to use double quotes for identifiers containing spaces or reserved words, following ANSI SQL standards.
 
     .PARAMETER RejectSampleValue
-        No information provided by Microsoft
+        Sets the sample size for reject value calculations in external tables with error handling.
+        Specify the number of rows to sample when determining if reject thresholds have been exceeded during external data access.
 
     .PARAMETER RejectType
-        No information provided by Microsoft
+        Defines how reject values are calculated for external tables (VALUE or PERCENTAGE).
+        Use VALUE for absolute row count limits or PERCENTAGE for proportional error thresholds when accessing external data sources.
 
     .PARAMETER RejectValue
-        No information provided by Microsoft
+        Sets the maximum number or percentage of rejected rows allowed when querying external tables.
+        Configure this to control query behavior when encountering data quality issues in external data sources.
 
     .PARAMETER RemoteDataArchiveDataMigrationState
-        No information provided by Microsoft
+        Controls the data migration state for Stretch Database tables (INBOUND, OUTBOUND, or PAUSED).
+        Use this to manage how historical data is migrated between on-premises SQL Server and Azure SQL Database.
 
     .PARAMETER RemoteDataArchiveEnabled
-        No information provided by Microsoft
+        Enables Stretch Database functionality to automatically migrate cold data to Azure SQL Database.
+        Use this for tables with historical data that can be moved to lower-cost cloud storage while remaining queryable.
 
     .PARAMETER RemoteDataArchiveFilterPredicate
-        No information provided by Microsoft
+        Defines the filter function determining which rows are eligible for Stretch Database migration.
+        Specify a function that returns 1 for rows to migrate, typically based on date criteria for archiving old data.
 
     .PARAMETER RemoteObjectName
-        No information provided by Microsoft
+        Specifies the name of the remote table or object for Stretch Database or external table scenarios.
+        Use this when the remote table name differs from the local table name in federated or hybrid configurations.
 
     .PARAMETER RemoteSchemaName
-        No information provided by Microsoft
+        Specifies the schema name in the remote database for Stretch Database tables.
+        Define this when the remote Azure SQL Database uses a different schema structure than your local database.
 
     .PARAMETER RemoteTableName
-        No information provided by Microsoft
+        Sets the table name in the remote Azure SQL Database for Stretch Database functionality.
+        Specify this when you want the archived data to use a different table name in the cloud storage location.
 
     .PARAMETER RemoteTableProvisioned
-        No information provided by Microsoft
+        Indicates whether the remote table for Stretch Database has already been created in Azure SQL Database.
+        Set to true if the remote table structure already exists, preventing automatic provisioning during setup.
 
     .PARAMETER ShardingColumnName
-        No information provided by Microsoft
+        Specifies the column used for sharding data distribution in Azure SQL Database elastic pools.
+        Define the column that determines how rows are distributed across multiple database shards for horizontal scaling.
 
     .PARAMETER TextFileGroup
-        No information provided by Microsoft
+        Specifies the filegroup for storing text, ntext, and image columns in SQL Server versions before 2016.
+        Use this for legacy applications requiring separate storage for large text data, though newer data types are recommended.
 
     .PARAMETER TrackColumnsUpdatedEnabled
-        No information provided by Microsoft
+        Enables column-level change tracking to identify which specific columns were modified.
+        Use this when you need granular change information beyond just knowing that a row was updated, useful for selective synchronization.
 
     .PARAMETER HistoryRetentionPeriod
-        No information provided by Microsoft
+        Sets the retention period for temporal table history data before automatic cleanup.
+        Specify the number of time units (days, months, years) to retain historical data for compliance and storage management.
 
     .PARAMETER HistoryRetentionPeriodUnit
-        No information provided by Microsoft
+        Defines the time unit for history retention period (DAYS, WEEKS, MONTHS, or YEARS).
+        Use this with HistoryRetentionPeriod to control how long temporal table history is preserved before automatic deletion.
 
     .PARAMETER DwTableDistribution
-        No information provided by Microsoft
+        Specifies the distribution strategy for data warehouse tables (HASH, ROUND_ROBIN, or REPLICATE).
+        Choose HASH for large fact tables, ROUND_ROBIN for staging tables, or REPLICATE for small dimension tables in analytical workloads.
 
     .PARAMETER RejectedRowLocation
-        No information provided by Microsoft
+        Specifies where to store rows that exceed reject thresholds when querying external tables.
+        Define a location for storing problematic rows for later analysis and data quality troubleshooting.
 
     .PARAMETER OnlineHeapOperation
-        No information provided by Microsoft
+        Enables online operations for heap tables during index creation or rebuilding.
+        Use this to minimize blocking and maintain table availability during maintenance operations on tables without clustered indexes.
 
     .PARAMETER LowPriorityMaxDuration
-        No information provided by Microsoft
+        Sets the maximum time in minutes for low-priority lock waits during online operations.
+        Specify how long online operations should wait for locks before taking alternative action to balance performance and availability.
 
     .PARAMETER DataConsistencyCheck
-        No information provided by Microsoft
+        Enables data consistency validation during online index operations.
+        Use this to ensure data integrity is maintained during concurrent modifications to tables undergoing maintenance operations.
 
     .PARAMETER LowPriorityAbortAfterWait
-        No information provided by Microsoft
+        Defines the action to take when low-priority operations exceed their maximum wait duration.
+        Choose how to handle lock conflicts: continue waiting, abort the operation, or kill blocking transactions.
 
     .PARAMETER MaximumDegreeOfParallelism
-        No information provided by Microsoft
+        Limits the number of processors used during table operations like index creation.
+        Set this to control resource usage and prevent single operations from consuming all available CPU cores.
 
     .PARAMETER IsNode
-        No information provided by Microsoft
+        Creates a node table for SQL Server 2017+ Graph Database functionality.
+        Enable this when building graph databases where the table will store entities and their properties for relationship modeling.
 
     .PARAMETER IsEdge
-        No information provided by Microsoft
+        Creates an edge table for SQL Server 2017+ Graph Database functionality to store relationships.
+        Enable this when building graph databases where the table will store connections between node tables.
 
     .PARAMETER IsVarDecimalStorageFormatEnabled
-        No information provided by Microsoft
+        Enables variable-length decimal storage format to reduce storage space for decimal and numeric columns.
+        Use this for tables with many decimal columns containing leading zeros or small values to optimize storage efficiency.
 
     .PARAMETER Passthru
-        Don't create the table, just print the table script on the screen.
+        Returns the T-SQL script for table creation instead of executing it immediately.
+        Use this to review, modify, or save table creation scripts before deployment, or to generate scripts for version control.
 
     .PARAMETER WhatIf
        Shows what would happen if the command were to run. No actions are actually performed.

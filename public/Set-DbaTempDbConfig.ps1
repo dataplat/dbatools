@@ -21,34 +21,44 @@ function Set-DbaTempDbConfig {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DataFileCount
-        Specifies the number of data files to create. If this number is not specified, the number of logical cores of the host will be used.
+        Sets the number of tempdb data files to create. When omitted, automatically uses the logical core count (capped at 8 per Microsoft best practices).
+        Override this when you need a specific file count different from core count, though exceeding core count generates a warning as it goes against best practices.
 
     .PARAMETER DataFileSize
-        Specifies the total data file size in megabytes. This is distributed across the total number of data files.
+        Sets the total size in MB for all tempdb data files combined. This value gets evenly divided across all data files.
+        For example, 1000MB with 4 files creates four 250MB files. Choose based on your workload's tempdb usage patterns and available storage.
 
     .PARAMETER LogFileSize
-        Specifies the log file size in megabytes. If not specified, no change will be made.
+        Sets the tempdb log file size in MB. When omitted, the existing log file size remains unchanged.
+        Use this to resize the log file when current sizing doesn't match your tempdb transaction volume requirements.
 
     .PARAMETER DataFileGrowth
-        Specifies the growth amount for the data file(s) in megabytes. The default is 512 MB.
+        Controls the growth increment for tempdb data files in MB when they need to expand. Defaults to 512 MB.
+        Set this based on your typical tempdb usage spikes to avoid frequent small growths that can impact performance. Use 0 with -DisableGrowth to prevent growth entirely.
 
     .PARAMETER LogFileGrowth
-        Specifies the growth amount for the log file in megabytes. The default is 512 MB.
+        Controls the growth increment for the tempdb log file in MB when it needs to expand. Defaults to 512 MB.
+        Size this according to your transaction log activity in tempdb to minimize auto-growth events during peak workloads.
 
     .PARAMETER DataPath
-        Specifies the filesystem path(s) in which to create the tempdb data files. If not specified, current tempdb location will be used.
+        Sets the folder path(s) where tempdb data files will be created. When omitted, uses the current tempdb data file location.
+        Specify multiple paths to distribute files across different drives for performance. Files are distributed round-robin across the provided paths.
 
     .PARAMETER LogPath
-        Specifies the filesystem path in which to create the tempdb log file. If not specified, current tempdb location will be used.
+        Sets the folder path where the tempdb log file will be created. When omitted, uses the current tempdb log file location.
+        Consider placing the log file on a separate drive from data files to reduce I/O contention for write-heavy tempdb workloads.
 
     .PARAMETER OutputScriptOnly
-        If this switch is enabled, only the T-SQL script to change the tempdb configuration is created and output.
+        Returns the generated T-SQL script without executing it against the SQL Server instance.
+        Use this to review the configuration changes before applying them, or to run the script manually during maintenance windows.
 
     .PARAMETER OutFile
-        Specifies the filesystem path into which the generated T-SQL script will be saved.
+        Saves the generated T-SQL script to the specified file path instead of executing it.
+        Useful for storing configuration scripts in source control or running them later through scheduled maintenance processes.
 
     .PARAMETER DisableGrowth
-        If this switch is enabled, the tempdb files will be configured to not grow. This overrides -DataFileGrowth and -LogFileGrowth.
+        Prevents tempdb files from auto-growing by setting growth to 0. Overrides any values specified for -DataFileGrowth and -LogFileGrowth.
+        Use this when you want to pre-size tempdb files appropriately and prevent unexpected growth during production workloads.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

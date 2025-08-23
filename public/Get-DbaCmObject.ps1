@@ -11,31 +11,35 @@ function Get-DbaCmObject {
         Much of its behavior can be configured using Test-DbaCmConnection to pre-test and configure optimal connection methods for your environment.
 
     .PARAMETER ClassName
-        The name of the class to retrieve.
+        Specifies the WMI or CIM class name to query from the target servers. Common classes include Win32_OperatingSystem for OS details, Win32_ComputerSystem for hardware info, or Win32_Service for Windows services.
+        Use this when you need to retrieve all instances and properties of a specific Windows management class across your SQL Server infrastructure.
 
     .PARAMETER Query
-        The Wmi/Cim query to run against the server.
+        Specifies a custom WQL (WMI Query Language) query to execute against the target servers. Allows for complex filtering and specific property selection beyond simple class retrieval.
+        Use this when you need advanced filtering like "SELECT Name, State FROM Win32_Service WHERE StartMode='Auto'" to get specific data rather than entire class instances.
 
     .PARAMETER ComputerName
-        The computer(s) to connect to. Defaults to localhost.
+        Specifies the target computer names or SQL Server host names to query for Windows management information. Accepts multiple values and pipeline input.
+        Defaults to the local machine when not specified, but typically used to gather system-level data from remote SQL Server hosts for infrastructure monitoring.
 
     .PARAMETER Credential
         Credentials to use. Invalid credentials will be stored in a credentials cache and not be reused.
 
     .PARAMETER Namespace
-        The namespace of the class to use.
+        Specifies the WMI namespace path where the target class or query should be executed. The default "root\cimv2" contains most Windows system classes.
+        Change this when querying specialized namespaces like "root\SQLSERVER" for SQL Server-specific WMI classes or "root\MSCluster" for cluster information.
 
     .PARAMETER DoNotUse
-        Connection Protocols that should not be used.
+        Excludes specific connection protocols from the automatic fallback sequence. Valid values are CimRM, CimDCOM, Wmi, and PowerShellRemoting.
+        Use this when certain protocols are blocked by network policies or cause issues in your environment, forcing the function to skip problematic connection methods.
 
     .PARAMETER Force
-        Overrides some checks that might otherwise halt execution as a precaution
-        - Ignores timeout on bad connections
+        Bypasses timeout protections on connections that have previously failed, allowing retry attempts on servers marked as problematic.
+        Use this when you suspect connection issues have been resolved or when you need to override cached failure states during troubleshooting.
 
     .PARAMETER SilentlyContinue
-        Use in conjunction with the -EnableException switch.
-        By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in exception enabled mode.
-        Setting this switch will cause it write a non-terminating exception and continue with the next computer.
+        Converts terminating connection failures into non-terminating errors when used with EnableException, allowing processing to continue with remaining servers.
+        Use this when querying multiple servers where some may be unavailable, and you want to collect data from accessible servers rather than stopping on the first failure.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

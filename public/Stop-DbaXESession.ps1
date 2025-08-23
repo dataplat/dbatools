@@ -17,13 +17,16 @@ function Stop-DbaXESession {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
-        Specifies individual Extended Events sessions to stop.
+        Specifies the names of specific Extended Events sessions to stop by name. Accepts session names as strings or arrays for multiple sessions.
+        Use this when you need to stop particular monitoring sessions while leaving others running, such as stopping a performance troubleshooting session while keeping system health sessions active.
 
     .PARAMETER AllSessions
-        If this switch is enabled, all Extended Events sessions will be stopped except the packaged sessions AlwaysOn_health, system_health, telemetry_xevents.
+        Stops all user-created Extended Events sessions while preserving critical system sessions (AlwaysOn_health, system_health, telemetry_xevents).
+        Use this when performing maintenance, reducing resource usage, or cleaning up after troubleshooting activities without disrupting essential SQL Server monitoring.
 
     .PARAMETER InputObject
-        Accepts the object output by Get-DbaXESession as the list of sessions to be stopped.
+        Accepts Extended Events session objects from Get-DbaXESession through the pipeline for stopping sessions.
+        Use this approach when you need to filter sessions based on properties like status, start time, or event counts before stopping them, enabling more sophisticated session management workflows.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

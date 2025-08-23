@@ -17,10 +17,12 @@ function Test-DbaDbCollation {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for collation mismatches against the server's default collation. Accepts wildcards for pattern matching.
+        Use this when you need to focus collation testing on specific databases rather than scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies which databases to skip during collation testing. Useful for excluding system databases or databases you know have intentional collation differences.
+        Common scenarios include skipping databases with different language requirements or legacy databases scheduled for decommission.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

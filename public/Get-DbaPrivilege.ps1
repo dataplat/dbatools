@@ -11,7 +11,8 @@ function Get-DbaPrivilege {
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the target computer names where you want to audit Windows privileges. Accepts multiple computer names for bulk privilege auditing.
+        Use this to check privilege configurations on SQL Server host machines, especially when troubleshooting performance issues related to missing Lock Pages in Memory or Instant File Initialization rights.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.

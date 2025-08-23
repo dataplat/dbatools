@@ -17,29 +17,36 @@ function New-DbaReplSubscription {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database on the publisher that will be replicated.
+        Specifies the source database on the publisher instance that contains the publication data to be replicated.
+        This database must already contain the publication you're subscribing to.
 
     .PARAMETER SubscriberSqlInstance
-        The subscriber SQL instance.
+        The target SQL Server instance that will receive the replicated data from the publisher.
+        Can specify multiple instances to create subscriptions on several subscribers simultaneously.
 
     .PARAMETER SubscriberSqlCredential
-        Login to the subscriber instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login credentials for connecting to the subscriber SQL Server instance. Accepts PowerShell credentials (Get-Credential).
+        Use this when the subscriber requires different authentication than the publisher connection.
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SubscriptionDatabase
-        The database on the subscriber that will be the target of the replicated data.
+        The destination database name on the subscriber instance where replicated data will be stored.
+        If this database doesn't exist, it will be automatically created with default settings.
 
     .PARAMETER PublicationName
-        The name of the replication publication
+        The name of the existing publication on the publisher database that you want to subscribe to.
+        This publication must already exist and be configured for the type of subscription you're creating.
 
     .PARAMETER SubscriptionSqlCredential
-        Credential object that will be saved as the 'subscriber credential' in the subscription properties.
+        SQL Server credentials used by the replication agents to connect to the subscriber database during synchronization.
+        These credentials are stored in the subscription properties and used by the Distribution or Merge Agent.
 
     .PARAMETER Type
-        The flavour of the subscription. Push or Pull.
+        Specifies whether to create a Push or Pull subscription for data synchronization.
+        Push subscriptions are managed by the publisher and typically used for high-frequency replication, while Pull subscriptions are managed by the subscriber.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

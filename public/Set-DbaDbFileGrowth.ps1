@@ -17,19 +17,24 @@ function Set-DbaDbFileGrowth {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The name of the target databases
+        Specifies which databases to modify file growth settings for. Accepts an array of database names.
+        Use this when you need to target specific databases rather than all databases on an instance.
 
     .PARAMETER GrowthType
-        The growth type, MB by default - valid values are MB, KB, GB or TB.
+        Specifies the unit of measurement for the growth increment. Valid values are KB, MB, GB, or TB.
+        Choose the appropriate unit based on your database size and expected growth patterns - MB for smaller databases, GB for larger ones.
 
     .PARAMETER Growth
-        The growth value. 64 by default.
+        Sets the numeric value for the fixed growth increment. Defaults to 64 when combined with the default MB unit.
+        Use smaller values (16-64MB) for smaller databases or larger values (256MB-1GB) for high-growth production databases to balance performance and storage efficiency.
 
     .PARAMETER FileType
-        Apply changes to only DATA, LOG or ALL files
+        Controls which file types to modify - Data files only, Log files only, or All files (both data and log).
+        Use 'Data' when you need different growth settings for data vs log files, or 'All' to standardize growth across all database files.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline operations.
+        Use this when you need to filter databases first or when working with database objects from other dbatools functions.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run

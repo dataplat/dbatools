@@ -21,31 +21,40 @@ function Invoke-DbaDbUpgrade {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is autopopulated from the server. If unspecified, you have to use -ExcludeDatabase to exclude some user databases or -AllUserDatabases to process all user databases.
+        Specifies which databases to upgrade and run post-upgrade maintenance tasks on. Accepts wildcards for pattern matching.
+        Use this when you need to target specific databases rather than processing all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is autopopulated from the server
+        Excludes specific databases from the upgrade process when using -AllUserDatabases. Accepts wildcards for pattern matching.
+        Useful for skipping system-critical databases or those with special maintenance windows during bulk upgrade operations.
 
     .PARAMETER AllUserDatabases
-        Run command against all user databases
+        Processes all user databases on the instance, excluding system databases. Cannot be used with -Database parameter.
+        Use this for instance-wide upgrades after SQL Server version changes or when standardizing all databases to current compatibility levels.
 
     .PARAMETER Force
-        Don't skip over databases that are already at the same level the instance is
+        Runs all maintenance tasks even on databases already at the correct compatibility level and target recovery time.
+        Use this when you need to ensure CHECKDB, UPDATEUSAGE, statistics updates, and view refreshes run regardless of compatibility status.
 
     .PARAMETER NoCheckDb
-        Skip checkdb
+        Skips the DBCC CHECKDB with DATA_PURITY validation step during the upgrade process.
+        Use this when you've recently run integrity checks or need to reduce upgrade time, though this removes corruption detection from the process.
 
     .PARAMETER NoUpdateUsage
-        Skip usage update
+        Skips the DBCC UPDATEUSAGE step that corrects inaccuracies in page and row count information.
+        Use this when you're confident space usage statistics are accurate or need to minimize upgrade time for very large databases.
 
     .PARAMETER NoUpdateStats
-        Skip stats update
+        Skips running sp_updatestats to refresh all user table statistics with current data distribution.
+        Use this when statistics were recently updated or when you have a separate statistics maintenance plan in place.
 
     .PARAMETER NoRefreshView
-        Skip view update
+        Skips executing sp_refreshview on all user views to update their metadata for the new SQL Server version.
+        Use this when you have no views or prefer to refresh view metadata manually to avoid potential view compilation issues.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase)
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase output. Cannot be used with -Database or -AllUserDatabases.
+        Use this for targeted upgrades based on complex filtering criteria or when integrating with other dbatools commands in a pipeline.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run

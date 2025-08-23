@@ -7,13 +7,16 @@ function New-DbaSqlParameter {
         Creates a Microsoft.Data.SqlClient.SqlParameter object with specified properties like data type, direction, size, and value. This is essential for executing parameterized queries and stored procedures safely through Invoke-DbaQuery, preventing SQL injection while providing precise control over parameter behavior. Supports all SqlParameter properties including output parameters, table-valued parameters, and column encryption for secure data handling.
 
     .PARAMETER CompareInfo
-        Sets the CompareInfo object that defines how string comparisons should be performed for this parameter.
+        Defines how string comparisons are performed when this parameter is used in SQL operations. Controls case sensitivity, accent sensitivity, and other collation behaviors.
+        Use this when you need specific string comparison rules that differ from the database's default collation settings.
 
     .PARAMETER DbType
-        Sets the SqlDbType of the parameter.
+        Specifies the .NET data type for the parameter using System.Data.DbType enumeration. This is an alternative to SqlDbType for cross-database compatibility.
+        Use SqlDbType instead for SQL Server-specific operations, as it provides better type mapping and performance.
 
     .PARAMETER Direction
-        Sets a value that indicates whether the parameter is input-only, output-only, bidirectional, or a stored procedure return value parameter.
+        Specifies whether the parameter passes data into the query (Input), returns data from a stored procedure (Output), or both (InputOutput).
+        Required when creating output parameters for stored procedures that return values through parameters rather than result sets.
 
     .PARAMETER ForceColumnEncryption
         Enforces encryption of a parameter when using Always Encrypted.
@@ -23,51 +26,64 @@ function New-DbaSqlParameter {
         This property provides additional protection against security attacks that involve a compromised SQL Server providing incorrect encryption metadata to the client, which may lead to data disclosure.
 
     .PARAMETER IsNullable
-        Sets a value that indicates whether the parameter accepts null values.
-
-        IsNullable is not used to validate the parameter's value and will not prevent sending or receiving a null value when executing a command.
+        Indicates whether the parameter can accept null values, but does not enforce null validation during query execution.
+        This is primarily used for metadata purposes and DataAdapter operations, not for runtime null checking.
 
     .PARAMETER LocaleId
-        Sets the locale identifier that determines conventions and language for a particular region.
+        Specifies the locale identifier (LCID) that determines regional formatting conventions for the parameter value.
+        Use this when working with locale-specific data formatting, particularly for date, time, and numeric values that need specific regional representation.
 
     .PARAMETER Offset
-        Sets the offset to the Value property.
+        Specifies the starting position within the parameter value when working with binary or text data types.
+        Useful when you need to read or write data starting from a specific byte position rather than the beginning of the value.
 
     .PARAMETER ParameterName
-        Sets the name of the SqlParameter.
+        Specifies the name of the parameter as it appears in the SQL query or stored procedure, including the '@' prefix.
+        Must match exactly with parameter names defined in your SQL statements for proper parameter binding.
 
     .PARAMETER Precision
-        Sets the maximum number of digits used to represent the Value property.
+        Defines the total number of digits for numeric data types like decimal or numeric columns.
+        Required when working with precise financial calculations or when the target column has specific precision requirements.
 
     .PARAMETER Scale
-        Sets the number of decimal places to which Value is resolved.
+        Specifies the number of decimal places for numeric data types, working together with Precision.
+        Essential for financial data and calculations where exact decimal representation is required to prevent rounding errors.
 
     .PARAMETER Size
-        Sets the maximum size, in bytes, of the data within the column.
+        Defines the maximum length for variable-length data types like varchar, nvarchar, or varbinary columns.
+        Use -1 for MAX data types (varchar(max), nvarchar(max)) to handle large text or binary data without size restrictions.
 
     .PARAMETER SourceColumn
-        Sets the name of the source column mapped to the DataSet and used for loading or returning the Value.
+        Maps the parameter to a specific column name in a DataTable or DataSet for bulk operations.
+        Used primarily with DataAdapter operations when you need to map parameter values to specific columns during data updates.
 
     .PARAMETER SourceColumnNullMapping
-        Sets a value which indicates whether the source column is nullable. This allows SqlCommandBuilder to correctly generate Update statements for nullable columns.
+        Indicates whether the source column allows null values, helping SqlCommandBuilder generate correct UPDATE statements.
+        Important for DataAdapter scenarios where the framework needs to understand column nullability for proper SQL generation.
 
     .PARAMETER SourceVersion
-        Sets the DataRowVersion to use when you load Value.
+        Specifies which version of data to use from a DataRow when the parameter value comes from a DataSet.
+        Use 'Current' for modified data, 'Original' for unchanged data, or 'Proposed' for uncommitted changes during DataAdapter operations.
 
     .PARAMETER SqlDbType
-        Sets the SqlDbType of the parameter.
+        Specifies the SQL Server data type for the parameter, ensuring proper type mapping and optimal performance.
+        Prefer this over DbType for SQL Server operations as it provides exact type matching with SQL Server's native data types.
 
     .PARAMETER SqlValue
-        Sets the value of the parameter as an SQL type.
+        Sets the parameter value using SQL Server-specific data types (like SqlString, SqlInt32) instead of standard .NET types.
+        Use this when you need to handle SQL null values explicitly or work with SQL Server-specific type behaviors that differ from .NET types.
 
     .PARAMETER TypeName
-        Sets the type name for a table-valued parameter.
+        Specifies the user-defined table type name when passing DataTable objects as table-valued parameters to stored procedures.
+        The type name must match a table type defined in the database schema and is essential for bulk data operations.
 
     .PARAMETER UdtTypeName
-        Sets a string that represents a user-defined type as a parameter.
+        Specifies the name of a user-defined data type (UDT) or CLR type when working with custom SQL Server data types.
+        Required when passing complex objects or custom data structures that extend beyond standard SQL Server data types.
 
     .PARAMETER Value
-        Sets the value of the parameter.
+        Specifies the actual data value to pass to the SQL parameter, automatically handling type conversion from .NET to SQL types.
+        The most commonly used parameter property for passing data into queries and stored procedures safely.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

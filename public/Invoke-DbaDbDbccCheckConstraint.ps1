@@ -20,25 +20,28 @@ function Invoke-DbaDbDbccCheckConstraint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for constraint violations. Accepts multiple database names and supports wildcards for pattern matching.
+        If not specified, all accessible databases on the instance will be processed. Use this when you need to target specific databases instead of checking the entire instance.
 
     .PARAMETER Object
-        The table or constraint to be checked.
-        When table_name or table_id is specified, all enabled constraints on that table are checked.
-        When constraint_name or constraint_id is specified, only that constraint is checked.
-        If neither a table identifier nor a constraint identifier is specified, all enabled constraints on all tables in the current database are checked.
+        Specifies the table or constraint to check for violations. Accepts either table names, constraint names, or their numeric IDs.
+        When targeting a table, all enabled constraints on that table are validated. When targeting a specific constraint, only that constraint is checked.
+        Use this when you need to focus on a specific table after bulk data operations or when investigating a known problematic constraint.
 
     .PARAMETER AllConstraints
-        Checks all enabled and disabled constraints on the table if the table name is specified or if all tables are checked;
-        Otherwise, checks only the enabled constraint.
-        Has no effect when a constraint is specified
+        Forces checking of both enabled and disabled constraints on the specified table or all tables in the database.
+        By default, only enabled constraints are validated. Use this when you need to verify data integrity against all constraint definitions, including those temporarily disabled during maintenance operations.
+        Has no effect when checking a specific constraint by name or ID.
 
     .PARAMETER AllErrorMessages
-        Returns all rows that violate constraints in the table that is checked.
-        The default is the first 200 rows.
+        Returns all constraint violation rows instead of limiting output to the first 200 violations per constraint.
+        Use this when you need a complete inventory of data quality issues, especially after bulk imports or when preparing comprehensive data cleanup reports.
+        Be cautious with large tables as this can generate extensive output.
 
     .PARAMETER NoInformationalMessages
-        Suppresses all informational messages.
+        Suppresses informational messages like "DBCC execution completed" and processing status updates.
+        Use this when automating constraint checks in scripts where you only want to capture actual constraint violations, not DBCC status messages.
+        Helpful for cleaner output when processing multiple databases or integrating results into monitoring systems.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

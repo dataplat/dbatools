@@ -17,16 +17,24 @@ function Get-DbaDbFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for file information. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases rather than scanning all databases on the instance.
+        Particularly useful for capacity planning or troubleshooting file growth issues on targeted databases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the file analysis. Accepts wildcards for pattern matching.
+        Use this to skip system databases, test databases, or databases you don't need to analyze.
+        Helpful when performing routine file space reviews while avoiding databases that don't require monitoring.
 
     .PARAMETER FileGroup
-        Filter results to only files within this certain filegroup.
+        Filters results to show only files within the specified filegroup name.
+        Use this when analyzing specific filegroups for space utilization, I/O patterns, or growth planning.
+        Particularly valuable when troubleshooting performance issues or planning filegroup-specific storage migrations.
 
     .PARAMETER InputObject
-        A piped collection of database objects
+        Accepts database objects piped from other dbatools commands like Get-DbaDatabase.
+        Use this for advanced filtering scenarios or when chaining multiple dbatools commands together.
+        Allows you to pre-filter databases using complex criteria before analyzing their file information.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -9,30 +9,30 @@ function Copy-DbaBackupDevice {
         Physical backup files are transferred using admin shares, and if the original directory structure doesn't exist on the destination, files are automatically placed in SQL Server's default backup directory. Existing backup devices are skipped unless -Force is specified to overwrite them.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing the backup devices to copy. The source instance must be SQL Server 2000 or higher with sysadmin access required.
+        Use this when migrating backup devices from an existing SQL Server to consolidate backup infrastructure or during server migrations.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies alternative credentials for connecting to the source SQL Server instance. Accepts PowerShell credentials created with Get-Credential.
+        Use this when the source server requires different authentication than your current Windows session, such as SQL Server authentication or a different domain account.
+        Supports Windows Authentication, SQL Server Authentication, Active Directory Password, and Active Directory Integrated. For MFA support, use Connect-DbaInstance first.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies one or more destination SQL Server instances where backup devices will be created. Each destination instance must be SQL Server 2000 or higher with sysadmin access required.
+        Use this to specify target servers during migrations, disaster recovery setup, or when standardizing backup device configurations across multiple instances.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies alternative credentials for connecting to the destination SQL Server instances. Accepts PowerShell credentials created with Get-Credential.
+        Use this when destination servers require different authentication than your current Windows session, such as SQL Server authentication or different domain accounts.
+        Supports Windows Authentication, SQL Server Authentication, Active Directory Password, and Active Directory Integrated. For MFA support, use Connect-DbaInstance first.
 
     .PARAMETER BackupDevice
-        BackupDevice to be copied. Auto-populated list of devices. If not provided all BackupDevice(s) will be copied.
+        Specifies which backup devices to copy from the source instance. Accepts an array of backup device names and supports tab completion with available devices.
+        Use this to selectively copy specific backup devices instead of migrating all devices, which is helpful when you only need certain backup configurations on the destination.
 
     .PARAMETER Force
-        If this switch is enabled, backup device(s) will be dropped and recreated if they already exists on destination.
+        Forces the recreation of backup devices that already exist on the destination instance by dropping them first. Without this switch, existing backup devices are skipped.
+        Use this when you need to overwrite existing backup device configurations with updated settings from the source, such as changing file paths or device properties during migrations.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

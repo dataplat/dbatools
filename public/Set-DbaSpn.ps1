@@ -9,16 +9,22 @@ function Set-DbaSpn {
         Note: This function supports -WhatIf
 
     .PARAMETER SPN
-        The SPN you want to add
+        Specifies the Service Principal Name to register in Active Directory for SQL Server Kerberos authentication.
+        Must follow the format 'MSSQLSvc/hostname:port' or 'MSSQLSvc/FQDN:port' for named instances.
+        Use this to enable Kerberos authentication and eliminate double-hop authentication issues.
 
     .PARAMETER ServiceAccount
-        The account you want the SPN added to
+        Specifies the Active Directory account that runs the SQL Server service and will own the SPN.
+        Can be a domain user account (domain\username) or computer account (computername$) depending on your SQL Server service configuration.
+        This account must exist in Active Directory and you must have permissions to modify its properties.
 
     .PARAMETER Credential
         The credential you want to use to connect to Active Directory to make the changes
 
     .PARAMETER NoDelegation
-        Skips setting the delegation
+        Prevents automatic configuration of Kerberos constrained delegation for the specified SPN.
+        Use this when you want to manually configure delegation later or when delegation is not required for your environment.
+        By default, the function enables constrained delegation to allow the service account to authenticate to other services.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

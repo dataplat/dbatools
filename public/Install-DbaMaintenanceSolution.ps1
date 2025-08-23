@@ -17,55 +17,54 @@ function Install-DbaMaintenanceSolution {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where Ola Hallengren's solution will be installed. Defaults to master.
+        Specifies the database where Ola Hallengren's maintenance solution objects will be installed. Defaults to master.
+        Consider using a dedicated DBA or maintenance database instead of master to keep system databases clean and simplify backup strategies.
 
     .PARAMETER BackupLocation
-        Location of the backup root directory. If this is not supplied, the default backup directory will be used.
+        Sets the root directory path where backup files will be stored by the maintenance jobs. Defaults to the instance's default backup location.
+        Specify this when you need backups in a specific location for storage policies, network shares, or disk space management.
 
     .PARAMETER CleanupTime
-        Time in hours, after which backup files are deleted.
+        Defines retention period in hours before backup files are automatically deleted by cleanup jobs.
+        Only used when InstallJobs is specified. Common values: 168 hours (1 week), 720 hours (30 days), or 2160 hours (90 days).
 
     .PARAMETER OutputFileDirectory
-        Specify the output file directory where the Maintenance Solution will write to.
+        Sets the directory path where SQL Agent jobs will write their output log files during maintenance operations.
+        Use this to centralize job output logs for monitoring and troubleshooting maintenance activities.
 
     .PARAMETER ReplaceExisting
-        If this switch is enabled, objects already present in the target database will be dropped and recreated.
-
-        Note - The tables for `LogToTable` and `InstallParallel` will only be dropped if those options are also specified.
+        Forces replacement of existing Ola Hallengren objects including stored procedures and SQL Agent jobs.
+        Use this when upgrading to newer versions of the maintenance solution or when previous installations need to be refreshed.
+        CommandLog and Queue tables are only dropped when LogToTable or InstallParallel switches are also specified.
 
     .PARAMETER LogToTable
-        If this switch is enabled, the Maintenance Solution will be configured to log commands to a table.
+        Enables command logging to the CommandLog table for tracking maintenance operation history and performance.
+        Essential for monitoring backup completion times, index maintenance duration, and troubleshooting failed operations.
 
     .PARAMETER Solution
-        Specifies which portion of the Maintenance solution to install. Valid values are All (full solution), Backup, IntegrityCheck and IndexOptimize.
+        Determines which maintenance components to install: All, Backup, IntegrityCheck, or IndexOptimize.
+        Use specific components when you only need certain maintenance functions or want to install different parts on different servers.
 
     .PARAMETER InstallJobs
-        If this switch is enabled, the corresponding SQL Agent Jobs will be created.
+        Creates pre-configured SQL Agent jobs for automated execution of backup, integrity check, and index maintenance tasks.
+        Without this switch, only the stored procedures are installed and must be scheduled manually or called from custom jobs.
 
     .PARAMETER AutoScheduleJobs
-        Scheduled jobs during an optimal time. When AutoScheduleJobs is used, this time will be used as the start time for the jobs unless a schedule already
-        exists in the same time slot. If so, then it will add an hour until it finds an open time slot. Defaults to 1:15 AM.
-
-        WeeklyFull will create weekly full, daily differential and 15 minute log backups of _user_ databases.
-
-        _System_ databases will always be backed up daily.
-
-        Differentials will be skipped when NoDiff or DailyFull is specified.
-
-        To perform log backups each hour instead of every 15 minutes, specify HourlyLog in the values.
-
-        Recommendations can be found on Ola's site: https://ola.hallengren.com/frequently-asked-questions.html
+        Automatically creates optimized job schedules for backup operations. Valid values: WeeklyFull, DailyFull, NoDiff, FifteenMinuteLog, HourlyLog.
+        WeeklyFull creates weekly full backups, daily differentials, and 15-minute log backups. DailyFull skips differentials. Use HourlyLog for less frequent transaction log backups.
+        System databases are always backed up daily regardless of user database schedule. Automatically resolves schedule conflicts by adjusting start times.
 
     .PARAMETER StartTime
-        When AutoScheduleJobs is used, this time will be used as the start time for the jobs unless a schedule already
-        exists in the same time slot. If so, then it will add an hour until it finds an open time slot. Defaults to 1:15 AM.
+        Sets the preferred start time for automatically scheduled jobs in HHMMSS format. Defaults to 011500 (1:15 AM).
+        The system automatically adjusts this time if conflicts exist with other scheduled jobs. Choose off-peak hours to minimize impact on production workloads.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install Ola's solution from. This *should* be the zip file as distributed by the maintainers.
-        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution
+        Specifies path to a local zip file containing Ola Hallengren's maintenance solution instead of downloading from GitHub.
+        Use this in environments without internet access or when you need to install a specific version for consistency across multiple servers.
 
     .PARAMETER Force
-        If this switch is enabled, the Ola's solution will be downloaded from the internet even if previously cached.
+        Forces fresh download of the maintenance solution from GitHub, bypassing any locally cached version.
+        Use this to ensure you're installing the latest version when the cache might contain an older release.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -74,7 +73,8 @@ function Install-DbaMaintenanceSolution {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER InstallParallel
-        If this switch is enabled, the Queue and QueueDatabase tables are created, for use when  @DatabasesInParallel = 'Y' are set in the jobs.
+        Creates Queue and QueueDatabase tables required for parallel execution of maintenance operations across multiple databases.
+        Enable this when you have many databases and want to run maintenance tasks concurrently to reduce overall completion time.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

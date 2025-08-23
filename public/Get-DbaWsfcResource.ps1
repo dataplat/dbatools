@@ -11,7 +11,8 @@ function Get-DbaWsfcResource {
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the target cluster to query for resource information. Can be any cluster node name or the cluster name itself.
+        Use this when managing multiple clusters or when connecting from outside the cluster to gather resource status and configuration details.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

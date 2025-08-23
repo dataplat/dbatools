@@ -11,30 +11,28 @@ function Copy-DbaDbAssembly {
         The function does not copy assembly dependencies or dependent objects like CLR stored procedures, functions, or user-defined types that reference the assemblies.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Source SQL Server instance containing the CLR assemblies to copy. Requires sysadmin access to scan all accessible databases for user-created assemblies.
+        The function will inventory all custom assemblies across every database on this instance for migration.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the source SQL Server instance. Use this when your current Windows credentials don't have sysadmin access to the source server.
+        Accepts PowerShell credential objects created with Get-Credential and supports SQL Server Authentication or Active Directory authentication methods.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Target SQL Server instance(s) where CLR assemblies will be created. Accepts multiple destinations to copy assemblies to several servers simultaneously.
+        Requires sysadmin access and corresponding databases must already exist on the destination for assembly migration to succeed.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the destination SQL Server instance(s). Use this when your current Windows credentials don't have sysadmin access to the target servers.
+        Accepts PowerShell credential objects created with Get-Credential and supports SQL Server Authentication or Active Directory authentication methods.
 
     .PARAMETER Assembly
-        The assembly(ies) to process. This list is auto-populated from the server. If unspecified, all assemblies will be processed.
+        Specific CLR assemblies to copy instead of migrating all assemblies. Use the format 'DatabaseName.AssemblyName' to target assemblies in specific databases.
+        This is useful when you only need to migrate certain assemblies rather than performing a full assembly migration across all databases.
 
     .PARAMETER ExcludeAssembly
-        The assembly(ies) to exclude. This list is auto-populated from the server.
+        CLR assemblies to skip during the migration process. Use the format 'DatabaseName.AssemblyName' to exclude specific assemblies from specific databases.
+        This is helpful when you want to migrate most assemblies but need to skip problematic or obsolete ones that shouldn't be copied to the destination.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -48,7 +46,8 @@ function Copy-DbaDbAssembly {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, existing assemblies on Destination with matching names from Source will be dropped.
+        Drops existing assemblies on the destination before recreating them from the source. By default, assemblies that already exist are skipped.
+        Use this when you need to overwrite destination assemblies with updated versions from the source, but be aware that assemblies with dependencies cannot be dropped.
 
     .NOTES
         Tags: Migration, Assembly

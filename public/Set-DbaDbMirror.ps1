@@ -18,22 +18,28 @@ function Set-DbaDbMirror {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database.
+        Specifies the database(s) to configure mirroring settings for. Accepts multiple database names.
+        Use this to target specific mirrored databases when you need to modify partner, witness, safety level, or state settings.
 
     .PARAMETER Partner
-        Sets the partner Fully Qualified Domain Name.
+        Sets the mirroring partner server endpoint in TCP://servername:port format. This establishes or changes the mirror partnership.
+        Use this when setting up initial mirroring or changing the partner server after a configuration change or migration.
 
     .PARAMETER Witness
-        Sets the witness Fully Qualified Domain Name.
+        Sets the witness server endpoint in TCP://servername:port format to enable automatic failover in high-safety mode.
+        Use this to add witness functionality for automatic failover or to change the witness server location.
 
     .PARAMETER SafetyLevel
-        Sets the mirroring safety level.
+        Controls transaction safety mode: 'Full' for synchronous high-safety, 'Off' for asynchronous high-performance.
+        Use 'Full' when you need zero data loss with automatic failover, or 'Off' for better performance with potential data loss during failover.
 
     .PARAMETER State
-        Sets the mirror state.
+        Changes the operational state of the mirroring session. Options include Suspend, Resume, Failover, or RemoveWitness.
+        Use this to temporarily pause mirroring during maintenance, resume after suspension, perform manual failover, or remove witness functionality.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase pipeline input for batch operations.
+        Use this to configure mirroring settings across multiple databases efficiently by piping database objects from other dbatools commands.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

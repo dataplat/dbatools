@@ -17,51 +17,48 @@ function Set-DbaAgentOperator {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Operator
-        Name of the operator in SQL Agent.
+        Specifies the name of the existing SQL Agent operator to modify. Use this when targeting a specific operator by name instead of piping operator objects.
 
     .PARAMETER Name
-        The new name of the agent operator.
+        Renames the operator to the specified value. Use this when you need to change an operator's name while preserving all other settings and alert assignments.
 
     .PARAMETER EmailAddress
-        The email address the SQL Agent will use to email alerts to the operator.
+        Sets the email address where SQL Agent will send email notifications for this operator. This is the primary contact method for most alert notifications and job failure messages.
 
     .PARAMETER NetSendAddress
-        The net send address the SQL Agent will use for the operator to net send alerts.
+        Specifies the network computer name for net send notifications. This legacy notification method sends popup messages to Windows computers on the same network domain.
 
     .PARAMETER PagerAddress
-        The pager email address the SQL Agent will use to send alerts to the operator.
+        Sets the pager email address for urgent notifications. Typically used for SMS gateways or mobile email addresses when immediate notification is required outside normal business hours.
 
     .PARAMETER PagerDay
-        Defines what days the pager portion of the operator will be used. The default is 'Everyday'. Valid parameters
-        are 'EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', and
-        'Saturday'.
+        Controls which days pager notifications are active for this operator. Use 'Weekdays' for business hours coverage, 'Weekend' for off-hours support, or specific days for rotating on-call schedules.
+        Valid values are 'EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', and 'Saturday'.
 
     .PARAMETER SaturdayStartTime
-        This a string that takes the Saturday Pager Start Time.
+        Sets when pager notifications begin on Saturday in HHMMSS format (e.g., '080000' for 8:00 AM). Use this to define weekend on-call coverage hours for the operator.
 
     .PARAMETER SaturdayEndTime
-        This a string that takes the Saturday Pager End Time.
+        Sets when pager notifications end on Saturday in HHMMSS format (e.g., '180000' for 6:00 PM). Notifications outside this window will use email instead of pager for the operator.
 
     .PARAMETER SundayStartTime
-        This a string that takes the Sunday Pager Start Time.
+        Sets when pager notifications begin on Sunday in HHMMSS format (e.g., '080000' for 8:00 AM). Use this to define weekend on-call coverage hours for the operator.
 
     .PARAMETER SundayEndTime
-        This a string that takes the Sunday Pager End Time.
+        Sets when pager notifications end on Sunday in HHMMSS format (e.g., '170000' for 5:00 PM). Notifications outside this window will use email instead of pager for the operator.
 
     .PARAMETER WeekdayStartTime
-        This a string that takes the Weekdays Pager Start Time.
+        Sets when pager notifications begin on weekdays (Monday-Friday) in HHMMSS format (e.g., '060000' for 6:00 AM). Use this to define business hours pager coverage for the operator.
 
     .PARAMETER WeekdayEndTime
-        This a string that takes the Weekdays Pager End Time.
+        Sets when pager notifications end on weekdays (Monday-Friday) in HHMMSS format (e.g., '190000' for 7:00 PM). Notifications outside this window will use email instead of pager for the operator.
 
     .PARAMETER IsFailsafeOperator
-        If this switch is enabled, this operator will be your failsafe operator and replace the one that existed before.
+        Designates this operator as the failsafe operator who receives notifications when primary operators are unavailable. Only one failsafe operator can exist per SQL Server instance, so this replaces any existing failsafe operator.
 
     .PARAMETER FailsafeNotificationMethod
-        Defines the notification method(s) for the failsafe operator. The default is 'NotifyEmail'.
-        Valid parameter values are 'None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll'.
-        Values 'NotifyEmail', 'Pager', 'NetSend' can be specified in any combination.
-        Values 'None' and 'NotifyAll' cannot be specified in conjunction with any other value.
+        Specifies how the failsafe operator receives notifications when primary operators cannot be reached. Use 'NotifyEmail' for standard alerts, 'Pager' for urgent notifications, or 'NotifyAll' for maximum coverage.
+        Valid values are 'None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll'. Multiple methods can be combined except 'None' and 'NotifyAll' which must be used alone.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -70,7 +67,7 @@ function Set-DbaAgentOperator {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER InputObject
-        SMO Server Objects (pipeline input from Connect-DbaInstance)
+        Accepts SQL Agent operator objects from the pipeline, typically from Get-DbaAgentOperator. Use this to modify multiple operators or when working with operator objects in a pipeline workflow.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

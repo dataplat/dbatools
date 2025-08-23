@@ -17,22 +17,22 @@ function Get-DbaDbView {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get views from specific database(s) - this list is auto populated from the server.
+        Specifies which databases to search for views. Use this when you need to focus on specific databases instead of scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Specifies databases to skip when retrieving views. Useful when you want results from most databases but need to exclude specific ones like test or staging databases.
 
     .PARAMETER ExcludeSystemView
-        This switch removes all system objects from the view collection.
+        Excludes SQL Server system views from results to focus only on user-created views. Essential when documenting custom application views since each database can contain 400+ system views that clutter output.
 
     .PARAMETER View
-        The view(s) to include - all views are selected if not populated
+        Specifies specific view names to retrieve instead of returning all views. Supports three-part naming (database.schema.view) to target views across different databases and schemas in a single query.
 
     .PARAMETER Schema
-        Only return views from the specified schema
+        Filters results to views within specific schemas only. Useful for organizing output when databases have views spread across multiple schemas like dbo, reporting, or application-specific schemas.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the pipeline. Allows you to filter databases first with Get-DbaDatabase then retrieve views from only those selected databases.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

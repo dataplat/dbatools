@@ -9,10 +9,12 @@ function Set-DbaExtendedProperty {
         Works with extended properties on all SQL Server object types including databases, tables, views, stored procedures, functions, columns, indexes, schemas, and many others. The function accepts extended property objects from Get-DbaExtendedProperty through the pipeline, so you can easily filter and update specific properties across your environment.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaExtendedProperty
+        Accepts extended property objects from Get-DbaExtendedProperty to update their values. Use this to pipeline specific extended properties that you want to modify.
+        Typically used after filtering extended properties by name, object type, or other criteria to batch update property values across multiple database objects.
 
     .PARAMETER Value
-        The new value for the extended property
+        Specifies the new value to assign to the extended property. Accepts any string value including version numbers, descriptions, or configuration data.
+        Common uses include updating application version numbers, modifying documentation text, or changing configuration values stored as extended properties.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -20,7 +20,8 @@ function Find-DbaUserObject {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Pattern
-        The regex pattern that the command will search for
+        Searches for objects owned by accounts matching this regex pattern. Use this when looking for objects owned by a specific user or group of users.
+        When omitted, finds all objects not owned by system accounts (sa/dbo). Supports Windows domain accounts like 'DOMAIN\username' or SQL logins.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

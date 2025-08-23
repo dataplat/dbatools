@@ -13,15 +13,16 @@ function Set-DbatoolsInsecureConnection {
         You can read more here: https://dbatools.io/newdefaults
 
     .PARAMETER SessionOnly
-        Does not persist across sessions so the default will return if you close and reopen PowerShell.
+        Applies the insecure connection settings only to the current PowerShell session instead of persisting them permanently.
+        Use this when testing connection settings or when you need insecure connections temporarily without changing your permanent dbatools configuration.
 
     .PARAMETER Scope
-        The configuration scope it should be registered under. Defaults to UserDefault.
-
-        Configuration scopes are the default locations configurations are being stored at.
+        Specifies where to store the persistent connection settings when SessionOnly is not used. Defaults to UserDefault.
+        UserDefault applies to the current user only, while SystemDefault applies to all users on the machine.
 
     .PARAMETER Register
-        Deprecated.
+        This parameter is deprecated and will be removed in a future release.
+        The function now automatically handles registration of settings when SessionOnly is not specified.
 
     .LINK
         https://dbatools.io/Set-DbatoolsInsecureConnection

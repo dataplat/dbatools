@@ -7,36 +7,43 @@ Function Invoke-DbaAdvancedUpdate {
         Executes SQL Server KB updates on a target computer by extracting patch files, running setup.exe with appropriate parameters, and managing system restarts as needed. This function handles the core installation logic for Update-DbaInstance, processing update actions for specific SQL Server instances or all instances on a machine. It automatically detects the drive with most free space for extraction, validates pending reboots, and coordinates restart sequences to ensure patches install successfully across multiple update cycles.
 
     .PARAMETER ComputerName
-        Target computer with SQL instance or instances.
+        Specifies the remote computer where SQL Server updates will be installed.
+        This function handles the actual installation process after Update-DbaInstance creates the action plan.
+        Must have WinRM enabled and accessible for remote operations including file extraction and system restarts.
 
     .PARAMETER Action
-        An object containing the action plan
+        Contains the update action plan objects created by Update-DbaInstance with details for each KB to install.
+        Each action includes properties like TargetLevel, KB number, Installer path, MajorVersion, Build, and InstanceName.
+        Multiple actions can be processed sequentially to chain-install several updates with automatic restarts between each.
 
     .PARAMETER Restart
-        Restart computer automatically after a successful installation of a patch and wait until it comes back online.
-        Using this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.
+        Automatically restarts the target computer after successful patch installation and waits for it to come back online.
+        Required for installing multiple patches in sequence, as each SQL Server update typically requires a system restart to complete.
+        Also handles pre-installation restarts when pending reboots are detected before beginning the update process.
 
     .PARAMETER Credential
         Windows Credential with permission to log on to the remote server.
         Must be specified for any remote connection if update Repository is located on a network folder.
 
     .PARAMETER Authentication
-        Chooses an authentication protocol for remote connections.
-        If the protocol fails to establish a connection
-
-        Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
-        * Default when -Credential is not specified. Will likely fail if a network path is specified.
+        Specifies the WinRM authentication protocol for remote connections to the target computer.
+        Defaults to CredSSP when credentials are provided to handle network share access and avoid double-hop authentication issues.
+        Use Default authentication only for local operations, as network-based update repositories require credential delegation.
 
     .PARAMETER ExtractPath
-        Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
+        Specifies the directory path where update files will be extracted on the target computer.
+        If not specified, automatically selects the drive with the most free space for extraction.
+        Use this when you need to control extraction location for space management or security requirements.
 
     .PARAMETER ArgumentList
-        A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
-        Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
+        Additional command-line arguments passed to the SQL Server setup.exe during installation.
+        Commonly used for setup customization like "/SkipRules=RebootRequiredCheck" to bypass reboot validation or "/Q" for quiet mode.
+        Arguments are automatically combined with required parameters like /quiet, /allinstances or /instancename, and /IAcceptSQLServerLicenseTerms.
 
     .PARAMETER NoPendingRenameCheck
-        Disables pending rename validation when checking for a pending reboot.
+        Skips the pending file rename check when determining if a system restart is required before installation.
+        Use this when the pending rename detection produces false positives that prevent updates from proceeding.
+        The function will still check other restart conditions like registry entries and exit codes from previous installations.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

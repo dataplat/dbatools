@@ -21,10 +21,12 @@ function Test-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
-        Test only specific endpoint or endpoints.
+        Specifies which endpoint names to test for network connectivity. Accepts multiple endpoint names to filter testing to specific endpoints.
+        Use this when you need to validate connectivity for particular endpoints like database mirroring, Service Broker, or availability group listeners instead of testing all endpoints on the instance.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaEndpoint.
+        Accepts endpoint objects from Get-DbaEndpoint for pipeline processing. This allows you to filter endpoints first using Get-DbaEndpoint, then test only those specific endpoints.
+        Use this approach when you need to apply complex filtering logic before testing connectivity, such as testing only endpoints of a specific type or state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

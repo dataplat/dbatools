@@ -21,72 +21,72 @@ function Invoke-DbaDbMirroring {
         NOTE: If backup/restore is performed, the backup files will remain on the network share for your records.
 
     .PARAMETER Primary
-        SQL Server name or SMO object representing the primary SQL Server.
+        Specifies the SQL Server instance that will serve as the primary (principal) server in the mirroring partnership.
+        Use this when setting up mirroring from scratch rather than piping database objects from Get-DbaDatabase.
+        Must be paired with the Database parameter to identify which databases to mirror.
 
     .PARAMETER PrimarySqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the primary SQL Server instance.
+        Required when the current user context doesn't have sufficient permissions on the primary server.
+        Accepts PowerShell credential objects created with Get-Credential for SQL Authentication or domain accounts.
 
     .PARAMETER Mirror
-        SQL Server name or SMO object representing the mirror SQL Server.
+        Specifies the SQL Server instance(s) that will serve as the mirror server(s) in the mirroring partnership.
+        This is where the mirrored database copies will be created and maintained.
+        Supports multiple mirror instances for creating mirror partnerships with different servers.
 
     .PARAMETER MirrorSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the mirror SQL Server instance(s).
+        Required when the current user context doesn't have sufficient permissions on the mirror server.
+        Accepts PowerShell credential objects created with Get-Credential for SQL Authentication or domain accounts.
 
     .PARAMETER Witness
-        SQL Server name or SMO object representing the witness SQL Server.
+        Specifies the SQL Server instance that will serve as the witness server for automatic failover scenarios.
+        Optional parameter that enables high safety mode with automatic failover when all three servers can communicate.
+        Leave empty if you only need high safety mode without automatic failover or high performance mode.
 
     .PARAMETER WitnessSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the witness SQL Server instance.
+        Required when the current user context doesn't have sufficient permissions on the witness server.
+        Accepts PowerShell credential objects created with Get-Credential for SQL Authentication or domain accounts.
 
     .PARAMETER Database
-        The database or databases to mirror.
+        Specifies which database(s) on the primary server to set up for mirroring.
+        Required when using the Primary parameter instead of piping from Get-DbaDatabase.
+        Supports multiple database names to set up mirroring for several databases in a single operation.
 
     .PARAMETER SharedPath
-        The network share where the backups will be backed up and restored from.
-
-        Each SQL Server service account must have access to this share.
-
-        NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
+        Network share path accessible by all SQL Server service accounts for backup and restore operations.
+        Required when the mirror database doesn't exist and needs to be initialized from backups.
+        Must have read/write permissions for the service accounts running SQL Server on primary and mirror instances.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase.
+        Accepts database objects piped from Get-DbaDatabase to set up mirroring for specific databases.
+        Use this approach when you want to filter databases first or work with existing database objects.
+        Alternative to using the Primary and Database parameters.
 
     .PARAMETER UseLastBackup
-        Use the last full backup of database.
+        Uses the most recent full and log backups from the primary server to initialize the mirror database.
+        Avoids creating new backups when recent ones already exist and are sufficient for mirroring setup.
+        Requires the primary database to be in Full recovery model with existing backup history.
 
     .PARAMETER Force
-        Drop and recreate the database on remote servers using fresh backup.
+        Drops and recreates the mirror database even if it already exists, using fresh backups from the primary.
+        Use this when you need to completely reinitialize mirroring or when the existing mirror database is corrupted.
+        Requires either SharedPath for new backups or UseLastBackup to use existing ones.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER EndpointEncryption
-        Used to specify the state of encryption on the endpoint. Defaults to required.
-        Disabled
-        Required
-        Supported
+        Controls the encryption requirement for database mirroring endpoints created during setup.
+        Default is 'Required' which enforces encrypted communication between all mirroring partners.
+        Use 'Supported' to allow both encrypted and unencrypted connections, or 'Disabled' to prevent encryption.
 
     .PARAMETER EncryptionAlgorithm
-        Specifies an encryption algorithm used on an endpoint. Defaults to Aes.
-
-        Options are:
-        AesRC4
-        Aes
-        None
-        RC4
-        RC4Aes
+        Specifies the encryption algorithm used by database mirroring endpoints for secure communication.
+        Default is 'Aes' which provides strong encryption with good performance.
+        Consider 'AesRC4' or 'RC4Aes' for compatibility with older SQL Server versions in mixed environments.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.

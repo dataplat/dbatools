@@ -21,58 +21,65 @@ function Start-DbaDbEncryption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases that will be encrypted
+        Specifies which user databases to encrypt with Transparent Data Encryption (TDE). Accepts single database names, arrays, or wildcards.
+        Use this when you need to encrypt specific databases instead of all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database or databases that will not be encrypted
+        Specifies which databases to exclude from TDE encryption when using wildcards or AllUserDatabases.
+        Useful when you want to encrypt most databases but need to skip specific ones due to compatibility or business requirements.
 
     .PARAMETER EncryptorName
-        The name of the encryptor (Certificate or Asymmetric Key) in master that will be used. Tries to find one if one is not specified. If certificate does not exist and -Force is specified, one will be created with the given Encryptor Name.
-
-        In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
+        Specifies the name of the certificate or asymmetric key in the master database that will encrypt the database encryption keys.
+        If not specified, the function will automatically find an existing certificate or asymmetric key. When used with -Force, creates a new certificate with this name if none exists.
+        For asymmetric keys, the key must reside on an extensible key management provider to encrypt database encryption keys.
 
     .PARAMETER EncryptorType
-        Type of Encryptor - either Asymmetric or Certificate
+        Determines whether to use a certificate or asymmetric key for TDE encryption. Defaults to Certificate.
+        Certificate is the most common choice for standard TDE implementations. Use AsymmetricKey when integrating with extensible key management providers.
 
     .PARAMETER MasterKeySecurePassword
-        A master service key will be created and backed up if one does not exist
-
-        MasterKeySecurePassword is the secure string (password) used to create the key
-
-        This parameter is required even if no master keys are made, as we won't know if master key creation will be required until each server is processed
+        Secure password used to create and protect the service master key in the master database if one doesn't exist.
+        Required for all TDE operations because the function cannot determine if master key creation is needed until runtime.
+        This password protects the root of the encryption hierarchy and is critical for disaster recovery.
 
     .PARAMETER BackupSecurePassword
-        This command will perform backups of all maskter keys and certificates. Use this parameter to set the backup password
+        Secure password used to encrypt backup files for master keys and certificates created during TDE setup.
+        Essential for disaster recovery as these backups are required to restore encrypted databases on different servers.
+        Must be stored securely as losing this password makes the encrypted data unrecoverable.
 
     .PARAMETER BackupPath
-        The path (accessible by and relative to the SQL Server) where master keys and certificates are backed up
+        Directory path where master key and certificate backup files will be stored, accessible by the SQL Server service account.
+        Critical for disaster recovery as these backups are required to restore TDE-encrypted databases.
+        Ensure this path has appropriate security permissions and is included in your backup strategy.
 
     .PARAMETER AllUserDatabases
-        Run command against all user databases
-
-        This was added to emphasize that all user databases will be encrypted
+        Encrypts all user databases on the instance, excluding system databases (master, model, tempdb, msdb).
+        Use this for compliance initiatives when you need to encrypt every user database quickly.
+        System databases are automatically excluded as they cannot be encrypted with TDE.
 
     .PARAMETER CertificateSubject
-        Optional subject that will be used when creating all certificates
+        Sets the subject field for TDE certificates created during the encryption process.
+        Use this to standardize certificate naming for compliance or organizational requirements.
 
     .PARAMETER CertificateStartDate
-        Optional start date that will be used when creating all certificates
-
-        By default, certs will start immediately
+        Specifies when TDE certificates become valid. Defaults to the current date and time.
+        Useful for planned encryption rollouts where certificates need to activate at a specific time.
 
     .PARAMETER CertificateExpirationDate
-        Optional expiration that will be used when creating all certificates
-
-        By default, certs will last 5 years
+        Sets when TDE certificates will expire. Defaults to 5 years from the current date.
+        Plan certificate renewals well before expiration to avoid service disruptions during database operations.
 
     .PARAMETER CertificateActiveForServiceBrokerDialog
-        Microsoft has not provided a description so we can only assume the cert is active for service broker dialog
+        Enables the TDE certificate for Service Broker dialog security in addition to database encryption.
+        Use this when your databases utilize Service Broker and need certificate-based dialog security.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for TDE encryption via pipeline.
+        Allows filtering and processing specific databases before encryption, useful for complex selection criteria.
 
     .PARAMETER Force
-        If EncryptorName is specified and certificate does not exist, one will be created with the given Encryptor Name.
+        Creates a new certificate with the specified EncryptorName if it doesn't exist in the master database.
+        Requires EncryptorName to be specified. Use this when you need to establish new TDE infrastructure with specific naming conventions.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

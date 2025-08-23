@@ -10,7 +10,8 @@ function Get-DbaPfAvailableCounter {
         https://daniel.streefkerkonline.com/2016/02/18/use-powershell-to-list-all-windows-performance-counters-and-their-numeric-ids
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computers to query for available performance counters. Defaults to localhost.
+        Use this when you need to discover counters on remote SQL Server instances or other servers in your environment before setting up monitoring.
 
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:
@@ -18,7 +19,8 @@ function Get-DbaPfAvailableCounter {
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER Pattern
-        Specify a pattern for filtering.
+        Filters counter names using wildcard pattern matching (supports * and ? wildcards).
+        Use this to find specific SQL Server counters like "*sql*" or "*buffer*" when you need to identify relevant performance metrics for monitoring setup.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

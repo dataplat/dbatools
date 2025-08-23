@@ -20,7 +20,9 @@ function Enable-DbaTraceFlag {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER TraceFlag
-        Trace flag number(s) to enable globally
+        Specifies one or more trace flag numbers to enable globally across all sessions on the SQL Server instance.
+        Use specific trace flag numbers like 3226 (suppress backup log messages), 1117/1118 (tempdb optimization), or 4199 (query optimizer fixes).
+        Multiple trace flags can be specified as an array to enable several flags in a single operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

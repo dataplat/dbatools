@@ -39,28 +39,36 @@ function Get-DbaHelpIndex {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for index and statistics information. Accepts multiple database names and wildcard patterns.
+        Use this when you need to focus your analysis on specific databases rather than scanning the entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Databases to skip during the index analysis process. Useful for excluding system databases or databases currently under maintenance.
+        Commonly used to exclude tempdb or databases that are offline or in restoring state.
 
     .PARAMETER ObjectName
-        The name of a table for which you want to obtain the index information. If the two part naming convention for an object is not used it will use the default schema for the executing user. If not passed it will return data on all indexes in a given database.
+        Targets index analysis to a specific table using either single name (uses default schema) or two-part naming like 'schema.table'.
+        Essential when troubleshooting performance issues on a specific table or when you need detailed statistics information on SQL Server 2005 instances.
 
     .PARAMETER IncludeStats
-        If this switch is enabled, statistics as well as indexes will be returned in the output (statistics information such as the StatsRowMods will always be returned for indexes).
+        Returns statistics objects in addition to indexes, providing complete picture of query optimization structures.
+        Use this when analyzing query plan issues or determining which statistics might be missing or stale for specific tables.
 
     .PARAMETER IncludeDataTypes
-        If this switch is enabled, the output will include the data type of each column that makes up a part of the index definition (key and include columns).
+        Adds data type information for all key and include columns in the index definitions.
+        Helpful when analyzing index key size, planning composite indexes, or understanding why certain indexes might be inefficient.
 
     .PARAMETER IncludeFragmentation
-        If this switch is enabled, the output will include fragmentation information.
+        Adds fragmentation percentage data by querying sys.dm_db_index_physical_stats with DETAILED mode.
+        Critical for index maintenance planning but significantly increases execution time on large databases with many indexes.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline processing.
+        Enables filtering databases first, then analyzing only the indexes on those specific databases.
 
     .PARAMETER Raw
-        If this switch is enabled, results may be less user-readable but more suitable for processing by other code.
+        Returns numeric values without formatting (no thousands separators) and Size as a dbasize object.
+        Use this when feeding results into other functions or when you need precise numeric values for calculations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

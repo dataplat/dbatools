@@ -17,7 +17,8 @@ function Get-DbaAgentLog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LogNumber
-        An Int32 value that specifies the index number of the error log required. Error logs are listed 0 through 9 where 0 is the current error log and 9 is the oldest.
+        Specifies which numbered agent error log files to retrieve (0-9). Log 0 contains the most recent entries, while higher numbers contain older historical logs that get cycled as new logs are created.
+        Use this when you need to examine historical agent activity or troubleshoot issues that occurred days or weeks ago, rather than just current entries.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

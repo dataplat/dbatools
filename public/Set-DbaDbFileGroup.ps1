@@ -18,22 +18,28 @@ function Set-DbaDbFileGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases contain the filegroups to modify. Required when using SqlInstance parameter.
+        Use this to target specific databases when working with filegroup configurations across multiple databases.
 
     .PARAMETER FileGroup
-        The name(s) of the filegroup(s).
+        Specifies the name(s) of the filegroup(s) to modify. The filegroup must exist and contain at least one file.
+        Use this to target specific filegroups when you need to change their default status, read-only setting, or auto-grow behavior.
 
     .PARAMETER Default
-        Specifies if the filegroup should be the default. Only one filegroup in a database can be specified as the default.
+        Sets the filegroup as the default filegroup for new database objects like tables and indexes.
+        Use this when restructuring storage layout or when you want new objects created in a specific filegroup instead of PRIMARY.
 
     .PARAMETER ReadOnly
-        Specifies the filegroup should be readonly. To change the filegroup to readwrite use -ReadOnly:$false
+        Controls the read-only status of the filegroup to prevent data modifications for archival or compliance purposes.
+        Set to $true for read-only (common for historical data), or $false to restore read-write access.
 
     .PARAMETER AutoGrowAllFiles
-        Specifies the filegroup should auto grow all files if one file has met the threshold to auto grow. To revert this setting use -AutoGrowAllFiles:$false
+        Enables proportional growth across all files in the filegroup when any file reaches its growth threshold.
+        Use this to maintain balanced file sizes and prevent hotspots, especially important for tempdb and high-transaction filegroups.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase and Get-DbaDbFileGroup.
+        Accepts database or filegroup objects from Get-DbaDatabase or Get-DbaDbFileGroup via pipeline.
+        Use this for efficient processing when working with multiple databases or filegroups from previous commands.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

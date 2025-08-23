@@ -17,13 +17,16 @@ function Suspend-DbaAgDbDataMovement {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases to suspend movement upon.
+        Specifies which availability group databases to suspend data movement for. Accepts multiple database names.
+        Use this when you need to halt synchronization for specific databases while leaving other AG databases running normally.
 
     .PARAMETER AvailabilityGroup
-        The availability group where the database movement will be suspended.
+        Specifies the availability group containing the databases to suspend. Required when using SqlInstance parameter.
+        Use this to target databases within a specific AG when multiple availability groups exist on the instance.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAgDatabase
+        Accepts availability group database objects piped from Get-DbaAgDatabase or other dbatools AG commands.
+        Use this for pipeline operations when you want to filter and select specific AG databases before suspending data movement.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

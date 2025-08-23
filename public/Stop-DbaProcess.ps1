@@ -19,29 +19,25 @@ function Stop-DbaProcess {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Spid
-        Specifies one or more spids to be killed. Options for this parameter are auto-populated from the server.
+        Targets specific session IDs (SPIDs) for termination. Use this when you know the exact process ID causing problems, typically identified from blocking reports or activity monitors. You can specify multiple SPIDs to kill several problem sessions at once.
 
     .PARAMETER Login
-        Specifies one or more login names whose processes will be killed. Options for this parameter are auto-populated from the server and only login names that have active processes are offered.
+        Terminates all active sessions for specified login names. Use this to disconnect all connections from a specific user account, such as when removing user access or troubleshooting login-specific issues. Supports multiple logins and accepts both Windows (DOMAIN\user) and SQL logins.
 
     .PARAMETER Hostname
-        Specifies one or more client hostnames whose processes will be killed. Options for this parameter are auto-populated from the server and only hostnames that have active processes are offered.
+        Kills all sessions originating from specified client computer names. Useful when a problematic application server or workstation is creating excessive connections or when you need to force disconnect all sessions from a specific machine. Accepts multiple hostnames including both short names and FQDNs.
 
     .PARAMETER Program
-        Specifies one or more client programs whose processes will be killed. Options for this parameter are auto-populated from the server and only programs that have active processes are offered.
+        Terminates sessions based on the client application name. Use this to disconnect all connections from specific applications like SSMS, poorly-behaved ETL tools, or misbehaving custom applications. Common program names include 'Microsoft SQL Server Management Studio' and various .NET application names.
 
     .PARAMETER Database
-        Specifies one or more databases whose processes will be killed. Options for this parameter are auto-populated from the server and only databases that have active processes are offered.
-
-        This parameter is auto-populated from -SqlInstance and allows only database names that have active processes. You can specify one or more Databases whose processes will be killed.
+        Kills all active sessions connected to specified databases. Useful when you need to perform exclusive database operations like restores, schema changes, or when preparing for database maintenance. This will disconnect all users currently connected to the targeted databases.
 
     .PARAMETER ExcludeSpid
-        Specifies one or more spids which will not be killed. Options for this parameter are auto-populated from the server.
-
-        Exclude is the last filter to run, so even if a spid matches (for example) Hosts, if it's listed in Exclude it wil be excluded.
+        Protects specific session IDs from termination even if they match other filter criteria. Use this to preserve important connections like monitoring tools or critical application sessions when killing processes by login, hostname, or database. This exclusion is applied last, overriding all other matching filters.
 
     .PARAMETER InputObject
-        This is the process object passed by Get-DbaProcess if using a pipeline.
+        Accepts process objects from Get-DbaProcess through the pipeline. Use this approach to first identify and review problematic sessions before terminating them, providing better control and verification of which processes will be killed.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
