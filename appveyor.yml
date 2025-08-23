@@ -5,6 +5,9 @@ configuration: "Debug"
 # skip PR builds when there's already a push build
 skip_branch_with_pr: true
 
+# skip tag commits entirely
+skip_tags: true
+
 skip_commits:
   files:
     - '**/*.md'

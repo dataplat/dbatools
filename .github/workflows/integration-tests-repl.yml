@@ -1,6 +1,8 @@
 name: Run Replication Tests
 on:
   push:
+    tags-ignore:
+      - '**'
     paths-ignore:
       - '**/*.md'
       - '**/*.json'
