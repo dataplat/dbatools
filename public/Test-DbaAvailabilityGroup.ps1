@@ -155,7 +155,7 @@ function Test-DbaAvailabilityGroup {
 
         foreach ($dbName in $AddDatabase) {
             $db = $server.Databases[$dbName]
-            $db.Refresh()
+            $null = $db.Refresh()
 
             if ($SeedingMode -eq 'Automatic' -and $server.VersionMajor -lt 13) {
                 Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Target $server
