@@ -163,8 +163,7 @@ function Get-DbaProcess {
                 if ($Database) {
                     $allSessions = $allSessions | Where-Object { $Database -contains $_.Database }
                 }
-            }
-            else {
+            } else {
                 if ($Login) {
                     $allSessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allSessions.Spid }
                 }
@@ -183,7 +182,7 @@ function Get-DbaProcess {
 
                 if ($Database) {
                     $allSessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allSessions.Spid }
-                }            
+                }
             }
 
             if (Test-Bound -not 'Login', 'Spid', 'ExcludeSpid', 'Hostname', 'Program', 'Database') {
