@@ -39,21 +39,26 @@ function Copy-DbaCredential {
         This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
 
     .PARAMETER Name
-        Only include specific names
+        Specifies the credential names to copy from the source server. Supports wildcards for pattern matching.
+        Use this when you only need to migrate specific credentials instead of all credentials on the server.
         Note: if spaces exist in the credential name, you will have to type "" or '' around it.
 
     .PARAMETER ExcludeName
-        Excluded credential names
+        Specifies credential names to exclude from the copy operation. Supports wildcards for pattern matching.
+        Use this when you want to copy most credentials but skip specific ones like test accounts or deprecated credentials.
 
     .PARAMETER Identity
-        Only include specific identities
+        Specifies the credential identities (user accounts) to copy from the source server. Supports wildcards for pattern matching.
+        Use this when you need to migrate credentials for specific service accounts or domain users rather than filtering by credential name.
         Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
 
     .PARAMETER ExcludeIdentity
-        Excluded identities
+        Specifies credential identities (user accounts) to exclude from the copy operation. Supports wildcards for pattern matching.
+        Use this when you want to copy most credentials but skip those associated with specific service accounts or domain users.
 
     .PARAMETER Force
-        If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
+        Overwrites existing credentials on the destination server by dropping and recreating them with the source values.
+        Use this when you need to update credential passwords or identities that have changed on the source server since the last migration.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

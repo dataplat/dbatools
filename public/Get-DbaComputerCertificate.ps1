@@ -7,25 +7,37 @@ function Get-DbaComputerCertificate {
         Scans Windows certificate stores to find X.509 certificates suitable for enabling SQL Server network encryption. By default, returns only certificates with Server Authentication capability from the LocalMachine\My store, which are the certificates SQL Server can actually use for TLS connections. This saves you from manually browsing certificate stores and checking enhanced key usage extensions when configuring Force Encryption or setting up secure SQL Server connections.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must specify the distinct nodes.
+        Specifies the target computer(s) to scan for certificates. Defaults to localhost.
+        Use this when you need to check certificates on remote SQL Server machines or when configuring network encryption across multiple instances.
+        For SQL Server clusters, specify each individual cluster node separately since certificates are stored per machine, not per cluster resource.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
 
     .PARAMETER Store
-        Certificate store - defaults to LocalMachine
+        Specifies which Windows certificate store location to search. Defaults to LocalMachine.
+        Use LocalMachine for certificates that SQL Server service accounts can access, or CurrentUser for user-specific certificates.
+        SQL Server typically requires certificates in LocalMachine store for network encryption to work properly.
 
     .PARAMETER Folder
-        Certificate folder - defaults to My (Personal)
+        Specifies which certificate folder within the store to search. Defaults to My (Personal certificates).
+        Use My for personal certificates with private keys, Root for trusted root certificates, or other folders based on certificate type.
+        SQL Server network encryption typically uses certificates from the My folder since they contain the required private keys.
 
     .PARAMETER Path
-        The path to a certificate - basically changes the path into a certificate object
+        Specifies the file system path to a certificate file (.cer, .crt, .pfx) to load and analyze.
+        Use this when you need to examine a certificate file before installing it to a certificate store.
+        This bypasses the Store and Folder parameters since the certificate is loaded directly from the file system.
 
     .PARAMETER Type
-        The type of certificates to return. All or Service. Default is Service since this is SQL specific.
+        Filters certificates by their intended usage. Service returns only certificates with Server Authentication capability, All returns every certificate.
+        Use Service (default) to find certificates that SQL Server can actually use for network encryption and TLS connections.
+        Service certificates have the required Enhanced Key Usage extension (1.3.6.1.5.5.7.3.1) that enables them for server authentication scenarios.
 
     .PARAMETER Thumbprint
-        Return certificate based on thumbprint
+        Filters results to return only certificates with the specified thumbprint(s). Accepts multiple thumbprints.
+        Use this when you need to verify specific certificates exist or check their properties before configuring SQL Server network encryption.
+        The thumbprint is the unique SHA-1 hash identifier that SQL Server uses in its certificate configuration.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

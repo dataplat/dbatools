@@ -17,13 +17,16 @@ function New-DbaSsisCatalog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SecurePassword
-        Required password that will be used for the security key in SSISDB.
+        Specifies the master password that encrypts the SSIS catalog database master key. This password is required to access and decrypt sensitive data like connection strings and package parameters stored in SSISDB.
+        Use Read-Host -AsSecureString or ConvertTo-SecureString to create this value securely without exposing the password in plain text.
 
     .PARAMETER Credential
-        Use a credential object instead of a securepassword
+        Provides an alternative way to supply the master password using a PSCredential object instead of SecurePassword. The username portion is ignored - only the password from the credential is used.
+        This approach simplifies password input by allowing you to use Get-Credential, which presents a secure password prompt dialog.
 
     .PARAMETER SsisCatalog
-        SSIS catalog name. By default, this is SSISDB.
+        Specifies the name for the SSIS catalog database that will be created. Defaults to 'SSISDB' which is the Microsoft standard name.
+        Only change this if your organization has specific naming requirements, as most SSIS tooling and documentation assumes the standard SSISDB name.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

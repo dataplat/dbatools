@@ -12,7 +12,9 @@ function Get-DbaClientProtocol {
         The client protocols can be enabled and disabled when retrieved via WSMan.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the target computer(s) to retrieve SQL Server client protocol configuration from. Accepts computer names, IP addresses, or SQL Server instance names.
+        Use this when you need to audit client protocol settings on remote servers or troubleshoot connectivity issues across multiple machines.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.

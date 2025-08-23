@@ -17,9 +17,9 @@ function Test-DbaLastBackup {
         The target SQL Server instance or instances. Unlike many of the other commands, you cannot specify more than one server.
 
     .PARAMETER Destination
-        The destination server to use to test the restore. By default, the Destination will be set to the source server
-
-        If a different Destination server is specified, you must ensure that the database backups are on a shared location
+        Specifies the SQL Server instance where test restores will be performed. Defaults to the source server if not specified.
+        Use this when you want to test restores on a different server, such as isolating test operations from production workloads.
+        When using a different destination server, backup files must be accessible from that server via shared storage or use -CopyFile.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -29,68 +29,104 @@ function Test-DbaLastBackup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the destination SQL Server instance when different from the source.
+        Use this when the destination server requires different authentication than the source server.
+        Accepts PowerShell credentials (Get-Credential) and supports Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated.
 
     .PARAMETER Database
-        The database backups to test. If -Database is not provided, all database backups will be tested.
+        Specifies which databases to include in the backup test. Accepts wildcards for pattern matching.
+        Use this to limit testing to specific databases instead of all databases on the instance.
+        Helpful when you only want to verify critical databases or troubleshoot specific backup issues.
 
     .PARAMETER ExcludeDatabase
-        Exclude specific Database backups to test.
+        Specifies databases to exclude from backup testing. Accepts wildcards for pattern matching.
+        Use this to skip non-critical databases, large databases, or databases with known backup issues.
+        Commonly used to exclude system databases or databases that would take too long to test.
 
     .PARAMETER DataDirectory
-        Specifies an alternative directory for mdfs, ndfs and so on. The command uses the SQL Server's default data directory for all restores.
+        Specifies the directory where restored database data files (.mdf, .ndf) will be placed. Defaults to the SQL Server's default data directory.
+        Use this when you need to direct test restores to specific storage, such as faster drives for testing or isolated storage locations.
+        The SQL Server service account must have write permissions to this directory.
 
     .PARAMETER LogDirectory
-        Specifies an alternative directory for ldfs. The command uses the SQL Server's default log directory for all restores.
+        Specifies the directory where restored database log files (.ldf) will be placed. Defaults to the SQL Server's default log directory.
+        Use this when you want to separate test database logs from production logs or direct them to faster storage for testing.
+        The SQL Server service account must have write permissions to this directory.
 
     .PARAMETER FileStreamDirectory
-        Specifies a directory for filestream data.
+        Specifies the directory where FileStream data will be restored for databases that use FileStream storage.
+        Use this when testing databases with FileStream-enabled tables to ensure the FileStream data is properly restored and accessible.
+        Required only for databases that contain FileStream data and when not using -ReuseSourceFolderStructure.
 
     .PARAMETER VerifyOnly
-        If this switch is enabled, VERIFYONLY will be performed. An actual restore will not be executed.
+        Performs backup verification only without actually restoring the database. Uses T-SQL RESTORE VERIFYONLY command.
+        Use this for faster backup validation when you only need to confirm backup file integrity without full restore testing.
+        Skips DBCC CHECKDB since no actual database is restored.
 
     .PARAMETER NoCheck
-        If this switch is enabled, DBCC CHECKDB will be skipped
+        Skips the DBCC CHECKDB operation after restoring the test database.
+        Use this to speed up the testing process when you only need to verify that backups can be restored successfully.
+        Reduces testing time but provides less thorough validation of database integrity.
 
     .PARAMETER NoDrop
-        If this switch is enabled, the newly-created test database will not be dropped.
+        Prevents the test database from being automatically dropped after the test completes.
+        Use this when you need to examine the restored database manually or perform additional testing.
+        Remember to manually clean up test databases later to avoid storage issues.
 
     .PARAMETER CopyFile
-        If this switch is enabled, the backup file will be copied to the destination default backup location unless CopyPath is specified.
+        Copies backup files to the destination server's default backup directory before attempting the restore.
+        Use this when backup files are not accessible from the destination server, such as local backups on different servers.
+        Cannot be used with Azure SQL Database backups.
 
     .PARAMETER CopyPath
-        Specifies a path relative to the SQL Server to copy backups when CopyFile is specified. If not specified will use destination default backup location. If destination SQL Server is not local, admin UNC paths will be utilized for the copy.
+        Specifies the destination directory where backup files will be copied when using -CopyFile. Defaults to the destination server's default backup directory.
+        Use this to control where backup files are temporarily stored during testing, such as directing them to faster storage.
+        Path must be accessible to the destination SQL Server service account.
 
     .PARAMETER MaxSize
-        Max size in MB. Databases larger than this value will not be restored.
+        Maximum database size in MB. Databases with backups larger than this value will be skipped.
+        Use this to avoid testing extremely large databases that would consume excessive time or storage resources.
+        Helps focus testing on databases that can be practically tested within available resources.
 
     .PARAMETER MaxDop
-        Allows you to pass in a MAXDOP setting to the DBCC CheckDB command to limit the number of parallel processes used.
+        Sets the maximum degree of parallelism for the DBCC CHECKDB operation. Limits the number of parallel processes used.
+        Use this to control resource usage during integrity checks, especially on busy servers or when testing multiple databases.
+        Lower values reduce CPU usage but increase DBCC runtime.
 
     .PARAMETER DeviceType
-        Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
+        Filters backups by device type such as 'Disk', 'Tape', or 'Virtual Device'. Accepts multiple values.
+        Use this when you need to test only backups from specific backup devices or exclude certain device types.
+        Commonly used to test only disk backups or exclude tape backups that may be offline.
 
     .PARAMETER AzureCredential
-        The name of the SQL Server credential on the destination instance that holds the key to the azure storage account.
+        Specifies the name of the SQL Server credential that contains the key for accessing Azure Storage where backups are stored.
+        Use this when testing backups stored in Azure Blob Storage that require credential-based authentication.
+        The credential must already exist on the destination SQL Server instance.
 
     .PARAMETER IncludeCopyOnly
-        If this switch is enabled, copy only backups will be counted as a last backup.
+        Includes copy-only backups when determining the most recent backup to test.
+        Use this when you want to test copy-only backups that were created for specific purposes like migrations or testing.
+        Copy-only backups don't break the backup chain but are normally excluded from 'last backup' queries.
 
     .PARAMETER IgnoreLogBackup
-        If this switch is enabled, transaction log backups will be ignored. The restore will stop at the latest full or differential backup point.
+        Skips transaction log backups during restore, stopping at the most recent full or differential backup.
+        Use this for faster testing when point-in-time recovery precision isn't critical for the test.
+        Results in some data loss compared to a complete restore chain but significantly reduces testing time.
 
     .PARAMETER IgnoreDiffBackup
-        If this switch is enabled, differential backups will be ignored. The restore will only use Full and Log backups, so will take longer to complete
+        Skips differential backups during restore, using only full and transaction log backups.
+        Use this to test restore scenarios that don't rely on differential backups or when differential backups are suspected to be problematic.
+        May significantly increase restore time due to processing more transaction log backups.
 
     .PARAMETER Prefix
-        The database is restored as "dbatools-testrestore-$databaseName" by default. You can change dbatools-testrestore to whatever you would like using this parameter.
+        Specifies the naming prefix for test databases. Defaults to 'dbatools-testrestore-' resulting in names like 'dbatools-testrestore-MyDB'.
+        Use this to customize test database naming for organizational standards or to avoid naming conflicts.
+        Choose prefixes that clearly identify databases as temporary test restores.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline processing.
+        Use this to test backups for databases selected through Get-DbaDatabase filtering options.
+        Enables complex database selection scenarios beyond simple name matching.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -99,17 +135,19 @@ function Test-DbaLastBackup {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER MaxTransferSize
-        Parameter to set the unit of transfer. Values must be a multiple of 64kb and a max of 4GB
-        Parameter is used as passthrough for Restore-DbaDatabase.
+        Sets the data transfer unit size for backup restoration. Must be a multiple of 64KB with a maximum of 4GB.
+        Use this to optimize restore performance by increasing buffer size, especially for large databases on high-speed storage.
+        Higher values can improve performance but consume more memory during the restore operation.
 
     .PARAMETER BufferCount
-        Number of I/O buffers to use to perform the operation.
-        Reference: https://msdn.microsoft.com/en-us/library/ms178615.aspx#data-transfer-options
-        Parameter is used as passthrough for Restore-DbaDatabase.
+        Specifies the number of I/O buffers used during the restore operation.
+        Use this to optimize restore performance by controlling memory allocation for the restore process.
+        Higher values can improve performance but consume more memory, so balance against other server activity.
 
     .PARAMETER ReuseSourceFolderStructure
-        By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure.
-        The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+        Maintains the original file paths and directory structure from the source database during restore.
+        Use this when testing databases that have specific file location requirements or when simulating exact production restore scenarios.
+        Ensures the destination server has the same directory structure as the source or the restore will fail.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

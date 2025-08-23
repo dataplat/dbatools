@@ -9,13 +9,15 @@ function Get-DbaPowerPlan {
         By default, returns the currently active power plan for each specified computer. Use the -List parameter to view all available power plans and their status. Microsoft recommends using the "High Performance" power plan for SQL Server hosts to prevent CPU throttling and ensure consistent database performance.
 
     .PARAMETER ComputerName
-        The server(s) to check Power Plan settings on.
+        Specifies the SQL Server host computer(s) to check for Windows Power Plan configuration. Accepts multiple server names for bulk power plan auditing.
+        Use this to verify that your SQL Server hosts are configured with the recommended "High Performance" power plan instead of "Balanced" or "Power Saver" modes that can throttle CPU performance.
 
     .PARAMETER Credential
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
     .PARAMETER List
-        Return all available Power Plans.
+        Returns all available power plans on the target computers instead of just the currently active plan. Shows the status of each plan including which one is active.
+        Use this when you need to see all power plan options available on a server before making configuration changes or to audit power plan availability across your environment.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

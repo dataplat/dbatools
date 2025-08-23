@@ -63,7 +63,9 @@ function Install-DbaInstance {
         You can also define instance name and port using -InstanceName and -Port parameters.
 
     .PARAMETER SaCredential
-        Securely provide the password for the sa account when using mixed mode authentication.
+        Specifies the password for the sa account when AuthenticationMode is set to Mixed.
+        If not provided with Mixed mode, a random 128-character password is automatically generated and returned in the output.
+        Only required when you want to set a specific sa password instead of using the auto-generated one.
 
     .PARAMETER Credential
         Windows Credential with permission to log on to the remote server.
@@ -73,152 +75,162 @@ function Install-DbaInstance {
         For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER ConfigurationFile
-        The path to the custom Configuration.ini file.
+        Path to an existing SQL Server Configuration.ini file to use for the installation.
+        Use this when you have a pre-configured setup file from a previous installation or when you need specific settings not covered by the function parameters.
+        The function will read and apply all settings from this file, overriding any conflicting parameters.
 
     .PARAMETER Configuration
-        A hashtable with custom configuration items that you want to use during the installation.
-        Overrides all other parameters.
-        For example, to define a custom server collation you can use the following parameter:
-        PS> Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = 'Latin1_General_BIN' }
-
-        As long as you don't specify the item ACTION, some items are already set by the command, like SQLSYSADMINACCOUNTS or *SVCSTARTUPTYPE.
-        If you specify the item ACTION, only INSTANCENAME and FEATURES are set based on the corresponding parameters and QUIET is set to True.
-        You will have to set all other needed items for your specific ACTION.
-        But this way it is possible to use the command so install a Failover Cluster Instance or even to remove a SQL Server instance.
-
-        More information about how to install a Failover Cluster Instance can be found here: https://github.com/dataplat/dbatools/discussions/7447
-
-        Full list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install
+        A hashtable containing SQL Server setup configuration parameters that override function defaults.
+        Use this for advanced scenarios like setting custom startup types, enabling specific features, or configuring failover cluster instances.
+        Each key-value pair becomes a parameter in the Configuration.ini file, allowing full control over the installation process.
+        When ACTION is specified, only minimal defaults are set, requiring you to provide all necessary configuration items for that specific installation type.
 
     .PARAMETER Authentication
-        Chooses an authentication protocol for remote connections.
-        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'.
-        If the protocol fails to establish a connection and explicit -Credentials were used, a failback authentication method would be attempted that configures PSSessionConfiguration
-        on the remote machine. This method, however, is considered insecure and would, therefore, prompt an additional confirmation when used.
-
-        Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
-        * Default when -Credential is not specified. Will likely fail if a network path is specified.
-
-        For CredSSP see also additional information in DESCRIPTION.
+        Specifies the PowerShell remoting authentication protocol for connecting to remote servers during installation.
+        Defaults to CredSSP when -Credential is provided to handle network share access and avoid double-hop authentication issues.
+        Use 'Kerberos' in domain environments where CredSSP is restricted, or 'Basic' for workgroup scenarios.
+        When installing from network shares, CredSSP is typically required to pass credentials through to the file server.
 
     .PARAMETER Version
-        SQL Server version you wish to install.
-        This is the year version (e.g. "2008R2", "2017", "2019", "2022")
+        Specifies the SQL Server version to install using the year-based identifier.
+        Valid values are 2008, 2008R2, 2012, 2014, 2016, 2017, 2019, and 2022.
+        This parameter determines which setup.exe file to locate in the installation media and configures version-specific features like tempdb file optimization (SQL 2016+).
 
     .PARAMETER InstanceName
-        Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.
+        Specifies the name for the new SQL Server instance, overriding any instance name in the SqlInstance parameter.
+        Use 'MSSQLSERVER' for the default instance or a custom name for named instances.
+        Named instances enable multiple SQL Server installations on the same server and affect service names, registry keys, and connection strings.
 
     .PARAMETER Feature
-        Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components. Full list of features:
-
-        Default: Engine, Replication, FullText, Tools
-        All
-        Engine
-        Tools: SSMS, BackwardsCompatibility, Connectivity
-        Replication
-        FullText
-        DataQuality
-        PolyBase
-        MachineLearning
-        AnalysisServices
-        ReportingServices
-        ReportingForSharepoint
-        SharepointAddin
-        IntegrationServices
-        MasterDataServices
-        PythonPackages
-        RPackages
-        BackwardsCompatibility
-        Connectivity
-        ReplayController
-        ReplayClient
-        SDK
-        BIDS
-        SSMS: SSMS, ADV_SSMS
+        Specifies which SQL Server components to install, either as individual features or using predefined templates.
+        'Default' installs Engine, Replication, FullText, and Tools for typical database server setups.
+        'All' installs every available feature for the specified version.
+        Choose specific features like 'Engine', 'AnalysisServices', 'ReportingServices', or 'IntegrationServices' for targeted installations based on your requirements.
 
     .PARAMETER InstancePath
-        Root folder for instance components. Includes SQL Server logs, system databases, etc.
+        Specifies the root directory where SQL Server instance files will be installed, including program files, system databases, and logs.
+        Defaults to the standard program files location unless you need to install on a different drive for capacity or performance reasons.
+        This path becomes the base for all instance-specific directories unless individual paths are specified.
 
     .PARAMETER DataPath
-        Path to the Data folder.
+        Specifies the default directory for user database data files (.mdf and .ndf).
+        Used as the default location when creating new databases if no explicit path is provided in CREATE DATABASE statements.
+        Consider placing this on high-performance storage separate from logs for optimal I/O performance.
 
     .PARAMETER LogPath
-        Path to the Log folder.
+        Specifies the default directory for user database transaction log files (.ldf).
+        Used as the default location for transaction logs when creating new databases.
+        Best practice is to place logs on separate storage from data files to optimize write performance and enable better backup strategies.
 
     .PARAMETER TempPath
-        Path to the TempDB folder.
+        Specifies the directory for tempdb database files, which handle temporary objects and internal SQL Server operations.
+        Consider placing tempdb on fast storage (SSD) separate from user databases since it's heavily used for sorts, joins, and temporary tables.
+        For SQL 2016+, the function automatically configures multiple tempdb data files based on CPU core count.
 
     .PARAMETER BackupPath
-        Path to the Backup folder.
+        Specifies the default directory for database backup files when no explicit path is provided in BACKUP commands.
+        This location should have sufficient space for your backup retention strategy and be accessible to your backup software.
+        Consider network accessibility if you plan to backup to shared storage or use backup software that requires UNC paths.
 
     .PARAMETER UpdateSourcePath
-        Path to the updates that you want to slipstream into the installation.
+        Specifies the directory containing SQL Server updates (service packs, cumulative updates) to apply during installation.
+        Enables slipstream installation to avoid separate patching steps after the base installation completes.
+        The path should contain the update executable files compatible with the SQL Server version being installed.
 
     .PARAMETER AdminAccount
-        One or more members of the sysadmin group. Uses UserName from the -Credential parameter if specified, or current Windows user by default.
+        Specifies one or more Windows accounts to grant sysadmin privileges on the new SQL Server instance.
+        Defaults to the current user or the account specified in the Credential parameter.
+        Use domain\\username format for domain accounts or computername\\username for local accounts.
 
     .PARAMETER Port
-        After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.
+        Specifies the TCP port number for SQL Server after installation, overriding the default port 1433.
+        The function configures the port post-installation since SQL Server setup doesn't directly support custom ports.
+        Use non-standard ports for security through obscurity or when running multiple instances that need distinct ports.
 
     .PARAMETER ProductID
-        Product ID, or simply, serial number of your SQL Server installation, which will determine which version to install.
-        If the PID is already built into the installation media, can be ignored.
+        Specifies the product license key (PID) to install a licensed edition of SQL Server instead of Evaluation edition.
+        Required only when the installation media doesn't include an embedded license key.
+        Without a valid ProductID, the installation defaults to a time-limited Evaluation edition that expires after 180 days.
 
     .PARAMETER AsCollation
-        Collation for the Analysis Service.
-        Default value: Latin1_General_CI_AS
+        Specifies the collation for Analysis Services, determining sort order and character comparison rules for SSAS databases.
+        Defaults to Latin1_General_CI_AS if not specified.
+        Choose a collation that matches your data locale and case sensitivity requirements for dimensional and tabular models.
 
     .PARAMETER SqlCollation
-        Collation for the Database Engine.
-        The default depends on the Windows locale:
-        https://docs.microsoft.com/en-us/sql/relational-databases/collations/collation-and-unicode-support#Server-level-collations
+        Specifies the server-level collation for the Database Engine, affecting sort order, case sensitivity, and accent sensitivity for all databases.
+        Defaults to the Windows locale setting if not specified.
+        Choose carefully as changing server collation after installation requires rebuilding system databases and can affect application compatibility.
 
     .PARAMETER EngineCredential
-        Service account of the SQL Server Database Engine
+        Specifies the Windows account to run the SQL Server Database Engine service.
+        Use domain service accounts for network access, Managed Service Accounts (MSAs) for automated password management, or local accounts for standalone servers.
+        The account needs specific Windows privileges like 'Log on as a service' and permissions to the installation directories.
 
     .PARAMETER AgentCredential
-        Service account of the SQL Server Agent
+        Specifies the Windows account to run the SQL Server Agent service, which manages scheduled jobs, alerts, and replication.
+        Typically uses the same account as the Database Engine for simplicity, but can be separate for security isolation.
+        Requires permissions to execute job steps, access network resources for backup jobs, and interact with other SQL Server instances for replication.
 
     .PARAMETER ASCredential
-        Service account of the Analysis Services
+        Specifies the Windows account to run the Analysis Services (SSAS) service for OLAP cubes and tabular models.
+        The account needs permissions to data sources, file system access for processing, and network connectivity for distributed queries.
+        Consider using a dedicated service account when SSAS requires different security contexts than the Database Engine.
 
     .PARAMETER ISCredential
-        Service account of the Integration Services
+        Specifies the Windows account to run the Integration Services (SSIS) service for ETL package execution and management.
+        The account needs permissions to source and destination systems, file shares for package storage, and SQL Server databases for logging and configuration.
+        Use a service account with broad permissions since SSIS packages often access multiple systems and data sources.
 
     .PARAMETER RSCredential
-        Service account of the Reporting Services
+        Specifies the Windows account to run the Reporting Services (SSRS) service for report generation and delivery.
+        The account needs permissions to the report server database, data sources used in reports, and network resources for email delivery.
+        Consider network connectivity requirements when reports access remote data sources or when using email subscriptions.
 
     .PARAMETER FTCredential
-        Service account of the Full-Text catalog service
+        Specifies the Windows account to run the Full-Text Filter Daemon service for indexing and searching text content in databases.
+        The account needs permissions to database files and temporary directories used during full-text indexing operations.
+        Usually runs under a low-privilege account since it only processes text extraction and indexing without requiring broad system access.
 
     .PARAMETER PBEngineCredential
-        Service account of the PolyBase service
+        Specifies the Windows account to run the PolyBase Engine service for distributed queries against Hadoop, Azure Blob Storage, and other external data sources.
+        The account needs network access to external systems and permissions to temporary directories for data processing.
+        Required when installing PolyBase features for big data integration and external table functionality.
 
     .PARAMETER Path
-        Path to the folder(s) with SQL Server installation media downloaded. It will be scanned recursively for a corresponding setup.exe.
-        Path should be available from the remote server.
-        If a setup.exe file is missing in the repository, the installation will fail.
-        Consider setting the following configuration in your session if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerSetup -Value '\\path\to\installations'`
+        Specifies the directory containing extracted SQL Server installation media, which will be scanned recursively for the appropriate setup.exe.
+        Can be a local path or network share accessible from target servers during remote installations.
+        The path must contain the extracted ISO contents or downloaded installer files, not the ISO file itself.
 
     .PARAMETER PerformVolumeMaintenanceTasks
-        Allow SQL Server service account to perform Volume Maintenance tasks.
+        Grants the SQL Server service account 'Perform volume maintenance tasks' privilege to enable instant file initialization.
+        Allows SQL Server to skip zero-initialization of data files, significantly reducing the time for database creation, restore operations, and auto-growth events.
+        Only affects data files; transaction log files are always zero-initialized for transaction integrity.
 
     .PARAMETER SaveConfiguration
-        Save installation configuration file in a custom location. Will not be preserved otherwise.
+        Specifies a path to save the generated Configuration.ini file for future reference or reuse.
+        Without this parameter, the configuration file is created in a temporary location and not preserved after installation.
+        Useful for documenting installation settings, troubleshooting, or replicating installations across multiple servers.
 
     .PARAMETER Throttle
-        Maximum number of computers updated in parallel. Once reached, the update operations will queue up.
-        Default: 50
+        Specifies the maximum number of concurrent SQL Server installations when targeting multiple servers.
+        Controls resource usage and network bandwidth by limiting parallel operations.
+        Consider your network capacity, installation media server performance, and available system resources when adjusting from the default of 50.
 
     .PARAMETER Restart
-        Restart computer automatically if a restart is required before or after the installation.
+        Automatically restarts target computers when required by Windows updates, pending file operations, or installation prerequisites.
+        Use this during maintenance windows when automatic restarts are acceptable.
+        Without this parameter, installations will fail if pending restarts are detected, requiring manual intervention.
 
     .PARAMETER AuthenticationMode
-        Chooses authentication mode for SQL Server. Allowed values: Mixed, Windows.
+        Specifies the SQL Server authentication mode: Windows (Windows Authentication only) or Mixed (Windows and SQL Authentication).
+        Windows mode is more secure and recommended for domain environments, while Mixed mode is required for applications that need SQL logins.
+        When using Mixed mode, ensure you provide a strong SaCredential or allow the function to generate a secure random password.
 
     .PARAMETER NoPendingRenameCheck
-        Disables pending rename validation when checking for a pending reboot.
+        Skips the check for pending file rename operations when validating reboot requirements.
+        Use this when you know pending renames won't affect the SQL Server installation or when working with systems that show false positives for pending renames.
+        Generally safer to allow the default validation unless you have specific reasons to bypass this safety check.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

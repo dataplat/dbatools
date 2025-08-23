@@ -20,10 +20,12 @@ function Get-DbaDbQueryStoreOption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which user databases to retrieve Query Store configuration from. Accepts database names, wildcards, or arrays for multiple databases.
+        Use this when you need to audit Query Store settings for specific databases rather than scanning your entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from Query Store configuration retrieval. System databases (master, tempdb, model) are automatically excluded.
+        Useful for skipping databases that you know don't need Query Store monitoring or have restricted access permissions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

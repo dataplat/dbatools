@@ -21,21 +21,25 @@ function Restore-DbaDbSnapshot {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Restores from the last snapshot databases with this names only. You can pass either Databases or Snapshots
+        Specifies which databases to restore from their most recent snapshots. Accepts multiple database names and wildcards for pattern matching.
+        Use this when you want to restore specific databases to their snapshot state rather than working with snapshot names directly.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from being restored when using wildcard patterns or restoring multiple databases.
+        Helpful when you want to restore most databases from snapshots but skip certain critical production databases.
 
     .PARAMETER Snapshot
-        Restores databases from snapshots with this names only. You can pass either Databases or Snapshots
+        Specifies the exact snapshot names to restore from, giving you precise control over which snapshot is used for each database.
+        Use this when you need to restore from specific snapshots rather than automatically using the most recent ones.
 
     .PARAMETER InputObject
-        Allows piping from other Snapshot commands
+        Accepts snapshot objects from other dbatools commands like Get-DbaDbSnapshot through the PowerShell pipeline.
+        This enables you to filter and select specific snapshots before restoring, such as using Out-GridView for interactive selection.
 
     .PARAMETER Force
-        If restoring from a snapshot involves dropping any other snapshot, you need to explicitly
-        use -Force to let this command delete the ones not involved in the restore process.
-        Also, -Force will forcibly kill all running queries that prevent the restore process.
+        Automatically drops other snapshots of the same database that would prevent the restore operation, as required by SQL Server.
+        Also terminates active connections to both the target database and snapshot to ensure the restore completes successfully.
+        Required when multiple snapshots exist for the database being restored or when active sessions could block the operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run

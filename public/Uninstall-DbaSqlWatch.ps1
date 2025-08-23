@@ -17,7 +17,8 @@ Function Uninstall-DbaSqlWatch {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database to install SqlWatch into. Defaults to master.
+        Specifies the database containing the SqlWatch installation to remove. Defaults to master.
+        Use this when SqlWatch was installed in a database other than the default master database.
 
     .PARAMETER Confirm
         Prompts to confirm actions

@@ -11,7 +11,9 @@ function Get-DbaNetworkActivity {
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the computer names or SQL Server instances to monitor network activity.
+        Function extracts the computer name from full instance names and resolves them to fully qualified domain names.
+        Defaults to the local computer when not specified.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.

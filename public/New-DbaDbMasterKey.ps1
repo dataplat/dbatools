@@ -17,16 +17,20 @@ function New-DbaDbMasterKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        Enables easy creation of a secure password.
+        Provides an alternative way to supply the master key password using a PSCredential object.
+        Use this when you need to pass the password programmatically or when integrating with credential management systems. The password portion of the credential is used to encrypt the master key.
 
     .PARAMETER Database
-        The database where the master key will be created. Defaults to master.
+        Specifies the database where the master key will be created. Defaults to master database if not specified.
+        Use this when implementing encryption features like TDE or Always Encrypted in specific user databases rather than just the system master database.
 
     .PARAMETER SecurePassword
-        Secure string used to create the key.
+        Provides the password used to encrypt the database master key as a SecureString object.
+        If not specified, you'll be prompted to enter the password securely via console. This password is required for SQL Server to decrypt the master key when the service starts.
 
     .PARAMETER InputObject
-        Database object piped in from Get-DbaDatabase.
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase.
+        Use this when you want to create master keys across multiple databases in a single pipeline operation or when working with pre-filtered database collections.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

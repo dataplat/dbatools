@@ -11,7 +11,8 @@ function Get-DbaInstanceProtocol {
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the target computer(s) where SQL Server instances are running. Accepts computer names, fully qualified domain names, or IP addresses.
+        Use this when you need to check network protocol configurations on remote SQL Server machines for connectivity troubleshooting or security audits.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.

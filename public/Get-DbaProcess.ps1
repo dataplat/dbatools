@@ -23,27 +23,32 @@ function Get-DbaProcess {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Spid
-        Specifies one or more process IDs (Spid) to be displayed. Options for this parameter are auto-populated from the server.
+        Filters results to specific process IDs (SPIDs) you want to monitor. Also includes any processes that are blocked by the specified SPIDs.
+        Use this when investigating specific connections or troubleshooting blocking issues where you need to see both the blocker and blocked processes.
 
     .PARAMETER Login
-        Specifies one or more Login names with active processes to look for. Options for this parameter are auto-populated from the server.
+        Filters results to sessions connected with specific SQL Server login names or Windows authentication accounts.
+        Use this to monitor connections from specific applications, service accounts, or users when investigating security concerns or connection patterns.
 
     .PARAMETER Hostname
-        Specifies one or more hostnames with active processes to look for. Options for this parameter are auto-populated from the server.
+        Filters results to sessions originating from specific client machines or server names.
+        Use this when tracking connections from particular workstations, application servers, or investigating connection leaks from specific hosts.
 
     .PARAMETER Program
-        Specifies one or more program names with active processes to look for. Options for this parameter are auto-populated from the server.
+        Filters results to sessions created by specific client applications such as 'Microsoft SQL Server Management Studio' or custom application names.
+        Use this to monitor connections from particular applications, identify connection patterns, or troubleshoot application-specific database issues.
 
     .PARAMETER Database
-        Specifies one or more databases with active processes to look for. Options for this parameter are auto-populated from the server.
+        Filters results to sessions currently connected to specific databases.
+        Use this when monitoring activity on particular databases, investigating database-specific performance issues, or auditing access to sensitive databases.
 
     .PARAMETER ExcludeSpid
-        Specifies one ore more process IDs to exclude from display. Options for this parameter are auto-populated from the server.
-
-        This is the last filter to run, so even if a Spid matches another filter, it will be excluded by this filter.
+        Excludes specific process IDs (SPIDs) from the results, even if they match other filter criteria.
+        Use this to remove known processes like monitoring tools, maintenance jobs, or your own session from the output. This filter is applied last, overriding all other inclusion filters.
 
     .PARAMETER ExcludeSystemSpids
-        If this switch is enabled, system Spids will be ignored.
+        Excludes system processes (SPIDs 1-50) from the results to focus only on user connections and application processes.
+        Use this when you want to see only actual user sessions and application connections, filtering out SQL Server internal processes like checkpoints, log writers, and system tasks.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

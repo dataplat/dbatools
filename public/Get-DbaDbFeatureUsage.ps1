@@ -21,13 +21,19 @@ function Get-DbaDbFeatureUsage {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to scan for Enterprise edition features. Accepts wildcards for pattern matching.
+        Use this when you need to check specific databases instead of scanning all databases on the instance.
+        Helpful when planning edition downgrades for particular databases or troubleshooting feature usage in development environments.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the Enterprise feature scan. Accepts wildcards for pattern matching.
+        Use this to skip system databases, read-only databases, or databases you know don't need to be downgraded.
+        Commonly used to exclude tempdb, model, or archived databases from bulk scanning operations.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase), to be tested.
+        Accepts database objects directly from the pipeline, typically from Get-DbaDatabase output.
+        Use this for advanced filtering scenarios or when you've already retrieved specific database objects.
+        Allows you to chain database selection commands with feature usage checking in a single pipeline operation.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

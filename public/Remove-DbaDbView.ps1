@@ -17,13 +17,16 @@ function Remove-DbaDbView {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to search for views to remove. Accepts multiple database names.
+        Use this to limit view removal to specific databases instead of searching all databases on the instance.
 
     .PARAMETER View
-        The name(s) of the view(s).
+        Specifies the names of the views to remove. Accepts multiple view names and supports wildcards for pattern matching.
+        When targeting views in specific schemas, use the two-part naming convention like 'dbo.ViewName'.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbView.
+        Accepts view objects from Get-DbaDbView for pipeline operations. Use this for complex filtering scenarios or bulk removals.
+        This approach provides better control over which specific views get removed compared to using name-based targeting.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

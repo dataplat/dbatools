@@ -21,22 +21,22 @@ function Remove-DbaAgentOperator {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Operator
-        Name of the operator in SQL Agent.
+        Specifies the SQL Server Agent operator names to remove from the instance. Accepts multiple operator names for bulk removal.
+        Use this when you need to remove specific operators by name, such as when employees leave or contact information becomes outdated.
 
     .PARAMETER ExcludeOperator
-        The operator(s) to exclude.
+        Specifies operator names to skip during removal operations. Useful when removing multiple operators but want to preserve certain ones.
+        Use this to protect critical operators from accidental deletion when performing bulk removals or scripted cleanup operations.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaAgentOperator.
+        Accepts SQL Server Agent operator objects from Get-DbaAgentOperator for pipeline operations.
+        This parameter enables filtering operators before removal and supports interactive selection workflows using Out-GridView.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-
-    .PARAMETER InputObject
-        SMO Server Objects (pipeline input from Connect-DbaInstance)
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

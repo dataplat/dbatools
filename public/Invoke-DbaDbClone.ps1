@@ -25,22 +25,28 @@ function Invoke-DbaDbClone {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database to clone - this list is auto-populated from the server.
+        Specifies the source database(s) to clone from the SQL Server instance. Accepts multiple database names for batch operations.
+        Use this when connecting directly to an instance rather than piping database objects from Get-DbaDatabase.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the pipeline, allowing for filtered operations.
+        This method provides more flexibility than the Database parameter for complex database selection scenarios.
 
     .PARAMETER CloneDatabase
-        The name(s) to clone to.
+        Specifies the name(s) for the new cloned database(s). If not provided, defaults to adding '_clone' suffix to the source database name.
+        Each clone must have a unique name on the target instance and cannot already exist.
 
     .PARAMETER ExcludeStatistics
-        Exclude the statistics in the cloned database
+        Excludes table and index statistics from the cloned database, creating only the schema structure without statistical metadata.
+        Use this when you only need the database structure for schema comparison or when statistics would interfere with your testing scenario. Requires SQL Server 2014 SP2 CU3+ or SQL Server 2016 SP1+.
 
     .PARAMETER ExcludeQueryStore
-        Exclude the QueryStore data in the cloned database
+        Excludes Query Store data from the cloned database, preventing historical query execution data from being copied.
+        Use this when you want a clean slate for query performance analysis or when Query Store data is not relevant to your testing scenario. Requires SQL Server 2016 SP1 or higher.
 
     .PARAMETER UpdateStatistics
-        Update the statistics prior to cloning (per Microsoft Tiger Team formula)
+        Updates column store index statistics in the source database before cloning using Microsoft Tiger Team methodology.
+        Use this when working with column store indexes to ensure the clone contains current statistical information for accurate query plan generation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

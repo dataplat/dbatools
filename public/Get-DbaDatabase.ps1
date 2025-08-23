@@ -20,53 +20,71 @@ function Get-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies one or more databases to include in the results. Supports wildcards and exact name matching.
+        Use this when you need to retrieve specific databases instead of all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more database(s) to exclude from processing.
+        Specifies one or more databases to exclude from the results. Supports wildcards and exact name matching.
+        Use this to filter out specific databases like test or staging environments from your inventory.
 
     .PARAMETER ExcludeUser
-        If this switch is enabled, only databases which are not User databases will be processed.
-
+        Returns only system databases (master, model, msdb, tempdb).
+        Use this when you need to focus on system database maintenance tasks or validation.
         This parameter cannot be used with -ExcludeSystem.
 
     .PARAMETER ExcludeSystem
-        If this switch is enabled, only databases which are not System databases will be processed.
-
+        Returns only user databases, excluding system databases (master, model, msdb, tempdb).
+        Use this when you need to focus on application databases for maintenance, backup, or compliance reporting.
         This parameter cannot be used with -ExcludeUser.
 
     .PARAMETER Status
-        Specifies one or more database statuses to filter on. Only databases in the status(es) listed will be returned. Valid options for this parameter are 'EmergencyMode', 'Normal', 'Offline', 'Recovering', 'RecoveryPending', 'Restoring', 'Standby', and 'Suspect'.
+        Filters databases by their current operational status. Returns only databases matching the specified status values.
+        Use this to identify databases requiring attention (Suspect, Offline) or in specific states for maintenance planning.
+        Valid options: EmergencyMode, Normal, Offline, Recovering, RecoveryPending, Restoring, Standby, Suspect.
 
     .PARAMETER Access
-        Filters databases returned by their access type. Valid options for this parameter are 'ReadOnly' and 'ReadWrite'. If omitted, no filtering is performed.
+        Filters databases by their read/write access mode. Returns only databases set to the specified access type.
+        Use ReadOnly to find reporting databases or those temporarily set to read-only for maintenance.
+        Valid options: ReadOnly, ReadWrite.
 
     .PARAMETER Owner
-        Specifies one or more database owners. Only databases owned by the listed owner(s) will be returned.
+        Filters databases by their database owner (the principal listed as the database owner).
+        Use this to find databases owned by specific accounts for security auditing or ownership cleanup.
+        Accepts login names like 'sa', 'DOMAIN\user', or service account names.
 
     .PARAMETER Encrypted
-        If this switch is enabled, only databases which have Transparent Data Encryption (TDE) enabled will be returned.
+        Returns only databases with Transparent Data Encryption (TDE) enabled.
+        Use this for compliance reporting or to verify which databases have encryption configured for data protection.
 
     .PARAMETER RecoveryModel
-        Filters databases returned by their recovery model. Valid options for this parameter are 'Full', 'Simple', and 'BulkLogged'.
+        Filters databases by their recovery model setting, which controls transaction log behavior and backup capabilities.
+        Use this to verify recovery model consistency or find databases needing model changes for backup strategy compliance.
+        Valid options: Full (point-in-time recovery), Simple (no log backups), BulkLogged (minimal logging for bulk operations).
 
     .PARAMETER NoFullBackup
-        If this switch is enabled, only databases without a full backup recorded by SQL Server will be returned. This will also indicate which of these databases only have CopyOnly full backups.
+        Returns only databases that have never had a full backup or only have CopyOnly full backups recorded in msdb.
+        Use this to identify databases at risk due to missing backup coverage for disaster recovery planning.
 
     .PARAMETER NoFullBackupSince
-        Only databases which haven't had a full backup since the specified DateTime will be returned.
+        Returns databases that haven't had a full backup since the specified date and time.
+        Use this to identify databases with stale backups that may violate your backup policy or RTO requirements.
 
     .PARAMETER NoLogBackup
-        If this switch is enabled, only databases without a log backup recorded by SQL Server will be returned.
+        Returns databases in Full or BulkLogged recovery model that have never had a transaction log backup.
+        Use this to identify databases where transaction logs may be growing unchecked due to missing log backup strategy.
 
     .PARAMETER NoLogBackupSince
-        Only databases which haven't had a log backup since the specified DateTime will be returned.
+        Returns databases that haven't had a transaction log backup since the specified date and time.
+        Use this to find databases with overdue log backups that may cause transaction log growth or RPO violations.
 
     .PARAMETER IncludeLastUsed
-        If this switch is enabled, the last used read & write times for each database will be returned. This data is retrieved from sys.dm_db_index_usage_stats which is reset when SQL Server is restarted.
+        Adds LastRead and LastWrite columns showing when databases were last accessed based on index usage statistics.
+        Use this to identify unused or rarely accessed databases for decommissioning or archival decisions.
+        Data is retrieved from sys.dm_db_index_usage_stats and resets when SQL Server restarts.
 
     .PARAMETER OnlyAccessible
-        If this switch is enabled, only accessible databases are returned (huge speedup in SMO enumeration)
+        Returns only databases that are currently accessible, excluding offline or inaccessible databases.
+        Use this to improve performance when you only need databases that can be queried, providing significant speedup for SMO enumeration.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

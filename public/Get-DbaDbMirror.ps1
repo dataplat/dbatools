@@ -18,7 +18,8 @@ function Get-DbaDbMirror {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The name of the target databases
+        Specifies which databases to check for mirroring configuration. Accepts multiple database names and supports wildcards.
+        Use this when you want to examine mirroring status for specific databases instead of checking all databases on the instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

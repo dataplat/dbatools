@@ -17,13 +17,16 @@ function Get-DbaDbCompression {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for compression information. Accepts multiple database names as an array.
+        Use this when you want to focus compression analysis on specific databases rather than scanning all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Specifies which databases to skip during compression analysis. Accepts multiple database names as an array.
+        Use this to exclude system databases, maintenance databases, or other databases you don't want included in compression reporting.
 
     .PARAMETER Table
-        The table(s) to process. If unspecified, all tables will be processed.
+        Specifies which tables to analyze for compression information. Accepts multiple table names as an array.
+        Use this when you need compression details for specific tables rather than all tables in the target databases, particularly useful for large databases where you want to focus on specific objects.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

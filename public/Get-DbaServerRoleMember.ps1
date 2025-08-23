@@ -17,16 +17,20 @@ function Get-DbaServerRoleMember {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
-        The role(s) to process. If unspecified, all roles will be processed.
+        Specifies which server roles to check for membership. Accepts role names like 'sysadmin', 'dbcreator', 'securityadmin', or custom server roles.
+        Use this when you need to focus your audit on specific high-privilege roles or investigate particular security concerns.
 
     .PARAMETER ExcludeServerRole
-        The role(s) to exclude.
+        Excludes specified server roles from the membership report. Useful when you want to see all role memberships except certain roles.
+        Commonly used to exclude low-privilege roles like 'public' when focusing on elevated permissions during security reviews.
 
     .PARAMETER Login
-        The login(s) to process. If unspecified, all logins will be processed.
+        Filters results to show only server role memberships for specific logins. Accepts login names including Windows accounts, SQL logins, and service accounts.
+        Use this when investigating permissions for particular users or troubleshooting access issues for specific accounts.
 
     .PARAMETER ExcludeFixedRole
-        Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports creation of server-level roles.
+        Excludes built-in server roles like sysadmin, securityadmin, and dbcreator, showing only custom server roles created by your organization.
+        Only available on SQL Server 2017 and later which supports user-defined server roles. Use this to audit custom role assignments in environments with specialized security models.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

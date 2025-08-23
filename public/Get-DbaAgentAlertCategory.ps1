@@ -17,7 +17,8 @@ function Get-DbaAgentAlertCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category to filter out. If no category is used all categories will be returned.
+        Specifies one or more alert category names to return from the SQL Server Agent. Accepts multiple values and wildcards are not supported.
+        Use this when you need to examine specific alert categories rather than retrieving all categories on the instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

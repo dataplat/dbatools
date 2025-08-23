@@ -21,13 +21,16 @@ function Get-DbaRegServerGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Group
-        Specifies one or more groups to include from SQL Server Central Management Server.
+        Specifies one or more server group names to retrieve from Central Management Server. Supports hierarchical paths using backslash notation (e.g., 'Production\WebServers').
+        Use this when you need specific organizational groups rather than all groups, or when working with nested subgroups within your CMS structure.
 
     .PARAMETER ExcludeGroup
-        Specifies one or more Central Management Server groups to exclude.
+        Specifies one or more server group names to exclude from the results. Accepts the same hierarchical path format as the Group parameter.
+        Use this when you want all groups except certain ones, such as excluding test environments from production operations or removing deprecated groups from inventory reports.
 
     .PARAMETER Id
-        Get group by Id(s). This parameter only works if the group has a registered server in it.
+        Retrieves server groups by their numeric identifier. Note that Id 1 always represents the root DatabaseEngineServerGroup, and this parameter only works for groups that contain registered servers.
+        Use this when you need to target groups programmatically using their internal CMS identifiers, typically in automated scripts that reference groups by ID rather than name.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

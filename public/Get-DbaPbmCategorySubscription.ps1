@@ -17,7 +17,8 @@ function Get-DbaPbmCategorySubscription {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaPbmStore
+        Accepts Policy-Based Management store objects from Get-DbaPbmStore for pipeline processing.
+        Use this when you need to query category subscriptions from an already retrieved PBM store object, improving performance when working with multiple PBM operations on the same instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

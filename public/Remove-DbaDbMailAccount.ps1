@@ -18,13 +18,19 @@ function Remove-DbaDbMailAccount {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Account
-        Specifies one or more database mail account(s) to delete. If unspecified, all accounts will be removed.
+        Specifies one or more Database Mail account names to remove from the SQL Server instance.
+        Use this when you need to remove specific accounts rather than all accounts on the server.
+        Accepts multiple account names as a string array for bulk removal operations.
 
     .PARAMETER ExcludeAccount
-        Specifies one or more database mail account(s) to exclude.
+        Specifies Database Mail account names to exclude from removal when processing all accounts on the instance.
+        Use this when you want to remove most accounts but keep certain ones active for ongoing operations.
+        Only applies when the Account parameter is not specified.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbMailAccount.
+        Accepts Database Mail account objects from the pipeline, typically from Get-DbaDbMailAccount.
+        Use this approach when you need to filter or review accounts before removal using PowerShell pipeline operations.
+        Provides more flexibility than specifying account names directly.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

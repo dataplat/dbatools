@@ -22,10 +22,12 @@ function Set-DbaErrorLogConfig {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LogCount
-        Integer value between 6 and 99 for setting the number of error log files to keep for SQL Server instance.
+        Sets the number of error log files SQL Server retains before deleting the oldest ones. Must be between 6 and 99.
+        Use this to balance disk space with troubleshooting history - more files provide longer history but consume more disk space.
 
     .PARAMETER LogSize
-        Integer value for the size in KB that you want the error log file to grow. This is feature only in SQL Server 2012 and higher. When the file reaches that limit SQL Server will roll the error log over.
+        Sets the maximum size in KB for each error log file before SQL Server automatically creates a new log file. Only available on SQL Server 2012 and later.
+        Use this to prevent error logs from growing too large and to ensure regular log rotation without manual intervention.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

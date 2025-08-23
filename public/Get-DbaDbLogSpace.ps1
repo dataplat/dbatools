@@ -19,13 +19,16 @@ Function Get-DbaDbLogSpace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for transaction log space usage. Accepts wildcards for pattern matching.
+        Use this when you need to monitor specific databases instead of checking all databases on the instance, particularly useful for focusing on high-growth or critical databases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server.
+        Specifies databases to skip when checking transaction log space usage. Accepts wildcards for pattern matching.
+        Use this to exclude databases you don't need to monitor regularly, such as test databases, read-only databases, or databases with known stable log usage patterns.
 
     .PARAMETER ExcludeSystemDatabase
-        Allows you to suppress output on system databases.
+        Excludes system databases (master, model, msdb, tempdb) from the transaction log space report.
+        Use this when focusing on user databases only, as system database log usage is typically managed differently and may not require the same monitoring attention.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

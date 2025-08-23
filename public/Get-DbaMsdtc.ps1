@@ -11,7 +11,8 @@ function Get-DbaMsdtc {
         Requires: Windows administrator access on target servers
 
     .PARAMETER ComputerName
-        The target computer.
+        Specifies the server or computer names where MSDTC information should be retrieved. Accepts multiple values and supports pipeline input.
+        Use this when checking MSDTC configuration across multiple SQL Server hosts, especially when troubleshooting distributed transactions or linked server issues.
 
     .PARAMETER Credential
         Alternative credential

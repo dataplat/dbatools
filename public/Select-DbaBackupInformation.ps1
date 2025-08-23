@@ -7,30 +7,36 @@ function Select-DbaBackupInformation {
         Analyzes backup history objects and determines the exact sequence of backups required to restore a database to a specific point in time. This function handles the complex LSN logic to identify which full, differential, and log backups are needed, eliminating the guesswork of manual restore planning. It supports continuing interrupted restores, filtering by database or server names, and accommodating different restore strategies by optionally ignoring differential or log backups. Perfect for automating disaster recovery procedures or when you need to restore to a precise moment without restoring unnecessary backup files.
 
     .PARAMETER BackupHistory
-        A dbatools.BackupHistory object containing backup history records
+        Backup history records from Get-DbaBackupInformation containing backup metadata and file paths.
+        This function analyzes these records to determine the minimum backup chain needed for point-in-time recovery.
 
     .PARAMETER RestoreTime
-        The point in time you want to restore to
+        The specific point in time to restore the database to. Defaults to one month in the future if not specified.
+        Use this when you need to recover to a specific moment, such as just before a data corruption incident occurred.
 
     .PARAMETER IgnoreLogs
-        This switch will cause Log Backups to be ignored. So will restore to the last Full or Diff backup only
+        Excludes transaction log backups from the restore chain, limiting recovery to the most recent full or differential backup.
+        Use this when you don't need point-in-time recovery or when log backups are unavailable or corrupted.
 
     .PARAMETER IgnoreDiffs
-        This switch will cause Differential backups to be ignored. Unless IgnoreLogs is specified, restore to point in time will still occur, just using all available log backups
+        Excludes differential backups from the restore chain, using only full backups and transaction logs.
+        Use this when differential backups are corrupted or when you want to test a restore strategy using only full and log backups.
 
     .PARAMETER DatabaseName
-        A string array of Database Names that you want to filter to
+        Filters results to only include backup chains for the specified database names. Accepts wildcards.
+        Use this when you only need to restore specific databases from a backup set containing multiple databases.
 
     .PARAMETER ServerName
-        A string array of Server Names that you want to filter
+        Filters results to only include backups from the specified server or availability group names.
+        For Availability Groups, this filters by the AG name rather than individual replica server names.
 
     .PARAMETER ContinuePoints
-        The Output of Get-RestoreContinuableDatabase while provides 'Database',redo_start_lsn,'FirstRecoveryForkID' values. Used to filter backups to continue a restore on a database
-        Sets IgnoreDiffs, and also filters databases to only those within the ContinuePoints object, or the ContinuePoints object AND DatabaseName if both specified
+        Output from Get-RestoreContinuableDatabase containing LSN and fork information for resuming interrupted restores.
+        Use this when continuing a partial restore operation on a database that's already in a restoring state.
 
     .PARAMETER LastRestoreType
-        The Output of Get-DbaDbRestoreHistory -last
-        This is used to check the last type of backup to a database to see if a differential backup can be restored
+        Output from Get-DbaDbRestoreHistory -Last showing the most recent restore operation performed on the target database.
+        This determines whether differential backups can be applied based on the last restore type performed.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

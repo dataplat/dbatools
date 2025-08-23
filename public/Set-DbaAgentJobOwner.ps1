@@ -25,16 +25,20 @@ function Set-DbaAgentJobOwner {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies which SQL Agent jobs to update ownership for. Accepts job names as strings and supports tab completion from the target server.
+        Use this when you need to update ownership for specific jobs rather than processing all jobs on the instance.
 
     .PARAMETER ExcludeJob
-        Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies SQL Agent jobs to skip during the ownership update process. Accepts job names as strings with tab completion.
+        Useful for excluding critical jobs or jobs that must retain their current ownership for security or operational reasons.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAgentJob
+        Accepts SQL Agent job objects from the pipeline, typically from Get-DbaAgentJob output.
+        Use this for advanced filtering scenarios where you need to process jobs based on complex criteria like owner, category, or schedule properties.
 
     .PARAMETER Login
-        Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
+        Specifies the target login account that should own the SQL Agent jobs. Defaults to 'sa' or automatically detects the renamed sysadmin account (login ID 1).
+        Must be a valid SQL login or Windows account that exists on the server. Cannot be a Windows group as they cannot own SQL Agent jobs.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

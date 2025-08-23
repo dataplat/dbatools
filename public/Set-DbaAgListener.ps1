@@ -17,16 +17,20 @@ function Set-DbaAgListener {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        The Availability Group to which a property will be changed.
+        Specifies the name of the availability group containing the listener to modify. Required when using SqlInstance parameter.
+        Use this to target specific availability groups when multiple groups exist on the same instance.
 
     .PARAMETER Port
-        Sets the port number used to communicate with the availability group.
+        Sets the new port number for the availability group listener. This is the TCP port clients will use to connect to the availability group.
+        Commonly changed to standardize ports across environments, resolve conflicts with other services, or meet security requirements.
 
     .PARAMETER Listener
-        Modify only specific listeners.
+        Specifies the name of specific listeners to modify within the availability group. Optional parameter to target only certain listeners.
+        Use this when an availability group has multiple listeners and you only want to change the port for specific ones.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAvailabilityGroup
+        Accepts availability group listener objects from the pipeline, typically from Get-DbaAgListener. Allows you to chain commands together.
+        Use this approach when you want to filter or select specific listeners before modifying their ports.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -7,33 +7,32 @@ function Copy-DbaAgentSchedule {
         Copies shared job schedules (not job-specific schedules) from the source SQL Server Agent to one or more destination instances using T-SQL scripting. This is essential when standardizing job schedules across multiple servers or migrating Agent configurations to new instances. Existing schedules are skipped by default unless -Force is specified, and schedules with associated jobs cannot be overwritten even with Force to prevent breaking existing job assignments. Use this instead of manually recreating complex recurring schedules with specific timing requirements across your SQL Server environment.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing the shared job schedules to copy. When specified, all shared schedules (or those filtered by Schedule/Id parameters) will be copied from this instance.
+        Use this parameter when copying schedules from a specific server, or omit it when piping schedules from Get-DbaAgentSchedule.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies alternative credentials for connecting to the source SQL Server instance. Use this when the current Windows user lacks sufficient permissions or when connecting with SQL Server authentication.
+        Accepts credentials created with Get-Credential or saved credential objects. Required when copying from instances that don't accept your current Windows authentication.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies one or more destination SQL Server instances where the shared job schedules will be copied. This parameter accepts multiple instances, allowing you to deploy schedules to several servers simultaneously.
+        Use this when standardizing schedules across multiple instances or when migrating Agent configurations to new servers.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies alternative credentials for connecting to the destination SQL Server instances. Use this when the current Windows user lacks sufficient permissions on the target servers or when connecting with SQL Server authentication.
+        Accepts credentials created with Get-Credential or saved credential objects. Required when copying to instances that don't accept your current Windows authentication.
 
     .PARAMETER Schedule
-        Copy only specific schedules. Note that SQL Server allows multiple schedules with the same name. Use Id for more accurate schedule copies.
+        Filters the operation to copy only schedules with specific names. Accepts an array of schedule names using wildcard patterns for flexible matching.
+        Use this when you need to copy only certain schedules instead of all shared schedules. Since SQL Server allows duplicate schedule names, combine with Id parameter for precise targeting.
 
     .PARAMETER Id
-        Copy only specific schedule.
+        Filters the operation to copy only schedules with specific numeric IDs. Accepts an array of schedule IDs for targeting multiple specific schedules.
+        Use this instead of schedule names when you need precise identification, especially when duplicate schedule names exist on the source instance.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAgentSchedule
+        Accepts job schedule objects from the pipeline, typically from Get-DbaAgentSchedule. When provided, these specific schedule objects will be copied instead of querying the source instance.
+        Use this for advanced scenarios like selective copying based on complex filtering or when working with schedules from multiple source instances.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -42,7 +41,8 @@ function Copy-DbaAgentSchedule {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Operator will be dropped and recreated on Destination.
+        Forces the overwrite of existing schedules on the destination instances by dropping and recreating them. Without this switch, existing schedules are skipped.
+        Use this when you need to update existing schedules with new configurations. Note that schedules currently assigned to jobs cannot be overwritten, even with Force enabled.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -21,13 +21,16 @@ function New-DbaAgentProxy {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The name of the proxy or proxies you want to create
+        Specifies the name for the SQL Agent proxy account being created. The name must be unique within the SQL Server instance.
+        Use a descriptive name that indicates the proxy's purpose or the credential it represents for easier management.
 
     .PARAMETER ProxyCredential
-        The associated SQL Server Credential. The credential must be created prior to creating the Proxy.
+        Specifies the name of an existing SQL Server credential that the proxy will use for authentication. The credential must already exist on the instance.
+        This credential defines the Windows account under which job steps will run when using this proxy.
 
     .PARAMETER SubSystem
-        The associated subsystem or subsystems. Defaults to CmdExec.
+        Specifies which SQL Agent subsystems can use this proxy account for job step execution. Defaults to CmdExec if not specified.
+        Multiple subsystems can be assigned to a single proxy, allowing it to run different types of job steps under the same security context.
 
         Valid options include:
         ActiveScripting
@@ -43,22 +46,28 @@ function New-DbaAgentProxy {
         Ssis
 
     .PARAMETER Description
-        A description of the proxy
+        Provides a text description for the proxy account to document its purpose or usage requirements.
+        Use this to help other DBAs understand when and how this proxy should be used in job steps.
 
     .PARAMETER Login
-        The SQL Server login or logins (known as proxy principals) to assign to the proxy
+        Specifies which SQL Server logins can use this proxy account in their job steps. By default, only sysadmin members can use proxy accounts.
+        Add specific logins here to grant non-sysadmin users the ability to create job steps that run under this proxy's security context.
 
     .PARAMETER ServerRole
-        The SQL Server role or roles (known as proxy principals) to assign to the proxy
+        Specifies which SQL Server fixed server roles can use this proxy account in job steps. Members of these server roles will inherit proxy usage permissions.
+        This provides role-based access control for proxy usage without needing to grant permissions to individual logins.
 
     .PARAMETER MsdbRole
-        The msdb role or roles (known as proxy principals) to assign to the proxy
+        Specifies which msdb database roles can use this proxy account in job steps. Common roles include SQLAgentUserRole, SQLAgentReaderRole, and SQLAgentOperatorRole.
+        This allows you to grant proxy access based on existing Agent role membership rather than individual user assignments.
 
     .PARAMETER Disabled
-        Create the proxy as disabled
+        Creates the proxy account in a disabled state, preventing its immediate use in job steps.
+        Use this when you need to set up the proxy configuration first before allowing job steps to use it.
 
     .PARAMETER Force
-        Drop and recreate the proxy if it already exists
+        Drops and recreates the proxy account if one with the same name already exists on the instance.
+        Without this switch, the function will skip existing proxy accounts and display a warning message.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

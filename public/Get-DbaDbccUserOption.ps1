@@ -20,7 +20,7 @@ function Get-DbaDbccUserOption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Option
-        Return only specific options. Returns all results if not specified.
+        Filters results to show only specific session options instead of all DBCC USEROPTIONS output. Use this when troubleshooting specific connection settings like ANSI options, date formats, or isolation levels without seeing the full list of 13 available options.
         Accepts any values in set 'ansi_null_dflt_on', 'ansi_nulls', 'ansi_padding', 'ansi_warnings', 'arithabort', 'concat_null_yields_null', 'datefirst', 'dateformat', 'isolation level', 'language', 'lock_timeout', 'quoted_identifier', 'textsize'
 
     .PARAMETER EnableException

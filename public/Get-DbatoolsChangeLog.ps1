@@ -7,7 +7,7 @@ function Get-DbatoolsChangeLog {
         Launches your default browser to view the dbatools release changelog on GitHub. This provides access to version history, new features, bug fixes, and breaking changes for the dbatools PowerShell module. Useful for staying current with module updates or troubleshooting issues that may be related to recent changes.
 
     .PARAMETER Local
-        Once upon a time, there was a local changelog. This is not available anymore so a proper warning will be raised
+        Attempts to display a local changelog file instead of opening the online version. This functionality has been deprecated and will display a warning message directing users to the online changelog.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -17,31 +17,40 @@ function New-DbaDbSynonym {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to create the synonym in. Accepts wildcards for pattern matching.
+        When omitted, synonyms will be created in all accessible databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from synonym creation when processing multiple databases.
+        Useful when you want to create synonyms across most databases but skip system databases or specific user databases.
 
     .PARAMETER Synonym
-        The synonym to create.
+        The name of the synonym to create. This becomes the alternate name that applications and users will reference.
+        Choose meaningful names that follow your organization's naming conventions and make object access more intuitive.
 
     .PARAMETER Schema
-        The schema of the synonym. If not specified will assume the default dbo.
+        The schema where the synonym will be created. Defaults to 'dbo' if not specified.
+        Consider using application-specific schemas to organize synonyms logically and control access through schema permissions.
 
     .PARAMETER BaseServer
-        The linked server name. If specified then BaseDatabase and BaseSchema are required.
+        The linked server name when creating cross-server synonyms. Requires BaseDatabase and BaseSchema parameters.
+        Use this to create synonyms that reference objects on remote SQL Server instances through established linked server connections.
 
     .PARAMETER BaseDatabase
-        The object parent database name. If specified then BaseSchema is required.
+        The database containing the target object that the synonym will reference. Requires BaseSchema when specified.
+        Use this for cross-database synonyms or when creating synonyms on linked servers to reference objects in specific databases.
 
     .PARAMETER BaseSchema
-        The object parent schema name.
+        The schema containing the target object that the synonym will reference.
+        Required when BaseDatabase is specified, ensuring the synonym points to the correct object in complex multi-schema environments.
 
     .PARAMETER BaseObject
-        The object name. Can be table, view, stored procedure, function, etc.
+        The name of the database object that the synonym will reference. Supports tables, views, stored procedures, functions, and other schema-scoped objects.
+        This is the actual object that users will access through the synonym name, enabling abstraction and simplified references.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase for creating synonyms across multiple databases.
+        Useful for batch operations when you need to create the same synonym in multiple databases selected by specific criteria.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

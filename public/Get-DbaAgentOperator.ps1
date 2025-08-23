@@ -17,10 +17,12 @@ function Get-DbaAgentOperator {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Operator
-        The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
+        Specifies which SQL Agent operators to retrieve by name. Accepts an array of operator names for targeting specific notification contacts.
+        Use this when you need to check configuration or troubleshoot notification issues for particular operators instead of reviewing all operators on the instance.
 
     .PARAMETER ExcludeOperator
-        The operator(s) to exclude - this list is auto-populated from the server
+        Excludes specified SQL Agent operators from the results by name. Useful for filtering out test operators or disabled contacts during audits.
+        Commonly used when reviewing active notification configurations while ignoring legacy or temporary operator accounts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

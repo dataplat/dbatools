@@ -22,13 +22,13 @@ function Set-DbaSpConfigure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The name of the configuration to be set -- Configs is auto-populated for tabbing convenience.
+        Specifies which SQL Server configuration setting to modify, such as 'max server memory (MB)', 'xp_cmdshell', or 'cost threshold for parallelism'. Use this when targeting specific settings by name instead of piping from Get-DbaSpConfigure.
 
     .PARAMETER Value
-        The new value for the configuration
+        Sets the new configuration value within the setting's valid range (minimum to maximum). The function validates the value against SQL Server's defined limits to prevent invalid configurations that could prevent startup or cause performance issues.
 
     .PARAMETER InputObject
-        Piped objects from Get-DbaSpConfigure
+        Accepts configuration objects piped from Get-DbaSpConfigure to modify multiple settings across instances. Use this approach when you need to bulk update configurations or apply conditional logic based on current values.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

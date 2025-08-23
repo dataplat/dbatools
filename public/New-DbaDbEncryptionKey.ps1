@@ -17,30 +17,31 @@ function New-DbaDbEncryptionKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the encryption key will be created. Defaults to master.
+        Specifies the database where the encryption key will be created to enable Transparent Data Encryption.
+        This is the user database you want to encrypt, not the master database where certificates are stored.
 
     .PARAMETER EncryptorName
-        The name of the encryptor (Certificate or Asymmetric Key) in master that will be used. Tries to find one if one is not specified.
-
-        In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
+        Specifies the name of the certificate or asymmetric key in the master database to encrypt the database encryption key.
+        If not provided, the function automatically selects an appropriate certificate from master (requires exactly one non-system certificate to exist).
+        For asymmetric keys, the key must reside on an extensible key management provider like Azure Key Vault or Hardware Security Module.
 
     .PARAMETER Type
-        Specifies an encryption type of Certificate or Asymmetric Key. Defaults to Certificate.
+        Specifies whether to use a Certificate or AsymmetricKey from the master database as the encryptor.
+        Certificates are more common for TDE implementations, while asymmetric keys are typically used with external key management providers.
 
     .PARAMETER EncryptionAlgorithm
-        Specifies an encryption algorithm. Defaults to Aes256.
-
-        Options are: "Aes128", "Aes192", "Aes256", "TripleDes"
+        Specifies the symmetric encryption algorithm used for the database encryption key.
+        Aes256 provides the strongest encryption and is recommended for production environments, while Aes128 offers faster performance.
+        TripleDes is legacy and should be avoided for new implementations.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase to create encryption keys for multiple databases.
+        Use this when you need to enable TDE on several databases across one or more SQL Server instances.
 
     .PARAMETER Force
-        When a certificate encryptor is used, this command will refuse to create an encryption key for a certificate that has not been backed up
-
-        Use Force to create an encryption key even though the specified cert has not been backed up
-
-        Also, if EncryptorName is specified and the certificate does not exist, it will be created when Force is specified
+        Bypasses the safety check that prevents creating encryption keys with unbackup certificates, which could lead to unrecoverable data loss.
+        Also creates the specified certificate automatically if it doesn't exist in the master database.
+        Use this only in development environments or when you have verified certificate backups exist through other means.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

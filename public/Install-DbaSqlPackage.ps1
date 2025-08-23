@@ -18,24 +18,29 @@ function Install-DbaSqlPackage {
         Writes to $script:PSModuleRoot\bin\sqlpackage by default for CurrentUser scope.
 
     .PARAMETER Path
-        Specifies the path where SqlPackage will be extracted or installed.
-        If not specified, SqlPackage will be installed to the dbatools directory for CurrentUser scope.
+        Specifies the custom directory path where SqlPackage will be extracted or installed.
+        Use this when you need SqlPackage in a specific location for CI/CD pipelines, shared tools directories, or portable deployments.
+        If not specified, defaults to the dbatools data directory for CurrentUser scope or system location for AllUsers scope.
 
     .PARAMETER Scope
-        Specifies the installation scope. Valid values are:
-        - CurrentUser: Installs to the dbatools directory (default, uses ZIP)
-        - AllUsers: Installs to system location (Windows: Program Files with MSI/admin privileges; Unix: /usr/local/sqlpackage)
+        Controls whether SqlPackage is installed for the current user only or system-wide for all users.
+        Use CurrentUser (default) for personal use or when you lack admin rights. Use AllUsers for shared servers where multiple DBAs need access to SqlPackage.
+        AllUsers requires administrative privileges on Windows and installs to Program Files via MSI or /usr/local/sqlpackage on Unix systems.
 
     .PARAMETER Type
-        Specifies the installation type. Valid values are:
-        - Zip: Downloads and extracts the portable ZIP file (default, works on all platforms)
-        - Msi: Downloads and installs the MSI package (Windows only, AllUsers scope only, requires admin privileges)
+        Determines the installation method for SqlPackage deployment.
+        Use Zip (default) for portable installations that don't require admin rights and work on all platforms. Use Msi for Windows system-wide installations with proper registry integration.
+        MSI installations require AllUsers scope and administrative privileges but provide better integration with Windows software management.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install SqlPackage from. This file should be an msi or zip file.
+        Specifies the path to a pre-downloaded SqlPackage installation file (MSI or ZIP format).
+        Use this in air-gapped environments or when you've already downloaded SqlPackage for offline installation.
+        Useful for corporate environments where direct internet downloads are restricted or when installing the same version across multiple servers.
 
     .PARAMETER Force
-        If this switch is enabled, the Sqlpackage will be downloaded from the internet even if previously cached.
+        Forces re-download and reinstallation of SqlPackage even if it already exists in the target location.
+        Use this when you need to update to the latest version, fix a corrupted installation, or ensure you have a clean SqlPackage deployment.
+        Without this switch, the function will skip installation if SqlPackage is already detected in the destination path.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

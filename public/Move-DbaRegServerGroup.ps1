@@ -17,13 +17,16 @@ function Move-DbaRegServerGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Group
-        Specifies one or more groups to include from SQL Server Central Management Server.
+        Specifies the registered server group(s) to move within your Central Management Server hierarchy. Accepts group paths like 'HR\Development' or 'Production\WebServers'.
+        Use this when you need to select specific groups to relocate rather than piping group objects from Get-DbaRegServerGroup.
 
     .PARAMETER NewGroup
-        The new location.
+        Specifies the destination group where the selected groups will be moved. Accepts group paths like 'AD\Prod' or 'Web', or use 'Default' to move to the root level.
+        The destination group must already exist in the Central Management Server hierarchy.
 
     .PARAMETER InputObject
-        Allows results from Get-DbaRegServerGroup to be piped in
+        Accepts registered server group objects from Get-DbaRegServerGroup for pipeline operations. Use this when you want to filter or manipulate groups before moving them.
+        This parameter enables advanced scenarios like moving multiple groups based on complex criteria or properties.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

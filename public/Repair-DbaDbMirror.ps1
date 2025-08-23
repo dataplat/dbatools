@@ -20,10 +20,14 @@ function Repair-DbaDbMirror {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database.
+        Specifies the name of the mirrored database that needs repair on the SQL Server instance.
+        Use this when you know the specific database with suspended mirroring that requires endpoint restart and session resumption.
+        Accepts multiple database names and supports wildcards for pattern matching.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase pipeline input to repair multiple mirrored databases in a single operation.
+        Use this approach when you need to repair several databases at once or when working with the output of database filtering commands.
+        Each database object must represent a database that has mirroring configured.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

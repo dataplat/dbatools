@@ -23,13 +23,16 @@ function Remove-DbaDbBackupRestoreHistory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER KeepDays
-        The number of days of history to keep. Defaults to 30 days.
+        Specifies how many days of backup and restore history to retain when performing server-level cleanup. Records older than this period will be deleted from MSDB history tables.
+        Use this for regular maintenance to prevent MSDB growth while preserving recent history for troubleshooting. Cannot be combined with Database parameter.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
+        Specifies specific databases to completely remove all backup and restore history records regardless of age. Accepts multiple database names and wildcards.
+        Use this when decommissioning databases or performing targeted cleanup after major maintenance operations. Cannot be combined with KeepDays parameter.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase to remove complete backup and restore history for those specific databases.
+        Use this for pipeline operations when working with filtered database collections or when combining with other dbatools database commands.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

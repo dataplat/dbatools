@@ -14,10 +14,12 @@ function Test-DbaDiskAllocation {
         https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size has been explicitly defined at 64 KB, which is a best practice for SQL Server."
 
     .PARAMETER ComputerName
-        The server(s) to check disk configuration on.
+        Specifies the target server(s) to examine for disk allocation unit compliance. Accepts multiple server names for bulk validation.
+        Use this to verify storage configuration across your SQL Server environment during deployment or storage audits.
 
     .PARAMETER NoSqlCheck
-        If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
+        Skips detection of SQL Server database files and examines all NTFS volumes regardless of their SQL Server usage.
+        Use this when you want to validate allocation units on all drives, not just those containing SQL Server data or log files.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).

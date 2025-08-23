@@ -17,16 +17,21 @@ function New-DbaAgentSchedule {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The name of the job that has the schedule.
+        Specifies existing SQL Server Agent jobs to immediately attach this schedule to after creation.
+        Use this when you want to apply the same schedule to multiple jobs without manually attaching it later through SSMS.
 
     .PARAMETER Schedule
-        The name of the schedule.
+        The name for the new schedule that will appear in SQL Server Agent.
+        Choose descriptive names like "DailyAt6AM" or "WeeklyMaintenanceWindow" to make schedule management easier for your team.
 
     .PARAMETER Disabled
-        Set the schedule to disabled. Default is enabled
+        Creates the schedule in a disabled state, preventing any attached jobs from running until the schedule is manually enabled.
+        Use this when you need to set up schedules in advance but don't want them active immediately.
 
     .PARAMETER FrequencyType
-        A value indicating when a job is to be executed.
+        Determines the basic execution pattern for jobs using this schedule.
+        Daily runs every day or every N days, Weekly runs on specific days of the week, Monthly runs on specific dates, and MonthlyRelative runs on relative dates like "first Monday."
+        Once/OneTime creates single-execution schedules, while AgentStart/AutoStart and IdleComputer/OnIdle create event-triggered schedules.
 
         Allowed values: 'Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle'
 
@@ -38,7 +43,10 @@ function New-DbaAgentSchedule {
         If force is used the default will be "Once".
 
     .PARAMETER FrequencyInterval
-        The days that a job is executed
+        Defines which specific days the job executes based on the FrequencyType selected.
+        For Daily: use numbers 1-365 for "every N days" or "EveryDay" for daily execution.
+        For Weekly: specify day names like "Monday,Friday" or use "Weekdays," "Weekend," or "EveryDay."
+        For Monthly: use numbers 1-31 to run on specific dates of each month.
 
         Allowed values for FrequencyType 'Daily': EveryDay or a number between 1 and 365.
         Allowed values for FrequencyType 'Weekly': Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
@@ -49,7 +57,9 @@ function New-DbaAgentSchedule {
         If force is used the default will be 1.
 
     .PARAMETER FrequencySubdayType
-        Specifies the units for the subday FrequencyInterval.
+        Sets the time interval unit when jobs need to run multiple times per day.
+        Use "Once" for single daily execution, "Hours" for hourly intervals, "Minutes" for minute-based intervals, or "Seconds" for very frequent execution.
+        Most maintenance jobs use "Once" while monitoring jobs might use "Minutes" or "Hours."
 
         Allowed values: 'Once', 'Time', 'Seconds', 'Second', 'Minutes', 'Minute', 'Hours', 'Hour'
 
@@ -60,46 +70,47 @@ function New-DbaAgentSchedule {
         Hours=Hour
 
     .PARAMETER FrequencySubdayInterval
-        The number of subday type periods to occur between each execution of a job.
-
-        The interval needs to be at least 10 seconds long.
+        Specifies how often the job repeats within a day when FrequencySubdayType is not "Once."
+        For example, with FrequencySubdayType "Hours" and FrequencySubdayInterval 4, the job runs every 4 hours.
+        Minimum interval is 10 seconds for second-based scheduling.
 
     .PARAMETER FrequencyRelativeInterval
-        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+        Determines which occurrence of a day type to use for MonthlyRelative schedules.
+        Use "First" for first occurrence, "Second" for second occurrence, etc., or "Last" for the final occurrence of that day in the month.
+        For example, "Second" with "Friday" runs on the second Friday of each month.
 
         Allowed values: First, Second, Third, Fourth or Last
 
     .PARAMETER FrequencyRecurrenceFactor
-        The number of weeks or months between the scheduled execution of a job.
+        Controls how many weeks or months to skip between executions for Weekly, Monthly, and MonthlyRelative schedules.
+        Use 1 for every week/month, 2 for every other week/month, 3 for every third, etc.
+        This allows schedules like "every 2 weeks on Monday" or "every 3 months on the 15th."
 
         FrequencyRecurrenceFactor is used only if FrequencyType is "Weekly", "Monthly" or "MonthlyRelative".
 
     .PARAMETER StartDate
-        The date on which execution of a job can begin. Must be a string in the format yyyyMMdd.
-
-        If force is used the start date will be the current day
+        The earliest date this schedule can execute jobs, formatted as yyyyMMdd (e.g., "20240315" for March 15, 2024).
+        Use this to delay schedule activation until a future date or to document when recurring maintenance should begin.
+        With -Force, defaults to today's date.
 
     .PARAMETER EndDate
-        The date on which execution of a job can stop. Must be a string in the format yyyyMMdd.
-
-        If force is used the end date will be '99991231'
+        The latest date this schedule can execute jobs, formatted as yyyyMMdd (e.g., "20241231" for December 31, 2024).
+        Use this for temporary schedules or to automatically deactivate seasonal jobs.
+        With -Force, defaults to "99991231" (no expiration).
 
     .PARAMETER StartTime
-        The time on any day to begin execution of a job. Must be a string in the format HHmmss / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
-
-        If force is used the start time will be '000000' for midnight.
+        The time of day when job execution can begin, formatted as HHmmss in 24-hour format (e.g., "143000" for 2:30 PM).
+        For subday schedules, this is when the first execution occurs each day.
+        With -Force, defaults to "000000" (midnight).
 
     .PARAMETER EndTime
-        The time on any day to end execution of a job. Must be a string in the format HHmmss / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
-
-        If force is used the end time will be '235959' for one second before midnight.
+        The time of day when job execution must stop, formatted as HHmmss in 24-hour format (e.g., "180000" for 6:00 PM).
+        For subday schedules, no new executions start after this time, but running jobs can complete.
+        With -Force, defaults to "235959" (one second before midnight).
 
     .PARAMETER Owner
-        Login to own the job, defaults to login running the command.
+        The SQL Server login that owns this schedule, which determines permissions for schedule modification.
+        Defaults to the login running this command, but you can specify a service account or DBA login for centralized schedule management.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -108,8 +119,8 @@ function New-DbaAgentSchedule {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
-        It will also remove the any present schedules with the same name for the specific job.
+        Bypasses parameter validation and applies default values for missing required parameters like dates and times.
+        Also removes any existing schedule with the same name before creating the new one, preventing naming conflicts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

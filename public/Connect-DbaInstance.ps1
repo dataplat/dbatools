@@ -28,139 +28,124 @@ function Connect-DbaInstance {
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server.
+        Specifies the initial database context for the connection instead of connecting to the default database.
+        Useful when you need to connect directly to a specific database or when the login's default database is unavailable.
 
     .PARAMETER AppendConnectionString
-        Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and optionally -SqlCredential to set authentication information.
+        Adds custom connection string parameters to the generated connection string.
+        Use this for advanced connection properties like custom timeout values, SSL settings, or application-specific parameters that aren't covered by other parameters.
 
     .PARAMETER ApplicationIntent
-        Declares the application workload type when connecting to a server.
-
-        Valid values are "ReadOnly" and "ReadWrite".
+        Declares the application workload type when connecting to an Always On Availability Group.
+        Use "ReadOnly" to route connections to readable secondary replicas for reporting workloads, reducing load on the primary replica.
 
     .PARAMETER BatchSeparator
-        A string to separate groups of SQL statements being executed. By default, this is "GO".
+        Sets the batch separator for multi-statement SQL execution, defaulting to "GO".
+        Change this when working with scripts that use different batch separators or when "GO" conflicts with your SQL content.
 
     .PARAMETER ClientName
-        By default, this command sets the client's ApplicationName property to "dbatools PowerShell module - dbatools.io". If you're doing anything that requires profiling, you can look for this client name. Using -ClientName allows you to set your own custom client application name.
+        Sets a custom application name in the connection string for identification in SQL Server monitoring tools.
+        Use this to distinguish dbatools sessions from other applications when analyzing connections in Profiler, Extended Events, or sys.dm_exec_sessions.
 
     .PARAMETER ConnectTimeout
-        The length of time (in seconds) to wait for a connection to the server before terminating the attempt and generating an error.
-
-        Valid values are integers between 0 and 2147483647.
-
-        When opening a connection to a Azure SQL Database, set the connection timeout to 30 seconds.
+        Sets the connection timeout in seconds before the connection attempt fails.
+        Increase this for slow networks or busy servers, or decrease it for faster failure detection in automated scripts. Azure SQL Database connections typically need 30 seconds.
 
     .PARAMETER EncryptConnection
-        If this switch is enabled, SQL Server uses SSL encryption for all data sent between the client and server.
-
-        Beginning in .NET Framework 4.5, when TrustServerCertificate is false and EncryptConnection is true, the server name (or IP address) in a SQL Server SSL certificate must exactly match the server name (or IP address) specified in the connection string. Otherwise, the connection attempt will fail. For information about support for certificates whose subject starts with a wildcard character (*), see Accepted wildcards used by server certificates for server authentication. https://support.microsoft.com/en-us/help/258858/accepted-wildcards-used-by-server-certificates-for-server-authenticati
+        Forces SSL encryption for all data transmitted between client and server.
+        Required for many compliance scenarios and recommended for connections over untrusted networks. Ensure server certificates are properly configured to avoid connection failures.
 
     .PARAMETER FailoverPartner
-        The name of the failover partner server where database mirroring is configured.
-
-        If the value of this key is "" (an empty string), then Initial Catalog must be present in the connection string, and its value must not be "".
-
-        The server name can be 128 characters or less.
-
-        If you specify a failover partner but the failover partner server is not configured for database mirroring and the primary server (specified with the Server keyword) is not available, then the connection will fail.
-
-        If you specify a failover partner and the primary server is not configured for database mirroring, the connection to the primary server (specified with the Server keyword) will succeed if the primary server is available.
+        Specifies the failover partner server name for database mirroring configurations.
+        Use this when connecting to databases configured for database mirroring to enable automatic failover if the primary server becomes unavailable.
 
     .PARAMETER LockTimeout
-        Sets the time in seconds required for the connection to time out when the current transaction is locked.
+        Sets the lock timeout in seconds for transactions on this connection.
+        Use this to control how long statements wait for locks before timing out, which helps prevent long-running blocking scenarios.
 
     .PARAMETER MaxPoolSize
-        Sets the maximum number of connections allowed in the connection pool for this specific connection string.
+        Sets the maximum number of connections allowed in the connection pool for this connection string.
+        Increase this for applications with high concurrency requirements, but be mindful of server resource limits and licensing constraints.
 
     .PARAMETER MinPoolSize
-        Sets the minimum number of connections allowed in the connection pool for this specific connection string.
+        Sets the minimum number of connections maintained in the connection pool for this connection string.
+        Use this to pre-warm the connection pool for better performance when you know connections will be used frequently.
 
     .PARAMETER MultipleActiveResultSets
-        If this switch is enabled, an application can maintain multiple active result sets (MARS).
-
-        If this switch is not enabled, an application must process or cancel all result sets from one batch before it can execute any other batch on that connection.
+        Enables Multiple Active Result Sets (MARS) allowing multiple commands to be executed simultaneously on a single connection.
+        Use this when you need to execute multiple queries concurrently without opening additional connections, though it can impact performance.
 
     .PARAMETER MultiSubnetFailover
-        If this switch is enabled, and your application is connecting to an AlwaysOn availability group (AG) on different subnets, detection of and connection to the currently active server will be faster. For more information about SqlClient support for Always On Availability Groups, see https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery
+        Enables faster detection and connection to the active server in Always On Availability Groups across multiple subnets.
+        Essential for AG configurations where replicas are in different subnets, reducing connection time during failover scenarios.
 
     .PARAMETER NetworkProtocol
-        Explicitly sets the network protocol used to connect to the server.
-
-        Valid values are "TcpIp","NamedPipes","Multiprotocol","AppleTalk","BanyanVines","Via","SharedMemory" and "NWLinkIpxSpx"
+        Specifies the network protocol for connecting to SQL Server.
+        Use "TcpIp" for remote connections, "NamedPipes" for local connections with better security, or "SharedMemory" for fastest local connections. Most modern environments use TcpIp.
 
     .PARAMETER NonPooledConnection
-        If this switch is enabled, a non-pooled connection will be requested.
+        Creates a dedicated connection that bypasses connection pooling.
+        Use this for long-running operations, dedicated admin connections, or when you need to ensure the connection isn't shared with other processes.
 
     .PARAMETER PacketSize
-        Sets the size in bytes of the network packets used to communicate with an instance of SQL Server. Must match at server.
+        Sets the network packet size in bytes for communication with SQL Server.
+        Increase from the default 4096 bytes to improve performance for large data transfers, but ensure the server is configured to support the same packet size.
 
     .PARAMETER PooledConnectionLifetime
-        When a connection is returned to the pool, its creation time is compared with the current time and the connection is destroyed if that time span (in seconds) exceeds the value specified by Connection Lifetime. This is useful in clustered configurations to force load balancing between a running server and a server just brought online.
-
-        A value of zero (0) causes pooled connections to have the maximum connection timeout.
+        Sets the maximum lifetime in seconds for pooled connections before they're discarded and recreated.
+        Use this in clustered environments to force load balancing or to refresh connections periodically. Zero means unlimited lifetime.
 
     .PARAMETER SqlExecutionModes
-        The SqlExecutionModes enumeration contains values that are used to specify whether the commands sent to the referenced connection to the server are executed immediately or saved in a buffer.
-
-        Valid values include "CaptureSql", "ExecuteAndCaptureSql" and "ExecuteSql".
+        Controls how SQL commands are processed by the connection.
+        Use "CaptureSql" to generate scripts without execution, "ExecuteAndCaptureSql" to both execute and log commands, or "ExecuteSql" for normal execution.
 
     .PARAMETER StatementTimeout
-        Sets the number of seconds a statement is given to run before failing with a timeout error.
-
-        The default is read from the configuration 'sql.execution.timeout' that is currently set to 0 (unlimited).
-        If you want to change this to 10 minutes, use: Set-DbatoolsConfig -FullName 'sql.execution.timeout' -Value 600
+        Sets the timeout in seconds for SQL statement execution before canceling the command.
+        Use this to prevent runaway queries from blocking operations indefinitely. Zero means unlimited, but set reasonable limits for production environments.
 
     .PARAMETER TrustServerCertificate
-        When this switch is enabled, the channel will be encrypted while bypassing walking the certificate chain to validate trust.
+        Bypasses certificate validation when using encrypted connections.
+        Use this for development environments or when connecting to servers with self-signed certificates, but avoid in production for security reasons.
 
     .PARAMETER WorkstationId
-        Sets the name of the workstation connecting to SQL Server.
+        Sets the workstation name visible in SQL Server monitoring and session information.
+        Use this to identify the source of connections in sys.dm_exec_sessions or when troubleshooting connection issues.
 
     .PARAMETER AlwaysEncrypted
-        Sets "Column Encryption Setting=enabled" on the connection so you can work with Always Encrypted values.
-
-        For more information, see https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/develop-using-always-encrypted-with-net-framework-data-provider
+        Enables Always Encrypted support for accessing encrypted columns in databases with column-level encryption.
+        Required when working with sensitive data protected by Always Encrypted, allowing proper decryption of encrypted column values.
 
     .PARAMETER SqlConnectionOnly
-        Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
+        Returns only a SqlConnection object instead of the full SMO server object.
+        Use this when you only need basic connection functionality and want to reduce memory overhead or avoid SMO initialization.
 
     .PARAMETER AzureUnsupported
-        Terminate if Azure is detected but not supported
+        Causes the connection to fail if the target is detected as Azure SQL Database.
+        Use this to prevent operations that are incompatible with Azure SQL Database from attempting to connect to cloud instances.
 
     .PARAMETER AzureDomain
-        By default, this is set to database.windows.net
-
-        In the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.
-        This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
+        Specifies the domain for Azure SQL Database connections, defaulting to database.windows.net.
+        Use this when connecting to Azure SQL instances in sovereign clouds or custom domains that require different authentication methods.
 
     .PARAMETER MinimumVersion
-        Terminate if the target SQL Server instance version does not meet version requirements
+        Specifies the minimum SQL Server version required for the connection to succeed.
+        Use this to ensure scripts only run against SQL Server versions that support the required features, preventing compatibility issues.
 
     .PARAMETER Tenant
-        The TenantId for an Azure Instance
+        Specifies the Azure Active Directory tenant ID for Azure SQL Database authentication.
+        Required when using service principal authentication or when your account exists in multiple Azure AD tenants.
 
     .PARAMETER AccessToken
-        Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken or New-DbaAzAccessToken.
-
-        Supports both String (Azure PowerShell v13 and earlier) and SecureString (Azure PowerShell v14+) token formats.
-        The function automatically detects the token type and converts SecureString tokens to the required plain text format internally.
-
-        Note that the token is valid for only one hour and cannot be renewed automatically.
-
-        Note that the returned SMO is not a fully functional SMO. It can only be used in a limited list of commands like Invoke-DbaQuery, Import-DbaCsv or Write-DbaDbTableData.
+        Authenticates to Azure SQL Database using an access token generated by Get-AzAccessToken or New-DbaAzAccessToken.
+        Use this for service principal authentication or when integrating with Azure automation that provides pre-generated tokens. Tokens expire after one hour and cannot be renewed.
 
     .PARAMETER DedicatedAdminConnection
-        Connects using "ADMIN:" to create a dedicated admin connection (DAC) as a non-pooled connection.
-        If the instance is on a remote server, the remote access has to be enabled via "Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value $true" or "sp_configure 'remote admin connections', 1".
-        The connection will not be closed if the variable holding the Server SMO is going out of scope, so it is very important to call .ConnectionContext.Disconnect() to close the connection. See example.
+        Creates a dedicated administrator connection (DAC) for emergency access to SQL Server.
+        Use this when SQL Server is unresponsive to regular connections, allowing you to diagnose and resolve critical issues. Remember to manually disconnect the connection when finished.
 
     .PARAMETER DisableException
-        By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-
-        This command, however, gifts you  with "sea of red" exceptions, by default, because it is useful for advanced scripting.
-
-        Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
+        Changes exception handling from throwing errors to displaying warnings.
+        Use this in interactive sessions where you want graceful error handling instead of script-stopping exceptions, which is the default behavior for this command.
 
     .NOTES
         Tags: Connection

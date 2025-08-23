@@ -9,7 +9,8 @@ function Test-DbaDbDataGeneratorConfig {
         This validation step prevents runtime errors during data generation and helps catch configuration issues early in the test data creation workflow. Returns detailed error information for any invalid configurations, showing exactly which tables and columns have problems so you can fix them before attempting to generate data.
 
     .PARAMETER FilePath
-        Path to the file to test
+        Specifies the path to the JSON configuration file created by New-DbaDbDataGeneratorConfig that needs validation.
+        Use this to verify your data generation configuration before running Invoke-DbaDbDataGenerator to avoid runtime errors.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -21,9 +22,6 @@ function Test-DbaDbDataGeneratorConfig {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-    .PARAMETER Force
-        If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
 
     .NOTES
         Tags: DataGeneration

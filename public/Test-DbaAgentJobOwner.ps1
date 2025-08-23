@@ -19,13 +19,16 @@ function Test-DbaAgentJobOwner {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies specific SQL Agent jobs to check for ownership compliance. When provided, only these named jobs are evaluated against the target owner.
+        Use this to focus on critical jobs or when troubleshooting specific ownership issues. If omitted, all jobs on the instance are processed.
 
     .PARAMETER ExcludeJob
-        Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Excludes specific SQL Agent jobs from the ownership compliance check. Useful for skipping system jobs or jobs that legitimately require different owners.
+        Commonly used to exclude jobs like 'syspolicy_purge_history' or maintenance jobs that run under service accounts by design.
 
     .PARAMETER Login
-        Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
+        Specifies the target login that should own SQL Agent jobs for security compliance. Must be an existing login on the server, cannot be a Windows Group.
+        Defaults to 'sa' (or the renamed sysadmin account). Common alternatives include service accounts or dedicated job owner logins required by your organization's security policies.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

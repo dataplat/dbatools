@@ -21,10 +21,14 @@ function Set-DbaDefaultPath {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Type
-        The type of path to modify. Options include: Data, Log and Backup.
+        Specifies which default path types to configure: Data (new database data files), Log (new database log files), or Backup (backup operations).
+        Use Data and Log when standardizing database file locations across instances or moving files to faster storage.
+        Backup path changes take effect immediately, while Data and Log changes require a SQL Server service restart.
 
     .PARAMETER Path
-        The path on the destination SQL Server
+        The directory path where SQL Server will create new database files or backups by default.
+        Must be a valid path accessible to the SQL Server service account with appropriate permissions.
+        Use UNC paths for shared storage or local paths like C:\Data for dedicated storage volumes.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

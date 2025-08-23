@@ -17,10 +17,12 @@ function Remove-DbaDbAsymmetricKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database from which the asymmetric key will be deleted.
+        Specifies the database containing the asymmetric key to be removed. Defaults to 'master' if not specified.
+        Use this to target specific databases when cleaning up encryption objects during security audits or decommissioning operations.
 
     .PARAMETER Name
-        Name of the asymmetric key to be removed
+        Specifies the name of the asymmetric key to remove from the database.
+        Use this when you know the exact key name to target specific encryption objects for deletion.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -29,7 +31,8 @@ function Remove-DbaDbAsymmetricKey {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER InputObject
-        Allows passing in of AsymmetricKey objects from Get-DbaDbAsymmetricKey
+        Accepts AsymmetricKey objects from Get-DbaDbAsymmetricKey for pipeline operations.
+        Use this when you need to remove multiple keys or when filtering keys based on specific criteria before deletion.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

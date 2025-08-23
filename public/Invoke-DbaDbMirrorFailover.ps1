@@ -17,13 +17,16 @@ function Invoke-DbaDbMirrorFailover {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases to mirror
+        Specifies which mirrored databases to fail over to their mirror partners. Accepts multiple database names.
+        Use this when you need to fail over specific databases rather than piping database objects from Get-DbaDatabase.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the pipeline for failover operations.
+        This enables you to filter databases using Get-DbaDatabase and pipe the results directly to perform failovers.
 
     .PARAMETER Force
-        Force Failover and allow data loss
+        Forces an immediate failover that allows data loss, primarily for asynchronous mirroring or emergency situations.
+        Without this switch, the function performs a safe synchronous failover by setting safety to Full before failing over.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

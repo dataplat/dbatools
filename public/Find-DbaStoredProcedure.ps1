@@ -17,21 +17,24 @@ function Find-DbaStoredProcedure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to search for stored procedures containing the pattern. Accepts database names and supports wildcards.
+        When omitted, searches all user databases on the instance. Use this to focus searches on specific databases when you know where procedures are located.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during the stored procedure search. Accepts database names and supports wildcards.
+        Use this when you want to search most databases but exclude specific ones like test environments or databases with sensitive procedures.
 
     .PARAMETER Pattern
-        String pattern that you want to search for in the stored procedure text body
+        Specifies the text pattern or regular expression to search for within stored procedure definitions. Supports full regex syntax for complex pattern matching.
+        Use this to find hardcoded values, deprecated functions, security vulnerabilities, or specific business logic across procedure source code.
 
     .PARAMETER IncludeSystemObjects
-        By default, system stored procedures are ignored but you can include them within the search using this parameter.
-
-        Warning - this will likely make it super slow if you run it on all databases.
+        Includes system stored procedures (those shipped with SQL Server) in the search results. By default, only user-created procedures are searched.
+        Use this when investigating system procedures or when patterns might exist in Microsoft-provided code. Warning: this significantly slows performance when searching multiple databases.
 
     .PARAMETER IncludeSystemDatabases
-        By default system databases are ignored but you can include them within the search using this parameter
+        Includes system databases (master, model, msdb, tempdb) in the search scope. By default, only user databases are searched.
+        Use this when investigating system procedures or when your pattern might exist in maintenance scripts stored in system databases.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

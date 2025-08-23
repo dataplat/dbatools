@@ -7,16 +7,16 @@ function Get-DbatoolsConfigValue {
         Retrieves the actual value stored in a specific dbatools configuration setting using its full name (Module.Name format). This function is primarily used internally by dbatools functions to access their configuration settings, but can also be used by DBAs in custom scripts to retrieve specific module preferences like connection timeouts, default file paths, or email settings. Unlike Get-DbatoolsConfig which lists multiple configurations, this function returns the raw value of a single setting with optional fallback support.
 
     .PARAMETER FullName
-        The full name (<Module>.<Name>) of the configured value to return.
+        Specifies the exact configuration setting name in Module.Name format (like 'sql.connection.timeout' or 'path.dbatoolsdata').
+        Use this to retrieve specific dbatools module settings that control behavior like connection timeouts, default file paths, or email configurations.
 
     .PARAMETER Fallback
-        A fallback value to use, if no value was registered to a specific configuration element.
-        This basically is a default value that only applies on a "per call" basis, rather than a system-wide default.
+        Provides a default value to return when the specified configuration setting doesn't exist or is set to null.
+        Use this in scripts when you need a reliable value even if the configuration hasn't been set, such as providing a default timeout of 30 seconds when no custom timeout is configured.
 
     .PARAMETER NotNull
-        By default, this function returns null if one tries to retrieve the value from either a Configuration that does not exist or a Configuration whose value was set to null.
-        However, sometimes it may be important that some value was returned.
-        By specifying this parameter, the function will throw an error if no value was found at all.
+        Forces the function to throw an error instead of returning null when no configuration value is found.
+        Use this when your script requires a specific configuration setting to be present and should fail gracefully rather than continue with null values that could cause unexpected behavior.
 
     .NOTES
         Tags: Module

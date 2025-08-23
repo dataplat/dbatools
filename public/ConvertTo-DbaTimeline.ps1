@@ -11,13 +11,14 @@ function ConvertTo-DbaTimeline {
         Output is a self-contained HTML file that can be viewed in any browser, emailed to stakeholders, or archived for historical analysis. Supports both single and multi-instance scenarios with automatic labeling and color-coded status indicators.
 
     .PARAMETER InputObject
-
-        Pipe input, must an output from the above functions.
+        Specifies the SQL Server data to convert into timeline visualization. Accepts piped output from Get-DbaAgentJobHistory or Get-DbaDbBackupHistory.
+        Use this to transform job execution history or backup operation data into an interactive HTML timeline chart.
+        The function automatically detects the input type and formats the timeline appropriately with status colors and duration calculations.
 
     .PARAMETER ExcludeRowLabel
-        By default, the Timeline shows SqlInstance and item name (agent job or database) in row labels section of the chart.
-        When this parameter (ExcludeRowLabel) is set to true the row labels will not be shown which will maximise the chart area for better visualization.
-        All relevant details are still available in the tooltip.
+        Removes the row labels showing SQL instance and item names from the left side of the timeline chart. By default, labels display "[InstanceName] JobName" or "[InstanceName] DatabaseName" for each timeline row.
+        Use this when you need to maximize chart space for better visualization of timeline data, especially with long instance or job names.
+        All label information remains available in the hover tooltips when you mouse over timeline bars.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

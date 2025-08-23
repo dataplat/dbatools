@@ -17,7 +17,8 @@ function Test-DbaReplLatency {
         The target SQL Server instance or instances.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases containing transactional replication publications to test for latency. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific publication databases instead of testing all replicated databases on the instance.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -27,17 +28,20 @@ function Test-DbaReplLatency {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER PublicationName
-        The publication(s) to process. If unspecified, all publications will be processed.
+        Specifies which transactional replication publications to test for latency. Accepts wildcards for pattern matching.
+        Use this when you need to test specific publications instead of all transactional publications in the specified databases.
 
     .PARAMETER TimeToLive
-        How long, in seconds, to wait for a tracer token to complete its journey from the publisher to the subscriber.
-        If unspecified, all tracer tokens will take as long as they need to process results.
+        Sets the maximum time in seconds to wait for tracer tokens to travel from publisher through distributor to all subscribers.
+        Use this to prevent the function from hanging indefinitely when replication is severely delayed or broken. If the timeout is reached, the function reports incomplete latency data and continues to the next publication.
 
     .PARAMETER RetainToken
-        Retains the tracer tokens created for each publication. If unspecified, all tracer tokens created will be discarded.
+        Keeps the tracer tokens in the distribution database after latency testing is complete instead of automatically cleaning them up.
+        Use this when you need to preserve tracer token history for further analysis or troubleshooting. Without this switch, tokens are automatically removed to prevent distribution database bloat.
 
     .PARAMETER DisplayTokenHistory
-        Displays all tracer tokens in each publication. If unspecified, the current tracer token created will be only token displayed.
+        Shows latency measurements for all existing tracer tokens in each publication instead of just the newly created token.
+        Use this to see historical latency patterns and trends for ongoing replication monitoring. Without this switch, only the current test token results are displayed.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -13,25 +13,31 @@ function New-DbaComputerCertificateSigningRequest {
         By default, creates RSA certificates with 1024-bit keys, though this can be customized for stronger encryption requirements. All certificates are configured as machine certificates with the Microsoft RSA SChannel Cryptographic Provider for compatibility with SQL Server's encryption stack.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
+        The target computer name hosting the SQL Server instance where the certificate will be installed. Accepts multiple computer names for batch processing.
+        For standalone servers, this creates certificates for the specified machine. For clusters, specify each cluster node here and use ClusterInstanceName for the virtual cluster name.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
 
     .PARAMETER Path
-        The folder to export to.
+        Directory where the certificate configuration (.inf) and signing request (.csr) files will be created. Defaults to the dbatools export path.
+        Each computer gets its own subdirectory containing the certificate files needed for submission to your Certificate Authority.
 
     .PARAMETER ClusterInstanceName
-        When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
+        Specifies the virtual cluster name for SQL Server failover cluster instances. This becomes the certificate's Common Name (CN) and primary DNS entry.
+        Required when generating certificates for clustered SQL Server instances to ensure proper SSL validation during failovers between cluster nodes.
 
     .PARAMETER FriendlyName
-        The FriendlyName listed in the certificate. This defaults to the FQDN of the $ComputerName
+        Sets a descriptive name for the certificate that appears in the Windows Certificate Store. Defaults to "SQL Server".
+        This name helps administrators identify the certificate's purpose when managing multiple certificates on the same server.
 
     .PARAMETER KeyLength
-        The length of the key - defaults to 1024
+        Specifies the RSA key length in bits for the certificate. Defaults to 1024 for compatibility, though 2048 or 4096 is recommended for production.
+        Higher key lengths provide stronger encryption but may impact SQL Server connection performance on older hardware.
 
     .PARAMETER Dns
-        Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
+        Additional DNS names to include in the certificate's Subject Alternative Name (SAN) field. By default includes both short and FQDN names.
+        Add extra DNS entries here if clients connect using aliases, load balancer names, or other DNS records that point to your SQL Server instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -20,14 +20,16 @@ function Remove-DbaAgentJobCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category.
+        Specifies the name of the SQL Agent job category to remove from the instance. Accepts multiple category names for batch operations.
+        Use this when you need to clean up specific custom categories that are no longer needed for job organization.
 
     .PARAMETER CategoryType
-        The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-        If no category is used all categories types will be removed.
+        Filters categories by their type: "LocalJob" for single-server jobs, "MultiServerJob" for multi-server administration jobs, or "None" for uncategorized jobs.
+        Use this to target specific category types when cleaning up job organization structures. If omitted, all category types will be processed.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaAgentJobCategory.
+        Accepts SQL Agent job category objects from the pipeline, typically from Get-DbaAgentJobCategory.
+        Use this for interactive category selection workflows or when you need to filter categories before removal using Get-DbaAgentJobCategory's filtering options.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

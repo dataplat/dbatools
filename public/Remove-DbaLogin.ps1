@@ -13,13 +13,16 @@ function Remove-DbaLogin {
         Allows you to login to servers using alternative credentials.
 
     .PARAMETER Login
-        The Login(s) to process - this list is auto-populated from the server. If unspecified, all Logins will be processed.
+        Specifies the SQL Server login names to remove from the target instance. Accepts multiple login names as an array.
+        Use this when you know the specific logins to delete, such as when cleaning up test accounts or decommissioned user logins.
 
     .PARAMETER InputObject
-        A collection of Logins (such as returned by Get-DbaLogin), to be removed.
+        Accepts login objects piped from Get-DbaLogin or other dbatools functions that return SQL Server login objects.
+        Use this for advanced filtering scenarios or when chaining multiple dbatools commands together in a pipeline.
 
     .PARAMETER Force
-        Kills any sessions associated with the login prior to drop
+        Automatically terminates any active database connections and sessions associated with the login before attempting removal.
+        Use this when you need to forcibly remove logins that have active sessions, common in development environments or during emergency cleanup.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

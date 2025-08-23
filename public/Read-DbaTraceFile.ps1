@@ -21,40 +21,64 @@ function Read-DbaTraceFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Path to the trace file. This path is relative to the SQL Server instance.
+        Specifies the full path to the trace file (.trc) on the SQL Server instance.
+        When omitted, reads from the default system trace that automatically captures configuration changes and security events.
+        Use this when analyzing specific trace files created by custom traces or archived default traces.
 
     .PARAMETER Database
-        Search for results only with specific DatabaseName. Uses IN for comparisons.
+        Filters trace events to show only those affecting specific databases by name.
+        Use this to focus analysis on particular databases when investigating issues or tracking changes.
+        Accepts multiple database names and supports wildcards for pattern matching.
 
     .PARAMETER Login
-        Search for results only with specific Logins. Uses IN for comparisons.
+        Filters trace events to show only those performed by specific SQL Server logins.
+        Essential for security investigations to track activities by suspected user accounts or service accounts.
+        Accepts multiple login names for comprehensive user activity analysis.
 
     .PARAMETER Spid
-        Search for results only with specific Spids. Uses IN for comparisons.
+        Filters trace events to show only those from specific Session Process IDs (SPIDs).
+        Useful for tracking all activities within particular database sessions or troubleshooting specific connection issues.
+        Accepts multiple SPID values to monitor several concurrent sessions.
 
     .PARAMETER EventClass
-        Search for results only with specific EventClasses. Uses IN for comparisons.
+        Filters trace events by event class numbers to focus on specific types of database activities.
+        Common values include login events (14), logout events (15), SQL statements (10-12), and security audit events (102-111).
+        Use this to narrow analysis to particular event types like failed logins or DDL changes.
 
     .PARAMETER ObjectType
-        Search for results only with specific ObjectTypes. Uses IN for comparisons.
+        Filters trace events by the type of database object being accessed or modified.
+        Common values include tables, views, stored procedures, functions, and triggers.
+        Use this when investigating changes to specific types of database objects during schema modifications.
 
     .PARAMETER ErrorId
-        Search for results only with specific Errors. Filters 'Error in ($ErrorId)'  Uses IN for comparisons.
+        Filters trace events to show only those with specific SQL Server error numbers.
+        Common values include login failures (18456), permission denied (229), and deadlock victims (1205).
+        Use this to focus on particular error conditions when troubleshooting recurring issues or security events.
 
     .PARAMETER EventSequence
-        Search for results only with specific EventSequences. Uses IN for comparisons.
+        Filters trace events by their sequence number within the trace file.
+        Use this to retrieve specific events when you know their exact sequence numbers from previous analysis.
+        Helpful for pinpointing events that occurred at precise moments during an incident.
 
     .PARAMETER TextData
-        Search for results only with specific TextData. Uses LIKE for comparisons.
+        Filters trace events by searching within the SQL statements or command text using pattern matching.
+        Use this to find specific queries, stored procedure calls, or SQL commands that contain particular keywords.
+        Supports partial text matching, making it ideal for finding all queries containing specific table names or SQL constructs.
 
     .PARAMETER ApplicationName
-        Search for results only with specific ApplicationNames. Uses LIKE for comparisons.
+        Filters trace events by the application name that initiated the database connection.
+        Use this to isolate activities from specific applications like SQL Server Management Studio, custom applications, or services.
+        Supports pattern matching to group similar application names or versions together.
 
     .PARAMETER ObjectName
-        Search for results only with specific ObjectNames. Uses LIKE for comparisons.
+        Filters trace events by the name of the database object being accessed or modified.
+        Use this to track all operations against specific tables, views, procedures, or other database objects.
+        Supports pattern matching to find objects with similar naming conventions or prefixes.
 
     .PARAMETER Where
-        Custom where clause - use without the word "WHERE". Here are the available columns:
+        Specifies a custom SQL WHERE clause for complex filtering beyond the standard parameters.
+        Use this for advanced queries combining multiple conditions, date ranges, or custom logic that other parameters cannot achieve.
+        Do not include the word "WHERE" - it is added automatically. Here are the available columns:
 
         TextData
         BinaryData

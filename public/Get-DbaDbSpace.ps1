@@ -19,16 +19,20 @@ function Get-DbaDbSpace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Limits space analysis to specific databases by name. Accepts multiple values and supports wildcards.
+        Use this when monitoring space usage for critical databases or investigating specific capacity issues.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Excludes specific databases from space analysis by name. Accepts multiple values and supports wildcards.
+        Useful for skipping test databases, staging environments, or databases with known space issues when doing server-wide capacity reviews.
 
     .PARAMETER InputObject
-        A piped collection of database objects from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase for space analysis.
+        This allows for advanced filtering scenarios, such as analyzing only databases with specific properties like recovery models or creation dates.
 
     .PARAMETER IncludeSystemDBs
-        Deprecated - if filtering is needed, please pipe filtered results from Get-DbaDatabase
+        This parameter is deprecated and will cause the function to stop with an error message.
+        To include system databases in space analysis, pipe results from Get-DbaDatabase with the -IncludeSystem parameter instead.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

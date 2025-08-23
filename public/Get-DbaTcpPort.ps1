@@ -22,10 +22,12 @@ function Get-DbaTcpPort {
         Credential object used to connect to the Computer as a different user
 
     .PARAMETER All
-        If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
+        Returns comprehensive network configuration details including server name, IP addresses (IPv4 and IPv6), port numbers, and whether the port assignment is static.
+        Use this when troubleshooting connectivity issues or when you need complete network configuration information instead of just the port number.
 
     .PARAMETER ExcludeIpv6
-        If this switch is enabled, IPv6 information is excluded from All output.
+        Excludes IPv6 addresses from the output when used with the All parameter, showing only IPv4 network configurations.
+        Use this in environments where IPv6 is disabled or when you only need to focus on IPv4 connectivity for troubleshooting.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

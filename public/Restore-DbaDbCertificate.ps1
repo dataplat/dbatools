@@ -19,22 +19,28 @@ function Restore-DbaDbCertificate {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
+        Specifies the file system path to certificate files (.cer) or a directory containing multiple certificates. When pointing to a directory, the function processes all .cer files found within it.
+        Use this to restore certificates from your certificate backup location after disaster recovery or server migrations.
 
     .PARAMETER KeyFilePath
-        The Path the contains the private key file. If one is not specified, we will try to find it for you.
+        Specifies the path to the private key file (.pvk) associated with the certificate. If not provided, the function automatically searches for a matching .pvk file in the same directory as the certificate.
+        Only specify this when your private key files are stored in a different location from your certificate files.
 
     .PARAMETER DecryptionPassword
-        Secure string used to decrypt the private key.
+        Provides the password required to decrypt the private key file (.pvk) during certificate restoration. This password was set when the certificate was originally backed up.
+        Required for all certificate restores since private keys are encrypted by default when exported from SQL Server.
 
     .PARAMETER EncryptionPassword
-        If specified this will be used to encrypt the private key.
+        Sets a new password to encrypt the private key after restoration to SQL Server. If not specified, the restored certificate will be encrypted with the database master key.
+        Use this when you want to change the private key encryption method or set a specific password for the restored certificate.
 
     .PARAMETER Database
-        The database where the certificate imports into. Defaults to master.
+        Specifies the target database where the certificate will be restored. Defaults to the master database if not specified.
+        Use this when restoring certificates for specific database features like TDE, Always Encrypted, or application-specific encryption within user databases.
 
     .PARAMETER Name
-        The optional name for the certificate, otherwise, it will be guessed from the certificate file name.
+        Specifies a custom name for the restored certificate in SQL Server. If not provided, the function derives the name from the certificate file name, removing instance and database prefixes.
+        Use this when you need the certificate to have a specific name that differs from the backup file naming convention.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

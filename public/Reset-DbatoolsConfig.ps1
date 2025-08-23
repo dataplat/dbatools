@@ -13,17 +13,20 @@ function Reset-DbatoolsConfig {
         - The setting cannot have been enforced by policy.
 
     .PARAMETER ConfigurationItem
-        A configuration object as returned by Get-DbatoolsConfig.
+        One or more configuration objects as returned by Get-DbatoolsConfig.
+        Use this when you want to reset specific configuration items that you've already identified through Get-DbatoolsConfig, allowing for precise control over which settings get reset.
 
     .PARAMETER FullName
-        The full name of the setting to reset, offering the maximum of precision.
+        The full qualified name of a specific configuration setting to reset (e.g., 'dbatools.Connection.EncryptConnection').
+        Use this when you know the exact setting name and want to reset just that one item, providing the most precise targeting of configuration changes.
 
     .PARAMETER Module
-        The name of the module, from which configurations should be reset.
-        Used in conjunction with the -Name parameter to filter a specific set of items.
+        The name of the module whose configuration settings should be reset (e.g., 'dbatools', 'sql', 'connection').
+        Use this when you want to reset all settings within a specific functional area, such as resetting all connection-related settings after environment changes.
 
     .PARAMETER Name
-        Used in conjunction with the -Module parameter to select which settings to reset using wildcard comparison.
+        A wildcard pattern to match configuration setting names within the specified module (defaults to "*" for all settings).
+        Use this with the -Module parameter to selectively reset settings, such as using "Encrypt*" to reset only encryption-related settings within a module.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

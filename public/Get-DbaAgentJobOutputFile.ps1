@@ -17,10 +17,12 @@ function Get-DbaAgentJobOutputFile {
         For MFA support, please use Connect-DbaInstance. be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Job
-        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies specific SQL Agent jobs to examine for output file configurations. Accepts job names as strings and supports multiple values.
+        Use this when you need to check output file paths for specific jobs rather than scanning all jobs on the instance.
 
     .PARAMETER ExcludeJob
-        The job(s) to exclude - this list is auto-populated from the server
+        Specifies SQL Agent jobs to exclude from the output file search. Accepts job names as strings and supports multiple values.
+        Use this when you want to scan most jobs but skip specific ones, such as excluding system maintenance jobs or jobs you know don't use output files.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

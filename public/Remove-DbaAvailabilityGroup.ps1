@@ -27,13 +27,16 @@ function Remove-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Only remove specific availability groups.
+        Specifies the name(s) of specific availability groups to remove. Accepts multiple values and wildcards for pattern matching.
+        Use this when you need to remove only certain availability groups rather than all groups on the instance.
 
     .PARAMETER AllAvailabilityGroups
-        Remove all availability groups on an instance.
+        Removes all availability groups found on the specified SQL Server instance.
+        Use this switch when decommissioning a server or performing bulk cleanup operations.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline operations.
+        Use this when you need to filter or pre-process availability groups before removal.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

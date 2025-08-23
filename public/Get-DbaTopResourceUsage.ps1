@@ -25,19 +25,24 @@ function Get-DbaTopResourceUsage {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for resource-intensive queries. Accepts multiple database names.
+        Use this when troubleshooting performance issues in specific databases rather than analyzing server-wide query performance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip when analyzing query performance across the SQL Server instance.
+        Use this to exclude test databases, archived databases, or other databases that aren't relevant to your performance investigation.
 
     .PARAMETER ExcludeSystem
-        This will exclude system objects like replication procedures from being returned.
+        Excludes system objects like replication procedures (sp_MS% objects) from the query analysis results.
+        Use this when you want to focus on application queries rather than system maintenance operations that may consume resources.
 
     .PARAMETER Type
-        By default, all Types run but you can specify one or more of the following: Duration, Frequency, IO, or CPU
+        Specifies which resource usage metrics to analyze: Duration, Frequency, IO, CPU, or All (default).
+        Use specific types when investigating particular performance symptoms - Duration for slow queries, Frequency for high-activity queries, IO for disk bottlenecks, or CPU for processor-intensive operations.
 
     .PARAMETER Limit
-        By default, these query the Top 20 worst offenders (though more than 20 results can be returned if each of the top 20 have more than 1 subsequent result)
+        Controls how many top resource-consuming query hashes to return for each metric type (default is 20).
+        Increase this value when you need to analyze more queries, or decrease it to focus on only the most problematic queries during initial performance triage.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

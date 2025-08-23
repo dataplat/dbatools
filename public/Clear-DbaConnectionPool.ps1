@@ -13,7 +13,9 @@ function Clear-DbaConnectionPool {
         Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
 
     .PARAMETER ComputerName
-        Target computer(s). If no computer name is specified, the local computer is targeted.
+        Specifies the computer(s) where SQL Server connection pools should be cleared. Accepts multiple computer names and supports pipeline input.
+        Use this when connection pool issues are occurring on specific client machines or application servers connecting to SQL Server.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Alternate credential object to use for accessing the target computer(s).

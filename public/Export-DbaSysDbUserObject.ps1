@@ -15,28 +15,36 @@ function Export-DbaSysDbUserObject {
         Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER IncludeDependencies
-        Specifies whether dependent objects are also scripted out.
+        Includes dependent objects in the scripted output when exporting user objects.
+        Use this when your custom objects have dependencies that need to be recreated together on the target instance.
 
     .PARAMETER BatchSeparator
-        Batch separator for scripting output. "GO" by default.
+        Sets the batch separator used between SQL statements in the exported script files. Defaults to "GO".
+        Change this when you need compatibility with specific SQL tools that use different batch separators.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the directory where the exported SQL script file will be created. Uses the dbatools default export path if not specified.
+        Provide this when you need the script saved to a specific location for documentation or deployment purposes.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Specifies the complete file path including filename for the exported SQL script.
+        Use this instead of Path when you need precise control over the output file name and location.
 
     .PARAMETER NoPrefix
-        If this switch is used, the scripts will not include prefix information containing creator and datetime.
+        Excludes header information from the exported scripts, removing creator details and timestamp comments.
+        Use this when you need clean scripts without metadata for version control or when the header information is not needed.
 
     .PARAMETER ScriptingOptionsObject
-        Add scripting options to scripting output.
+        Provides a custom ScriptingOptions object to control how objects are scripted, including permissions, indexes, and constraints.
+        Use this when you need specific scripting behavior beyond the default options, such as excluding certain object properties.
 
     .PARAMETER NoClobber
-        Do not overwrite file.
+        Prevents overwriting existing files at the target location and throws an error if the file already exists.
+        Use this as a safety measure when you want to avoid accidentally replacing existing script files.
 
-    .PARAMETER Passthru
-        Output script to console.
+    .PARAMETER PassThru
+        Outputs the generated SQL scripts directly to the PowerShell console instead of saving to a file.
+        Use this when you want to review the scripts immediately or pipe them to other cmdlets for further processing.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

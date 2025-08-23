@@ -17,65 +17,80 @@ function New-DbaAgentJobStep {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The name of the job to which to add the step.
+        Specifies the SQL Server Agent job name where the new step will be added. Accepts job names or job objects from Get-DbaAgentJob.
+        Use this to target specific jobs when building multi-step automation workflows.
 
     .PARAMETER StepId
-        The sequence identification number for the job step. Step identification numbers start at 1 and increment without gaps.
+        Sets the execution order position for this step within the job sequence. Step numbers start at 1 and must be sequential.
+        Use this to control step execution order or when inserting steps between existing ones. If not specified, adds the step at the end.
 
     .PARAMETER StepName
-        The name of the step.
+        Defines a descriptive name for the job step that appears in SQL Server Agent and job history logs.
+        Choose meaningful names that clearly identify the step's purpose for easier troubleshooting and maintenance.
 
     .PARAMETER SubSystem
-        The subsystem used by the SQL Server Agent service to execute command.
-        Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
-        The default is 'TransactSql'
+        Determines what execution engine SQL Server Agent uses to run the step command. Defaults to 'TransactSql' for T-SQL scripts.
+        Use 'PowerShell' for PowerShell scripts, 'CmdExec' for operating system commands, 'Ssis' for SSIS packages, or replication subsystems for replication tasks.
+        Analysis subsystems require SQL Server Analysis Services and the SubSystemServer parameter.
 
     .PARAMETER SubSystemServer
-        The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply
+        Specifies the Analysis Services server name when using AnalysisScripting, AnalysisCommand, or AnalysisQuery subsystems.
+        Required for Analysis Services job steps to connect to the appropriate SSAS instance for cube processing or MDX queries.
 
     .PARAMETER Command
-        The commands to be executed by SQLServerAgent service through subsystem.
+        Contains the actual code or command that the job step will execute, such as T-SQL scripts, PowerShell code, or operating system commands.
+        The command syntax must match the specified subsystem type. For T-SQL steps, include complete SQL statements or stored procedure calls.
 
     .PARAMETER CmdExecSuccessCode
-        The value returned by a CmdExec subsystem command to indicate that command executed successfully.
+        Defines the exit code that indicates successful completion for CmdExec subsystem steps. Most applications return 0 for success.
+        Use this when running batch files or executables that return non-zero success codes to prevent the job from failing incorrectly.
 
     .PARAMETER OnSuccessAction
-        The action to perform if the step succeeds.
-        Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
-        The text value can either be lowercase, uppercase or something in between as long as the text is correct.
+        Controls job flow when this step completes successfully. Default 'QuitWithSuccess' ends the job with success status.
+        Use 'GoToNextStep' for sequential execution, 'GoToStep' to jump to a specific step, or 'QuitWithFailure' for conditional failure handling.
+        Essential for building complex workflows with branching logic based on step outcomes.
 
     .PARAMETER OnSuccessStepId
-        The ID of the step in this job to execute if the step succeeds and OnSuccessAction is "GoToStep".
+        Specifies which step to execute next when OnSuccessAction is set to 'GoToStep' and this step succeeds.
+        Use this to create conditional branching in job workflows, such as skipping cleanup steps when data processing completes successfully.
 
     .PARAMETER OnFailAction
-        The action to perform if the step fails.
-        Allowed values  "QuitWithFailure" (default), "QuitWithSuccess", "GoToNextStep", "GoToStep".
-        The text value can either be lowercase, uppercase or something in between as long as the text is correct.
+        Determines job behavior when this step fails. Default 'QuitWithFailure' stops the job and reports failure.
+        Use 'GoToNextStep' to continue despite failures, 'GoToStep' for error handling routines, or 'QuitWithSuccess' when failure is acceptable.
+        Critical for implementing error handling and recovery procedures in automated processes.
 
     .PARAMETER OnFailStepId
-        The ID of the step in this job to execute if the step fails and OnFailAction is "GoToStep".
+        Identifies the step to execute when OnFailAction is 'GoToStep' and this step fails.
+        Use this to implement error handling workflows, such as sending notifications or running cleanup procedures when critical steps fail.
 
     .PARAMETER Database
-        The name of the database in which to execute a Transact-SQL step. The default is 'master'.
+        Specifies the database context for TransactSql subsystem steps. Defaults to 'master' if not specified.
+        Set this to the appropriate database where your T-SQL commands should execute, as it determines schema resolution and object access.
 
     .PARAMETER DatabaseUser
-        The name of the user account to use when executing a Transact-SQL step.
+        Sets the database user context for executing T-SQL steps, overriding the SQL Server Agent service account permissions.
+        Use this when the step needs specific database-level permissions that differ from the Agent service account's access rights.
 
     .PARAMETER RetryAttempts
-        The number of retry attempts to use if this step fails. The default is 0.
+        Sets how many times SQL Server Agent will retry this step if it fails before considering it permanently failed.
+        Use this for steps that might fail due to temporary issues like network connectivity or resource contention. Defaults to 0 (no retries).
 
     .PARAMETER RetryInterval
-        The amount of time in minutes between retry attempts. The default is 0.
+        Defines the wait time in minutes between retry attempts when a step fails. Defaults to 0 (immediate retry).
+        Set appropriate intervals to allow temporary issues to resolve, such as waiting for locked resources or network recovery.
 
     .PARAMETER OutputFileName
-        The name of the file in which the output of this step is saved.
+        Specifies a file path where the step's output will be written for logging and troubleshooting purposes.
+        Use this to capture command results, error messages, or progress information for later analysis when jobs fail or need auditing.
 
     .PARAMETER Insert
-        This switch indicates the new step is inserted at the specified stepid.
-        All following steps will have their IDs incremented by, and success/failure next steps incremented accordingly
+        Inserts the new step at the specified StepId position, automatically renumbering subsequent steps and updating their references.
+        Use this when adding steps to existing jobs without breaking the workflow sequence, such as inserting validation steps between existing processes.
 
     .PARAMETER Flag
-        Sets the flag(s) for the job step.
+        Controls how job step output and history are logged and stored. Multiple flags can be specified for comprehensive logging.
+        Use 'AppendAllCmdExecOutputToJobHistory' to capture command output in job history, 'AppendToLogFile' for SQL Server error log entries, or 'AppendToTableLog' for database table logging.
+        Essential for troubleshooting and auditing job execution, especially for steps that generate important output or error information.
 
         Flag                                    Description
         ----------------------------------------------------------------------------
@@ -88,7 +103,8 @@ function New-DbaAgentJobStep {
         ProvideStopProcessEvent                 Job processing is stopped.
 
     .PARAMETER ProxyName
-        The name of the proxy that the job step runs as.
+        Specifies a SQL Server Agent proxy account to use for step execution instead of the Agent service account.
+        Use this when steps need specific Windows credentials for file system access, network resources, or applications that require different security contexts.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -97,7 +113,8 @@ function New-DbaAgentJobStep {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Bypasses validation checks and overwrites existing steps with the same name or ID.
+        Use this when recreating steps during development or when you need to replace existing steps without manual deletion first.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

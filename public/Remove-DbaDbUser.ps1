@@ -21,19 +21,24 @@ function Remove-DbaDbUser {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies the database(s) from which to remove the specified users. Accepts wildcards for pattern matching.
+        When omitted, the function processes all accessible databases on the instance to find and remove the specified users.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies the database(s) to skip during user removal operations. Use this to protect critical databases like system databases.
+        Commonly used to exclude model, tempdb, or production databases during bulk user cleanup operations.
 
     .PARAMETER User
-        Specifies the list of users to remove.
+        Specifies the database user(s) to remove from the target databases. Accepts multiple user names for bulk operations.
+        The function will automatically handle schema ownership conflicts that typically prevent user deletion.
 
     .PARAMETER InputObject
-        Support piping from Get-DbaDbUser.
+        Accepts user objects from Get-DbaDbUser for pipeline operations. This allows for advanced filtering scenarios.
+        Use this when you need to remove users based on complex criteria like creation date, permissions, or other user properties.
 
     .PARAMETER Force
-        If enabled this will force the change of the owner to 'dbo' for any schema which owner is the User.
+        Forces schema ownership transfer to 'dbo' when the user owns schemas containing database objects. Without this, user removal fails if owned schemas contain objects.
+        Use this during user deprovisioning when you need to ensure complete cleanup regardless of schema dependencies.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

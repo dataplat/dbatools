@@ -32,17 +32,20 @@ function Invoke-DbaDbDecryptObject {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Database to search for the object.
+        Specifies which databases contain the encrypted objects you want to decrypt. Accepts multiple database names.
+        Use this to target specific databases instead of searching across all databases on the instance.
 
     .PARAMETER ObjectName
-        The name of the object to search for in the database.
+        Specifies the names of encrypted objects to decrypt (stored procedures, functions, views, or triggers). Accepts multiple object names.
+        When omitted, all encrypted objects in the specified databases will be decrypted. Use this to target specific objects when you only need a few items recovered.
 
     .PARAMETER EncodingType
-        The encoding type used to decrypt and encrypt values.
+        Determines the text encoding used during the XOR decryption process to convert binary data back to readable T-SQL code. Defaults to ASCII.
+        Use UTF8 when dealing with databases that contain Unicode characters in object definitions or when ASCII decryption produces garbled text.
 
     .PARAMETER ExportDestination
-        Location to output the decrypted object definitions.
-        The destination will use the instance name, database name and object type i.e.: C:\temp\decrypt\SQLDB1\DB1\StoredProcedure
+        Specifies the folder path where decrypted T-SQL scripts will be saved as individual .sql files.
+        When specified, creates an organized folder structure by instance, database, and object type (e.g., C:\temp\decrypt\SQLDB1\DB1\StoredProcedure). When omitted, results are displayed in the console only.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

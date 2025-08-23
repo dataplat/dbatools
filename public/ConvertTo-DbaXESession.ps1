@@ -14,13 +14,16 @@ function ConvertTo-DbaXESession {
         https://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/
 
     .PARAMETER InputObject
-        Specifies a Trace object output by Get-DbaTrace.
+        Specifies the SQL Server Trace objects to convert to Extended Events sessions. Must be trace objects returned by Get-DbaTrace.
+        Use this to convert existing traces from SQL Trace to Extended Events, preserving event mappings and filter configurations.
 
     .PARAMETER Name
-        The name of the Trace to convert. If the name exists, characters will be appended to it.
+        Specifies the name for the new Extended Events session. If a session with this name already exists, the function automatically appends the trace ID or a random number to avoid conflicts.
+        Choose a descriptive name that identifies the monitoring purpose, as this becomes the session name visible in SQL Server Management Studio and sys.server_event_sessions.
 
     .PARAMETER OutputScriptOnly
-        Outputs the T-SQL script to create the XE session and does not execute it.
+        Returns the T-SQL CREATE EVENT SESSION script without executing it on the server. Use this when you need to review the generated script before deployment or save it for later execution.
+        Particularly useful in compliance environments where all scripts require approval before running against production databases.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

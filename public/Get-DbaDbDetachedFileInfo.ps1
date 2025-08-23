@@ -25,7 +25,9 @@ function Get-DbaDbDetachedFileInfo {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access.
+        Specifies the full file path to one or more detached MDF database files to analyze. The SQL Server service account must have read access to these file locations.
+        Use this when you need to examine database files in archives, backups, or migration staging areas before deciding whether to attach them.
+        Supports multiple file paths and accepts wildcards, but each MDF file must be accessible from the specified SQL Server instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

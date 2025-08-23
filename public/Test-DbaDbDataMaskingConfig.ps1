@@ -10,7 +10,8 @@ function Test-DbaDbDataMaskingConfig {
         Essential for troubleshooting complex masking configurations and ensuring they'll execute successfully without runtime errors.
 
     .PARAMETER FilePath
-        Path to the file to test
+        Specifies the full path to the data masking configuration JSON file to validate.
+        Use this to verify your masking configuration before running New-DbaDbDataMaskingConfig or Invoke-DbaDbDataMasking to catch errors early.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -22,9 +23,6 @@ function Test-DbaDbDataMaskingConfig {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-    .PARAMETER Force
-        If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
 
     .NOTES
         Tags: Masking, DataMasking

@@ -19,22 +19,21 @@ function Get-DbaBinaryFileTable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to scan for tables containing binary columns. Accepts wildcards for pattern matching.
+        Use this to limit the search scope when you know which databases might contain file storage tables, reducing scan time on large instances.
 
     .PARAMETER Table
-        Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl.
-
-        If the object has special characters please wrap them in square brackets [ ].
-        Using dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
-        The correct way to find table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table]
-        Any actual usage of the ] must be escaped by duplicating the ] character.
-        The correct way to find a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
+        Targets specific tables to analyze for binary columns instead of scanning all tables in the database. Supports three-part naming (database.schema.table) and wildcards.
+        Use this when you already know which tables contain binary data, such as document storage tables or attachment tables in applications.
+        Wrap table names with special characters in square brackets, and escape actual ] characters by doubling them.
 
     .PARAMETER Schema
-        Only return tables from the specified schema
+        Restricts the search to tables within specific database schemas. Accepts multiple schema names and wildcards.
+        Useful for focusing on application-specific schemas that typically contain file storage tables, such as 'Documents' or 'Attachments' schemas.
 
     .PARAMETER InputObject
-        Table objects to be piped in from Get-DbaDbTable
+        Accepts table objects piped directly from Get-DbaDbTable, allowing you to pre-filter tables before binary column analysis.
+        Use this approach when you want to combine complex table filtering with binary column detection in a pipeline workflow.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

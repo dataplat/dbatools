@@ -18,10 +18,12 @@ function Get-DbaInstanceAudit {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Audit
-        Return only specific audits
+        Specifies which audit objects to retrieve by name. Accepts multiple audit names to return only those specific audits.
+        Use this when you need to check configuration or status for particular audits instead of retrieving all instance-level audits.
 
     .PARAMETER ExcludeAudit
-        Exclude specific audits
+        Specifies which audit objects to exclude from results by name. Accepts multiple audit names to filter out unwanted audits.
+        Use this when you want to retrieve most audits but skip specific ones, such as excluding test or temporary audits from compliance reports.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -7,53 +7,58 @@ function Format-DbaBackupInformation {
         Takes backup history objects from Select-DbaBackupInformation and transforms them for restore scenarios where you need to change database names, file locations, or backup paths. This is essential for disaster recovery situations where you're restoring to different servers, renaming databases, or moving files to new storage locations. The function handles all the metadata transformations needed so you don't have to manually edit restore paths and database references before running Restore-DbaDatabase.
 
     .PARAMETER BackupHistory
-        A dbatools backupHistory object, normally this will have been created using Select-DbaBackupInformation
+        Backup history objects from Select-DbaBackupInformation that contain metadata about database backups.
+        Use this to pass backup information that needs to be modified for restore operations to different locations or with different names.
 
     .PARAMETER ReplaceDatabaseName
-        If a single value is provided, this will be replaced do all occurrences a database name
-        If a Hashtable is passed in, each database name mention will be replaced as specified. If a database's name does not appear it will not be replace
-        DatabaseName will also be replaced where it  occurs in the file paths of data and log files.
-        Please note, that this won't change the Logical Names of data files, that has to be done with a separate Alter DB call
+        Changes the database name in backup history to prepare for restoring with a different name. Pass a single string to rename one database, or a hashtable to map multiple old names to new names.
+        Use this when restoring databases to different environments or creating copies with new names.
+        Database names in file paths are also updated, but logical file names require separate ALTER DATABASE commands after restore.
 
     .PARAMETER DatabaseNamePrefix
-        This string will be prefixed to all restored database's name
+        Adds a prefix to all database names during the restore operation. The prefix is applied after any name replacements from ReplaceDatabaseName.
+        Use this to create standardized naming conventions like adding environment identifiers (Dev_, Test_, etc.) to restored databases.
 
     .PARAMETER DataFileDirectory
-        This will move ALL restored files to this location during the restore
+        Sets the destination directory for all data files during restore. This overrides the original file locations stored in the backup.
+        Use this when restoring to servers with different drive configurations or when consolidating database files to specific storage locations.
 
     .PARAMETER LogFileDirectory
-        This will move all log files to this location, overriding DataFileDirectory
+        Sets the destination directory specifically for transaction log files during restore. This takes precedence over DataFileDirectory for log files only.
+        Use this to place log files on separate storage from data files for performance optimization or storage management requirements.
 
     .PARAMETER DestinationFileStreamDirectory
-        This move the FileStream folder and contents to the new location, overriding DataFileDirectory
-
-    .PARAMETER FileNamePrefix
-        This string will  be prefixed to all restored files (Data and Log)
-
-    .PARAMETER RebaseBackupFolder
-        Use this to rebase where your backups are stored.
-
-    .PARAMETER Continue
-        Indicates that this is a continuing restore
+        Sets the destination directory for FileStream data files during restore. This takes precedence over DataFileDirectory for FileStream files only.
+        Use this when databases contain FileStream data that needs to be stored on specific storage optimized for large file handling.
 
     .PARAMETER DatabaseFilePrefix
-        A string that will be prefixed to every file restored
+        Adds a prefix to the physical file names of all restored database files (both data and log files).
+        Use this to avoid file name conflicts when restoring to servers that already have files with the same names.
+
+    .PARAMETER RebaseBackupFolder
+        Changes the path where SQL Server will look for backup files during the restore operation.
+        Use this when backup files have been moved to a different location since the backup was created, such as copying backups to a disaster recovery site.
+
+    .PARAMETER Continue
+        Marks this as part of an ongoing restore sequence that will have additional transaction log backups applied later.
+        Use this when performing point-in-time recovery scenarios where you need to restore a full backup followed by multiple log backups.
 
     .PARAMETER DatabaseFileSuffix
-        A string that will be suffixed to every file restored
+        Adds a suffix to the physical file names of all restored database files (both data and log files).
+        Use this to create unique file names when restoring multiple copies of the same database or to add version identifiers to restored files.
 
     .PARAMETER ReplaceDbNameInFile
-        If set, will replace the old database name with the new name if it occurs in the file name
+        Replaces occurrences of the original database name within physical file names with the new database name.
+        Use this in combination with ReplaceDatabaseName to ensure file names match the new database name and avoid confusion during restore operations.
 
     .PARAMETER FileMapping
-        A hashtable that can be used to move specific files to a location.
-        `$FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}`
-        And files not specified in the mapping will be restored to their original location
-        This Parameter is exclusive with DestinationDataDirectory
-        If specified, this will override any other file renaming/relocation options.
+        Maps specific logical file names to custom physical file paths during restore. Use hashtable format like @{'LogicalName1'='C:\NewPath\file1.mdf'}.
+        Use this when you need granular control over where individual database files are restored, overriding directory-based parameters.
+        Files not specified in the mapping retain their original locations, and this parameter takes precedence over all other file location settings.
 
     .PARAMETER PathSep
-        By default is Windows's style (`\`) but you can pass also, e.g., `/` for Unix's style paths
+        Specifies the path separator character for file paths. Defaults to backslash (\) for Windows.
+        Use forward slash (/) when working with Linux SQL Server instances or when backup history contains Unix-style paths.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

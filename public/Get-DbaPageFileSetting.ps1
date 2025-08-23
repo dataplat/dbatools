@@ -12,8 +12,9 @@ function Get-DbaPageFileSetting {
         Note that this may require local administrator privileges for the relevant computers.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
-        This can be the name of a computer, a SMO object, an IP address, an AD Computer object, a connection string or a SQL Instance.
+        Specifies the target SQL Server host computers to retrieve page file settings from. Accepts computer names, IP addresses, or SQL Server instance names.
+        Use this to analyze page file configurations across your SQL Server infrastructure for capacity planning and performance troubleshooting.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user

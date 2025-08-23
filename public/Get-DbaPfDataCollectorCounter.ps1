@@ -7,7 +7,8 @@ function Get-DbaPfDataCollectorCounter {
         Retrieves the list of performance counters that are configured within Windows Performance Monitor Data Collector Sets. This is useful for auditing performance monitoring configurations, verifying which SQL Server and system counters are being collected, and understanding your performance data collection setup. The function extracts counter details from existing Data Collector objects, showing you exactly which performance metrics are being tracked for troubleshooting and capacity planning.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target server(s) where Performance Monitor Data Collector Sets are configured.
+        Use this to audit performance counters on remote SQL Server instances or retrieve counter configurations from multiple servers at once.
 
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:
@@ -15,16 +16,20 @@ function Get-DbaPfDataCollectorCounter {
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER CollectorSet
-        The Collector Set name.
+        Filters results to specific Data Collector Set names such as 'System Correlation' or custom SQL performance monitoring sets.
+        Use this when you need to examine counters for particular monitoring scenarios rather than reviewing all configured performance data collection.
 
     .PARAMETER Collector
-        The Collector name.
+        Filters results to specific Data Collector names within a Collector Set.
+        Use this to narrow down results when a Collector Set contains multiple data collectors and you only need counter details from specific ones.
 
     .PARAMETER Counter
-        The Counter name to capture. This must be in the form of '\Processor(_Total)\% Processor Time'.
+        Searches for specific performance counter names using the exact Windows Performance Monitor format like '\SQLServer:Buffer Manager\Page life expectancy' or '\Processor(_Total)\% Processor Time'.
+        Use this to verify if critical SQL Server or system performance counters are being monitored in your data collection setup.
 
     .PARAMETER InputObject
-        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+        Accepts Data Collector objects from Get-DbaPfDataCollector via the pipeline to extract counter configurations.
+        Use this for chaining commands when you want to drill down from Collector Sets to specific Data Collectors and then to their individual performance counters.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

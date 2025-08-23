@@ -17,13 +17,16 @@ function Get-DbaXESessionTarget {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
-        Only return a specific session. Options for this parameter are auto-populated from the server.
+        Filters results to specific Extended Events sessions by name. Supports wildcards and multiple session names.
+        Use this when you only need target information from particular XE sessions instead of all sessions on the instance.
 
     .PARAMETER Target
-        Only return a specific target.
+        Filters results to specific target types such as 'event_file', 'ring_buffer', or 'event_counter'. Supports multiple target names.
+        Use this when you need information about particular target types, like finding all file-based targets or checking ring buffer configurations.
 
     .PARAMETER InputObject
-        Specifies an XE session returned by Get-DbaXESession to search.
+        Accepts Extended Events session objects from Get-DbaXESession through the pipeline. Allows chaining commands for more complex filtering.
+        Use this when you've already retrieved specific XE sessions and want to examine their targets without re-querying the server.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

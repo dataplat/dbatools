@@ -21,37 +21,48 @@ function Invoke-DbaDiagnosticQuery {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Alternate path for the diagnostic scripts
+        Specifies a custom directory containing Glenn Berry diagnostic query script files. By default, uses the scripts included with dbatools.
+        Use this when you want to run newer diagnostic query versions downloaded from Glenn Berry's website or custom query collections.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed
+        Specifies which databases to run database-specific diagnostic queries against. Accepts wildcard patterns and multiple database names.
+        When omitted, all user databases are processed. System databases are automatically excluded unless explicitly specified.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude
+        Excludes specific databases from database-level diagnostic query execution. Accepts wildcard patterns and multiple database names.
+        Useful when you want to run diagnostics on most databases but skip problematic or maintenance databases.
 
     .PARAMETER ExcludeQuery
-        The Queries to exclude
+        Excludes specific diagnostic queries from execution by their query names. Accepts multiple query names as an array.
+        Use this to skip time-consuming queries like index fragmentation analysis or queries that might cause blocking during peak hours.
 
     .PARAMETER UseSelectionHelper
-        Provides a grid view with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
+        Opens an interactive grid view showing all available diagnostic queries with descriptions for manual selection.
+        Perfect for ad-hoc troubleshooting when you want to run only specific queries relevant to your current performance issue.
 
     .PARAMETER QueryName
-        Only run specific query
+        Runs only the specified diagnostic queries by their exact query names. Accepts multiple query names as an array.
+        Use this when you know exactly which diagnostics you need, such as 'Wait Stats' or 'Top CPU Queries' for targeted performance analysis.
 
     .PARAMETER InstanceOnly
-        Run only instance level queries
+        Limits execution to server-level diagnostic queries only, skipping all database-specific queries.
+        Ideal for quick instance health checks focusing on server configuration, wait statistics, and instance-wide performance metrics.
 
     .PARAMETER DatabaseSpecific
-        Run only database level queries
+        Limits execution to database-level diagnostic queries only, skipping all instance-level queries.
+        Use this when investigating database-specific issues like index fragmentation, table statistics, or database configuration problems.
 
     .PARAMETER ExcludeQueryTextColumn
-        Use this switch to exclude the [Complete Query Text] column from relevant queries
+        Removes the [Complete Query Text] column from diagnostic query results to reduce output size and improve performance.
+        Useful when you only need query execution statistics without the actual SQL text, especially for queries with large stored procedures.
 
     .PARAMETER ExcludePlanColumn
-        Use this switch to exclude the [Query Plan] column from relevant queries
+        Removes the [Query Plan] column from diagnostic query results to significantly reduce memory usage and improve performance.
+        Essential when processing large result sets or when execution plan XML data is not needed for your analysis.
 
     .PARAMETER NoColumnParsing
-        Does not parse the [Complete Query Text] and [Query Plan] columns and disregards the ExcludeQueryTextColumn and NoColumnParsing switches
+        Disables all column parsing and formatting for [Complete Query Text] and [Query Plan] columns, returning raw data.
+        Use this for maximum performance when you need the fastest possible execution and don't require formatted output columns.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -65,11 +76,12 @@ function Invoke-DbaDiagnosticQuery {
         Shows what would happen if the command would execute, but does not actually perform the command
 
     .PARAMETER OutputPath
-        Directory to parsed diagnostics queries to. This will split them based on server, database name, and query.
+        Specifies the directory path where exported diagnostic query SQL files will be saved when using -ExportQueries.
+        Files are automatically organized by server name, database name, and query name for easy identification and manual execution.
 
     .PARAMETER ExportQueries
-        Use this switch to export the diagnostic queries to sql files. Instead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version.
-        These sql files will then be created in the OutputDirectory
+        Exports diagnostic queries as individual SQL files instead of executing them, organized by query type and target database.
+        Useful for creating a library of diagnostic scripts for offline analysis, sharing with team members, or manual execution during maintenance windows.
 
     .NOTES
         Tags: Community, GlennBerry

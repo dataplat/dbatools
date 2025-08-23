@@ -24,23 +24,31 @@ function Backup-DbaDbMasterKey {
         Pass a credential object for the password
 
     .PARAMETER Database
-        Backup master key from specific database(s).
+        Specifies which databases to export master keys from. Only databases containing master keys will be processed.
+        Use this when you need to backup encryption keys from specific databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server.
+        Excludes specific databases from master key backup operations. Auto-completes with available database names.
+        Useful when backing up master keys from most databases but skipping test, development, or non-encrypted databases.
 
     .PARAMETER SecurePassword
-        The password to encrypt the exported key. This must be a SecureString.
+        Password used to encrypt the exported master key backup files. Must be provided as a SecureString object.
+        This password will be required when restoring the master keys, so store it securely with your backup documentation.
+        If not specified, you'll be prompted to enter the password interactively for each database.
 
     .PARAMETER Path
-        The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
+        Directory path where master key backup files will be saved. Accepts local paths or UNC network shares.
+        Defaults to the SQL Server instance's configured backup directory if not specified.
+        The SQL Server service account must have write permissions to the specified location.
 
     .PARAMETER FileBaseName
-        Override the default naming convention with a fixed name for the database master key, useful when exporting a single one.
-        ".key" will be appended to the filename.
+        Overrides the default file naming convention with a custom base name for the backup file.
+        Useful when exporting a single database's master key and you want a specific filename for documentation or automation.
+        The ".key" extension is automatically appended to whatever name you specify.
 
     .PARAMETER InputObject
-        Database object piped in from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase or other dbatools database commands.
+        Allows you to filter databases using Get-DbaDatabase parameters before piping to this function for master key backup.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

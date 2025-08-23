@@ -17,13 +17,16 @@ function Get-DbaDbMasterKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Get master key from specific database
+        Specifies which databases to check for database master keys. Accepts wildcards for pattern matching.
+        Use this when you need to audit encryption keys for specific databases instead of scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip when checking for master keys. Accepts wildcards for pattern matching.
+        Use this to exclude system databases or databases you know don't use encryption features during security audits.
 
     .PARAMETER InputObject
-        Database object piped in from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the pipeline for master key analysis.
+        Use this when you need to check master keys for databases that match specific criteria like compatibility level or size.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed

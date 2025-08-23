@@ -19,7 +19,8 @@ function Get-DbaRunningJob {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAgentJob
+        Accepts SQL Server Agent job objects piped from Get-DbaAgentJob for filtering to only running jobs.
+        Use this when you need to check execution status on a specific set of jobs rather than all jobs on an instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

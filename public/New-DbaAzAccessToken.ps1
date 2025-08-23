@@ -9,26 +9,13 @@ function New-DbaAzAccessToken {
         Want to know more about Access Tokens? This page explains it well: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re
 
     .PARAMETER Type
-        The type of request:
-        ManagedIdentity
-        ServicePrincipal
-        RenewableServicePrincipal
+        Specifies the authentication method for generating the access token. ManagedIdentity uses Azure VM identity for password-free authentication, ServicePrincipal uses application credentials for automated scripts, and RenewableServicePrincipal creates tokens that automatically refresh for long-running connections.
 
     .PARAMETER Subtype
-        The subtype. Options include:
-        AzureSqlDb (default)
-        ResourceManager
-        DataLake
-        EventHubs
-        KeyVault
-        ResourceManager
-        ServiceBus
-        Storage
-
-        Read more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql
+        Determines which Azure service resource to generate the token for. AzureSqlDb creates tokens for Azure SQL Database connections, while other options like KeyVault, Storage, and ResourceManager target their respective Azure services. Defaults to AzureSqlDb for database connections.
 
     .PARAMETER Config
-        The hashtable or json configuration.
+        Optional configuration object for advanced token generation scenarios. Typically auto-generated based on the Subtype parameter and rarely needs manual specification. Use this only when you need custom resource URLs or API versions not covered by standard subtypes.
 
     .PARAMETER Credential
         When using the ServicePrincipal type, a Credential is required. The username is the App ID and Password is the App Password
@@ -36,13 +23,13 @@ function New-DbaAzAccessToken {
         https://docs.microsoft.com/en-us/azure/active-directory/user-help/multi-factor-authentication-end-user-app-passwords
 
     .PARAMETER Tenant
-        When using the ServicePrincipal or RenewableServicePrincipal types, a tenant name or ID is required. This field works with both.
+        Specifies the Azure Active Directory tenant ID or domain name for Service Principal authentication. Required when using ServicePrincipal or RenewableServicePrincipal types. Use your organization's tenant ID (GUID format) or domain name like 'contoso.onmicrosoft.com'.
 
     .PARAMETER Thumbprint
-        Thumbprint for connections to Azure MSI
+        Certificate thumbprint for Managed Service Identity authentication. Use this when your Azure VM or service uses certificate-based authentication instead of the default metadata endpoint. Defaults to the value stored in dbatools configuration.
 
     .PARAMETER Store
-        Store where the Azure MSI certificate is stored
+        Specifies the certificate store location for MSI certificates. Choose CurrentUser for user-specific certificates or LocalMachine for system-wide certificates. Use with Thumbprint parameter for certificate-based Managed Service Identity authentication.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

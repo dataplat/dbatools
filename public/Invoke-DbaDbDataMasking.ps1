@@ -30,59 +30,72 @@ function Invoke-DbaDbDataMasking {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Databases to process through
+        Specifies which databases to mask on the target instance. Accepts wildcards for pattern matching.
+        If omitted, uses the database name from the configuration file. Essential for targeting specific databases when the same config applies to multiple environments.
 
     .PARAMETER Table
-        Tables to process. By default all the tables will be processed
+        Limits masking to specific tables within the configuration file. Accepts wildcards for pattern matching.
+        Use this when you need to mask only certain tables during testing or phased rollouts, rather than processing all tables defined in the config.
 
     .PARAMETER Column
-        Columns to process. By default all the columns will be processed
+        Restricts masking to specific columns within the selected tables. Accepts wildcards for pattern matching.
+        Useful for testing individual column masks or when you need to re-mask specific columns without affecting others.
 
     .PARAMETER FilePath
-        Configuration file that contains the which tables and columns need to be masked
+        Path to the JSON configuration file that defines masking rules for tables and columns. Accepts pipeline input from New-DbaDbMaskingConfig.
+        This file specifies which columns to mask, what type of fake data to generate, and handles relationships between tables to maintain referential integrity.
 
     .PARAMETER Locale
-        Set the local to enable certain settings in the masking
+        Sets the locale for generating culture-specific fake data like names, addresses, and phone numbers. Defaults to 'en' (English).
+        Change this when masking data for specific regions to ensure realistic replacement values that match your target environment's cultural context.
 
     .PARAMETER CharacterString
-        The characters to use in string data. 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' by default
+        Defines the character set used when generating random strings for masked data. Defaults to alphanumeric characters.
+        Customize this to match your application's validation rules, such as excluding certain characters that might cause issues with your systems.
 
     .PARAMETER ExcludeTable
-        Exclude specific tables even if it's listed in the config file.
+        Skips masking for specified tables even if they're defined in the configuration file. Accepts wildcards.
+        Use this to temporarily exclude problematic tables during troubleshooting or when certain tables need to remain unchanged in specific environments.
 
     .PARAMETER ExcludeColumn
-        Exclude specific columns even if it's listed in the config file.
+        Skips masking for specified columns even if they're defined in the configuration file. Accepts wildcards.
+        Helpful for excluding columns that are part of unique indexes or when specific columns need to remain unchanged during testing phases.
 
     .PARAMETER MaxValue
-        Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.
-
-        Useful for adhoc updates and testing, otherwise, the config file should be used.
+        Overrides the maximum length for generated string values, useful for testing with shorter data than production allows.
+        The smaller value between this parameter and the column's actual maximum length will be used. Primarily useful for development and testing scenarios rather than production masking.
 
     .PARAMETER ModulusFactor
-        Calculating the next nullable by using the remainder from the modulus. Default is every 10.
+        Controls how frequently nullable columns are set to NULL during masking. Default value of 10 means approximately every 10th row will be NULL.
+        Adjust this to match your production data's NULL distribution patterns, ensuring masked data maintains realistic null value frequency.
 
     .PARAMETER ExactLength
-        Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
+        Forces masked string values to match the exact length of the original data. For example, 'Smith' becomes exactly 5 random characters.
+        Enable this when your applications have strict validation rules that depend on consistent field lengths or when maintaining data formatting is critical.
 
     .PARAMETER CommandTimeout
-        Timeout for the database connection in seconds. Default is 300.
+        Sets the timeout in seconds for SQL commands during the masking process. Default is 300 seconds (5 minutes).
+        Increase this value when masking large tables or when working with slower storage systems to prevent timeout errors during long-running operations.
 
     .PARAMETER BatchSize
-        Size of the batch to use to write the masked data back to the database
+        Number of rows processed in each batch during the masking operation. Default is 1000 rows per batch.
+        Adjust based on your system's memory and transaction log capacity. Smaller batches reduce memory usage but may slow processing, while larger batches improve performance but require more resources.
 
     .PARAMETER Retry
-        The amount of retries to generate a unique row for a table. Default is 1000.
+        Maximum number of attempts to generate unique values when tables have unique constraints. Default is 1000 retries.
+        Increase this when masking tables with many unique indexes or when the range of possible values is limited, preventing failure due to constraint violations.
 
     .PARAMETER DictionaryFilePath
-        Import the dictionary to be used in in the database masking
+        Path to CSV files containing deterministic value mappings for consistent masking across multiple runs or environments.
+        Use this when you need the same original values to always map to the same masked values, maintaining referential integrity across related systems.
 
     .PARAMETER DictionaryExportPath
-        Export the dictionary to the given path. Naming convention will be [computername]_[instancename]_[database]_Dictionary.csv
-
-        Be careful with this feature, this export is the key to get the original values which is a security risk!
+        Directory path where deterministic value mapping files will be exported after masking. Files are named [computername]_[instancename]_[database]_Dictionary.csv.
+        Use with extreme caution as these files can be used to reverse masked values back to originals. Store securely and delete after use if not needed for consistency across environments.
 
     .PARAMETER Force
-        Forcefully execute commands when needed
+        Bypasses confirmation prompts and executes the masking operation without user interaction.
+        Use this for automated scripts and scheduled masking operations where manual confirmation isn't feasible, but ensure you've thoroughly tested the configuration first.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

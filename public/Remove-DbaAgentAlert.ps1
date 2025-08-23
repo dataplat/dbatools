@@ -18,13 +18,19 @@ function Remove-DbaAgentAlert {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
-        Specifies one or more SQL Agent alert(s) to delete. If unspecified, all accounts will be removed.
+        Specifies the names of specific SQL Agent alerts to remove from the target instances.
+        Use this when you need to remove particular alerts rather than all alerts on the server.
+        Accepts an array of alert names for bulk removal operations.
 
     .PARAMETER ExcludeAlert
-        Specifies one or more SQL Agent alert(s) to exclude.
+        Excludes specific SQL Agent alerts from removal when processing all alerts on an instance.
+        Useful for bulk cleanup operations where you want to preserve certain critical alerts.
+        Only applies when the Alert parameter is not specified, allowing you to remove all alerts except those listed here.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaAgentAlert.
+        Accepts SQL Agent alert objects from the pipeline, typically from Get-DbaAgentAlert.
+        Use this for selective removal operations where you first query alerts with specific criteria and then remove the filtered results.
+        Enables advanced scenarios like interactive selection using Out-GridView or complex filtering logic.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

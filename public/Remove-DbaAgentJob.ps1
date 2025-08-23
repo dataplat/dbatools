@@ -17,17 +17,20 @@ function Remove-DbaAgentJob {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The name of the job. Can be null if the the job id is being used.
+        Specifies the name of the SQL Server Agent job to remove. Accepts one or more job names.
+        Use this when you know the specific job names you want to delete, rather than piping job objects.
 
     .PARAMETER KeepHistory
-        Specifies to keep the history for the job. By default history is deleted.
+        Preserves job execution history in the msdb.dbo.sysjobhistory tables when removing the job.
+        Use this when you need to retain audit trails or troubleshooting information for compliance or analysis purposes.
 
     .PARAMETER KeepUnusedSchedule
-        Specifies to keep the schedules attached to this job if they are not attached to any other job.
-        By default the unused schedule is deleted.
+        Preserves job schedules that aren't used by other jobs when removing this job.
+        Use this when you plan to reuse the schedule for new jobs or want to maintain schedule definitions for documentation purposes.
 
     .PARAMETER InputObject
-        Accepts piped input from Get-DbaAgentJob
+        Accepts SQL Server Agent job objects from the pipeline, typically from Get-DbaAgentJob.
+        Use this approach when you need to filter jobs with complex criteria before removal or when processing jobs from multiple instances.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

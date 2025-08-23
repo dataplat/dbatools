@@ -19,7 +19,8 @@ function Get-DbaStartupParameter {
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER Simple
-        If this switch is enabled, simplified output will be produced including only Server, Master Data path, Master Log path, ErrorLog, TraceFlags and ParameterString.
+        Returns only essential startup information: file paths (master data, master log, error log), trace flags, and the complete parameter string.
+        Use this when you need a quick overview without detailed startup mode flags like single-user, minimal start, or monitoring settings.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

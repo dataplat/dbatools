@@ -21,13 +21,16 @@ function Remove-DbaDbPartitionScheme {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to scan for partition schemes to remove. Accepts multiple database names.
+        Use this when you need to remove partition schemes from specific databases rather than all databases on the instance, such as during database decommissioning or partition strategy simplification.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Specifies databases to skip when scanning for partition schemes to remove. Accepts multiple database names.
+        Use this to exclude system databases or specific databases you want to preserve during bulk partition scheme cleanup operations.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbPartitionScheme.
+        Accepts partition scheme objects piped from Get-DbaDbPartitionScheme for targeted removal operations.
+        Use this for selective removal workflows where you first identify specific partition schemes and then remove only those schemes.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

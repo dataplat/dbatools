@@ -16,10 +16,12 @@ function Test-DbaConnectionAuthScheme {
         The target SQL Server instance or instances. Server(s) must be SQL Server 2005 or higher.
 
     .PARAMETER Kerberos
-        If this switch is enabled, checks will be made for Kerberos authentication.
+        Returns $true if the connection uses Kerberos authentication, $false otherwise.
+        Use this switch when you need to verify that domain authentication is working properly and not falling back to NTLM.
 
     .PARAMETER Ntlm
-        If this switch is enabled, checks will be made for NTLM authentication.
+        Returns $true if the connection uses NTLM authentication, $false otherwise.
+        Use this switch to confirm when connections are using NTLM instead of the preferred Kerberos authentication method.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).

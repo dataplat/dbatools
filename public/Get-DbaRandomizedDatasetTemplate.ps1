@@ -7,14 +7,19 @@ function Get-DbaRandomizedDatasetTemplate {
         Retrieves JSON template files from default and custom directories that define how to generate realistic test datasets. These templates specify column names, data types, and semantic subtypes (like Name.FirstName, Address.City) for creating structured sample data for development and testing environments. The default templates include PersonalData with common fields like names, addresses, and birthdates, and you can specify custom template directories to include organization-specific data patterns.
 
     .PARAMETER Template
-        The name of the template to use.
-        It will go through the default templates to see if it's present
+        Specifies which template files to retrieve by name (without the .json extension).
+        Use this to filter results when you only need specific templates like "PersonalData" or custom templates.
+        If not specified, all available templates from the specified paths are returned.
 
     .PARAMETER Path
-        Path or paths that contain template files
+        Specifies one or more directory paths containing custom JSON template files for data generation.
+        Use this when your organization has created custom templates beyond the default dbatools templates.
+        Templates from these paths are added to the default templates unless -ExcludeDefault is specified.
 
     .PARAMETER ExcludeDefault
-        Exclude the default templates
+        Excludes the built-in dbatools templates from the results.
+        Use this when you only want to work with custom templates from specified paths.
+        The default templates include common data patterns like PersonalData with names, addresses, and dates.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

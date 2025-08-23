@@ -17,10 +17,12 @@ function Get-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
-        Return only specific endpoints.
+        Specifies one or more endpoint names to retrieve instead of returning all endpoints. Accepts exact endpoint names and supports multiple values.
+        Use this when you need to examine specific endpoints like 'Mirroring' or 'AlwaysOn_health' rather than scanning all configured endpoints.
 
     .PARAMETER Type
-        Return only specific types of endpoints. Options include: DatabaseMirroring, ServiceBroker, Soap, and TSql.
+        Filters endpoints by their functional type. Valid options: DatabaseMirroring, ServiceBroker, Soap, and TSql.
+        Use this to focus on specific endpoint categories, such as 'DatabaseMirroring' for Always On AG troubleshooting or 'ServiceBroker' for message queuing configurations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

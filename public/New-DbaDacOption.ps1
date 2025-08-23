@@ -12,19 +12,25 @@ function New-DbaDacOption {
         for more information
 
     .PARAMETER Type
-        Selecting the type of the export: Dacpac (default) or Bacpac.
+        Specifies the package type to create: Dacpac (schema and data) or Bacpac (data only). Defaults to Dacpac.
+        Use Dacpac when you need to capture database schema structure along with optional data for deployment scenarios.
+        Use Bacpac when you only need to export and import data without schema changes.
 
     .PARAMETER Action
-        Choosing an intended action: Publish or Export.
+        Determines whether you're exporting from a database or publishing to a database.
+        Use Export when extracting a package from an existing database for backup or migration purposes.
+        Use Publish when deploying a package to create or update a target database.
 
     .PARAMETER PublishXml
-        Specifies the publish profile which will include options and sqlCmdVariables.
+        Path to a DAC publish profile XML file that contains deployment options and SQLCMD variables.
+        These profiles are typically created in SQL Server Data Tools (SSDT) and control how the deployment behaves.
+        When specified, the profile's settings override any DeployOptions specified in the Property parameter.
 
     .PARAMETER Property
-        A Hashtable that would be used to initialize Options object properties.
-        If you want to specify DeployOptions parameters, which is a property of the options object,
-        add the DeployOptions key with an appropriate hashtable as a value:
-        @{DeployOptions=@{ConnectionTimeout=5}}
+        Hashtable of properties to configure the DAC options object, such as CommandTimeout or ExtractAllTableData.
+        For Publish actions, use the DeployOptions key to set deployment behaviors like DropObjectsNotInSource or BlockOnPossibleDataLoss.
+        Common properties include CommandTimeout for long operations and ExtractAllTableData when exporting data with schema.
+        Example: @{CommandTimeout=0; DeployOptions=@{DropObjectsNotInSource=$true}}
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

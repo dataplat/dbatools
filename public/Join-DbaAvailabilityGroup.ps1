@@ -17,14 +17,18 @@ function Join-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        The availability group to join.
+        Specifies the name of the availability group that the target instance will join as a secondary replica.
+        Use this when you need to add a secondary replica to an existing availability group that was created on the primary server.
 
     .PARAMETER ClusterType
-        Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.
-        Options include: External, Wsfc or None.
+        Specifies the cluster type for the availability group when joining SQL Server 2017 or later instances.
+        Use 'Wsfc' for Windows Server Failover Clustering, 'External' for Linux cluster managers like Pacemaker, or 'None' for read-scale availability groups without clustering.
+        If not specified, the cluster type is automatically detected from the existing availability group.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline operations.
+        Use this when you want to retrieve availability group details from the primary replica and pipe them directly to join secondary replicas.
+        The availability group name and cluster type are automatically extracted from the input object.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

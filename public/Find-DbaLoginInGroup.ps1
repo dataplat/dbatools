@@ -13,7 +13,9 @@ function Find-DbaLoginInGroup {
         PSCredential object to connect under. If not specified, current Windows login will be used.
 
     .PARAMETER Login
-        Find all AD Groups used on the instance that an individual login is a member of.
+        Filters results to show only Windows Active Directory groups that contain the specified individual user account(s).
+        Use this when you need to find which AD groups give a specific user access to SQL Server, rather than seeing all users from all groups.
+        Accepts multiple login names in DOMAIN\username format and supports pipeline input.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

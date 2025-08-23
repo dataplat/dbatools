@@ -17,10 +17,12 @@ function Get-DbaTrace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
-        The id(s) of the Trace
+        Specifies the trace ID(s) to retrieve information for. Accepts single values or arrays of trace IDs.
+        Use this when you need to check specific traces instead of retrieving all configured traces on the instance.
 
     .PARAMETER Default
-        Switch that will only return the information for the default system trace
+        Returns only the default system trace (usually trace ID 1) which SQL Server automatically creates for auditing DDL operations.
+        Use this when you need to locate the default trace file for troubleshooting schema changes, login events, or security auditing.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

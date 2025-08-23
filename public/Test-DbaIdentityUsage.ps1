@@ -17,7 +17,8 @@ function Test-DbaIdentityUsage {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to scan for IDENTITY column usage. Accepts multiple database names as an array.
+        Use this when you need to focus analysis on specific databases rather than scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server

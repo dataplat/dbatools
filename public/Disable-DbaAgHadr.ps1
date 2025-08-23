@@ -21,7 +21,7 @@ function Disable-DbaAgHadr {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        Will restart SQL Server and SQL Server Agent service to apply the change.
+        Automatically restarts both SQL Server and SQL Server Agent services to immediately apply the HADR setting change. Without this switch, the HADR disable setting is changed but requires manual service restart to take effect.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

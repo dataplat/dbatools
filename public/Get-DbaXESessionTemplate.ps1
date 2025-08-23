@@ -22,13 +22,16 @@ function Get-DbaXESessionTemplate {
         http://sqlskills.com/blogs/jonathan
 
     .PARAMETER Path
-        The path to the template directory. Defaults to the dbatools template repository (/bin/XEtemplates/).
+        Specifies the directory path containing Extended Event template XML files. Defaults to the built-in dbatools template repository.
+        Use this when you want to browse custom or additional templates stored in your own directory instead of the default collection.
 
     .PARAMETER Pattern
-        Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaXESessionTemplate
+        Filters templates by searching for the specified text pattern across template names, categories, sources, and descriptions.
+        Use this to quickly find templates related to specific monitoring scenarios like "deadlock", "performance", or "security" without browsing all available templates.
 
     .PARAMETER Template
-        Specifies one or more of the templates provided by dbatools. Press tab to cycle through the list of options.
+        Specifies the exact name(s) of specific templates to retrieve, matching the template file names without the .xml extension.
+        Use this when you know the specific template names you want to examine, such as "Deadlock_Tracking" or "Query_Duration_Performance".
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

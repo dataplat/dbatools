@@ -19,16 +19,20 @@ function Remove-DbaDbRoleMember {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to process for role member removal. Accepts wildcards for pattern matching.
+        When omitted, the function processes all databases on the instance. Use this to target specific databases during security reviews or when cleaning up permissions in development environments.
 
     .PARAMETER Role
-        The role(s) to process.
+        Specifies the database roles to remove users from, such as db_datareader, db_datawriter, db_owner, or custom roles.
+        Accepts multiple roles to remove users from several roles simultaneously. Required unless you're piping in DatabaseRole objects from Get-DbaDbRole.
 
     .PARAMETER User
-        The user(s) to remove from the role(s) specified.
+        Specifies the database users to remove from the specified roles. Accepts multiple usernames for bulk operations.
+        The function validates that users are actually members of the roles before attempting removal, preventing errors when users aren't currently assigned to the roles.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+        Accepts piped input from Get-DbaDatabase, Get-DbaDbRole, or SQL Server instance objects.
+        Use this to chain commands together, such as piping specific databases or roles to process only those objects instead of specifying them via parameters.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

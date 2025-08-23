@@ -7,19 +7,23 @@ function Remove-DbaComputerCertificate {
         Removes certificates from Windows certificate stores on local or remote computers using PowerShell remoting. This is essential for managing SSL/TLS certificates used by SQL Server instances for encrypted connections and authentication. DBAs commonly use this to clean up expired certificates, remove compromised certificates during security incidents, or manage certificate lifecycle during SQL Server migrations and decommissions. The function targets specific certificates by thumbprint and can work across multiple certificate stores and folders.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computer(s) where certificates will be removed. Defaults to localhost.
+        Use this when managing SSL certificates across multiple SQL Server instances or cleaning up certificates on remote servers during migrations.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials
 
     .PARAMETER Thumbprint
-        The thumbprint of the certificate object
+        Specifies the unique thumbprint(s) of the certificate(s) to remove. This is the SHA-1 hash that uniquely identifies each certificate.
+        Use Get-DbaComputerCertificate to find thumbprints of certificates you want to remove, commonly needed when cleaning up expired SSL certificates or removing compromised certificates.
 
     .PARAMETER Store
-        Certificate store - defaults to LocalMachine (otherwise exceptions can be thrown on remote connections)
+        Specifies the certificate store location where certificates will be removed. Defaults to LocalMachine.
+        Use LocalMachine for system-wide certificates (typical for SQL Server SSL certificates) or CurrentUser for user-specific certificates.
 
     .PARAMETER Folder
-        Certificate folder
+        Specifies the certificate store folder (subfolder) where certificates will be removed. Defaults to 'My' (Personal certificates).
+        Common folders include 'My' for SSL certificates used by SQL Server, 'Root' for trusted root certificates, or 'TrustedPeople' for trusted person certificates.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

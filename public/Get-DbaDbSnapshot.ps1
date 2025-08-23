@@ -17,16 +17,20 @@ function Get-DbaDbSnapshot {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Return information for only specific databases
+        Filters results to snapshots created from specific base databases. Use this when you want to see all snapshots created from particular source databases like 'HR' or 'Accounting'.
+        Accepts multiple database names and is useful for focusing on snapshots from databases you're actively managing.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes snapshots created from specific base databases from the results. Use this to filter out snapshots from databases you don't want to see, such as system databases or databases managed by other teams.
+        Helpful when you want a comprehensive view but need to omit certain source databases from the output.
 
     .PARAMETER Snapshot
-        Return information for only specific snapshots
+        Returns information for specific database snapshots by their snapshot names. Use this when you need details about particular snapshots like 'HR_BeforeUpdate_20240101' or 'Production_Backup_Snapshot'.
+        Accepts multiple snapshot names and is ideal for checking the status or disk usage of known snapshots.
 
     .PARAMETER ExcludeSnapshot
-        The snapshot(s) to exclude - this list is auto-populated from the server
+        Excludes specific database snapshots from the results by their snapshot names. Use this to filter out snapshots you don't want to see in the output, such as automated system snapshots or snapshots from other environments.
+        Helpful for focusing on production snapshots while excluding development or test snapshots.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

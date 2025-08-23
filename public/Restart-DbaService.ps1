@@ -9,10 +9,12 @@ function Restart-DbaService {
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the computer names where SQL Server services will be restarted. Accepts multiple computer names for batch operations.
+        Use this when you need to restart services across multiple SQL Server hosts during maintenance windows or after configuration changes.
 
     .PARAMETER InstanceName
-        Only affects services that belong to the specific instances.
+        Restricts the restart operation to services belonging to specific SQL Server instances (like MSSQLSERVER, SQLEXPRESS, or named instances).
+        Use this when you have multiple instances on a server but only need to restart services for specific instances, avoiding unnecessary downtime for other instances.
 
     .PARAMETER SqlInstance
         Use a combination of computername and instancename to get the SQL Server related services for specific instances on specific computers.
@@ -23,14 +25,16 @@ function Restart-DbaService {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Type
-        Use -Type to collect only services of the desired SqlServiceType.
-        Can be one of the following: "Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad"
+        Specifies which SQL Server service types to restart: Agent, Browser, Engine, FullText, SSAS, SSIS, SSRS, PolyBase, or Launchpad.
+        Use this when you need to restart only specific services rather than all SQL Server services, such as restarting just SQL Agent after job configuration changes or only SSRS after report deployment.
 
     .PARAMETER Timeout
-        How long to wait for the start/stop request completion before moving on. Specify 0 to wait indefinitely.
+        Sets the maximum time in seconds to wait for each service stop/start operation to complete before timing out. Defaults to 60 seconds.
+        Increase this value for busy systems or when restarting services with large databases that may take longer to shut down gracefully. Set to 0 for infinite wait.
 
     .PARAMETER InputObject
-        A collection of services from Get-DbaService
+        Accepts service objects from Get-DbaService to restart specific services that have already been filtered or identified.
+        Use this when you need to restart a predefined set of services, typically by piping results from Get-DbaService with custom filtering or from previously saved service collections.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -44,7 +48,8 @@ function Restart-DbaService {
         Prompts you for confirmation before running the cmdlet.
 
     .PARAMETER Force
-        Will stop dependent SQL Server agents when stopping Engine services.
+        Automatically includes dependent services (SQL Agent, PolyBase, Launchpad) when restarting Database Engine services to ensure proper shutdown sequence.
+        Use this when restarting Engine services to avoid dependency conflicts and ensure all related services restart cleanly, particularly important during major configuration changes or patches.
 
     .NOTES
         Tags: Service, Instance, Restart

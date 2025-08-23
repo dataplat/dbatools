@@ -39,10 +39,12 @@ function Get-DbaEstimatedCompletionTime {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Filters results to show only long-running operations within the specified database(s). Accepts multiple database names or wildcards.
+        Use this when you need to monitor specific databases during maintenance windows or troubleshoot performance issues in particular databases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes long-running operations from the specified database(s) when monitoring across the entire instance.
+        Helpful when you want to monitor all databases except system databases or exclude databases with known maintenance operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -19,10 +19,12 @@ function Get-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Return only specific availability groups.
+        Specifies one or more Availability Group names to filter results to specific AGs. Supports wildcards for pattern matching.
+        Use this when you need to check status or configuration of particular AGs rather than retrieving information for all AGs on the instance.
 
     .PARAMETER IsPrimary
-        If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.
+        Returns a boolean value indicating whether the queried SQL Server instance is currently serving as the Primary replica for each Availability Group.
+        Use this switch when you need to quickly identify which replica in your AG topology is currently primary, particularly useful for automated failover scripts or health monitoring.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

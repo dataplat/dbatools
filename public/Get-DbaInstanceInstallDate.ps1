@@ -17,10 +17,12 @@ function Get-DbaInstanceInstallDate {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        Credential object used to connect to the SQL Server as a different Windows user
+        Windows credentials used for WMI connection when retrieving Windows OS installation date with -IncludeWindows.
+        Only required when the current user lacks WMI access to the target server or when connecting across domains.
 
     .PARAMETER IncludeWindows
-        Includes the Windows Server Install date information
+        Retrieves the Windows OS installation date in addition to SQL Server installation date using WMI.
+        Useful for infrastructure audits requiring both application and operating system installation timestamps.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

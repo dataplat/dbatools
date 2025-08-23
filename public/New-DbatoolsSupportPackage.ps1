@@ -20,14 +20,16 @@ function New-DbatoolsSupportPackage {
         The output file is automatically created on your desktop (or home directory if desktop doesn't exist) as a timestamped ZIP archive. Always start a fresh PowerShell session and reproduce the minimal steps to trigger your issue before running this command - this keeps the diagnostic data focused and avoids including unrelated information or sensitive data from your session history.
 
     .PARAMETER Path
-        The folder where to place the output xml in.
+        Specifies the directory where the support package ZIP file will be created. Defaults to your desktop, or home directory if desktop doesn't exist.
+        Use this when you need the diagnostic file saved to a specific location for easier access or compliance requirements.
 
     .PARAMETER Variables
-        Name of additional variables to attach.
-        This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
+        Specifies additional PowerShell variables to include in the diagnostic package by name. Only captures variables that exist in your current session.
+        Use this when specific variables contain connection strings, configuration settings, or data relevant to reproducing your issue.
 
     .PARAMETER PassThru
-        Returns file object that was created during execution.
+        Returns the FileInfo object for the created ZIP file instead of just displaying its location.
+        Use this when you need to programmatically work with the support package file, such as uploading it automatically or getting its size.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

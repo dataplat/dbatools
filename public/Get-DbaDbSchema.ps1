@@ -18,22 +18,28 @@ function Get-DbaDbSchema {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to retrieve schemas from. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of all databases on the instance.
 
     .PARAMETER Schema
-        The name(s) of the schema(s)
+        Filters results to include only schemas with the specified names. Accepts multiple schema names.
+        Use this when you need to check specific schemas like custom application schemas or verify particular schema configurations.
 
     .PARAMETER SchemaOwner
-        The name(s) of the database user(s) that own(s) the schema(s).
+        Filters results to schemas owned by the specified database users or roles. Accepts multiple owner names.
+        Use this for security audits to identify all schemas owned by specific users, or when troubleshooting schema ownership issues.
 
     .PARAMETER IncludeSystemDatabases
-        Include the system databases.
+        Includes system databases (master, model, msdb, tempdb) in the schema retrieval.
+        Use this when you need to audit or document schema configurations across all databases including system databases.
 
     .PARAMETER IncludeSystemSchemas
-        Include the system schemas.
+        Includes built-in system schemas like dbo, sys, guest, and INFORMATION_SCHEMA in the results.
+        Use this when you need complete schema inventory including system schemas, or when specifically working with dbo schema objects.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase via pipeline input for processing.
+        Use this to chain database operations or when you already have database objects and want to retrieve their schemas efficiently.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

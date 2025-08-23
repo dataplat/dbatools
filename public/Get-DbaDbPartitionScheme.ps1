@@ -17,13 +17,16 @@ function Get-DbaDbPartitionScheme {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get users from specific database(s).
+        Specifies which databases to scan for partition schemes. Accepts multiple database names.
+        Use this when you need to check partition schemes in specific databases rather than all accessible databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server.
+        Specifies databases to skip when scanning for partition schemes. Accepts multiple database names.
+        Use this to exclude system databases or specific databases you don't want to check, such as development or staging databases during production audits.
 
     .PARAMETER PartitionScheme
-        The name(s) of the partition scheme(s).
+        Specifies which partition schemes to retrieve by name. Accepts multiple scheme names for targeted retrieval.
+        Use this when you need to examine specific partition schemes rather than all schemes in the database, such as when troubleshooting performance issues with particular partitioned tables.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

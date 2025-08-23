@@ -7,7 +7,8 @@ function Copy-DbaDbQueryStoreOption {
         Reads the complete Query Store configuration from a source database and applies those exact settings to specified destination databases. This lets you standardize Query Store behavior across your environment using proven configurations from production databases. The function handles version-specific settings automatically, supporting SQL Server 2016 through current versions with their respective Query Store features like wait statistics capture and custom capture policies.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2016 or higher.
+        The SQL Server instance containing the database with Query Store configuration you want to copy from.
+        You must have sysadmin access and server version must be SQL Server 2016 or higher since Query Store was introduced in SQL Server 2016.
 
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -17,10 +18,12 @@ function Copy-DbaDbQueryStoreOption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SourceDatabase
-        Specifies the database to copy the Query Store configuration from.
+        The database containing the Query Store configuration you want to replicate to other databases.
+        This database should have Query Store enabled with settings you've tested and want to standardize across your environment.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2016 or higher.
+        The SQL Server instance(s) where you want to apply the Query Store configuration to target databases.
+        You must have sysadmin access and the server must be SQL Server 2016 or higher. Supports multiple destination instances for bulk configuration deployment.
 
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -30,13 +33,19 @@ function Copy-DbaDbQueryStoreOption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationDatabase
-        Specifies a list of databases that will receive a copy of the Query Store configuration of the SourceDatabase.
+        Specifies which specific databases should receive the Query Store configuration from the source database.
+        Use this when you want to apply settings to selected databases rather than all databases on the destination instance.
+        Cannot be used together with AllDatabases parameter.
 
     .PARAMETER Exclude
-        Specifies a list of databases which will NOT receive a copy of the Query Store configuration.
+        Databases to skip when copying Query Store configuration, useful when using AllDatabases but want to exclude specific databases.
+        System databases are automatically excluded since Query Store cannot be enabled on them.
+        Commonly used to exclude test databases or databases with special Query Store requirements.
 
     .PARAMETER AllDatabases
-        If this switch is enabled, the Query Store configuration will be copied to all databases on the destination instance.
+        Applies the Query Store configuration to all user databases on the destination instance.
+        System databases are automatically excluded since Query Store is not supported on them.
+        Use this for standardizing Query Store settings across an entire instance, optionally combined with Exclude parameter for exceptions.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

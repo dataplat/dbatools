@@ -17,15 +17,16 @@ function Import-DbaRegServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Group
-        Imports to specific group
+        Specifies the target group within the CMS hierarchy where servers will be imported. Accepts group paths using backslash notation like "hr\Seattle" or ServerGroup objects from Get-DbaRegServerGroup.
+        Use this when you need to organize imported servers into specific groups rather than importing to the root level.
 
     .PARAMETER Path
-        Optional path to exported reg server XML
+        Specifies the file path to XML files containing exported registered server configurations from SQL Server Management Studio or Export-DbaRegServer.
+        Use this when migrating CMS configurations between environments or restoring server lists from backup exports.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaRegServer, Get-DbaRegServerGroup, CSVs and other objects.
-
-        If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
+        Accepts registered server objects, server group objects, or custom objects like CSV data for bulk import operations. Supports piping from Get-DbaRegServer and Get-DbaRegServerGroup cmdlets.
+        When importing from CSV or custom objects, ServerName column is required while Name, Description, and Group columns are optional. Use this for consolidating servers from multiple CMS instances or bulk-loading server inventories.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -13,7 +13,9 @@ function Get-DbaExternalProcess {
         https://web.archive.org/web/20201027122300/http://vickyharp.com/2013/12/killing-sessions-with-external-wait-types/
 
     .PARAMETER ComputerName
-        The target SQL Server host computer
+        Specifies the SQL Server host computer(s) to check for external processes spawned by SQL Server.
+        Use this when troubleshooting hung sessions or investigating resource usage from processes like xp_cmdshell, BCP, or SSIS operations.
+        Accepts multiple computer names and SQL Server instance names with automatic computer resolution.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.

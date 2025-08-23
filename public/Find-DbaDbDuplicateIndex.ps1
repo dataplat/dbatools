@@ -24,12 +24,13 @@ function Find-DbaDbDuplicateIndex {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for duplicate indexes. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of scanning all databases on the instance, which can be time-consuming on servers with many databases.
 
     .PARAMETER IncludeOverlapping
-        If this switch is enabled, indexes which are partially duplicated will be returned.
-
-        Example: If the first key column is the same between two indexes, but one has included columns and the other not, this will be shown.
+        Finds indexes that share some key columns but have different column structures, not just exact duplicates.
+        Use this to identify indexes where one might be redundant because it's covered by another with additional columns.
+        For example, an index on (CustomerID) would be flagged as overlapping with an index on (CustomerID, OrderDate).
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

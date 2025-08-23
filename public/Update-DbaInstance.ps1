@@ -35,67 +35,66 @@ function Update-DbaInstance {
         For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER Type
-        Type of the update: All | ServicePack | CumulativeUpdate.
-        Default: All
-        Use -Version to limit upgrade to a certain Major version of SQL Server.
+        Specifies which types of SQL Server updates to install: All, ServicePack, or CumulativeUpdate.
+        Use this when you want to apply only specific update types, such as installing only Service Packs during maintenance windows.
+        Defaults to All, which installs both Service Packs and Cumulative Updates in proper sequence.
 
     .PARAMETER KB
-        Install a specific update or list of updates. Can be a number or a string KBXXXXXXX.
+        Installs a specific Knowledge Base update or list of updates by KB number.
+        Use this when you need to apply a particular security patch or bug fix identified by Microsoft.
+        Accepts formats like 123456 or KB123456, and supports multiple KB numbers for batch installations.
 
     .PARAMETER Version
-        A target version of the installation you want to reach. If not specified, a latest available version would be used by default.
-        Can be defined using the following general pattern: <MajorVersion><SPX><CUX>.
-        Any part of the pattern can be omitted if needed:
-        2008R2SP1 - will update SQL 2008R2 to SP1
-        2016CU3 - will update SQL 2016 to CU3 of current Service Pack installed
-        SP0CU3 - will update all existing SQL Server versions to RTM CU3 without installing any service packs
-        SP1CU7 - will update all existing SQL Server versions to SP1 and then (after restart if -Restart is specified) to SP1CU7
-        CU7 - will update all existing SQL Server versions to CU7 of current Service Pack installed
+        Defines the target SQL Server version level to reach using pattern <MajorVersion><SPX><CUX>.
+        Use this to standardize SQL Server instances to a specific patch level across your environment.
+        Examples: 2008R2SP1 (SQL 2008R2 to SP1), 2016CU3 (SQL 2016 to CU3), SP1CU7 (all versions to SP1 then CU7).
+        When omitted, installs the latest available patches for each detected SQL Server version.
 
     .PARAMETER Path
-        Path to the folder(s) with SQL Server patches downloaded. It will be scanned recursively for available patches.
-        Path should be available from both server with SQL Server installation and client that runs the command.
-        All file names should match the pattern used by Microsoft: SQLServer####*-KB###-*x##*.exe
-        If a file is missing in the repository, the installation will fail.
-        Consider setting the following configuration if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value '\\path\to\updates'`
+        Specifies the folder path containing SQL Server update files for installation.
+        Use this to point to your centralized patch repository where you store downloaded SQL Server updates.
+        Files must follow Microsoft's naming pattern (SQLServer####*-KB###-*x##*.exe) and path must be accessible from both client and target servers.
+        Configure a default path with Set-DbatoolsConfig -Name Path.SQLServerUpdates to avoid specifying this repeatedly.
 
     .PARAMETER Restart
-        Restart computer automatically after a successful installation of a patch and wait until it comes back online.
-        Using this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.
+        Automatically restarts the server after successful patch installation and waits for it to come back online.
+        Required for chaining multiple updates since SQL Server patches mandate a restart between installations.
+        Use this during planned maintenance windows when you can afford server downtime for complete patch sequences.
 
     .PARAMETER Continue
-        Continues a failed installation attempt when specified. Will abort a previously failed installation otherwise.
+        Resumes a previously failed SQL Server update installation from where it left off.
+        Use this when a patch installation was interrupted due to network issues, timeouts, or other temporary failures.
+        Without this switch, the function will abort and clean up any failed installation attempts.
 
     .PARAMETER Authentication
-        Chooses an authentication protocol for remote connections.
-        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'.
-        If the protocol fails to establish a connection and explicit -Credentials were used, a failback authentication method would be attempted that configures PSSessionConfiguration
-        on the remote machine. This method, however, is considered insecure and would, therefore, prompt an additional confirmation when used.
-
-        Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
-        * Default when -Credential is not specified. Will likely fail if a network path is specified.
-
-        For CredSSP see also additional information in DESCRIPTION.
+        Specifies the PowerShell remoting authentication method for connecting to remote SQL Server hosts.
+        Defaults to CredSSP when using -Credential to avoid double-hop authentication issues with network patch repositories.
+        Use CredSSP when your patch files are stored on network shares that require credential delegation to remote servers.
 
     .PARAMETER InstanceName
-        Only updates a specific instance(s).
+        Limits patching to a specific named SQL Server instance on the target computer.
+        Use this when you have multiple SQL instances and need to patch only one, such as updating a development instance while leaving production untouched.
+        Omit this parameter to update all SQL Server instances found on the target computers.
 
     .PARAMETER Throttle
-        Maximum number of computers updated in parallel. Once reached, the update operations will queue up.
-        Default: 50
+        Controls the maximum number of servers that can be updated simultaneously during parallel operations.
+        Use a lower value (5-10) for large production environments to limit network load and system resource usage.
+        Defaults to 50, but consider your network bandwidth and the number of concurrent patch installations your infrastructure can handle.
 
     .PARAMETER ArgumentList
-        A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
-        Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
+        Passes additional command-line parameters to the SQL Server patch installer executable.
+        Use this to customize installation behavior such as skipping specific validation rules or running in quiet mode.
+        Common examples include /SkipRules=RebootRequiredCheck to bypass reboot checks, or /Q for silent installation.
 
     .PARAMETER Download
-        Download missing KBs to the first folder specified in the -Path parameter.
-        Files would be first downloaded to the local machine (TEMP folder), and then distributed onto remote machines if needed.
-        If the Path is a network Path, the files would be downloaded straight to the network folder and executed from there.
+        Automatically downloads missing SQL Server update files from Microsoft when they're not found in your patch repository.
+        Use this to ensure patches are available during installation without manually downloading them beforehand.
+        Files download to your local temp folder first, then get distributed to target servers or directly to network paths.
 
     .PARAMETER NoPendingRenameCheck
-        Disables pending rename validation when checking for a pending reboot.
+        Bypasses the check for pending file rename operations that typically require a reboot before patching.
+        Use this in environments where you're confident no pending renames exist or when system monitoring tools show false positives.
+        Exercise caution as installing patches with pending renames can lead to installation failures.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -109,7 +108,9 @@ function Update-DbaInstance {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER ExtractPath
-        Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
+        Specifies the directory on target servers where SQL Server patch files will be extracted before installation.
+        Use this to control where temporary installation files are placed, especially on servers with limited C: drive space.
+        Defaults to system temporary directory if not specified, but consider using a dedicated drive with sufficient space.
 
     .LINK
         https://dbatools.io/Update-DbaInstance

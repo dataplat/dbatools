@@ -23,30 +23,34 @@ function Find-DbaSimilarTable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to search for similar table structures. Accepts multiple database names.
+        Use this to limit the search scope when you know which databases contain the tables you're comparing.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the similarity search. Accepts multiple database names.
+        Useful for skipping temp databases, development copies, or databases with known irrelevant structures.
 
     .PARAMETER SchemaName
-        If you are looking in a specific schema whose table structures is to be used as reference structure, provide the name of the schema.
-        If no schema is provided, looks at all schemas
+        Limits the search to tables within a specific schema. Only tables in this schema will be used as reference structures.
+        Use this when comparing tables within a logical grouping like 'Sales', 'HR', or 'Archive' schemas.
 
     .PARAMETER TableName
-        If you are looking in a specific table whose structure is to be used as reference structure, provide the name of the table.
-        If no table is provided, looks at all tables
-        If the table name exists in multiple schemas, all of them would qualify
+        Uses a specific table as the reference structure to find similar tables across databases.
+        Perfect for finding archive versions of production tables or identifying tables that mirror a known structure.
+        When the table exists in multiple schemas, all instances are used as reference points.
 
     .PARAMETER ExcludeViews
-        By default, views are included. You can exclude them by setting this switch to $false
-        This excludes views in both matching and matched list
+        Excludes views from both the reference objects and the comparison results, focusing only on physical tables.
+        Use this when you need to find similar table structures for data migration or archiving where views aren't relevant.
 
     .PARAMETER IncludeSystemDatabases
-        By default system databases are ignored but you can include them within the search using this parameter
+        Includes system databases (master, model, msdb, tempdb) in the similarity search.
+        Typically used when troubleshooting system table relationships or comparing custom objects in system databases.
 
     .PARAMETER MatchPercentThreshold
-        The minimum percentage of column names that should match between the matching and matched objects.
-        Entries with no matches are eliminated
+        Sets the minimum percentage of matching column names required to include a table pair in results.
+        Use values like 50 for loose matches, 80 for close structural similarity, or 95 for near-identical tables.
+        Zero matches are always excluded regardless of this threshold.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -20,16 +20,20 @@ function Get-DbaDbPageInfo {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Filter to only get specific databases
+        Specifies which databases to analyze for page allocation information. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases rather than scanning all databases on the instance.
 
     .PARAMETER Schema
-        Filter to only get specific schemas
+        Limits the analysis to tables within specific schemas only. Multiple schema names can be provided.
+        Helpful when troubleshooting page issues in specific application schemas or when you want to exclude system schemas from results.
 
     .PARAMETER Table
-        Filter to only get specific tables
+        Restricts page information retrieval to specific tables only. Can be combined with Schema parameter for precise targeting.
+        Use this when investigating page allocation problems for known problematic tables or when performing focused storage analysis.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase, allowing you to chain commands together.
+        This enables scenarios like getting databases from multiple instances and then analyzing their page information in a single pipeline.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

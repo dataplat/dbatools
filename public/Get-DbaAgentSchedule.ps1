@@ -17,13 +17,19 @@ function Get-DbaAgentSchedule {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Schedule
-        Parameter to filter the schedules returned
+        Specifies one or more schedule names to retrieve from the SQL Agent shared schedules collection.
+        Use this when you need to examine specific schedules by their display names, such as checking timing details for maintenance windows or job execution patterns.
+        Accepts multiple schedule names and supports wildcards for pattern matching.
 
     .PARAMETER ScheduleUid
-        The unique identifier of the schedule
+        Specifies the GUID-based unique identifier of one or more shared schedules to retrieve.
+        Use this when you need to target schedules by their immutable identifiers, particularly useful for automation scripts or when schedule names might change.
+        Each shared schedule has a persistent UID that remains constant even if the schedule is renamed.
 
     .PARAMETER Id
-        Parameter to filter the schedules returned
+        Specifies the numeric identifier of one or more shared schedules to retrieve from SQL Agent.
+        Use this when you know the internal ID numbers of specific schedules, often obtained from previous queries or database system tables.
+        Schedule IDs are assigned sequentially by SQL Server and remain constant unless the schedule is deleted and recreated.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

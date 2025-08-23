@@ -21,16 +21,22 @@ function Install-DbaDarlingData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database to install Erik's stored procedures into
+        Specifies the target database where Erik Darling's performance monitoring stored procedures will be installed.
+        Commonly set to master, DBA, or a dedicated administrative database where diagnostic procedures are centralized.
+        The database must already exist on the target instance.
 
     .PARAMETER Branch
-        Specifies an alternate branch of Erik's to install.
+        Specifies which branch of the DarlingData repository to install from.
+        Use 'main' for the latest stable release or 'dev' for experimental features and bug fixes.
+        The dev branch may contain newer procedures or fixes not yet available in the main branch.
         Allowed values:
             main (default)
             dev
 
     .PARAMETER Procedure
-        Specifies the name(s) of the procedures to install
+        Specifies which specific performance monitoring procedures to install instead of the complete collection.
+        Use this when you only need particular diagnostic tools or want to avoid installing procedures you don't use.
+        Each procedure addresses different performance areas: HumanEvents for extended events analysis, PressureDetector for memory pressure monitoring, QuickieStore for Query Store analysis.
         Allowed Values or Combination of Values:
             All (default, to install all procedures)
             HumanEvents (to install sp_HumanEvents)
@@ -44,11 +50,15 @@ function Install-DbaDarlingData {
         The following shorthands are allowed, ordered as above: Human, Pressure, Quickie, Block, Log, Health, Index, Perf.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install from. This *should* be the zip file as distributed by the maintainers.
+        Specifies the path to a local zip file containing the DarlingData procedures instead of downloading from GitHub.
+        Use this when internet access is restricted, when you need to install a specific version, or when you have a pre-downloaded copy.
+        The file must be the official zip distribution from the DarlingData repository maintainers.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/erikdarlingdata/DarlingData
 
     .PARAMETER Force
-        If this switch is enabled, the zip will be downloaded from the internet even if previously cached.
+        Forces a fresh download of the DarlingData procedures even if a cached version already exists locally.
+        Use this when you need to ensure you have the absolute latest version or when troubleshooting installation issues.
+        Without this switch, the function uses the cached version if available to improve performance.
 
     .PARAMETER Confirm
         Prompts to confirm actions

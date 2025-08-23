@@ -20,13 +20,16 @@ function Remove-DbaDbMailProfile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Profile
-        Specifies one or more database mail profile(s) to get. If unspecified, all profiles will be removed.
+        Specifies one or more Database Mail profile names to remove from the instance. Supports wildcards for pattern matching.
+        Use this when you need to remove specific profiles instead of all profiles on the instance. If unspecified, all profiles will be removed.
 
     .PARAMETER ExcludeProfile
-        Specifies one or more database mail profile(s) to exclude.
+        Specifies one or more Database Mail profile names to exclude from removal. Supports wildcards for pattern matching.
+        Use this when removing all profiles except certain ones you want to keep active for ongoing email operations.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbMailProfile.
+        Accepts Database Mail profile objects from Get-DbaDbMailProfile via pipeline.
+        This allows for advanced filtering and selection of profiles before removal, such as selecting profiles based on account configuration or last usage date.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

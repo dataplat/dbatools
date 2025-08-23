@@ -17,7 +17,8 @@ function Get-DbaXESession {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
-        Only return specific sessions. Options for this parameter are auto-populated from the server.
+        Filters results to specific Extended Events sessions by name. Accepts multiple session names as an array.
+        Use this when you need to check status or configuration of particular sessions rather than viewing all XE sessions on the instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

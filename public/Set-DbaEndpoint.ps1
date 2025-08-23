@@ -17,19 +17,19 @@ function Set-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Owner
-        Change the endpoint owner.
+        Specifies the new login name to assign as the endpoint owner. Common during security compliance audits when transferring endpoint ownership from individual accounts to service accounts or when standardizing endpoint ownership across your environment.
 
     .PARAMETER Type
-        Change the endpoint type. Options: DatabaseMirroring, ServiceBroker, Soap, TSql
+        Changes the endpoint protocol type between DatabaseMirroring, ServiceBroker, Soap, or TSql. Use DatabaseMirroring for availability group configurations, ServiceBroker for application messaging, TSql for custom client connections, or Soap for web service integrations.
 
     .PARAMETER Endpoint
-        Only set specific endpoint properties.
+        Specifies the name(s) of specific endpoints to modify. Accepts multiple endpoint names and wildcards for pattern matching. Use when you need to update only certain endpoints rather than all endpoints on the instance.
 
     .PARAMETER AllEndpoints
-        Set all endpoint properties on an instance.
+        Modifies all endpoints found on the target SQL Server instance. Useful for bulk administrative changes like standardizing endpoint ownership or protocol types across your entire server environment.
 
     .PARAMETER InputObject
-        Enables piping from Get-Endpoint.
+        Accepts endpoint objects from the pipeline, typically from Get-DbaEndpoint. This allows you to filter endpoints with Get-DbaEndpoint first, then pipe the results for modification, providing precise control over which endpoints get updated.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

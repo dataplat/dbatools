@@ -17,10 +17,12 @@ function Get-DbaDbOrphanUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for orphaned users. Accepts database names, wildcards, or arrays.
+        Use this when you need to focus the orphaned user search on specific databases rather than checking all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
+        Specifies databases to skip when checking for orphaned users. Useful for excluding system databases or databases under maintenance.
+        Commonly used to exclude tempdb, distribution, or databases where orphaned users are expected and acceptable.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -19,13 +19,19 @@ function Get-DbaFile {
         Allows you to login to servers using alternative credentials
 
     .PARAMETER Path
-        Used to specify extra directories to search in addition to the default data directory.
+        Specifies additional directory paths to search beyond the instance's default data directory. Accepts multiple paths as an array.
+        Use this when you need to scan specific locations for orphaned files, backup locations, or custom database file directories.
+        Defaults to the instance's data directory if not specified.
 
     .PARAMETER FileType
-        Used to specify filter by filetype. No dot required, just pass the extension.
+        Filters results to only show files with specific extensions. Pass extensions without the dot (e.g., 'mdf', 'ldf', 'bak').
+        Use this to find specific database files like data files (mdf, ndf), log files (ldf), or backup files (bak, trn).
+        Accepts multiple extensions to search for different file types simultaneously.
 
     .PARAMETER Depth
-        Used to specify recursive folder depth.  Default is 1, non-recursive.
+        Controls how many subdirectory levels to search recursively. Default is 1 (current directory only).
+        Increase this value when searching deep folder structures for scattered database files or backup archives.
+        Higher values take more time but ensure comprehensive file discovery across complex directory trees.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

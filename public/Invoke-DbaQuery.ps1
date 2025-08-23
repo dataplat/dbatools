@@ -17,40 +17,50 @@ function Invoke-DbaQuery {
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
-        The database to select before running the query. This list is auto-populated from the server.
+        Specifies the target database context for query execution. The query will run against this database regardless of any USE statements in the SQL code.
+        Use this when you need to ensure queries execute in a specific database, particularly when running the same query against multiple instances with different default databases.
 
     .PARAMETER Query
-        Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon or a GO
+        Contains the T-SQL commands to execute against the target instances. Supports T-SQL statements, XQuery, and SQLCMD commands with GO batch separators.
+        Use this for ad-hoc queries, maintenance scripts, or data extraction commands. For complex scripts or version-controlled SQL, consider using the File parameter instead.
 
         Escape any double quotation marks included in the string.
 
         Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
     .PARAMETER QueryTimeout
-        Specifies the number of seconds before the queries time out.
+        Sets the command timeout in seconds before the query is cancelled. Defaults to the connection's default timeout if not specified.
+        Increase this value for long-running maintenance operations, large data exports, or complex analytical queries that need more processing time.
 
     .PARAMETER File
-        Specifies the path to one or several files to be used as the query input.
+        Specifies file paths, URLs, or directories containing SQL scripts to execute. Supports individual .sql files, entire directories, or HTTP/HTTPS URLs for remote scripts.
+        Use this for deploying version-controlled SQL scripts, running standardized maintenance routines, or executing scripts downloaded from repositories.
 
     .PARAMETER SqlObject
-        Specify one or more SQL objects. Those will be converted to script and their scripts run on the target system(s).
+        Accepts SQL Server Management Objects (SMO) that will be scripted out and executed on target instances. Works with tables, views, stored procedures, functions, and other database objects.
+        Use this to deploy database schema changes by passing SMO objects from a source environment to recreate them elsewhere.
 
     .PARAMETER As
-        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', 'PSObjectArray', and 'SingleValue'.
+        Controls the format of returned query results. Choose 'DataRow' (default) for typical result sets, 'PSObject' for PowerShell-friendly objects, or 'SingleValue' for scalar results.
+        Use 'PSObject' when you need to pipe results to other PowerShell commands that expect objects. Use 'SingleValue' for queries returning a single value like COUNT(*) or configuration checks.
 
         PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
 
     .PARAMETER SqlParameter
-        Specifies a hashtable of parameters or output from New-DbaSqlParameter for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
+        Provides parameters for safe execution of queries with dynamic values, preventing SQL injection attacks. Accepts hashtables or SqlParameter objects from New-DbaSqlParameter.
+        Use this whenever your queries include user input, dynamic values, or when calling stored procedures with input/output parameters. Essential for secure production scripts.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
 
     .PARAMETER AppendServerInstance
-        If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
+        Adds the source SQL Server instance name as a column to query results. Particularly useful when running the same query against multiple instances.
+        Use this when you need to identify which instance produced each row of results, essential for multi-instance reporting and troubleshooting scenarios.
 
     .PARAMETER MessagesToOutput
-        Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too.
+        Captures and returns T-SQL PRINT statements, RAISERROR messages, and other informational messages along with query results.
+        Use this when debugging stored procedures, monitoring script progress, or when you need to see messages that SQL scripts output during execution.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase)
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase. The query will execute against each database in the collection.
+        Use this to run the same query across multiple databases efficiently, such as checking configuration settings or gathering statistics from all user databases.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -58,17 +68,21 @@ function Invoke-DbaQuery {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER ReadOnly
-        Execute the query with ReadOnly application intent.
+        Sets the connection to use ReadOnly application intent, directing queries to readable secondary replicas in Availability Groups.
+        Use this when querying Availability Group listeners to reduce load on primary replicas and take advantage of readable secondaries for reporting workloads.
 
     .PARAMETER CommandType
-        Specifies the type of command represented by the query string. Valid options for this parameter are 'Text', 'TableDirect', and 'StoredProcedure'.
-        Default is 'Text'. Further information: https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlcommand.commandtype
+        Defines how the Query parameter should be interpreted. Use 'Text' (default) for T-SQL statements, 'StoredProcedure' for procedure calls, or 'TableDirect' for direct table access.
+        Set this to 'StoredProcedure' when calling stored procedures, which enables proper parameter handling and allows the use of output parameters.
+        Further information: https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlcommand.commandtype
 
     .PARAMETER NoExec
-        Use this switch to prepend SET NOEXEC ON and append SET NOEXEC OFF to each statement, useful for checking query formal errors
+        Enables syntax and semantic validation without executing the actual statements. The SQL engine parses and compiles queries but doesn't run them.
+        Use this to validate T-SQL syntax, check object references, and verify permissions before running potentially destructive scripts in production environments.
 
     .PARAMETER AppendConnectionString
-        Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and optionally -SqlCredential to set authentication information.
+        Adds custom connection string parameters for specialized connection requirements like MultiSubnetFailover, encryption settings, or timeout values.
+        Use this for Availability Group connections, Always Encrypted scenarios, or when you need connection properties not available through standard parameters. Authentication must still be handled via SqlInstance and SqlCredential.
 
     .NOTES
         Tags: Database, Query, Utility

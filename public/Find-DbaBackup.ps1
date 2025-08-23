@@ -11,30 +11,21 @@ function Find-DbaBackup {
         Commonly used in automated maintenance scripts to identify backup files ready for deletion based on your organization's retention requirements.
 
     .PARAMETER Path
-        Specifies the name of the base level folder to search for backup files.
+        Specifies the root directory path to recursively search for backup files. Searches all subdirectories within this path.
+        Use this to target specific backup locations like dedicated backup drives or network shares where your SQL Server backups are stored.
 
     .PARAMETER BackupFileExtension
-        Specifies the filename extension of the backup files you wish to find (typically 'bak', 'trn' or 'log'). Do not include the period.
+        Specifies the file extension to search for without the period (e.g., 'bak', 'trn', 'dif', 'log').
+        Use 'bak' for full backups, 'trn' or 'log' for transaction log backups, or 'dif' for differential backups depending on which backup type you need to manage.
 
     .PARAMETER RetentionPeriod
-        Specifies the retention period for backup files. Correct format is ##U.
-
-        ## is the retention value and must be an integer value
-        U signifies the units where the valid units are:
-        h = hours
-        d = days
-        w = weeks
-        m = months
-
-        Formatting Examples:
-        '48h' = 48 hours
-        '7d' = 7 days
-        '4w' = 4 weeks
-        '1m' = 1 month
+        Specifies how old backup files must be before they're included in results, using format like '7d' or '48h'.
+        Files older than this period will be returned, making this essential for backup cleanup operations based on your retention policy.
+        Valid units: h (hours), d (days), w (weeks), m (months). Examples: '48h', '7d', '4w', '1m'.
 
     .PARAMETER CheckArchiveBit
-        If this switch is enabled, the filesystem Archive bit is checked.
-        If this bit is set (which translates to "it has not been backed up to another location yet"), the file won't be included.
+        Only includes backup files that have been archived to another location (Archive bit is not set).
+        Use this safety feature to ensure backups have been copied to tape, cloud storage, or other backup systems before cleanup to prevent accidental data loss.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -66,7 +57,7 @@ function Find-DbaBackup {
          PS C:\> Find-DbaBackup -Path '\\SQL2014\Backup\' -BackupFileExtension bak -RetentionPeriod 24h | Remove-Item -Verbose
 
          Searches for all bak files in \\SQL2014\Backup\ and all subdirectories that are more than 24 hours old and deletes only those files with verbose message.
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, HelpMessage = "Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]

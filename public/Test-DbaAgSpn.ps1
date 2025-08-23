@@ -24,13 +24,16 @@ function Test-DbaAgSpn {
         Alternative credential for connecting to Active Directory.
 
     .PARAMETER AvailabilityGroup
-        The availability group to test. If not specified, all availability groups will be tested.
+        Specifies which availability groups to validate SPNs for by name. Use this when you need to check specific AGs instead of all AGs on the instance.
+        If not specified, all availability groups will be tested. Accepts multiple AG names for bulk validation.
 
     .PARAMETER Listener
-        The availability group listener to test. If not specified, all listeners will be tested.
+        Specifies which AG listeners to validate SPNs for by listener name. Use this when troubleshooting specific listener connectivity issues.
+        If not specified, all listeners within the specified availability groups will be tested. Accepts multiple listener names.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline processing. Use this to chain commands when working with specific AG objects.
+        This allows for filtering AGs before SPN validation without needing to specify instance and AG names separately.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

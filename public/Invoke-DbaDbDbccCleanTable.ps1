@@ -24,17 +24,24 @@ function Invoke-DbaDbDbccCleanTable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to include in the clean table operation. Accepts multiple database names.
+        When omitted, the operation runs against all accessible databases on the instance.
+        Use this to target specific databases where you know variable-length columns have been dropped recently.
 
     .PARAMETER Object
-        The table(s) or indexed view(s) to be cleaned.
+        Specifies the table or indexed view names to clean, or their object IDs for more precise targeting.
+        Accepts schema-qualified names like 'dbo.TableName' or numeric object IDs like 34636372.
+        This parameter is required since DBCC CLEANTABLE must target specific objects, not entire databases.
 
     .PARAMETER BatchSize
-        Is the number of rows processed per transaction.
-        If not specified, or if 0 is specified, the statement processes the whole table in one transaction.
+        Controls how many rows are processed per transaction during the clean operation.
+        Use smaller batch sizes (like 5000-10000) on production systems to reduce lock duration and transaction log impact.
+        When omitted, processes the entire table in a single transaction which is faster but holds locks longer.
 
     .PARAMETER NoInformationalMessages
-        Suppresses all informational messages.
+        Suppresses informational messages from the DBCC CLEANTABLE output, showing only errors and warnings.
+        Use this in automated scripts or when processing multiple tables to reduce console output volume.
+        Equivalent to adding WITH NO_INFOMSGS to the DBCC command.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

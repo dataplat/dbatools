@@ -18,22 +18,28 @@ function New-DbaLinkedServerLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LinkedServer
-        The name(s) of the linked server(s).
+        Specifies the name of the linked server where the login mapping will be created. Required when using SqlInstance parameter.
+        Use this to target specific linked servers when you have multiple configured on the same SQL instance.
 
     .PARAMETER LocalLogin
-        Specifies the local login name. This parameter is required in all scenarios.
+        Specifies the local SQL Server login that needs access to the linked server. Required in all scenarios.
+        This is the login name that exists on your local SQL instance and will be mapped to credentials on the remote server.
 
     .PARAMETER RemoteUser
-        Specifies the remote login name.
+        Specifies the login name to use on the remote server for authentication. Use with RemoteUserPassword to create explicit credential mapping.
+        When omitted with Impersonate disabled, the mapping will fail unless the same login exists on both servers.
 
     .PARAMETER RemoteUserPassword
-        Specifies the remote login password as a secure string. NOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using this parameter. View the documentation for sp_addlinkedsrvlogin for more details.
+        Provides the password for the RemoteUser as a secure string. Required when mapping to a different remote login.
+        WARNING: Passwords are transmitted to SQL Server in plain text - consult your security team before using in production environments.
 
     .PARAMETER Impersonate
-        Specifies if the local login credentials should be used instead of the remote login credentials.
+        Enables pass-through authentication where local login credentials are used to authenticate to the remote server.
+        Use this for trusted domain environments where the same login exists on both servers, eliminating the need to store remote passwords.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaLinkedServer.
+        Accepts linked server objects from Get-DbaLinkedServer pipeline input.
+        Use this to efficiently configure login mappings across multiple linked servers retrieved from Get-DbaLinkedServer.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

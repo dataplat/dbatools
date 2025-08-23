@@ -11,7 +11,8 @@ function Remove-DbaExtendedProperty {
         The command uses sp_dropextendedproperty internally and returns status information for each removed property, so you can verify successful cleanup operations or track what was removed for audit purposes.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaExtendedProperty
+        Specifies the extended property objects to remove from SQL Server objects. Accepts ExtendedProperty objects from Get-DbaExtendedProperty.
+        Use this to remove outdated documentation, compliance tags, or metadata stored as extended properties on databases, tables, columns, and other SQL Server objects.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -11,48 +11,52 @@ function Copy-DbaDbCertificate {
         This is particularly useful for database migration projects, disaster recovery setup, and maintaining encryption consistency across environments where manual certificate management would be time-consuming and error-prone.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The source SQL Server instance containing the database certificates to copy. Requires sysadmin privileges to access certificate metadata and backup operations.
+        Use this to specify where the certificates currently exist that need to be migrated to other servers.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the source SQL Server instance. Use this when the current Windows user lacks sufficient privileges or when connecting with SQL authentication.
+        Essential for cross-domain scenarios or when running under service accounts that don't have source server access.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        The destination SQL Server instance(s) where certificates will be restored. Accepts multiple servers for bulk certificate deployment.
+        Requires sysadmin privileges to create master keys and restore certificates to matching databases.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to destination SQL Server instance(s). Required when destination servers are in different domains or when using SQL authentication.
+        Must have permissions to create database master keys and restore certificates in target databases.
 
     .PARAMETER Database
-        The database(s) to process.
+        Specifies which databases to include when copying certificates. Only certificates from these databases will be migrated to matching databases on destination servers.
+        Use this to limit certificate copying to specific databases rather than processing all databases with certificates.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude.
+        Excludes specific databases from certificate copying operations. Certificates in these databases will be skipped even if they exist on the source.
+        Useful when you want to copy most database certificates but exclude system databases or specific application databases.
 
     .PARAMETER Certificate
-        The certificate(s) to process.
+        Specifies which certificates to copy by name. Only these named certificates will be processed across all included databases.
+        Use this to migrate specific certificates like TDE certificates while leaving other database certificates untouched.
 
     .PARAMETER ExcludeCertificate
-        The certificate(s) to exclude.
+        Excludes specific certificates from the copying process by name. These certificates will be skipped in all databases.
+        Commonly used to exclude system-generated certificates or certificates that should remain environment-specific.
 
     .PARAMETER SharedPath
-        Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
+        Network path where certificate backup files will be temporarily stored during the copy operation. Both source and destination SQL Server service accounts must have full access to this location.
+        Required because certificates cannot be directly transferred between instances and must be backed up to disk first.
 
     .PARAMETER EncryptionPassword
-        A string value that specifies the secure password to encrypt the private key.
+        Secure password used to encrypt the private key during certificate backup operations. If not provided, a random password is generated automatically.
+        Specify this when you need consistent encryption passwords across multiple certificate operations or for compliance requirements.
 
     .PARAMETER DecryptionPassword
-        Secure string used to decrypt the private key.
+        Password required to decrypt the private key when restoring certificates to destination databases. Must match the password used when the certificate was originally backed up.
+        Use this when copying certificates that were previously backed up with a specific encryption password.
 
     .PARAMETER MasterKeyPassword
-        The password to encrypt the exported key. This must be a SecureString.
+        Password for creating database master keys on destination servers when they don't exist. Required for certificates that use master key encryption.
+        Essential for TDE scenarios where certificates depend on database master keys for private key protection.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -66,7 +70,8 @@ function Copy-DbaDbCertificate {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, existing certificates on Destination with matching names from Source will be dropped.
+        Overwrites existing certificates on destination servers that have the same names as source certificates. Without this switch, existing certificates are skipped.
+        Use this when refreshing certificates during disaster recovery or when certificates need to be updated with new keys.
 
     .NOTES
         Tags: Migration, Certificate

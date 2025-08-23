@@ -9,23 +9,29 @@ function Register-DbatoolsConfig {
         It also can be used to generate a registry template, which can then be used to create policies.
 
     .PARAMETER Config
-        The configuration object to write to registry.
-        Can be retrieved using Get-DbatoolsConfig.
+        Configuration object(s) to persist to registry or file system for future PowerShell sessions.
+        Accepts pipeline input from Get-DbatoolsConfig to save specific settings like connection timeouts or SSL preferences.
+        Use this when you have configuration objects you want to make permanent across dbatools sessions.
 
     .PARAMETER FullName
-        The full name of the setting to be written to registry.
+        Complete configuration setting name to register, such as "sql.connection.trustcert" or "message.consoleoutput.disable".
+        Specify this when you know the exact setting name and want to persist that specific configuration.
+        Use Get-DbatoolsConfig to discover available configuration names in your environment.
 
     .PARAMETER Module
-        The name of the module, whose settings should be written to registry.
+        Module name containing the configuration settings to register, such as "Message" or "SqlInstance".
+        Use this to register all configuration settings for a particular dbatools module at once.
+        Combine with -Name parameter to filter which settings within the module get registered.
 
     .PARAMETER Name
-        Default: "*"
-        Used in conjunction with the -Module parameter to restrict the number of configuration items written to registry.
+        Filters which configuration settings get registered when used with -Module parameter. Supports wildcards.
+        Use this to register only specific settings within a module rather than all module settings.
+        Defaults to "*" which includes all settings for the specified module.
 
     .PARAMETER Scope
-        Default: UserDefault
-        Who will be affected by this export how? Current user or all? Default setting or enforced?
-        Legal values: UserDefault, UserMandatory, SystemDefault, SystemMandatory
+        Determines where the configuration is stored and who can access it.
+        UserDefault applies to current user only, while SystemDefault affects all users on the machine.
+        Use UserMandatory or SystemMandatory to enforce settings that cannot be overridden by individual users.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

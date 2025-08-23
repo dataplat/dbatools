@@ -21,13 +21,16 @@ function Show-DbaDbList {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Title
-        Title of the window being displayed. Default is "Select Database".
+        Sets the title text that appears in the window's title bar. Defaults to "Select Database".
+        Use this to customize the dialog title for specific maintenance scripts or to indicate the purpose of the database selection.
 
     .PARAMETER Header
-        Header text displayed above the database listing. Default is "Select the database:".
+        Specifies the instruction text displayed above the database tree view. Defaults to "Select the database:".
+        Customize this to provide context-specific instructions like "Choose database to backup:" or "Select database for maintenance:".
 
     .PARAMETER DefaultDb
-        Specify a database to have selected when the window appears.
+        Pre-selects a specific database when the selection dialog opens.
+        Use this when you have a preferred or most commonly selected database to reduce clicks for end users.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

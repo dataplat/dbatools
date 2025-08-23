@@ -10,7 +10,8 @@ function Enable-DbaAgHadr {
         The target SQL Server instance or instances.
 
     .PARAMETER Credential
-        Credential object used to connect to the Windows server as a different user
+        Windows credential object used to connect to the target server with different authentication context.
+        Required when the current user lacks administrative privileges on the SQL Server host or when connecting across domain boundaries.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -19,7 +20,8 @@ function Enable-DbaAgHadr {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        Will restart SQL Server and SQL Server Agent service to apply the change.
+        Automatically restarts the SQL Server Database Engine and SQL Server Agent services to immediately apply the HADR setting change.
+        Without this parameter, the HADR setting change requires a manual service restart before Availability Groups can be created.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

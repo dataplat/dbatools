@@ -20,10 +20,13 @@ function New-DbaAgentAlertCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category
+        Specifies the name or names of the alert categories to create in SQL Server Agent.
+        Use descriptive names that reflect how you organize alerts, such as 'Database Errors', 'Performance Issues', or 'Security Events'.
+        Multiple categories can be created in a single operation by providing an array of category names.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Bypasses confirmation prompts and creates the alert categories without user interaction.
+        Use this parameter in automated scripts or when you're confident about the category names being created.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

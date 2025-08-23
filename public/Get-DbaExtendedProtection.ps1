@@ -14,7 +14,8 @@ function Get-DbaExtendedProtection {
         The target SQL Server instance or instances.
 
     .PARAMETER Credential
-        Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials
+        Specifies alternative Windows credentials for connecting to the target computer to read registry values. This is for Windows computer access, not SQL Server authentication.
+        Required when your current Windows account lacks administrative privileges on the target server or when connecting across domains.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

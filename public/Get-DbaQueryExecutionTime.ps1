@@ -21,22 +21,34 @@ function Get-DbaQueryExecutionTime {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for query execution statistics. Accepts wildcards for pattern matching.
+        Use this when troubleshooting performance issues in specific databases instead of scanning all databases on the instance.
+        Helpful for focusing on production databases or isolating performance analysis to databases experiencing issues.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during the execution time analysis. Accepts wildcards for pattern matching.
+        Use this to avoid processing databases that are known to be performing well or contain only static reference data.
+        Common use case is excluding development or staging databases when analyzing production performance.
 
     .PARAMETER MaxResultsPerDb
-        Allows you to limit the number of results returned, as many systems can have very large amounts of query plans.  Default value is 100 results.
+        Limits the number of top execution time results returned per database. Defaults to 100 results.
+        Specify a lower number for quick performance overviews or higher numbers for comprehensive analysis.
+        Large values may impact query performance on busy systems with extensive plan cache data.
 
     .PARAMETER MinExecs
-        Allows you to limit the scope to queries that have been executed a minimum number of time. Default value is 100 executions.
+        Filters results to queries that have executed at least this many times. Defaults to 100 executions.
+        Use this to focus on frequently-run queries that have consistent performance patterns rather than one-time queries.
+        Higher values help identify truly problematic queries that impact system performance regularly.
 
     .PARAMETER MinExecMs
-        Allows you to limit the scope to queries with a specified average execution time.  Default value is 500 (ms).
+        Filters results to queries with an average execution time of at least this many milliseconds. Defaults to 500ms.
+        Use this to focus on genuinely slow queries rather than fast queries that happen to consume CPU cycles.
+        Lowering this value shows more queries but may include acceptable performance levels.
 
     .PARAMETER ExcludeSystem
-        Allows you to suppress output on system databases
+        Skips analysis of system databases (master, model, msdb, tempdb).
+        Use this when focusing performance analysis on user databases only, since system database queries are typically administrative.
+        System database performance issues are usually infrastructure-related rather than application code problems.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

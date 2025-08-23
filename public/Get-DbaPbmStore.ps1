@@ -16,15 +16,6 @@ function Get-DbaPbmStore {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Policy
-        Filters results to only show specific policy
-
-    .PARAMETER Category
-        Filters results to only show policies in the category selected
-
-    .PARAMETER IncludeSystemObject
-        By default system objects are filtered out. Use this parameter to include them.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.

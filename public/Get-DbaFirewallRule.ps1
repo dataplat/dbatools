@@ -22,17 +22,16 @@ function Get-DbaFirewallRule {
         Credential object used to connect to the Computer as a different user.
 
     .PARAMETER Type
-        Returns firewall rules for the given type(s).
+        Specifies which SQL Server firewall rule types to retrieve from the target computer.
+        Use this when you need to focus on specific SQL Server components during network troubleshooting or security audits.
 
         Valid values are:
-        * Engine - for the SQL Server instance
-        * Browser - for the SQL Server Browser
-        * DAC - for the dedicated admin connection (DAC)
-        * AllInstance - for all firewall rules on the target computer related to SQL Server
+        * Engine - Returns firewall rules for the SQL Server Database Engine service
+        * Browser - Returns firewall rules for the SQL Server Browser service (UDP 1434)
+        * DAC - Returns firewall rules for the Dedicated Admin Connection
+        * AllInstance - Returns all SQL Server-related firewall rules on the target computer
 
-        If this parameter is not used, the firewall rule for the SQL Server instance will be returned
-        and in case the instance is listening on a port other than 1433,
-        also the firewall rule for the SQL Server Browser will be returned.
+        When omitted, returns Engine and DAC rules for the specified instance, plus Browser rules if the instance uses a non-standard port.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

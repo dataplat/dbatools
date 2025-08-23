@@ -17,13 +17,16 @@ function Get-DbaServerRole {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
-        Server-Level role to filter results to that role only.
+        Specifies one or more server-level roles to include in the results. Accepts role names like 'sysadmin', 'dbcreator', or custom role names.
+        Use this when you need to audit specific roles rather than retrieving all server roles from the instance.
 
     .PARAMETER ExcludeServerRole
-        Server-Level role to exclude from results.
+        Specifies one or more server-level roles to exclude from the results. Useful for filtering out roles you don't need to audit.
+        Commonly used to exclude built-in roles like 'public' when focusing on administrative roles with elevated permissions.
 
     .PARAMETER ExcludeFixedRole
-        Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports creation of server-level roles.
+        Excludes built-in fixed server roles from the results, showing only custom user-defined server roles.
+        Use this when auditing custom security configurations or identifying roles created by your organization rather than SQL Server's default roles.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

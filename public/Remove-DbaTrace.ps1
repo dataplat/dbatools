@@ -17,10 +17,12 @@ function Remove-DbaTrace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
-        A list of trace ids.
+        Specifies the trace IDs to stop and remove from the SQL Server instance. Accepts one or more integer values.
+        Use this when you know the specific trace IDs you want to remove, which you can obtain from Get-DbaTrace or SQL Server Profiler.
 
     .PARAMETER InputObject
-        Internal parameter for piping.
+        Accepts trace objects from Get-DbaTrace via the pipeline for removal operations.
+        This enables filtering traces with Get-DbaTrace before removing specific ones, such as removing only traces with certain characteristics.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

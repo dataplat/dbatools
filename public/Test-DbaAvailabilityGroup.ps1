@@ -21,31 +21,32 @@ function Test-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        The name of the Availability Group to test.
+        Specifies the Availability Group name to validate for replica connectivity and database prerequisites.
+        Use this to target a specific AG when testing health status or preparing to add databases.
 
     .PARAMETER Secondary
-        Not required - the command will figure this out. But use this parameter if secondary replicas listen on a non default port.
+        Specifies secondary replica endpoints when they use non-standard ports or custom connection strings.
+        The function auto-discovers secondary replicas from the AG configuration, but use this when replicas listen on custom ports or require specific connection parameters.
 
     .PARAMETER SecondarySqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies credentials for connecting to secondary replica instances during validation.
+        Use this when secondary replicas require different authentication than the primary replica, such as in cross-domain scenarios or when using SQL authentication on secondaries.
 
     .PARAMETER AddDatabase
-        Test whether all prerequisites for Add-DbaAgDatabase to add these databases to the Availability Group are met.
-
-        Use Secondary, SecondarySqlCredential, SeedingMode, SharedPath and UseLastBackup with the same values that will be used with Add-DbaAgDatabase later.
+        Specifies database names to validate for Availability Group addition prerequisites.
+        Triggers comprehensive validation including recovery model, database status, backup history, and seeding compatibility checks. Use this to prevent Add-DbaAgDatabase failures by catching configuration issues early.
 
     .PARAMETER SeedingMode
-        Only used when AddDatabase is used. See documentation at Add-DbaAgDatabase for more details.
+        Specifies the database seeding method for validation when using AddDatabase parameter.
+        Use 'Automatic' for SQL Server 2016+ environments or 'Manual' when you need to control backup/restore operations. This determines the prerequisite validation logic performed.
 
     .PARAMETER SharedPath
-        Only used when AddDatabase is used. See documentation at Add-DbaAgDatabase for more details.
+        Specifies the network path accessible by all replicas for backup and restore operations during manual seeding validation.
+        Required when AddDatabase uses manual seeding and databases need to be restored on secondary replicas. Must be accessible by all SQL Server service accounts.
 
     .PARAMETER UseLastBackup
-        Only used when AddDatabase is used. See documentation at Add-DbaAgDatabase for more details.
+        Validates that the most recent database backup chain can be used for AG database addition.
+        Enables validation using existing backups instead of creating new ones, but requires the last backup to be a transaction log backup. Use this to test AG readiness with your current backup strategy.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

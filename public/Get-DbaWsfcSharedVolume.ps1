@@ -11,7 +11,8 @@ function Get-DbaWsfcSharedVolume {
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the target Windows Server Failover Cluster to query for Cluster Shared Volume information. Accepts either individual cluster node names or the cluster name itself.
+        Use this when you need to check CSV health and configuration on remote clusters hosting SQL Server FCIs. Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

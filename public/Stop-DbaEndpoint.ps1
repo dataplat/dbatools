@@ -17,13 +17,16 @@ function Stop-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
-        Only stop specific endpoints.
+        Specifies the names of specific endpoints to stop. Accepts multiple endpoint names as an array.
+        Use this when you need to stop only certain endpoints while leaving others running, such as stopping a Service Broker endpoint for maintenance while keeping Database Mirroring endpoints active.
 
     .PARAMETER AllEndpoints
-        Stops all endpoints on an instance.
+        Stops all endpoints on the specified SQL Server instance. Required when using SqlInstance parameter if Endpoint is not specified.
+        Use this during full maintenance windows or when you need to completely disable all endpoint communication for troubleshooting network connectivity issues.
 
     .PARAMETER InputObject
-        Enables piping from Get-Endpoint.
+        Accepts endpoint objects from Get-DbaEndpoint for pipeline operations. Allows filtering and processing endpoints before stopping them.
+        Use this for complex scenarios where you need to filter endpoints based on their properties before stopping them.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

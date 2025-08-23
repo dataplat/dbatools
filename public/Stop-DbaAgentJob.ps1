@@ -20,16 +20,20 @@ function Stop-DbaAgentJob {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies which SQL Agent jobs to stop by name. Accepts exact job names from the target instance.
+        Use this when you need to stop specific jobs instead of all running jobs. If unspecified, all currently running jobs will be processed.
 
     .PARAMETER ExcludeJob
-        The job(s) to exclude - this list is auto-populated from the server.
+        Specifies SQL Agent job names to exclude from the stop operation. Accepts exact job names from the target instance.
+        Use this when you want to stop most jobs but preserve critical ones like backup jobs, monitoring jobs, or maintenance routines during troubleshooting.
 
     .PARAMETER Wait
-        Wait for output until the job has completely stopped
+        Waits for each job to completely finish stopping before returning results. Without this switch, the function returns immediately after sending the stop command.
+        Use this when you need to ensure jobs have fully terminated before proceeding with subsequent operations like maintenance or troubleshooting steps.
 
     .PARAMETER InputObject
-        Internal parameter that enables piping
+        Accepts SQL Agent job objects from pipeline operations, typically from Get-DbaAgentJob or other dbatools commands.
+        This allows you to filter jobs using complex criteria upstream and then pipe the results directly to Stop-DbaAgentJob for processing.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

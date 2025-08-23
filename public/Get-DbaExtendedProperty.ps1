@@ -23,13 +23,16 @@ function Get-DbaExtendedProperty {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Get extended properties from specific database
+        Specifies which databases to search for extended properties. Only applies when connecting directly to SqlInstance.
+        Use this when you need to examine extended properties from specific databases rather than all accessible databases on the instance.
 
     .PARAMETER Name
-        Get specific extended properties by name
+        Filters results to extended properties with specific names. Accepts multiple property names.
+        Use this when you know the exact property names you're looking for, such as finding all objects tagged with 'Description' or 'Version' properties.
 
     .PARAMETER InputObject
-        Enables piping from Get-Dba* commands
+        Accepts SQL Server objects piped from other dbatools commands to examine their extended properties.
+        Use this to discover metadata on specific objects like tables, stored procedures, or views returned from commands like Get-DbaDbTable or Get-DbaDbStoredProcedure.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

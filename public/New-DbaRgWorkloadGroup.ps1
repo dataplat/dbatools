@@ -17,38 +17,48 @@ function New-DbaRgWorkloadGroup {
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER WorkloadGroup
-        Name of the workload group to be created.
+        Specifies the name of the workload group to create within the resource pool. Use descriptive names that reflect the workload type, like 'ReportingQueries', 'ETLProcesses', or 'AdminTasks'.
+        Each workload group acts as a container for classifying requests and applying specific resource limits and priorities.
 
     .PARAMETER ResourcePool
-        Name of the resource pool to create the workload group in. If not provided, set to the Default Resource Pool.
+        Specifies which resource pool will contain the new workload group. Defaults to 'default' if not specified.
+        Use this to organize workload groups within custom resource pools that have specific CPU and memory allocations.
 
     .PARAMETER ResourcePoolType
-        Internal (default) or External
+        Determines whether to create the workload group in an Internal or External resource pool. Defaults to Internal.
+        Use External for R/Python workloads or machine learning services; use Internal for standard SQL Server workloads like queries and stored procedures.
 
     .PARAMETER Importance
-        Specifies the relative importance of a request in the workload group. Default is MEDIUM, allowed: LOW, MEDIUM, HIGH
+        Sets the relative priority for requests in this workload group when competing for CPU resources. Defaults to MEDIUM.
+        Use HIGH for critical application queries, MEDIUM for normal operations, and LOW for background tasks like maintenance or reporting.
 
     .PARAMETER RequestMaximumMemoryGrantPercentage
-        Specifies the maximum amount of memory that a single request can take from the pool. Default is 25%.
+        Limits how much memory any single query in this workload group can consume from the resource pool. Defaults to 25%.
+        Lower this for concurrent workloads to prevent memory hogging, or increase it for data warehouse queries that need large memory grants for sorting and hashing.
 
     .PARAMETER RequestMaximumCpuTimeInSeconds
-        Specifies the maximum amount of CPU time, in seconds, that a request can use.
+        Sets the maximum CPU time in seconds that any single request can consume before being terminated. Default of 0 means unlimited.
+        Use this to prevent runaway queries from consuming excessive CPU, typically setting values between 300-3600 seconds depending on your workload requirements.
 
     .PARAMETER RequestMemoryGrantTimeoutInSeconds
-        Specifies the maximum time, in seconds, that a query can wait for a memory grant (work buffer memory) to become available.
+        Defines how long a query will wait for memory grants before timing out. Default of 0 means unlimited wait time.
+        Set this to prevent queries from waiting indefinitely during memory pressure, typically using values like 60-300 seconds for interactive workloads.
 
     .PARAMETER MaximumDegreeOfParallelism
-        Specifies the maximum degree of parallelism (MAXDOP) for parallel query execution.
+        Controls the maximum number of processors that queries in this workload group can use for parallel execution. Default of 0 uses the server's MAXDOP setting.
+        Lower values prevent queries from consuming too many CPU cores, while higher values can improve performance for analytical workloads on servers with many cores.
 
     .PARAMETER GroupMaximumRequests
-        Specifies the maximum number of simultaneous requests that are allowed to execute in the workload group.
+        Limits the total number of concurrent requests that can execute simultaneously within this workload group. Default of 0 means unlimited.
+        Use this to control concurrency for resource-intensive workloads, preventing too many expensive queries from running at once and overwhelming the system.
 
     .PARAMETER SkipReconfigure
-        Resource Governor requires a reconfiguriation for workload group changes to take effect.
-        Use this switch to skip issuing a reconfigure for the Resource Governor.
+        Prevents automatic reconfiguration of Resource Governor after creating the workload group. Changes won't take effect until you manually run ALTER RESOURCE GOVERNOR RECONFIGURE.
+        Use this when creating multiple workload groups in a batch to avoid repeated reconfigurations, but remember to reconfigure manually afterward.
 
     .PARAMETER Force
-        If the workload group already exists, drop and re-create it.
+        Drops and recreates the workload group if it already exists, applying new configuration settings.
+        Use this when you need to modify an existing workload group's properties, as Resource Governor workload groups cannot be altered once created.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

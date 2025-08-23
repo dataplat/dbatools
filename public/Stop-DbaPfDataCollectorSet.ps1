@@ -7,7 +7,9 @@ function Stop-DbaPfDataCollectorSet {
         Stops running Performance Monitor Data Collector Sets that are actively collecting performance counters for SQL Server monitoring and analysis. This function interacts with the Windows Performance Logs and Alerts (PLA) service to gracefully halt data collection processes. Commonly used to stop baseline data collection after capturing sufficient performance metrics, or to halt monitoring during maintenance windows when counter data isn't needed.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computer where Performance Monitor Data Collector Sets are running. Accepts multiple computer names for bulk operations.
+        Use this when stopping collectors on remote SQL Server instances or when managing multiple servers from a central location.
+        Defaults to localhost when not specified.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials. To use:
@@ -15,13 +17,17 @@ function Stop-DbaPfDataCollectorSet {
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
     .PARAMETER CollectorSet
-        The name of the Collector Set to stop.
+        Specifies the exact name of the Data Collector Set to stop. Supports multiple collector names for stopping several sets simultaneously.
+        Use this when you need to stop specific performance monitoring sets without affecting other running collectors on the system.
+        Common SQL Server collector sets include 'SQL Server Data Collector Set' and custom monitoring configurations.
 
     .PARAMETER NoWait
-        If this switch is enabled, the collector is stopped and the results are returned immediately.
+        Returns control immediately after initiating the stop command without waiting for the collector to fully terminate.
+        Use this in automated scripts where you need to stop multiple collectors quickly or when the stopping process might take time due to large data buffers being flushed.
 
     .PARAMETER InputObject
-        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+        Accepts Data Collector Set objects from Get-DbaPfDataCollectorSet via pipeline input.
+        Use this approach when you need to filter or examine collector properties before stopping them, or when building complex monitoring workflows.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

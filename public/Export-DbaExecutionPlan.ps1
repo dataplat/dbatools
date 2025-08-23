@@ -23,19 +23,29 @@ function Export-DbaExecutionPlan {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to export execution plans from. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of analyzing plans from all databases on the instance.
+        Helps reduce output volume and processing time when troubleshooting database-specific performance issues.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies which databases to exclude from execution plan export. Accepts wildcards for pattern matching.
+        Use this to skip system databases or databases that are known to be performing well when doing instance-wide plan analysis.
+        Common exclusions include tempdb, model, or development databases that don't need performance review.
 
     .PARAMETER SinceCreation
-        Datetime object used to narrow the results to a date
+        Filters execution plans to only include those created after the specified date and time.
+        Use this when investigating performance issues that started after a specific deployment, configuration change, or known incident.
+        Helps focus analysis on recently compiled plans rather than older cached plans that may no longer be relevant.
 
     .PARAMETER SinceLastExecution
-        Datetime object used to narrow the results to a date
+        Filters execution plans to only include those last executed after the specified date and time.
+        Use this when you want to analyze only actively used plans rather than stale plans sitting in cache.
+        Particularly useful for identifying currently problematic queries during active performance issues or recent workload changes.
 
     .PARAMETER Path
-        The directory where all of the sqlxml files will be exported
+        Specifies the directory path where .sqlplan files will be saved. Defaults to the dbatools export configuration path.
+        Files are named using a pattern that includes instance name, database, query position, and SQL handle for easy identification.
+        Ensure the path exists and has sufficient space, as large plan caches can generate hundreds of files.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -44,7 +54,9 @@ function Export-DbaExecutionPlan {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER InputObject
-        Internal parameter
+        Accepts execution plan objects from the pipeline, typically from Get-DbaExecutionPlan.
+        Use this when you want to filter or process plans with Get-DbaExecutionPlan first, then export specific results.
+        Allows for more complex filtering scenarios before exporting plans to files.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

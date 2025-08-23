@@ -21,13 +21,16 @@ function Read-DbaTransactionLog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Database to read the transaction log of
+        Specifies the database whose transaction log records you want to analyze. The database must be online and in a normal state.
+        Use this to target the specific database where you need to investigate transaction activity or perform forensic analysis.
 
     .PARAMETER IgnoreLimit
-        Switch to indicate that you wish to bypass the recommended limits of the function
+        Bypasses the built-in 0.5GB safety limit that prevents performance issues when reading large transaction logs.
+        Use this when you need to analyze databases with large active logs, but be aware it may impact SQL Server performance during execution.
 
     .PARAMETER RowLimit
-        Will limit the number of rows returned from the transaction log
+        Limits the number of transaction log records returned by adding a TOP clause to the fn_dblog query.
+        Use this when you only need recent transactions or want to prevent memory issues with very large logs. Automatically enables IgnoreLimit when specified.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

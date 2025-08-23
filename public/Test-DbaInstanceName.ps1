@@ -25,7 +25,9 @@ function Test-DbaInstanceName {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ExcludeSsrs
-        If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
+        Skips checking for SQL Server Reporting Services installations that would require manual updates after a server rename.
+        Use this switch when you know SSRS isn't installed or when you want to focus only on core SQL Server rename blockers.
+        Without this switch, the function will warn about SSRS configurations that need attention during rename operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

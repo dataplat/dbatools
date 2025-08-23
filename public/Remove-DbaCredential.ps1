@@ -17,20 +17,24 @@ function Remove-DbaCredential {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        Specifies one or more SQL credential(s) to delete. If unspecified, all accounts will be removed.
+        Specifies one or more SQL Server credential names to remove from the instance. Accepts wildcards for pattern matching.
+        Use this to target specific credentials instead of removing all credentials on the server.
 
     .PARAMETER ExcludeCredential
-        Specifies one or more SQL credential(s) to exclude.
+        Specifies one or more SQL Server credential names to exclude from removal. Accepts wildcards for pattern matching.
+        Use this when you want to remove most credentials but preserve certain ones like service account or backup credentials.
 
     .PARAMETER Identity
-        Only include specific identities
-        Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
+        Filters credentials by their associated identity (the Windows account or certificate the credential represents).
+        Use this to remove credentials based on the underlying identity rather than the credential name. Enclose identities with spaces in quotes.
 
     .PARAMETER ExcludeIdentity
-        Excluded identities
+        Specifies identities to exclude from credential removal operations.
+        Use this to preserve credentials associated with specific Windows accounts or certificates when removing others.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaCredential.
+        Accepts credential objects from Get-DbaCredential for pipeline operations.
+        Use this to chain credential discovery and removal operations, enabling selective removal through Out-GridView or other filters.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

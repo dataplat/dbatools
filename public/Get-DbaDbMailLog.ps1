@@ -17,10 +17,12 @@ function Get-DbaDbMailLog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Since
-        Datetime object used to narrow the results to the send request date
+        Filters log entries to only include events that occurred on or after the specified date and time.
+        Use this when troubleshooting recent mail delivery issues or investigating problems within a specific timeframe.
 
     .PARAMETER Type
-        Narrow the results by type. Valid values include Error, Warning, Success, Information, Internal
+        Filters log entries by event type to focus troubleshooting on specific mail system behaviors.
+        Use 'Error' to identify failed deliveries, 'Warning' for potential issues, 'Success' to verify deliveries, 'Information' for general events, or 'Internal' for system-level Database Mail operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

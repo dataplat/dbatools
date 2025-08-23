@@ -20,7 +20,9 @@ function Disable-DbaTraceFlag {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER TraceFlag
-        Trace flag number to disable globally
+        Specifies the trace flag numbers to disable globally across all sessions on the SQL Server instance.
+        Only trace flags that are currently running will be disabled - flags not currently active are skipped with a warning.
+        Supports multiple trace flag numbers to disable several flags in a single operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

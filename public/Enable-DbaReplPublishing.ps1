@@ -17,13 +17,14 @@ function Enable-DbaReplPublishing {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SnapshotShare
-        The share used to access snapshot files.
-
-        The default is the ReplData folder within the InstallDataDirectory for the instance.
+        Specifies the network share path where replication snapshot files will be stored and accessed by subscribers.
+        Use this when you need snapshot files in a specific location for network access or storage requirements.
+        Defaults to InstallDataDirectory\ReplData if not specified.
 
     .PARAMETER PublisherSqlLogin
-        If this is used the PublisherSecurity will be set to use this.
-        If not specified WindowsAuthentication will be used - this is the default, and recommended method.
+        SQL Server login credentials to use for publisher security authentication instead of Windows Authentication.
+        Use this when the distributor and publisher are in different domains or when Windows Authentication is not available.
+        Windows Authentication is used by default and is the recommended method for security.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

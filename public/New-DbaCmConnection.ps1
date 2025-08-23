@@ -20,46 +20,62 @@ function New-DbaCmConnection {
         Use this function when you need to pre-configure specific authentication or protocol settings before running other dbatools commands.
 
     .PARAMETER ComputerName
-        The computer to build the connection object for.
+        Specifies the target computer name or IP address where SQL Server instances are running.
+        Use this to pre-configure connection settings before running other dbatools commands against remote SQL Server hosts.
+        Accepts pipeline input for bulk configuration of multiple servers.
 
     .PARAMETER Credential
         The credential to register.
 
     .PARAMETER UseWindowsCredentials
-        Whether using the default windows credentials is legit.
-        Not setting this will not exclude using windows credentials, but only not pre-confirm them as working.
+        Confirms that the current Windows user credentials are valid for connecting to the target computer.
+        Use this when your current domain account has administrative rights on the SQL Server host.
+        Pre-validates these credentials to avoid authentication delays during subsequent dbatools operations.
 
     .PARAMETER OverrideExplicitCredential
-        Setting this will enable the credential override.
-        The override will cause the system to ignore explicitly specified credentials, so long as known, good credentials are available.
+        Forces the connection to use cached working credentials instead of any explicitly provided credentials.
+        Use this when you want to ensure consistent authentication across multiple dbatools commands.
+        Prevents authentication failures when mixed credentials are accidentally specified in scripts.
 
     .PARAMETER DisabledConnectionTypes
-        Explicitly disable connection types.
-        These types will then not be used for connecting to the computer.
+        Specifies which connection protocols to disable when connecting to the remote computer.
+        Use this to force specific connection methods when certain protocols are blocked by network policies.
+        Common values include 'CimRM' to disable CIM over WinRM or 'CimDCOM' to disable DCOM connections.
 
     .PARAMETER DisableBadCredentialCache
-        Will prevent the caching of credentials if set to true.
+        Prevents failed credentials from being stored in the credential cache.
+        Use this in environments where credentials change frequently or when testing different authentication methods.
+        Helps avoid repeated authentication attempts with known bad credentials.
 
     .PARAMETER DisableCimPersistence
-        Will prevent Cim-Sessions to be reused.
+        Forces creation of new CIM sessions for each connection instead of reusing existing sessions.
+        Use this when troubleshooting connection issues or when working with servers that have session limits.
+        May impact performance but ensures fresh connections for each dbatools operation.
 
     .PARAMETER DisableCredentialAutoRegister
-        Will prevent working credentials from being automatically cached
+        Prevents successful credentials from being automatically stored in the connection cache.
+        Use this for one-time operations where you don't want credentials persisted for future use.
+        Useful in high-security environments where credential caching is not permitted.
 
     .PARAMETER EnableCredentialFailover
-        Will enable automatic failing over to known to work credentials, when using bad credentials.
-        By default, passing bad credentials will cause the Computer Management functions to interrupt with a warning (Or exception if in silent mode).
+        Automatically switches to cached working credentials when the initially provided credentials fail.
+        Use this to ensure dbatools operations continue even if incorrect credentials are accidentally specified.
+        Prevents script interruptions due to authentication failures when multiple credential sets are available.
 
     .PARAMETER WindowsCredentialsAreBad
-        Will prevent the windows credentials of the currently logged on user from being used for the remote connection.
+        Explicitly marks the current Windows user credentials as invalid for this computer connection.
+        Use this when your domain account lacks privileges on the target SQL Server host.
+        Forces the use of alternative credentials and prevents authentication attempts with insufficient privileges.
 
     .PARAMETER CimWinRMOptions
-        Specify a set of options to use when connecting to the target computer using CIM over WinRM.
-        Use 'New-CimSessionOption' to create such an object.
+        Configures advanced WinRM connection settings for CIM sessions to the target computer.
+        Use this to specify custom ports, authentication methods, or SSL settings required by your network configuration.
+        Create the options object using New-CimSessionOption with specific timeout, encryption, or proxy settings.
 
     .PARAMETER CimDCOMOptions
-        Specify a set of options to use when connecting to the target computer using CIM over DCOM.
-        Use 'New-CimSessionOption' to create such an object.
+        Configures advanced DCOM connection settings for legacy CIM sessions to the target computer.
+        Use this when connecting to older Windows servers or when WinRM is not available.
+        Create the options object using New-CimSessionOption with DCOM-specific authentication and timeout settings.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

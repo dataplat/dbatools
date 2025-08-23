@@ -17,13 +17,16 @@ function Get-DbaDbTrigger {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to scan for DDL triggers. Accepts wildcards for pattern matching.
+        Use this when you need to audit triggers in specific databases rather than checking all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the trigger scan. Useful for skipping system databases or databases under maintenance.
+        Commonly used to exclude tempdb, model, or databases that don't require trigger auditing.
 
     .PARAMETER InputObject
-        Allow pipedline input from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase via pipeline input for targeted trigger analysis.
+        Use this when you want to process a pre-filtered set of database objects instead of specifying database names.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

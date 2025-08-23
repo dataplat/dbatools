@@ -21,50 +21,52 @@ function Export-DbaUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all InputObject will be processed.
+        Specifies which databases to export users from. Accepts wildcards for pattern matching.
+        Use this when you need to export users from specific databases instead of all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to exclude from user export operations. Accepts wildcards for pattern matching.
+        Useful when exporting from most databases but need to skip system databases or specific application databases.
 
     .PARAMETER User
-        Export only the specified database user(s). If not specified will export all users from the database(s)
+        Exports only the specified database users by name. Accepts multiple user names.
+        Use this when you need to export specific application users or service accounts rather than all database users.
 
     .PARAMETER DestinationVersion
-        To say to which version the script should be generated. If not specified will use database compatibility level
+        Specifies the target SQL Server version for the generated T-SQL script syntax compatibility.
+        Use this when migrating users to a different SQL Server version than the source database compatibility level.
 
     .PARAMETER Encoding
-        Specifies the file encoding. The default is UTF8.
-
-        Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+        Sets the character encoding for the output T-SQL script file. Defaults to UTF8.
+        Change this when you need to match specific encoding requirements for your deployment tools or source control systems.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Sets the directory path where user script files will be created. Creates individual files per user when FilePath is not specified.
+        Use this when organizing exported scripts by directory structure for different environments or applications.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Sets the complete file path for a single consolidated script containing all exported users.
+        Use this when you need all user definitions in one file for batch deployment or version control.
 
     .PARAMETER InputObject
-        Allows database objects to be piped in from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase for processing specific database collections.
+        Use this in pipeline operations when you have pre-filtered database objects to process.
 
     .PARAMETER NoClobber
-        Do not overwrite file
+        Prevents overwriting existing files during export operations.
+        Use this safety feature when running exports to avoid accidentally replacing existing user scripts.
 
     .PARAMETER Append
-        Append to file
+        Adds the exported user scripts to the end of an existing file instead of creating a new file.
+        Use this when consolidating user exports from multiple instances or databases into a single deployment script.
 
     .PARAMETER Passthru
-        Output script to console, useful with | clip
+        Returns the T-SQL script to the console instead of writing to a file.
+        Use this for copying scripts to clipboard, reviewing output before saving, or integrating with other PowerShell operations.
 
     .PARAMETER Template
-        Script user as a templated string that contains tokens {templateUser} and {templateLogin} instead of username and login
+        Replaces actual usernames and login names with placeholders {templateUser} and {templateLogin} in the generated script.
+        Use this when creating reusable deployment scripts that can be parameterized for different environments or applications.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -78,11 +80,12 @@ function Export-DbaUser {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER ScriptingOptionsObject
-        A Microsoft.SqlServer.Management.Smo.ScriptingOptions object with the options that you want to use to generate the t-sql script.
-        You can use the New-DbaScriptingOption to generate it.
+        Provides a custom ScriptingOptions object to control detailed T-SQL generation behavior and formatting.
+        Use this for advanced scenarios requiring specific scripting options beyond the standard Export-DbaUser parameters.
 
     .PARAMETER ExcludeGoBatchSeparator
-        If specified, will NOT script the 'GO' batch separator.
+        Removes the 'GO' batch separator statements from the generated T-SQL script.
+        Use this when the target deployment tool or application doesn't support batch separators or requires continuous T-SQL.
 
     .NOTES
         Tags: User, Export

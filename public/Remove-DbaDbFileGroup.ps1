@@ -18,13 +18,16 @@ function Remove-DbaDbFileGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to target for filegroup removal. Required when using SqlInstance parameter.
+        Use this to limit the operation to specific databases instead of all databases on the instance.
 
     .PARAMETER FileGroup
-        The name(s) of the filegroup(s).
+        Specifies the name(s) of the filegroup(s) to remove from the target databases. Required when specifying databases directly.
+        Only empty filegroups (containing no data files) can be removed. Common scenarios include removing filegroups after data migration or database cleanup projects.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase and Get-DbaDbFileGroup.
+        Accepts database or filegroup objects from Get-DbaDatabase or Get-DbaDbFileGroup for pipeline operations.
+        Use this when you need to remove filegroups from a filtered set of databases or when working with specific filegroup objects.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

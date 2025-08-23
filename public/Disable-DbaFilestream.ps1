@@ -29,7 +29,9 @@ function Disable-DbaFilestream {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        Restart SQL Instance after changes. Use this parameter with care as it overrides whatif.
+        Bypasses confirmation prompts and automatically restarts the SQL Server service to apply FileStream configuration changes immediately.
+        Without this parameter, the function makes configuration changes but requires you to manually restart the SQL service later for changes to take effect.
+        Use with caution in production environments as it causes service downtime during the restart.
 
     .PARAMETER WhatIf
         Shows what would happen if the command runs. The command is not run unless Force is specified.

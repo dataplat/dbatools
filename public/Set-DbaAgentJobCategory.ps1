@@ -17,13 +17,16 @@ function Set-DbaAgentJobCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category
+        Specifies the existing job category name(s) to rename. The category must already exist in the SQL Server Agent on the target instance.
+        Use this to identify which job categories need standardized naming across your environment.
 
     .PARAMETER NewName
-        New name of the job category
+        Specifies the new name(s) for the job category. The new name cannot already exist on the target instance.
+        When renaming multiple categories, provide names in the same order as the Category parameter values.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Bypasses confirmation prompts and performs the rename operation without asking for user confirmation.
+        Use this when scripting bulk category renames where manual confirmation would be impractical.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

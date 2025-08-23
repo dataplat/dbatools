@@ -17,32 +17,36 @@ function New-DbaDbCertificate {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the certificate will be created. Defaults to master.
+        Specifies the database where the certificate will be created. Defaults to master if not specified.
+        Use this when you need certificates in specific databases for TDE, column-level encryption, or Service Broker security.
 
     .PARAMETER Name
-        Optional name to create the certificate. Defaults to database name.
+        Specifies the name for the certificate. Defaults to the database name if not provided.
+        Use descriptive names that indicate the certificate's purpose, such as 'TDE_Certificate' or 'ColumnEncryption_Cert'.
 
     .PARAMETER Subject
-        Optional subject that will be used when creating all certificates
+        Specifies the certificate subject field for identification purposes. Defaults to '[DatabaseName] Database Certificate'.
+        Use meaningful subjects like 'CN=MyApp TDE Certificate' to help identify certificate purposes in production environments.
 
     .PARAMETER StartDate
-        Optional start date that will be used when creating all certificates
-
-        By default, certs will start immediately
+        Specifies when the certificate becomes valid for use. Defaults to the current date and time.
+        Set future start dates when you need to prepare certificates in advance for scheduled encryption implementations.
 
     .PARAMETER ExpirationDate
-        Optional expiration that will be used when creating all certificates
-
-        By default, certs will last 5 years
+        Specifies when the certificate expires and becomes invalid. Defaults to 5 years from the start date.
+        Plan expiration dates carefully as expired certificates will prevent access to encrypted data and require certificate renewal procedures.
 
     .PARAMETER ActiveForServiceBrokerDialog
-        Microsoft has not provided a description so we can only assume the cert is active for service broker dialog
+        Enables the certificate for Service Broker dialog security and message encryption. Disabled by default.
+        Use this when implementing Service Broker applications that require encrypted message communication between services.
 
     .PARAMETER SecurePassword
-        Optional password - if no password is supplied, the password will be protected by the master key
+        Specifies a password to encrypt the certificate's private key. If not provided, the database master key protects the certificate.
+        Use passwords when you need to backup/restore certificates across instances or when the database master key is not available.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline operations.
+        Use this to create certificates across multiple databases efficiently by piping database objects from Get-DbaDatabase.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

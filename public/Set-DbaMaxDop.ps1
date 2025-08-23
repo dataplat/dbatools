@@ -17,19 +17,29 @@ function Set-DbaMaxDop {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more databases to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to configure with database-scoped MaxDOP settings. Only works on SQL Server 2016 and higher.
+        Use this when you need different MaxDOP values for specific databases with unique workload characteristics.
+        Cannot be combined with AllDatabases or ExcludeDatabase parameters.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more databases to exclude from processing. Options for this list are auto-populated from the server
+        Specifies which databases to skip when applying database-scoped MaxDOP settings. Only works on SQL Server 2016 and higher.
+        Use this when you want to configure most databases but leave certain ones (like system databases) unchanged.
+        Cannot be combined with Database or AllDatabases parameters.
 
     .PARAMETER MaxDop
-        Specifies the Max DOP value to set.
+        Sets a specific MaxDOP value instead of using the recommended value from Test-DbaMaxDop.
+        Use this when you have specific performance requirements or want to override the automatic recommendations.
+        Common values are 1 (disable parallelism), 2-4 (typical OLTP), or higher values for data warehouse workloads.
 
     .PARAMETER AllDatabases
-        If this switch is enabled, Max DOP will be set on all databases. This switch is only useful on SQL Server 2016 and higher.
+        Applies database-scoped MaxDOP settings to all databases on the instance. Only works on SQL Server 2016 and higher.
+        Use this when you want consistent MaxDOP values across all databases rather than relying on instance-level settings.
+        Cannot be combined with Database or ExcludeDatabase parameters.
 
     .PARAMETER InputObject
-        If Test-SqlMaxDop has been executed prior to this function, the results may be passed in via this parameter.
+        Accepts the output from Test-DbaMaxDop to avoid re-analyzing server hardware and current settings.
+        Use this when you want to review the recommendations first or apply settings from a previously saved analysis.
+        Can be piped directly from Test-DbaMaxDop for streamlined workflows.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

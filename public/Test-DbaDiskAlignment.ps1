@@ -21,7 +21,8 @@ function Test-DbaDiskAlignment {
         * System drives in versions previous to Windows Server 2008 cannot be aligned, but it is generally not recommended to place SQL Server databases on system drives.
 
     .PARAMETER ComputerName
-        The target computer or computers.
+        Specifies the Windows computer(s) to test for disk partition alignment issues. Accepts multiple server names for batch processing.
+        Use this to identify storage configuration problems that could impact SQL Server I/O performance across your environment.
 
     .PARAMETER Credential
         Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
@@ -36,7 +37,8 @@ function Test-DbaDiskAlignment {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER NoSqlCheck
-        If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
+        Tests alignment on all disk partitions instead of limiting the check to only those containing SQL Server data or log files.
+        Use this when you want a comprehensive disk alignment assessment for the entire server, not just SQL Server storage.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

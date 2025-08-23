@@ -10,13 +10,17 @@ function Remove-DbaClientAlias {
         Commonly used when decommissioning servers, updating connection strings, or troubleshooting connectivity issues caused by stale alias configurations.
 
     .PARAMETER ComputerName
-        The target computer where the alias will be created.
+        Specifies the target computer(s) where SQL Server client aliases will be removed from the Windows registry.
+        Use this when you need to clean up aliases on remote workstations or application servers.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Allows you to login to remote computers using alternative credentials
 
     .PARAMETER Alias
-        The alias or array of aliases to be deleted
+        Specifies the SQL Server client alias name(s) to remove from both 32-bit and 64-bit registry locations.
+        Use this to clean up outdated aliases that redirect connections to decommissioned servers or incorrect instances.
+        Accepts multiple alias names for bulk cleanup operations.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

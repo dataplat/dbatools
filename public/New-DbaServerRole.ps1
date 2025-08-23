@@ -17,13 +17,12 @@ function New-DbaServerRole {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
-        Server-Level role to be created.
+        Specifies the name of the custom server-level role to create. Accepts multiple role names to create several roles in one operation.
+        Use this when implementing role-based security models or when you need custom permission groups beyond the built-in server roles like sysadmin or dbcreator.
 
     .PARAMETER Owner
-        The owner of the role. If not specified will assume the default dbo.
-
-    .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Sets the login that will own the newly created server role. Defaults to 'dbo' if not specified.
+        Specify a different owner when you need the role managed by a specific login for security or organizational requirements.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

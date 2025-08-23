@@ -24,10 +24,12 @@ function Get-DbaDbIdentity {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for identity column values. If not specified, all accessible databases on the instance are processed.
+        Use this to focus on specific databases when you don't need identity information from every database on the server.
 
     .PARAMETER Table
-        The table(s) for which to check the current identity value.
+        Specifies the table names to check for current identity seed and column values. Accepts schema-qualified names like 'Production.ScrapReason'.
+        This parameter is required since DBCC CHECKIDENT must target specific tables. Use a query against sys.columns to find all tables with identity columns if needed.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

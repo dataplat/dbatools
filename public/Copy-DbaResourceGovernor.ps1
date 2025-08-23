@@ -13,30 +13,28 @@ function Copy-DbaResourceGovernor {
         Note that Resource Governor is only available in Enterprise, Datacenter, and Developer editions of SQL Server. The -ResourcePool parameter is auto-populated for command-line completion and can be used to copy only specific objects.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        Specifies the source SQL Server instance containing the Resource Governor configuration to copy. Must have sysadmin privileges and be SQL Server 2008 or later.
+        Use this to identify which server contains the Resource Governor setup you want to migrate to other instances.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Provides alternative credentials for connecting to the source SQL Server instance. Accepts PowerShell credential objects from Get-Credential.
+        Use this when your current Windows credentials don't have access to the source server or when you need to use SQL Server authentication.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2008 or higher.
+        Specifies the destination SQL Server instance(s) where the Resource Governor configuration will be copied. Accepts multiple instances and requires sysadmin privileges on each.
+        Use this to define which servers should receive the migrated Resource Governor pools, workload groups, and classifier functions.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Provides alternative credentials for connecting to the destination SQL Server instance(s). Accepts PowerShell credential objects from Get-Credential.
+        Use this when your current Windows credentials don't have access to the destination servers or when you need to use SQL Server authentication.
 
     .PARAMETER ResourcePool
-        Specifies the resource pool(s) to process. Options for this list are auto-populated from the server. If unspecified, all resource pools will be processed.
+        Specifies which resource pools to copy by name. Supports tab completion with pools from the source server and accepts multiple pool names.
+        Use this when you only want to migrate specific resource pools rather than the entire Resource Governor configuration. Excludes system pools (internal, default) automatically.
 
     .PARAMETER ExcludeResourcePool
-        Specifies the resource pool(s) to exclude. Options for this list are auto-populated from the server
+        Specifies which resource pools to skip during the copy operation. Supports tab completion and accepts multiple pool names.
+        Use this when you want to migrate most of your Resource Governor configuration but exclude certain pools that shouldn't be copied to the destination.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -45,7 +43,8 @@ function Copy-DbaResourceGovernor {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the policies will be dropped and recreated on Destination.
+        Drops and recreates existing resource pools, workload groups, and classifier functions on the destination server.
+        Use this when you need to overwrite existing Resource Governor objects that would otherwise be skipped due to name conflicts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -20,10 +20,12 @@ function Get-DbaWaitingTask {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Spid
-        Find the waiting task of one or more specific process ids
+        Filters results to show waiting tasks for specific session IDs only. Accepts one or more SPIDs as an array.
+        Use this when troubleshooting known problematic sessions or when you want to focus on specific user connections instead of scanning all active sessions.
 
     .PARAMETER IncludeSystemSpid
-        If this switch is enabled, the output will include the system sessions.
+        Includes system sessions (SPIDs) in the results along with user sessions. By default, only user sessions are returned.
+        Enable this when diagnosing system-level performance issues or when system processes might be causing blocking or resource contention.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

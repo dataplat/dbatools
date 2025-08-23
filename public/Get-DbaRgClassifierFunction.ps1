@@ -17,7 +17,8 @@ function Get-DbaRgClassifierFunction {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaResourceGovernor
+        Accepts Resource Governor objects piped from Get-DbaResourceGovernor.
+        Use this when processing multiple instances or when you already have Resource Governor objects to work with, allowing for efficient pipeline operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -34,7 +34,9 @@ function New-DbaAvailabilityGroup {
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
 
     .PARAMETER Primary
-        The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
+        Specifies the SQL Server instance that will host the primary replica of the availability group.
+        This instance must have AlwaysOn Availability Groups enabled and be running SQL Server 2012 or higher.
+        Use this when setting up the main server that will handle write operations and coordinate with secondary replicas.
 
     .PARAMETER PrimarySqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -44,7 +46,9 @@ function New-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Secondary
-        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
+        Specifies one or more SQL Server instances that will host secondary replicas in the availability group.
+        All instances must have AlwaysOn enabled and be running SQL Server 2012 or higher.
+        These servers will receive synchronized copies of your databases and can serve read-only workloads or provide disaster recovery.
 
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -54,141 +58,149 @@ function New-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The name of the Availability Group.
+        Specifies the name for the new availability group.
+        This name must be unique across all availability groups in the Windows Server Failover Cluster.
+        Choose a descriptive name that reflects the application or purpose, as this will be used for monitoring and management.
 
     .PARAMETER IsContained
-        Builds the Availability Group as contained. Only supported in SQL Server 2022 or higher.
-
-        https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/contained-availability-groups-overview
+        Creates a contained availability group that includes system databases alongside user databases.
+        Only supported in SQL Server 2022 and above, this eliminates the need to manually synchronize logins and jobs.
+        Use this for simplified management when you need consistent security objects across all replicas.
 
     .PARAMETER ReuseSystemDatabases
-        Used when rebuilding an availability group with the same name, where system databases already exist for the contained availability group.
+        Reuses existing system databases when recreating a contained availability group with the same name.
+        Only applicable with contained availability groups (-IsContained).
+        Use this when rebuilding an AG to avoid conflicts with previously created system database copies.
 
     .PARAMETER DtcSupport
-        Indicates whether the DtcSupport is enabled
+        Enables support for distributed transactions using Microsoft Distributed Transaction Coordinator (DTC).
+        Required when applications use distributed transactions that span databases in the availability group.
+        Note that DTC support is not available on Linux SQL Server instances.
 
     .PARAMETER ClusterType
-        Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.
-        Options include: Wsfc, External or None.
-
-        Defaults to Wsfc (Windows Server Failover Cluster).
-
-        The default can be changed with:
-        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.ClusterType' -Value '...' -Passthru | Register-DbatoolsConfig
+        Defines the clustering technology used by the availability group (SQL Server 2017+).
+        Options: Wsfc (Windows Server Failover Cluster), External (Linux Pacemaker), or None (no cluster).
+        Use 'None' for read-scale scenarios without automatic failover, 'External' for Linux environments, or 'Wsfc' for traditional Windows clustering.
 
     .PARAMETER AutomatedBackupPreference
-        Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.
+        Controls which replicas are preferred for automated backup operations.
+        Options: Primary, Secondary, SecondaryOnly, or None.
+        Use 'Secondary' to offload backup I/O from the primary, or 'SecondaryOnly' to ensure backups never impact primary performance.
 
     .PARAMETER FailureConditionLevel
-        Specifies the different conditions that can trigger an automatic failover in Availability Group.
-
-        Defaults to OnCriticalServerErrors (Level 3).
-
-        From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-availability-group-transact-sql:
-            Level 1 = OnServerDown
-            Level 2 = OnServerUnresponsive
-            Level 3 = OnCriticalServerErrors (the default in CREATE AVAILABILITY GROUP and in this command)
-            Level 4 = OnModerateServerErrors
-            Level 5 = OnAnyQualifiedFailureCondition
-
-        The default can be changed with:
-        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.FailureConditionLevel' -Value 'On...' -Passthru | Register-DbatoolsConfig
+        Determines what conditions trigger automatic failover in the availability group.
+        Default is Level 3 (OnCriticalServerErrors), which balances protection against false positives.
+        Use Level 1 for fastest failover, Level 5 for maximum sensitivity, or adjust based on your tolerance for automatic failover events.
 
     .PARAMETER HealthCheckTimeout
-        This setting used to specify the length of time, in milliseconds, that the SQL Server resource DLL should wait for information returned by the sp_server_diagnostics stored procedure before reporting the Always On Failover Cluster Instance (FCI) as unresponsive.
-
-        Changes that are made to the timeout settings are effective immediately and do not require a restart of the SQL Server resource.
-
-        Defaults to 30000 (30 seconds).
+        Sets the timeout in milliseconds for health check responses from the sp_server_diagnostics procedure.
+        Default is 30000 (30 seconds). Lower values provide faster failure detection but may cause false positives.
+        Increase this value in environments with high I/O load or slower storage to prevent unnecessary failovers.
 
     .PARAMETER Basic
-        Indicates whether the availability group is Basic Availability Group.
-
-        https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/basic-availability-groups-always-on-availability-groups
+        Creates a Basic Availability Group limited to one database and two replicas.
+        Available in SQL Server 2016 Standard Edition and above as an alternative to Database Mirroring.
+        Use this for simple two-node high availability scenarios when you don't need multiple databases or advanced features.
 
     .PARAMETER DatabaseHealthTrigger
-        Indicates whether the availability group triggers the database health.
+        Enables database-level health monitoring that can trigger automatic failover.
+        When enabled, database corruption or other critical database errors can initiate failover.
+        Use this for additional protection when database integrity is more critical than minimizing failover events.
 
     .PARAMETER Passthru
-        Don't create the availability group, just pass thru an object that can be further customized before creation.
+        Returns the availability group object without creating it, allowing further customization.
+        Use this when you need to modify advanced properties or add custom configurations before creating the AG.
+        The returned object can be passed to other dbatools commands or have properties modified directly.
 
     .PARAMETER Database
-        The database or databases to add.
+        Specifies which databases to add to the availability group during creation.
+        Databases must be in Full recovery model and have recent transaction log backups.
+        Use this to automatically include databases rather than adding them separately after AG creation.
 
     .PARAMETER SharedPath
-        The network share where the backups will be backed up and restored from.
-
-        Each SQL Server service account must have access to this share.
-
-        NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
+        Specifies the network path where database backups will be stored during secondary replica initialization.
+        All SQL Server service accounts must have read/write access to this location.
+        Required for manual seeding mode when adding databases - backups remain on the share after completion.
 
     .PARAMETER UseLastBackup
-        Use the last full and log backup of database. A log backup must be the last backup.
+        Uses existing backup files instead of creating new ones for database initialization.
+        The most recent full backup and subsequent log backups will be restored to secondary replicas.
+        Use this to save time and storage when recent backups are already available and accessible.
 
     .PARAMETER Force
-        Drop and recreate the database on remote servers using fresh backup.
+        Removes existing databases on secondary replicas before restoring from backup.
+        Use this when databases already exist on secondary servers but you want to refresh them.
+        Requires SharedPath or UseLastBackup to be specified for the restore operation.
 
     .PARAMETER AvailabilityMode
-        Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
+        Controls whether transaction commits wait for secondary replica acknowledgment.
+        SynchronousCommit ensures zero data loss but may impact performance over distance.
+        Use AsynchronousCommit for disaster recovery replicas or when network latency affects performance.
 
     .PARAMETER FailoverMode
-        Sets the failover mode of the availability group replica. Options are Automatic, Manual and External. Automatic is default.
+        Determines how failover occurs for the availability group.
+        Automatic enables cluster-managed failover with synchronous replicas, Manual requires DBA intervention.
+        Use External for Linux environments with Pacemaker cluster management.
 
     .PARAMETER BackupPriority
-        Sets the backup priority availability group replica. Default is 50.
+        Sets the priority for backup operations on this replica (0-100, default 50).
+        Higher values make this replica more preferred for automated backup jobs.
+        Use lower values on primary replicas to offload backup I/O, higher values on dedicated backup servers.
 
     .PARAMETER Endpoint
-        By default, this command will attempt to find a DatabaseMirror endpoint. If one does not exist, it will create it.
-
-        If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
+        Specifies the name for the database mirroring endpoint used for availability group communication.
+        If not specified, the command searches for existing endpoints or creates 'hadr_endpoint'.
+        Use a custom name when you have specific endpoint naming standards or multiple AGs on the same instance.
 
     .PARAMETER EndpointUrl
-        By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.
-
-        Use EndpointUrl if different URLs are required due to special network configurations.
-        EndpointUrl has to be an array of strings in format 'TCP://system-address:port', one entry for every instance.
-        First entry for the primary instance, following entries for secondary instances in the order they show up in Secondary.
-        See details regarding the format at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica
+        Specifies custom TCP URLs for availability group endpoints when automatic detection isn't suitable.
+        Required format: 'TCP://hostname:port' for each instance (primary first, then secondaries).
+        Use this in complex network environments with custom DNS, firewalls, or when instances use non-default ports.
 
     .PARAMETER ConnectionModeInPrimaryRole
-        Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
+        Controls what connections are allowed to the primary replica.
+        AllowAllConnections (default) permits both read-write and read-intent connections.
+        Use AllowReadWriteConnections to restrict read-only workloads to secondary replicas only.
 
     .PARAMETER ConnectionModeInSecondaryRole
-        Specifies the connection modes of an Availability Replica in secondary role.
-        Options include: AllowNoConnections (Alias: No), AllowReadIntentConnectionsOnly (Alias: Read-intent only),  AllowAllConnections (Alias: Yes)
-
-        Defaults to AllowNoConnections.
-
-        The default can be changed with:
-        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.ConnectionModeInSecondaryRole' -Value '...' -Passthru | Register-DbatoolsConfig
+        Controls what connections are allowed to secondary replicas.
+        Default is AllowNoConnections to prevent accidental writes or outdated reads.
+        Use AllowReadIntentConnectionsOnly for reporting workloads, or AllowAllConnections for maximum flexibility.
 
     .PARAMETER SeedingMode
-        Specifies how the secondary replica will be initially seeded.
-
-        Automatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
-
-        Manual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
+        Determines how databases are initialized on secondary replicas.
+        Manual (default) uses backup/restore through shared storage, Automatic uses direct network streaming.
+        Use Automatic for SQL Server 2016+ to simplify setup when network bandwidth is sufficient and shared storage is limited.
 
     .PARAMETER Certificate
-        Specifies that the endpoint is to authenticate the connection using the certificate specified by certificate_name to establish identity for authorization.
-
-        The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
+        Specifies the certificate name for endpoint authentication instead of Windows authentication.
+        Both endpoints must have matching certificates with corresponding public/private key pairs.
+        Use this for cross-domain scenarios or when Windows authentication is not available between replicas.
 
     .PARAMETER ConfigureXESession
-        Configure the AlwaysOn_health extended events session to start automatically on every replica as the SSMS wizard would do.
-        https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-extended-events#BKMK_alwayson_health
+        Automatically starts the AlwaysOn_health Extended Events session on all replicas.
+        This session captures availability group events for monitoring and troubleshooting.
+        Use this to match the behavior of the SQL Server Management Studio AG wizard and enable built-in diagnostics.
 
     .PARAMETER IPAddress
-        Sets the IP address of the availability group listener.
+        Specifies one or more static IP addresses for the availability group listener.
+        Each IP should correspond to a different subnet if replicas span multiple subnets.
+        Use static IPs when DHCP is not available or when you need predictable listener addresses for applications.
 
     .PARAMETER SubnetMask
-        Sets the subnet IP mask of the availability group listener.
+        Specifies the subnet mask for static IP listener configuration.
+        Default is 255.255.255.0, which works for most standard network configurations.
+        Adjust this to match your network's subnet configuration when using custom IP addressing.
 
     .PARAMETER Port
-        Sets the number of the port used to communicate with the availability group.
+        Specifies the TCP port for the availability group listener.
+        Default is 1433 (standard SQL Server port). Applications connect to this port to reach the current primary.
+        Use a different port when 1433 is already in use or for security through obscurity.
 
     .PARAMETER Dhcp
-        Indicates whether the object is DHCP.
+        Configures the availability group listener to use DHCP for IP address assignment.
+        The cluster will request an IP address from DHCP servers on each replica's subnet.
+        Use this when static IP management is not desired and DHCP reservations can provide consistent addressing.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

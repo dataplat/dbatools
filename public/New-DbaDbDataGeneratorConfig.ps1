@@ -25,26 +25,32 @@ function New-DbaDbDataGeneratorConfig {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Databases to process through
+        Specifies which databases to analyze for data generation configuration creation. Accepts multiple database names.
+        Use this when you need to create test data configs for specific databases instead of all databases on the instance.
 
     .PARAMETER Table
-        Tables to process. By default all the tables will be processed.
+        Specifies which tables to include in the data generation configuration. Accepts multiple table names and supports wildcards.
+        Use this when you only need test data for specific tables rather than analyzing the entire database schema.
 
     .PARAMETER ResetIdentity
-        Resets the identity column for a table to it's starting value. By default it will continue with the next identity.
+        Controls whether identity columns should reset to their seed values when generating test data. When enabled, identity values start from the original seed.
+        Use this when you need predictable, consistent identity values across test data generation runs instead of continuing from existing maximum values.
 
     .PARAMETER TruncateTable
-        Truncates the tabel befoe inserting the values.
+        Enables table truncation before inserting generated test data. When specified, existing data is removed before populating with fake data.
+        Use this when you need clean test environments or want to replace all existing data rather than appending to current table contents.
 
     .PARAMETER Rows
-        Amount of rows that need to be generated. The default is 1000.
+        Sets the number of test data rows to generate for each table in the configuration. Defaults to 1000 rows per table.
+        Adjust this based on your testing needs - use smaller values for development environments or larger values for performance testing scenarios.
 
     .PARAMETER Path
-        Path where to save the generated JSON files.
-        The naming convention will be "servername.databasename.tables.json".
+        Specifies the directory where JSON configuration files will be saved. Files are named using the pattern "servername.databasename.DataGeneratorConfig.json".
+        Choose a location accessible to your development team since these config files will be used by Invoke-DbaDbDataGenerator to create the actual test data.
 
     .PARAMETER Force
-        Forcefully execute commands when needed.
+        Allows the function to create the specified Path directory if it doesn't exist. Without this switch, the function will fail if the target directory is missing.
+        Use this when setting up new test data workflows where the output directory structure hasn't been established yet.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

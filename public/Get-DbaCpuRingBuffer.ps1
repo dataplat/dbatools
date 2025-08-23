@@ -26,7 +26,8 @@ function Get-DbaCpuRingBuffer {
         Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
     .PARAMETER CollectionMinutes
-        Allows you to specify a Collection Period in Minutes. Default is 60 minutes
+        Specifies how many minutes of historical CPU data to retrieve from the ring buffer. Defaults to 60 minutes.
+        Use this to extend the analysis window when investigating longer-term CPU trends or to focus on recent activity with shorter periods. Maximum available history is typically 256 minutes depending on system activity.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

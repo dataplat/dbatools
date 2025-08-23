@@ -17,14 +17,16 @@ function New-DbaAgentJobCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category
+        Specifies the name of the SQL Agent job category to create. Accepts multiple category names when you need to create several categories at once.
+        Use descriptive names that reflect job functions like 'Database Maintenance', 'ETL Jobs', or 'Reporting' to help organize jobs by purpose or department.
 
     .PARAMETER CategoryType
-        The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-        The default is "LocalJob" and will automatically be set when no option is chosen.
+        Defines the scope and purpose of the job category. Valid options are "LocalJob" for jobs that run on the local instance, "MultiServerJob" for jobs in multi-server environments, or "None" for general-purpose categories.
+        Defaults to "LocalJob" when not specified, which is appropriate for most standalone SQL Server instances.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Suppresses confirmation prompts during category creation. Sets the confirmation preference to bypass interactive confirmation requests.
+        Use this when automating category creation in scripts where manual confirmation is not desired or possible.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

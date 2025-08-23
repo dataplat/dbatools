@@ -13,7 +13,9 @@ function Update-DbaBuildReference {
         Use Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference' to see the current download URL.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install from instead of downloading from Github.
+        Specifies the path to a local JSON build reference file to use instead of downloading from the internet.
+        Use this in air-gapped environments or when you need to use a specific version of the build reference data.
+        The file must be the dbatools-buildref-index.json format containing SQL Server build mappings and patch information.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

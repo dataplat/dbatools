@@ -11,7 +11,9 @@ function Get-DbaWsfcResourceType {
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the target Windows Server Failover Cluster by providing either a cluster node name or the cluster name itself.
+        Use this when connecting to a specific cluster to retrieve its available resource types for SQL Server FCI planning or troubleshooting.
+        Defaults to the local computer name if not specified.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

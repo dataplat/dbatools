@@ -20,25 +20,32 @@ function Get-DbaModule {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to search for modified modules. Accepts database names or wildcards for pattern matching.
+        Use this when you need to focus on specific databases rather than scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude.
+        Excludes specific databases from the module search. Useful when you want to search most databases but skip certain ones like test or archive databases.
+        Commonly used to exclude databases under maintenance or those known to have frequent module changes.
 
     .PARAMETER ModifiedSince
-        DateTime value to use as minimum modified date of module.
+        Returns only modules modified after this date and time. Defaults to 1900-01-01 to include all modules.
+        Essential for tracking recent code changes after deployments, maintenance windows, or troubleshooting sessions.
 
     .PARAMETER Type
-        Limit by specific type of module. Valid choices include: View, TableValuedFunction, DefaultConstraint, StoredProcedure, Rule, InlineTableValuedFunction, Trigger, ScalarFunction
+        Filters results to specific module types only. Valid choices include: View, TableValuedFunction, DefaultConstraint, StoredProcedure, Rule, InlineTableValuedFunction, Trigger, ScalarFunction.
+        Use this when investigating specific types of database objects, such as finding all modified stored procedures after an application release.
 
     .PARAMETER ExcludeSystemDatabases
-        Allows you to suppress output on system databases
+        Excludes system databases (master, model, msdb, tempdb) from the search. Focus on user databases only.
+        Recommended for routine auditing since system database changes are typically handled by SQL Server updates rather than application deployments.
 
     .PARAMETER ExcludeSystemObjects
-        Allows you to suppress output on system objects
+        Excludes Microsoft-shipped system objects from results. Shows only user-created modules.
+        Use this to filter out built-in SQL Server objects and focus on custom business logic that your team maintains.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase for pipeline operations. Allows chaining commands together.
+        Useful for complex filtering scenarios where you first select databases with specific criteria, then search for modules within those databases.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

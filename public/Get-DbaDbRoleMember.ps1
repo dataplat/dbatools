@@ -17,25 +17,32 @@ function Get-DbaDbRoleMember {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for role membership. Accepts wildcards for pattern matching.
+        Use this to focus on specific databases rather than scanning all databases on the instance. Helpful when you only need role membership data for particular applications or business units.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Excludes specific databases from role membership analysis. Supports wildcards for pattern matching.
+        Use this to skip system databases like tempdb or databases under maintenance when performing enterprise-wide role audits.
 
     .PARAMETER Role
-        The role(s) to process. If unspecified, all roles will be processed.
+        Limits the analysis to specific database roles by name. Accepts wildcards for pattern matching.
+        Use this when investigating membership of particular roles like 'db_owner', 'db_datareader', or custom application roles during security reviews or troubleshooting.
 
     .PARAMETER ExcludeRole
-        The role(s) to exclude.
+        Excludes specific database roles from the membership analysis. Supports wildcards for pattern matching.
+        Use this to filter out roles you're not interested in, such as excluding 'public' role or application-specific roles during focused security audits.
 
     .PARAMETER ExcludeFixedRole
-        Excludes all members of fixed roles.
+        Excludes members of SQL Server's built-in database roles like db_owner, db_datareader, db_datawriter, etc.
+        Use this when you want to focus only on custom application roles and their memberships, filtering out the standard SQL Server role assignments.
 
     .PARAMETER IncludeSystemUser
-        Includes system users. By default system users are not included.
+        Includes SQL Server system users like 'dbo', 'guest', 'sys', and 'INFORMATION_SCHEMA' in the results.
+        Use this for comprehensive security audits or when troubleshooting system-level permission issues. Normally these accounts are excluded to focus on business user accounts.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+        Accepts piped objects from Get-DbaDbRole, Get-DbaDatabase, or SQL Server instances for processing.
+        Use this to chain commands together, such as first filtering roles with Get-DbaDbRole then analyzing their membership, or to process multiple database objects efficiently.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

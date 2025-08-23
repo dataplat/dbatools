@@ -29,27 +29,32 @@ function Test-DbaDbCompression {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for compression opportunities. Accepts multiple database names and supports wildcards.
+        Use this to focus analysis on specific databases rather than scanning all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during compression analysis. Helpful when you want to analyze most databases but exclude specific ones.
+        Commonly used to skip databases that are already compressed, read-only, or contain sensitive data requiring separate analysis.
 
     .PARAMETER Schema
-        Filter to only get specific schemas If unspecified, all schemas will be processed.
+        Filters analysis to specific database schemas only. Accepts multiple schema names for targeted analysis.
+        Use this when you need compression recommendations for tables in specific schemas like 'dbo', 'sales', or custom application schemas.
 
     .PARAMETER Table
-        Filter to only get specific tables If unspecified, all User tables will be processed.
+        Filters analysis to specific table names only. Accepts multiple table names for focused compression analysis.
+        Use this when investigating compression opportunities for known large tables or when validating compression recommendations for specific objects.
 
     .PARAMETER ResultSize
-        Allows you to limit the number of results returned, as some systems can have very large number of tables.  Default value is no restriction.
+        Limits the number of objects analyzed per database to control analysis scope and execution time. No limit applied when unspecified.
+        Use this on large databases to focus on the biggest storage consumers first, as compression analysis can be time-intensive on systems with thousands of tables.
 
     .PARAMETER Rank
-        Allows you to specify the field used for ranking when determining the ResultSize
-        Can be either TotalPages, UsedPages or TotalRows with default of TotalPages. Only applies when ResultSize is used.
+        Determines how objects are prioritized when ResultSize limits are applied. Options are TotalPages (default), UsedPages, or TotalRows.
+        TotalPages focuses on allocated storage, UsedPages targets actual data consumption, and TotalRows prioritizes by record count for different optimization strategies.
 
     .PARAMETER FilterBy
-        Allows you to specify level of filtering when determining the ResultSize
-        Can be at either Table, Index or Partition level with default of Partition. Only applies when ResultSize is used.
+        Sets the granularity level for ResultSize filtering. Options are Partition (default), Index, or Table level filtering.
+        Partition level provides most detailed analysis per partition, Index level groups by index, and Table level gives broader table-focused results.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

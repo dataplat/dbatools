@@ -24,22 +24,28 @@ function Export-DbaCredential {
         Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        The path to the directory that will contain the exported sql file.
+        Specifies the directory where the exported T-SQL script file will be saved. Defaults to the configured DbatoolsExport path.
+        Use this when you want to control where credential scripts are stored for organization or compliance requirements.
 
     .PARAMETER FilePath
-       The specific path to a file which will contain the output.
+        Specifies the complete file path and name for the exported T-SQL script. Overrides the Path parameter when specified.
+        Use this when you need precise control over the output file name and location, especially for automated processes.
 
     .PARAMETER Identity
-        The credentials to export. If unspecified, all credentials will be exported.
+        Specifies which credential names to export by filtering on the Identity property. Accepts an array of credential names.
+        Use this to export specific credentials instead of all credentials, particularly useful when migrating only certain application or service accounts.
 
     .PARAMETER InputObject
-        Allow credentials to be piped in from Get-DbaCredential
+        Accepts credential objects piped from Get-DbaCredential, allowing for advanced filtering and processing scenarios.
+        Use this in pipeline operations when you need to filter or process credentials before exporting them.
 
     .PARAMETER ExcludePassword
-        Exports the SQL credential without any sensitive information.
+        Exports credential definitions without the actual password values, replacing them with placeholder text.
+        Use this for documentation purposes or when you need credential structure without sensitive data for security reviews.
 
     .PARAMETER Append
-        Append to Path
+        Adds the exported credential scripts to an existing file instead of overwriting it.
+        Use this when consolidating credentials from multiple instances into a single deployment script.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -23,10 +23,12 @@ function Clear-DbaPlanCache {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Threshold
-        Memory used threshold.
+        Specifies the memory threshold in megabytes for single-use adhoc and prepared plans before the plan cache is cleared. Default is 100 MB.
+        Use this to control when plan cache cleanup occurs based on your server's memory capacity and workload patterns.
 
     .PARAMETER InputObject
-        Enables results to be piped in from Get-DbaPlanCache.
+        Accepts plan cache objects from Get-DbaPlanCache via pipeline input. Each object contains plan cache statistics including memory usage and instance details.
+        Use this to process multiple instances or when you need to filter plan cache results before clearing.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

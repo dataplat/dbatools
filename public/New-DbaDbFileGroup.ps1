@@ -18,16 +18,20 @@ function New-DbaDbFileGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies the database(s) where the new filegroup will be created. Supports multiple database names for bulk operations.
+        Use this when you need to create the same filegroup structure across multiple databases for consistency.
 
     .PARAMETER FileGroup
-        The name of the new filegroup.
+        Sets the name for the new filegroup being created. The name must be unique within the database and follow SQL Server naming conventions.
+        Use descriptive names like 'HR_Data' or 'Archive_FG' to indicate the data's purpose or department for better organization.
 
     .PARAMETER FileGroupType
-        The type of the file group. Possible values are "FileStreamDataFileGroup", "MemoryOptimizedDataFileGroup", "RowsFileGroup". The default is "RowsFileGroup".
+        Defines the storage type for the filegroup: RowsFileGroup for regular tables and indexes, FileStreamDataFileGroup for FILESTREAM data like documents and images, or MemoryOptimizedDataFileGroup for In-Memory OLTP tables.
+        Most scenarios use the default RowsFileGroup unless you're specifically implementing FILESTREAM or In-Memory OLTP features.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase for pipeline operations. This enables you to filter databases first, then create filegroups on the selected ones.
+        Useful when working with multiple databases that match specific criteria rather than specifying database names directly.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

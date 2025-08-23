@@ -17,19 +17,29 @@ function New-DbaDbRole {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to create the new role(s) in. Accepts wildcards for pattern matching.
+        Use this when you need to create roles in specific databases instead of all databases on the instance.
+        If unspecified, the role will be created in all accessible databases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to exclude from role creation when processing all databases.
+        Use this to skip system databases or specific user databases where the role shouldn't be created.
+        Particularly useful when creating standardized roles across most but not all databases.
 
     .PARAMETER Role
-        The role(s) to create.
+        Specifies the name(s) of the custom database role(s) to create.
+        Use meaningful names that reflect the role's intended permissions like 'AppReadOnly' or 'ReportUsers'.
+        The function will create each specified role in all target databases.
 
     .PARAMETER Owner
-        The owner of the role. If not specified will assume the default dbo.
+        Specifies the database principal that will own the new role. Defaults to 'dbo' if not specified.
+        Use this when you need a specific user or role to own the new database role for security or organizational requirements.
+        The owner must exist in each target database.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase for role creation.
+        Use this for advanced filtering or when working with databases from multiple instances.
+        This parameter allows you to chain Get-DbaDatabase with specific filters before creating roles.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

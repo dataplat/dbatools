@@ -17,22 +17,28 @@ function New-DbaCredential {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The Credential name
+        Specifies the name for the SQL Server credential object. Defaults to the Identity value if not provided.
+        Use a descriptive name that identifies the purpose, like 'AzureBackupStorage' or 'NetworkShareAccess'.
 
     .PARAMETER Identity
-        The Credential Identity
+        Defines the authentication identity for the credential. Can be a Windows account, service account, Azure storage URI, or special values like 'SHARED ACCESS SIGNATURE' or 'Managed Identity'.
+        For Azure backup scenarios, use the full blob container URI or SAS/Managed Identity authentication methods.
 
     .PARAMETER SecurePassword
-        Secure string used to authenticate the Credential Identity
+        Provides the password or access key as a SecureString for credential authentication. Required for most authentication methods except Managed Identity.
+        For Azure storage, this would be the access key or SAS token. Use Get-Credential or ConvertTo-SecureString to create the SecureString.
 
     .PARAMETER MappedClassType
-        Sets the class associated with the credential.
+        Specifies the credential mapping class type. Use 'CryptographicProvider' for credentials that will use cryptographic providers, or 'None' for standard credentials.
+        Most common scenarios use 'None' (default). Only specify 'CryptographicProvider' when working with EKM or custom cryptographic providers.
 
     .PARAMETER ProviderName
-        Sets the name of the provider
+        Specifies the name of the cryptographic provider when MappedClassType is 'CryptographicProvider'.
+        Only required when using Extensible Key Management (EKM) scenarios with third-party cryptographic providers.
 
     .PARAMETER Force
-        If credential exists, drop and recreate
+        Drops and recreates the credential if it already exists on the target instance.
+        Use this when you need to update an existing credential's identity or password, as SQL Server credentials cannot be modified once created.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed

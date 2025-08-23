@@ -45,35 +45,36 @@ function Expand-DbaDbLogFile {
         The target SQL Server instance or instances.
 
     .PARAMETER Database
-        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to expand transaction log files for. Accepts wildcards for pattern matching.
+        If not specified, all accessible databases on the instance will be processed. Use this when you need to target specific databases instead of processing the entire instance.
 
     .PARAMETER TargetLogSize
-        Specifies the target size of the transaction log file in megabytes.
+        Sets the final size you want the transaction log to reach, specified in megabytes.
+        This should be large enough to handle your typical transaction volume plus growth buffer. Common values range from 1GB (1024MB) for smaller databases to 10GB+ for high-transaction systems.
 
     .PARAMETER IncrementSize
-        Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSize, you will be prompted to confirm your choice.
-
-        This value will be calculated if not specified.
+        Controls the size of each growth operation in megabytes during the expansion process.
+        If not specified, the function calculates an optimal increment size based on your target size and SQL Server version to minimize VLF fragmentation. Only specify this if you need to override the intelligent defaults.
 
     .PARAMETER LogFileId
-        Specifies the file number(s) of additional transaction log files to grow.
-
-        If this value is not specified, only the first transaction log file will be processed.
+        Targets a specific transaction log file by its file ID number when databases have multiple log files.
+        Use this when you need to expand secondary log files instead of the primary log file. Get the file ID from sys.database_files or SSMS properties.
 
     .PARAMETER ShrinkLogFile
-        If this switch is enabled, your transaction log files will be shrunk.
+        Shrinks the transaction log to the ShrinkSize before expanding it to the target size.
+        This removes excessive VLF fragmentation by first reducing the log, then growing it with optimal increment sizes. Requires transaction log backups and cannot be used with Simple recovery model databases.
 
     .PARAMETER ShrinkSize
-        Specifies the target size of the transaction log file for the shrink operation in megabytes.
+        Sets the intermediate size in megabytes to shrink the log file to before re-expanding.
+        This should be small enough to remove VLF fragmentation but large enough to handle active transactions. Typical values are 10-100MB depending on transaction activity.
 
     .PARAMETER BackupDirectory
-        Specifies the location of your backups. Backups must be performed to shrink the transaction log.
-
-        If this value is not specified, the SQL Server instance's default backup directory will be used.
+        Sets the directory path where transaction log backups will be created during the shrink process.
+        Transaction log backups are required to shrink log files, so this directory must be accessible to the SQL Server service account. Defaults to the instance's default backup directory if not specified.
 
     .PARAMETER ExcludeDiskSpaceValidation
-        If this switch is enabled, the validation for enough disk space using Get-DbaDiskSpace command will be skipped.
-        This can be useful when you know that you have enough space to grow your TLog but you don't have PowerShell Remoting enabled to validate it.
+        Skips the automatic disk space validation that normally ensures sufficient free space exists before expanding log files.
+        Use this when you're confident about available disk space but PowerShell remoting isn't available to check drive capacity, or when working with network storage that may not report correctly.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -83,7 +84,8 @@ function Expand-DbaDbLogFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. Options for this list are auto-populated from the server.
+        Specifies databases to skip during the expansion process when processing all databases on an instance.
+        Use this to exclude system databases, read-only databases, or databases with specific requirements from batch log file expansion operations.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

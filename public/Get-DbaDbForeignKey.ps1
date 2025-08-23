@@ -20,13 +20,16 @@ function Get-DbaDbForeignKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get Foreign Keys from specific database(s)
+        Specifies which databases to scan for foreign key constraints. Accepts database names, wildcards, or arrays.
+        Use this when you need to focus on specific databases rather than scanning all accessible databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Excludes specific databases from the foreign key scan. Useful for skipping large databases, test environments, or databases known to have no relevant constraints.
+        Commonly used to exclude system databases like master, model, msdb, and tempdb when focusing on user databases.
 
     .PARAMETER ExcludeSystemTable
-        This switch removes all system objects from the tables collection
+        Excludes system tables from the foreign key analysis, focusing only on user-created tables.
+        Use this switch when documenting application schemas or analyzing business logic relationships, as system table foreign keys are typically not relevant for most DBA tasks.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

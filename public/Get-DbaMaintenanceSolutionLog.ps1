@@ -23,13 +23,19 @@ function Get-DbaMaintenanceSolutionLog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LogType
-        Accepts 'IndexOptimize', 'DatabaseBackup', 'DatabaseIntegrityCheck'. Only IndexOptimize parsing is available at the moment
+        Specifies which Ola Hallengren maintenance solution log type to parse from text files. Accepts 'IndexOptimize', 'DatabaseBackup', or 'DatabaseIntegrityCheck'.
+        Currently only IndexOptimize parsing is supported - use this when you need to analyze index rebuild and reorganize operations from file-based logs.
+        DatabaseBackup and DatabaseIntegrityCheck parsing are planned for future releases.
 
     .PARAMETER Since
-        Consider only files generated since this date
+        Filters log files to include only those created on or after the specified date and time.
+        Use this when you need to focus on recent maintenance operations or investigate issues that started after a specific point in time.
+        The function examines both the filename timestamp and file creation time to determine which logs to process.
 
     .PARAMETER Path
-        Where to search for log files. By default it's the SQL instance error log path path
+        Specifies a custom directory path where maintenance solution log files are stored. Defaults to the SQL Server instance's error log directory.
+        Use this when your maintenance solution jobs write logs to a non-standard location, such as a dedicated maintenance logs folder or shared network path.
+        The path must be accessible from the machine where you're running the command.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

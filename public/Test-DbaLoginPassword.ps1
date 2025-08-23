@@ -19,13 +19,19 @@ function Test-DbaLoginPassword {
         To connect as a different Windows user, run PowerShell as that user.
 
     .PARAMETER Dictionary
-        Specifies a list of passwords to include in the test for weak passwords.
+        Specifies additional passwords to test against all SQL authentication logins using PWDCOMPARE().
+        Use this to check for organization-specific weak passwords like company names, common words, or previously breached passwords.
+        These passwords are tested in addition to the default checks for empty passwords and username-matching passwords.
 
     .PARAMETER Login
-        The login(s) to process.
+        Specifies which SQL authentication logins to test for weak passwords instead of testing all SQL logins on the instance.
+        Accepts single login names, arrays of login names, or wildcard patterns for filtering specific accounts.
+        Useful when you want to focus testing on high-privilege logins or specific service accounts that need immediate attention.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaLogin.
+        Accepts login objects from Get-DbaLogin to test for weak passwords, enabling pipeline operations and complex filtering scenarios.
+        Use this when you need to filter logins by properties like creation date, last login time, or server roles before testing passwords.
+        Commonly used with Get-DbaLogin to test logins across multiple servers or with specific criteria that can't be achieved with the Login parameter alone.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

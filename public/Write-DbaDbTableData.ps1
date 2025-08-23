@@ -17,70 +17,66 @@ function Write-DbaDbTableData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the Input Object data will be written.
+        Specifies the target database for the bulk insert operation. Required when using one or two-part table names.
+        Use this when you need to target a specific database different from the default connection database.
 
     .PARAMETER InputObject
-        This is the DataTable (or data row) to import to SQL Server.
-
-        It is very important to understand how different types of objects are beeing processed to get the best performance.
-        The best performance is achieved when using the DataSet data type. If the data to be imported are determined with Invoke-DbaQuery, the option "-As DataSet" should be used. Then all records are imported in a single call of SqlBulkCopy.
-        Also the data type DataTable can lead to an import of all records in a single call of SqlBulkCopy. However, it should be noted that "$varWithDataTable | Write-DbaDbTableData" causes the pipeline to convert the single object of type DataTable to a series of objects of type DataRow. These in turn lead to single calls of SqlBulkCopy per record, which negatively affects performance. This is also the reason why the use of the DataRow data type is generally discouraged.
-        When using objects of type PSObject, these are first all combined into an internal object of type DataTable and then imported in a single call of SqlBulkCopy.
+        Accepts various data formats including DataTable, DataSet, CSV files, or PowerShell objects for bulk insertion.
+        Use DataSet for optimal performance as all records import in a single SqlBulkCopy call. DataTable also performs well but avoid piping directly as it converts to slower DataRow processing.
+        PowerShell objects are automatically converted to DataTable format before import.
 
     .PARAMETER Table
-        The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.
-
-        If the table does not exist, you can use -AutoCreateTable to automatically create the table. The table will be created with sub-optimal data types such as nvarchar(max).
-
-        If the object has special characters please wrap them in square brackets [ ].
-        Using dbo.First.Table will try to import to a table named 'Table' on schema 'First' and database 'dbo'.
-        The correct way to import to a table named 'First.Table' on schema 'dbo' is by passing dbo.[First].[Table].
-        Any actual usage of the ] must be escaped by duplicating the ] character.
-        The correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].
+        Specifies the destination table using one, two, or three-part naming (database.schema.table). Supports temp tables with # prefix.
+        Use square brackets for special characters: [Schema.Name].[Table]] for tables containing brackets. Three-part names override the Database parameter.
+        Combine with -AutoCreateTable to create missing tables, though manual table creation provides better data type control.
 
     .PARAMETER Schema
-        Defaults to dbo if no schema is specified.
+        Sets the schema for the destination table when not specified in the table name. Defaults to 'dbo'.
+        Use this when working with non-default schemas or when security policies require specific schema targeting.
 
     .PARAMETER BatchSize
-        The BatchSize for the import defaults to 50000.
+        Controls how many rows are sent to SQL Server in each batch operation. Defaults to 50,000 rows.
+        Lower values (5,000-10,000) work better for wide tables or limited memory, while higher values improve performance for narrow tables with sufficient resources.
 
     .PARAMETER NotifyAfter
-        Sets the option to show the notification after so many rows of import. Defaults to 5000 rows.
+        Determines how frequently progress notifications appear during the import operation. Defaults to every 5,000 rows.
+        Set higher for less frequent updates on large imports, or lower for more granular progress tracking on smaller datasets.
 
     .PARAMETER AutoCreateTable
-        If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max).
+        Automatically creates the destination table when it doesn't exist, using data types inferred from the source data.
+        Convenient for quick imports but creates generic data types like NVARCHAR(MAX). For production use, manually create tables with appropriate data types and constraints.
 
     .PARAMETER NoTableLock
-        If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
+        Disables the default TABLOCK hint during bulk insert operations, allowing concurrent access to the destination table.
+        Use when importing to tables that need concurrent read access, though this may reduce import performance compared to the default exclusive lock.
 
     .PARAMETER CheckConstraints
-        If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.
-
-        Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
+        Enforces check constraints during the bulk insert operation instead of the default behavior of bypassing them.
+        Use when data integrity validation is critical, though this reduces import performance. Constraints are normally checked after bulk operations complete.
 
     .PARAMETER FireTriggers
-        If this switch is enabled, the SqlBulkCopy option to fire insert triggers will be enabled.
-
-        Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the Database."
+        Executes INSERT triggers during the bulk copy operation instead of bypassing them for performance.
+        Essential when triggers maintain audit trails, calculated fields, or related table updates. Significantly impacts import speed but preserves all database logic.
 
     .PARAMETER KeepIdentity
-        If this switch is enabled, the SqlBulkCopy option to preserve source identity values will be enabled.
-
-        Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
+        Preserves identity column values from the source data instead of generating new sequential values.
+        Critical for maintaining referential integrity when importing related tables or restoring data with existing identity dependencies.
 
     .PARAMETER KeepNulls
-        If this switch is enabled, the SqlBulkCopy option to preserve NULL values will be enabled.
-
-        Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+        Maintains NULL values from source data instead of replacing them with column default values.
+        Use when NULL has specific business meaning in your data or when you need to preserve exact source data representation including missing values.
 
     .PARAMETER Truncate
-        If this switch is enabled, the destination table will be truncated after prompting for confirmation.
+        Removes all existing data from the destination table before performing the bulk insert operation.
+        Useful for refreshing tables with new data while maintaining table structure, indexes, and permissions. Always prompts for confirmation before execution.
 
     .PARAMETER BulkCopyTimeOut
-        Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
+        Sets the maximum time in seconds to wait for the bulk copy operation to complete. Defaults to 5,000 seconds.
+        Increase for very large datasets or slow storage systems. Set to 0 for unlimited timeout when importing millions of rows.
 
     .PARAMETER ColumnMap
-        By default, the bulk insert tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
+        Defines custom mapping between source and destination columns using a hashtable when automatic column mapping fails.
+        Use when column names differ between source and target, or when you need to import only specific columns. Format: @{SourceColumn='DestColumn'}.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -94,8 +90,8 @@ function Write-DbaDbTableData {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER UseDynamicStringLength
-        By default, all string columns will be NVARCHAR(MAX).
-        If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified).
+        Creates string columns with lengths based on source data MaxLength property instead of defaulting to NVARCHAR(MAX).
+        Improves storage efficiency and query performance when AutoCreateTable is used, but requires source data to provide accurate length information.
 
     .NOTES
         Tags: Table, Data, Insert
@@ -252,7 +248,7 @@ function Write-DbaDbTableData {
 
             .PARAMETER BulkCopy
                 Needs not be specified. The bulk copy object used to perform the copy operation.
-        #>
+            #>
             [CmdletBinding()]
             param (
                 $DataTable,

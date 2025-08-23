@@ -18,10 +18,12 @@ function Export-DbaSpConfigure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the directory where the sp_configure script files will be exported. Defaults to the configured DbatoolsExport path.
+        Use this when you need to organize configuration scripts in a specific location for documentation or deployment procedures.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Specifies the complete file path including filename for the exported sp_configure script. Overrides the Path parameter when specified.
+        Use this when you need precise control over the output filename, especially for automated deployment scripts or standardized naming conventions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

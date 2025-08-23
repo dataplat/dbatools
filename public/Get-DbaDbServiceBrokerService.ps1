@@ -17,13 +17,16 @@ function Get-DbaDbServiceBrokerService {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get service broker services from specific database(s)
+        Specifies which databases to query for Service Broker services. Accepts multiple database names.
+        Use this when you need to limit the search to specific databases instead of scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Excludes specific databases from the Service Broker service search. Accepts multiple database names.
+        Useful when you want to audit most databases but skip known databases without Service Broker configurations.
 
     .PARAMETER ExcludeSystemService
-        This switch removes all system objects from the queue collection
+        Excludes system-created Service Broker services from the results, showing only user-defined services.
+        Use this to focus on custom messaging implementations and avoid clutter from built-in SQL Server services.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

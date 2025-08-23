@@ -9,7 +9,8 @@ function Remove-DbaCmConnection {
         This function lets you remove specific cached connections or clear the entire cache, which is useful when credentials change, connections become stale, or you need to force fresh authentication for troubleshooting.
 
     .PARAMETER ComputerName
-        The target computer. Accepts both text as well as the output of Get-DbaCmConnection.
+        Specifies the computer name(s) whose cached connections should be removed from the dbatools connection cache. Accepts computer names as strings or connection objects from Get-DbaCmConnection.
+        Use this when you need to clear stale connections after credential changes, network issues, or when troubleshooting remote computer management problems.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -7,22 +7,28 @@ function Find-DbaCommand {
         Finds dbatools commands searching through the inline help text, building a consolidated json index and querying it because Get-Help is too slow
 
     .PARAMETER Tag
-        Finds all commands tagged with this auto-populated tag
+        Filters results to show only commands that contain all specified tags. Tags categorize commands by SQL Server feature area like "Backup", "AG", "Job", or "Security".
+        Use this when you need to find commands related to specific SQL Server functionality. Multiple tags require commands to have ALL specified tags.
 
     .PARAMETER Author
-        Finds all commands tagged with this author
+        Filters results to show commands created by authors whose name contains the specified text. Uses wildcard matching so partial names work.
+        Useful when you want to find commands written by a specific contributor or when following up on recommendations from particular experts.
 
     .PARAMETER MinimumVersion
-        Finds all commands tagged with this auto-populated minimum version
+        Filters results to show only commands that require the specified minimum version of dbatools or higher.
+        Use this to ensure compatibility when working with older dbatools installations or when checking what features require recent updates.
 
     .PARAMETER MaximumVersion
-        Finds all commands tagged with this auto-populated maximum version
+        Filters results to show only commands that work with the specified maximum version of dbatools or lower.
+        Helpful when working with legacy environments where you need to avoid commands that require newer dbatools versions.
 
     .PARAMETER Rebuild
-        Rebuilds the index
+        Forces a complete rebuild of the dbatools command index from the current module state. This rescans all help text and updates the cached index file.
+        Use this when developing new commands, after updating dbatools, or when search results seem outdated or incomplete.
 
     .PARAMETER Pattern
-        Searches help for all commands in dbatools for the specified pattern and displays all results
+        Searches all help text properties (synopsis, description, examples, parameters) for the specified text pattern using wildcard matching.
+        Use this for broad searches when you know a concept or term but aren't sure which specific commands handle it.
 
     .PARAMETER Confirm
         Confirms overwrite of index

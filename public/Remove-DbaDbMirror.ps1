@@ -20,10 +20,12 @@ function Remove-DbaDbMirror {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database.
+        Specifies the names of databases whose mirroring partnerships should be terminated. Accepts multiple database names.
+        Required when using SqlInstance parameter. Use this to target specific mirrored databases rather than processing all databases on the instance.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase.
+        Use this when you want to filter databases using Get-DbaDatabase's capabilities before breaking mirroring partnerships.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

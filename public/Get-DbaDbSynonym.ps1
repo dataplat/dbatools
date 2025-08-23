@@ -17,25 +17,32 @@ function Get-DbaDbSynonym {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which database(s) to search for synonyms. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Excludes specific database(s) from the synonym search. Accepts wildcards for pattern matching.
+        Useful for skipping system databases, test environments, or databases you know don't contain relevant synonyms.
 
     .PARAMETER Schema
-        The schema(s) to process. If unspecified, all schemas will be processed.
+        Filters synonyms to only those in the specified schema(s). Accepts wildcards for pattern matching.
+        Use this when you need to focus on synonyms within specific schemas, such as application-specific or departmental schemas.
 
     .PARAMETER ExcludeSchema
-        The schema(s) to exclude.
+        Excludes synonyms from specific schema(s) in the results. Accepts wildcards for pattern matching.
+        Helpful for filtering out system schemas or schemas that contain synonyms you're not interested in analyzing.
 
     .PARAMETER Synonym
-        The synonym(s) to process. If unspecified, all synonyms will be processed.
+        Specifies exact synonym name(s) to retrieve. Accepts multiple synonym names as an array.
+        Use this when you need details about specific synonyms, such as checking where a particular synonym points or verifying its target object.
 
     .PARAMETER ExcludeSynonym
-        The synonym(s) to exclude.
+        Excludes specific synonym(s) from the results by name. Accepts multiple synonym names as an array.
+        Useful when you want to see all synonyms except certain ones you already know about or don't need to review.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase via pipeline input. Allows you to chain database filtering commands.
+        Use this to process synonyms only from databases that meet specific criteria, such as specific compatibility levels or last backup dates.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

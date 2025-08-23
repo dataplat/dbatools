@@ -13,14 +13,15 @@ function Get-DbaDiskSpace {
         Requires Windows administrator access on target SQL Server systems.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the SQL Server host systems to query for disk space information. Accepts multiple computer names for bulk monitoring.
+        Use this to check storage capacity across your SQL Server environment before database growth or backup operations impact available space.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Unit
-        This parameter has been deprecated and will be removed in 1.0.0
-        All properties previously generated through this command are present at the same time, but hidden by default.
+        This parameter has been deprecated and will be removed in 1.0.0.
+        All size properties (Bytes, KB, MB, GB, TB, PB) are now available simultaneously in the output object but hidden by default for cleaner display.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -30,16 +31,16 @@ function Get-DbaDiskSpace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ExcludeDrive
-        Filter out drives - format is C:\
+        Specifies drive letters to exclude from the disk space report, using the format 'C:\' or 'D:\'.
+        Use this to skip system drives or non-SQL storage when focusing on database file locations, or to exclude network drives that may cause timeouts.
 
     .PARAMETER CheckFragmentation
-        If this switch is enabled, fragmentation of all file systems will be checked.
-
-        This will increase the runtime of the function by seconds or even minutes per volume.
+        Enables filesystem fragmentation analysis for all volumes, which can impact SQL Server I/O performance when database or log files are stored on fragmented drives.
+        This significantly increases runtime (seconds to minutes per volume) but provides critical data for troubleshooting slow database operations or planning defragmentation maintenance.
 
     .PARAMETER Force
-        Enabling this switch will cause the command to include ALL drives.
-        By default, only local disks and removable disks are shown, and hidden volumes are excluded.
+        Includes all drive types and hidden volumes in the results, not just local and removable disks (DriveType 2 and 3).
+        Use this when you need complete storage visibility including network drives, CD/DVD drives, or system volumes that might host SQL Server components like backup locations or tempdb files.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -11,32 +11,27 @@ function Remove-DbaBackup {
         Replaces the backup cleanup functionality found in SQL Server maintenance plans with more granular control and PowerShell automation. Optionally removes empty backup folders after file cleanup to keep your backup directory structure tidy.
 
     .PARAMETER Path
-        Specifies the name of the base level folder to search for backup files. Deletion of backup files will be recursive from this location.
+        Specifies the root directory where backup files are stored for cleanup. The function recursively searches all subdirectories from this location.
+        Use this to target your primary backup storage location, whether it's a local drive, network share, or mounted backup volume.
 
     .PARAMETER BackupFileExtension
-        Specifies the filename extension of the backup files you wish to remove (typically 'bak', 'trn' or 'log'). Do not include the period.
+        Specifies the file extension for the backup type to clean up. Common values are 'bak' for full backups, 'trn' for transaction log backups, or 'dif' for differential backups.
+        Use this to target specific backup types during cleanup, allowing you to apply different retention policies for each backup type. Do not include the period.
 
     .PARAMETER RetentionPeriod
-        Specifies the retention period for backup files. Correct format is ##U.
+        Defines how long to keep backup files before deletion, formatted as number plus unit (48h, 7d, 4w, 1m).
+        Use shorter periods for transaction log backups (24h-48h) and longer periods for full backups (1w-4w) based on your recovery requirements and storage capacity.
 
-        ## is the retention value and must be an integer value
-        U signifies the units where the valid units are:
-        h = hours
-        d = days
-        w = weeks
-        m = months
-
-        Formatting Examples:
-        '48h' = 48 hours
-        '7d' = 7 days
-        '4w' = 4 weeks
-        '1m' = 1 month
+        Valid units: h=hours, d=days, w=weeks, m=months
+        Examples: '48h' keeps files for 48 hours, '7d' for 7 days, '4w' for 4 weeks, '1m' for 1 month
 
     .PARAMETER CheckArchiveBit
-        If this switch is enabled, the filesystem Archive bit is checked before deletion. If this bit is set (which translates to "it has not been backed up to another location yet", the file won't be deleted.
+        Prevents deletion of files that haven't been archived to tape or another backup location by checking the Windows Archive bit.
+        Use this when you have a two-tier backup strategy where files are first copied to disk, then archived to tape or cloud storage before cleanup.
 
     .PARAMETER RemoveEmptyBackupFolder
-        If this switch is enabled, empty folders will be removed after the cleanup process is complete.
+        Removes directories that become empty after backup file cleanup to prevent folder structure clutter.
+        Use this to maintain a clean backup directory structure, especially when backup files are organized by database or date folders.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

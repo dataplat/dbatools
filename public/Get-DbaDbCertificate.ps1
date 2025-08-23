@@ -17,19 +17,24 @@ function Get-DbaDbCertificate {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Get certificate from specific database
+        Specifies which databases to search for certificates. Accepts one or more database names as strings.
+        Use this when you need to audit certificates in specific databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Database(s) to ignore when retrieving certificates
+        Specifies which databases to skip when retrieving certificates. Accepts one or more database names as strings.
+        Useful when you want to audit most databases but exclude system databases or specific databases that don't contain certificates of interest.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the PowerShell pipeline.
+        This allows you to chain commands like Get-DbaDatabase | Get-DbaDbCertificate for more complex filtering scenarios.
 
     .PARAMETER Certificate
-        Get specific certificate by name
+        Filters results to specific certificates by their name property. Accepts one or more certificate names as strings.
+        Use this when you need to check the status of known certificates across multiple databases, such as tracking TDE certificates or Service Broker certificates.
 
     .PARAMETER Subject
-        Get specific certificate by subject
+        Filters results to certificates with specific subject names. Accepts one or more subject strings for exact matching.
+        Helpful when searching for certificates based on their distinguished name or common name, particularly when certificate names aren't descriptive but subjects are standardized.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

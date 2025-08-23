@@ -24,10 +24,12 @@ function Get-DbaDbState {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which user databases to check for state information. Accepts multiple database names as an array.
+        Use this when you need to audit specific databases rather than checking all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies which user databases to exclude from the state check. Accepts multiple database names as an array.
+        Use this when you want to check most databases but skip specific ones, such as databases under maintenance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

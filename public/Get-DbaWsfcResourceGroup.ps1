@@ -11,13 +11,17 @@ function Get-DbaWsfcResourceGroup {
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the target Windows Server Failover Cluster to query, either as a cluster name or any node name within the cluster.
+        Use this when connecting to specific failover clusters hosting SQL Server FCI or Availability Group resources.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.
 
     .PARAMETER Name
-        Allows you to login to the cluster using alternative credentials.
+        Filters results to only include resource groups with the specified names. Supports multiple values.
+        Use this when you need to check specific SQL Server resource groups like 'SQL Server (MSSQLSERVER)' or named Availability Groups.
+        Omit this parameter to retrieve all resource groups in the cluster.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

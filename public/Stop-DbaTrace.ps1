@@ -17,10 +17,12 @@ function Stop-DbaTrace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
-        A list of trace ids
+        Specifies the trace IDs to stop. Accepts one or more trace ID numbers as integers.
+        Use this when you need to stop specific traces instead of all running traces on the instance.
 
     .PARAMETER InputObject
-        Internal parameter for piping
+        Accepts trace objects from the pipeline, typically from Get-DbaTrace output.
+        This enables selective stopping of traces by piping Get-DbaTrace results through filtering commands like Out-GridView or Where-Object.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

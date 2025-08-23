@@ -24,22 +24,24 @@ function Test-DbaDbLogShipStatus {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Allows you to filter the results to only return the databases you're interested in. This can be one or more values separated by commas.
-        This is not a wildcard and should be the exact database name. See examples for more info.
+        Specifies which log shipped databases to check by exact name. Accepts multiple database names as a comma-separated list.
+        Use this when you want to focus on specific databases instead of checking all log shipped databases on the monitoring instance.
 
     .PARAMETER ExcludeDatabase
-        Allows you to filter the results to only return the databases you're not interested in. This can be one or more values separated by commas.
-        This is not a wildcard and should be the exact database name.
+        Excludes specific log shipped databases from the status check by exact name. Accepts multiple database names as a comma-separated list.
+        Use this when you want to check most databases but skip certain ones, such as test or development log shipping configurations.
 
     .PARAMETER Primary
-        Allows to filter the results to only return values that apply to the primary instance.
+        Returns only status information for databases acting as primary instances in log shipping configurations.
+        Use this when you want to focus specifically on backup operations and primary-side health monitoring.
 
     .PARAMETER Secondary
-        Allows to filter the results to only return values that apply to the secondary instance.
+        Returns only status information for databases acting as secondary instances in log shipping configurations.
+        Use this when you want to focus specifically on copy and restore operations and secondary-side health monitoring.
 
     .PARAMETER Simple
-        By default all the information will be returned.
-        If this parameter is used you get an overview with the SQL Instance, Database, Instance Type and the status
+        Returns only essential columns: SqlInstance, Database, InstanceType, and Status instead of all detailed timing information.
+        Use this for quick health overviews when you don't need the full backup/copy/restore timing details.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

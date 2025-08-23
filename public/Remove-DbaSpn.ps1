@@ -9,10 +9,12 @@ function Remove-DbaSpn {
         Requires write access to Active Directory through the provided credentials.
 
     .PARAMETER SPN
-        The SPN you want to remove
+        Specifies the exact Service Principal Name to remove from Active Directory. Must include the full SPN format like 'MSSQLSvc/servername:port' or 'MSSQLSvc/servername.domain.com'.
+        Use this when decommissioning SQL instances, changing service accounts, or cleaning up duplicate SPNs that cause Kerberos authentication failures.
 
     .PARAMETER ServiceAccount
-        The account you want the SPN remove from
+        Specifies the Active Directory account (user or computer) that currently owns the SPN to be removed. Use domain\username format for user accounts or COMPUTERNAME$ for computer accounts.
+        This should match the account currently running the SQL Server service that you're decommissioning or reconfiguring.
 
     .PARAMETER Credential
         The credential you want to use to connect to Active Directory to make the changes

@@ -21,16 +21,20 @@ function Set-DbaDbOwner {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to change ownership for. Accepts database names and supports wildcards for pattern matching.
+        When omitted, all user databases on the instance will be processed. System databases are automatically excluded.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies databases to skip during ownership changes. Useful when processing all databases but need to exclude specific ones.
+        Accepts database names and supports wildcards for pattern matching.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline operations. Use this when you need to filter databases with specific criteria before changing ownership.
+        Allows for complex database selection logic beyond simple name matching.
 
     .PARAMETER TargetLogin
-        Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
+        Specifies the login to set as the new database owner. Defaults to 'sa' (or the renamed sysadmin account if sa was renamed).
+        The login must exist on the server, cannot be a Windows group, and cannot already be mapped as a user within the target database. Common values include service accounts or standardized admin logins.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

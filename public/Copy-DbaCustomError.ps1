@@ -31,10 +31,12 @@ function Copy-DbaCustomError {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER CustomError
-        The custom error(s) to process. This list is auto-populated from the server. If unspecified, all custom errors will be processed.
+        Specifies which custom error message IDs to migrate from the source server. Only the specified error numbers will be copied to the destination.
+        Use this when you need to migrate specific custom errors rather than all of them, such as when standardizing only certain application error codes across environments.
 
     .PARAMETER ExcludeCustomError
-        The custom error(s) to exclude. This list is auto-populated from the server.
+        Specifies which custom error message IDs to skip during migration. All custom errors except the excluded ones will be copied.
+        Use this when you want to migrate most custom errors but exclude problematic ones, or when certain error IDs are environment-specific and shouldn't be copied.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -48,7 +50,8 @@ function Copy-DbaCustomError {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, the custom error will be dropped and recreated if it already exists on Destination.
+        Overwrites existing custom errors on the destination server by dropping and recreating them with source values.
+        Use this when you need to update custom error messages that have changed on the source, or when synchronizing error definitions across environments.
 
     .NOTES
         Tags: Migration, CustomError

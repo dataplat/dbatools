@@ -17,13 +17,16 @@ function Resume-DbaAgDbDataMovement {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases to resume movement upon.
+        Specifies which availability group databases to resume data movement for. Accepts multiple database names.
+        Use this to target specific databases when you don't want to resume movement for all databases in the availability group.
 
     .PARAMETER AvailabilityGroup
-        The availability group where the database movement will be resumed.
+        Specifies the name of the availability group containing the databases with suspended data movement.
+        Required when using the SqlInstance parameter to identify which AG context to work within.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAgDatabase
+        Accepts availability group database objects from Get-DbaAgDatabase for pipeline operations.
+        Use this when you want to filter or select specific AG databases before resuming data movement.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

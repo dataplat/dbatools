@@ -17,34 +17,39 @@ function New-DbaDbAsymmetricKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the asymmetric key will be created. Defaults to master.
+        Specifies the target database where the asymmetric key will be created. Defaults to master database if not specified.
+        Use this when creating encryption keys for specific user databases rather than system-wide keys.
 
     .PARAMETER Name
-        Optional name to create the asymmetric key. Defaults to database name.
+        Specifies the name for the asymmetric key object within the database. Defaults to the database name if not provided.
+        Choose meaningful names that reflect the key's purpose, such as 'TDE_Key' or 'BackupKey' for easier identification.
 
     .PARAMETER SecurePassword
-        Optional password - if no password is supplied, the password will be protected by the master key
+        Provides a password to encrypt the asymmetric key's private key. If omitted, the database master key protects the private key.
+        Use this when you need explicit password control or when the database master key is not available.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the pipeline for batch key creation.
+        Use this when creating asymmetric keys across multiple databases in a single operation.
 
     .PARAMETER KeySourceType
-        The source of external keys loaded in, can be one of Executable, File or Assembly
-        We do not currently support Provider
+        Specifies the type of external key source when importing existing keys. Valid values are Executable, File, or SqlAssembly.
+        Required when using KeySource parameter to import keys from external files rather than generating new ones.
 
     .PARAMETER KeySource
-        The path to the Executable, File or Assembly to be passed in.
-        The path is parsed by the SQL Server instance, so needs to be visible to the instance
+        Specifies the path or name of the external key source (file, executable, or SQL assembly name).
+        The path must be accessible by the SQL Server service account when using File or Executable types.
 
     .PARAMETER Algorithm
-        The algorithm used to generate the key. Can be one of RSA512, RSA1024, RSA1024, RSA2048, RSA3072 or RSA4096. If not specified RSA2048 is the default
-        This value will be ignored when KeySource is supplied, as the algorithm is embedded in the KeySource
+        Sets the RSA encryption algorithm strength for newly generated keys. Valid options are Rsa512, Rsa1024, Rsa2048, Rsa3072, or Rsa4096.
+        Defaults to Rsa2048 which provides good security for most scenarios. Higher bit strengths offer stronger encryption but slower performance.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Owner
-        User within the database who will own the key. Defaults to the user creating the key if not specified. User must exist withing the database already
+        Specifies the database user who will own the asymmetric key. Defaults to the current user if not specified.
+        The specified user must already exist in the target database before creating the key.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.

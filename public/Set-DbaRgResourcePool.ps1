@@ -16,43 +16,63 @@ function Set-DbaRgResourcePool {
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER ResourcePool
-        Name of the resource pool to be created.
+        Specifies the name of the existing resource pool to modify.
+        Use this to target specific pools like 'poolAdmin' or 'poolDeveloper' when you need to adjust their resource limits.
 
     .PARAMETER Type
-        Internal or External.
+        Specifies whether to modify Internal or External resource pools.
+        Internal pools control SQL Server queries and connections, while External pools manage R Services, Python, or other external processes.
+        Defaults to Internal if not specified.
 
     .PARAMETER MinimumCpuPercentage
-        Specifies the guaranteed average CPU bandwidth for all requests in the resource pool when there is CPU contention.
+        Sets the guaranteed minimum CPU percentage (0-100) that this pool will always receive during CPU contention.
+        Use this to ensure critical workloads get sufficient CPU even when the server is busy.
+        For example, set to 20 to guarantee a pool always gets at least 20% of available CPU.
 
     .PARAMETER MaximumCpuPercentage
-        Specifies the maximum average CPU bandwidth that all requests in resource pool will receive when there is CPU contention.
+        Sets the maximum CPU percentage (1-100) that this pool can consume during CPU contention.
+        Use this to prevent runaway queries from monopolizing CPU resources.
+        For example, set to 30 to limit a development pool to 30% of available CPU.
 
     .PARAMETER CapCpuPercentage
-        Specifies a hard cap on the CPU bandwidth that all requests in the resource pool will receive.
-        Limits the maximum CPU bandwidth level to be the same as the specified value. Only for SQL Server 2012+
+        Sets an absolute hard cap (1-100) on CPU usage that cannot be exceeded even when CPU is available.
+        Unlike MaximumCpuPercentage, this limit applies regardless of server load or contention.
+        Only available on SQL Server 2012 and later. Use this for strict resource isolation requirements.
 
     .PARAMETER MinimumMemoryPercentage
-        Specifies the minimum amount of memory reserved for this resource pool that can not be shared with other resource pools.
+        Sets the minimum memory percentage (0-100) that is reserved exclusively for this pool and cannot be shared.
+        Use this to guarantee memory for critical workloads that must have dedicated memory allocation.
+        For example, set to 15 to ensure a production pool always has at least 15% of server memory reserved.
 
     .PARAMETER MaximumMemoryPercentage
-        Specifies the total server memory that can be used by requests in this resource pool. value is an integer with a default setting of 100.
+        Sets the maximum memory percentage (1-100) that this pool can consume from total server memory.
+        Use this to prevent memory-intensive workloads from consuming all available memory.
+        Defaults to 100, meaning no memory restrictions. Set lower values like 50 to limit pool memory usage.
 
     .PARAMETER MinimumIOPSPerVolume
-        Specifies the minimum I/O operations per second (IOPS) per disk volume to reserve for the resource pool.
+        Sets the minimum guaranteed IOPS per disk volume that this pool will receive during I/O contention.
+        Use this to ensure critical workloads get sufficient disk I/O performance even when storage is busy.
+        For example, set to 1000 to guarantee at least 1000 IOPS per volume for a production pool.
 
     .PARAMETER MaximumIOPSPerVolume
-        Specifies the maximum I/O operations per second (IOPS) per disk volume to allow for the resource pool.
+        Sets the maximum IOPS per disk volume that this pool can consume during I/O operations.
+        Use this to prevent I/O-intensive workloads from overwhelming disk subsystems and affecting other pools.
+        For example, set to 5000 to limit a reporting pool to 5000 IOPS per volume.
 
     .PARAMETER MaximumProcesses
-        Specifies the maximum number of processes allowed for the external resource pool.
-        Specify 0 to set an unlimited threshold for the pool, which is thereafter bound only by computer resources.
+        Sets the maximum number of external processes allowed in this external resource pool.
+        Only applies to External pool types used for R Services, Python, or other external runtime processes.
+        Set to 0 for unlimited processes (limited only by server resources), or specify a number like 10 to restrict concurrent external processes.
 
     .PARAMETER SkipReconfigure
-        Resource Governor requires a reconfiguriation for resource pool changes to take effect.
-        Use this switch to skip issuing a reconfigure for the Resource Governor.
+        Prevents automatic reconfiguration of the Resource Governor after making pool changes.
+        Use this when making multiple pool modifications and you want to reconfigure manually later.
+        Without reconfiguration, your pool changes won't take effect until you manually reconfigure the Resource Governor.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaRgResourcePool.
+        Accepts resource pool objects piped from Get-DbaRgResourcePool for bulk modifications.
+        Use this to modify multiple pools at once by piping them from Get-DbaRgResourcePool.
+        Eliminates the need to specify SqlInstance and ResourcePool parameters when working with existing pool objects.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

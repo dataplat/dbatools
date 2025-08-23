@@ -9,30 +9,28 @@ function Copy-DbaEndpoint {
         Existing endpoints on the destination are skipped by default to prevent conflicts, but can be overwritten using the -Force parameter. The function scripts the complete endpoint definition from the source and recreates it on each destination server.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing endpoints to copy. Must have sysadmin access to enumerate and script endpoint definitions.
+        Use this to identify the server containing Service Broker, Database Mirroring, or Availability Group endpoints needed on other instances.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies alternative credentials for connecting to the source SQL Server instance. Required when Windows Authentication is not available or sufficient.
+        Use this when the source server requires SQL authentication or when running under a service account that lacks access to the source instance.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies one or more destination SQL Server instances where endpoints will be created. Must have sysadmin access to create endpoint objects.
+        Use this to deploy endpoints across multiple servers in Always On configurations or Service Broker scenarios requiring identical endpoint definitions.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Specifies alternative credentials for connecting to destination SQL Server instances. Applied to all destination servers when Windows Authentication is insufficient.
+        Use this when destination servers require SQL authentication or when deploying endpoints across environments with different security contexts.
 
     .PARAMETER Endpoint
-        The endpoint(s) to process. This list is auto-populated from the server. If unspecified, all endpoints will be processed.
+        Specifies which endpoints to copy from the source instance. Accepts endpoint names and supports wildcards for pattern matching.
+        Use this when you need to migrate specific endpoints like Database Mirroring or Service Broker endpoints rather than copying all user-defined endpoints.
 
     .PARAMETER ExcludeEndpoint
-        The endpoint(s) to exclude. This list is auto-populated from the server.
+        Specifies which endpoints to skip during the copy operation. Takes precedence over the Endpoint parameter when both are specified.
+        Use this to exclude problematic or environment-specific endpoints while copying most other endpoints from the source instance.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -46,7 +44,8 @@ function Copy-DbaEndpoint {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, existing endpoints on Destination with matching names from Source will be dropped.
+        Drops and recreates existing endpoints on destination instances when name conflicts occur. By default, existing endpoints are skipped to prevent disruption.
+        Use this when updating endpoint configurations or when you need to overwrite outdated endpoint definitions on destination servers.
 
     .NOTES
         Tags: Migration, Endpoint

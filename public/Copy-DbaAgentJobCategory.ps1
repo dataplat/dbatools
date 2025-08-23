@@ -13,36 +13,36 @@ function Copy-DbaAgentJobCategory {
         The function uses SQL Server Management Objects (SMO) to script category definitions and recreate them on the target server.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The source SQL Server instance from which to copy Agent job categories. Requires sysadmin permissions to access MSDB and read category definitions.
+        Use this to specify the server that has the custom categories you want to replicate to other instances.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the source SQL Server instance. Use this when your current Windows authentication doesn't have sufficient permissions on the source server.
+        Accepts credentials created with Get-Credential for SQL authentication or different Windows accounts.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        One or more destination SQL Server instances where the Agent job categories will be created. Accepts an array to copy categories to multiple servers simultaneously.
+        Requires sysadmin permissions to create categories in each destination server's MSDB database.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the destination SQL Server instances. Use this when different authentication is needed for the destination servers than your current context.
+        Accepts credentials created with Get-Credential and applies to all destination servers specified.
 
     .PARAMETER CategoryType
-        Specifies the Category Type to migrate. Valid options are "Job", "Alert" and "Operator". When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
+        Filters the copy operation to specific category types: Job, Alert, or Operator. When specified, copies all categories of the selected type(s) from the source.
+        Use this for bulk migration of entire category types rather than individual category names. Leave empty to copy all category types.
 
     .PARAMETER OperatorCategory
-        This parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
+        Specific operator category names to copy from the source server. Use this for selective migration when you only need certain operator categories.
+        Supports tab completion from the source server's existing operator categories for convenience.
 
     .PARAMETER AgentCategory
-        This parameter is auto-populated for command-line completion and can be used to copy only specific agent categories.
+        Specific alert category names to copy from the source server. Use this for selective migration when you only need certain alert categories.
+        Note: This parameter is currently not implemented in the function code and will be ignored if used.
 
     .PARAMETER JobCategory
-        This parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
+        Specific job category names to copy from the source server. Use this for selective migration when you only need certain job categories.
+        Supports tab completion from the source server's existing job categories for convenience.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -51,7 +51,8 @@ function Copy-DbaAgentJobCategory {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Category will be dropped and recreated on Destination.
+        Drops and recreates existing categories on the destination servers instead of skipping them. Use this when you need to overwrite categories that have changed on the source.
+        Without this switch, categories that already exist on the destination will be skipped to prevent data loss.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

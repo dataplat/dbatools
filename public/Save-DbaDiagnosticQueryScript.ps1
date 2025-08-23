@@ -13,7 +13,8 @@ function Save-DbaDiagnosticQueryScript {
         The function automatically detects and downloads scripts for all available SQL Server versions found on Glenn Berry's resources page, saving them with version-specific filenames for easy identification.
 
     .PARAMETER Path
-        Specifies the path to the output
+        Specifies the directory path where Glenn Berry's diagnostic query scripts will be downloaded. Defaults to the current user's Documents folder.
+        Use this when you need to organize scripts in a specific location, such as a shared network drive for team access or a local folder structure for different environments.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

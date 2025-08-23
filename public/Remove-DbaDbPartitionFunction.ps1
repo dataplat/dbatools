@@ -17,13 +17,16 @@ function Remove-DbaDbPartitionFunction {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies the database(s) from which to remove partition functions. Accepts wildcard patterns for matching multiple databases.
+        Use this to target specific databases when you need to clean up partitioning objects from particular databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Excludes the specified database(s) from partition function removal operations. Auto-populated with available databases from the target server.
+        Use this when you want to remove partition functions from most databases but need to preserve them in specific databases like production or critical systems.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbPartitionFunction.
+        Accepts partition function objects from Get-DbaDbPartitionFunction for targeted removal operations.
+        Use this with pipeline operations when you need to selectively remove specific partition functions based on criteria like name patterns, usage, or dependencies.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

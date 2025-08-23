@@ -17,10 +17,12 @@ function Remove-DbaAgListener {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Listener
-        The listener or listeners to remove.
+        Specifies the name of specific availability group listeners to remove. Required when using SqlInstance parameter.
+        Use this when you need to remove particular listeners rather than all listeners from availability groups.
 
     .PARAMETER AvailabilityGroup
-        Only remove listeners from specific availability groups.
+        Filters listener removal to only those within the specified availability groups.
+        Use this when you want to remove listeners from particular AGs while preserving listeners from other availability groups on the same instance.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -29,7 +31,8 @@ function Remove-DbaAgListener {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaListener
+        Accepts availability group listener objects from the pipeline, typically from Get-DbaAgListener.
+        Use this when you need to remove listeners that have been filtered or selected through other dbatools commands.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

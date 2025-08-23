@@ -11,7 +11,8 @@ function Measure-DbaDiskSpaceRequirement {
         Accepts pipeline input with Source, Database, and Destination properties, making it ideal for bulk migration planning from CSV files, SQL queries, or PowerShell objects.
 
     .PARAMETER Source
-        Source SQL Server.
+        Specifies the source SQL Server instance containing the database to analyze for migration.
+        This is where the database currently exists and from which file sizes will be measured.
 
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -21,10 +22,12 @@ function Measure-DbaDiskSpaceRequirement {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database to copy. It MUST exist.
+        Specifies the name of the database to analyze on the source instance.
+        The database must exist on the source server as the function reads actual file sizes from this database.
 
     .PARAMETER Destination
-        Destination SQL Server instance.
+        Specifies the destination SQL Server instance where the database will be migrated.
+        Used to determine target file paths, check for existing databases with the same name, and calculate mount point requirements.
 
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -34,8 +37,9 @@ function Measure-DbaDiskSpaceRequirement {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationDatabase
-        The database name at destination.
-        May or may not be present, if unspecified it will default to the database name provided in SourceDatabase.
+        Specifies the database name to use on the destination instance if different from the source database name.
+        When omitted, the destination database will use the same name as the source database.
+        Useful when migrating databases that need to be renamed or when avoiding naming conflicts on the destination server.
 
     .PARAMETER Credential
         The credentials to use to connect via CIM/WMI/PowerShell remoting.

@@ -17,13 +17,16 @@ function Set-DbaResourceGovernor {
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER Enabled
-        Enables the Resource Governor.
+        Enables Resource Governor on the SQL Server instance to activate workload resource management.
+        Use this when you need to enforce resource limits and allocations for different workload groups.
 
     .PARAMETER Disabled
-        Disables the Resource Governor.
+        Disables Resource Governor on the SQL Server instance, removing all resource controls and workload management.
+        All sessions will use unlimited resources from the default resource pool when Resource Governor is disabled.
 
     .PARAMETER ClassifierFunction
-        Sets the classifier function for Resource Governor.
+        Specifies the name of a user-defined function in the master database that determines which workload group incoming sessions should use.
+        The function must return a workload group name or ID based on session properties like login name or application name. Use 'NULL' to remove the current classifier function and route all sessions to the default workload group.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

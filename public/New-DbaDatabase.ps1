@@ -21,65 +21,64 @@ function New-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The name of the new database or databases to be created.
+        Specifies the name of the database(s) to create on the SQL Server instance. Accepts multiple database names as an array to create several databases in a single operation. If not provided, creates a database with a randomly generated name like "random-12345".
 
     .PARAMETER DataFilePath
-        The location that data files will be placed, otherwise the default SQL Server data path will be used.
+        Specifies the directory path where database data files (.mdf and .ndf) will be created. Use this when you need to place database files on specific drives for performance or storage management. If not specified, uses the SQL Server instance's default data directory. The function will create the directory if it doesn't exist.
 
     .PARAMETER LogFilePath
-        The location the log file will be placed, otherwise the default SQL Server log path will be used.
+        Specifies the directory path where transaction log files (.ldf) will be created. Best practice is to place log files on separate drives from data files for performance and availability. If not specified, uses the SQL Server instance's default log directory. The function will create the directory if it doesn't exist.
 
     .PARAMETER Collation
-        The database collation, if not supplied the default server collation will be used.
+        Specifies the collation for the new database, which determines sorting rules, case sensitivity, and accent sensitivity for string data. Use this when creating databases that need specific language or cultural sorting requirements different from the server default. If not specified, inherits the server's default collation.
 
     .PARAMETER RecoveryModel
-        The recovery model for the database, if not supplied the recovery model from the model database will be used.
-        Valid options are: Simple, Full, BulkLogged.
+        Sets the recovery model which determines how transaction log backups work and how much data loss is acceptable. Simple recovery model doesn't require log backups but limits point-in-time recovery, Full enables complete point-in-time recovery with log backups, BulkLogged offers a compromise for bulk operations. If not specified, inherits from the model database.
 
     .PARAMETER Owner
-        The login that will be used as the database owner.
+        Specifies which SQL Server login will be assigned as the database owner (dbo). Use this to assign ownership to a specific service account or administrator instead of the default creator. The login must already exist on the SQL Server instance. If not specified, the connecting user becomes the database owner.
 
     .PARAMETER PrimaryFilesize
-        The size in MB for the Primary file. If this is less than the primary file size for the model database, then the model size will be used instead.
+        Sets the initial size in MB for the primary data file (.mdf). Use this to create databases with appropriate initial sizing based on expected data volume to reduce autogrowth events. If the specified size is smaller than the model database's primary file, the model size is used instead to maintain minimum requirements.
 
     .PARAMETER PrimaryFileGrowth
-        The size in MB that the Primary file will autogrow by.
+        Specifies the autogrowth increment in MB for the primary data file when it needs more space. Using fixed MB increments prevents runaway percentage-based growth that can cause performance issues and disk space problems in production environments. If not specified, inherits the model database's growth settings.
 
     .PARAMETER PrimaryFileMaxSize
-        The maximum permitted size in MB for the Primary File. If this is less than the primary file size for the model database, then the model size will be used instead.
+        Sets the maximum size limit in MB that the primary data file can grow to during autogrowth events. Use this to prevent database files from consuming all available disk space in case of runaway processes or data imports. If set smaller than the initial file size, the initial size becomes the maximum.
 
     .PARAMETER LogSize
-        The size in MB that the Transaction log will be created.
+        Sets the initial size in MB for the transaction log file (.ldf). Proper log sizing prevents frequent autogrowth during normal operations which can impact performance. Size the log based on your transaction volume and backup frequency - larger logs for high-activity databases or infrequent log backups. If not specified, uses the model database's log size.
 
     .PARAMETER LogGrowth
-        The amount in MB that the log file will be set to autogrow by.
+        Specifies the autogrowth increment in MB for the transaction log file when additional space is needed. Fixed MB growth prevents percentage-based growth that can cause performance delays during high-activity periods. Consider setting this to handle your typical transaction volume between log backups. If not specified, uses the model database's growth settings.
 
     .PARAMETER LogMaxSize
-        The maximum permitted size in MB. If this is less than the log file size for the model database, then the model log size will be used instead.
+        Sets the maximum size limit in MB for the transaction log file during autogrowth. This prevents transaction logs from consuming all disk space during bulk operations or when log backups are delayed. Consider your available disk space and typical maintenance windows when setting this limit. If set smaller than the initial log size, the initial size becomes the maximum.
 
     .PARAMETER SecondaryFileCount
-        The number of files to create in the Secondary filegroup for the database.
+        Specifies how many data files to create in the secondary filegroup. Multiple files allow parallel I/O operations which can improve performance for large databases with high activity. Consider your storage configuration and available CPU cores when determining the file count - typically one file per CPU core up to the number of available drives.
 
     .PARAMETER SecondaryFilesize
-        The size in MB of the files to be added to the Secondary filegroup. Each file added will be created with this size setting.
+        Sets the initial size in MB for each file in the secondary filegroup. All secondary files will be created with this same size. Use this to establish consistent file sizes across the filegroup for balanced I/O distribution. If not specified and secondary files are created, uses the model database's file size.
 
     .PARAMETER SecondaryFileMaxSize
-        The maximum permitted size in MB for the Secondary data files to grow to. Each file added will be created with this max size setting.
+        Sets the maximum size limit in MB for each secondary data file during autogrowth. This prevents individual files from consuming excessive disk space while allowing controlled growth. All secondary files will use this same maximum size limit to maintain consistency across the filegroup.
 
     .PARAMETER SecondaryFileGrowth
-        The amount in MB that the Secondary files will be set to autogrow by. Use 0 for no growth allowed. Each file added will be created with this growth setting.
+        Specifies the autogrowth increment in MB for each secondary data file when additional space is needed. All secondary files will use the same growth increment to maintain balanced file sizes. Set to 0 to disable autogrowth for controlled file management. Fixed MB increments provide predictable growth behavior.
 
     .PARAMETER DefaultFileGroup
-        Sets the default file group. Either primary or secondary.
+        Specifies which filegroup becomes the default for new tables and indexes when no filegroup is explicitly specified. Primary uses the standard PRIMARY filegroup, Secondary uses the created secondary filegroup. Setting the secondary filegroup as default directs new objects to use the optimized multi-file configuration for better performance.
 
     .PARAMETER DataFileSuffix
-        The data file suffix.
+        Specifies a custom suffix to append to the primary data file name. The full filename becomes DatabaseName + DataFileSuffix + .mdf. Use this to follow organizational naming conventions or to differentiate between environments (like "_PROD" or "_DEV"). If not specified, no suffix is added.
 
     .PARAMETER LogFileSuffix
-        The log file suffix. Defaults to "_log"
+        Specifies the suffix to append to the transaction log file name. The full filename becomes DatabaseName + LogFileSuffix + .ldf. Use this to follow naming conventions that distinguish log files from data files. Defaults to "_log" if not specified, creating files like "MyDatabase_log.ldf".
 
     .PARAMETER SecondaryDataFileSuffix
-        The secondary data file suffix.
+        Specifies the suffix used for the secondary filegroup name and its data files. The filegroup becomes DatabaseName + SecondaryDataFileSuffix, and files are named like DatabaseName + SecondaryDataFileSuffix + "_1.ndf". Use descriptive suffixes like "_Data" or "_Indexes" to indicate the intended use of the secondary filegroup.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

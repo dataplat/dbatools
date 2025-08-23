@@ -29,26 +29,21 @@ function Invoke-DbaDbccFreeCache {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Operation
-        DBCC Operation to Perform - Supports specific set of operations
+        Specifies which cache clearing operation to perform: FreeProcCache, FreeSessionCache, or FreeSystemCache.
+        Use FreeProcCache to resolve parameter sniffing or clear inefficient query plans, FreeSessionCache to clear linked server connections, or FreeSystemCache to clear authentication tokens and system-level caches.
 
     .PARAMETER InputValue
-        Value used for Operation - meaning depends on Operation
-        DBCC FREEPROCCACHE accepts
-            a plan_handle of type varbinary(64)
-            a sql_handle of type varbinary(64)
-            or the name of a Resource Governor resource pool of type sysname
-            If blank then clears all elements from the plan cache
-        DBCC FREESYSTEMCACHE accepts
-            'ALL' for ALL specifies all supported caches
-            or name of a Resource Governor pool cache
-        Not required for other values
+        Specifies a target value to limit the cache clearing operation instead of clearing all cache entries.
+        For FreeProcCache: provide a specific plan_handle (0x...), sql_handle (0x...), or Resource Governor pool name to clear only those entries. For FreeSystemCache: provide a Resource Governor pool name to clear only that pool's cache entries.
+        When omitted, clears all entries for the specified operation which is the typical DBA use case.
 
     .PARAMETER NoInformationalMessages
-        Suppresses all informational messages.
+        Suppresses informational messages returned by the DBCC commands.
+        Use this in scripts or automated processes where you only want to capture errors and warnings.
 
     .PARAMETER MarkInUseForRemoval
-        Used when Operation = DBCC FREESYSTEMCACHE
-        Asynchronously frees currently used entries from their respective caches after they become unused
+        Marks currently active cache entries for removal once they become unused, rather than waiting for them to be released.
+        Only applies to FreeSystemCache operations and helps ensure memory is freed more aggressively on systems under memory pressure.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

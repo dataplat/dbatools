@@ -29,13 +29,16 @@ function Test-DbaDbQueryStore {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all user databases will be processed.
+        Specifies which databases to test for Query Store best practices. Accepts wildcards for pattern matching.
+        Use this when you need to evaluate Query Store settings for specific databases instead of all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Excludes specific databases from Query Store evaluation. System databases (master, model, tempdb) are automatically excluded.
+        Use this when you want to test most databases but skip certain ones like development or temporary databases.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase.
+        Accepts database objects piped from Get-DbaDatabase, server objects, or instance parameters for testing.
+        Use this when you want to test Query Store settings on a pre-filtered set of databases or work within a pipeline workflow.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

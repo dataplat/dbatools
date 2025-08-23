@@ -17,7 +17,9 @@ function Set-DbaExtendedProtection {
         Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials
 
     .PARAMETER Value
-        Posible values are Off, Allowed and Always.
+        Specifies the Extended Protection level for SQL Server network protocols. Accepts "Off", "Allowed", or "Required" (or equivalent integers 0, 1, 2).
+        Use "Off" to disable Extended Protection, "Allowed" to accept both protected and unprotected connections, or "Required" to enforce Extended Protection for all client connections.
+        Defaults to "Off" when not specified. Setting to "Required" may prevent older applications from connecting unless they support Extended Protection authentication.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

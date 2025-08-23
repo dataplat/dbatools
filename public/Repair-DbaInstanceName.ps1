@@ -23,10 +23,14 @@ function Repair-DbaInstanceName {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AutoFix
-        If this switch is enabled, the repair will be performed automatically.
+        Automatically resolves blockers that prevent the server name repair, including removing replication distribution and disabling database mirroring.
+        Use this when you need to fix the server name without manual intervention to remove these blocking configurations.
+        This parameter will prompt for confirmation before breaking replication or mirroring unless combined with -Force.
 
     .PARAMETER Force
-        If this switch is enabled, most confirmation prompts will be skipped.
+        Bypasses confirmation prompts for potentially destructive operations like stopping SQL services and breaking replication or mirroring.
+        Use this for unattended automation or when you're certain about proceeding with all changes.
+        Combine with -AutoFix for fully automated server name repairs without any prompts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

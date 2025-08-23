@@ -17,19 +17,24 @@ function Test-DbaWindowsLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        Specifies a list of logins to include in the results. Options for this list are auto-populated from the server.
+        Specifies specific Windows logins to validate against Active Directory. Use this when you want to test only certain logins rather than all Windows accounts on the server.
+        Accepts wildcards and multiple values. Helpful for focused security audits of high-privilege accounts or problem logins.
 
     .PARAMETER ExcludeLogin
-        Specifies a list of logins to exclude from the results. Options for this list are auto-populated from the server.
+        Excludes specific Windows logins from validation checks. Use this to skip service accounts or known system logins that you don't need to audit.
+        Accepts wildcards and multiple values. Common exclusions include application service accounts and break-glass emergency accounts.
 
     .PARAMETER FilterBy
-        Specifies the object types to return. By default, both Logins and Groups are returned. Valid options for this parameter are 'GroupsOnly' and 'LoginsOnly'.
+        Limits validation to either individual user accounts or Active Directory groups. Use 'LoginsOnly' when auditing user access or 'GroupsOnly' when reviewing group-based permissions.
+        Default of 'None' validates both types. GroupsOnly is useful for reviewing role-based access control implementation.
 
     .PARAMETER IgnoreDomains
-        Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
+        Excludes logins from specific Active Directory domains from validation. Use this in multi-domain environments to focus on specific domains or skip legacy/untrusted domains.
+        Helpful when you have old domain trusts or want to audit only production domains while excluding development or test domains.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaLogin.
+        Accepts login objects from Get-DbaLogin for targeted validation. Use this when you want to validate a specific subset of logins already retrieved by another command.
+        Enables powerful filtering scenarios by piping pre-filtered login objects instead of processing all Windows logins on the server.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

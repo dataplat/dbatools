@@ -27,31 +27,47 @@ function Remove-DbaDbTableData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all user databases will be processed.
+        Specifies which databases to include in the table data removal operation. Accepts wildcards for pattern matching.
+        If unspecified, all user databases on the instance will be processed, which means the same table deletion will occur across multiple databases.
 
     .PARAMETER BatchSize
-        The number of rows to delete per batch. This param is defaulted to 100000 and limited to a value between 1 and 1000000000 (1 billion). This param can only be used with the -Table param. If -DeleteSql is used the TOP (N) clause must be specified in the SQL DELETE string. Note: for Azure SQL databases error 40552 could occur for large batch deletions: https://docs.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues#error-40552-the-session-has-been-terminated-because-of-excessive-transaction-log-space-usage
+        Controls how many rows are deleted per batch to prevent transaction log growth and blocking issues. Defaults to 100,000 rows and accepts values between 1 and 1 billion.
+        Use smaller batch sizes (10,000-50,000) for heavily indexed tables or when other users need access during the operation. Can only be used with -Table parameter.
+        For Azure SQL databases, large batch sizes may trigger error 40552 due to transaction log space limits.
 
     .PARAMETER Table
-        The name of the table that data should be deleted. This param is required except when -DeleteSql is specified. When this param is used the -BatchSize param may also be used (or its default value).
+        Specifies the fully qualified table name from which to delete data (e.g., dbo.CustomerHistory, Sales.OrderDetails).
+        Use this for simple scenarios where you want to delete all rows from a table. For complex deletions with WHERE clauses or JOINs, use -DeleteSql instead.
 
     .PARAMETER DeleteSql
-        A SQL DELETE statement to be used in the command's loop for more advanced scenarios such as deleting based on a join, using a where clause, or using an order by clause (or a combination of all of those). It is required that the DELETE statement include the TOP (N) clause. See the example below. This param may be used instead of -Table and -BatchSize.
+        Provides a custom DELETE statement for complex deletion scenarios involving WHERE clauses, JOINs, or ORDER BY conditions.
+        Must include a TOP (N) clause to control batch size (e.g., "DELETE TOP (100000) FROM dbo.Orders WHERE OrderDate < '2020-01-01'").
+        Use this when -Table parameter is insufficient for your deletion logic. Cannot be combined with -Table or -BatchSize parameters.
 
     .PARAMETER LogBackupPath
-        The directory to store the log backups. This command creates log backups when the database is using the full or bulk_logged recovery models and is an on-prem SQL server instance. If this param is not provided the command will not take log backups. This directory should be writeable by the SQL Server service account.
+        Specifies the directory path where transaction log backup files will be created during the deletion process.
+        Required for databases in Full or Bulk-logged recovery models to prevent log file growth during large deletions. Only applies to on-premises SQL Server instances.
+        The SQL Server service account must have write permissions to this directory. Not used for Simple recovery model or Azure SQL databases.
 
     .PARAMETER LogBackupTimeStampFormat
-        By default the command timestamps the log backup files using the format yyyyMMddHHmm. The timestamp format should be defined using the Get-Date formats, because illegal formats will cause an error to be thrown.
+        Controls the timestamp format used in transaction log backup file names. Defaults to 'yyyyMMddHHmm' (e.g., 202312151430).
+        Use Get-Date format strings to customize the naming pattern. Invalid formats will cause the operation to fail.
+        Helps organize log backup files chronologically when performing multiple large deletion operations.
 
     .PARAMETER AzureBaseUrl
-        Used for log backups. See https://dbatools.io/Backup-DbaDatabase for information on this parameter. This function invokes Backup-DbaDatabase with -AzureBaseUrl if it is provided.
+        Specifies the Azure Storage container URL for storing transaction log backups during the deletion process.
+        Use this when you need log backups stored in Azure Blob Storage instead of local file system storage.
+        Cannot be combined with -LogBackupPath parameter. See Backup-DbaDatabase documentation for container URL format requirements.
 
     .PARAMETER AzureCredential
-        Used for log backups. See https://dbatools.io/Backup-DbaDatabase for information on this parameter. This function invokes Backup-DbaDatabase with -AzureCredential if it is provided.
+        Provides the credential name for authenticating to Azure Storage when using -AzureBaseUrl for log backups.
+        Must reference a SQL Server credential that contains the Azure Storage account access key or SAS token.
+        Required when backing up transaction logs to Azure Blob Storage during the deletion process.
 
     .PARAMETER InputObject
-        Enables piped input of Microsoft.SqlServer.Management.Smo.Database, Microsoft.SqlServer.Management.Smo.Server, and Dataplat.Dbatools.Parameter.DbaInstanceParameter objects.
+        Accepts piped input from other dbatools commands like Get-DbaDatabase or Connect-DbaInstance.
+        Use this to chain commands together, such as filtering databases first and then performing table data removal.
+        Supports Database, Server, and DbaInstanceParameter objects from the dbatools pipeline.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -7,52 +7,48 @@ function Get-DbatoolsLog {
         Retrieves log entries from dbatools' internal logging system, allowing you to troubleshoot command execution and track what happened during script runs. Use this when dbatools commands aren't behaving as expected or when you need to see detailed execution information for debugging purposes. The function can filter logs by specific functions, modules, targets, execution history, or message levels, making it easier to isolate issues during SQL Server automation tasks.
 
     .PARAMETER FunctionName
-        Default: "*"
-        Only messages written by similar functions will be returned.
+        Filters log entries to show only messages from dbatools functions matching this pattern. Supports wildcards.
+        Use this when troubleshooting specific commands like 'Backup-DbaDatabase' or when you want to see all backup-related functions with 'Backup-Dba*'.
 
     .PARAMETER ModuleName
-        Default: "*"
-        Only messages written by commands from similar modules will be returned.
+        Filters log entries to show only messages from modules matching this pattern. Supports wildcards.
+        Use this when working with multiple PowerShell modules and you only want to see dbatools-related log entries.
 
     .PARAMETER Target
-        Only messages handling the specified target will be returned.
+        Filters log entries to show only messages related to a specific target object like a server name, database name, or other SQL Server component.
+        Use this when troubleshooting issues with a particular SQL Server instance or database to see only relevant log entries.
 
     .PARAMETER Tag
-        Only messages containing one of these tags will be returned.
+        Filters log entries to show only messages that contain any of the specified tags.
+        Use this to find specific types of operations like 'backup', 'restore', or 'migration' when tracking down issues with particular dbatools workflows.
 
     .PARAMETER Last
-        Only messages written by the last X executions will be returned.
-        Uses Get-History to determine execution. Ignores Get-message commands.
-        By default, this will also include messages from other runspaces. If your command executes in parallel, that's useful.
-        If it doesn't and you were offloading executions to other runspaces, consider also filtering by runspace using '-Runspace'
+        Returns log entries from only the last X PowerShell command executions in your current session.
+        Use this to focus on recent activity when troubleshooting the most recent dbatools commands you ran. Excludes Get-DbatoolsLog commands from the execution count to avoid confusion.
 
     .PARAMETER LastError
-        Only retrieves the last error message type written.
+        Returns only the most recent error message from the dbatools logging system.
+        Use this as a quick way to see what went wrong with your last dbatools command execution without scrolling through all log entries.
 
     .PARAMETER Skip
-        How many executions to skip when specifying '-Last'.
-        Has no effect without the '-Last' parameter.
+        Specifies how many recent executions to skip when using the -Last parameter.
+        Use this when you want to see log entries from earlier executions, like '-Last 3 -Skip 2' to see the 3rd, 4th, and 5th most recent executions.
 
     .PARAMETER Raw
-        By default, messages such as SQL statements are flattened. Use raw to see the output without flattened formatting.
+        Returns log messages in their original format without flattening multiline content like SQL statements.
+        Use this when you need to see the exact formatting of SQL queries or error messages for detailed troubleshooting.
 
     .PARAMETER Runspace
-        The guid of the runspace to return messages from.
-        By default, messages from all runspaces are returned.
-        Run the following line to see the list of guids:
-
-        Get-Runspace | ft Id, Name, InstanceId -AutoSize
+        Filters log entries to show only messages from the specified PowerShell runspace GUID.
+        Use this when troubleshooting parallel or background dbatools operations to isolate messages from specific execution threads.
 
     .PARAMETER Level
-        Limit the message selection by level.
-        Message levels have a numeric value, making it easier to select a range:
-
-        -Level (1..6)
-
-        Will select the first 6 levels (Critical - SomewhatVerbose).
+        Filters log entries by message severity level (Critical, Error, Warning, Info, Verbose, etc.).
+        Use this to focus on specific severity levels, like only errors and warnings, or to see verbose details during troubleshooting. Supports arrays and ranges like (1..6).
 
     .PARAMETER Errors
-        Instead of log entries, the error entries will be retrieved
+        Returns error entries from dbatools' error tracking system instead of regular log entries.
+        Use this when you specifically need to see exceptions and errors that occurred during dbatools command execution, separate from informational logging.
 
     .NOTES
         Tags: Module, Support

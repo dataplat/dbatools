@@ -17,13 +17,19 @@ function Test-DbaDiskSpeed {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to include in the I/O performance analysis. Accepts database names as strings or arrays.
+        Use this when you need to focus on specific databases instead of analyzing all databases on the instance.
+        Commonly used to isolate performance issues in production databases or exclude system databases from analysis.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies which databases to exclude from the I/O performance analysis. Accepts database names as strings or arrays.
+        Use this when you want to analyze most databases but skip specific ones like development databases or those with known issues.
+        Helpful for excluding system databases (master, model, msdb) when focusing on user database performance.
 
     .PARAMETER AggregateBy
-        Specify the level of aggregation for the statistics. The available options are 'File' (the default), 'Database', and 'Disk'.
+        Controls how I/O statistics are grouped and summarized in the results. Options are 'File' (default), 'Database', or 'Disk'.
+        Use 'File' for detailed analysis of individual data and log files, 'Database' to compare performance across databases, or 'Disk' to identify storage-level bottlenecks.
+        File-level analysis helps pinpoint specific problematic files, while disk-level aggregation is useful for storage capacity planning and identifying hardware issues.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
