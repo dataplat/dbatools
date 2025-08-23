@@ -1,6 +1,8 @@
 name: Run Cross Platform Tests
 on:
   push:
+    tags-ignore:
+      - '**'
     paths-ignore:
       - '**/*.md'
       - '**/*.json'

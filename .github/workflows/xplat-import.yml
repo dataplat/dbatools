@@ -1,6 +1,8 @@
 name: Cross Platform Import
 on:
   push:
+    tags-ignore:
+      - '**'
     paths-ignore:
       - '**/*.md'
       - '**/*.json'

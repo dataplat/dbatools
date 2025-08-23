@@ -4,6 +4,8 @@ on:
  push:
    # branches:  # Removed to apply to all branches
    #   - master
+   tags-ignore:
+     - '**'
    paths-ignore:
      - '**/*.md'
      - '**/*.json'

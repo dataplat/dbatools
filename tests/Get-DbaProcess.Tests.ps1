@@ -20,7 +20,8 @@ Describe $CommandName -Tag UnitTests {
                 "Hostname",
                 "Program",
                 "ExcludeSystemSpids",
-                "EnableException"
+                "EnableException",
+                "Intersect"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
@@ -48,6 +49,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns only processes from master database when filtered by Database" {
             $masterResults = @(Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database master)
             foreach ($result in $masterResults) {
+                $result.Database | Should -Be "master"
+            }
+        }
+
+        It "returns only dbatools processes and master when filtered by Program and Database and told to intersect" {
+            $dbatoolsResults = @(Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program "dbatools PowerShell module - dbatools.io" -Database master -Intersect)
+            foreach ($result in $dbatoolsResults) {
+                $result.Program | Should -Be "dbatools PowerShell module - dbatools.io"
                 $result.Database | Should -Be "master"
             }
         }
