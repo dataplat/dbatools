@@ -1,11 +1,16 @@
 function Install-DbaSqlWatch {
     <#
     .SYNOPSIS
-        Installs or updates SqlWatch.
+        Installs or updates SqlWatch monitoring solution on SQL Server instances.
 
     .DESCRIPTION
-        Downloads, extracts and installs or updates SqlWatch.
-        https://sqlwatch.io/
+        Deploys SqlWatch, an open-source SQL Server monitoring and performance collection tool, to one or more SQL Server instances. SqlWatch continuously gathers performance metrics, wait statistics, and system information into dedicated tables for historical analysis and alerting.
+
+        This function automatically downloads the latest SqlWatch release from GitHub (or uses a local file), then deploys it to the specified database using DACPAC technology. SqlWatch creates its own database objects to collect and store performance data, making it useful for DBAs who need ongoing monitoring without third-party agents or expensive monitoring solutions.
+
+        The installed SqlWatch system runs autonomously via SQL Agent jobs, collecting data at regular intervals. It includes a web dashboard for viewing metrics and can be customized for specific monitoring requirements.
+
+        More information: https://sqlwatch.io/
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to.

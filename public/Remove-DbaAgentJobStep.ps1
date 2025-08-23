@@ -1,10 +1,10 @@
 function Remove-DbaAgentJobStep {
     <#
     .SYNOPSIS
-        Removes a step from the specified SQL Agent job.
+        Removes specified job steps from SQL Server Agent jobs.
 
     .DESCRIPTION
-        Removes a job step from a SQL Server Agent job.
+        Removes individual job steps from SQL Server Agent jobs by step name. This function validates that both the job and step exist before attempting removal, preventing errors when cleaning up outdated or broken job steps. Useful for job maintenance tasks like removing obsolete backup steps, failed notification steps, or deprecated processes without affecting the rest of the job workflow.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

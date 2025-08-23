@@ -1,11 +1,10 @@
 function Get-DbaManagementObject {
     <#
     .SYNOPSIS
-        Gets SQL Management Object versions installed on the machine.
+        Discovers installed SQL Server Management Object (SMO) assemblies and their load status
 
     .DESCRIPTION
-        The Get-DbaManagementObject returns an object with the Version and the
-        Add-Type Load Template for each version on the server.
+        Scans the system for SQL Server Management Object (SMO) assemblies, SqlClient libraries, and SNI modules to help troubleshoot version conflicts and connectivity issues. This function checks both the Global Assembly Cache (GAC) and currently loaded assemblies in the PowerShell session, returning version information, load status, file paths, and ready-to-use Add-Type commands. Particularly useful when diagnosing why different SQL Server tools behave differently or when you need to load specific SMO versions in PowerShell scripts.
 
     .PARAMETER ComputerName
         The name of the Windows Server(s) you would like to check.

@@ -1,10 +1,10 @@
 function Invoke-DbatoolsRenameHelper {
     <#
     .SYNOPSIS
-        Older dbatools command names have been changed. This script helps keep up.
+        Updates PowerShell scripts to replace deprecated dbatools command and parameter names with current equivalents.
 
     .DESCRIPTION
-        Older dbatools command names have been changed. This script helps keep up.
+        Automatically scans and updates PowerShell script files to replace old dbatools command names and parameter names that have been renamed over time. This function searches through your scripts for over 200 deprecated command names and dozens of parameter renames, then updates the file content with the current naming conventions. Instead of manually hunting through scripts to update commands like Get-SqlMaxMemory to Get-DbaMaxMemory or Copy-SqlLogin to Copy-DbaLogin, this function handles the bulk replacement work for you.
 
     .PARAMETER InputObject
         A piped in object from Get-ChildItem

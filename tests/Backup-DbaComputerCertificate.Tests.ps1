@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaComputerCertificate -Thumbprint $certThumbprint -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

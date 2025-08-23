@@ -1,10 +1,10 @@
 function New-DbaDbMasterKey {
     <#
     .SYNOPSIS
-        Creates a new database master key
+        Creates a database master key for encryption operations
 
     .DESCRIPTION
-        Creates a new database master key. If no database is specified, the master key will be created in master.
+        Creates a database master key, which is required for implementing Transparent Data Encryption (TDE), Always Encrypted, or other database-level encryption features. The master key serves as the root encryption key that protects other encryption keys within the database. Defaults to creating the key in the master database if no specific database is specified, and will prompt securely for a password if none is provided.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

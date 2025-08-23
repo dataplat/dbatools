@@ -1,10 +1,10 @@
 function Get-DbaPbmCategorySubscription {
     <#
     .SYNOPSIS
-        Returns policy category subscriptions from policy based management from an instance.
+        Retrieves database subscriptions to Policy-Based Management categories that control automatic policy evaluation.
 
     .DESCRIPTION
-        Returns policy category subscriptions from policy based management from an instance.
+        Retrieves all database subscriptions to policy categories from SQL Server's Policy-Based Management feature. These subscriptions determine which databases are subject to automatic policy evaluation for specific policy categories. When a database subscribes to a category (either voluntarily or through mandatory subscription), all policies in that category will be automatically evaluated against the database. This is essential for auditing policy compliance, troubleshooting evaluation failures, and understanding which databases are governed by which policy sets.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

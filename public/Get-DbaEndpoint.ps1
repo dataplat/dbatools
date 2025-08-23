@@ -1,10 +1,10 @@
 function Get-DbaEndpoint {
     <#
     .SYNOPSIS
-        Returns endpoint objects from a SQL Server instance.
+        Retrieves SQL Server endpoints with network connectivity details for troubleshooting and documentation.
 
     .DESCRIPTION
-        Returns endpoint objects from a SQL Server instance.
+        Retrieves all SQL Server endpoints including DatabaseMirroring, ServiceBroker, Soap, and TSql types with their network configuration details. This function provides essential information for troubleshooting connectivity issues, documenting high availability setups, and performing security audits. It automatically resolves DNS names and constructs connection strings (FQDN format) for endpoints that have TCP listeners, making it easier to validate network accessibility and plan firewall configurations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

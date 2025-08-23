@@ -1,12 +1,12 @@
 function Start-DbaMigration {
     <#
     .SYNOPSIS
-        Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers, Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases, system triggers and backup devices from one SQL Server to another.
-
-        For more granular control, please use Exclude or use the other functions available within the dbatools module.
+        Migrates entire SQL Server instances including all databases, logins, server configuration, and server objects from source to destination servers.
 
     .DESCRIPTION
-        Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
+        Start-DbaMigration consolidates most of the migration tools in dbatools into one command for complete instance migrations. This function serves as an "easy button" when you need to move an entire SQL Server instance to new hardware, perform version upgrades, or consolidate servers. It's less flexible than using individual migration functions but handles the complexity of orchestrating a full migration workflow.
+
+        The function migrates:
 
         All user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -Exclude Databases to skip.
         All logins. Use -Exclude Logins to skip.

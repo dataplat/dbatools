@@ -1,10 +1,10 @@
 function New-DbaSqlParameter {
     <#
     .SYNOPSIS
-        Creates a new SQL parameter.
+        Creates a SqlParameter object for use with parameterized queries and stored procedures.
 
     .DESCRIPTION
-        Creates a new SQL parameter.
+        Creates a Microsoft.Data.SqlClient.SqlParameter object with specified properties like data type, direction, size, and value. This is essential for executing parameterized queries and stored procedures safely through Invoke-DbaQuery, preventing SQL injection while providing precise control over parameter behavior. Supports all SqlParameter properties including output parameters, table-valued parameters, and column encryption for secure data handling.
 
     .PARAMETER CompareInfo
         Sets the CompareInfo object that defines how string comparisons should be performed for this parameter.
@@ -129,7 +129,7 @@ function New-DbaSqlParameter {
     $param = New-Object Microsoft.Data.SqlClient.SqlParameter
 
     try {
-        
+
         if (Test-Bound -ParameterName CompareInfo) {
             $param.CompareInfo = $CompareInfo
         }

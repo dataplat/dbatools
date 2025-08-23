@@ -1,10 +1,10 @@
 function Disable-DbaReplPublishing {
     <#
     .SYNOPSIS
-        Disables publishing for the target SQL instances.
+        Disables replication publishing on SQL Server instances and removes publisher configuration.
 
     .DESCRIPTION
-        Disables publishing for the target SQL instances.
+        Removes the publisher role from SQL Server instances that are currently configured for replication publishing. This function safely dismantles the publishing configuration by removing the publisher from the distributor, which stops all publication activity on the target instance. Use this when decommissioning replication setups or troubleshooting publisher configuration issues that require a clean restart.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,12 @@
 function Get-DbaWsfcResourceGroup {
     <#
     .SYNOPSIS
-        Gets information about one or more resource groups in a failover cluster.
+        Retrieves Windows Server Failover Cluster resource group status and ownership information
 
     .DESCRIPTION
-        Gets information about one or more resource groups in a failover cluster.
+        Retrieves detailed information about Windows Server Failover Cluster resource groups, including their current state, persistent state, and which node currently owns them. This function helps DBAs monitor and troubleshoot SQL Server Failover Cluster Instances and Availability Groups by providing visibility into the underlying cluster resource groups that control SQL Server services and resources.
+
+        Use this command when you need to verify resource group health during maintenance windows, troubleshoot failover issues, or confirm which node is currently hosting specific SQL Server resources. The function translates numeric state codes into readable status values (Online, Offline, Failed, Unknown) so you can quickly identify problematic resource groups.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 

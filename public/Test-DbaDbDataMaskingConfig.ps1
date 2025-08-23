@@ -1,11 +1,13 @@
 function Test-DbaDbDataMaskingConfig {
     <#
     .SYNOPSIS
-        Checks the masking configuration if it's valid
+        Validates data masking configuration JSON files for structural and logical errors
 
     .DESCRIPTION
-        When you're dealing with large masking configurations, things can get complicated and messy.
-        This function will test for a range of rules and returns all the tables and columns that contain errors.
+        Validates data masking configuration JSON files by checking column properties, data types, masking types, and action configurations against dbatools requirements.
+        Returns detailed error information for any tables and columns that fail validation, helping you identify configuration issues before running data masking operations.
+        Checks include required/allowed column properties, supported SQL Server data types, valid masking and subtype combinations, date range validations, and action property requirements.
+        Essential for troubleshooting complex masking configurations and ensuring they'll execute successfully without runtime errors.
 
     .PARAMETER FilePath
         Path to the file to test

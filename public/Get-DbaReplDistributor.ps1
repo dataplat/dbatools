@@ -1,10 +1,10 @@
 function Get-DbaReplDistributor {
     <#
     .SYNOPSIS
-        Gets the information about a replication distributor for a given SQL Server instance.
+        Retrieves replication distributor configuration and status information from SQL Server instances.
 
     .DESCRIPTION
-        This function locates and enumerates distributor information for a given SQL Server instance.
+        Connects to SQL Server instances and retrieves detailed information about their replication distributor configuration, including distributor status, distribution database details, and publisher relationships. This is essential for DBAs managing replication topologies who need to quickly identify which servers act as distributors, where the distribution database is located, and whether remote publishers are configured. The function returns comprehensive distributor properties that help with replication troubleshooting, topology documentation, and configuration audits.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

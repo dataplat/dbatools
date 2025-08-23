@@ -1,10 +1,10 @@
 function Remove-DbaTrace {
     <#
     .SYNOPSIS
-        Stops and closes the specified trace and deletes its definition from the server.
+        Stops and removes SQL Server traces by ID or piped input from Get-DbaTrace.
 
     .DESCRIPTION
-        Stops and closes the specified trace and deletes its definition from the server.
+        Stops active SQL Server traces and permanently removes their definitions from the server using sp_trace_setstatus. This function helps clean up unnecessary traces that may be consuming server resources or disk space from previous troubleshooting sessions. The default trace is protected and cannot be removed - use Set-DbaSpConfigure to disable it instead. Traces are stopped first, then their definitions are deleted in a two-step process to ensure clean removal.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

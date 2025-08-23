@@ -55,7 +55,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatRemoveLogin = @{
             SqlInstance = $TestConfig.instance2
             Login       = $login1, $login2
-            Confirm     = $false
         }
         $null = Remove-DbaLogin @splatRemoveLogin
         $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Confirm:$false
@@ -69,7 +68,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance2
                 ServerRole  = $fixedServerRoles[0]
                 Login       = $login1
-                Confirm     = $false
             }
             Add-DbaServerRoleMember @splatAddRole
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
@@ -84,7 +82,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance2
                 ServerRole  = $serverRoles
                 Login       = $login1
-                Confirm     = $false
             }
             Add-DbaServerRoleMember @splatAddRoles
 
@@ -98,7 +95,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance2
                 ServerRole  = $customServerRole
                 Role        = $fixedServerRoles[-1]
-                Confirm     = $false
             }
             Add-DbaServerRoleMember @splatAddCustomRole
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[-1]

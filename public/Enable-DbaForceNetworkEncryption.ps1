@@ -1,12 +1,14 @@
 function Enable-DbaForceNetworkEncryption {
     <#
     .SYNOPSIS
-        Enables Force Encryption for a SQL Server instance.
+        Configures SQL Server to require encrypted connections from all clients by modifying the Windows registry
 
     .DESCRIPTION
-        Enables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.
+        Modifies the Windows registry to force all client connections to SQL Server to use encryption, regardless of the client's encryption settings. This security feature ensures that all data transmitted between clients and SQL Server is encrypted, protecting against network eavesdropping and man-in-the-middle attacks.
 
-        This setting is found in Configuration Manager.
+        This function operates at the Windows level by updating the ForceEncryption registry value in the SQL Server network configuration, which normally requires manual changes through SQL Server Configuration Manager. The setting applies to all protocols and client connections to the specified instance.
+
+        Important: You must restart the SQL Server service after running this command for the encryption requirement to take effect. Requires Windows administrator privileges on the target server, not SQL Server permissions.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

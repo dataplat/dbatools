@@ -1,10 +1,14 @@
 function Get-DbaExecutionPlan {
     <#
     .SYNOPSIS
-        Gets execution plans and metadata
+        Retrieves cached execution plans and metadata from SQL Server's plan cache
 
     .DESCRIPTION
-        Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan
+        Retrieves execution plans from SQL Server's plan cache using Dynamic Management Views (sys.dm_exec_query_stats, sys.dm_exec_query_plan, and sys.dm_exec_text_query_plan). This is essential for performance analysis because it shows you what queries are actually running and how SQL Server is executing them, without having to capture plans in real-time.
+
+        The function returns detailed metadata including database name, object name, creation time, last execution time, query and plan handles, plus the actual XML execution plans. You can filter results by database, creation date, or last execution time to focus on specific queries or time periods. Use this when troubleshooting performance issues, identifying resource-intensive queries, or analyzing query plan changes over time.
+
+        The output can be piped directly to Export-DbaExecutionPlan to save plans as .sqlplan files for detailed analysis in SQL Server Management Studio or other tools.
 
         Thanks to following for the queries:
         https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/

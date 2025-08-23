@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $keyname = "test1"
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
+            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database -SecurePassword $tPassword
             $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
             $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -WarningVariable warnvar
         }
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Remove a certificate" {
-            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -Confirm:$false
+            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
             $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
             $getResults | Should -HaveCount 0
             $removeResults.Status | Should -Be "Success"
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database $database -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database $database -ErrorAction SilentlyContinue
         }
 
         It "Should created new keys in $database" {
@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Remove a specific certificate" {
-            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -Confirm:$false
+            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
             $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database
             $getResults | Should -HaveCount 1
             $getResults[0].Name | Should -Be $keyname2

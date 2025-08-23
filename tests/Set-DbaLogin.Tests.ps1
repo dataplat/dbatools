@@ -99,12 +99,12 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # Create the login
             New-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -Password $password1
 
-            New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "testdb1_$random" -Confirm:$false
+            New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "testdb1_$random"
         }
 
         AfterAll {
-            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "testdb1_$random" -Confirm:$false
+            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -Force
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "testdb1_$random"
         }
 
         It "Does test login exist" {

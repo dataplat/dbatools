@@ -1,12 +1,17 @@
 function Copy-DbaCredential {
     <#
     .SYNOPSIS
-        Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
+        Migrates SQL Server credentials between instances while preserving encrypted passwords.
 
     .DESCRIPTION
-        By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
+        Copies SQL Server credentials from source to destination instances without losing the original passwords, which normally can't be retrieved through standard methods. This function uses a Dedicated Admin Connection (DAC) and password decryption techniques to extract the actual credential passwords from the source server and recreate them identically on the destination.
 
-        Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+        This is essential for server migrations, disaster recovery setup, or environment synchronization where you need to move service accounts, proxy credentials, or linked server authentication without having to reset passwords or contact application teams for credentials.
+
+        The function requires sysadmin privileges on both servers, Windows administrator access, and DAC enabled on the source instance. It supports filtering by credential name or identity and can handle cryptographic provider credentials used for Extensible Key Management (EKM).
+
+        Credit: Based on password decryption techniques by Antti Rantasaari (NetSPI, 2014)
+        https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.

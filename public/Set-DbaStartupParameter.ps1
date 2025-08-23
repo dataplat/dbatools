@@ -1,10 +1,14 @@
 function Set-DbaStartupParameter {
     <#
     .SYNOPSIS
-        Sets the Startup Parameters for a SQL Server instance
+        Modifies SQL Server startup parameters stored in the Windows registry
 
     .DESCRIPTION
-        Modifies the startup parameters for a specified SQL Server Instance
+        Changes the startup parameters that SQL Server uses when the service starts, including paths to master database files, error log location, and various startup flags. These parameters are stored in the Windows registry and require elevated permissions to modify.
+
+        This function is commonly used to enable single-user mode for emergency repairs, set trace flags for troubleshooting, relocate system database files during migrations, or adjust memory settings. Changes take effect only after the SQL Server service is restarted.
+
+        The function validates file paths when the instance is online to prevent startup failures, but can work offline with the -Force parameter when you need to modify parameters for instances that won't start.
 
         For full details of what each parameter does, please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms190737(v=sql.105).aspx
 

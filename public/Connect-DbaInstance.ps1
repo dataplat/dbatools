@@ -1,22 +1,25 @@
 function Connect-DbaInstance {
     <#
     .SYNOPSIS
-        Creates a robust, reusable SQL Server object.
+        Creates a persistent SQL Server Management Object (SMO) connection for database operations.
 
     .DESCRIPTION
-        This command creates a robust, reusable sql server object.
+        This command creates a reusable SQL Server Management Object (SMO) that serves as the foundation for most dbatools operations. Think of it as your entry point for connecting to SQL Server instances, whether on-premises, in Azure, or anywhere else.
 
-        It is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.
+        The returned SMO server object handles authentication automatically, detecting whether to use Windows integrated security, SQL authentication, or Azure Active Directory based on your credentials. It supports connection pooling by default for better performance and can handle complex scenarios like failover partners, dedicated admin connections, and multi-subnet environments.
 
-        By default, this command also sets the connection's ApplicationName property  to "dbatools PowerShell module - dbatools.io - custom connection". If you're doing anything that requires profiling, you can look for this client name.
+        This is the connection object you'll pass to other dbatools commands like Get-DbaDatabase, Invoke-DbaQuery, or Backup-DbaDatabase. Rather than each command establishing its own connection, you create one persistent connection here and reuse it, which is both faster and more reliable.
 
-        Alternatively, you can pass in whichever client name you'd like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.
+        The connection includes helpful properties for scripting like ComputerName, IsAzure, and ConnectedAs, plus it automatically sets an identifiable ApplicationName in your connection string so you can track dbatools sessions in profiler or extended events.
 
-        See https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
-        and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx,
-        and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx
+        For Azure connections, it handles the various authentication methods including service principals, managed identities, and access tokens. For on-premises instances, it supports Windows authentication (including alternative credentials), SQL logins, and dedicated administrator connections for emergency access.
 
-        To execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
+        Reference documentation:
+        https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
+        https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx
+        https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx
+
+        To execute SQL commands directly: $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

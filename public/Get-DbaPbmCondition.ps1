@@ -1,10 +1,10 @@
 function Get-DbaPbmCondition {
     <#
     .SYNOPSIS
-        Returns conditions from policy based management from an instance.
+        Retrieves Policy-Based Management conditions from SQL Server instances for compliance monitoring and policy evaluation.
 
     .DESCRIPTION
-        Returns conditions from policy based management from an instance.
+        Retrieves Policy-Based Management (PBM) conditions from SQL Server instances, which define the rules and criteria used to evaluate database objects for compliance. These conditions form the building blocks of PBM policies and specify what to check (like database settings, table properties, or server configurations) and what values are acceptable. Use this to audit existing conditions, troubleshoot policy failures, or inventory your compliance framework across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

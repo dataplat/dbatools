@@ -70,7 +70,7 @@ AS
         }
 
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_viewdb" -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_viewdb"
         }
 
         It "Should find a specific view named v_dbatoolsci_sysadmin" {

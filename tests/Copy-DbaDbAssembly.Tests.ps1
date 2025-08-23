@@ -52,7 +52,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             ,   @description    = @assemblyName")
     }
     AfterAll {
-        Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database dbclrassembly | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database dbclrassembly | Remove-DbaDatabase
         $server3.Query("
             DECLARE
                 @hash           VARBINARY(64)   = $hexStr

@@ -1,10 +1,10 @@
 function Get-DbaInstanceAuditSpecification {
     <#
     .SYNOPSIS
-        Gets SQL Security Audit Specification information for each instance(s) of SQL Server.
+        Retrieves server-level audit specifications from SQL Server instances for compliance and security monitoring
 
     .DESCRIPTION
-        The Get-DbaInstanceAuditSpecification command gets SQL Security Audit Specification information for each instance(s) of SQL Server.
+        Returns all server-level audit specifications configured on SQL Server instances, including their enabled status, associated audit names, and configuration details. This helps DBAs inventory audit configurations for compliance reporting, security assessments, and ensuring proper event monitoring is in place. Server audit specifications define which events are captured by SQL Server Audit at the instance level, such as login attempts, permission changes, and database access patterns.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

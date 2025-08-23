@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     AfterAll {
         Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
     }
     Context "Command gets suggestions" {
         It "Should get results for $dbname" {

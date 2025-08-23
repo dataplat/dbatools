@@ -1,12 +1,14 @@
 function Invoke-DbaDbDataMasking {
     <#
     .SYNOPSIS
-        Masks data by using randomized values determined by a configuration file and a randomizer framework
+        Replaces sensitive production data with randomized values using configurable masking rules
 
     .DESCRIPTION
-        TMasks data by using randomized values determined by a configuration file and a randomizer framework
+        Replaces sensitive data in SQL Server databases with randomized values based on a JSON configuration file. This enables DBAs to create safe, non-production datasets for development, testing, and training environments without exposing real customer data.
 
-        It will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig
+        The function processes tables row-by-row, applying masking rules like generating fake names, addresses, phone numbers, or random strings while preserving data relationships and referential integrity. It supports deterministic masking to maintain consistency across related records and can handle unique constraints.
+
+        Use New-DbaDbMaskingConfig to generate the required configuration file, which defines which columns to mask and what type of replacement data to generate. The masking process creates temporary tables and indexes to optimize performance during large data transformations.
 
         Note that the following column and data types are not currently supported:
         Identity

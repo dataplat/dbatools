@@ -1,16 +1,10 @@
 function Set-DbaDbCompression {
     <#
     .SYNOPSIS
-        Sets tables and indexes with preferred compression setting.
+        Applies data compression to SQL Server tables and indexes to reduce storage space and improve performance.
 
     .DESCRIPTION
-        This function sets the appropriate compression recommendation, determined either by using the Tiger Team's query or set to the CompressionType parameter.
-
-        Remember Uptime is critical for the Tiger Team query, the longer uptime, the more accurate the analysis is.
-        You would probably be best if you utilized Get-DbaUptime first, before running this command.
-
-        Set-DbaDbCompression script derived from GitHub and the tigertoolbox
-        (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
+        Compresses tables, indexes, and heaps across one or more databases using Row, Page, or intelligent recommendations based on Microsoft's Tiger Team compression analysis. Automatically handles the complex process of analyzing usage patterns, applying appropriate compression types, and rebuilding objects online when possible. Saves significant storage space, reduces backup sizes, and improves I/O performance without requiring manual compression analysis for each object. Particularly valuable for large production databases where storage costs and backup windows are concerns.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

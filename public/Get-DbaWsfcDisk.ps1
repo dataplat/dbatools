@@ -1,10 +1,10 @@
 function Get-DbaWsfcDisk {
     <#
     .SYNOPSIS
-        Gets information about the clustered disks on one or more failover clusters in a given domain.
+        Retrieves detailed information about clustered physical disks from Windows Server Failover Clusters.
 
     .DESCRIPTION
-        Gets information about the clustered disks on one or more failover clusters in a given domain.
+        Retrieves comprehensive disk information from Windows Server Failover Clusters including disk space usage, file systems, mount points, and cluster resource states. This function is essential for DBAs managing SQL Server Failover Cluster Instances who need to monitor storage health and capacity across cluster nodes. Returns detailed disk properties like total size, free space, volume labels, and serial numbers for each clustered disk resource, helping identify storage bottlenecks and plan capacity upgrades.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 

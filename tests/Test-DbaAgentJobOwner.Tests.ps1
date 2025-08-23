@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $notSaJob -OwnerLogin 'NT AUTHORITY\SYSTEM'
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $saJob, $notSaJob -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $saJob, $notSaJob
     }
 
     Context "Command actually works" {

@@ -1,10 +1,10 @@
 function Resume-DbaAgDbDataMovement {
     <#
     .SYNOPSIS
-        Resumes data movement for an availability group database on a SQL Server instance.
+        Resumes suspended data synchronization for availability group databases.
 
     .DESCRIPTION
-        Resumes data movement for an availability group database on a SQL Server instance.
+        Resumes data movement for availability group databases that have been suspended due to errors, maintenance, or storage issues. When data movement is suspended, secondary replicas stop receiving transaction log records from the primary, causing synchronization lag. This function reconnects the synchronization process so secondary replicas can catch up to the primary replica.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

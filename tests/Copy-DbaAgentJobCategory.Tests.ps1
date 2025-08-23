@@ -44,8 +44,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created categories
-        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "dbatoolsci test category" -Confirm:$false
-        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance3 -Category "dbatoolsci test category" -Confirm:$false
+        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "dbatoolsci test category"
+        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance3 -Category "dbatoolsci test category"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -1,12 +1,12 @@
 function Copy-DbaAgentJob {
     <#
     .SYNOPSIS
-        Copy-DbaAgentJob migrates jobs from one SQL Server to another.
+        Migrates SQL Server Agent jobs between instances with dependency validation
 
     .DESCRIPTION
-        By default, all jobs are copied. The -Job parameter is auto-populated for command-line completion and can be used to copy only specific jobs.
+        Copies SQL Server Agent jobs from one instance to another while automatically validating all dependencies including databases, logins, proxy accounts, and operators. This eliminates the manual process of checking prerequisites before moving jobs during migrations, disaster recovery, or environment promotions.
 
-        If the job already exists on the destination, it will be skipped unless -Force is used.
+        The function intelligently skips jobs associated with maintenance plans and provides detailed validation messages for any missing dependencies. By default, existing jobs are preserved unless -Force is specified to overwrite them.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

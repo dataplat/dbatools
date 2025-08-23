@@ -1,12 +1,10 @@
 function Get-DbaHideInstance {
     <#
     .SYNOPSIS
-        Gets Hide Instance settings for a SQL Server instance
+        Retrieves the Hide Instance setting from SQL Server registry configuration
 
     .DESCRIPTION
-        Gets Hide Instance settings for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.
-
-        This setting is found in Configuration Manager.
+        Retrieves the Hide Instance setting from the Windows registry for SQL Server instances. This security setting controls whether the instance appears when clients browse the network for available SQL Server instances. When Hide Instance is enabled, the SQL Server instance will not respond to broadcast requests from SQL Server Browser service, making it invisible to network discovery tools. DBAs use this setting as a security hardening measure to reduce the attack surface by preventing unauthorized discovery of SQL Server instances. Note that this requires Windows administrative access to the target server, not SQL Server permissions.
 
     .PARAMETER SqlInstance
        The target SQL Server instance or instances. Defaults to localhost.

@@ -93,7 +93,7 @@ Describe $CommandName -Tag IntegrationTests {
             $db6 = "dbatoolsci_dbsetstate_multi"
             $db7 = "dbatoolsci_dbsetstate_rw"
             $db8 = "dbatoolsci_dbsetstate_ro"
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8 | Remove-DbaDatabase
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2")
             $server.Query("CREATE DATABASE $db3")
@@ -111,7 +111,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         AfterAll {
             $null = Set-DbaDbState -Sqlinstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4, $db5, $db7 -Online -ReadWrite -MultiUser -Force
-            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
         }
         It "Honors the Database parameter" {
             if (-not $setupright) {

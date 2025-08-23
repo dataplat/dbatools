@@ -1,15 +1,14 @@
 function Export-DbaInstance {
     <#
     .SYNOPSIS
-        Exports SQL Server *ALL* database restore scripts, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
-        Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
-        system triggers and backup devices from one SQL Server to another.
+        Exports complete SQL Server instance configuration as T-SQL scripts for migration or disaster recovery
 
     .DESCRIPTION
-        Export-DbaInstance consolidates most of the export scripts in dbatools into one command.
+        Export-DbaInstance consolidates most of the export scripts in dbatools into one command that captures everything needed to recreate or migrate a SQL Server instance.
 
-        This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions.
-        Think of it as an easy button. Unless an -Exclude is specified, it exports:
+        This command saves hours of manual work when migrating instances to new servers, creating disaster recovery scripts, or documenting configurations for compliance. It generates individual T-SQL script files for each component type, organized in a timestamped folder structure that's perfect for version control or automated deployment pipelines.
+
+        Unless an -Exclude is specified, it exports:
 
         All database 'restore from backup' scripts.  Note: if a database does not have a backup the 'restore from backup' script won't be generated.
         All logins.
@@ -33,13 +32,18 @@ function Export-DbaInstance {
         All Availability Groups.
         All OLEDB Providers.
 
-        The exported files are written to a folder with a naming convention of "machinename$instance-yyyyMMddHHmmss".
+        The exported files are written to a folder using the naming convention "machinename$instance-yyyyMMddHHmmss", making it easy to identify the source instance and export timestamp.
 
-        This command supports the following use cases related to the output files:
+        This command is particularly valuable for:
+        - Instance migrations when moving to new hardware or cloud platforms
+        - Creating standardized development and test environments that match production
+        - Disaster recovery planning by maintaining current configuration snapshots
+        - Compliance documentation that automatically captures security settings and configurations
+        - Change management workflows where you need baseline configurations before major updates
 
-        1. Export files to a new timestamped folder. This is the default behavior and results in a simple historical archive within the local filesystem.
-        2. Export files to an existing folder and overwrite pre-existing files. This can be accomplished using the -Force parameter.
-        This results in a single folder location with the latest exported files. These files can then be checked into a source control system if needed.
+        Two folder management options are supported:
+        1. Default behavior creates new timestamped folders for historical archiving
+        2. Using -Force overwrites files in the same location, ideal for scheduled exports that feed into version control systems
 
         For more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.
 

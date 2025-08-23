@@ -1,10 +1,10 @@
 function Get-DbaReplPublisher {
     <#
     .SYNOPSIS
-        Gets publisher information for the target SQL instances.
+        Retrieves SQL Server replication publisher configuration and status from distribution servers.
 
     .DESCRIPTION
-        Gets publisher information for the target SQL instances.
+        Retrieves detailed information about SQL Server replication publishers configured on distribution servers. This function connects to instances acting as distributors and returns publisher details including status, working directory, distribution database, and publication counts. Use this to audit replication topology, troubleshoot publisher connectivity issues, or verify publisher configurations across your replication environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,12 @@
 function Get-DbaPrivilege {
     <#
     .SYNOPSIS
-        Gets the users with local privileges on one or more computers.
+        Retrieves Windows security privileges critical for SQL Server performance from target computers.
 
     .DESCRIPTION
-        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', 'Generate Security Audits' or 'Logon as a service' on one or more computers.
+        Audits five Windows privileges that directly impact SQL Server performance and functionality: Lock Pages in Memory, Instant File Initialization, Logon as Batch, Generate Security Audits, and Logon as a Service. These privileges are essential for SQL Server service accounts to achieve optimal performance and proper operation.
+
+        Use this to verify that SQL Server service accounts have the necessary Windows privileges configured, troubleshoot performance issues related to missing privileges, or audit security configurations across your SQL Server environment. The function exports the local security policy using secedit and parses the results to show which users and groups hold these critical privileges.
 
         Requires Local Admin rights on destination computer(s).
 

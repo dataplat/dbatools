@@ -1,10 +1,10 @@
 function Get-DbaDbCertificate {
     <#
     .SYNOPSIS
-        Gets database certificates
+        Retrieves database-level certificates from SQL Server databases for security auditing and certificate management
 
     .DESCRIPTION
-        Gets database certificates
+        Retrieves all certificates stored within SQL Server databases, providing detailed information about each certificate including expiration dates, issuers, and encryption properties. This function is essential for DBAs managing Transparent Data Encryption (TDE), Service Broker security, or other database-level encryption features. Use this to audit certificate inventory across your environment, monitor approaching expiration dates for proactive renewal planning, and ensure compliance with security policies that require certificate tracking and rotation.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

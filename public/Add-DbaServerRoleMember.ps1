@@ -1,10 +1,10 @@
 function Add-DbaServerRoleMember {
     <#
     .SYNOPSIS
-        Adds a login to a server-level role(s) for each instance(s) of SQL Server.
+        Adds logins or server roles to server-level roles for SQL Server security administration.
 
     .DESCRIPTION
-        Adds a login to a server-level role(s) for each instance(s) of SQL Server.
+        Grants server-level role membership to SQL logins or nests server roles within other server roles. Use this command when setting up security permissions, implementing role-based access control, or managing server-level privileges across multiple SQL Server instances. Supports both built-in roles (sysadmin, dbcreator, etc.) and custom server roles, so you don't have to manually assign permissions through SSMS or T-SQL scripts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

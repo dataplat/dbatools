@@ -1,11 +1,14 @@
 function Invoke-DbaQuery {
     <#
     .SYNOPSIS
-        A command to run explicit T-SQL commands or files.
+        Executes T-SQL queries, scripts, and stored procedures against SQL Server instances with parameterized query support
 
     .DESCRIPTION
-        This function is a wrapper command around Invoke-DbaAsync, which in turn is based on Invoke-SqlCmd2.
-        It was designed to be more convenient to use in a pipeline and to behave in a way consistent with the rest of our functions.
+        Executes T-SQL commands against one or more SQL Server instances, supporting queries from strings, files, URLs, or SQL Server Management Objects. This is the primary dbatools command for running custom SQL against your environment, whether you're extracting data for reports, deploying scripts across multiple servers, or running maintenance commands.
+
+        The function provides secure parameterized query execution to prevent SQL injection attacks, making it safe to use with dynamic values. You can target specific databases, execute against Availability Group listeners with ReadOnly intent, and choose from multiple output formats to match your workflow needs.
+
+        Built for pipeline operations, it accepts multiple instances from Get-DbaRegServer or database collections from Get-DbaDatabase, allowing you to efficiently execute the same query across your entire SQL Server estate. The function handles both simple ad-hoc queries and complex stored procedure calls with input/output parameters, table-valued parameters, and Always Encrypted column support.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

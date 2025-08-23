@@ -1,10 +1,10 @@
 function Stop-DbaPfDataCollectorSet {
     <#
     .SYNOPSIS
-        Stops Performance Monitor Data Collector Set.
+        Stops Windows Performance Monitor Data Collector Sets used for SQL Server performance monitoring.
 
     .DESCRIPTION
-        Stops Performance Monitor Data Collector Set.
+        Stops running Performance Monitor Data Collector Sets that are actively collecting performance counters for SQL Server monitoring and analysis. This function interacts with the Windows Performance Logs and Alerts (PLA) service to gracefully halt data collection processes. Commonly used to stop baseline data collection after capturing sufficient performance metrics, or to halt monitoring during maintenance windows when counter data isn't needed.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

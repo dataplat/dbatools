@@ -1,12 +1,14 @@
 function Find-DbaSimilarTable {
     <#
     .SYNOPSIS
-        Returns all tables/views that are similar in structure by comparing the column names of matching and matched tables/views
+        Finds tables and views with similar structures by comparing column names across databases
 
     .DESCRIPTION
-        This function can either run against specific databases or all databases searching all/specific tables and views including in system databases.
-        Typically one would use this to find for example archive version(s) of a table whose structures are similar.
-        This can also be used to find tables/views that are very similar to a given table/view structure to see where a table/view might be used.
+        Analyzes table and view structures across databases by comparing column names using INFORMATION_SCHEMA views. Returns a match percentage showing how similar structures are based on shared column names.
+
+        Perfect for finding archive tables that mirror production structures, identifying tables that might serve similar purposes across databases, or discovering where specific table patterns are used throughout your SQL Server environment.
+
+        You can search across all databases or target specific databases, schemas, or tables. The function calculates match percentages so you can set minimum thresholds to filter results and focus on the most relevant matches.
 
         More information can be found here: https://sqljana.wordpress.com/2017/03/31/sql-server-find-tables-with-similar-table-structure/
 

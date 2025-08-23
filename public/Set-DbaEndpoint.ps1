@@ -1,10 +1,10 @@
 function Set-DbaEndpoint {
     <#
     .SYNOPSIS
-        Sets endpoint properties on a SQL Server instance.
+        Modifies SQL Server endpoint properties including owner and protocol type.
 
     .DESCRIPTION
-        Sets endpoint properties on a SQL Server instance.
+        Modifies properties of existing SQL Server endpoints such as changing the owner for security compliance or switching the endpoint type between DatabaseMirroring, ServiceBroker, Soap, and TSql protocols. This is commonly used when transferring endpoint ownership during security audits, changing communication protocols for availability group configurations, or updating Service Broker endpoints for application messaging. The function works with specific endpoints by name or can target all endpoints on an instance, making it useful for bulk administrative changes across your SQL Server environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

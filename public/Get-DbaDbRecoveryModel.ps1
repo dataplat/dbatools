@@ -1,10 +1,10 @@
 function Get-DbaDbRecoveryModel {
     <#
     .SYNOPSIS
-        Displays the Recovery Model.
+        Retrieves database recovery model settings and backup history information from SQL Server instances.
 
     .DESCRIPTION
-        Displays the Recovery Model for all databases. This is the default, you can filter using -Database, -ExcludeDatabase, -RecoveryModel
+        Retrieves recovery model configuration for databases along with their last backup dates, which is essential for backup strategy planning and compliance auditing. DBAs use this to identify databases with inappropriate recovery models for their business requirements, troubleshoot transaction log growth issues, and ensure backup policies align with recovery model settings. The function shows whether databases are accessible and when their last full, differential, and transaction log backups occurred, making it valuable for both routine maintenance and disaster recovery planning.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

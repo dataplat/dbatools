@@ -1,12 +1,12 @@
 function Get-DbaReplArticle {
     <#
     .SYNOPSIS
-        Gets the information about publication articles.
+        Retrieves detailed information about replication articles from SQL Server publications.
 
     .DESCRIPTION
-        This function locates and enumerates articles' information.
+        Retrieves comprehensive details about articles within SQL Server replication publications, helping DBAs audit and manage replication topology. Articles define which tables, views, or stored procedures are included in a publication for data distribution to subscribers.
 
-        Can specify a database, publication or article name.
+        This function examines all accessible databases on the specified instances and returns article properties including name, type, schema, source objects, and partitioning details. Use this when troubleshooting replication issues, documenting replication setup, or verifying which objects are being replicated across your environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

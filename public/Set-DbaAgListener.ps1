@@ -1,12 +1,10 @@
 function Set-DbaAgListener {
     <#
     .SYNOPSIS
-        Sets a listener property for an availability group on a SQL Server instance.
+        Modifies the port number for Availability Group listeners on SQL Server instances.
 
     .DESCRIPTION
-        Sets a listener property for an availability group on a SQL Server instance.
-
-        Basically, only the port is settable at this time, so this command updates the listener port.
+        Modifies the port number for Availability Group listeners, allowing you to change the network port that clients use to connect to the availability group. This is commonly needed when standardizing ports across environments, resolving port conflicts with other services, or implementing security policies that require non-default ports. The command works with existing listeners and requires the availability group to be online to complete the port change.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

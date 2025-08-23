@@ -1,10 +1,10 @@
 function Set-DbaAgentJobOutputFile {
     <#
     .Synopsis
-        Set the output file for a step within an Agent job.
+        Configures the output file path for SQL Server Agent job steps to capture step execution logs.
 
     .DESCRIPTION
-        Sets the Output File for a step of an agent job with the Job Names and steps provided dynamically if required
+        Modifies the output file location where SQL Server Agent writes job step execution details, error messages, and command output. This centralizes logging for troubleshooting failed jobs, monitoring step execution, and maintaining audit trails without manually editing each job step through SQL Server Management Studio. When no specific step is provided, an interactive selection interface appears for jobs with multiple steps.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -18,14 +18,14 @@ function Set-DbaAgentJobOutputFile {
 
     .PARAMETER Job
         The name of the job to process.
-        
+
         This parameter is not officially mandatory, but you will always be asked to provide a job if you have not.
 
     .PARAMETER Step
         The name of the Agent Job Step to provide Output File Path for.
-        
+
         Within a job, step names are unique so this is a safe way to select steps.
-        
+
         Also available dynamically. If you do not specify this parameter and the target job has only one step, then we use that step. If it has more than one, then a GUI will be used to make you pick steps. If that GUI does not work, then we use all steps.
 
     .PARAMETER OutputFile

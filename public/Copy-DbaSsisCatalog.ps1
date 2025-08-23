@@ -1,12 +1,14 @@
 function Copy-DbaSsisCatalog {
     <#
     .SYNOPSIS
-        Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.
+        Migrates SSIS catalogs including folders, projects, and environments between SQL Server instances.
 
     .DESCRIPTION
-        By default, all folders, projects, and environments are copied. The -Project parameter can be specified to copy only one project, if desired.
+        Copies the complete SSISDB catalog structure from a source SQL Server to one or more destination instances. This function handles server migrations, environment promotions, and disaster recovery scenarios where you need to replicate your Integration Services deployments.
 
-        The parameters get more granular from the Folder level. For example, specifying -Folder will only deploy projects/environments from within that folder.
+        By default, all folders, projects, and environments are copied. You can use -Project, -Folder, or -Environment parameters to migrate specific components instead of the entire catalog. The function will create the SSISDB catalog on the destination if it doesn't exist, and automatically enable SQL CLR if required.
+
+        The parameters work hierarchically - specifying -Folder will only deploy projects and environments from within that folder, while -Project will deploy just that specific project from whichever folder contains it.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2012 or higher.

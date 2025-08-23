@@ -1,10 +1,10 @@
 function Get-DbaXESession {
     <#
     .SYNOPSIS
-        Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
+        Retrieves Extended Events sessions with detailed configuration and status information from SQL Server instances.
 
     .DESCRIPTION
-        Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).
+        This function connects to one or more SQL Server instances and returns comprehensive information about Extended Events sessions, including their current status, configuration details, target files, and memory settings. Extended Events sessions are SQL Server's modern event-handling system used for performance monitoring, troubleshooting, and auditing. This command helps DBAs inventory existing sessions, verify their operational status, and locate output files across multiple SQL Server instances without manually connecting to each server. The function automatically resolves target file paths and provides both local and UNC path information for easier file access from remote management stations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

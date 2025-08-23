@@ -1,14 +1,16 @@
 function Get-DbaDiskSpace {
     <#
     .SYNOPSIS
-        Displays disk information for all local disk on a server.
+        Retrieves disk space and filesystem details from SQL Server host systems for capacity monitoring and performance analysis.
 
     .DESCRIPTION
-        Returns a custom object with server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.
+        Queries Windows disk volumes on SQL Server systems using WMI to gather critical storage information for database administration. Returns comprehensive disk details including capacity, free space, filesystem type, and optional fragmentation analysis.
 
-        By default, this function only shows drives of types 2 and 3 (removable disk and local disk).
+        Essential for SQL Server capacity planning, this function helps DBAs monitor disk space before growth limits impact database operations. Use it to verify adequate space for backup operations, identify performance bottlenecks from fragmented volumes hosting data or log files, and maintain compliance documentation for storage utilization.
 
-        Requires Windows administrator access on SQL Servers
+        By default, only local disks and removable disks are shown (DriveType 2 and 3), which covers most SQL Server storage scenarios. Hidden system volumes are excluded unless the Force parameter is used.
+
+        Requires Windows administrator access on target SQL Server systems.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

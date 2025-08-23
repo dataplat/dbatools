@@ -110,7 +110,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $piiscanDb -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $piiscanDb
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

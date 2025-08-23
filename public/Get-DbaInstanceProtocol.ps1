@@ -1,13 +1,14 @@
 function Get-DbaInstanceProtocol {
     <#
     .SYNOPSIS
-        Gets the SQL Server related server protocols on a computer.
+        Retrieves SQL Server network protocol configuration and status from target computers.
 
     .DESCRIPTION
-        Gets the SQL Server related server protocols on one or more computers.
+        Retrieves the configuration and status of SQL Server network protocols (TCP/IP, Named Pipes, Shared Memory, VIA) by querying the WMI ComputerManagement namespace. This is essential for troubleshooting connectivity issues, auditing network configurations for security compliance, and managing protocol settings across multiple SQL Server instances.
+
+        The returned protocol objects include Enable() and Disable() methods, allowing you to manage protocol states directly without opening SQL Server Configuration Manager. This is particularly useful for automating security hardening by disabling unnecessary protocols or standardizing configurations across your environment.
 
         Requires Local Admin rights on destination computer(s).
-        The server protocols can be enabled and disabled when retrieved via WSMan.
 
     .PARAMETER ComputerName
         The target SQL Server instance or instances.

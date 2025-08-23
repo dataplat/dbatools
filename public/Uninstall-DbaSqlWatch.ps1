@@ -1,10 +1,10 @@
 Function Uninstall-DbaSqlWatch {
     <#
     .SYNOPSIS
-        Uninstalls SqlWatch.
+        Completely removes SqlWatch monitoring solution from a SQL Server instance
 
     .DESCRIPTION
-        Deletes all user objects, agent jobs, and historical data associated with SqlWatch.
+        Performs a complete uninstallation of the SqlWatch performance monitoring solution by removing all associated database objects, SQL Agent jobs, and historical data. This includes dropping all SqlWatch tables (containing performance metrics history), views, stored procedures, functions, Extended Events sessions, Service Broker components, assemblies, and user-defined table types. The function also unpublishes the SqlWatch DACPAC registration to ensure clean removal. Use this when decommissioning SqlWatch or preparing for a fresh installation after configuration issues.
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to.

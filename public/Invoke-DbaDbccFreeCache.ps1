@@ -1,15 +1,17 @@
 function Invoke-DbaDbccFreeCache {
     <#
     .SYNOPSIS
-        Execution of Database Console Commands that clear Server level Memory caches
+        Clears SQL Server memory caches using DBCC commands to resolve performance issues and free memory
 
     .DESCRIPTION
-        Allows execution of Database Console Commands that act at Server Level to clear Memory caches
+        Executes DBCC commands to clear various SQL Server memory caches when troubleshooting performance problems or freeing memory on resource-constrained systems. This function helps DBAs resolve issues like parameter sniffing, plan cache bloat, or memory pressure without restarting the SQL Server service.
 
-        Allows execution of the following commands
-            DBCC FREEPROCCACHE
-            DBCC FREESESSIONCACHE
-            DBCC FREESYSTEMCACHE
+        Supports three cache-clearing operations:
+        - DBCC FREEPROCCACHE: Clears procedure cache (all plans or specific plan handles/resource pools)
+        - DBCC FREESESSIONCACHE: Clears distributed query connection cache for linked servers
+        - DBCC FREESYSTEMCACHE: Clears system caches like token cache and ring buffers
+
+        Use FREEPROCCACHE to resolve parameter sniffing issues or when query plans become inefficient. Use FREESESSIONCACHE when experiencing linked server connection problems. Use FREESYSTEMCACHE to clear authentication tokens and other system-level cached data.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freeproccache-transact-sql

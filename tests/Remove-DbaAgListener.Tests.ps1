@@ -34,7 +34,6 @@ Describe $CommandName -Tag IntegrationTests {
             Name         = $agName
             ClusterType  = "None"
             FailoverMode = "Manual"
-            Confirm      = $false
             Certificate  = "dbatoolsci_AGCert"
         }
         $ag = New-DbaAvailabilityGroup @splatAg
@@ -42,7 +41,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatListener = @{
             IPAddress = "127.0.20.1"
             Port      = 14330
-            Confirm   = $false
         }
         $agListener = $ag | Add-DbaAgListener @splatListener
 
@@ -54,15 +52,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName -Confirm:$false
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing a listener" {
         It "Returns results with proper data" {
-            $results = Remove-DbaAgListener -SqlInstance $TestConfig.instance3 -Listener $agListener.Name -Confirm:$false
+            $results = Remove-DbaAgListener -SqlInstance $TestConfig.instance3 -Listener $agListener.Name
             $results.Status | Should -Be "Removed"
         }
     }

@@ -1,10 +1,10 @@
 function Backup-DbaDbCertificate {
     <#
     .SYNOPSIS
-        Exports database certificates from SQL Server using SMO.
+        Exports database certificates and private keys to physical backup files on SQL Server instances.
 
     .DESCRIPTION
-        Exports database certificates from SQL Server using SMO and outputs the .cer and .pvk files.
+        Backs up database certificates by exporting them to .cer (certificate) and .pvk (private key) files on the SQL Server file system. This is essential for disaster recovery scenarios where you need to restore encrypted databases or migrate certificates to another instance. Without backing up certificates, you cannot decrypt TDE-enabled databases or access data encrypted with certificate-based encryption. Files are saved to the instance's default backup directory unless a custom path is specified.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

@@ -1,10 +1,10 @@
 function Remove-DbaDbTable {
     <#
     .SYNOPSIS
-        Removes database table(s) from each database and SQL Server instance.
+        Drops tables from SQL Server databases with safety controls and detailed status reporting.
 
     .DESCRIPTION
-        Removes database table(s), with supported piping from Get-DbaDbTable.
+        Permanently removes tables from one or more databases using SQL Server Management Objects (SMO). This function provides a safer alternative to manual DROP TABLE statements by including built-in confirmation prompts and comprehensive error handling. You can specify tables directly by name or pipe table objects from Get-DbaDbTable for more complex filtering scenarios. Each removal operation returns detailed status information including success confirmation and specific error messages when failures occur.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

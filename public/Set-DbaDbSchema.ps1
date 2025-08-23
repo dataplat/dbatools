@@ -1,10 +1,10 @@
 function Set-DbaDbSchema {
     <#
     .SYNOPSIS
-        Updates the owner for one or more schemas.
+        Changes the owner of database schemas to reassign security and object ownership responsibilities
 
     .DESCRIPTION
-        Updates the owner for one or more schemas.
+        Modifies the ownership of database schemas by updating the schema owner property in SQL Server. This is commonly needed when reorganizing database security, transferring ownership from developers to service accounts, or standardizing schema ownership after database migrations. The function works by retrieving the schema object and updating its Owner property through SQL Server Management Objects, then applying the change to the database.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

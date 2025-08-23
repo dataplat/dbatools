@@ -90,8 +90,8 @@ Describe $CommandName -Tag IntegrationTests {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("DROP USER $user1", "msdb")
         $null = $server.Query("DROP USER $user2", "msdb")
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

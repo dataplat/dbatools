@@ -42,20 +42,13 @@ Describe $CommandName -Tag IntegrationTests {
         # We'll create the master key if it doesn't exist, and track files created for cleanup.
 
         # Set variables. They are available in all the It blocks.
-        $testInstance    = $TestConfig.instance1
-        $testDatabase    = "tempdb"
-        $masterKeyPass   = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+        $random = Get-Random
+        $testInstance = $TestConfig.instance1
+        $testDatabase = "dbatoolscli_db_$random"
+        $masterKeyPass = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
 
-        # Create the objects.
-        if (-not (Get-DbaDbMasterKey -SqlInstance $testInstance -Database $testDatabase)) {
-            $splatNewKey = @{
-                SqlInstance = $testInstance
-                Database    = $testDatabase
-                Password    = $masterKeyPass
-                Confirm     = $false
-            }
-            $null = New-DbaDbMasterKey @splatNewKey
-        }
+        $null = New-DbaDatabase -SqlInstance $testInstance -Name $testDatabase
+        $null = New-DbaDbMasterKey -SqlInstance $testInstance -Database $testDatabase -Password $masterKeyPass
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -66,10 +59,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Get-DbaDbMasterKey -SqlInstance $testInstance -Database $testDatabase | Remove-DbaDbMasterKey -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $testInstance -Database $testDatabase
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -81,7 +74,6 @@ Describe $CommandName -Tag IntegrationTests {
                 Database       = $testDatabase
                 SecurePassword = $masterKeyPass
                 Path           = $backupPath
-                Confirm        = $false
             }
             $results = Backup-DbaDbMasterKey @splatBackup
             $results | Should -Not -BeNullOrEmpty
@@ -100,7 +92,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SecurePassword = $masterKeyPass
                 Path           = $backupPath
                 FileBaseName   = "dbatoolscli_dbmasterkey_$random"
-                Confirm        = $false
             }
             $results = Backup-DbaDbMasterKey @splatBackupWithName
             $results | Should -Not -BeNullOrEmpty

@@ -1,10 +1,10 @@
 function Export-DbatoolsConfig {
     <#
     .SYNOPSIS
-        Exports configuration items to a Json file.
+        Exports dbatools module configuration settings to a JSON file for backup or migration.
 
     .DESCRIPTION
-        Exports configuration items to a Json file.
+        Exports dbatools configuration settings to a JSON file, allowing you to backup your current settings or migrate them to other machines. This function captures customized settings like connection timeouts, default database paths, and other module preferences that have been changed from their default values. You can export all settings or filter by specific modules, and optionally exclude settings that haven't been modified from defaults.
 
     .PARAMETER FullName
         Select the configuration objects to export by filtering by their full name.

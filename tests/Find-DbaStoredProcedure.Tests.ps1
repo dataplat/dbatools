@@ -115,7 +115,6 @@ AS
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = "dbatoolsci_storedproceduredb"
-                Confirm     = $false
             }
             $null = Remove-DbaDatabase @splatRemoveDb
 

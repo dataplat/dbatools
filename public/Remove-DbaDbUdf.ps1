@@ -1,10 +1,10 @@
 function Remove-DbaDbUdf {
     <#
     .SYNOPSIS
-        Removes a database user defined function(s) from each database and SQL Server instance.
+        Removes user-defined functions from SQL Server databases.
 
     .DESCRIPTION
-        Removes a database user defined function(s), with supported piping from Get-DbaDbUdf.
+        Removes user-defined functions from specified databases, providing a clean way to drop obsolete or unwanted UDFs without manual T-SQL scripting. This function is particularly useful during database cleanup operations, code refactoring projects, or when removing deprecated functions that are no longer needed. Supports filtering by schema and function name, and can exclude system UDFs to prevent accidental removal of built-in functions. Works seamlessly with Get-DbaDbUdf for pipeline operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Set-DbaAgentJobCategory {
     <#
     .SYNOPSIS
-        Set-DbaAgentJobCategory changes a job category.
+        Renames SQL Server Agent job categories to standardize naming conventions across instances.
 
     .DESCRIPTION
-        Set-DbaAgentJobCategory makes it possible to change a job category.
+        Renames existing SQL Server Agent job categories by updating their names in the msdb database. This is particularly useful for standardizing job category naming conventions across multiple environments or correcting categories that were created with inconsistent names. The function validates that source categories exist and prevents renaming to names that already exist, helping maintain clean job organization within SQL Server Agent.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

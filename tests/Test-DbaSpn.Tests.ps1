@@ -36,15 +36,15 @@ Describe $CommandName -Tag IntegrationTests {
                     FullComputerName = $env:COMPUTERNAME
                 }
             }
-            $global:results = Test-DbaSpn -ComputerName $env:COMPUTERNAME -WarningAction SilentlyContinue
+            $results = Test-DbaSpn -ComputerName $env:COMPUTERNAME -WarningAction SilentlyContinue
         }
 
         It "Returns some results" {
-            $null -ne $global:results.RequiredSPN | Should -Be $true
+            $null -ne $results.RequiredSPN | Should -Be $true
         }
 
         It "Has the required properties for all results" {
-            foreach ($result in $global:results) {
+            foreach ($result in $results) {
                 $result.RequiredSPN -match "MSSQLSvc" | Should -Be $true
                 $result.Cluster -eq $false | Should -Be $true
                 $result.TcpEnabled | Should -Be $true

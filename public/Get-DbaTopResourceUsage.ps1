@@ -1,10 +1,14 @@
 function Get-DbaTopResourceUsage {
     <#
     .SYNOPSIS
-        Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
+        Identifies the most resource-intensive cached queries from sys.dm_exec_query_stats for performance troubleshooting
 
     .DESCRIPTION
-        Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
+        Analyzes cached query performance by examining sys.dm_exec_query_stats to find your worst-performing queries across four key metrics: total duration, execution frequency, IO operations, and CPU time. Each metric returns the top consumers (default 20) grouped by query hash, so you can quickly spot patterns in problematic queries that are dragging down server performance.
+
+        When your SQL Server is running slowly, this command helps you skip the guesswork and zero in on the specific queries consuming the most resources. Instead of manually writing complex DMV queries, you get formatted results showing query text, execution plans, database context, and performance metrics in one output.
+
+        You can focus on specific databases, exclude system objects like replication procedures, or analyze just one metric type (like Duration) when investigating particular performance issues. The results include actual query text and execution plans, so you can immediately start optimizing the problematic SQL.
 
         This command is based off of queries provided by Michael J. Swart at http://michaeljswart.com/go/Top20
 

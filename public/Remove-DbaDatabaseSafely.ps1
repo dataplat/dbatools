@@ -1,10 +1,12 @@
 function Remove-DbaDatabaseSafely {
     <#
     .SYNOPSIS
-        Safely removes a SQL Database and creates an Agent Job to restore it.
+        Removes databases after creating verified backups and testing restore procedures.
 
     .DESCRIPTION
-        Performs a DBCC CHECKDB on the database, backs up the database with Checksum and verify only to a final (golden) backup location, creates an Agent Job to restore from that backup, drops the database, runs the agent job to restore the database, performs a DBCC CHECKDB and drops the database.
+        Performs a comprehensive database removal workflow that validates database integrity, creates verified backups, and tests restore procedures before permanently removing databases. This function runs DBCC CHECKDB to verify database health, creates a checksummed backup to a specified location, generates a SQL Agent job for automated restore testing, drops the original database, executes the restore job to verify backup integrity, performs another DBCC check on the restored database, and finally removes the test database.
+
+        This process ensures that removed databases have reliable, tested backups that can be restored if needed later. The automated restore job remains available for future recovery operations, making this ideal for database decommissioning, environment cleanup, or compliance scenarios where you need proof that backups are valid before removing production data.
 
         With huge thanks to Grant Fritchey and his verify your backups video. Take a look, it's only 3 minutes long. http://sqlps.io/backuprant
 

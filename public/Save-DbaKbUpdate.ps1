@@ -1,10 +1,10 @@
 function Save-DbaKbUpdate {
     <#
     .SYNOPSIS
-        Downloads patches from Microsoft
+        Downloads Microsoft Knowledge Base updates and patches to local storage
 
     .DESCRIPTION
-        Downloads patches from Microsoft
+        Downloads Microsoft KB updates, cumulative updates, and service packs from Microsoft's servers to your local file system. This function handles SQL Server patches as well as any other Microsoft KB updates, making it easy to stage patches for installation across multiple servers. Supports filtering by architecture (x86, x64, ia64) and language, and can download multiple KBs in a single operation. Use this to build a local patch repository or download specific updates for offline installation scenarios.
 
     .PARAMETER Name
         The KB name or number. For example, KB4057119 or 4057119.

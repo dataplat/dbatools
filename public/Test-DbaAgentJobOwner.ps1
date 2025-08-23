@@ -1,12 +1,11 @@
 function Test-DbaAgentJobOwner {
     <#
     .SYNOPSIS
-        Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
+        Identifies SQL Agent jobs with incorrect ownership for security compliance auditing
 
     .DESCRIPTION
-        This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not. By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else.
+        This function audits SQL Agent job ownership by comparing each job's current owner against a target login, typically 'sa' or another sysadmin account. Jobs owned by inappropriate accounts can pose security risks, especially if those accounts are disabled, deleted, or have reduced permissions. By default, it checks against the 'sa' account (or renamed sysadmin), but you can specify any valid login for your organization's security standards. Returns only jobs that don't match the expected ownership, making it easy to identify compliance violations that need remediation.
 
-        Only SQL Agent Jobs that do not match this ownership will be displayed.
         Best practice reference: https://www.itprotoday.com/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
     .PARAMETER SqlInstance

@@ -98,7 +98,7 @@ GO
         }
 
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_triggerdb" -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_triggerdb"
         }
 
         It "Should find a specific Trigger at the Database Level" {

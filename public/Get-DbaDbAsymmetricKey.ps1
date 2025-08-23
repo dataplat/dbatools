@@ -1,10 +1,13 @@
 function Get-DbaDbAsymmetricKey {
     <#
     .SYNOPSIS
-        Gets database Asymmetric Key
+        Retrieves asymmetric keys from SQL Server databases for encryption management and security auditing
 
     .DESCRIPTION
-        Gets database Asymmetric Key
+        Retrieves asymmetric keys stored in SQL Server databases, including their encryption algorithms, key lengths, owners, and thumbprints.
+        This function is essential for security audits and encryption key management, allowing DBAs to inventory all asymmetric keys across databases without manually querying system catalogs.
+        Asymmetric keys are used for encryption, digital signatures, and certificate creation in SQL Server's transparent data encryption and column-level encryption features.
+        Returns detailed key properties to help with compliance reporting and security assessments.
 
     .PARAMETER SqlInstance
         The target SQL Server instance

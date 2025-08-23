@@ -1,10 +1,10 @@
 function Get-DbaDbFile {
     <#
     .SYNOPSIS
-        Returns detailed information about database files.
+        Retrieves comprehensive database file information including size, growth, I/O statistics, and storage details.
 
     .DESCRIPTION
-        Returns detailed information about database files. Does not use SMO - SMO causes enumeration and this command avoids that.
+        Retrieves detailed information about database files (data and log files) from SQL Server instances using direct T-SQL queries for optimal performance. This function provides comprehensive file metadata including current size, used space, growth settings, I/O statistics, and volume free space information that DBAs need for capacity planning, performance analysis, and storage management. Unlike SMO-based approaches, this command avoids costly enumeration operations and provides faster results when analyzing file configurations across multiple databases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

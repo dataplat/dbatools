@@ -1,10 +1,10 @@
 function New-DbaDbTable {
     <#
     .SYNOPSIS
-        Creates a new table in a database
+        Creates database tables with columns and constraints using PowerShell hashtables or SMO objects
 
     .DESCRIPTION
-        Creates a new table in a database
+        Creates new tables in SQL Server databases with specified columns, data types, constraints, and properties. You can define table structure using simple PowerShell hashtables for columns or pass in pre-built SMO column objects for advanced scenarios. The function handles all common column properties including data types, nullability, default values, identity columns, and decimal precision/scale. It also supports advanced table features like memory optimization, temporal tables, file tables, and external tables. If the specified schema doesn't exist, it will be created automatically.
 
    .PARAMETER SqlInstance
        The target SQL Server instance or instances.

@@ -1,10 +1,10 @@
 function Get-DbaAgentJobCategory {
     <#
     .SYNOPSIS
-        Get-DbaAgentJobCategory retrieves the job categories.
+        Retrieves SQL Server Agent job categories with usage counts and filtering options
 
     .DESCRIPTION
-        Get-DbaAgentJobCategory makes it possible to retrieve the job categories.
+        Returns SQL Server Agent job categories from one or more instances, showing how many jobs are assigned to each category. Job categories help organize and group related SQL Agent jobs for easier management and reporting. This function retrieves both built-in categories (like Database Maintenance, Log Shipping) and custom categories created by DBAs. You can filter by specific category names or types (LocalJob for single-instance jobs, MultiServerJob for MSX/TSX environments, or None for uncategorized jobs) to focus on particular organizational schemes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

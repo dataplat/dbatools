@@ -1,10 +1,10 @@
 function Enable-DbaReplPublishing {
     <#
     .SYNOPSIS
-        Enables replication publishing for the target SQL instances.
+        Configures a SQL Server instance as a replication publisher on an existing distributor.
 
     .DESCRIPTION
-        Enables replication publishing for the target SQL instances.
+        Configures a SQL Server instance to publish data for replication by creating the necessary publisher configuration on an existing distributor. This is typically the second step in setting up SQL Server replication, after the distributor has been configured with Enable-DbaReplDistributor. The function sets up the snapshot working directory, configures publisher security authentication, and registers the instance as a publisher with the distribution database. The target instance must already be configured as a distributor before running this command.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

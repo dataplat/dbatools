@@ -1,10 +1,10 @@
 function Remove-DbaAgListener {
     <#
     .SYNOPSIS
-        Removes a listener from an availability group on a SQL Server instance.
+        Removes availability group listeners from SQL Server instances.
 
     .DESCRIPTION
-        Removes a listener from an availability group on a SQL Server instance.
+        Removes availability group listeners from SQL Server instances, permanently deleting the virtual network name and IP address configuration that clients use to connect to availability group databases. This operation is typically performed during decommissioning, reconfiguration, or when consolidating listeners. Once removed, applications will need to connect directly to individual replicas or use a different listener. The function can target specific listeners by name or remove all listeners from specified availability groups.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

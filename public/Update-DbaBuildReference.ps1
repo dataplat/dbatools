@@ -1,12 +1,16 @@
 function Update-DbaBuildReference {
     <#
     .SYNOPSIS
-        Updates the local reference looking online for the most up to date.
+        Downloads the latest SQL Server build reference database used for patch compliance and version tracking
 
     .DESCRIPTION
-        This function updates the local json files containing all the infos about SQL builds.
-        It uses the setting 'assets.sqlbuildreference' to fetch it.
-        To see your current setting, use Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
+        Refreshes the comprehensive SQL Server build reference database that powers Get-DbaBuild and Test-DbaBuild functions with current patch level information. This database contains detailed mappings between build numbers, service packs, cumulative updates, KB articles, release dates, and support lifecycle dates for all SQL Server versions.
+
+        DBAs use this to maintain accurate patch compliance reporting and identify outdated installations that need security updates. The function downloads the latest reference data from the dbatools project repository, ensuring you have current information about newly released patches and updated support timelines.
+
+        The reference file is stored locally and automatically updated from newer module versions, but this command ensures you get the very latest patch data between dbatools releases. You can also specify a local file path instead of downloading, useful for air-gapped environments.
+
+        Use Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference' to see the current download URL.
 
     .PARAMETER LocalFile
         Specifies the path to a local file to install from instead of downloading from Github.

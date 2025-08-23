@@ -1,11 +1,13 @@
 function Get-DbaBuild {
     <#
     .SYNOPSIS
-        Returns SQL Server Build infos on a SQL instance
+        Retrieves detailed SQL Server build information including service pack, cumulative update, KB articles, and support lifecycle dates
 
     .DESCRIPTION
-        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
-        It also includes End Of Support dates as specified on Microsoft Life Cycle Policy
+        Identifies the specific build version of SQL Server instances and translates build numbers into meaningful patch levels with their corresponding KB articles.
+        This function helps DBAs quickly determine what service packs and cumulative updates are installed, whether builds have been retired by Microsoft, and when support ends.
+        You can query live SQL Server instances, look up specific build numbers, search by KB article numbers, or find builds by specifying major version with service pack and cumulative update combinations.
+        The function maintains an offline reference index that can be updated online to ensure current patch information and accurate support lifecycle dates.
 
     .PARAMETER Build
         Instead of connecting to a real instance, pass a string identifying the build to get the info back.

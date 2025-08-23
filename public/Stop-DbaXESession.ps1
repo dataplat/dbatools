@@ -1,10 +1,10 @@
 function Stop-DbaXESession {
     <#
     .SYNOPSIS
-        Stops Extended Events sessions.
+        Stops running Extended Events sessions on SQL Server instances
 
     .DESCRIPTION
-        This script stops Extended Events sessions on a SQL Server instance.
+        Stops active Extended Events sessions that are currently collecting diagnostic data or monitoring SQL Server activity. This function helps DBAs manage resource usage by ending sessions that may be consuming disk space, memory, or CPU cycles. You can stop specific sessions by name, stop all user-created sessions while preserving critical system sessions, or use pipeline input from Get-DbaXESession. The function safely checks if sessions are running before attempting to stop them and provides clear feedback about the operation results.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

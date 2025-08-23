@@ -1,10 +1,10 @@
 function Find-DbaDbGrowthEvent {
     <#
     .SYNOPSIS
-        Finds any database AutoGrow events in the Default Trace.
+        Retrieves database auto-growth and auto-shrink events from the SQL Server Default Trace
 
     .DESCRIPTION
-        Finds any database AutoGrow events in the Default Trace.
+        Queries the SQL Server Default Trace to identify when database files have automatically grown or shrunk, providing detailed timing and size change information essential for performance troubleshooting and capacity planning. This function helps DBAs investigate unexpected performance slowdowns caused by auto-growth events, analyze storage growth patterns to optimize initial file sizing, and track which applications or processes are triggering unplanned database expansions. Returns comprehensive details including the exact time of each event, size change in MB, duration, and the application/user that caused the growth, so you don't have to manually parse trace files or write custom T-SQL queries.
 
         The following events are included:
         92 - Data File Auto Grow

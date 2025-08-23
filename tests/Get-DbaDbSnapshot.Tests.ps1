@@ -31,15 +31,15 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-            $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $global:db1 = "dbatoolsci_GetSnap"
-            $global:db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
-            $global:db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
-            $global:db2 = "dbatoolsci_GetSnap2"
-            $global:db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
-            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -Confirm:$false
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $db1 = "dbatoolsci_GetSnap"
+            $db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
+            $db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
+            $db2 = "dbatoolsci_GetSnap2"
+            $db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 | Remove-DbaDatabase
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2")
             $null = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1 -Name $db1_snap1 -WarningAction SilentlyContinue
@@ -54,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue -Confirm:$false
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }

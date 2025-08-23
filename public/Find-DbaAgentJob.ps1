@@ -1,10 +1,10 @@
 function Find-DbaAgentJob {
     <#
     .SYNOPSIS
-        Find-DbaAgentJob finds agent jobs that fit certain search filters.
+        Searches and filters SQL Agent jobs across SQL Server instances using multiple criteria.
 
     .DESCRIPTION
-        This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
+        Searches SQL Agent jobs across one or more SQL Server instances using various filter criteria including job name, step name, execution status, schedule status, and notification settings. Helps DBAs identify problematic jobs that have failed, haven't run recently, are disabled, lack schedules, or missing email notifications. Useful for maintenance audits, troubleshooting job issues, and identifying cleanup candidates in environments with many automated processes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

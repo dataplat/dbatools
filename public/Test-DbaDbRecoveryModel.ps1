@@ -1,12 +1,14 @@
 function Test-DbaDbRecoveryModel {
     <#
     .SYNOPSIS
-        Find if database is really a specific recovery model or not.
+        Validates whether databases are truly operating in their configured recovery model
 
     .DESCRIPTION
-        When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
+        When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain. This function identifies the gap between configured and actual recovery model behavior.
 
-        However, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.
+        For FULL recovery databases, the function checks if a log backup chain has been established by examining the last_log_backup_lsn in sys.database_recovery_status. Databases without this value are functionally operating in SIMPLE mode despite being configured for FULL recovery.
+
+        This validation is critical for DBAs who need to ensure point-in-time recovery capabilities are actually available, not just configured. It also allows validation of SIMPLE or BULK_LOGGED recovery models on an instance.
 
         Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
 

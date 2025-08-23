@@ -1,10 +1,10 @@
 function Export-DbaScript {
     <#
     .SYNOPSIS
-        Exports scripts from SQL Management Objects (SMO)
+        Generates T-SQL CREATE scripts from SQL Server Management Objects for migration and deployment
 
     .DESCRIPTION
-        Exports scripts from SQL Management Objects
+        Takes any SQL Server Management Object from dbatools commands and converts it into executable T-SQL CREATE scripts using SMO scripting. This lets you script out database objects like tables, jobs, logins, stored procedures, and more for migration between environments or backup purposes. The function handles proper formatting with batch separators and supports custom scripting options to control what gets included in the output. Perfect for creating deployment scripts or documenting your SQL Server configurations without manual scripting.
 
     .PARAMETER InputObject
         A SQL Management Object such as the one returned from Get-DbaLogin

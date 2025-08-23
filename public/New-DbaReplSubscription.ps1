@@ -1,10 +1,10 @@
 function New-DbaReplSubscription {
     <#
     .SYNOPSIS
-        Creates a subscription for the database on the target SQL instances.
+        Creates SQL Server replication subscriptions to distribute data from publisher to subscriber instances.
 
     .DESCRIPTION
-        Creates a subscription for the database on the target SQL instances.
+        Creates push or pull subscriptions for SQL Server replication, connecting a subscriber instance to an existing publication on a publisher. This function handles the setup of transactional, snapshot, and merge replication subscriptions, automatically creating the subscription database and required schemas if they don't exist. Use this when you need to establish data replication for disaster recovery, reporting databases, or distributing data across multiple SQL Server instances without manually configuring subscription properties through SQL Server Management Studio.
 
     .PARAMETER SqlInstance
         The target publishing SQL Server instance or instances.

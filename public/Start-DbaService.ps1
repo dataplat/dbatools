@@ -1,10 +1,10 @@
 function Start-DbaService {
     <#
     .SYNOPSIS
-        Starts SQL Server services on a computer.
+        Starts SQL Server related services across multiple computers while respecting service dependencies.
 
     .DESCRIPTION
-        Starts the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
+        Starts SQL Server services (Engine, Agent, Browser, FullText, SSAS, SSIS, SSRS) on one or more computers following proper dependency order. This function handles the complexity of starting services in the correct sequence so you don't have to manually determine which services depend on others. Commonly used after maintenance windows, server reboots, or when troubleshooting stopped services across an environment.
 
         Requires Local Admin rights on destination computer(s).
 

@@ -1,11 +1,13 @@
 function Set-DbaDbIdentity {
     <#
     .SYNOPSIS
-        Checks and updates the current identity value via DBCC CHECKIDENT
+        Checks and resets identity column values using DBCC CHECKIDENT
 
     .DESCRIPTION
-        Use the command DBCC CHECKIDENT to check and if necessary update the current identity value of a table and return results
-        Can update an individual table via the ReSeedValue and RESEED option of DBCC CHECKIDENT
+        Executes DBCC CHECKIDENT to verify the current identity value for tables with identity columns and optionally reseed them to a specific value.
+        This is essential after bulk data operations, imports, or deletes that can leave identity values out of sync with actual table data.
+        When run without ReSeedValue, it reports the current identity value and the maximum value in the identity column.
+        When ReSeedValue is specified, it resets the identity counter to prevent duplicate key errors or close identity gaps.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkident-transact-sql

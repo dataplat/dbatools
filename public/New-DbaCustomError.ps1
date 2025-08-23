@@ -1,12 +1,16 @@
 function New-DbaCustomError {
     <#
     .SYNOPSIS
-        Creates a user defined message in sys.messages. This command does not support Azure SQL Database.
+        Creates custom error messages in SQL Server's sys.messages table for standardized application and stored procedure error handling
 
     .DESCRIPTION
-        This command provides a wrapper for the sp_addmessage system procedure that allows for user defined messages to be added to sys.messages.
+        Creates custom error messages in SQL Server's sys.messages table using sp_addmessage, enabling standardized error handling across applications and stored procedures. This replaces the need to manually execute sp_addmessage for each custom message you want to define.
 
-        Note: See the remarks section of the documentation for sp_addmessage regarding the addition of non-English messages. The U.S. English message needs to be added first and the severity must be the same.
+        Custom error messages are essential for application development and database maintenance workflows where you need consistent, meaningful error reporting. Instead of generic SQL Server errors, you can define specific messages like "Customer record not found" or "Data validation failed for field X" that make troubleshooting much easier for both developers and DBAs.
+
+        You can assign custom message IDs between 50001 and 2147483647, set severity levels from 1-25, and optionally enable logging to both the Windows Application Log and SQL Server Error Log. The function supports multiple languages and can create messages across multiple SQL Server instances simultaneously.
+
+        Note: When adding non-English messages, the U.S. English version must be created first with the same severity level. This command does not support Azure SQL Database.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

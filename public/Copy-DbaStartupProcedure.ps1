@@ -1,12 +1,14 @@
 function Copy-DbaStartupProcedure {
     <#
     .SYNOPSIS
-        Copy-DbaStartupProcedure migrates startup procedures (user defined procedures within master database) from one SQL Server to another.
+        Copies startup procedures from master database between SQL Server instances
 
     .DESCRIPTION
-        By default, all procedures found flagged as startup procedures are copied and then set as a startup procedure on the destination instance. The -Procedure parameter is auto-populated for command-line completion and can be used to copy only specific startup procedures.
+        Migrates user-defined startup procedures stored in the master database from source to destination SQL Server instances. Startup procedures are stored procedures that automatically execute when SQL Server starts up, commonly used for server initialization tasks, custom monitoring setup, or configuration validation.
 
-        If the procedure already exists on the destination, it will be skipped unless -Force is used.
+        This function identifies procedures flagged with the startup option using sp_procoption, copies their definitions to the destination master database, and configures them as startup procedures. This is essential during server migrations, disaster recovery setup, or when standardizing startup configurations across multiple SQL Server environments.
+
+        By default, all startup procedures are copied. Use -Procedure to copy specific procedures or -ExcludeProcedure to skip certain ones. Existing procedures on the destination are skipped unless -Force is used to overwrite them.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

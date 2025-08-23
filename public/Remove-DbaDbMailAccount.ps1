@@ -1,12 +1,13 @@
 function Remove-DbaDbMailAccount {
     <#
     .SYNOPSIS
-        Removes database mail account(s).
+        Removes Database Mail accounts from SQL Server instances
 
     .DESCRIPTION
-        Removes the database mail account(s) that have passed through the pipeline.
-        If not used with a pipeline, Get-DbaDbMailAccount will be executed with the parameters provided
-        and the returned database mail account(s) will be removed.
+        Permanently deletes Database Mail accounts from the specified SQL Server instances, removing them from the MSDB database configuration.
+        This command is useful when decommissioning obsolete email accounts, cleaning up after application retirement, or consolidating accounts during email system migrations.
+        When used without pipeline input, it automatically retrieves accounts using Get-DbaDbMailAccount with the provided parameters before removal.
+        Returns detailed status information for each removal operation, including success/failure status and any error messages encountered.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

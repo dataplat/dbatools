@@ -40,29 +40,29 @@ Describe $CommandName -Tag IntegrationTests {
             RETURN DB_NAME();
             END;"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $createUDFQuery -Database "master"
-            Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Disabled -Confirm:$false
+            Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Disabled
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "enables resource governor" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled -Confirm:$false
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
             $results.Enabled | Should -Be $true
         }
 
         It "disables resource governor" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Disabled -Confirm:$false
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Disabled
             $results.Enabled | Should -Be $false
         }
 
         It "modifies resource governor classifier function" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction $classifierFunction -Confirm:$false
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction $classifierFunction
             $results.ClassifierFunction | Should -Be $qualifiedClassifierFunction
         }
 
         It "removes resource governor classifier function" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction "NULL" -Confirm:$false
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction "NULL"
             $results.ClassifierFunction | Should -Be ""
         }
 

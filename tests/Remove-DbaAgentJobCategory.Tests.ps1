@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Clean up any remaining test categories
-            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3" -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3" -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Remove the job categories" {
-            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3" -Confirm:$false
+            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3"
 
             $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3"
 

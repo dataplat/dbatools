@@ -1,11 +1,10 @@
 function New-DbaDiagnosticAdsNotebook {
     <#
     .SYNOPSIS
-        Creates a new Diagnostic Jupyter Notebook for use with Azure Data Studio
+        Generates a Jupyter Notebook containing Glenn Berry's SQL Server diagnostic queries for Azure Data Studio
 
     .DESCRIPTION
-        Creates a new Jupyter Notebook for use with Azure Data Studio, based on Glenn Berry's
-        popular Diagnostic queries
+        Converts Glenn Berry's well-known SQL Server diagnostic queries into a Jupyter Notebook (.ipynb) file that can be opened and executed in Azure Data Studio. The function automatically detects your SQL Server version or accepts a target version parameter, then creates a notebook with version-specific diagnostic queries formatted as executable cells. Each query includes descriptive markdown explaining what it measures and why it's useful for performance troubleshooting and health monitoring.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to the default instance on localhost.

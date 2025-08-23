@@ -1,10 +1,10 @@
 function Remove-DbaDbView {
     <#
     .SYNOPSIS
-        Removes a database view(s) from each database and SQL Server instance.
+        Removes database views from SQL Server databases
 
     .DESCRIPTION
-        Removes a database view(s), with supported piping from Get-DbaDbView.
+        Removes one or more database views from specified databases and SQL Server instances. This function streamlines the cleanup of obsolete views during database refactoring, development cleanup, or schema maintenance tasks. You can specify views individually by name or use pipeline input from Get-DbaDbView for bulk operations. Each removal operation includes detailed status reporting and supports WhatIf testing to preview changes before execution.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

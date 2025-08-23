@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
         $fileStreamStatus = Get-DbaFilestream -SqlInstance $TestConfig.instance2
 
         if ($fileStreamStatus.InstanceAccessLevel -eq 0) {
-            Enable-DbaFilestream -SqlInstance $TestConfig.instance2 -Confirm:$false -Force
+            Enable-DbaFilestream -SqlInstance $TestConfig.instance2 -Force
             $resetFileStream = $true
         } else {
             $resetFileStream = $false
@@ -54,10 +54,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $newDb1, $newDb2 | Remove-DbaDatabase -Confirm:$false
+        $newDb1, $newDb2 | Remove-DbaDatabase
 
         if ($resetFileStream) {
-            Disable-DbaFilestream -SqlInstance $TestConfig.instance2 -Confirm:$false -Force
+            Disable-DbaFilestream -SqlInstance $TestConfig.instance2 -Force
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

@@ -1,10 +1,10 @@
 function Get-DbaDbccHelp {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC HELP
+        Retrieves syntax help and parameter information for DBCC commands
 
     .DESCRIPTION
-        Returns the results of DBCC HELP
+        Executes DBCC HELP against SQL Server to display syntax, parameters, and usage information for Database Console Commands. This saves you from having to look up DBCC command syntax in documentation, especially for complex commands like CHECKDB, CHECKTABLE, or SHRINKFILE. Supports both documented and undocumented DBCC commands when used with the IncludeUndocumented parameter.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-help-transact-sql

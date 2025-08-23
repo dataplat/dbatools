@@ -1,10 +1,14 @@
 function New-DbaDbDataGeneratorConfig {
     <#
     .SYNOPSIS
-        Generates a new data generation configuration file.
+        Creates JSON configuration files for generating realistic test data in SQL Server database tables
 
     .DESCRIPTION
-        Generates a new data generation configuration file. This file is important to apply any data generation to a table in a database.
+        Analyzes database table structures and generates JSON configuration files that define how to populate each column with realistic fake data. The function examines column names, data types, constraints, and relationships to intelligently map appropriate data generation rules using the Bogus library. Column names matching common patterns (like "Address", "Email", "Phone") automatically get contextually appropriate fake data types, while other columns get sensible defaults based on their SQL data types.
+
+        These configuration files serve as the blueprint for Invoke-DbaDbDataGenerator, allowing DBAs to create development databases with realistic test data instead of using production data. Perfect for building demo environments, testing applications with meaningful datasets, or creating training databases that mirror production schemas but contain no sensitive information.
+
+        The function handles identity columns, foreign key relationships, unique indexes, and nullable constraints while skipping unsupported column types like computed columns, spatial data types, and XML. Configuration files are saved with the naming convention "servername.databasename.DataGeneratorConfig.json" for easy identification and reuse.
 
         Read more here:
         https://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/

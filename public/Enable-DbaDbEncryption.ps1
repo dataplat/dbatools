@@ -1,10 +1,10 @@
 function Enable-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Enables encryption on a database
+        Enables Transparent Data Encryption (TDE) on SQL Server databases
 
     .DESCRIPTION
-        Enables encryption on a database
+        Enables Transparent Data Encryption (TDE) on specified databases to protect data at rest. This is essential for compliance with regulations like HIPAA, PCI-DSS, and organizational security policies. The function automatically creates a Database Encryption Key (DEK) if one doesn't exist, using a certificate from the master database to encrypt it. By default, it verifies that the certificate has been backed up before proceeding, helping prevent data loss scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

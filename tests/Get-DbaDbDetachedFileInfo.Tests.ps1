@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server.Query("CREATE DATABASE $dbname
             ON (FILENAME = '$path')
             FOR ATTACH")
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
     }
 
     Context "Command actually works" {

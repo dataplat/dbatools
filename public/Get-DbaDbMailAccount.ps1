@@ -1,10 +1,10 @@
 function Get-DbaDbMailAccount {
     <#
     .SYNOPSIS
-        Gets database mail account(s) from SQL Server.
+        Retrieves Database Mail account configurations from SQL Server instances
 
     .DESCRIPTION
-        Gets database mail account(s) from SQL Server.
+        Retrieves Database Mail account configurations including email addresses, display names, SMTP server settings, and authentication details from SQL Server instances. This function helps DBAs audit email configurations across their environment, troubleshoot mail delivery issues, and document Database Mail settings for compliance or migration purposes. The returned account objects include connection details, server configurations, and account properties that can be used to verify proper Database Mail setup.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

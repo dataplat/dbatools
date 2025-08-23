@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
+            if ($masterKey) { $masterkey | Remove-DbaDbMasterKey }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -39,11 +39,11 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             }
 
             # Create and then remove a database certificate for testing
-            $results = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Confirm:$false | Remove-DbaDbCertificate -Confirm:$false
+            $results = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 | Remove-DbaDbCertificate
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

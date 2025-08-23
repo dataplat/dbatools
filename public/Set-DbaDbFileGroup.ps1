@@ -1,10 +1,10 @@
 function Set-DbaDbFileGroup {
     <#
     .SYNOPSIS
-        Sets the options for a filegroup.
+        Modifies filegroup properties including default designation, read-only status, and auto-grow behavior.
 
     .DESCRIPTION
-        Sets the options for a filegroup for the specified database(s).
+        Modifies key properties of database filegroups including setting the default filegroup for new objects, changing read-only status for data archival, and configuring auto-grow behavior across all files in the filegroup. Use this when you need to restructure database storage layout, implement data archival strategies, or optimize file growth patterns. The function validates that filegroups exist and contain at least one file before applying changes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

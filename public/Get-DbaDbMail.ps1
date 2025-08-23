@@ -1,10 +1,10 @@
 function Get-DbaDbMail {
     <#
     .SYNOPSIS
-        Gets the database mail from SQL Server
+        Retrieves Database Mail configuration including profiles, accounts, and settings from SQL Server instances
 
     .DESCRIPTION
-        Gets the database mail from SQL Server
+        Retrieves the complete Database Mail configuration from one or more SQL Server instances, including mail profiles, SMTP accounts, configuration values, and properties. This function provides a quick way to audit your email setup across multiple servers, troubleshoot mail delivery issues, or document your Database Mail configuration for compliance purposes. The output includes server identification details to help when working with multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

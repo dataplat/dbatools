@@ -1,11 +1,13 @@
 function Get-DbaRandomizedValue {
     <#
     .SYNOPSIS
-        This function will generate a random value for a specific data type or bogus type and subtype
+        Generates random data values for SQL Server data types or specialized data patterns for data masking and test data creation
 
     .DESCRIPTION
-        Generates a random value based on the assigned sql data type or bogus type with sub type.
-        It supports a wide range of sql data types and an entire dictionary of various random values.
+        Creates realistic fake data by generating random values that match SQL Server data type constraints or using specialized data patterns like names, addresses, and phone numbers.
+        This function is essential for data masking in non-production environments, replacing sensitive production data with believable fake data while maintaining referential integrity and data patterns.
+        Supports all major SQL Server data types (varchar, int, datetime, etc.) with proper ranges and formatting, plus hundreds of specialized randomizer types including personal information, financial data, and lorem ipsum text.
+        Uses the Bogus library to ensure generated data follows realistic patterns rather than simple random character generation.
 
     .PARAMETER DataType
         The target SQL Server instance or instances.

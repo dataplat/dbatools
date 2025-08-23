@@ -1,12 +1,14 @@
 function Copy-DbaDataCollector {
     <#
     .SYNOPSIS
-        Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
+        Copies SQL Data Collector collection sets from one instance to another
 
     .DESCRIPTION
-        By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used.
+        Copies SQL Data Collector collection sets between SQL Server instances, allowing you to replicate performance monitoring configurations across your environment. This command scripts out the collection set definitions from the source instance and recreates them on the destination, preserving all collection items, schedules, and upload settings.
 
-        The -CollectionSet parameter is auto-populated for command-line completion and can be used to copy only specific objects.
+        By default, all user-defined collection sets are migrated. If a collection set already exists on the destination, it will be skipped unless -Force is used to drop and recreate it. Collection sets that were running on the source will automatically be started on the destination after migration.
+
+        The -CollectionSet parameter is auto-populated for command-line completion and can be used to copy only specific collection sets. Note that Data Collector must already be configured and enabled on the destination instance before running this command.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

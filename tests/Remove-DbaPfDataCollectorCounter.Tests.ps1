@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns the correct values" {
             $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Get-DbaPfDataCollector |
             Get-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length" |
-            Remove-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length" -Confirm:$false
+            Remove-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
         $results.DataCollectorSet | Should -Be "Long Running Queries"
         $results.Name | Should -Be "\LogicalDisk(*)\Avg. Disk Queue Length"
         $results.Status | Should -Be "Removed"

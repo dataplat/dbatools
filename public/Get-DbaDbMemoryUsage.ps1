@@ -1,10 +1,12 @@
 function Get-DbaDbMemoryUsage {
     <#
     .SYNOPSIS
-        Determine buffer pool usage by database.
+        Retrieves detailed buffer pool memory consumption by database and page type for performance analysis.
 
     .DESCRIPTION
-        This command can be utilized to determine which databases on a given instance are consuming buffer pool memory.
+        Analyzes SQL Server buffer pool memory usage by querying sys.dm_os_buffer_descriptors to show exactly how much memory each database consumes, broken down by page type (data pages, index pages, etc.). This helps DBAs identify memory-hungry databases that may be impacting instance performance and guides decisions about memory allocation, database optimization, or server capacity planning.
+
+        The results include both raw page counts and percentage of total buffer pool consumed, making it easy to spot databases that are taking disproportionate memory resources. Use this when troubleshooting memory pressure, planning database migrations, or optimizing buffer pool utilization across multiple databases.
 
         This command is based on query provided by Aaron Bertrand.
         Reference: https://www.mssqltips.com/sqlservertip/2393/determine-sql-server-memory-use-by-database-and-object/

@@ -1,10 +1,12 @@
 function Sync-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Syncs dependent objects such as jobs, logins and custom errors for availability groups
+        Synchronizes server-level objects from primary to secondary replicas in availability groups
 
     .DESCRIPTION
-        Syncs dependent objects for availability groups. Such objects include:
+        Copies server-level objects from the primary replica to all secondary replicas in an availability group. Availability groups only synchronize databases, not the server-level dependencies that applications need to function properly after failover.
+
+        This command ensures that logins, SQL Agent jobs, linked servers, and other critical server objects exist on all replicas so your applications work seamlessly regardless of which replica becomes primary. By default, it synchronizes these object types:
 
         SpConfigure
         CustomErrors
@@ -22,9 +24,9 @@ function Sync-DbaAvailabilityGroup {
         AgentSchedule
         AgentJob
 
-        Note that any of these can be excluded. For specific object exclusions (such as a single job), using the underlying Copy-Dba* command will be required.
+        Any of these object types can be excluded using the -Exclude parameter. For granular control over specific objects (like excluding individual jobs or logins), use the -ExcludeJob, -ExcludeLogin parameters or the underlying Copy-Dba* commands directly.
 
-        This command does not filter by which logins are in use by the ag databases or which linked servers are used. All objects that are not excluded will be copied like hulk smash.
+        The command copies ALL objects of each enabled type - it doesn't filter based on which objects are actually used by the availability group databases. Use the exclusion parameters to limit scope when needed.
 
     .PARAMETER Primary
         The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.

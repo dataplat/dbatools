@@ -22,12 +22,11 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $global:TestConfig = Get-TestConfig
-        $results = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.instance1 -Type instance
-    }
-
     Context "Validate output" {
+        BeforeAll {
+            $results = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.instance1 -Type instance
+        }
+
         It "Should have correct properties" {
             $expectedProps = @(
                 "ComputerName",

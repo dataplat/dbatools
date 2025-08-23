@@ -1,12 +1,12 @@
 function Copy-DbaSystemDbUserObject {
     <#
     .SYNOPSIS
-        Imports all user objects found in source SQL Server's master, msdb and model databases to the destination.
+        Copies user-created objects from system databases (master, msdb, model) between SQL Server instances.
 
     .DESCRIPTION
-        Imports all user objects found in source SQL Server's master, msdb and model databases to the destination. This is useful because many DBAs store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
+        Migrates custom database objects that DBAs commonly store in system databases like maintenance procedures, monitoring tables, custom triggers, and backup utilities from master and msdb. Also transfers objects from the model database that will be included in new databases created on the destination instance.
 
-        It is also useful for migrating objects within the model database.
+        This function handles schemas, tables, views, stored procedures, functions, triggers, and other user-defined objects while preserving dependencies and permissions. It's particularly valuable during server migrations or when standardizing DBA tooling across multiple instances.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

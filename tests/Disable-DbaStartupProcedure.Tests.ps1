@@ -56,7 +56,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatDisable = @{
                 SqlInstance      = $TestConfig.instance2
                 StartupProcedure = $startupProc
-                Confirm          = $false
             }
             $result = Disable-DbaStartupProcedure @splatDisable
         }
@@ -87,7 +86,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatDisableAgain = @{
                 SqlInstance      = $TestConfig.instance2
                 StartupProcedure = $startupProc
-                Confirm          = $false
             }
             $result = Disable-DbaStartupProcedure @splatDisableAgain
         }
@@ -118,10 +116,9 @@ Describe $CommandName -Tag IntegrationTests {
             $splatEnable = @{
                 SqlInstance      = $TestConfig.instance2
                 StartupProcedure = $startupProc
-                Confirm          = $false
             }
             $null = Enable-DbaStartupProcedure @splatEnable
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 | Disable-DbaStartupProcedure -Confirm:$false
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 | Disable-DbaStartupProcedure
         }
 
         It "Should return correct schema" {

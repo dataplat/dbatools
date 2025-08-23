@@ -1,10 +1,10 @@
 function Copy-DbaDbQueryStoreOption {
     <#
     .SYNOPSIS
-        Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
+        Replicates Query Store configuration settings from one database to multiple target databases across instances.
 
     .DESCRIPTION
-        Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
+        Reads the complete Query Store configuration from a source database and applies those exact settings to specified destination databases. This lets you standardize Query Store behavior across your environment using proven configurations from production databases. The function handles version-specific settings automatically, supporting SQL Server 2016 through current versions with their respective Query Store features like wait statistics capture and custom capture policies.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2016 or higher.

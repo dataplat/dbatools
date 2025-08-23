@@ -1,10 +1,12 @@
 function Get-DbaFeature {
     <#
     .SYNOPSIS
-        Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
+        Discovers installed SQL Server features and components across multiple servers
 
     .DESCRIPTION
-        Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
+        Executes SQL Server's built-in feature discovery report to inventory all installed SQL Server components, editions, and instances across one or more servers. This function automates the manual process of running setup.exe /Action=RunDiscovery and parsing the resulting XML report, making it perfect for compliance auditing, license tracking, and environment documentation.
+
+        The function returns structured data showing exactly what SQL Server features are installed, which instances they belong to, their versions, editions, and configuration status. This is essential for DBAs who need to understand their SQL Server landscape without manually checking each server or running discovery reports individually.
 
         Inspired by Dave Mason's (@BeginTry) post at
         https://itsalljustelectrons.blogspot.be/2018/04/SQL-Server-Discovery-Report.html

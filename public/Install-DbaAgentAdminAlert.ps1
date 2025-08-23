@@ -1,14 +1,14 @@
 function Install-DbaAgentAdminAlert {
     <#
     .SYNOPSIS
-        Creates SQL Server Agent alerts commonly needed by DBAs
+        Creates standard SQL Server Agent alerts for critical system errors and disk I/O failures
 
     .DESCRIPTION
-        Creates SQL Server Agent alerts commonly needed by DBAs
+        Creates a predefined set of SQL Server Agent alerts that monitor for critical system errors (severity levels 17-25) and disk I/O corruption errors (messages 823-825). These alerts catch serious issues like hardware failures, database corruption, insufficient resources, and fatal system errors that require immediate DBA attention.
 
-        You can specify an operator to use for the alert, or it will use any operator it finds if there is just one.
+        The function automatically creates alerts for severity levels 17-25 and error messages 823-825 unless specifically excluded. It can create missing operators and alert categories as needed, making it easy to establish consistent monitoring across multiple SQL Server instances.
 
-        Alternatively, if you specify both an operator name and an email, it will create the operator if it does not exist.
+        You can specify an operator to use for the alert, or it will use any operator it finds if there is just one. Alternatively, if you specify both an operator name and an email, it will create the operator if it does not exist.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

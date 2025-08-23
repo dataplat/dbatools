@@ -42,7 +42,6 @@ Describe $CommandName -Tag IntegrationTests {
             ClusterType   = "None"
             FailoverMode  = "Manual"
             Database      = $dbname
-            Confirm       = $false
             Certificate   = "dbatoolsci_AGCert"
             UseLastBackup = $true
         }
@@ -56,9 +55,9 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname
         Remove-Item -Path "$($TestConfig.Temp)\$dbname.bak", "$($TestConfig.Temp)\$dbname.trn" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -66,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "removes ag db" {
         It "returns removed results" {
-            $results = Remove-DbaAgDatabase -SqlInstance $TestConfig.instance3 -Database $dbname -Confirm:$false
+            $results = Remove-DbaAgDatabase -SqlInstance $TestConfig.instance3 -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Database | Should -Be $dbname
             $results.Status | Should -Be "Removed"

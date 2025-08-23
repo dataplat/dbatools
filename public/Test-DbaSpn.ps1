@@ -1,17 +1,18 @@
 function Test-DbaSpn {
     <#
     .SYNOPSIS
-        Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
-        whether the SPNs are set or not.
+        Validates Service Principal Name (SPN) configuration for SQL Server instances by comparing required SPNs against Active Directory registrations
 
     .DESCRIPTION
-        This function is designed to take in a server name(s) and attempt to determine required SPNs. It was initially written to mimic the (previously) broken functionality of the Microsoft Kerberos Configuration manager and SQL Server 2016.
+        This function discovers SQL Server instances on target computers and validates their Service Principal Name (SPN) configuration for Kerberos authentication. It addresses the common problem of missing or incorrect SPNs that cause authentication failures and double-hop issues in SQL Server environments.
 
-        - For any instances with TCP/IP enabled, the script will determine which port(s) the instances are listening on and generate the required SPNs.
-        - For named instances NOT using dynamic ports, the script will generate a port-based SPN for those instances as well.
-        - At a minimum, the script will test a base, port-less SPN for each instance discovered.
+        The function performs a complete SPN audit by first discovering all SQL Server instances via WMI, then generating the required SPNs based on each instance's configuration. For instances with TCP/IP enabled, it determines which ports they're listening on and generates the appropriate MSSQLSvc SPNs. Named instances get both instance-based and port-based SPNs, while the function handles dynamic ports by identifying the current port assignment.
 
-        Once the required SPNs are generated, the script will connect to Active Directory and search for any of the SPNs (if any) that are already set. The function will return a custom object(s) that contains the server name checked, the instance name discovered, the account the service is running under, and what the "required" SPN should be. It will also return a boolean property indicating if the SPN is set in Active Directory or not.
+        After generating the required SPNs, the function queries Active Directory to verify whether each SPN is actually registered to the correct service account. This catches common configuration issues like SPNs registered to the wrong account, missing SPNs, or duplicate SPNs that prevent proper Kerberos authentication.
+
+        The function handles complex scenarios including clustered instances (using virtual server names), managed service accounts, LocalSystem accounts, and both static and dynamic port configurations. Results include detailed information about each instance's service account, required SPNs, registration status, and any configuration warnings.
+
+        Use this function to troubleshoot Kerberos authentication issues, perform security audits, validate configurations before migrations, or as part of regular maintenance to ensure proper SPN setup across your SQL Server environment.
 
     .PARAMETER ComputerName
         The computer you want to discover any SQL Server instances on. This parameter is required.

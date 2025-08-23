@@ -1,12 +1,10 @@
 function Copy-DbaInstanceAudit {
     <#
     .SYNOPSIS
-        Copy-DbaInstanceAudit migrates server audits from one SQL Server to another.
+        Copies SQL Server audit objects from source to destination instances
 
     .DESCRIPTION
-        By default, all audits are copied. The -Audit parameter is auto-populated for command-line completion and can be used to copy only specific audits.
-
-        If the audit already exists on the destination, it will be skipped unless -Force is used.
+        Migrates SQL Server audit objects and their configurations from one instance to another, preserving audit settings and file paths. This function handles the complex task of recreating audit definitions on destination servers, making it essential for server migrations, disaster recovery scenarios, or standardizing auditing policies across multiple SQL Server instances. By default, all audits are copied, but you can specify individual audits to migrate. If an audit already exists on the destination, it will be skipped unless -Force is used to drop and recreate it.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

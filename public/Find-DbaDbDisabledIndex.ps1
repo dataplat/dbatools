@@ -1,10 +1,10 @@
 function Find-DbaDbDisabledIndex {
     <#
     .SYNOPSIS
-        Find Disabled indexes
+        Identifies disabled indexes across SQL Server databases
 
     .DESCRIPTION
-        This command will help you to find disabled indexes on a database or a list of databases.
+        Scans SQL Server databases to locate indexes that have been disabled, returning detailed information including database, schema, table, and index names. Disabled indexes consume storage space but aren't maintained during data modifications, making them candidates for cleanup or re-enabling. This is useful for database maintenance, performance troubleshooting, and identifying indexes that were disabled during bulk operations but never re-enabled.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

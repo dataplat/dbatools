@@ -1,10 +1,10 @@
 function Remove-DbaAgentJob {
     <#
     .SYNOPSIS
-        Remove-DbaAgentJob removes a job.
+        Removes SQL Server Agent jobs from one or more instances with options to preserve history and schedules.
 
     .DESCRIPTION
-        Remove-DbaAgentJob removes a job in the SQL Server Agent.
+        Removes SQL Server Agent jobs from the target instances using the sp_delete_job system stored procedure. By default, both job history and unused schedules are deleted along with the job itself. You can optionally preserve job execution history for compliance or troubleshooting purposes, and keep unused schedules that might be reused for other jobs. This function is commonly used when decommissioning applications, cleaning up test environments, or removing obsolete maintenance jobs during server consolidation projects.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

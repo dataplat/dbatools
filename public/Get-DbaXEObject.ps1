@@ -1,10 +1,10 @@
 function Get-DbaXEObject {
     <#
     .SYNOPSIS
-        Gets a list of extended events objects exposed by event packages from specified SQL Server instance(s).
+        Retrieves Extended Events objects available for monitoring and troubleshooting on SQL Server instances.
 
     .DESCRIPTION
-        This function returns a list of extended events objects exposed by event packages from specified SQL Server instance(s).
+        This function queries sys.dm_xe_packages and sys.dm_xe_objects to discover what Extended Events components are available on your SQL Server instances. Use this when planning Extended Events sessions to see what events you can capture, what actions you can attach, and what targets you can write to. Essential for DBAs setting up performance monitoring, security auditing, or troubleshooting sessions since XE object availability varies by SQL Server version and edition.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

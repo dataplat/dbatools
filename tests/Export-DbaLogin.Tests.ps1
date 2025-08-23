@@ -75,18 +75,18 @@ Describe $CommandName -Tag IntegrationTests {
         $db1.Query("CREATE USER [$login3] WITHOUT LOGIN")
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
+        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname2 -Confirm:$false
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname2
+        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2
         $timenow = (Get-Date -uformat "%m%d%Y%H")
         $ExportedCredential = Get-ChildItem $DefaultExportPath, $AltExportPath | Where-Object { $_.Name -match "$timenow\d{4}-login.sql|Dbatoolsci_login_CustomFile.sql" }
         if ($ExportedCredential) {
             $null = Remove-Item -Path $($ExportedCredential.FullName)
         }
 
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login3 -Confirm:$false
+        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login3
     }
 
     Context "Executes with Exclude Parameters" {

@@ -1,14 +1,10 @@
 function Set-DbaDbFileGrowth {
     <#
     .SYNOPSIS
-        Sets databases to a non-default growth and growth type. 64MB by default.
-
-        To get the file growth, use Get-DbaDbFile.
+        Modifies auto-growth settings for database data and log files to use fixed-size increments instead of percentage-based growth.
 
     .DESCRIPTION
-        Sets databases to a non-default growth and growth type. 64MB by default.
-
-        To get the file growth, use Get-DbaDbFile.
+        Configures database file auto-growth settings using ALTER DATABASE statements to replace default percentage-based growth with fixed-size increments. This prevents unpredictable growth patterns that can cause performance issues and storage fragmentation as databases grow larger. Defaults to 64MB growth increments, which provides better control over file expansion and reduces the risk of exponential growth that can quickly consume available disk space. You can target specific file types (data files, log files, or both) and specify custom growth values in KB, MB, GB, or TB units.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

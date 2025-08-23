@@ -1,10 +1,14 @@
 function Measure-DbaBackupThroughput {
     <#
     .SYNOPSIS
-        Determines how quickly SQL Server is backing up databases to media.
+        Calculates backup throughput statistics from msdb backup history to analyze backup performance.
 
     .DESCRIPTION
-        Returns backup history details for one or more databases on a SQL Server.
+        Analyzes backup history records from the msdb database to calculate detailed throughput statistics including average, minimum, and maximum backup speeds measured in megabytes per second. This function helps DBAs identify performance patterns, troubleshoot slow backups, and optimize backup strategies by examining historical backup performance data.
+
+        The function processes backup records for specified databases and time periods, calculating throughput by dividing backup size by duration. Results include comprehensive statistics like average backup size, duration ranges, throughput metrics, and backup frequency counts. This data is essential for capacity planning, identifying storage bottlenecks, and ensuring backup windows meet your RTO requirements.
+
+        Output includes detailed metrics per database showing average throughput, size patterns, duration statistics, and backup count summaries. You can filter by backup type (full, differential, log), time ranges, or specific databases to focus your performance analysis on particular scenarios or problem areas.
 
         Output looks like this:
         SqlInstance     : sql2016

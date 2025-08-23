@@ -1,10 +1,10 @@
 function Invoke-DbaAdvancedInstall {
     <#
     .SYNOPSIS
-        Designed for internal use, implements parallel execution for Install-DbaInstance.
+        Executes SQL Server installation on a single computer with automated restart handling.
 
     .DESCRIPTION
-        Invokes an install process for a single computer and restarts it if needed
+        Performs the complete SQL Server installation workflow on a target computer, including pre and post-installation restart management. This internal function handles copying configuration files to remote machines, executing setup.exe with specified parameters, configuring TCP ports, enabling volume maintenance tasks, and managing required system restarts. It provides detailed installation logging and error reporting to track the success or failure of each installation attempt.
 
     .PARAMETER ComputerName
         Target computer with SQL instance or instances.

@@ -1,12 +1,10 @@
 function New-DbaXESession {
     <#
     .SYNOPSIS
-        Creates a new XESession object - for the dogged.
+        Creates a new Extended Events session object for programmatic configuration and deployment.
 
     .DESCRIPTION
-        Creates a new XESession object - for the dogged (very manual, Import-DbaXESessionTemplate is recommended). See the following for more info:
-
-        https://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events
+        Creates a new Extended Events session object that can be programmatically configured with events, actions, and targets before deployment to SQL Server. This function provides the foundation for building XE sessions through code rather than using predefined templates. The returned session object requires additional configuration using AddEvent(), AddAction(), and AddTarget() methods before calling Create() to deploy it to the server. For most scenarios, Import-DbaXESessionTemplate provides a simpler approach using predefined session configurations, but this function offers complete control when building custom monitoring solutions from scratch.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

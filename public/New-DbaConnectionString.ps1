@@ -1,14 +1,14 @@
 function New-DbaConnectionString {
     <#
     .SYNOPSIS
-        Builds or extracts a SQL Server Connection String
+        Creates connection strings for SQL Server instances using PowerShell-friendly parameters
 
     .DESCRIPTION
-        Builds or extracts a SQL Server Connection String. Note that dbatools-style syntax is used.
+        Creates properly formatted SQL Server connection strings without having to manually construct complex connection string syntax. Instead of remembering obscure keywords like "Data Source" or "Initial Catalog", you can use familiar PowerShell parameters like -SqlInstance and -Database.
 
-        So you do not need to specify "Data Source", you can just specify -SqlInstance and -SqlCredential and we'll handle it for you.
+        This function handles the complexity of connection string building for you, including authentication methods (Windows, SQL Server, Azure AD), encryption settings, timeout values, and Azure SQL Database specifics. It supports both legacy System.Data.SqlClient and modern Microsoft.Data.SqlClient providers.
 
-        This is the simplified PowerShell approach to connection string building. See examples for more info.
+        Particularly useful when building custom applications, automation scripts, or when you need to generate connection strings for other tools that require them. The function can also extract connection strings from existing SMO server objects for reuse or modification.
 
         See https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
         and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx

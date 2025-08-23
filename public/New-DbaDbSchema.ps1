@@ -1,10 +1,10 @@
 function New-DbaDbSchema {
     <#
     .SYNOPSIS
-        Creates a new database schema and assigns an owner.
+        Creates new database schemas with specified ownership for organizing objects and implementing security boundaries.
 
     .DESCRIPTION
-        Creates a new database schema and assigns an owner.
+        Creates new database schemas within SQL Server databases, allowing you to organize database objects into logical groups and implement security boundaries. Schemas provide a way to separate tables, views, procedures, and other objects by ownership or function, which is essential for multi-tenant applications, security models, and organized database development. You can create multiple schemas across multiple databases in a single operation and specify the database user who will own each schema.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

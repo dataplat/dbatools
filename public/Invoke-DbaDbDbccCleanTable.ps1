@@ -1,12 +1,14 @@
 function Invoke-DbaDbDbccCleanTable {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC CLEANTABLE
+        Reclaims disk space from dropped variable-length columns in tables and indexed views
 
     .DESCRIPTION
-        Executes the command DBCC CLEANTABLE against defined objects and returns results
+        Executes DBCC CLEANTABLE to reclaim disk space after variable-length columns (varchar, nvarchar, varbinary, text, ntext, image, xml, or CLR user-defined types) have been dropped from tables or indexed views.
 
-        Reclaims space from dropped variable-length columns in tables or indexed views
+        When you drop variable-length columns, SQL Server doesn't immediately reclaim the space those columns occupied. This function runs the necessary DBCC command to physically remove that unused space and compact the remaining data, which can significantly reduce table size and improve performance.
+
+        The function accepts either table names (like 'dbo.TableName') or table object IDs for processing. You can control the operation through batch processing to minimize impact on production systems, and optionally suppress informational messages for cleaner output.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-cleantable-transact-sql

@@ -1,10 +1,12 @@
 function Set-DbaErrorLogConfig {
     <#
     .SYNOPSIS
-        Set the configuration for the ErrorLog on a given SQL Server instance
+        Configures SQL Server error log retention and size rollover settings
 
     .DESCRIPTION
-        Sets the number of log files configured on all versions, and size in KB in SQL Server 2012+ and above.
+        Configures how SQL Server manages its error log files by setting retention count and automatic rollover size. You can specify how many error log files to keep (6-99) across all SQL Server versions, and set the file size limit in KB for automatic rollover on SQL Server 2012 and later.
+
+        This helps DBAs manage disk space and ensure adequate error log history for troubleshooting without manual intervention. When a log file reaches the specified size limit, SQL Server automatically creates a new error log and archives the previous one.
 
         To set the Path to the ErrorLog, use Set-DbaStartupParameter -ErrorLog. Note that this command requires
         remote, administrative access to the Windows/WMI server, similar to SQL Configuration Manager.

@@ -1,10 +1,10 @@
 function Get-DbaWindowsLog {
     <#
     .SYNOPSIS
-        Gets Windows Application events associated with an instance
+        Retrieves and parses SQL Server error log entries from the file system for analysis and troubleshooting
 
     .DESCRIPTION
-        Gets Windows Application events associated with an instance
+        Parses SQL Server error log files directly from the file system to extract structured error information including timestamps, SPIDs, error numbers, severity levels, and messages. Locates error log files by querying Windows Application Event Log for SQL Server startup events (Event ID 17111), then reads and parses the raw log files to provide searchable, filterable results. This is essential for troubleshooting SQL Server issues, compliance reporting, and proactive monitoring since it gives you programmatic access to detailed error information that would otherwise require manual log file review.
 
     .PARAMETER SqlInstance
         The instance(s) to retrieve the event logs from

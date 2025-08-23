@@ -1,10 +1,12 @@
 function Test-DbaAgSpn {
     <#
     .SYNOPSIS
-        Tests the SPNs for an availability group listener
+        Validates Service Principal Name registration for Availability Group listeners in Active Directory
 
     .DESCRIPTION
-        Tests the SPNs for an availability group listener
+        Checks whether the required SPNs are properly registered in Active Directory for each Availability Group listener's service account. This function queries AD to verify that both the MSSQLSvc/listener.domain.com and MSSQLSvc/listener.domain.com:port SPNs exist, which are essential for Kerberos authentication to work correctly with AG listeners.
+
+        Use this to troubleshoot client connectivity issues, validate SPN configuration before deployments, or audit security compliance. Missing SPNs will cause authentication failures when clients attempt to connect using integrated Windows authentication through the listener.
 
         https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/listeners-client-connectivity-application-failover?view=sql-server-ver16#SPNs was used as a guide
 

@@ -1,10 +1,10 @@
 function Set-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Set-DbaAgentAlert updates the status of a SQL Agent Alert.
+        Modifies properties of existing SQL Agent alerts including enabled status and name.
 
     .DESCRIPTION
-        Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.
+        Modifies existing SQL Agent alerts on one or more SQL Server instances, allowing you to enable, disable, or rename alerts without using SQL Server Management Studio. This function is particularly useful for bulk operations across multiple servers, standardizing alert configurations between environments, or temporarily disabling noisy alerts during maintenance windows. The function works with the JobServer.Alerts collection and uses the SMO Alter() method to commit changes to existing alerts. You can specify alerts by name or pipe in alert objects from other dbatools commands like Get-DbaAgentAlert.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

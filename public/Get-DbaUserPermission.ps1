@@ -1,14 +1,16 @@
 function Get-DbaUserPermission {
     <#
     .SYNOPSIS
-        Displays detailed permissions information for the server and database roles and securables.
+        Audits comprehensive security permissions across SQL Server instances using DISA STIG methodology
 
     .DESCRIPTION
-        This command will display all server logins, server level securables, database logins and database securables.
+        Performs a comprehensive security audit by analyzing all server logins, server-level permissions, database users, database roles, and object-level permissions across SQL Server instances. Creates temporary STIG (Security Technical Implementation Guide) objects in tempdb to gather detailed permission information for both direct and inherited access rights.
 
-        DISA STIG implementors will find this command useful as it uses Permissions.sql provided by DISA.
+        This command is essential for security compliance audits, particularly for organizations implementing DISA STIG requirements. It reveals the complete permission landscape including role memberships, explicit grants/denials, and securable object permissions, giving DBAs the detailed visibility needed for access reviews and compliance reporting.
 
-        Note that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.
+        The function uses DISA-provided Permissions.sql scripts to ensure thorough analysis of security configurations. By default, it excludes public/guest permissions and system objects to focus on meaningful security grants, but these can be included for complete visibility.
+
+        Note that if you interrupt this command prematurely (Ctrl-C), it will leave behind a STIG schema in tempdb that should be manually cleaned up.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

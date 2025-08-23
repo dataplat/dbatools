@@ -1,11 +1,13 @@
 function Get-DbaDbPageInfo {
     <#
     .SYNOPSIS
-        Get-DbaDbPageInfo will return page information for a database
+        Retrieves detailed page allocation information from SQL Server databases for storage analysis and troubleshooting
 
     .DESCRIPTION
-        Get-DbaDbPageInfo is able to return information about the pages in a database.
-        It's possible to return the information for multiple databases and filter on specific databases, schemas and tables.
+        This function queries the sys.dm_db_database_page_allocations dynamic management view to return detailed information about page allocation, including page type, free space percentage, allocation status, and mixed page allocation indicators.
+        Use this when troubleshooting storage issues, analyzing space utilization patterns, or investigating page-level performance problems in your databases.
+        Results can be filtered by specific databases, schemas, and tables to focus your analysis on problem areas.
+        Requires SQL Server 2012 or higher as it depends on the sys.dm_db_database_page_allocations DMV.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

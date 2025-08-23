@@ -1,10 +1,14 @@
 function Get-DbaDbRestoreHistory {
     <#
     .SYNOPSIS
-        Returns restore history details for databases on a SQL Server.
+        Retrieves database restore history from MSDB for compliance reporting and recovery analysis.
 
     .DESCRIPTION
-        By default, this command will return the server name, database, username, restore type, date, from file and to files.
+        Queries the MSDB database's restorehistory and backupset tables to retrieve detailed information about all database restore operations performed on a SQL Server instance. This function returns comprehensive restore details including who performed the restore, when it occurred, what type of restore was performed, and the source and destination file paths.
+
+        Use this command to track restore activity for compliance auditing, troubleshoot database issues by determining when databases were last restored, or investigate unexpected changes by identifying recent restore operations. The function supports filtering by database name, restore type (Database, File, Filegroup, Differential, Log, Verifyonly, Revert), date ranges, and can return only the most recent restore for each database.
+
+        This eliminates the need to manually query MSDB system tables or write complex SQL joins to gather restore history information across multiple instances.
 
         Thanks to https://www.mssqltips.com/SqlInstancetip/1724/when-was-the-last-time-your-sql-server-database-was-restored/ for the query and https://sqlstudies.com/2016/07/27/when-was-this-database-restored/ for the idea.
 

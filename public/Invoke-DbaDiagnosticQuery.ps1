@@ -1,16 +1,14 @@
 function Invoke-DbaDiagnosticQuery {
     <#
     .SYNOPSIS
-        Invoke-DbaDiagnosticQuery runs the scripts provided by Glenn Berry's DMV scripts on specified servers
+        Executes Glenn Berry's DMV diagnostic queries to assess SQL Server performance and health
 
     .DESCRIPTION
-        This is the main function of the Sql Server Diagnostic Queries related functions in dbatools.
-        The diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:
-        https://glennsqlperformance.com/resources/
+        Runs Glenn Berry's comprehensive collection of DMV-based diagnostic queries to analyze SQL Server performance, configuration, and health issues. These queries help identify common problems like blocking, high CPU usage, memory pressure, index fragmentation, and configuration issues that affect SQL Server performance.
 
-        The most recent version of the diagnostic queries are included in the dbatools module.
-        But it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.
-        It will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object
+        The diagnostic queries are developed and maintained by Glenn Berry and can be found at https://glennsqlperformance.com/resources/ along with extensive documentation. The most recent version of these diagnostic queries are included in the dbatools module, but you can also specify a custom path to run newer versions or specific query collections.
+
+        This function automatically detects your SQL Server version (2005-2025, including Azure SQL Database) and runs the appropriate queries for that platform. You can run all queries, select specific ones interactively, or target only instance-level or database-specific diagnostics. Results are returned as structured PowerShell objects for easy analysis, filtering, and reporting. You can also export the queries as SQL files for manual execution or documentation purposes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Can be either a string or SMO server

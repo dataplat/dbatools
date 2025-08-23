@@ -1,10 +1,12 @@
 function Export-DbaBinaryFile {
     <#
     .SYNOPSIS
-        Exports binary files from SQL Server
+        Extracts binary data from SQL Server tables and writes it to physical files
 
     .DESCRIPTION
-        Exports binary files from SQL Server
+        Retrieves binary data stored in SQL Server tables and writes it as files to the filesystem. This is useful for extracting documents, images, or other files that have been stored in database columns using binary, varbinary, or image datatypes.
+
+        The function automatically detects filename and binary data columns based on column names and datatypes, but you can specify custom columns if needed. It supports streaming large files efficiently and can process multiple tables or databases in a single operation.
 
         If specific filename and binary columns aren't specified, the command will guess based on the datatype (binary/image) for the binary column and a match for "name" as the filename column.
 

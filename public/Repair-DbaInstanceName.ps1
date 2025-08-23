@@ -1,14 +1,14 @@
 function Repair-DbaInstanceName {
     <#
     .SYNOPSIS
-        Renames @@SERVERNAME to match with the Windows name.
+        Updates SQL Server's @@SERVERNAME system variable to match the Windows hostname
 
     .DESCRIPTION
-        When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
+        Updates SQL Server's @@SERVERNAME system variable to match the current Windows hostname, which is required after renaming a Windows server. This ensures proper functionality for Kerberos authentication and Availability Groups.
 
-        This command renames @@SERVERNAME to match with the Windows name. The new name is automatically determined. It does not matter if you use an alias to connect to the SQL instance.
+        The function automatically detects the correct new server name and uses sp_dropserver and sp_addserver to update the SQL Server system tables. It handles common blockers like active replication and database mirroring, optionally removing them with the -AutoFix parameter.
 
-        If the automatically determined new name matches the old name, the command will not run.
+        A SQL Server service restart is required to complete the rename process, which the function can perform automatically. The function will skip the operation if the names already match.
 
         https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 

@@ -1,10 +1,10 @@
 function Get-DbaDbPartitionScheme {
     <#
     .SYNOPSIS
-        Gets database partition scheme(s).
+        Retrieves partition schemes from SQL Server databases for table partitioning management.
 
     .DESCRIPTION
-        Gets database Partition Schemes.
+        Retrieves partition scheme objects from one or more SQL Server databases, providing details about how partitioned tables and indexes are distributed across filegroups. Partition schemes define the physical storage mapping for partitioned tables by specifying which filegroups contain each partition's data. This function helps DBAs inventory existing partition schemes when planning table partitioning strategies, troubleshooting performance issues with partitioned tables, or preparing for partition maintenance operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

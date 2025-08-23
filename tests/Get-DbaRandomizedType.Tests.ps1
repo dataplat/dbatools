@@ -24,21 +24,21 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command returns types" {
         BeforeAll {
-            $global:allTypes = Get-DbaRandomizedType
-            $global:zipcodeResult = Get-DbaRandomizedType -RandomizedSubType Zipcode
-            $global:namePatternTypes = Get-DbaRandomizedType -Pattern Name
+            $allTypes = Get-DbaRandomizedType
+            $zipcodeResult = Get-DbaRandomizedType -RandomizedSubType Zipcode
+            $namePatternTypes = Get-DbaRandomizedType -Pattern Name
         }
 
         It "Should have at least 205 rows" {
-            $global:allTypes.Count | Should -BeGreaterOrEqual 205
+            $allTypes.Count | Should -BeGreaterOrEqual 205
         }
 
         It "Should return correct type based on subtype" {
-            $global:zipcodeResult.Type | Should -Be "Address"
+            $zipcodeResult.Type | Should -Be "Address"
         }
 
         It "Should return values based on pattern" {
-            $global:namePatternTypes.Count | Should -BeGreaterOrEqual 26
+            $namePatternTypes.Count | Should -BeGreaterOrEqual 26
         }
     }
 }

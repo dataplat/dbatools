@@ -1,14 +1,14 @@
 function Find-DbaOrphanedFile {
     <#
     .SYNOPSIS
-        Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
+        Identifies database files on disk that are not attached to any SQL Server database instance
 
     .DESCRIPTION
-        This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
+        Scans filesystem directories for database files (.mdf, .ldf, .ndf) that exist on disk but are not currently attached to the SQL Server instance. This is essential for cleanup operations after database drops, detaches, or failed restores that leave behind orphaned files consuming disk space.
 
-        By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
+        The command compares files found via xp_dirtree against sys.master_files to identify true orphans. By default, it searches the root\data directory, default data and log paths, system paths, and any directory currently used by attached databases.
 
-        You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
+        Perfect for storage cleanup scenarios where you need to reclaim disk space by identifying leftover database files that can be safely removed. You can specify additional file types using -FileType and additional search paths using -Path parameter.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

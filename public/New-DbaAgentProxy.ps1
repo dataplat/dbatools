@@ -1,10 +1,12 @@
 function New-DbaAgentProxy {
     <#
     .SYNOPSIS
-        Adds one or more proxies to SQL Server Agent
+        Creates SQL Server Agent proxy accounts to enable job steps to run under different security contexts
 
     .DESCRIPTION
-        Adds one or more proxies to SQL Server Agent
+        Creates SQL Server Agent proxy accounts that allow job steps to execute under different security contexts than the SQL Agent service account. Proxy accounts use existing SQL Server credentials and can be assigned to specific subsystems like CmdExec, PowerShell, SSIS, or Analysis Services. This enables secure delegation of permissions for automated tasks without granting elevated privileges to the service account itself.
+
+        You can control which users, server roles, or msdb database roles have permission to use each proxy, providing granular security for job execution. The proxy must reference an existing SQL Server credential that contains the Windows account under which job steps will actually run.
 
         Note: ActiveScripting (ActiveX scripting) was discontinued in SQL Server 2016: https://docs.microsoft.com/en-us/sql/database-engine/discontinued-database-engine-functionality-in-sql-server
 

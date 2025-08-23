@@ -36,14 +36,14 @@ Describe $CommandName -Tag IntegrationTests {
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             if (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily) {
-                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily -Confirm:$false
+                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -72,14 +72,14 @@ Describe $CommandName -Tag IntegrationTests {
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             if (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly) {
-                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly -Confirm:$false
+                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -115,7 +115,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have deleted job: dbatoolsci_testjob_history" {
-            $null = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory -Confirm:$false
+            $null = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory
             (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history) | Should -BeNullOrEmpty
         }
 

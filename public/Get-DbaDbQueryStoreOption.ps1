@@ -1,12 +1,10 @@
 function Get-DbaDbQueryStoreOption {
     <#
     .SYNOPSIS
-        Get the Query Store configuration for Query Store enabled databases.
+        Retrieves Query Store configuration settings from databases across SQL Server instances.
 
     .DESCRIPTION
-        Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.
-
-        Due to SMO limitations, the model database is not checked.
+        Returns the complete Query Store configuration for user databases, including capture modes, storage limits, cleanup policies, and retention settings. This function helps DBAs audit Query Store configurations across their environment, identify databases with suboptimal settings, and ensure consistent Query Store policies. Query Store settings directly impact query performance monitoring, plan regression detection, and storage consumption, so regular configuration reviews are essential for maintaining optimal performance insights.
 
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.QueryStoreOptions

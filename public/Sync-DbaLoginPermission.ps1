@@ -1,10 +1,14 @@
 function Sync-DbaLoginPermission {
     <#
     .SYNOPSIS
-        Copies SQL login permissions from one server to another.
+        Synchronizes login permissions and role memberships between SQL Server instances.
 
     .DESCRIPTION
-        Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. Credential removal is not currently supported for this operation.
+        Syncs comprehensive login security settings from a source to destination SQL Server instance, ensuring logins have consistent permissions across environments. This function only modifies permissions for existing logins - it will not create or drop logins themselves.
+
+        The sync process handles server roles (sysadmin, bulkadmin, etc.), server-level permissions (Connect SQL, View any database, etc.), SQL Agent job ownership, credential mappings, database user mappings, database roles (db_owner, db_datareader, etc.), and database-level permissions. This is particularly useful for maintaining consistent security configurations across development, staging, and production environments, or when rebuilding servers and needing to restore login permissions without recreating the logins.
+
+        If a login exists on the source but not the destination, that login is skipped entirely. The function also protects against syncing permissions for system logins, host-based logins, and the currently connected login to prevent accidental lockouts.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

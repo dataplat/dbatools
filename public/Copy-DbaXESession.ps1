@@ -1,12 +1,14 @@
 function Copy-DbaXESession {
     <#
     .SYNOPSIS
-        Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
+        Copies Extended Event sessions from one SQL Server instance to another, excluding system sessions.
 
     .DESCRIPTION
-        Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
+        Copies custom Extended Event sessions between SQL Server instances while preserving their configuration and running state. This function scripts out the session definitions from the source server and recreates them on the destination, making it essential for server migrations, standardizing monitoring across environments, or setting up disaster recovery instances.
 
-        By default, all non-system Extended Events are migrated.
+        System sessions (AlwaysOn_health and system_health) are automatically excluded since they're managed by SQL Server itself. If a session was running on the source, it will be started on the destination after creation. Existing sessions with the same name on the destination will be skipped unless you use the Force parameter to overwrite them.
+
+        Perfect for migrating your custom monitoring, auditing, and troubleshooting Extended Event sessions when moving databases between servers or ensuring consistent monitoring across your SQL Server estate.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

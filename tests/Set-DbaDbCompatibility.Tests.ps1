@@ -25,52 +25,50 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $global:TestConfig = Get-TestConfig
-
-        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database model | Stop-DbaProcess -Confirm:$false
-        $global:sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $global:sqlCn.Refresh()
-        $global:dbNameNotMatches = "dbatoolscliCompatibilityLevelNotMatch_$(Get-Random -Minimum 600 -Maximum 1100)"
-        $instanceLevel = $global:sqlCn.Databases["master"].CompatibilityLevel
+        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database model | Stop-DbaProcess
+        $sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $sqlCn.Refresh()
+        $dbNameNotMatches = "dbatoolscliCompatibilityLevelNotMatch_$(Get-Random -Minimum 600 -Maximum 1100)"
+        $instanceLevel = $sqlCn.Databases["master"].CompatibilityLevel
         <# create a database that is one level down from instance level, any version tested against supports the prior level        #>
         $previousCompatLevel = [int]($instanceLevel.ToString().Trim("Version")) - 10
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database model | Stop-DbaProcess -Confirm:$false
-        $queryNot = "CREATE DATABASE $global:dbNameNotMatches"
-        #$null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $global:dbNameNotMatches
-        $global:sqlCn.Query($queryNot)
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database model | Stop-DbaProcess
+        $queryNot = "CREATE DATABASE $dbNameNotMatches"
+        #$null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbNameNotMatches
+        $sqlCn.Query($queryNot)
         Start-Sleep 5
-        $queryAlter = "ALTER DATABASE $global:dbNameNotMatches SET COMPATIBILITY_LEVEL = $($previousCompatLevel)"
-        $global:sqlCn.Query($queryAlter)
+        $queryAlter = "ALTER DATABASE $dbNameNotMatches SET COMPATIBILITY_LEVEL = $($previousCompatLevel)"
+        $sqlCn.Query($queryAlter)
 
-        $global:sqlCn.Refresh()
-        $global:sqlCn.Databases.Refresh()
-        $global:resultMatches = Set-DbaDbCompatibility -SqlInstance $global:sqlCn -Database "master" -Verbose 4>&1
-        $global:verboseMsg = "*current Compatibility Level matches target level*"
+        $sqlCn.Refresh()
+        $sqlCn.Databases.Refresh()
+        $resultMatches = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database "master" -Verbose 4>&1
+        $verboseMsg = "*current Compatibility Level matches target level*"
 
-        $global:sqlCn.Refresh()
-        $global:sqlCn.Databases.Refresh()
-        $global:resultNotMatches = Set-DbaDbCompatibility -SqlInstance $global:sqlCn -Database $global:dbNameNotMatches -Verbose 4>&1
-        $global:verboseSetMsg = "*Performing the operation `"Setting*Compatibility Level*"
+        $sqlCn.Refresh()
+        $sqlCn.Databases.Refresh()
+        $resultNotMatches = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database $dbNameNotMatches -Verbose 4>&1
+        $verboseSetMsg = "*Performing the operation `"Setting*Compatibility Level*"
     }
     AfterAll {
         $sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        Remove-DbaDatabase -SqlInstance $sqlCn -Database $global:dbNameNotMatches -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $sqlCn -Database $dbNameNotMatches -ErrorAction SilentlyContinue
         $sqlCn.ConnectionContext.Disconnect()
     }
     Context "Instance Compatibility Level" {
         It "Detects database is already at the instance level" {
-            $global:resultMatches[-1] | Should -BeLike $global:verboseMsg
+            $resultMatches[-1] | Should -BeLike $verboseMsg
         }
         It -Skip:$true "Should have no output" {
-            ($global:resultMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 1
+            ($resultMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 1
         }
     }
     Context "Providing Compatibility Level" {
         It "Performs operation to update compatibility level" {
-            $global:resultNotMatches[-2] | Should -BeLike $global:verboseSetMsg
+            $resultNotMatches[-2] | Should -BeLike $verboseSetMsg
         }
         It "Should output an object" {
-            ($global:resultNotMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 2
+            ($resultNotMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 2
         }
     }
 }

@@ -1,10 +1,10 @@
 function Get-DbaDbServiceBrokerService {
     <#
     .SYNOPSIS
-        Gets database service broker services
+        Retrieves Service Broker services from SQL Server databases for auditing and troubleshooting messaging configurations
 
     .DESCRIPTION
-        Gets database Service broker services
+        Retrieves detailed information about Service Broker services configured in SQL Server databases, including service names, associated queues, schemas, and ownership details. Service Broker services define the endpoints for reliable messaging between applications and databases. This function helps DBAs audit Service Broker implementations, troubleshoot message-based applications, and document messaging configurations for compliance or migration planning.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

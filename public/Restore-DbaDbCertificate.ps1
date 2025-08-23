@@ -1,10 +1,12 @@
 function Restore-DbaDbCertificate {
     <#
     .SYNOPSIS
-        Imports certificates from .cer files using SMO.
+        Restores database certificates from .cer and .pvk files into SQL Server databases.
 
     .DESCRIPTION
-        Imports certificates from.cer files using SMO.
+        Restores database certificates and their associated private keys from backup files into SQL Server databases. This function is essential for recovering certificates used in TDE (Transparent Data Encryption), backup encryption, Always Encrypted, and other SQL Server security features after database migrations, disaster recovery, or server rebuilds.
+
+        The function automatically locates matching private key files (.pvk) for each certificate (.cer) when processing directories, or you can specify key file paths explicitly. Handles password-protected private keys with secure credential management, and allows you to re-encrypt keys during the restore process if needed.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

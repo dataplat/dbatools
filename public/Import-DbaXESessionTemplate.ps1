@@ -1,10 +1,14 @@
 function Import-DbaXESessionTemplate {
     <#
     .SYNOPSIS
-        Imports a new XESession XML Template
+        Creates Extended Events sessions from XML templates on SQL Server instances
 
     .DESCRIPTION
-        Imports a new XESession XML Template either from the dbatools repository or a file you specify.
+        Creates new Extended Events sessions using predefined XML templates from the dbatools repository or custom template files you specify. This function simplifies XE session deployment by providing ready-to-use templates for common monitoring scenarios like performance troubleshooting, security auditing, and health monitoring.
+
+        Templates from the dbatools repository include popular configurations for index page splits, query wait statistics, deadlock monitoring, IO errors, and database health checks. You can also import custom templates created from existing sessions or third-party sources.
+
+        The function automatically handles SQL Server version compatibility, validates template XML structure, checks for existing sessions to prevent conflicts, and can optionally start sessions immediately with auto-start configuration for server restarts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

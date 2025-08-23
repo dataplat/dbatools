@@ -48,27 +48,27 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
         It "removes a database mail profile" {
             (Get-DbaDbMailProfile -SqlInstance $server -Profile $profileName) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbMailProfile -SqlInstance $server -Profile $profileName -Confirm:$false
+            Remove-DbaDbMailProfile -SqlInstance $server -Profile $profileName
             (Get-DbaDbMailProfile -SqlInstance $server -Profile $profileName) | Should -BeNullOrEmpty
         }
 
         It "supports piping database mail profile" {
             (Get-DbaDbMailProfile -SqlInstance $server -Profile $profileName) | Should -Not -BeNullOrEmpty
-            Get-DbaDbMailProfile -SqlInstance $server -Profile $profileName | Remove-DbaDbMailProfile -Confirm:$false
+            Get-DbaDbMailProfile -SqlInstance $server -Profile $profileName | Remove-DbaDbMailProfile
             (Get-DbaDbMailProfile -SqlInstance $server -Profile $profileName) | Should -BeNullOrEmpty
         }
 
         It "removes all database mail profiles but excluded" {
             (Get-DbaDbMailProfile -SqlInstance $server -Profile $profileName2) | Should -Not -BeNullOrEmpty
             (Get-DbaDbMailProfile -SqlInstance $server -ExcludeProfile $profileName2) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbMailProfile -SqlInstance $server -ExcludeProfile $profileName2 -Confirm:$false
+            Remove-DbaDbMailProfile -SqlInstance $server -ExcludeProfile $profileName2
             (Get-DbaDbMailProfile -SqlInstance $server -ExcludeProfile $profileName2) | Should -BeNullOrEmpty
             (Get-DbaDbMailProfile -SqlInstance $server -Profile $profileName2) | Should -Not -BeNullOrEmpty
         }
 
         It "removes all database mail profiles" {
             (Get-DbaDbMailProfile -SqlInstance $server) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbMailProfile -SqlInstance $server -Confirm:$false
+            Remove-DbaDbMailProfile -SqlInstance $server
             (Get-DbaDbMailProfile -SqlInstance $server) | Should -BeNullOrEmpty
         }
     }

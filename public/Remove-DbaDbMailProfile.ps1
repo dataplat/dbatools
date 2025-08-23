@@ -1,13 +1,13 @@
 function Remove-DbaDbMailProfile {
     <#
     .SYNOPSIS
-        Removes database mail profile(s).
+        Removes Database Mail profiles from SQL Server instances.
 
     .DESCRIPTION
-        Removes the database mail profile(s) that have passed through the pipeline.
-
-        If not used with a pipeline, Get-DbaDbMailProfile will be executed with the parameters provided
-        and the returned database mail profile(s) will be removed.
+        Deletes specified Database Mail profiles from the msdb database, permanently removing their configuration and preventing them from sending emails.
+        This is commonly used during security hardening to remove unused profiles or when cleaning up misconfigured mail setups.
+        Accepts profiles via pipeline from Get-DbaDbMailProfile or directly through parameters, making it easy to selectively remove profiles based on specific criteria.
+        Returns detailed results showing which profiles were successfully removed and any that failed during deletion.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

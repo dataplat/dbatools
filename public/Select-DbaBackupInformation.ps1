@@ -1,10 +1,10 @@
 function Select-DbaBackupInformation {
     <#
     .SYNOPSIS
-        Select a subset of backups from a dbatools backup history object
+        Filters backup history to identify the minimum backup chain needed for point-in-time database recovery
 
     .DESCRIPTION
-        Select-DbaBackupInformation filters out a subset of backups from the dbatools backup history object with parameters supplied.
+        Analyzes backup history objects and determines the exact sequence of backups required to restore a database to a specific point in time. This function handles the complex LSN logic to identify which full, differential, and log backups are needed, eliminating the guesswork of manual restore planning. It supports continuing interrupted restores, filtering by database or server names, and accommodating different restore strategies by optionally ignoring differential or log backups. Perfect for automating disaster recovery procedures or when you need to restore to a precise moment without restoring unnecessary backup files.
 
     .PARAMETER BackupHistory
         A dbatools.BackupHistory object containing backup history records

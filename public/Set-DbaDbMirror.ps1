@@ -1,10 +1,10 @@
 function Set-DbaDbMirror {
     <#
     .SYNOPSIS
-        Sets properties of database mirrors.
+        Configures database mirroring partner, witness, safety level, and operational state settings.
 
     .DESCRIPTION
-        Sets properties of database mirrors.
+        Modifies database mirroring configuration by setting the partner server, witness server, safety level, or changing the mirror state. This function lets you reconfigure existing mirrored databases without manually writing ALTER DATABASE statements. Use it to add or change witness servers for automatic failover, adjust safety levels between synchronous and asynchronous modes, or control mirror states like suspend, resume, and failover operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

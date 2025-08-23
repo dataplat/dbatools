@@ -1,14 +1,16 @@
 function Invoke-DbaDbShrink {
     <#
     .SYNOPSIS
-        Shrinks all files in a database. This is a command that should rarely be used.
+        Reduces the physical size of database files by removing unused space from data and log files.
 
         - Shrinks can cause severe index fragmentation (to the tune of 99%)
         - Shrinks can cause massive growth in the database's transaction log
         - Shrinks can require a lot of time and system resources to perform data movement
 
     .DESCRIPTION
-        Shrinks all files in a database. Databases should be shrunk only when completely necessary.
+        Reduces database file sizes by removing unused space from data files, log files, or both. This function targets specific files within databases and can reclaim substantial disk space when databases have grown significantly beyond their current data requirements.
+
+        Use this function sparingly and only when disk space recovery is critical, such as after large data deletions, index rebuilds, or when preparing databases for migration. The function supports chunked shrinking operations to minimize performance impact and provides detailed fragmentation statistics to help assess the operation's effects.
 
         Many awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:
 

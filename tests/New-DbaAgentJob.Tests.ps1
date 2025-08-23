@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup and ignore all output
-        Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

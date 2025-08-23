@@ -1,14 +1,16 @@
 function Get-DbaDbDetachedFileInfo {
     <#
     .SYNOPSIS
-        Get detailed information about detached SQL Server database files.
+        Reads detached SQL Server database files to extract metadata and file structure without attaching them.
 
     .DESCRIPTION
-        Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.
+        Analyzes detached MDF files to retrieve essential database metadata including name, SQL Server version, collation, and complete file structure. This lets you examine database files sitting in storage or archives without the risk of attaching them to a live instance.
 
-        "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the compatibility level.
+        Perfect for migration planning when you need to verify compatibility before moving databases between SQL Server versions. Also invaluable for troubleshooting scenarios where you have detached database files and need to understand their structure or requirements before reattachment.
 
-        MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
+        The function reads the MDF file header using SQL Server's built-in methods, so it requires an online SQL Server instance to interpret the binary data. All file paths must be accessible to the specified SQL Server service account.
+
+        Returns comprehensive details including the original database name, exact SQL Server version (mapped from internal version numbers), collation settings, and complete lists of associated data and log files as they existed when detached.
 
     .PARAMETER SqlInstance
         Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.

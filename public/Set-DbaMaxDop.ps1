@@ -1,14 +1,10 @@
 function Set-DbaMaxDop {
     <#
     .SYNOPSIS
-        Sets SQL Server maximum degree of parallelism (Max DOP), then displays information relating to SQL Server Max DOP configuration settings. Works on SQL Server 2005 and higher.
+        Configures SQL Server maximum degree of parallelism (MaxDOP) at instance or database level
 
     .DESCRIPTION
-        Uses the Test-DbaMaxDop command to get the recommended value if -MaxDop parameter is not specified.
-
-        These are just general recommendations for SQL Server and are a good starting point for setting the "max degree of parallelism" option.
-
-        You can set MaxDop database scoped configurations if the server is version 2016 or higher
+        Configures the max degree of parallelism setting to control how many processors SQL Server uses for parallel query execution. Without a specified value, the function automatically applies recommended settings based on your server's hardware configuration using Test-DbaMaxDop. This prevents performance issues caused by excessive parallelism on multi-core servers, especially in OLTP environments where parallel queries can create more overhead than benefit. For SQL Server 2016 and higher, you can set database-scoped MaxDOP configurations to fine-tune performance for specific workloads.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.

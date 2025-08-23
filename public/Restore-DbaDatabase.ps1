@@ -1,18 +1,20 @@
 function Restore-DbaDatabase {
     <#
     .SYNOPSIS
-        Restores a SQL Server Database from a set of backup files.
+        Restores SQL Server databases from backup files with intelligent backup chain selection and point-in-time recovery.
 
     .DESCRIPTION
-        Upon being passed a list of potential backups files this command will scan the files, select those that contain SQL Server
-        backup sets. It will then filter those files down to a set that can perform the requested restore, checking that we have a
-        full restore chain to the point in time requested by the caller.
+        Scans backup files and automatically selects the optimal restore sequence to recover databases to a specific point in time.
+        This function handles the complex task of building complete backup chains from full, differential, and transaction log backups,
+        so you don't have to manually determine which files are needed or in what order to restore them.
 
-        The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
-        XpDirTree will be used to perform the file scans.
+        The function excels at disaster recovery scenarios where you need to quickly restore from a collection of backup files.
+        It validates backup headers, ensures restore chains are complete, and can recover to any point in time within your backup coverage.
+        Whether restoring from local files, network shares, or Azure blob storage, it automatically handles file discovery and validation.
 
-        Various means can be used to pass in a list of files to be considered. The default is to recursively scan the folder
-        passed in.
+        By default, all file paths must be accessible to the target SQL Server instance. The function uses xp_dirtree for remote file scanning
+        and supports various input methods including direct file lists, folder scanning, and pipeline input from other dbatools commands.
+        It integrates seamlessly with Ola Hallengren's maintenance solution backup structures for faster processing.
 
     .PARAMETER SqlInstance
         The target SQL Server instance.

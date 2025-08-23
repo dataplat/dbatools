@@ -1,10 +1,10 @@
 function Get-DbaInstanceUserOption {
     <#
     .SYNOPSIS
-        Gets SQL Instance user options of one or more instance(s) of SQL Server.
+        Retrieves instance-level user option defaults that affect new database connections
 
     .DESCRIPTION
-        The Get-DbaInstanceUserOption command gets SQL Instance user options from the SMO object sqlserver.
+        Returns the default user options configured at the SQL Server instance level that are automatically applied to new database connections. These settings include ANSI compliance options like ANSI_NULLS, QUOTED_IDENTIFIER, date format preferences, and other connection-level defaults. This is useful when standardizing connection behavior across environments or troubleshooting why applications behave differently on different instances. Unlike Get-DbaDbccUserOption which shows current session settings, this command shows the instance defaults that would be inherited by new connections.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

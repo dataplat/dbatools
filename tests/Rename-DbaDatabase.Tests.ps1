@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         ADD FILEGROUP Dbatoolsci_filegroupname
 "@
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $fileGroupQuery
-        $global:testDate = (Get-Date).ToString("yyyyMMdd")
+        $testDate = (Get-Date).ToString("yyyyMMdd")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "test_dbatoolsci_rename2_$($global:testDate)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "test_dbatoolsci_rename2_$($testDate)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -147,10 +147,10 @@ Describe $CommandName -Tag IntegrationTests {
             $dateResults | Should -Not -BeNullOrEmpty
         }
         It "Should have a DatabaseRenames" {
-            $dateResults.DatabaseRenames | Should -Be "test_dbatoolsci_rename2 --> test_dbatoolsci_rename2_$($global:testDate)"
+            $dateResults.DatabaseRenames | Should -Be "test_dbatoolsci_rename2 --> test_dbatoolsci_rename2_$($testDate)"
         }
         It "Should have renamed the database" {
-            $dateResults.Database | Should -Be "[test_dbatoolsci_rename2_$($global:testDate)]"
+            $dateResults.Database | Should -Be "[test_dbatoolsci_rename2_$($testDate)]"
         }
         It "Should have the previous database name" {
             $dateResults.DBN.Keys | Should -Be "test_dbatoolsci_rename2"

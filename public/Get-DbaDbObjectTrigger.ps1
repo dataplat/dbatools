@@ -1,10 +1,10 @@
 function Get-DbaDbObjectTrigger {
     <#
     .SYNOPSIS
-        Get all existing triggers on object level (table or view) on one or more SQL instances.
+        Retrieves triggers attached to tables and views across SQL Server databases.
 
     .DESCRIPTION
-        Get all existing triggers on object level (table or view) on one or more SQL instances.
+        Retrieves all DML triggers that are attached to tables and views within specified databases. This function helps DBAs inventory trigger-based business logic, identify potential performance bottlenecks, and document database dependencies. You can filter results by database, object type (tables vs views), or pipe in specific objects from Get-DbaDbTable and Get-DbaDbView. Returns trigger details including enabled status and last modified date for impact analysis and change management.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

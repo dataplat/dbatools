@@ -1,10 +1,10 @@
 function Get-DbaReplSubscription {
     <#
     .SYNOPSIS
-        Displays all subscriptions for a publication.
+        Retrieves SQL Server replication subscription details for publications across instances.
 
     .DESCRIPTION
-        Displays all subscriptions for a publication
+        Retrieves detailed information about replication subscriptions, showing which subscriber instances are receiving data from publications. This is essential for monitoring replication topology, troubleshooting subscription issues, and auditing data distribution across your SQL Server environment. You can filter results by database, publication name, subscriber instance, subscription database, or subscription type (Push/Pull) to focus on specific replication relationships.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

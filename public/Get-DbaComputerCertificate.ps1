@@ -1,10 +1,10 @@
 function Get-DbaComputerCertificate {
     <#
     .SYNOPSIS
-        Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
+        Retrieves X.509 certificates from Windows certificate stores that can be used for SQL Server TLS encryption
 
     .DESCRIPTION
-        Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
+        Scans Windows certificate stores to find X.509 certificates suitable for enabling SQL Server network encryption. By default, returns only certificates with Server Authentication capability from the LocalMachine\My store, which are the certificates SQL Server can actually use for TLS connections. This saves you from manually browsing certificate stores and checking enhanced key usage extensions when configuring Force Encryption or setting up secure SQL Server connections.
 
     .PARAMETER ComputerName
         The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must specify the distinct nodes.

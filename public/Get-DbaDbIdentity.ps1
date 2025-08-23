@@ -1,10 +1,14 @@
 function Get-DbaDbIdentity {
     <#
     .SYNOPSIS
-        Checks the current identity value via DBCC CHECKIDENT with NORESEED optuin
+        Retrieves current identity values from tables without reseeding using DBCC CHECKIDENT
 
     .DESCRIPTION
-        Use the command DBCC CHECKIDENT with NORESEED option to checks the current identity value of a table and return results
+        Executes DBCC CHECKIDENT with the NORESEED option to retrieve current identity seed and column values from specified tables without modifying anything. This provides a safe way to inspect identity column status across multiple tables, databases, and instances simultaneously.
+
+        DBAs use this when troubleshooting identity gaps, planning bulk operations, or auditing identity column usage before performing maintenance tasks. Unlike running DBCC CHECKIDENT manually, this command structures the output into readable PowerShell objects that show both the current identity value and the actual highest value in the column.
+
+        The NORESEED option ensures no changes are made to your tables - it's purely informational. The function parses the DBCC output to extract specific identity metrics, making it ideal for scripted monitoring and reporting workflows.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkident-transact-sql

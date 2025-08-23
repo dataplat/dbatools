@@ -1,10 +1,12 @@
 function Get-DbaWsfcResourceType {
     <#
     .SYNOPSIS
-        Gets information about one or more resource types in a failover cluster.
+        Retrieves available resource types from Windows Server Failover Cluster for SQL Server FCI configuration.
 
     .DESCRIPTION
-        Gets information about one or more resource types in a failover cluster.
+        Retrieves detailed information about all resource types available in a Windows Server Failover Cluster. Resource types define what kinds of cluster resources can be created, including SQL Server instances, network names, IP addresses, and shared storage. This information is essential when configuring or troubleshooting SQL Server Failover Cluster Instances (FCI), as it shows which resource types are installed and their dependencies.
+
+        Returns resource type properties including display names, DLL locations, and required dependency relationships. This helps DBAs understand the available building blocks for creating clustered SQL Server resources and diagnose configuration issues.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 

@@ -1,10 +1,10 @@
 function Get-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        Get-DbaAgentAlertCategory retrieves the alert categories.
+        Retrieves SQL Server Agent alert categories and their associated alert counts
 
     .DESCRIPTION
-        Get-DbaAgentAlertCategory makes it possible to retrieve the alert categories.
+        Retrieves all SQL Server Agent alert categories from the target instances, showing how alerts are organized and grouped. Categories help DBAs manage alerts logically by grouping related notifications (such as severity-based alerts, database maintenance alerts, or custom business alerts). The function also returns a count of how many alerts are currently assigned to each category, making it useful for understanding your alerting structure and identifying unused or heavily-used categories.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

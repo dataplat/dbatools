@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
         } catch {
             $null = 1
         }
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
     }
 
     Context "Testing connection parameters" {
@@ -214,7 +214,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterEach {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
         }
 
         It "Should transfer all tables" {

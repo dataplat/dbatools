@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login, $login2, $login01, $login02
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
         Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
         Remove-Item -Path $outputFile2 -ErrorAction SilentlyContinue

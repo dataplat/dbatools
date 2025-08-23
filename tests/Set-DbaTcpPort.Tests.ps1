@@ -44,14 +44,14 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Restore the original port configuration
-            $null = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $originalPort -Confirm:$false -WarningAction SilentlyContinue
+            $null = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $originalPort -WarningAction SilentlyContinue
             $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should change the port" {
-            $result = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $testPort -Confirm:$false -WarningAction SilentlyContinue
+            $result = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $testPort -WarningAction SilentlyContinue
             $result.Changes | Should -Match "Changed TcpPort"
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should change the port back to the old value" {
-            $result = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $originalPort -Confirm:$false -WarningAction SilentlyContinue
+            $result = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $originalPort -WarningAction SilentlyContinue
             $result.Changes | Should -Match "Changed TcpPort"
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false

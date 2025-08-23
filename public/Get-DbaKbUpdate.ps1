@@ -1,14 +1,10 @@
 function Get-DbaKbUpdate {
     <#
     .SYNOPSIS
-        Gets download links and detailed information for KB files (SPs/hotfixes/CUs, etc)
+        Retrieves detailed metadata and download links for Microsoft KB updates from the update catalog
 
     .DESCRIPTION
-        Parses catalog.update.microsoft.com and grabs details for KB files (SPs/hotfixes/CUs, etc)
-
-        Because Microsoft's RSS feed does not work, the command has to parse a few webpages which can result in slowness.
-
-        Use the Simple parameter for simplified output and faster results.
+        Searches Microsoft's update catalog website to retrieve comprehensive information about KB updates including service packs, hotfixes, and cumulative updates. Returns detailed metadata such as supported products, architecture, language, file size, supersession information, and direct download links. Integrates with Get-DbaBuild to provide SQL Server-specific versioning details when available, making it essential for patch management and update research workflows. Note that parsing multiple web pages can be slow since Microsoft doesn't provide an API for this data.
 
     .PARAMETER Name
         The KB name or number. For example, KB4057119 or 4057119.

@@ -1,17 +1,19 @@
 function Install-DbaSqlPackage {
     <#
     .SYNOPSIS
-        Downloads and installs SqlPackage on Windows, Linux, or macOS
+        Installs Microsoft SqlPackage utility required for database deployment and DACPAC operations
 
     .DESCRIPTION
-        Downloads and installs SqlPackage so that you can use Import-DbaDacpac, Export-DbaDacpac, Publish-DbaDacpac and Get-DbaDacpac.
+        Downloads and installs Microsoft SqlPackage utility, which is essential for database deployment automation and DACPAC operations. This prerequisite tool enables you to use Import-DbaDacpac, Export-DbaDacpac, Publish-DbaDacpac and Get-DbaDacpac for automated database schema deployments and CI/CD pipelines.
+
+        SqlPackage is Microsoft's command-line utility for deploying database schema changes, extracting database schemas to DACPAC files, and publishing changes across environments. DBAs use this for automated deployments, maintaining consistent database schemas between development and production, and implementing database DevOps workflows.
 
         Cross-platform support:
         - Windows: Supports both ZIP (portable) and MSI installation methods
         - Linux/macOS: Supports ZIP installation method only
 
-        By default, SqlPackage is installed as a portable ZIP file to the dbatools directory for CurrentUser scope.
-        For AllUsers (LocalMachine) scope on Windows, you can use the MSI installer which requires administrative privileges.
+        By default, SqlPackage is installed as a portable ZIP file to the dbatools directory for CurrentUser scope, making it immediately available for database deployment tasks without requiring system-wide installation.
+        For AllUsers (LocalMachine) scope on Windows, you can use the MSI installer which requires administrative privileges and provides system-wide access.
 
         Writes to $script:PSModuleRoot\bin\sqlpackage by default for CurrentUser scope.
 

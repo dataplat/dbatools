@@ -64,9 +64,9 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force
-        Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -Confirm:$false
-        Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Force
+        Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name
+        Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "ensure command works" {
 
         It "Check the validation for a linked server" {
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable WarnVar -WarningAction SilentlyContinue
             $WarnVar | Should -Match "LinkedServer is required"
             $results | Should -BeNullOrEmpty
         }
@@ -83,14 +83,14 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results.length | Should -Be 1
 
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name -Confirm:$false
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results | Should -BeNullOrEmpty
 
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
             $results.length | Should -Be 2
 
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name -Confirm:$false
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
             $results | Should -BeNullOrEmpty
         }
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
             $results.length | Should -Be 1
 
-            $results = $instance2 | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name -Confirm:$false
+            $results = $instance2 | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
             $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
             $results | Should -BeNullOrEmpty
         }
@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin5Name
             $results.length | Should -Be 1
 
-            $results = $linkedServer1 | Remove-DbaLinkedServerLogin -LocalLogin $localLogin5Name -Confirm:$false
+            $results = $linkedServer1 | Remove-DbaLinkedServerLogin -LocalLogin $localLogin5Name
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin5Name
             $results | Should -BeNullOrEmpty
         }
@@ -117,7 +117,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin6Name
             $results.length | Should -Be 1
 
-            $results = $linkedServerLogin6 | Remove-DbaLinkedServerLogin -Confirm:$false
+            $results = $linkedServerLogin6 | Remove-DbaLinkedServerLogin
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin6Name
             $results | Should -BeNullOrEmpty
         }
@@ -128,7 +128,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Parent.Name | Should -Contain $linkedServer2Name
             $results.Name | Should -Contain $localLogin7Name
 
-            $results = $instance2 | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false
+            $results = $instance2 | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results.Name | Should -Not -Contain $localLogin7Name
         }

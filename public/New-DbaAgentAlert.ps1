@@ -1,10 +1,10 @@
 function New-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Creates a new SQL Server Agent alert
+        Creates SQL Server Agent alerts for automated monitoring and notification of errors, performance conditions, or system events
 
     .DESCRIPTION
-        Creates a new SQL Server Agent alert
+        Creates new SQL Server Agent alerts that monitor for specific error severities, message IDs, performance conditions, or WMI events. Alerts can automatically notify operators via email, pager, or net send when triggered, and optionally execute jobs in response to the monitored condition. Supports configurable notification delays to prevent alert spam and can target specific databases or system-wide monitoring scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

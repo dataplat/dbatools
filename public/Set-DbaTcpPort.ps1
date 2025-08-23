@@ -1,12 +1,14 @@
 function Set-DbaTcpPort {
     <#
     .SYNOPSIS
-        Changes the TCP port used by the specified SQL Server.
+        Configures SQL Server TCP port settings for specified instances and IP addresses.
 
     .DESCRIPTION
-        This function changes the TCP port used by the specified SQL Server.
+        Configures TCP port settings for SQL Server instances by modifying the network configuration through SQL Server Configuration Manager functionality. This replaces the manual process of opening SQL Server Configuration Manager to change port settings for security hardening or network compliance.
 
-        Be aware that the Database Engine begins listening on a new port only when restarted. So you have to restart the Database Engine that the new settings become effective.
+        The function can target all IP addresses (IPAll setting) or specific IP addresses, disables dynamic port allocation, and sets static port numbers. This is commonly used to move SQL Server off the default port 1433 for security purposes, configure custom ports for named instances, or meet organizational network segmentation requirements.
+
+        Important: SQL Server must be restarted before the new port configuration takes effect. Use the -Force parameter to automatically restart the Database Engine service, or restart manually after running the command.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         #create master key if not exists
         if (!($mkey = Get-DbaDbMasterKey -SqlInstance $server1 -Database master)) {
-            $null = New-DbaDbMasterKey -SqlInstance $server1 -Database master -Password $securePassword -Confirm:$false
+            $null = New-DbaDbMasterKey -SqlInstance $server1 -Database master -Password $securePassword
         }
 
         try {
@@ -103,7 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $crt.Drop()
             }
         } catch { <#nbd #> }
-        $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null -Confirm:$false
+        $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -133,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
             $server1.Credentials[$credLogin].Drop()
             $server1.Databases["master"].Certificates[$certificateName].Drop()
             if (!$mkey) {
-                $null = Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Confirm:$false
+                $null = Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master
             }
         } catch { <#nbd #> }
 

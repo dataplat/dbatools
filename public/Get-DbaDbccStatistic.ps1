@@ -1,15 +1,10 @@
 function Get-DbaDbccStatistic {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC SHOW_STATISTICS
+        Retrieves statistics information from tables and indexed views for query performance analysis
 
     .DESCRIPTION
-        Executes the command DBCC SHOW_STATISTICS against defined objects and returns results
-
-        Reclaims space from dropped variable-length columns in tables or indexed views
-
-        Read more:
-            - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-cleantable-transact-sql
+        Executes DBCC SHOW_STATISTICS to extract detailed information about statistics objects, including distribution histograms, density vectors, and header information. This helps DBAs diagnose query performance issues when the optimizer makes poor execution plan choices due to outdated or skewed statistics. You can analyze specific statistics objects or scan all statistics across databases to identify when UPDATE STATISTICS should be run. Returns different data sets based on the selected option: StatHeader shows when statistics were last updated and row counts, DensityVector reveals data uniqueness patterns, Histogram displays value distribution across column ranges, and StatsStream provides the raw binary statistics data.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -1,12 +1,12 @@
 function Add-DbaExtendedProperty {
     <#
     .SYNOPSIS
-        Adds an extended property
+        Adds extended properties to SQL Server objects for metadata storage and documentation
 
     .DESCRIPTION
-        Adds an extended property
+        Creates custom metadata properties on SQL Server objects to store documentation, version information, business context, or compliance tags. Extended properties are stored in the database system catalogs and don't affect object performance but provide valuable context for DBAs managing complex environments.
 
-        This command works out of the box with databases but you can add extended properties from several different types of objects, including:
+        This command accepts piped input from any dbatools Get-Dba* command, making it easy to bulk-apply properties across multiple objects. You can add extended properties to databases directly or target specific object types, including:
 
         Aggregate
         Assembly

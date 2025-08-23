@@ -45,7 +45,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance    = $TestConfig.instance2
                 Database       = $databaseName
                 SecurePassword = $tPassword
-                Confirm        = $false
             }
             $null = New-DbaDbMasterKey @splatMasterKey
 
@@ -70,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup all created objects.
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }

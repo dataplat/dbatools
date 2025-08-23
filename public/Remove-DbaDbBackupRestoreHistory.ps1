@@ -1,18 +1,16 @@
 function Remove-DbaDbBackupRestoreHistory {
     <#
     .SYNOPSIS
-        Reduces the size of the backup and restore history tables by deleting old entries for backup sets.
+        Removes backup and restore history records from MSDB database to prevent excessive growth
 
     .DESCRIPTION
-        Reduces the size of the backup and restore history tables by deleting the entries for backup sets.
+        Removes backup and restore history records from MSDB database tables to prevent them from consuming excessive disk space and degrading performance. Over time, these history tables can grow substantially on busy SQL Server instances with frequent backup operations.
 
-        Can be used at server level, in this case a retention period -KeepDays can be set (default is 30 days).
-        Can also be used at database level, in this case the complete history for the database(s) is deleted.
+        Works in two modes: server-level cleanup removes records older than a specified retention period (default 30 days), while database-level cleanup removes the complete backup/restore history for specific databases. This is particularly useful when decommissioning databases or cleaning up after major maintenance operations.
 
-        The backup and restore history tables reside in the msdb database.
+        The backup and restore history tables reside in the MSDB database and include backupset, backupfile, restorehistory, and related system tables. Large history accumulations can impact backup operations, SSMS performance when viewing backup history, and overall MSDB database size.
 
-        To periodically remove old data from backup and restore history tables it is recommended to schedule the agent job sp_delete_backuphistory from the
-        SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com).
+        For production environments, consider scheduling regular cleanup using the sp_delete_backuphistory agent job from Ola Hallengren's SQL Server Maintenance Solution (https://ola.hallengren.com) rather than manual cleanup operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

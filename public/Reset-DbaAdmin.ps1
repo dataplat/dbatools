@@ -1,30 +1,27 @@
 function Reset-DbaAdmin {
     <#
     .SYNOPSIS
-        This function allows administrators to regain access to SQL Servers in the event that passwords or access was lost.
-
-        Supports SQL Server 2005 and above. Windows administrator access is required.
+        Regains administrative access to SQL Server instances when passwords or access has been lost
 
     .DESCRIPTION
-        This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding the sysadmin role to existing login, or adding a new login (SQL or Windows) and granting it sysadmin privileges.
+        Recovers access to SQL Server instances when you're locked out due to forgotten passwords, disabled accounts, or authentication issues. This emergency recovery tool stops the SQL Server service and restarts it in single-user mode, allowing exclusive access to reset credentials and restore administrative privileges.
+
+        The function handles both standalone and clustered SQL Server instances, working with SQL authentication logins (like sa) and Windows authentication accounts. It automatically enables mixed mode authentication when working with SQL logins and ensures the target login is enabled, unlocked, and granted sysadmin privileges.
 
         This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-DbaAdmin parameter which starts the server in Single-User mode and only allows this script to connect.
 
         Once the service is restarted, the following tasks are performed:
         - Login is added if it doesn't exist
         - If login is a Windows User, an attempt is made to ensure it exists
-        - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.
+        - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode
         - Login will be enabled and unlocked
         - Login will be added to sysadmin role
 
-        If failures occur at any point, a best attempt is made to restart the SQL Server.
+        If failures occur at any point, a best attempt is made to restart the SQL Server normally. The function uses Microsoft.Data.SqlClient and Get-WmiObject for maximum compatibility across different environments without requiring additional tools.
 
-        In order to make this script as portable as possible, Microsoft.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
+        For remote SQL Server instances, ensure WinRM is configured and accessible. If remote access isn't possible, run the script locally on the target server. Requires Windows administrator access to the server hosting SQL Server.
 
-        If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
-
-        Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.
-        Tested on SQL Server 2005 SP4 through 2016 CTP2.
+        Supports SQL Server 2005 and above on clustered and standalone configurations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.

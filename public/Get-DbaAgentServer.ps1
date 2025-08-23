@@ -1,10 +1,10 @@
 function Get-DbaAgentServer {
     <#
     .SYNOPSIS
-        Gets SQL Agent Server information for each instance(s) of SQL Server.
+        Retrieves SQL Server Agent service configuration and status information
 
     .DESCRIPTION
-        The Get-DbaAgentServer returns connected SMO object for SQL Agent Server information for each instance(s) of SQL Server.
+        Returns detailed SQL Server Agent configuration including service state, logging levels, job history settings, and service accounts. This is essential for auditing Agent configurations across multiple instances, troubleshooting job failures, and documenting environment settings for compliance or migration planning. The function provides a standardized view of Agent properties that would otherwise require connecting to each instance individually through SSMS.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

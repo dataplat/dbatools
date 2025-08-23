@@ -1,14 +1,14 @@
 function Invoke-DbaXEReplay {
     <#
     .SYNOPSIS
-        This command replays events from Read-DbaXEFile on one or more target servers
+        Replays SQL queries captured in Extended Event files against target SQL Server instances
 
     .DESCRIPTION
-        This command replays events from Read-DbaXEFile. It is simplistic in its approach.
+        This command replays SQL workloads captured in Extended Event files against one or more target SQL Server instances for performance testing and load simulation. It extracts SQL statements from Extended Event data piped from Read-DbaXEFile and executes them sequentially against your specified targets.
 
-        - Writes all queries to a temp sql file
-        - Executes temp file using sqlcmd so that batches are executed properly
-        - Deletes temp file
+        The function works by collecting SQL queries from the Extended Event stream, writing them to a temporary SQL file with proper batch separators, then executing the file using sqlcmd to ensure batches run correctly. This approach allows you to replay production workloads in test environments to validate performance changes, test capacity, or troubleshoot query behavior under realistic conditions.
+
+        By default, it processes sql_batch_completed and rcp_completed events, but you can filter to specific event types. The replay maintains the original SQL structure while allowing you to redirect the workload to different databases or instances as needed.
 
     .PARAMETER SqlInstance
         Target SQL Server(s)

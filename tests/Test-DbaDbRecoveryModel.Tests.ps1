@@ -39,14 +39,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
         $server.Query("CREATE DATABASE $psudoSimpleRecovery")
 
-        Set-DbaDbRecoveryModel -sqlInstance $TestConfig.instance2 -RecoveryModel BulkLogged -Database $bulkLoggedRecovery -Confirm:$false
-        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $simpleRecovery -Confirm:$false
-        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $psudoSimpleRecovery -Confirm:$false
-        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full -Database $psudoSimpleRecovery -Confirm:$false
+        Set-DbaDbRecoveryModel -sqlInstance $TestConfig.instance2 -RecoveryModel BulkLogged -Database $bulkLoggedRecovery
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $simpleRecovery
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $psudoSimpleRecovery
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full -Database $psudoSimpleRecovery
 
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $fullRecovery, $bulkLoggedRecovery, $simpleRecovery, $psudoSimpleRecovery
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $fullRecovery, $bulkLoggedRecovery, $simpleRecovery, $psudoSimpleRecovery
     }
 
     Context "Default Execution" {

@@ -1,12 +1,14 @@
 function Get-DbaInstalledPatch {
     <#
     .SYNOPSIS
-        Retrives a historical list of all SQL Patches (CUs, Service Packs & Hot-fixes) installed on a Computer.
+        Retrieves installed SQL Server patches from Windows Registry for patch compliance and audit reporting.
 
     .DESCRIPTION
-        Retrives a historical list of all SQL Patches (CUs, Service Packs & Hot-fixes) installed on a Computer.
+        Queries the Windows Registry to retrieve a complete history of SQL Server patches installed on one or more computers. This includes Cumulative Updates (CUs), Service Packs, and Hotfixes that have been applied to any SQL Server instance on the target machines.
 
-        To test to see if your build is up to date, use Test-DbaBuild.
+        Essential for patch compliance audits, pre-upgrade planning, and troubleshooting environments where you need to verify what patches have been installed and when. The function returns patch names, versions, and installation dates so you can quickly assess patch levels across your SQL Server estate without manually checking each server.
+
+        To test if your build is up to date, use Test-DbaBuild.
 
     .PARAMETER ComputerName
         Allows you to specify a comma separated list of servers to query.

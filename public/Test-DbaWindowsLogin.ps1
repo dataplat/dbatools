@@ -1,10 +1,10 @@
 function Test-DbaWindowsLogin {
     <#
     .SYNOPSIS
-        Test-DbaWindowsLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
+        Validates Windows logins and groups in SQL Server against Active Directory to identify orphaned, disabled, or problematic accounts
 
     .DESCRIPTION
-        The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to keep your logins accurate and up to date by removing accounts that are no longer needed.
+        Queries SQL Server for all Windows-based logins and groups, then validates each against Active Directory to identify security issues and cleanup opportunities. The function checks whether AD accounts still exist, are enabled, and match their SQL Server SID to detect orphaned logins from domain migrations or account deletions. This helps DBAs maintain login security by identifying stale Windows authentication accounts that should be removed from SQL Server.
 
     .PARAMETER SqlInstance
         The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2000 or higher.

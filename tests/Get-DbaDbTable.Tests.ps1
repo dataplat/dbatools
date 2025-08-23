@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query "drop table $tablename"
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

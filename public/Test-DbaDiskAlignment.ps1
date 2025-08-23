@@ -1,12 +1,14 @@
 function Test-DbaDiskAlignment {
     <#
     .SYNOPSIS
-        Verifies that your non-dynamic disks are aligned according to physical constraints.
+        Tests disk partition alignment to identify I/O performance issues that can impact SQL Server.
 
     .DESCRIPTION
-        Verifies that your non-dynamic disks are aligned according to physical constraints.
+        Tests disk partition alignment by checking if partition starting offsets align properly with common stripe unit sizes (64KB, 128KB, 256KB, 512KB, 1024KB). Misaligned disk partitions can cause significant SQL Server I/O performance degradation, particularly on high-transaction systems.
 
-        Returns one row per computer, partition and stripe size with.
+        The function connects to Windows computers via CIM and examines each disk partition's starting offset. It can optionally focus only on partitions that contain SQL Server data or log files. Results show whether each partition follows alignment best practices and calculates the modulo for common stripe sizes.
+
+        Returns detailed alignment analysis including partition size, offset calculations, and recommendations. This helps identify storage configuration issues before they impact database performance.
 
         Please refer to your storage vendor best practices before following any advice below.
 

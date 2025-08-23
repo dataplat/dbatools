@@ -1,10 +1,10 @@
 function Add-DbaReplArticle {
     <#
     .SYNOPSIS
-        Add an article configuration to a publication in a database on the SQL Server instance(s).
+        Adds a table or other database object as an article to an existing replication publication.
 
     .DESCRIPTION
-        Add an article configuration to a publication in a database on the SQL Server instance(s).
+        Adds a database object (typically a table) as an article to an existing SQL Server replication publication. Articles define which tables and data get replicated to subscribers. This function supports both transactional and merge replication publications, allowing you to expand replication topology without using SQL Server Management Studio. You can apply horizontal filters to replicate only specific rows, and customize schema options like indexes and statistics that get created on subscriber databases.
 
     .PARAMETER SqlInstance
         The SQL Server instance(s) for the publication.

@@ -1,12 +1,12 @@
 function Remove-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Removes availability groups on a SQL Server instance.
+        Removes availability groups from SQL Server instances using DROP AVAILABILITY GROUP.
 
     .DESCRIPTION
-        Removes availability groups on a SQL Server instance.
+        Removes availability groups from SQL Server instances by executing the DROP AVAILABILITY GROUP T-SQL command. This is typically used when decommissioning high availability setups, migrating to different solutions, or cleaning up test environments.
 
-        If possible, remove the availability group only while connected to the server instance that hosts the primary replica.
+        The function handles the complex considerations around properly removing availability groups to avoid leaving databases in problematic states. If possible, remove the availability group only while connected to the server instance that hosts the primary replica.
         When the availability group is dropped from the primary replica, changes are allowed in the former primary databases (without high availability protection).
         Deleting an availability group from a secondary replica leaves the primary replica in the RESTORING state, and changes are not allowed on the databases.
 

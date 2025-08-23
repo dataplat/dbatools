@@ -1,10 +1,10 @@
 function New-DbaClientAlias {
     <#
     .SYNOPSIS
-        Creates/updates a sql alias for the specified server - mimics cliconfg.exe
+        Creates SQL Server client aliases in the Windows registry for simplified connection management
 
     .DESCRIPTION
-        Creates/updates a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+        Creates or updates SQL Server client aliases by modifying registry keys in HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client\ConnectTo, replacing the need for manual cliconfg.exe configuration. This allows applications and connections to use simple alias names instead of complex server names, instance names, or custom port numbers. Particularly useful when standardizing connections across multiple workstations, managing port changes, or simplifying named instance connections without modifying application connection strings.
 
     .PARAMETER ComputerName
         The target computer where the alias will be created

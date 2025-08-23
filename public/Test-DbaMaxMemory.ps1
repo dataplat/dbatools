@@ -1,12 +1,10 @@
 function Test-DbaMaxMemory {
     <#
     .SYNOPSIS
-        Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
+        Calculates recommended SQL Server max memory settings to prevent OS memory pressure and optimize performance.
 
     .DESCRIPTION
-        Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: total memory, currently configured SQL max memory, and the calculated recommendation.
-
-        Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment.
+        Analyzes server memory and SQL Server instances to calculate optimal max memory configuration settings. Uses a tiered algorithm that reserves appropriate memory for the operating system based on total server memory, accounting for multiple SQL instances and other SQL services like SSAS, SSRS, or SSIS. Compares current max memory settings against recommended values to help identify misconfigured servers that could cause memory pressure or performance issues. Based on Jonathan Kehayias's memory calculation methodology, this provides general recommendations that should be validated against your specific environment and workload requirements.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

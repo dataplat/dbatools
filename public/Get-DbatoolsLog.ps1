@@ -1,10 +1,10 @@
 function Get-DbatoolsLog {
     <#
     .SYNOPSIS
-        Returns log entries for dbatools
+        Retrieves internal log entries and error messages from dbatools module execution
 
     .DESCRIPTION
-        Returns log entries for dbatools. Handy when debugging or developing a script using it.
+        Retrieves log entries from dbatools' internal logging system, allowing you to troubleshoot command execution and track what happened during script runs. Use this when dbatools commands aren't behaving as expected or when you need to see detailed execution information for debugging purposes. The function can filter logs by specific functions, modules, targets, execution history, or message levels, making it easier to isolate issues during SQL Server automation tasks.
 
     .PARAMETER FunctionName
         Default: "*"

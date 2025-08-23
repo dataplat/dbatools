@@ -39,13 +39,13 @@ Describe $CommandName -Tag IntegrationTests {
     It "downloads a small update" {
         $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path $tempPath
         $results.Name -match "aspnet"
-        $global:filesToRemove += $results.FullName
+        $filesToRemove += $results.FullName
     }
 
     It "supports piping" {
         $results = Get-DbaKbUpdate -Name KB2992080 | Select-Object -First 1 | Save-DbaKbUpdate -Architecture All -Path $tempPath
         $results.Name -match "aspnet"
-        $global:filesToRemove += $results.FullName
+        $filesToRemove += $results.FullName
     }
 
     It "Download multiple updates" {
@@ -55,14 +55,14 @@ Describe $CommandName -Tag IntegrationTests {
         if ($null -eq $results -or $results.Count -ne 2) {
             Write-Message -Level Warning -Message "Retrying..."
             if ($results.Count -gt 0) {
-                $global:filesToRemove += $results.FullName
+                $filesToRemove += $results.FullName
             }
             Start-Sleep -s 30
             $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path $tempPath
         }
 
         $results.Count | Should -Be 2
-        $global:filesToRemove += $results.FullName
+        $filesToRemove += $results.FullName
 
         # download multiple updates via piping
         $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path $tempPath
@@ -71,14 +71,14 @@ Describe $CommandName -Tag IntegrationTests {
         if ($null -eq $results -or $results.Count -ne 2) {
             Write-Message -Level Warning -Message "Retrying..."
             if ($results.Count -gt 0) {
-                $global:filesToRemove += $results.FullName
+                $filesToRemove += $results.FullName
             }
             Start-Sleep -s 30
             $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path $tempPath
         }
 
         $results.Count | Should -Be 2
-        $global:filesToRemove += $results.FullName
+        $filesToRemove += $results.FullName
     }
 
     # see https://github.com/dataplat/dbatools/issues/6745
@@ -87,6 +87,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         $results = Save-DbaKbUpdate -Name KB4513696 -Architecture All -Path $tempPath
         $results.Count | Should -Be 1
-        $global:filesToRemove += $results.FullName
+        $filesToRemove += $results.FullName
     }
 }

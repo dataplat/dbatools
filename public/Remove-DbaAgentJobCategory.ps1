@@ -1,11 +1,13 @@
 function Remove-DbaAgentJobCategory {
     <#
     .SYNOPSIS
-        Remove-DbaAgentJobCategory removes a job category.
+        Removes SQL Server Agent job categories from one or more instances.
 
     .DESCRIPTION
-        Remove-DbaAgentJobCategory makes it possible to remove a job category.
-        Be assured that the category you want to remove is not used with other jobs. If another job uses this category it will be get the category [Uncategorized (Local)].
+        Removes custom SQL Server Agent job categories that are no longer needed for job organization and management.
+        This is useful when cleaning up obsolete categories after reorganizing jobs or migrating workloads between environments.
+        Any jobs currently assigned to a removed category will automatically be reassigned to the default "[Uncategorized (Local)]" category.
+        The function provides safety controls and detailed status reporting to ensure successful cleanup operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

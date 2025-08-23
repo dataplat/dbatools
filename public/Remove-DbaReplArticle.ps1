@@ -1,16 +1,14 @@
 function Remove-DbaReplArticle {
     <#
     .SYNOPSIS
-        Removes an article from a publication for the database on the target SQL instances.
+        Removes articles from SQL Server replication publications and their associated subscriptions.
 
     .DESCRIPTION
-        Removes an article from a publication for the database on the target SQL instances.
+        Removes articles from SQL Server replication publications, automatically handling subscription cleanup when subscribers exist. This function is essential when you need to stop replicating specific tables, views, or stored procedures without dismantling the entire publication.
 
-        Dropping an article from a publication does not remove the object from the publication database or the corresponding object from the subscription database.
-        Use DROP <Object> to remove these objects if necessary.
-        #TODO: add a param for this DropObjectOnSubscriber
+        When articles have active subscriptions, the function first removes them from all subscribers using sp_dropsubscription before removing the article from the publication itself. This prevents orphaned subscription entries that could cause synchronization issues.
 
-        Dropping an article invalidates the current snapshot; therefore a new snapshot must be created.
+        Important considerations: Dropping an article from a publication does not remove the actual object from the publication database or the corresponding object from the subscription database. Use DROP <Object> statements to remove these objects if necessary. Additionally, dropping an article invalidates the current snapshot, so a new snapshot must be created before the next synchronization cycle.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

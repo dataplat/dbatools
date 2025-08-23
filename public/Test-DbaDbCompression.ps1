@@ -1,23 +1,22 @@
 function Test-DbaDbCompression {
     <#
     .SYNOPSIS
-        Returns tables and indexes with preferred compression setting.
+        Analyzes user tables and indexes to recommend optimal compression settings for storage space reduction.
     .DESCRIPTION
-        This function returns the results of a full table/index compression analysis and the estimated, best option to date for either NONE, Page, or Row Compression.
+        Performs comprehensive compression analysis on user tables and indexes to help DBAs identify storage optimization opportunities. Uses SQL Server's sp_estimate_data_compression_savings system procedure combined with workload pattern analysis to recommend the most effective compression type for each object.
 
-        Remember Uptime is critical, the longer uptime, the more accurate the analysis is, and it would be best if you utilized Get-DbaUptime first, before running this command.
+        This function analyzes your database workload patterns (scan vs update ratios) and calculates potential space savings to recommend ROW compression, PAGE compression, or no compression. Longer server uptime provides more accurate workload statistics, so consider running Get-DbaUptime first to verify sufficient data collection time.
+
+        The analysis examines operational statistics from sys.dm_db_index_operational_stats to determine usage patterns:
+        - Percent_Update shows the percentage of update operations relative to total operations. Lower update percentages indicate better candidates for page compression.
+        - Percent_Scan shows the percentage of scan operations relative to total operations. Higher scan percentages indicate better candidates for page compression.
+        - Compression_Type_Recommendation provides specific guidance: 'PAGE', 'ROW', 'NO_GAIN' or '?' when the algorithm cannot determine the best option.
+
+        The function automatically excludes tables that cannot be compressed: memory-optimized tables (SQL 2014+), tables with encrypted columns (SQL 2016+), graph tables (SQL 2017+), and tables with sparse columns. It only analyzes user tables with no existing compression and requires SQL Server 2016 SP1 or higher for non-Enterprise editions.
 
         Test-DbaDbCompression script derived from GitHub and the Tiger Team's repository: (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
-        In the output, you will find the following information:
-        - Column Percent_Update shows the percentage of update operations on a specific table, index, or partition, relative to total operations on that object. The lower the percentage of Updates (that is, the table, index, or partition is infrequently updated), the better candidate it is for page compression.
-        - Column Percent_Scan shows the percentage of scan operations on a table, index, or partition, relative to total operations on that object. The higher the value of Scan (that is, the table, index, or partition is mostly scanned), the better candidate it is for page compression.
-        - Column Compression_Type_Recommendation can have four possible outputs indicating where there is most gain, if any: 'PAGE', 'ROW', 'NO_GAIN' or '?'. When the output is '?' this approach could not give a recommendation, so as a rule of thumb I would lean to ROW if the object suffers mainly UPDATES, or PAGE if mainly INSERTS, but this is where knowing your workload is essential. When the output is 'NO_GAIN' well, that means that according to sp_estimate_data_compression_savings no space gains will be attained when compressing, as in the above output example, where compressing would grow the affected object.
 
-        This script will execute on the context of the current database.
-        Also be aware that this may take a while to execute on large objects, because if the IS locks taken by the
-        sp_estimate_data_compression_savings cannot be honored, the SP will be blocked.
-        It only considers Row or Page Compression (not column compression)
-        It only evaluates User Tables
+        Be aware this may take considerable time on large databases as sp_estimate_data_compression_savings requires shared locks that can be blocked by concurrent activity. The analysis covers only ROW and PAGE compression options, not columnstore compression.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

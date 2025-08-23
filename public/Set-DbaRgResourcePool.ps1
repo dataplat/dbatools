@@ -1,11 +1,13 @@
 function Set-DbaRgResourcePool {
     <#
     .SYNOPSIS
-        Sets a resource pool for use by the Resource Governor on the specified SQL Server.
+        Modifies CPU, memory, and IOPS limits for existing SQL Server Resource Governor pools.
 
     .DESCRIPTION
-        Sets a resource pool for use by the Resource Governor on the specified SQL Server.
-        A resource pool represents a subset of the physical resources (memory, CPUs and IO) of an instance of the Database Engine.
+        Modifies resource allocation settings for existing Resource Governor pools to control how much CPU, memory, and disk I/O different workloads can consume.
+        This lets you adjust performance limits after analyzing workload patterns or when server capacity changes.
+        Works with both internal pools (for SQL Server queries) and external pools (for R Services, Python, or other external processes).
+        The Resource Governor is automatically reconfigured to apply changes immediately unless you skip reconfiguration.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

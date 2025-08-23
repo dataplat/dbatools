@@ -1,17 +1,16 @@
 function Get-DbaBackupInformation {
     <#
     .SYNOPSIS
-        Scan backup files and creates a set, compatible with Restore-DbaDatabase
+        Scans backup files and reads their headers to create structured backup history objects for restore operations
 
     .DESCRIPTION
-        Upon being passed a list of potential backups files this command will scan the files, select those that contain SQL Server
-        backup sets. It will then filter those files down to a set
+        Reads the headers of SQL Server backup files to extract metadata and creates BackupHistory objects compatible with Restore-DbaDatabase. This eliminates the need to manually track backup chains and file locations when planning database restores.
 
-        The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
-        XpDirTree will be used to perform the file scans
+        The function identifies valid SQL Server backup files from a given path, reads their headers using the SQL Server instance, and organizes them into backup sets. It handles full, differential, and log backups, automatically determining backup types, LSN chains, and file dependencies.
 
-        Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
-        passed in.
+        By default, the function uses xp_dirtree to scan remote paths accessible to the SQL Server instance. This means paths must be accessible from the SQL Server service account. The -NoXpDirTree switch allows scanning local files instead.
+
+        Special support is included for Ola Hallengren maintenance solution backup folder structures, which can significantly speed up scanning of organized backup directories.
 
     .PARAMETER Path
         Path to SQL Server backup files.

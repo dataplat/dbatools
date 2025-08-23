@@ -1,10 +1,14 @@
 function Remove-DbaDbRole {
     <#
     .SYNOPSIS
-        Removes a database role from database(s) for each instance(s) of SQL Server.
+        Removes custom database roles from SQL Server databases
 
     .DESCRIPTION
-        The Remove-DbaDbRole removes role(s) from database(s) for each instance(s) of SQL Server.
+        Removes user-defined database roles from SQL Server databases while protecting against accidental deletion of system roles. This function automatically excludes fixed database roles (like db_owner, db_datareader) and the public role, ensuring only custom roles created for specific security requirements can be removed.
+
+        The function performs safety checks before removal, preventing deletion of roles that own database schemas to avoid orphaning database objects. This is particularly useful when cleaning up deprecated security configurations or removing roles from development databases that were copied from production.
+
+        You can target specific roles across multiple databases and instances, making it ideal for standardizing security configurations or bulk cleanup operations. By default, system databases are excluded unless explicitly included with the IncludeSystemDbs parameter.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

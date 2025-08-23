@@ -1,10 +1,10 @@
 function New-DbaDbMailProfile {
     <#
     .SYNOPSIS
-        Creates a new database mail profile
+        Creates a new Database Mail profile for organizing SQL Server email notifications
 
     .DESCRIPTION
-        Creates a new database mail profile, and optionally associates it to a database mail account
+        Creates a new Database Mail profile on SQL Server instances, which serves as a container for organizing mail accounts used by SQL Server for notifications, alerts, and reports. Database Mail profiles allow you to group multiple mail accounts and set priorities for failover scenarios. You can optionally associate an existing mail account to the profile during creation, making this useful for setting up complete email notification systems or organizing different notification types into separate profiles.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

@@ -2,12 +2,14 @@
 function Get-DbaDbVirtualLogFile {
     <#
     .SYNOPSIS
-        Returns database virtual log file information for database files on a SQL instance.
+        Retrieves detailed virtual log file (VLF) metadata from transaction logs for performance analysis and troubleshooting.
 
     .DESCRIPTION
-        Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.
+        This function uses DBCC LOGINFO to return detailed metadata about each virtual log file (VLF) within database transaction logs. The output includes VLF size, file offsets, sequence numbers, status, and parity information that's essential for analyzing transaction log structure and performance.
 
-        Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
+        Having a transaction log file with too many virtual log files (VLFs) can hurt database performance. Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
+
+        Common use cases include identifying databases with excessive VLF counts (typically over 50-100), analyzing VLF size distribution to spot fragmentation issues, and monitoring VLF status during active transactions. This data helps DBAs make informed decisions about log file growth settings and maintenance schedules.
 
         References:
         http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/

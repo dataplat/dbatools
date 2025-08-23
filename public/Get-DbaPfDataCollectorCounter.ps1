@@ -1,10 +1,10 @@
 function Get-DbaPfDataCollectorCounter {
     <#
     .SYNOPSIS
-        Gets Performance Counters.
+        Retrieves performance counter configurations from Windows Performance Monitor Data Collector Sets.
 
     .DESCRIPTION
-        Gets Performance Counters.
+        Retrieves the list of performance counters that are configured within Windows Performance Monitor Data Collector Sets. This is useful for auditing performance monitoring configurations, verifying which SQL Server and system counters are being collected, and understanding your performance data collection setup. The function extracts counter details from existing Data Collector objects, showing you exactly which performance metrics are being tracked for troubleshooting and capacity planning.
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.

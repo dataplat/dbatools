@@ -1,21 +1,23 @@
 function New-DbaCmConnection {
     <#
     .SYNOPSIS
-        Generates a connection object for use in remote computer management.
+        Creates and configures connection objects for remote computer management using CIM/WMI protocols.
 
     .DESCRIPTION
-        Generates a connection object for use in remote computer management.
-        Those objects are used for the purpose of cim/wmi queries, caching which protocol worked, optimizing performance and minimizing authentication errors.
+        Creates connection objects that optimize remote computer management for SQL Server environments using CIM and WMI protocols.
+        These objects cache successful authentication methods and connection protocols, reducing authentication errors and improving performance when connecting to multiple SQL Server instances across different servers.
 
-        New-DbaCmConnection will create a NEW object and overwrite any existing ones for the specified computer.
-        Furthermore, information stored in the input beyond the computername will be discarded in favor of the new settings.
+        The function pre-configures connection settings including credentials, preferred protocols (CIM over WinRM or DCOM), and failover behavior.
+        This eliminates the need to repeatedly authenticate and negotiate protocols when running dbatools commands against remote SQL Server instances.
 
-        Unless the connection cache has been disabled, all connections will automatically be registered in the cache, so no further action is necessary.
-        The output is primarily for information purposes, however it may be used to pass objects and circumvent the cache with those.
+        New-DbaCmConnection creates a new connection object and overwrites any existing cached connection for the specified computer.
+        All connection information beyond the computer name gets replaced with the new settings you specify.
 
-        NOTE: Generally, this function need not be used, as a first connection to a computer using any connecting function such as "Get-DbaCmObject" will automatically register a new default connection for it.
+        Unless connection caching has been disabled globally, all connections are automatically stored in the connection cache for reuse.
+        The returned object is primarily informational, though it can be used to bypass the cache if needed.
 
-        This function exists to be able to preconfigure connections.
+        Note: This function is typically optional since dbatools commands like Get-DbaCmObject automatically create default connections when first connecting to a computer.
+        Use this function when you need to pre-configure specific authentication or protocol settings before running other dbatools commands.
 
     .PARAMETER ComputerName
         The computer to build the connection object for.

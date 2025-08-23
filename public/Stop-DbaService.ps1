@@ -1,10 +1,14 @@
 function Stop-DbaService {
     <#
     .SYNOPSIS
-        Stops SQL Server services on a computer.
+        Stops SQL Server-related Windows services with proper dependency handling.
 
     .DESCRIPTION
-        Stops the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
+        Stops SQL Server services including Database Engine, SQL Agent, Reporting Services, Analysis Services, Integration Services, and other components across one or more computers. Automatically handles service dependencies to prevent dependency conflicts during shutdown operations.
+
+        Particularly useful for planned maintenance windows, troubleshooting service issues, or preparing servers for patching and reboots. The Force parameter allows stopping dependent services automatically, which is essential when stopping Database Engine services that have SQL Agent dependencies.
+
+        Supports targeting specific service types or instances, making it ideal for selective service management in multi-instance environments. Can be combined with Get-DbaService for advanced filtering and bulk operations across entire SQL Server environments.
 
         Requires Local Admin rights on destination computer(s).
 

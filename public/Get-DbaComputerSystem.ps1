@@ -1,10 +1,14 @@
 function Get-DbaComputerSystem {
     <#
     .SYNOPSIS
-        Gets computer system information from the server.
+        Retrieves comprehensive hardware and system information from Windows computers hosting SQL Server instances.
 
     .DESCRIPTION
-        Gets computer system information from the server and returns as an object.
+        Collects detailed system specifications including processor details, memory configuration, domain membership, and hardware information from target computers. This function is essential for SQL Server capacity planning, pre-installation system verification, and troubleshooting performance issues by providing complete hardware inventory data.
+
+        The function queries WMI classes (Win32_ComputerSystem and Win32_Processor) to gather CPU details, determines hyperthreading status, checks total physical memory, and identifies domain roles. It also detects pending reboots that could affect SQL Server operations and optionally retrieves AWS EC2 metadata for cloud-hosted instances.
+
+        Use this command when documenting SQL Server environments, verifying system requirements before installations or upgrades, or investigating hardware-related performance bottlenecks.
 
     .PARAMETER ComputerName
         Target computer(s). If no computer name is specified, the local computer is targeted

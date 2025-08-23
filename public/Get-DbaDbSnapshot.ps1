@@ -1,10 +1,10 @@
 function Get-DbaDbSnapshot {
     <#
     .SYNOPSIS
-        Get database snapshots with details
+        Retrieves database snapshots with their source databases, creation times, and disk usage
 
     .DESCRIPTION
-        Retrieves the list of database snapshot available, along with their base (the db they are the snapshot of) and creation time
+        Collects information about all database snapshots on a SQL Server instance, showing which database each snapshot was created from, when it was created, and how much disk space it's consuming. This is useful for snapshot management, cleanup activities, and monitoring storage usage of point-in-time database copies. You can filter results by specific base databases or snapshot names to focus on particular snapshots of interest.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

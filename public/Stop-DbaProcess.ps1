@@ -1,12 +1,12 @@
 function Stop-DbaProcess {
     <#
     .SYNOPSIS
-        This command finds and kills SQL Server processes.
+        Terminates SQL Server processes (SPIDs) to resolve blocking, kill runaway queries, or clean up connections.
 
     .DESCRIPTION
-        This command kills all spids associated with a spid, login, host, program or database.
+        Terminates SQL Server processes by targeting specific SPIDs, logins, hostnames, programs, or databases. This is essential for resolving blocking situations, stopping runaway queries that consume resources, or cleaning up abandoned connections from applications or users.
 
-        If you are attempting to kill your own login sessions, the process performing the kills will be skipped.
+        The function automatically prevents you from killing your own connection session to avoid disconnecting yourself. You can filter processes by multiple criteria and use it alongside Get-DbaProcess to identify problem sessions before terminating them.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

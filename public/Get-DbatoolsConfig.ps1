@@ -1,11 +1,10 @@
 function Get-DbatoolsConfig {
     <#
     .SYNOPSIS
-        Retrieves configuration elements by name.
+        Retrieves dbatools module configuration settings and preferences.
 
     .DESCRIPTION
-        Retrieves configuration elements by name.
-        Can be used to search the existing configuration list.
+        Retrieves dbatools module configuration settings that control how dbatools functions behave. These settings include connection timeouts, default paths, email configurations, and other module preferences that affect dbatools operations. Use this command to view current settings, troubleshoot dbatools behavior, or identify what configurations are available for customization with Set-DbatoolsConfig.
 
     .PARAMETER FullName
         Default: "*"

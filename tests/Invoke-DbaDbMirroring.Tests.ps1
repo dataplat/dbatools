@@ -54,9 +54,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $dbName -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $dbName -Confirm:$false
-        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -EndPoint $endpointName -Confirm:$false
+        $null = Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $dbName
+        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -EndPoint $endpointName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -66,7 +66,6 @@ Describe $CommandName -Tag IntegrationTests {
             Primary    = $TestConfig.instance2
             Mirror     = $TestConfig.instance3
             Database   = $dbName
-            Confirm    = $false
             Force      = $true
             SharedPath = $TestConfig.Temp
         }

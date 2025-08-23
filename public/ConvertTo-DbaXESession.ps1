@@ -1,10 +1,14 @@
 function ConvertTo-DbaXESession {
     <#
     .SYNOPSIS
-        Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.
+        Converts SQL Server Traces to Extended Events sessions using intelligent column and event mapping.
 
     .DESCRIPTION
-        Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.
+        Converts existing SQL Server Traces to Extended Events sessions by analyzing trace definitions and mapping events, columns, actions, and filters to their Extended Events equivalents. This eliminates the need to manually recreate monitoring configurations when migrating from the deprecated SQL Trace to Extended Events.
+
+        The function uses a comprehensive mapping table that translates trace events like RPC:Completed, SQL:BatchCompleted, and Lock events to their corresponding Extended Events such as rpc_completed, sql_batch_completed, and lock_acquired. It preserves filters and column selections from the original trace, ensuring equivalent monitoring capabilities in the new Extended Events session.
+
+        By default, the function creates and starts the Extended Events session on the target server. Alternatively, you can generate just the T-SQL script for review or manual execution. This is particularly useful for compliance environments where script review is required before deployment.
 
         T-SQL code by: Jonathan M. Kehayias, SQLskills.com. T-SQL can be found in this module directory and at
         https://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/

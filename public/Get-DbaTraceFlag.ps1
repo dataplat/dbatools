@@ -1,10 +1,10 @@
 function Get-DbaTraceFlag {
     <#
     .SYNOPSIS
-        Get global Trace Flag(s) information for each instance(s) of SQL Server.
+        Retrieves currently enabled global trace flags from SQL Server instances.
 
     .DESCRIPTION
-        Returns Trace Flags that are enabled globally on each instance(s) of SQL Server as an object.
+        Queries SQL Server instances to identify which global trace flags are currently active, returning detailed status information for monitoring and compliance purposes. This is essential for auditing server configurations, troubleshooting performance issues, and ensuring trace flag consistency across environments. You can filter results to specific trace flag numbers or retrieve all enabled flags across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
