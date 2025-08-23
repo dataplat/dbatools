@@ -515,8 +515,6 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path "$($TestConfig.appveyorlabrepo)\RestoreTimeClean2016\restoretimeclean.bak" -WarningAction SilentlyContinue
             $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database RestoreTimeClean -BackupDirectory $backupPath
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database RestoreTimeClean
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have restored everything successfully" {

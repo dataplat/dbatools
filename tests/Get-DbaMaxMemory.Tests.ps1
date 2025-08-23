@@ -21,51 +21,49 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag UnitTests {
-    InModuleScope dbatools {
-        Context "Validate functionality" {
-            It "Server SqlInstance reported correctly" {
-                Mock Connect-DbaInstance {
-                    return @{
-                        DomainInstanceName = "ABC"
-                    }
+    Context "Validate functionality" {
+        It "Server SqlInstance reported correctly" {
+            Mock Connect-DbaInstance {
+                return @{
+                    DomainInstanceName = "ABC"
                 }
-
-                (Get-DbaMaxMemory -SqlInstance "ABC").SqlInstance | Should -Be "ABC"
             }
 
-            It "Server under-report by 1 the memory installed on the host" {
-                Mock Connect-DbaInstance {
-                    return @{
-                        PhysicalMemory = 1023
-                    }
-                }
+            (Get-DbaMaxMemory -SqlInstance "ABC").SqlInstance | Should -Be "ABC"
+        }
 
-                (Get-DbaMaxMemory -SqlInstance "ABC").Total | Should -Be 1024
+        It "Server under-report by 1 the memory installed on the host" {
+            Mock Connect-DbaInstance {
+                return @{
+                    PhysicalMemory = 1023
+                }
             }
 
-            It "Server reports correctly the memory installed on the host" {
-                Mock Connect-DbaInstance {
-                    return @{
-                        PhysicalMemory = 1024
-                    }
-                }
+            (Get-DbaMaxMemory -SqlInstance "ABC").Total | Should -Be 1024
+        }
 
-                (Get-DbaMaxMemory -SqlInstance "ABC").Total | Should -Be 1024
+        It "Server reports correctly the memory installed on the host" {
+            Mock Connect-DbaInstance {
+                return @{
+                    PhysicalMemory = 1024
+                }
             }
 
-            It "Memory allocated to SQL Server instance reported" {
-                Mock Connect-DbaInstance {
-                    return @{
-                        Configuration = @{
-                            MaxServerMemory = @{
-                                ConfigValue = 2147483647
-                            }
+            (Get-DbaMaxMemory -SqlInstance "ABC").Total | Should -Be 1024
+        }
+
+        It "Memory allocated to SQL Server instance reported" {
+            Mock Connect-DbaInstance {
+                return @{
+                    Configuration = @{
+                        MaxServerMemory = @{
+                            ConfigValue = 2147483647
                         }
                     }
                 }
-
-                (Get-DbaMaxMemory -SqlInstance "ABC").MaxValue | Should -Be 2147483647
             }
+
+            (Get-DbaMaxMemory -SqlInstance "ABC").MaxValue | Should -Be 2147483647
         }
     }
 }
