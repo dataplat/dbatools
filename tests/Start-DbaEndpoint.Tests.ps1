@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Stop the endpoint to prepare for testing
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint "TSQL Default TCP" | Stop-DbaEndpoint -Confirm:$false
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint "TSQL Default TCP" | Stop-DbaEndpoint
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -40,14 +40,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Restore the endpoint to its original state
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint "TSQL Default TCP" | Start-DbaEndpoint -Confirm:$false
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint "TSQL Default TCP" | Start-DbaEndpoint
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "starts the endpoint" {
         $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint "TSQL Default TCP"
-        $results = $endpoint | Start-DbaEndpoint -Confirm:$false
+        $results = $endpoint | Start-DbaEndpoint
         $results.EndpointState | Should -Be "Started"
     }
 }

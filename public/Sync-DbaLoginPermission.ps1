@@ -1,36 +1,40 @@
 function Sync-DbaLoginPermission {
     <#
     .SYNOPSIS
-        Copies SQL login permissions from one server to another.
+        Synchronizes login permissions and role memberships between SQL Server instances.
 
     .DESCRIPTION
-        Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. Credential removal is not currently supported for this operation.
+        Syncs comprehensive login security settings from a source to destination SQL Server instance, ensuring logins have consistent permissions across environments. This function only modifies permissions for existing logins - it will not create or drop logins themselves.
+
+        The sync process handles server roles (sysadmin, bulkadmin, etc.), server-level permissions (Connect SQL, View any database, etc.), SQL Agent job ownership, credential mappings, database user mappings, database roles (db_owner, db_datareader, etc.), and database-level permissions. This is particularly useful for maintaining consistent security configurations across development, staging, and production environments, or when rebuilding servers and needing to restore login permissions without recreating the logins.
+
+        If a login exists on the source but not the destination, that login is skipped entirely. The function also protects against syncing permissions for system logins, host-based logins, and the currently connected login to prevent accidental lockouts.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing the login permissions to copy from. The login permissions, server roles, database roles, and security settings will be read from this instance.
+        You must have sysadmin access and the server version must be SQL Server 2000 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
+        Specifies alternative credentials to connect to the source SQL Server instance. Use this when your current Windows credentials don't have access to the source server.
+        Accepts PowerShell credentials created with Get-Credential. Supports Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated.
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies the destination SQL Server instance(s) where login permissions will be applied. Accepts multiple instances to sync permissions to several servers simultaneously.
+        The logins must already exist on the destination - this function only syncs permissions, not the logins themselves. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
+        Specifies alternative credentials to connect to the destination SQL Server instance(s). Use this when your current Windows credentials don't have access to the destination server(s).
+        Accepts PowerShell credentials created with Get-Credential. Supports Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated.
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
+        Specifies which specific logins to sync permissions for. Use this when you only want to sync permissions for certain accounts rather than all logins.
+        Accepts multiple login names as an array. If not specified, permissions for all logins on the source server will be synced (excluding system and host-based logins).
 
     .PARAMETER ExcludeLogin
-        The login(s) to exclude. Options for this list are auto-populated from the server.
+        Specifies login names to exclude from the permission sync process. Use this to skip specific accounts that shouldn't have their permissions synced.
+        Commonly used to exclude service accounts, shared accounts, or logins with environment-specific permissions that should remain different between servers.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

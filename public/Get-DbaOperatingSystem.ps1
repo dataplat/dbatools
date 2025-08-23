@@ -1,13 +1,14 @@
 function Get-DbaOperatingSystem {
     <#
     .SYNOPSIS
-        Gets operating system information from the server.
+        Retrieves comprehensive Windows operating system details from SQL Server host machines.
 
     .DESCRIPTION
-        Gets operating system information from the server and returns as an object.
+        Collects detailed operating system information from local or remote Windows computers hosting SQL Server instances. Returns comprehensive system details including OS version, memory configuration, power plans, time zones, and Windows Server Failover Clustering status. This information is essential for SQL Server environment assessments, capacity planning, and troubleshooting performance issues that may be related to the underlying OS configuration.
 
     .PARAMETER ComputerName
-        Target computer(s). If no computer name is specified, the local computer is targeted
+        Specifies the computer names of SQL Server host machines to query for operating system information. Accepts multiple computer names, IP addresses, or SQL Server instance names.
+        Use this when you need to collect OS details from remote servers for environment assessments, capacity planning, or troubleshooting. Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Alternate credential object to use for accessing the target computer(s).

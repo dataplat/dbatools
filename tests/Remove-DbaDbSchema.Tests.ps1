@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
         $randomSuffix = Get-Random
         $server1Instance = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $server2Instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = Get-DbaProcess -SqlInstance $server1Instance, $server2Instance | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $server1Instance, $server2Instance | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
         $testDbName = "dbatoolsci_newdb_$randomSuffix"
         $testDatabases = New-DbaDatabase -SqlInstance $server1Instance, $server2Instance -Name $testDbName
 
@@ -45,9 +45,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = $testDatabases | Remove-DbaDatabase -Confirm:$false
+        $null = $testDatabases | Remove-DbaDatabase
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing database schemas" {
@@ -66,7 +66,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $server1Instance
                 Database    = $testDbName
                 Schema      = "TestSchema1"
-                Confirm     = $false
             }
             Remove-DbaDbSchema @splatRemoveSchema
 
@@ -91,7 +90,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $server1Instance, $server2Instance
                 Database    = $testDbName
                 Schema      = "TestSchema2", "TestSchema3"
-                Confirm     = $false
             }
             Remove-DbaDbSchema @splatRemoveMultiSchema
 
@@ -114,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
             $schema.Name | Should -Be "TestSchema1"
             $schema.Parent.Name | Should -Be $testDbName
 
-            Get-DbaDatabase -SqlInstance $server1Instance -Database $testDbName | Remove-DbaDbSchema -Schema "TestSchema1" -Confirm:$false
+            Get-DbaDatabase -SqlInstance $server1Instance -Database $testDbName | Remove-DbaDbSchema -Schema "TestSchema1"
 
             $splatGetPipeSchema = @{
                 SqlInstance = $server1Instance

@@ -46,9 +46,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup created database
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server.Query("CREATE ROLE $role1", $dbname1)
             $null = $server.Query("CREATE ROLE $role2", $dbname1)
             $result0 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
-            Remove-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
+            Remove-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
             $result1 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
 
             $result0.Count | Should -BeGreaterThan $result1.Count
@@ -68,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server.Query("CREATE ROLE $role1", $dbname1)
             $null = $server.Query("CREATE ROLE $role2", $dbname1)
             $result0 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
-            Remove-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Role $role1 -Confirm:$false
+            Remove-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Role $role1
             $result1 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
 
             $result0.Count | Should -BeGreaterThan $result1.Count
@@ -78,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Excludes databases Roles" {
             $null = $server.Query("CREATE ROLE $role1", $dbname1)
             $result0 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
-            Remove-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeRole $role1 -Confirm:$false
+            Remove-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeRole $role1
             $result1 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
 
             $result0.Count | Should -BeGreaterThan $result1.Count
@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Excepts input from Get-DbaDbRole" {
             $result0 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Role $role2
-            $result0 | Remove-DbaDbRole -Confirm:$false
+            $result0 | Remove-DbaDbRole
             $result1 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
 
             $result1.Name -contains $role2 | Should -Be $false
@@ -97,7 +97,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Removes roles in System DB" {
             $null = $server.Query("CREATE ROLE $role1", "msdb")
             $result0 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database msdb
-            Remove-DbaDbRole -SqlInstance $TestConfig.instance2 -Database msdb -Role $role1 -IncludeSystemDbs -Confirm:$false
+            Remove-DbaDbRole -SqlInstance $TestConfig.instance2 -Database msdb -Role $role1 -IncludeSystemDbs
             $result1 = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database msdb
 
             $result0.Count | Should -BeGreaterThan $result1.Count

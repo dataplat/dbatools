@@ -1,10 +1,14 @@
 function Get-DbaDbRestoreHistory {
     <#
     .SYNOPSIS
-        Returns restore history details for databases on a SQL Server.
+        Retrieves database restore history from MSDB for compliance reporting and recovery analysis.
 
     .DESCRIPTION
-        By default, this command will return the server name, database, username, restore type, date, from file and to files.
+        Queries the MSDB database's restorehistory and backupset tables to retrieve detailed information about all database restore operations performed on a SQL Server instance. This function returns comprehensive restore details including who performed the restore, when it occurred, what type of restore was performed, and the source and destination file paths.
+
+        Use this command to track restore activity for compliance auditing, troubleshoot database issues by determining when databases were last restored, or investigate unexpected changes by identifying recent restore operations. The function supports filtering by database name, restore type (Database, File, Filegroup, Differential, Log, Verifyonly, Revert), date ranges, and can return only the most recent restore for each database.
+
+        This eliminates the need to manually query MSDB system tables or write complex SQL joins to gather restore history information across multiple instances.
 
         Thanks to https://www.mssqltips.com/SqlInstancetip/1724/when-was-the-last-time-your-sql-server-database-was-restored/ for the query and https://sqlstudies.com/2016/07/27/when-was-this-database-restored/ for the idea.
 
@@ -19,22 +23,28 @@ function Get-DbaDbRestoreHistory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Filters restore history to specific database(s). Accepts wildcards for pattern matching.
+        Use this when investigating restore activity for particular databases rather than reviewing all restore operations on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Excludes specific database(s) from the restore history results. Accepts wildcards for pattern matching.
+        Useful when you need to filter out system databases or other databases that aren't relevant to your investigation.
 
     .PARAMETER Since
-        Specifies a datetime to use as the starting point for searching backup history.
+        Filters restore history to operations that occurred on or after the specified date and time.
+        Use this when investigating recent restore activity or limiting results to a specific time period for compliance reporting.
 
     .PARAMETER Force
-        Deprecated.
+        This parameter is deprecated and no longer used.
+        Previously controlled whether to return all available columns, but this functionality has been removed.
 
     .PARAMETER Last
-        If this switch is enabled, the last restore action performed on each database is returned.
+        Returns only the most recent restore operation for each database, filtering out all earlier restore history.
+        Use this when you need to quickly identify when each database was last restored without seeing the full restore timeline.
 
     .PARAMETER RestoreType
-        Return the history for a specific type of restore. The possible values are 'Database', 'File', 'Filegroup', 'Differential', 'Log', 'Verifyonly', 'Revert'. This is an optional parameter so there is no default value.
+        Filters results to a specific type of restore operation: Database, File, Filegroup, Differential, Log, Verifyonly, or Revert.
+        Use this when troubleshooting specific restore scenarios, such as finding all log restores during a point-in-time recovery or identifying differential restores for performance analysis.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

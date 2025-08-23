@@ -40,6 +40,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Invoke-DbaQuery -SqlInstance $server -Query "DROP CREDENTIAL proxyCred;"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     BeforeEach {
@@ -57,27 +59,27 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
         It "removes a SQL Agent proxy" {
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentProxy -SqlInstance $server -Proxy $proxyName -Confirm:$false
+            Remove-DbaAgentProxy -SqlInstance $server -Proxy $proxyName
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName) | Should -BeNullOrEmpty
         }
 
         It "supports piping SQL Agent proxy" {
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName | Remove-DbaAgentProxy -Confirm:$false
+            Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName | Remove-DbaAgentProxy
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName) | Should -BeNullOrEmpty
         }
 
         It "removes all SQL Agent proxies but excluded" {
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName2) | Should -Not -BeNullOrEmpty
             (Get-DbaAgentProxy -SqlInstance $server -ExcludeProxy $proxyName2) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentProxy -SqlInstance $server -ExcludeProxy $proxyName2 -Confirm:$false
+            Remove-DbaAgentProxy -SqlInstance $server -ExcludeProxy $proxyName2
             (Get-DbaAgentProxy -SqlInstance $server -ExcludeProxy $proxyName2) | Should -BeNullOrEmpty
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName2) | Should -Not -BeNullOrEmpty
         }
 
         It "removes all SQL Agent proxies" {
             (Get-DbaAgentProxy -SqlInstance $server) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentProxy -SqlInstance $server -Confirm:$false
+            Remove-DbaAgentProxy -SqlInstance $server
             (Get-DbaAgentProxy -SqlInstance $server) | Should -BeNullOrEmpty
         }
     }

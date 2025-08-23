@@ -1,10 +1,10 @@
 function New-DbaLogin {
     <#
     .SYNOPSIS
-        Creates a new SQL Server login
+        Creates SQL Server logins for authentication with configurable security policies and mapping options
 
     .DESCRIPTION
-        Creates a new SQL Server login with provided specifications
+        Creates new SQL Server logins supporting Windows Authentication, SQL Authentication, certificate-mapped, asymmetric key-mapped, and Azure AD authentication. Handles password policies, expiration settings, SID preservation for migration scenarios, and credential mapping. Can copy existing logins between instances while preserving or modifying security settings, making it essential for user provisioning, migration projects, and security standardization across environments.
 
     .PARAMETER SqlInstance
         The target SQL Server(s)
@@ -17,63 +17,80 @@ function New-DbaLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        The Login name(s)
+        Specifies the name or names of the logins to create. Accepts arrays for bulk login creation.
+        Use domain\username format for Windows Authentication logins, or simple names for SQL Server logins.
 
     .PARAMETER SecurePassword
-        Secure string used to authenticate the Login
+        Sets the password for SQL Server Authentication logins as a secure string object.
+        Required for new SQL logins unless using HashedPassword or copying from existing login objects.
 
     .PARAMETER HashedPassword
-        Hashed password string used to authenticate the Login
+        Provides a pre-hashed password string for SQL Server logins, allowing password preservation during migrations.
+        Use this when copying logins between instances while maintaining the original password hash.
 
     .PARAMETER InputObject
-        Takes the parameters required from a Login object that has been piped into the command
+        Accepts login objects piped from Get-DbaLogin for copying existing logins to new instances.
+        Preserves login properties including passwords, SIDs, and security settings from the source login.
 
     .PARAMETER LoginRenameHashtable
-        Pass a hash table into this parameter to change login names when piping objects into the procedure
+        Maps original login names to new names when piping login objects between instances.
+        Use format @{'OldLoginName' = 'NewLoginName'} to rename logins during the copy process.
 
     .PARAMETER MapToCertificate
-        Map the login to a certificate
+        Associates the login with a specific certificate for certificate-based authentication.
+        Specify the certificate name that exists in the master database for secure key-based login access.
 
     .PARAMETER MapToAsymmetricKey
-        Map the login to an asymmetric key
+        Links the login to an asymmetric key for public key authentication scenarios.
+        Provide the asymmetric key name from master database to enable cryptographic login authentication.
 
     .PARAMETER MapToCredential
-        Map the login to a credential
+        Connects the login to a server credential for accessing external resources or delegation scenarios.
+        Specify the credential name to associate with the login for extended authentication capabilities.
 
     .PARAMETER Sid
-        Provide an explicit Sid that should be used when creating the account. Can be [byte[]] or hex [string] ('0xFFFF...')
+        Forces a specific Security Identifier (SID) for the login instead of generating a new one.
+        Essential for login migrations to preserve user-database mappings and avoid orphaned users.
 
     .PARAMETER DefaultDatabase
-        Default database for the login
+        Sets the initial database context when the login connects to SQL Server.
+        Defaults to master if not specified; useful for directing users to their primary working database.
 
     .PARAMETER Language
-        Login's default language
+        Configures the default language for the login's SQL Server session messages and formatting.
+        Affects date formats, error messages, and other locale-specific behaviors for the login.
 
     .PARAMETER PasswordExpirationEnabled
-        Enforces password expiration policy. Requires PasswordPolicyEnforced to be enabled. Can be $true or $false(default)
+        Enforces Windows password expiration policy for SQL Server logins when combined with password policy enforcement.
+        Requires PasswordPolicyEnforced to be enabled; helps maintain consistent password aging across systems.
 
     .PARAMETER PasswordPolicyEnforced
-        Enforces password complexity policy. Can be $true or $false(default)
+        Applies Windows password complexity requirements to SQL Server logins including length and character variety.
+        Recommended for security compliance; works with domain password policies when available.
 
     .PARAMETER PasswordMustChange
-        Enforces user must change password at next login.
-        When specified will enforce PasswordExpirationEnabled and PasswordPolicyEnforced as they are required for the must change.
+        Forces the user to set a new password on their first login attempt after account creation.
+        Automatically enables password policy and expiration enforcement as prerequisites for this security feature.
 
     .PARAMETER Disabled
-        Create the login in a disabled state
+        Creates the login in a disabled state, preventing authentication until manually enabled.
+        Useful for preparing accounts before users need access or temporarily suspending login capabilities.
 
     .PARAMETER DenyWindowsLogin
-        Create the login and deny Windows login ability
+        Blocks Windows Authentication login access while preserving the login definition for future use.
+        Creates the login but prevents actual authentication; often used for security policy enforcement.
 
     .PARAMETER NewSid
-        Ignore sids from the piped login object to generate new sids on the server. Useful when copying login onto the same server
+        Generates fresh SIDs when copying logins to the same instance or when SID conflicts exist.
+        Prevents SID collision errors during login duplication and ensures unique security identifiers.
 
     .PARAMETER ExternalProvider
-        Specifies that the login is for Azure AD Authentication.
-        Equivalent to T-SQL: 'CREATE LOGIN [claudio@********.onmicrosoft.com] FROM EXTERNAL PROVIDER`
+        Configures the login for Azure Active Directory authentication in Azure SQL Database or Managed Instance.
+        Use with Azure AD user principal names or service principal names for cloud-integrated authentication.
 
     .PARAMETER Force
-        If login exists, drop and recreate
+        Removes any existing login with the same name before creating the new one.
+        Allows overwriting existing logins without manual cleanup; use carefully to avoid unintended access loss.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed

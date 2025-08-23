@@ -1,12 +1,10 @@
 function Copy-DbaAgentProxy {
     <#
     .SYNOPSIS
-        Copy-DbaAgentProxy migrates proxy accounts from one SQL Server to another.
+        Copies SQL Server Agent proxy accounts from one instance to another.
 
     .DESCRIPTION
-        By default, all proxy accounts are copied. The -ProxyAccounts parameter is auto-populated for command-line completion and can be used to copy only specific proxy accounts.
-
-        If the associated credential for the account does not exist on the destination, it will be skipped. If the proxy account already exists on the destination, it will be skipped unless -Force is used.
+        Migrates SQL Server Agent proxy accounts between instances, enabling job steps to run under different security contexts than the SQL Agent service account. By default, all proxy accounts are copied, but you can specify individual accounts to migrate or exclude specific ones. The function requires that associated credentials already exist on the destination server before copying proxy accounts. If a proxy account already exists on the destination, it will be skipped unless you use -Force to overwrite it.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -29,10 +27,12 @@ function Copy-DbaAgentProxy {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ProxyAccount
-        Only migrate specific proxy accounts
+        Specifies which proxy accounts to copy from the source server. Accepts an array of proxy account names.
+        Use this when you only need to migrate specific proxy accounts instead of all available accounts on the source server.
 
     .PARAMETER ExcludeProxyAccount
-        Migrate all proxy accounts except the ones explicitly excluded
+        Specifies proxy accounts to skip during migration. Accepts an array of proxy account names to exclude.
+        Use this when you want to copy most proxy accounts but need to avoid migrating specific ones that may conflict or aren't needed on the destination.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -41,7 +41,8 @@ function Copy-DbaAgentProxy {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Operator will be dropped and recreated on Destination.
+        Forces overwriting of existing proxy accounts on the destination server by dropping and recreating them.
+        Use this when you need to update proxy accounts that already exist on the destination with the current configuration from the source server.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

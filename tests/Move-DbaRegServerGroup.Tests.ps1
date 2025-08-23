@@ -50,8 +50,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName | Remove-DbaRegServer -ErrorAction SilentlyContinue
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When moving registered server groups" {

@@ -1,14 +1,12 @@
 function Repair-DbaDbMirror {
     <#
     .SYNOPSIS
-        Attempts to repair a suspended or paused mirroring database.
+        Repairs suspended database mirroring sessions by restarting endpoints and resuming mirroring
 
     .DESCRIPTION
-        Attempts to repair a suspended mirroring database.
+        Restores database mirroring functionality when mirroring sessions become suspended due to network connectivity issues, log space problems, or other transient failures. This function performs the standard troubleshooting steps that DBAs typically execute manually: stops and restarts the database mirroring endpoints on the SQL Server instance, then resumes the mirroring session between the principal and mirror databases.
 
-        Restarts the endpoints then sets the partner to resume. See this article for more info:
-
-        http://www.sqlservercentral.com/blogs/vivekssqlnotes/2016/09/03/how-to-resume-suspended-database-mirroring-in-sql-server-/
+        When database mirroring is suspended, the mirror database stops receiving transaction log records from the principal database, creating a potential data loss risk. This command automates the common recovery process, eliminating the need to manually restart endpoints and issue ALTER DATABASE commands to resume mirroring.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -22,10 +20,14 @@ function Repair-DbaDbMirror {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database.
+        Specifies the name of the mirrored database that needs repair on the SQL Server instance.
+        Use this when you know the specific database with suspended mirroring that requires endpoint restart and session resumption.
+        Accepts multiple database names and supports wildcards for pattern matching.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase pipeline input to repair multiple mirrored databases in a single operation.
+        Use this approach when you need to repair several databases at once or when working with the output of database filtering commands.
+        Each database object must represent a database that has mirroring configured.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

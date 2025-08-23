@@ -1,10 +1,10 @@
 function Get-DbaDbAssembly {
     <#
     .SYNOPSIS
-        Gets SQL Database Assembly information for each instance(s) of SQL Server.
+        Retrieves CLR assemblies registered in SQL Server databases for security auditing and inventory management.
 
     .DESCRIPTION
-        The Get-DbaDbAssembly command gets SQL Database Assembly information for each instance(s) of SQL Server.
+        Retrieves detailed information about Common Language Runtime (CLR) assemblies that have been registered in SQL Server databases. This function helps DBAs audit custom .NET assemblies for security compliance, track assembly versions, and identify potentially unsafe or unauthorized code deployed to their SQL Server instances. Returns key properties including assembly security level, owner, creation date, and version information across all accessible databases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,10 +18,12 @@ function Get-DbaDbAssembly {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all accessible databases will be processed.
+        Specifies which databases to scan for CLR assemblies. Accepts wildcards for pattern matching.
+        Use this when auditing assemblies in specific databases rather than scanning the entire instance.
 
     .PARAMETER Name
-        Specify an Assembly to be fetched. If not specified all Assemblies will be returned
+        Filters results to assemblies with matching names. Supports exact assembly name matching only.
+        Use this when investigating specific assemblies during security audits or troubleshooting CLR-related issues.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

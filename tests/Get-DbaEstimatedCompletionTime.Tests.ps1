@@ -63,10 +63,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:$(-not $TestConfig.BigDatabase
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job checkdbTestJob | Remove-DbaAgentJob -Confirm:$false
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job checkdbTestJob | Remove-DbaAgentJob
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database checkdbTestDatabase | Remove-DbaDatabase
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets correct results" {

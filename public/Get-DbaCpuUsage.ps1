@@ -1,15 +1,14 @@
 function Get-DbaCpuUsage {
     <#
     .SYNOPSIS
-        Provides detailed CPU usage information about a SQL Server's process
+        Correlates SQL Server processes with Windows threads to identify which queries are consuming CPU resources
 
     .DESCRIPTION
-        "If there are a lot of processes running on your instance and the CPU is very high,
-        then it's hard to find the exact process eating up your CPU using just the SQL Server
-        tools. One way to correlate the data between what is running within SQL Server and at
-        the Windows level is to use SPID and KPID values to get the exact process."
+        When CPU usage is high on your SQL Server, it can be difficult to pinpoint which specific SQL queries or processes are responsible using standard SQL Server tools alone. This function bridges that gap by correlating SQL Server process IDs (SPIDs) with Windows kernel process IDs (KPIDs) through system DMVs and Windows performance counters.
 
-        This command automates that process.
+        The function queries both SQL Server's process information and Windows thread performance data, then matches them together to show you exactly which SQL queries are consuming CPU at the operating system level. This is particularly valuable during performance troubleshooting when you need to identify the root cause of high CPU usage.
+
+        Results include detailed thread information such as processor time percentages, thread states, wait reasons, and the actual SQL queries being executed. You can also set a CPU threshold to focus only on processes exceeding a specific percentage.
 
         References: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/
 
@@ -30,7 +29,8 @@ function Get-DbaCpuUsage {
         Allows you to login to the Windows Server using alternative credentials.
 
     .PARAMETER Threshold
-        CPU threshold.
+        Filters results to only show SQL Server threads with CPU usage at or above this percentage.
+        Use this to focus on high-CPU consuming processes and ignore idle or low-activity threads during performance troubleshooting.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

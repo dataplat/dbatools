@@ -1,10 +1,10 @@
 function Find-DbaLoginInGroup {
     <#
     .SYNOPSIS
-        Finds Logins in Active Directory groups that have logins on the SQL Instance.
+        Discovers individual Active Directory users within Windows group logins on SQL Server instances.
 
     .DESCRIPTION
-        Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
+        Connects to SQL Server instances and recursively expands all Windows Active Directory group logins to reveal the individual user accounts that inherit access through group membership. This function queries Active Directory to enumerate all users within each Windows group login, including nested groups, providing a complete view of who actually has access to your SQL Server through group-based authentication. Essential for security audits, compliance reporting, and troubleshooting login access issues when you need to know which specific users can connect through group logins.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
@@ -13,7 +13,9 @@ function Find-DbaLoginInGroup {
         PSCredential object to connect under. If not specified, current Windows login will be used.
 
     .PARAMETER Login
-        Find all AD Groups used on the instance that an individual login is a member of.
+        Filters results to show only Windows Active Directory groups that contain the specified individual user account(s).
+        Use this when you need to find which AD groups give a specific user access to SQL Server, rather than seeing all users from all groups.
+        Accepts multiple login names in DOMAIN\username format and supports pipeline input.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

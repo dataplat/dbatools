@@ -73,6 +73,8 @@ Describe $CommandName -Tag IntegrationTests {
                 Get-DbaProcess -SqlInstance $TestConfig.instance1 -Login $login | Stop-DbaProcess -ErrorAction SilentlyContinue
                 $testLogin.Drop()
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Has the correct default properties" {

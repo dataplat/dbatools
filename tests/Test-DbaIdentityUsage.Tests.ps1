@@ -27,68 +27,68 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Verify Test Identity Usage on TinyInt" {
         BeforeAll {
-            $global:table1 = "TestTable_$(Get-Random)"
-            $tableDDL = "CREATE TABLE $global:table1 (testId TINYINT IDENTITY(1,1),testData DATETIME2 DEFAULT getdate() )"
+            $table1 = "TestTable_$(Get-Random)"
+            $tableDDL = "CREATE TABLE $table1 (testId TINYINT IDENTITY(1,1),testData DATETIME2 DEFAULT getdate() )"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $tableDDL -Database TempDb
 
-            $insertSql = "INSERT INTO $global:table1 (testData) DEFAULT VALUES"
+            $insertSql = "INSERT INTO $table1 (testData) DEFAULT VALUES"
             for ($i = 1; $i -le 128; $i++) {
                 Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -Database TempDb
             }
-            $global:results128 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $global:table1
+            $results128 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $table1
 
             for ($i = 1; $i -le 127; $i++) {
                 Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -Database TempDb
             }
-            $global:results255 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $global:table1
+            $results255 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $table1
         }
 
         AfterAll {
-            $cleanup = "Drop table $global:table1"
+            $cleanup = "Drop table $table1"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $cleanup -Database TempDb
         }
 
         It "Identity column should have 128 uses" {
-            $global:results128.NumberOfUses | Should -Be 128
+            $results128.NumberOfUses | Should -Be 128
         }
 
         It "TinyInt identity column with 128 rows inserted should be 50.20% full" {
-            $global:results128.PercentUsed | Should -Be 50.20
+            $results128.PercentUsed | Should -Be 50.20
         }
 
         It "Identity column should have 255 uses" {
-            $global:results255.NumberOfUses | Should -Be 255
+            $results255.NumberOfUses | Should -Be 255
         }
 
         It "TinyInt with 255 rows should be 100% full" {
-            $global:results255.PercentUsed | Should -Be 100
+            $results255.PercentUsed | Should -Be 100
         }
     }
 
     Context "Verify Test Identity Usage with increment of 5" {
         BeforeAll {
-            $global:table2 = "TestTable_$(Get-Random)"
-            $tableDDL = "CREATE TABLE $global:table2 (testId tinyint IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
+            $table2 = "TestTable_$(Get-Random)"
+            $tableDDL = "CREATE TABLE $table2 (testId tinyint IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $tableDDL -Database TempDb
 
-            $insertSql = "INSERT INTO $global:table2 (testData) DEFAULT VALUES"
+            $insertSql = "INSERT INTO $table2 (testData) DEFAULT VALUES"
             for ($i = 1; $i -le 25; $i++) {
                 Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -Database TempDb
             }
-            $global:results25 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $global:table2
+            $results25 = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object Table -eq $table2
         }
 
         AfterAll {
-            $cleanup = "Drop table $global:table2"
+            $cleanup = "Drop table $table2"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $cleanup -Database TempDb
         }
 
         It "Identity column should have 24 uses" {
-            $global:results25.NumberOfUses | Should -Be 24
+            $results25.NumberOfUses | Should -Be 24
         }
 
         It "TinyInt identity column with 25 rows using increment of 5 should be 47.06% full" {
-            $global:results25.PercentUsed | Should -Be 47.06
+            $results25.PercentUsed | Should -Be 47.06
         }
     }
 }

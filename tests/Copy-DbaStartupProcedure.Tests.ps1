@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created objects.
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup" -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying startup procedures" {

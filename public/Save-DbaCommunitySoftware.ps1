@@ -1,15 +1,17 @@
 function Save-DbaCommunitySoftware {
     <#
     .SYNOPSIS
-        Download and extract software from Github to update the local cached version of that software.
+        Downloads and caches popular SQL Server community tools from GitHub for use by dbatools installation commands
 
     .DESCRIPTION
-        Download and extract software from Github to update the local cached version of that software.
-        This command is run from inside of Install-Dba*, Update-Dba*, Invoke-DbaAzSqlDbTip commands to update the local cache if needed.
+        Downloads and extracts popular SQL Server community tools from GitHub repositories to maintain a local cache used by dbatools installation commands.
+        This function automatically manages the acquisition and versioning of essential DBA script collections, eliminating the need to manually download and organize multiple tool repositories.
+        It's called internally by Install-Dba*, Update-Dba*, and Invoke-DbaAzSqlDbTip commands when they need to access the latest versions of community tools.
 
-        In case you don't have internet access on the target computer, you can download the zip files from the following URLs
-        at another computer, transfer them to the target computer or place them on a network share and then use -LocalFile
-        to update the local cache:
+        Supports both online downloads directly from GitHub and offline installations using local zip files, making it suitable for restricted network environments.
+        The function handles version detection, directory structure normalization, and maintains consistent file organization across different tool repositories.
+
+        For environments without internet access, you can download zip files from the following URLs on another computer, transfer them to the target system, and use -LocalFile to update the local cache:
         * MaintenanceSolution: https://github.com/olahallengren/sql-server-maintenance-solution
         * FirstResponderKit: https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases
         * DarlingData: https://github.com/erikdarlingdata/DarlingData
@@ -30,16 +32,24 @@ function Save-DbaCommunitySoftware {
         * AzSqlTips: Azure SQL PM team scripts to review Azure SQL Database design, health and performance.
 
     .PARAMETER Branch
-        Specifies the branch. Defaults to master or main. Can only be used if Software is used.
+        Specifies which branch or version to download from the GitHub repository. Defaults to master or main depending on the repository.
+        Use this when you need a specific development branch or to override default versioning. Only applies to branch-based downloads like MaintenanceSolution, FirstResponderKit, DarlingData, and DbaMultiTool.
+        For SQLWATCH, use 'prerelease' or 'pre-release' to get preview versions instead of stable releases.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install from instead of downloading from Github.
+        Specifies the path to a local zip file or SQL script to install from instead of downloading from GitHub.
+        Use this for offline environments or when you have a specific version already downloaded. Accepts zip archives for all tools, plus individual SQL files for WhoIsActive (sp_WhoIsActive.sql) and AzSqlTips (get-sqldb-tips.sql).
+        Essential for air-gapped systems where direct internet access is not available.
 
     .PARAMETER Url
-        Specifies the URL to download from. Is not needed if Software is used.
+        Specifies a custom URL to download the software archive from instead of using the automatic GitHub URLs.
+        Use this when you need to download from a forked repository, specific release, or alternative hosting location. Overrides the default URL generation that occurs when using the Software parameter.
+        Must point to a downloadable zip file containing the community tools.
 
     .PARAMETER LocalDirectory
-        Specifies the local directory to extract the downloaded file to. Is not needed if Software is used.
+        Specifies a custom directory path where the community software will be extracted and cached.
+        Use this when you need to store the tools in a non-standard location instead of the default dbatools data directory. Overrides the automatic path generation based on the Software parameter.
+        Useful for custom cache locations or when working with multiple versions of the same tool.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

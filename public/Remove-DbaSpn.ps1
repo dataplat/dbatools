@@ -1,18 +1,20 @@
 function Remove-DbaSpn {
     <#
     .SYNOPSIS
-        Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found
+        Removes Service Principal Names from Active Directory service accounts and cleans up related Kerberos delegation
 
     .DESCRIPTION
-        This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also remove delegation to that service.
+        Connects to Active Directory to remove specified SPNs from SQL Server service accounts and automatically cleans up associated Kerberos delegation settings. This is essential when decommissioning SQL Server instances, changing service accounts, or troubleshooting Kerberos authentication issues where duplicate or incorrect SPNs exist. The function searches for the service account (user or computer), removes the SPN from the servicePrincipalName property, and also removes any corresponding delegation entries from msDS-AllowedToDelegateTo to maintain a clean AD environment.
 
-        In order to run this function, the credential you provide must have write access to Active Directory.
+        Requires write access to Active Directory through the provided credentials.
 
     .PARAMETER SPN
-        The SPN you want to remove
+        Specifies the exact Service Principal Name to remove from Active Directory. Must include the full SPN format like 'MSSQLSvc/servername:port' or 'MSSQLSvc/servername.domain.com'.
+        Use this when decommissioning SQL instances, changing service accounts, or cleaning up duplicate SPNs that cause Kerberos authentication failures.
 
     .PARAMETER ServiceAccount
-        The account you want the SPN remove from
+        Specifies the Active Directory account (user or computer) that currently owns the SPN to be removed. Use domain\username format for user accounts or COMPUTERNAME$ for computer accounts.
+        This should match the account currently running the SQL Server service that you're decommissioning or reconfiguring.
 
     .PARAMETER Credential
         The credential you want to use to connect to Active Directory to make the changes

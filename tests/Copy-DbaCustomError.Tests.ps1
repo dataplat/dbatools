@@ -45,6 +45,8 @@ Describe $CommandName -Tag IntegrationTests {
             $cleanupServer = Connect-DbaInstance -SqlInstance $serverInstance -Database master
             $cleanupServer.Query("IF EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'") | Out-Null
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying custom errors" {

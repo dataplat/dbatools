@@ -1,11 +1,16 @@
 function Install-DbaSqlWatch {
     <#
     .SYNOPSIS
-        Installs or updates SqlWatch.
+        Installs or updates SqlWatch monitoring solution on SQL Server instances.
 
     .DESCRIPTION
-        Downloads, extracts and installs or updates SqlWatch.
-        https://sqlwatch.io/
+        Deploys SqlWatch, an open-source SQL Server monitoring and performance collection tool, to one or more SQL Server instances. SqlWatch continuously gathers performance metrics, wait statistics, and system information into dedicated tables for historical analysis and alerting.
+
+        This function automatically downloads the latest SqlWatch release from GitHub (or uses a local file), then deploys it to the specified database using DACPAC technology. SqlWatch creates its own database objects to collect and store performance data, making it useful for DBAs who need ongoing monitoring without third-party agents or expensive monitoring solutions.
+
+        The installed SqlWatch system runs autonomously via SQL Agent jobs, collecting data at regular intervals. It includes a web dashboard for viewing metrics and can be customized for specific monitoring requirements.
+
+        More information: https://sqlwatch.io/
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to.
@@ -18,17 +23,20 @@ function Install-DbaSqlWatch {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database to install SqlWatch into. Defaults to SQLWATCH.
+        Specifies the target database where SqlWatch objects will be created and performance data will be stored. Defaults to SQLWATCH.
+        Use this when you want to install SqlWatch into an existing database alongside other monitoring tools or when following specific naming conventions.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.
-        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/marcingminski/sqlwatch
+        Specifies the path to a local SqlWatch zip file to install instead of downloading from GitHub. Must be the official zip file distributed by SqlWatch maintainers.
+        Use this when you have offline environments, want to control the specific version being deployed, or need to install from a pre-approved software repository.
 
     .PARAMETER Force
-        If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.
+        Forces re-download of SqlWatch from GitHub even if a cached copy already exists locally in the dbatools data directory.
+        Use this when you need to ensure you have the absolute latest version or when troubleshooting installation issues with potentially corrupted cached files.
 
     .PARAMETER PreRelease
-        If specified, a pre-release (beta) will be downloaded rather than a stable release
+        Downloads and installs the latest pre-release (beta) version of SqlWatch instead of the stable release branch.
+        Use this when you need to test new features or bug fixes that haven't been released yet, but avoid in production environments.
 
     .PARAMETER Confirm
         Prompts to confirm actions

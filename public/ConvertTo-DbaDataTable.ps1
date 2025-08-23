@@ -1,29 +1,43 @@
 function ConvertTo-DbaDataTable {
     <#
     .SYNOPSIS
-        Creates a DataTable for an object.
+        Converts PowerShell objects into .NET DataTable objects for bulk SQL Server operations
 
     .DESCRIPTION
-        Creates a DataTable based on an object's properties. This allows you to easily write to SQL Server tables.
+        Converts PowerShell objects into .NET DataTable objects with proper column types and database-compatible data formatting. This is essential for bulk operations like importing data into SQL Server tables using Write-DbaDataTable or other bulk insert methods.
+
+        The function automatically detects and converts data types to SQL Server-compatible formats, handling special dbatools types like DbaSize (file sizes) and DbaTimeSpan objects. You can control how these special types are converted - for example, converting TimeSpan objects to total milliseconds, seconds, or string representations.
+
+        Common scenarios include taking results from Get-DbaDatabase, Get-DbaBackupHistory, or other dbatools commands and preparing them for storage in custom reporting tables. The function handles complex object arrays, null values, and provides both strongly-typed and raw string conversion modes.
 
         Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
 
         If the attempt to convert to data table fails, try the -Raw parameter for less accurate datatype detection.
 
     .PARAMETER InputObject
-        The object to transform into a DataTable.
+        PowerShell objects to convert into a DataTable with proper SQL Server-compatible column types.
+        Accepts results from dbatools commands like Get-DbaDatabase, Get-DbaBackupHistory, or any PowerShell object array.
+        Handles complex properties, arrays, and dbatools-specific types like DbaSize and DbaTimeSpan automatically.
 
     .PARAMETER TimeSpanType
-        Specifies the type to convert TimeSpan objects into. Default is 'TotalMilliseconds'. Valid options are: 'Ticks', 'TotalDays', 'TotalHours', 'TotalMinutes', 'TotalSeconds', 'TotalMilliseconds', and 'String'.
+        Controls how TimeSpan and DbaTimeSpan objects are converted for database storage.
+        Use 'TotalMilliseconds' (default) for precise timing data, 'TotalSeconds' for general duration tracking, or 'String' to preserve readable format.
+        Common when converting backup duration, job runtime, or database uptime data for reporting tables.
 
     .PARAMETER SizeType
-        Specifies the type to convert DbaSize objects to. Default is 'Int64'. Valid options are 'Int32', 'Int64', and 'String'.
+        Controls how DbaSize objects (file sizes, database sizes) are converted for database storage.
+        Use 'Int64' (default) for precise byte values suitable for calculations, 'Int32' for smaller datasets, or 'String' to preserve human-readable format like '1.5 GB'.
+        Essential when storing database size reports, backup file information, or disk space data.
 
     .PARAMETER IgnoreNull
-        If this switch is enabled, objects with null values will be ignored (empty rows will be added by default).
+        Excludes null objects from the DataTable instead of creating empty rows.
+        Use this when preparing clean datasets for bulk insert operations where empty rows would cause issues.
+        Helpful when processing filtered results that may contain null entries from failed connections or missing databases.
 
     .PARAMETER Raw
-        If this switch is enabled, the DataTable will be created with strings. No attempt will be made to parse/determine data types.
+        Forces all DataTable columns to be strings instead of detecting proper data types.
+        Use this as a fallback when automatic type detection fails or when you need maximum compatibility with target tables that expect string data.
+        Trades type safety for reliability when dealing with complex or problematic object properties.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -228,7 +242,7 @@ function ConvertTo-DbaDataTable {
                     return [System.DateTime]$Value.DateTime
                 }
                 'String' {
-                    return ($Value | Foreach-Object { $_.ToString() }) -Join ', '
+                    return ($Value | ForEach-Object { $_.ToString() }) -Join ', '
                 }
             }
         }

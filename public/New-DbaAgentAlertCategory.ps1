@@ -1,11 +1,13 @@
 function New-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        New-DbaAgentAlertCategory creates a new alert category.
+        Creates new SQL Agent alert categories for organizing and managing database alerts.
 
     .DESCRIPTION
-        New-DbaAgentAlertCategory makes it possible to create a Agent Alert category that can be used with Alerts.
-        It returns an array of the alert categories created .
+        Creates custom alert categories in SQL Server Agent to help organize and group related alerts for better management and monitoring.
+        Alert categories allow DBAs to logically group alerts by function, severity, or responsibility, making it easier to assign different categories to different teams or escalation procedures.
+        This is particularly useful in environments with many alerts where categorization helps with organization, reporting, and maintenance workflows.
+        Returns the newly created alert category objects that can be immediately used when configuring SQL Agent alerts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -18,10 +20,13 @@ function New-DbaAgentAlertCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category
+        Specifies the name or names of the alert categories to create in SQL Server Agent.
+        Use descriptive names that reflect how you organize alerts, such as 'Database Errors', 'Performance Issues', or 'Security Events'.
+        Multiple categories can be created in a single operation by providing an array of category names.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Bypasses confirmation prompts and creates the alert categories without user interaction.
+        Use this parameter in automated scripts or when you're confident about the category names being created.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

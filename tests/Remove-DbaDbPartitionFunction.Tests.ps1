@@ -47,19 +47,21 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname1, $dbname2 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname1, $dbname2
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing partition functions" {
         It "Removes partition function by SqlInstance and Database" {
             Get-DbaDbPartitionFunction -SqlInstance $server -Database $dbname1 | Should -Not -BeNullOrEmpty
-            Remove-DbaDbPartitionFunction -SqlInstance $server -Database $dbname1 -Confirm:$false
+            Remove-DbaDbPartitionFunction -SqlInstance $server -Database $dbname1
             Get-DbaDbPartitionFunction -SqlInstance $server -Database $dbname1 | Should -BeNullOrEmpty
         }
 
         It "Supports piping partition function objects" {
             Get-DbaDbPartitionFunction -SqlInstance $server -Database $dbname2 | Should -Not -BeNullOrEmpty
-            Get-DbaDbPartitionFunction -SqlInstance $server -Database $dbname2 | Remove-DbaDbPartitionFunction -Confirm:$false
+            Get-DbaDbPartitionFunction -SqlInstance $server -Database $dbname2 | Remove-DbaDbPartitionFunction
             Get-DbaDbPartitionFunction -SqlInstance $server -Database $dbname2 | Should -BeNullOrEmpty
         }
     }

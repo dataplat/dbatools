@@ -1,10 +1,10 @@
 function Get-DbaInstanceProperty {
     <#
     .SYNOPSIS
-        Gets SQL Server instance properties of one or more instance(s) of SQL Server.
+        Retrieves comprehensive SQL Server instance configuration properties for auditing and comparison
 
     .DESCRIPTION
-        The Get-DbaInstanceProperty command gets SQL Server instance properties from the SMO object sqlserver.
+        Retrieves all instance-level configuration properties from SQL Server's Information, UserOptions, and Settings collections via SMO. This gives you a complete inventory of server settings like default file paths, memory configuration, security options, and user defaults in a standardized format. Essential for configuration audits, compliance reporting, environment comparisons, and troubleshooting configuration-related issues across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,10 +17,12 @@ function Get-DbaInstanceProperty {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InstanceProperty
-        SQL Server instance property(ies) to include.
+        Specifies which SQL Server instance properties to include from Information, UserOptions, and Settings collections. Accepts wildcards and arrays.
+        Use this to focus on specific configuration properties like DefaultFile, MaxWorkerThreads, or LoginMode when auditing particular settings across instances.
 
     .PARAMETER ExcludeInstanceProperty
-        SQL Server instance property(ies) to exclude.
+        Specifies which SQL Server instance properties to exclude from the results. Accepts wildcards and arrays.
+        Use this to filter out noisy or irrelevant properties when you need a cleaner view of configuration data for reporting or comparison.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

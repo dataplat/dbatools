@@ -1,15 +1,14 @@
 function Get-DbaCpuRingBuffer {
     <#
     .SYNOPSIS
-        Collects CPU data from sys.dm_os_ring_buffers.  Works on SQL Server 2005 and above.
+        Retrieves historical CPU utilization data from SQL Server's internal ring buffer for performance analysis
 
     .DESCRIPTION
-        This command is based off of Glen Berry's diagnostic query for average CPU
+        This command queries sys.dm_os_ring_buffers to extract detailed CPU utilization history for performance troubleshooting and capacity planning. Based on Glen Berry's diagnostic query, it provides minute-by-minute CPU usage breakdowns that help identify performance patterns and resource contention.
 
-        The sys.dm_os_ring_buffers stores the average CPU utilization history
-        by the current instance of SQL Server, plus the summed average CPU utilization
-        by all other processes on your machine are captured in one minute increments
-        for the past 256 minutes.
+        The ring buffer stores CPU utilization data in one-minute increments for up to 256 minutes, tracking three key metrics: SQL Server process utilization, other processes utilization, and system idle time. This historical data is invaluable when investigating performance issues, establishing baselines, or determining if high CPU usage originates from SQL Server or other system processes.
+
+        Use this function to analyze CPU trends during specific time periods, correlate CPU spikes with application events, or gather evidence for capacity planning decisions without requiring external monitoring tools.
 
         Reference: https://www.sqlskills.com/blogs/glenn/sql-server-diagnostic-information-queries-detailed-day-16//
 
@@ -27,7 +26,8 @@ function Get-DbaCpuRingBuffer {
         Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
     .PARAMETER CollectionMinutes
-        Allows you to specify a Collection Period in Minutes. Default is 60 minutes
+        Specifies how many minutes of historical CPU data to retrieve from the ring buffer. Defaults to 60 minutes.
+        Use this to extend the analysis window when investigating longer-term CPU trends or to focus on recent activity with shorter periods. Maximum available history is typically 256 minutes depending on system activity.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

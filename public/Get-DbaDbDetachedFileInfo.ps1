@@ -1,14 +1,16 @@
 function Get-DbaDbDetachedFileInfo {
     <#
     .SYNOPSIS
-        Get detailed information about detached SQL Server database files.
+        Reads detached SQL Server database files to extract metadata and file structure without attaching them.
 
     .DESCRIPTION
-        Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.
+        Analyzes detached MDF files to retrieve essential database metadata including name, SQL Server version, collation, and complete file structure. This lets you examine database files sitting in storage or archives without the risk of attaching them to a live instance.
 
-        "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the compatibility level.
+        Perfect for migration planning when you need to verify compatibility before moving databases between SQL Server versions. Also invaluable for troubleshooting scenarios where you have detached database files and need to understand their structure or requirements before reattachment.
 
-        MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
+        The function reads the MDF file header using SQL Server's built-in methods, so it requires an online SQL Server instance to interpret the binary data. All file paths must be accessible to the specified SQL Server service account.
+
+        Returns comprehensive details including the original database name, exact SQL Server version (mapped from internal version numbers), collation settings, and complete lists of associated data and log files as they existed when detached.
 
     .PARAMETER SqlInstance
         Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.
@@ -23,7 +25,9 @@ function Get-DbaDbDetachedFileInfo {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access.
+        Specifies the full file path to one or more detached MDF database files to analyze. The SQL Server service account must have read access to these file locations.
+        Use this when you need to examine database files in archives, backups, or migration staging areas before deciding whether to attach them.
+        Supports multiple file paths and accepts wildcards, but each MDF file must be accessible from the specified SQL Server instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

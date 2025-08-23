@@ -1,15 +1,16 @@
 function Disconnect-DbaInstance {
     <#
     .SYNOPSIS
-        Disconnects or closes a connection to a SQL Server instance
+        Closes active SQL Server connections and removes them from the dbatools connection cache
 
     .DESCRIPTION
-        Disconnects or closes a connection to a SQL Server instance
+        Properly closes SQL Server connections created by dbatools commands like Connect-DbaInstance, preventing connection leaks and freeing up server connection limits. This function handles both SMO server objects and raw SqlConnection objects, ensuring clean disconnection and removing connections from the internal connection hash. Use this in scripts to explicitly manage connection lifecycle, especially when working with multiple instances or in long-running automation where connection limits matter.
 
         To clear all of your connection pools, use Clear-DbaConnectionPool
 
     .PARAMETER InputObject
-        The server object to disconnect from, usually piped in from Get-DbaConnectedInstance
+        Specifies the SQL Server connection object(s) to disconnect, such as SMO Server objects or SqlConnection objects from Connect-DbaInstance. Accepts pipeline input from Get-DbaConnectedInstance to disconnect multiple connections at once.
+        Use this to explicitly close specific connections rather than letting them time out, which helps prevent connection pool exhaustion and reduces load on SQL Server instances.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

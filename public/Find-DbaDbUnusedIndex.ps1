@@ -1,12 +1,14 @@
 function Find-DbaDbUnusedIndex {
     <#
     .SYNOPSIS
-        Find unused indexes
+        Identifies database indexes with low usage statistics that may be candidates for removal
 
     .DESCRIPTION
-        This command will help you to find Unused indexes on a database or a list of databases
+        Analyzes index usage statistics from sys.dm_db_index_usage_stats to identify indexes with minimal activity that consume storage space and slow down data modifications without providing query performance benefits.
 
-        For now only supported for CLUSTERED and NONCLUSTERED indexes
+        This function helps DBAs optimize database performance by finding indexes that are rarely or never used, so you can safely remove them to reduce maintenance overhead, speed up INSERT/UPDATE/DELETE operations, and free up disk space. The function uses customizable thresholds for seeks, scans, and lookups to define what constitutes "unused," with safety checks to ensure SQL Server has been running long enough (7+ days) for reliable statistics.
+
+        Supports clustered and non-clustered indexes on SQL Server 2005 and higher, with additional data compression information available on SQL Server 2008+. Results include index size, row count, and detailed usage patterns to help prioritize which indexes to drop first.
 
     .PARAMETER SqlInstance
         The SQL Server you want to check for unused indexes.
@@ -19,16 +21,20 @@ function Find-DbaDbUnusedIndex {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for unused indexes. Accepts wildcards for pattern matching.
+        Use this when you want to focus on specific databases rather than scanning the entire instance, which is helpful for large environments or targeted maintenance windows.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Excludes specific databases from the unused index analysis. Accepts wildcards for pattern matching.
+        Commonly used to skip system databases, read-only databases, or databases undergoing maintenance that shouldn't be modified.
 
     .PARAMETER IgnoreUptime
-        Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been running for less than 7 days.
+        Bypasses the 7-day uptime check that normally prevents analysis on recently restarted instances.
+        Use this when you need results from a server with recent restarts, but be aware that usage statistics may not reflect normal workload patterns.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline operations.
+        This allows you to chain commands and apply complex database filtering logic before analyzing unused indexes.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -36,28 +42,16 @@ function Find-DbaDbUnusedIndex {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Seeks
-        Specify a custom threshold for user seeks. The default for this parameter is 1.
-        The valid values are between 1 and 1000000 to provide flexibility on the definition of 'unused' indexes.
-        Note: The resulting WHERE clause uses the AND operator:
-        user_seeks < $Seeks
-        AND user_scans < $Scans
-        AND user_lookups < $Lookups
+        Sets the threshold for user seeks below which an index is considered unused. Default is 1.
+        User seeks occur when the query optimizer uses the index to efficiently locate specific rows. Increase this value to find indexes with very low seek activity rather than completely unused ones.
 
     .PARAMETER Scans
-        Specify a custom threshold for user scans. The default for this parameter is 1.
-        The valid values are between 1 and 1000000 to provide flexibility on the definition of 'unused' indexes.
-        Note: The resulting WHERE clause uses the AND operator:
-        user_seeks < $Seeks
-        AND user_scans < $Scans
-        AND user_lookups < $Lookups
+        Sets the threshold for user scans below which an index is considered unused. Default is 1.
+        User scans happen when queries read multiple rows through the index, often for range queries or aggregations. Higher values help identify indexes with minimal scan activity.
 
     .PARAMETER Lookups
-        Specify a custom threshold for user lookups. The default for this parameter is 1.
-        The valid values are between 1 and 1000000 to provide flexibility on the definition of 'unused' indexes.
-        Note: The resulting WHERE clause uses the AND operator:
-        user_seeks < $Seeks
-        AND user_scans < $Scans
-        AND user_lookups < $Lookups
+        Sets the threshold for user lookups below which an index is considered unused. Default is 1.
+        User lookups occur when a nonclustered index is used to locate rows that are then retrieved from the clustered index. This typically indicates bookmark lookup operations.
 
     .NOTES
         Tags: Index, Lookup

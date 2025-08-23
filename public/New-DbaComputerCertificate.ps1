@@ -20,69 +20,83 @@ function New-DbaComputerCertificate {
         The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
+        Specifies the target computer or computers where the certificate will be created and installed. Defaults to localhost.
+        For SQL Server clusters, specify each cluster node here and use ClusterInstanceName for the cluster's virtual name.
+        The certificate is created locally and then copied to remote machines via WinRM if needed.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
 
     .PARAMETER CaServer
-        Optional - the CA Server where the request will be sent to
+        Specifies the Certificate Authority server that will sign the certificate request.
+        When omitted, the function automatically discovers the CA server from Active Directory.
+        Required for domain-signed certificates when automatic discovery fails.
 
     .PARAMETER CaName
-        The properly formatted CA name of the corresponding CaServer
+        Specifies the Certificate Authority name on the CA server.
+        When omitted, the function automatically discovers the CA name from Active Directory.
+        Must match the exact CA name as registered in the domain's PKI infrastructure.
 
     .PARAMETER ClusterInstanceName
-        When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
+        Specifies the virtual cluster name when creating certificates for SQL Server failover clusters.
+        The certificate subject and SAN will use this cluster name instead of individual node names.
+        Use ComputerName to specify each physical cluster node where the certificate will be installed.
 
     .PARAMETER SecurePassword
-        Password to encrypt/decrypt private key for export to remote machine
+        Specifies the password used to protect the private key during certificate export and import operations.
+        Required when installing certificates on remote machines to secure the private key during transport.
+        The same password is used for both export from the local machine and import on remote machines.
 
     .PARAMETER FriendlyName
-        The FriendlyName listed in the certificate. This defaults to the FQDN of the $ComputerName
+        Specifies the friendly name displayed in the certificate store to help identify the certificate.
+        Defaults to "SQL Server" making it easy to locate certificates intended for SQL Server encryption.
+        Choose descriptive names like "SQL Prod Cluster" or "SQL Dev Server" for better organization.
 
     .PARAMETER CertificateTemplate
-        The domain's Certificate Template - WebServer by default.
+        Specifies the Active Directory Certificate Template used for certificate generation.
+        Defaults to "WebServer" which provides the necessary server authentication capabilities for SQL Server encryption.
+        The template must exist in your domain's PKI and allow auto-enrollment for your account.
 
     .PARAMETER KeyLength
-        The length of the key - defaults to 1024
+        Specifies the RSA key size in bits for the certificate's private key.
+        Defaults to 1024 bits, though 2048 or 4096 bits provide better security for production environments.
+        Longer keys provide stronger encryption but may slightly impact performance during SSL handshakes.
 
     .PARAMETER Store
-        Certificate store - defaults to LocalMachine
+        Specifies the certificate store location where the certificate will be installed.
+        Defaults to "LocalMachine" which makes certificates available to services like SQL Server.
+        Use "CurrentUser" only for user-specific certificates that don't need service access.
 
     .PARAMETER Folder
-        Certificate folder - defaults to My (Personal)
+        Specifies the certificate store folder where the certificate will be placed.
+        Defaults to "My" (Personal certificates) which is where SQL Server looks for server certificates.
+        Use "TrustedPeople" or other folders only for specific certificate trust scenarios.
 
     .PARAMETER Flag
-        Defines where and how to import the private key of an X.509 certificate.
-
-        Defaults to: Exportable, PersistKeySet
-
-            EphemeralKeySet
-            The key associated with a PFX file is created in memory and not persisted on disk when importing a certificate.
-
-            Exportable
-            Imported keys are marked as exportable.
-
-            NonExportable
-            Expliictly mark keys as nonexportable.
-
-            PersistKeySet
-            The key associated with a PFX file is persisted when importing a certificate.
-
-            UserProtected
-            Notify the user through a dialog box or other method that the key is accessed. The Cryptographic Service Provider (CSP) in use defines the precise behavior. NOTE: This can only be used when you add a certificate to localhost, as it causes a prompt to appear.
+        Specifies how the certificate's private key should be handled during import operations.
+        Defaults to "Exportable, PersistKeySet" allowing the key to be backed up and persisted on disk.
+        Use "NonExportable" for high-security environments where private keys should never leave the machine.
+        "UserProtected" requires interactive confirmation and only works on localhost installations.
 
     .PARAMETER Dns
-        Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
+        Specifies additional DNS names to include in the certificate's Subject Alternative Name (SAN) extension.
+        By default, includes the computer name and FQDN, or cluster name and cluster FQDN for clusters.
+        Add extra DNS names that clients will use to connect, such as aliases or load balancer names.
 
     .PARAMETER SelfSigned
-        Creates a self-signed certificate. All other parameters can still apply except CaServer and CaName because the command does not go and get the certificate signed.
+        Creates a self-signed certificate instead of requesting one from a Certificate Authority.
+        Useful for development environments or when no domain CA is available.
+        Self-signed certificates will generate trust warnings unless manually added to client trust stores.
 
     .PARAMETER HashAlgorithm
-        Specifies hashing algorithm for self-signed certificate.  Must be one of the values Sha256, sha384, sha512, sha1, md5, md4, md2.
+        Specifies the cryptographic hash algorithm used for certificate signing.
+        Defaults to "sha1" for compatibility, though "Sha256" or higher is recommended for production security.
+        Modern browsers and applications prefer SHA-256 or higher; avoid MD5 and MD4 for security reasons.
 
     .PARAMETER MonthsValid
-        Allows you to specify the number of months a self-signed certificate will be valid for.  e.g a value of 60 will generate a certificate vaild until 5 years (60 months) time.
+        Specifies how many months the self-signed certificate remains valid from the creation date.
+        Defaults to 12 months; use longer periods like 60 months (5 years) to reduce certificate renewal frequency.
+        Only applies to self-signed certificates; CA-signed certificates use the CA's validity period.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -349,8 +363,8 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg "ProviderType = 12"
                 if ($SelfSigned) {
                     Add-Content $certCfg "RequestType = Cert"
-                    Add-Content $certCfg "NotBefore = $((get-date).ToShortDateString())"
-                    Add-Content $certCfg "NotAfter = $((get-date).AddMonths($MonthsValid).ToShortDateString())"
+                    Add-Content $certCfg "NotBefore = $((Get-Date).ToShortDateString())"
+                    Add-Content $certCfg "NotAfter = $((Get-Date).AddMonths($MonthsValid).ToShortDateString())"
                 } else {
                     Add-Content $certCfg "RequestType = PKCS10"
                 }

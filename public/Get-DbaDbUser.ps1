@@ -1,10 +1,10 @@
 function Get-DbaDbUser {
     <#
     .SYNOPSIS
-        Gets database users
+        Retrieves database user accounts and their associated login mappings from SQL Server databases
 
     .DESCRIPTION
-        Gets database users
+        Retrieves all database user accounts from one or more databases, showing their associated server logins, authentication types, and access states. This function is essential for security audits, user access reviews, and compliance reporting where you need to see who has database-level access and how their accounts are configured. You can filter results by specific users, logins, databases, or exclude system accounts to focus on custom user accounts that require regular review.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,19 +17,24 @@ function Get-DbaDbUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get users from specific database(s)
+        Specifies which databases to query for user accounts. Accepts multiple database names and supports wildcards.
+        Use this when you need to audit users in specific databases rather than scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Specifies databases to skip when retrieving user accounts. Useful for excluding system databases or databases you don't manage.
+        Common practice is to exclude tempdb, model, or development databases when focusing on production user access reviews.
 
     .PARAMETER ExcludeSystemUser
-        This switch removes all system objects from the user collection
+        Excludes built-in system users like 'dbo', 'guest', 'INFORMATION_SCHEMA', and other system-created accounts.
+        Use this switch during security audits to focus only on custom user accounts that require regular access review and management.
 
     .PARAMETER User
-        Specifies the name(s) of the user(s) to return.
+        Filters results to specific database user names. Accepts multiple user names for targeted queries.
+        Use this when investigating specific user accounts or verifying permissions for particular users during access reviews or troubleshooting.
 
     .PARAMETER Login
-        Specifies the name(s) of the login(s) to filter the user(s) returned.
+        Filters results to database users associated with specific server logins. Shows which databases a login has user accounts in.
+        Essential for understanding a login's database-level access across the instance, especially during user access audits or when removing departing employees.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -103,8 +108,8 @@ function Get-DbaDbUser {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
-            
+
+
             $databases = Get-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -OnlyAccessible
 
             foreach ($db in $databases) {

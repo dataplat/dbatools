@@ -1,10 +1,10 @@
 function Get-DbaDbSpace {
     <#
     .SYNOPSIS
-        Returns database file space information for database files on a SQL instance.
+        Retrieves detailed space usage metrics for all database files including used space, free space, and growth settings.
 
     .DESCRIPTION
-        This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY function to query and return information.
+        Queries sys.database_files and FILEPROPERTY to return comprehensive space information for data and log files across databases. Shows current usage, available free space, autogrowth configuration, and space remaining until maximum file size limits are reached. Essential for capacity planning, identifying files approaching size limits, and monitoring database storage consumption patterns.
 
         File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
 
@@ -19,16 +19,20 @@ function Get-DbaDbSpace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Limits space analysis to specific databases by name. Accepts multiple values and supports wildcards.
+        Use this when monitoring space usage for critical databases or investigating specific capacity issues.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Excludes specific databases from space analysis by name. Accepts multiple values and supports wildcards.
+        Useful for skipping test databases, staging environments, or databases with known space issues when doing server-wide capacity reviews.
 
     .PARAMETER InputObject
-        A piped collection of database objects from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase for space analysis.
+        This allows for advanced filtering scenarios, such as analyzing only databases with specific properties like recovery models or creation dates.
 
     .PARAMETER IncludeSystemDBs
-        Deprecated - if filtering is needed, please pipe filtered results from Get-DbaDatabase
+        This parameter is deprecated and will cause the function to stop with an error message.
+        To include system databases in space analysis, pipe results from Get-DbaDatabase with the -IncludeSystem parameter instead.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

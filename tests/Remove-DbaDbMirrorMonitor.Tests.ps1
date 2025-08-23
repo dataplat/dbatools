@@ -44,6 +44,8 @@ Describe $CommandName -Tag IntegrationTests {
             # add it back
             $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "removes the mirror monitor" {

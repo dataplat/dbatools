@@ -50,9 +50,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Validating Database Input" {
@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Corrupt a single database" {
-            Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption -Confirm:$false | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
+            Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
         }
 
         It "Causes DBCC CHECKDB to fail" {

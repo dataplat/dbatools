@@ -1,11 +1,10 @@
 function Test-DbaLoginPassword {
     <#
     .SYNOPSIS
-        Test-DbaLoginPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login
+        Identifies SQL Server logins with weak passwords including empty, username-matching, or dictionary-based passwords
 
     .DESCRIPTION
-        The purpose of this function is to find SQL Server logins that have no password or the same password as login. You can add your own password to check for or add them to a csv file.
-        By default it will test for empty password and the same password as username.
+        Tests SQL Server authentication logins for common weak password patterns using the PWDCOMPARE() function to validate password hashes stored in sys.sql_logins. This security audit function helps identify authentication vulnerabilities by checking for empty passwords, passwords that match the username, and passwords from a custom dictionary you provide. Use this during security reviews to find logins that could be easily compromised and require immediate password changes.
 
     .PARAMETER SqlInstance
         The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -20,13 +19,19 @@ function Test-DbaLoginPassword {
         To connect as a different Windows user, run PowerShell as that user.
 
     .PARAMETER Dictionary
-        Specifies a list of passwords to include in the test for weak passwords.
+        Specifies additional passwords to test against all SQL authentication logins using PWDCOMPARE().
+        Use this to check for organization-specific weak passwords like company names, common words, or previously breached passwords.
+        These passwords are tested in addition to the default checks for empty passwords and username-matching passwords.
 
     .PARAMETER Login
-        The login(s) to process.
+        Specifies which SQL authentication logins to test for weak passwords instead of testing all SQL logins on the instance.
+        Accepts single login names, arrays of login names, or wildcard patterns for filtering specific accounts.
+        Useful when you want to focus testing on high-privilege logins or specific service accounts that need immediate attention.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaLogin.
+        Accepts login objects from Get-DbaLogin to test for weak passwords, enabling pipeline operations and complex filtering scenarios.
+        Use this when you need to filter logins by properties like creation date, last login time, or server roles before testing passwords.
+        Commonly used with Get-DbaLogin to test logins across multiple servers or with specific criteria that can't be achieved with the Login parameter alone.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

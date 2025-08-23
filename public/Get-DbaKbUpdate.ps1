@@ -1,27 +1,22 @@
 function Get-DbaKbUpdate {
     <#
     .SYNOPSIS
-        Gets download links and detailed information for KB files (SPs/hotfixes/CUs, etc)
+        Retrieves detailed metadata and download links for Microsoft KB updates from the update catalog
 
     .DESCRIPTION
-        Parses catalog.update.microsoft.com and grabs details for KB files (SPs/hotfixes/CUs, etc)
-
-        Because Microsoft's RSS feed does not work, the command has to parse a few webpages which can result in slowness.
-
-        Use the Simple parameter for simplified output and faster results.
+        Searches Microsoft's update catalog website to retrieve comprehensive information about KB updates including service packs, hotfixes, and cumulative updates. Returns detailed metadata such as supported products, architecture, language, file size, supersession information, and direct download links. Integrates with Get-DbaBuild to provide SQL Server-specific versioning details when available, making it essential for patch management and update research workflows. Note that parsing multiple web pages can be slow since Microsoft doesn't provide an API for this data.
 
     .PARAMETER Name
-        The KB name or number. For example, KB4057119 or 4057119.
+        Specifies the KB article number to search for, with or without the 'KB' prefix. Accepts multiple values for batch processing.
+        Use this to retrieve update information for specific knowledge base articles like security patches, cumulative updates, or service packs.
 
     .PARAMETER Simple
-        A lil faster. Returns, at the very least: Title, Architecture, Language, Hotfix, UpdateId and Link
+        Returns only essential update information to improve performance by skipping detailed web scraping. Provides Title, Architecture, Language, Hotfix status, UpdateId, and download Link.
+        Use this when you need basic KB information quickly or when processing many updates where full details aren't required.
 
     .PARAMETER Language
-        Cumulative Updates come in one file for all languages, but Service Packs have a file for every language.
-
-        If you want to get only a specific language, use this parameter.
-
-        You you can press tab for auto-complete or use the two letter code that is used for Accept-Language HTTP header, e. g. "en" for English or "de" for German.
+        Filters results to show only updates for a specific language when multiple language versions exist. Service Packs typically have separate files per language, while Cumulative Updates usually include all languages in one file.
+        Use this when you need updates for non-English environments or want to download language-specific packages. Accepts standard language codes like "en" for English, "de" for German, or "ja" for Japanese.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

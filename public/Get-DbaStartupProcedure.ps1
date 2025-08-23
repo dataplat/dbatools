@@ -1,11 +1,10 @@
 function Get-DbaStartupProcedure {
     <#
     .SYNOPSIS
-        Get-DbaStartupProcedure gets startup procedures (user defined procedures within master database) from a SQL Server.
+        Retrieves stored procedures configured to run automatically when SQL Server starts up.
 
     .DESCRIPTION
-        By default, this command returns for each SQL Server instance passed in, the SMO StoredProcedure object for all procedures in the master database that are marked as a startup procedure.
-        Can be filtered to check only specific procedures
+        This function returns stored procedures from the master database that are configured to execute automatically during SQL Server startup. Startup procedures are useful for initializing application settings, populating cache tables, or performing other tasks that need to run every time the SQL Server service starts. The function returns SMO StoredProcedure objects with details about each startup procedure, including creation dates, schemas, and implementation types. You can filter results to check if specific procedures are configured as startup procedures, which is helpful for auditing server configurations or troubleshooting startup issues.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -18,7 +17,8 @@ function Get-DbaStartupProcedure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER StartupProcedure
-        Use this filter to check if specific procedure(s) are set as startup procedures.
+        Filters results to check if specific stored procedures are configured as startup procedures. Accepts procedure names in 'schema.procedurename' format or just 'procedurename' for dbo schema.
+        Use this when auditing server configurations or verifying that critical initialization procedures are properly configured to run at startup.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

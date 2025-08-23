@@ -1,10 +1,10 @@
 function Disable-DbaReplDistributor {
     <#
     .SYNOPSIS
-        Disables replication distribution for the target SQL instances.
+        Removes SQL Server replication distribution configuration from target instances.
 
     .DESCRIPTION
-        Disables replication distribution for the target SQL instances.
+        Removes the distribution database and configuration from SQL Server instances currently acting as replication distributors. This command terminates active connections to distribution databases and uninstalls the distributor role completely. Use this when decommissioning replication, troubleshooting distribution issues, or reconfiguring your replication topology. The Force parameter allows removal even when dependent objects or remote publishers cannot be contacted.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,11 +17,9 @@ function Disable-DbaReplDistributor {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Force
-        Specify whether or not replication objects are removed from the server, even if a remote Distributor cannot be reached.
-
-        If true, the publishing and Distributor configuration at the current server is uninstalled regardless of whether or not dependent publishing and distribution objects are uninstalled.
-
-        If false, the publisher and distribution databases must already be uninstalled, and no local databases are enabled for publishing.
+        Forces removal of the distributor configuration even when dependent replication objects exist or remote publishers cannot be contacted.
+        Use this when decommissioning a distributor that has orphaned publications or when network connectivity to remote publishers is unavailable.
+        Without Force, the command will fail if any local databases are enabled for publishing or if publisher/distribution databases haven't been cleanly removed first.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

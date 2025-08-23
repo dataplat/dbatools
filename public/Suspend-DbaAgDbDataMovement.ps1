@@ -1,10 +1,10 @@
 function Suspend-DbaAgDbDataMovement {
     <#
     .SYNOPSIS
-        Suspends data movement for an availability group database on a SQL Server instance.
+        Suspends data synchronization for availability group databases to halt replication between replicas.
 
     .DESCRIPTION
-        Suspends data movement for an availability group database on a SQL Server instance.
+        Temporarily halts data movement between primary and secondary replicas for specified availability group databases. This stops transaction log records from being sent to secondary replicas, which is useful during maintenance windows, troubleshooting synchronization issues, or when preparing for manual failovers. While suspended, the secondary databases will fall behind the primary and cannot be failed over to until data movement is resumed.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -17,13 +17,16 @@ function Suspend-DbaAgDbDataMovement {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases to suspend movement upon.
+        Specifies which availability group databases to suspend data movement for. Accepts multiple database names.
+        Use this when you need to halt synchronization for specific databases while leaving other AG databases running normally.
 
     .PARAMETER AvailabilityGroup
-        The availability group where the database movement will be suspended.
+        Specifies the availability group containing the databases to suspend. Required when using SqlInstance parameter.
+        Use this to target databases within a specific AG when multiple availability groups exist on the instance.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAgDatabase
+        Accepts availability group database objects piped from Get-DbaAgDatabase or other dbatools AG commands.
+        Use this for pipeline operations when you want to filter and select specific AG databases before suspending data movement.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

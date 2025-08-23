@@ -1,10 +1,10 @@
 function Export-DbaLogin {
     <#
     .SYNOPSIS
-        Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
+        Generates T-SQL scripts to recreate SQL Server logins with their complete security context for migration and disaster recovery.
 
     .DESCRIPTION
-        Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
+        Creates executable T-SQL scripts that recreate SQL Server and Windows logins along with their complete security configuration. The export includes login properties (SID, hashed passwords, default database), server-level permissions and role memberships, database user mappings and roles, plus SQL Agent job ownership assignments. This addresses the common challenge where restoring databases doesn't restore the associated logins, leaving applications unable to connect. DBAs use this for server migrations, disaster recovery scenarios, and maintaining consistent security across environments.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. SQL Server 2000 and above supported.
@@ -17,71 +17,76 @@ function Export-DbaLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase, Get-DbaLogin and more.
+        Accepts piped objects from Get-DbaLogin, Get-DbaDatabase, or Connect-DbaInstance commands.
+        Use this when you want to export logins from specific objects rather than specifying instances directly.
 
     .PARAMETER Login
-        The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
+        Specifies which SQL Server logins to export by name. Accepts wildcards and arrays.
+        When specified, only these logins are processed instead of all server logins. Use this to target specific accounts for migration or backup.
 
     .PARAMETER ExcludeLogin
-        The login(s) to exclude. Options for this list are auto-populated from the server.
+        Specifies login names to skip during export. Accepts wildcards and arrays.
+        Use this to exclude system accounts, service accounts, or other logins that shouldn't be migrated to the target environment.
 
     .PARAMETER Database
-        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Limits export to logins that have user mappings in the specified databases. Accepts database names or database objects.
+        When specified, only logins with permissions or user accounts in these databases are exported, reducing script size for targeted migrations.
 
     .PARAMETER ExcludeJobs
-        If this switch is enabled, Agent job ownership will not be exported.
+        Excludes SQL Agent job ownership assignments from the export script.
+        Use this when migrating logins to servers where the associated jobs don't exist or will be owned by different accounts.
 
     .PARAMETER ExcludeDatabase
-        If this switch is enabled, mappings for databases will not be exported.
+        Excludes database user mappings and permissions from the export script.
+        Use this when you only need server-level login definitions without their database-specific permissions and role memberships.
 
     .PARAMETER ExcludePassword
-        If this switch is enabled, hashed passwords will not be exported.
+        Excludes hashed password values from SQL login export, replacing them with placeholder text.
+        Use this for security compliance when sharing scripts or when passwords will be reset after migration.
 
-   .PARAMETER DefaultDatabase
-        If this switch is enabled, all logins will be scripted with specified default database,
-        that could help to successfully import logins on server that is missing default database for login.
+    .PARAMETER DefaultDatabase
+        Overrides the default database for all exported logins with the specified database name.
+        Use this when migrating to servers where the original default databases don't exist, preventing login creation failures.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
-        Will default to Path.DbatoolsExport Configuration entry
+        Specifies the directory where export files will be saved. Defaults to the Path.DbatoolsExport configuration setting.
+        Files are automatically named based on instance and timestamp unless FilePath is specified.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file. If left blank then filename based on Instance name and date is created.
-        If more than one instance is input then this parameter should be blank.
+        Specifies the complete file path for the export script. Cannot be used when exporting from multiple instances.
+        Use this when you need precise control over the output file location and name.
 
     .PARAMETER Passthru
-        Output script to console
+        Returns the generated T-SQL script to the PowerShell pipeline instead of saving to file.
+        Use this to capture the script in a variable, pipe to other commands, or display directly in the console.
 
     .PARAMETER BatchSeparator
-        Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally "GO"
+        Sets the T-SQL batch separator used between statements. Defaults to 'GO' from the Formatting.BatchSeparator configuration.
+        Specify an empty string to remove batch separators when the target system doesn't support them.
 
     .PARAMETER NoClobber
-        If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
+        Prevents overwriting existing files at the specified Path location.
+        Use this as a safety measure when you don't want to accidentally replace existing login export scripts.
 
     .PARAMETER Append
-        If this switch is enabled, content will be appended to a file already existing at the path specified by Path. If the file does not exist, it will be created.
+        Adds the generated script to an existing file instead of overwriting it.
+        Use this to combine login exports from multiple instances into a single deployment script.
 
     .PARAMETER DestinationVersion
-        To say to which version the script should be generated. If not specified will use instance major version.
+        Generates T-SQL syntax compatible with the specified SQL Server version. Defaults to the source instance version.
+        Use this when migrating to older SQL Server versions that require different syntax for role assignments or other features.
 
     .PARAMETER NoPrefix
-        Do not include a Prefix
+        Excludes the standard dbatools header comment from the generated script.
+        Use this when you need clean T-SQL output without metadata comments for automated deployment systems.
 
     .PARAMETER Encoding
-        Specifies the file encoding. The default is UTF8.
-
-        Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+        Sets the character encoding for the output file. Defaults to UTF8.
+        Choose the appropriate encoding based on your deployment environment requirements and any special characters in login names.
 
     .PARAMETER ObjectLevel
-        Include object-level permissions for each user associated with copied login.
+        Includes detailed object-level permissions for each database user associated with the exported logins.
+        Use this for complete permission migration when you need granular security settings preserved in the target environment.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

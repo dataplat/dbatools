@@ -1,10 +1,10 @@
 function Remove-DbaDbCertificate {
     <#
     .SYNOPSIS
-        Deletes specified database certificate
+        Removes database certificates from SQL Server databases
 
     .DESCRIPTION
-        Deletes specified database certificate
+        Removes database certificates from specified SQL Server databases using the DROP CERTIFICATE statement. This function is commonly used during certificate rotation, security cleanup, or when decommissioning encryption features like Transparent Data Encryption (TDE) or Always Encrypted. Certificates can be targeted individually by name or removed in bulk using pipeline input from Get-DbaDbCertificate.
 
     .PARAMETER SqlInstance
         The SQL Server to create the certificates on.
@@ -17,10 +17,12 @@ function Remove-DbaDbCertificate {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the certificate will be removed.
+        Specifies the target databases containing certificates to remove. Accepts multiple database names.
+        When omitted, the function will process certificates from all databases that contain the specified certificates.
 
     .PARAMETER Certificate
-        The certificate that will be removed
+        Specifies the names of certificates to remove from the target databases. Supports multiple certificate names.
+        Use this to target specific certificates rather than removing all certificates found by Get-DbaDbCertificate.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -34,7 +36,8 @@ function Remove-DbaDbCertificate {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER InputObject
-        Piped certificate objects
+        Accepts certificate objects from Get-DbaDbCertificate via pipeline input.
+        This allows for advanced filtering and bulk operations when combined with other dbatools certificate functions.
 
     .NOTES
         Tags: Certificate, Security

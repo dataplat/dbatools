@@ -1,11 +1,13 @@
 function Copy-DbaDbViewData {
     <#
     .SYNOPSIS
-        Copies data from a SQL Server view to a table.
+        Copies data from SQL Server views to destination tables using high-performance bulk copy operations.
 
     .DESCRIPTION
-        Copies data from a SQL Server view to a table using SQL Bulk Copy.
-        With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
+        Extracts data from SQL Server views and bulk copies it to destination tables, either on the same instance or across different servers.
+        Uses SqlBulkCopy for optimal performance when migrating view data, materializing view results, or creating data snapshots from complex views.
+        Supports custom queries against views, identity preservation, constraint checking, and automatic destination table creation.
+        Handles large datasets efficiently with configurable batch sizes and minimal resource overhead compared to traditional INSERT statements.
 
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -18,76 +20,76 @@ function Copy-DbaDbViewData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        Target SQL Server instance where view data will be copied to. Accepts one or more SQL Server instances.
+        Specify this when copying view data to a different server than the source, or when doing cross-instance data transfers.
 
     .PARAMETER DestinationSqlCredential
-        Login to the destination instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for authenticating to the destination instance. Required when your current Windows credentials don't have access to the target server.
+        Use this for cross-domain scenarios, SQL authentication, or when the destination requires different security context than the source.
 
     .PARAMETER Database
-        The database to copy the table from.
+        Source database containing the view to copy data from. Required when not using pipeline input.
+        Must exist on the source instance and your account must have read permissions on the specified view.
 
     .PARAMETER DestinationDatabase
-        The database to copy the table to. If not specified, it is assumed to be the same of Database
+        Target database where copied view data will be inserted. Defaults to the same database name as the source.
+        Use this when copying data to a different database name on the destination instance or for cross-database copies within the same server.
 
     .PARAMETER View
-        Specify a view to use as a source. You can specify a 2 or 3 part name (see examples).
-
-        If the object has special characters please wrap them in square brackets.
+        Source view name to copy data from. Accepts 2-part ([schema].[view]) or 3-part ([database].[schema].[view]) names.
+        Use square brackets for names with spaces or special characters. Required to specify which view's data to extract and copy.
 
     .PARAMETER DestinationTable
-        The table you want to use as destination. If not specified, it is assumed to be the same of View
+        Target table name where view data will be inserted. Defaults to the same name as the source view.
+        Use this when copying to a table with a different name or schema, or when materializing view data into a permanent table structure.
 
     .PARAMETER Query
-        Define a query to use as a source. Note: 3 or 4 part object names may be used (see examples)
-        Ensure to select all required columns.
-        Calculated Columns or columns with default values may be excluded.
-
-        Note: The workflow in the command requires that a valid -Table or -View parameter value be specified.
+        Custom SQL SELECT query to use as the data source instead of copying the entire view. Supports 3 or 4-part object names.
+        Use this when you need to filter rows, join the view with other tables, or transform data during the copy operation. Still requires specifying a View parameter for metadata purposes.
 
     .PARAMETER AutoCreateTable
-        Creates the destination table if it does not already exist, based off of the "Export..." script of the source table.
+        Automatically creates the destination table if it doesn't exist, using the same structure as the source view.
+        Essential for initial data migrations or when materializing view data into new tables where destination tables haven't been created yet.
 
     .PARAMETER BatchSize
-        The BatchSize for the import defaults to 50000.
+        Number of rows to process in each bulk copy batch. Defaults to 50000 rows.
+        Reduce this value for memory-constrained systems or increase it for faster transfers when copying large view result sets with sufficient memory.
 
     .PARAMETER NotifyAfter
-        Sets the option to show the notification after so many rows of import. The default is 5000 rows.
+        Number of rows to process before displaying progress updates. Defaults to 5000 rows.
+        Set to a lower value for frequent updates on small view datasets or higher for less verbose output on large view copies.
 
     .PARAMETER NoTableLock
-        If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
+        Disables the default table lock (TABLOCK) on the destination table during bulk copy operations.
+        Use this when you need to allow concurrent read access to the destination table, though it may reduce bulk copy performance.
 
     .PARAMETER CheckConstraints
-        If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.
-
-        Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
+        Enables constraint checking during bulk copy operations. By default, constraints are ignored for performance.
+        Use this when data integrity validation is more important than copy speed, particularly when copying view data to tables with strict business rules.
 
     .PARAMETER FireTriggers
-        If this switch is enabled, the SqlBulkCopy option to fire insert triggers will be enabled.
-
-        Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the Database."
+        Enables INSERT triggers to fire during bulk copy operations. By default, triggers are bypassed for performance.
+        Use this when you need audit trails, logging, or other trigger-based business logic to execute during the view data copy.
 
     .PARAMETER KeepIdentity
-        If this switch is enabled, the SqlBulkCopy option to preserve source identity values will be enabled.
-
-        Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
+        Preserves the original identity column values from the source view. By default, the destination generates new identity values.
+        Essential when copying view data that includes identity columns and you need to maintain exact ID relationships in the destination table.
 
     .PARAMETER KeepNulls
-        If this switch is enabled, the SqlBulkCopy option to preserve NULL values will be enabled.
-
-        Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+        Preserves NULL values from the source view data instead of replacing them with destination column defaults.
+        Use this when you need exact source data reproduction from the view, especially when NULL has specific business meaning versus default values.
 
     .PARAMETER Truncate
-        If this switch is enabled, the destination table will be truncated after prompting for confirmation.
+        Removes all existing data from the destination table before copying new view data. Prompts for confirmation unless -Force is used.
+        Essential for refresh scenarios where you want to replace all destination data with current view data.
 
     .PARAMETER BulkCopyTimeOut
-        Value in seconds for the BulkCopy operations timeout. The default is 5000 seconds.
+        Maximum time in seconds to wait for bulk copy operations to complete. Defaults to 5000 seconds (83 minutes).
+        Increase this value when copying very large view result sets that may take longer than the default timeout period.
 
     .PARAMETER InputObject
-        Enables piping of View objects from Get-DbaDbView
+        Accepts view objects from Get-DbaDbView for pipeline operations.
+        Use this to copy data from multiple views by piping them from Get-DbaDbView, allowing batch processing of view data copies.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

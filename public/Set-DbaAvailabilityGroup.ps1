@@ -1,10 +1,10 @@
 function Set-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Sets availability group properties on a SQL Server instance.
+        Modifies availability group configuration settings including DTC support, backup preferences, and failover conditions
 
     .DESCRIPTION
-        Sets availability group properties on a SQL Server instance.
+        Modifies configuration properties of existing availability groups without requiring you to script out and recreate the entire AG setup. Commonly used to enable DTC support for distributed transactions, adjust automated backup preferences across replicas, configure failure condition levels for automatic failover, and set health check timeouts for monitoring. This saves time compared to using SQL Server Management Studio or T-SQL ALTER AVAILABILITY GROUP statements for routine configuration changes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -17,44 +17,49 @@ function Set-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Only set specific availability group properties.
+        Specifies the name(s) of specific availability groups to modify. Accepts multiple AG names as an array.
+        Use this to target individual AGs instead of modifying all AGs on the instance.
 
     .PARAMETER AllAvailabilityGroups
-        Set properties for all availability group on an instance.
+        Modifies configuration settings for every availability group on the target SQL Server instance.
+        Use this switch when you need to apply the same configuration changes across all AGs simultaneously.
 
     .PARAMETER DtcSupportEnabled
-        Enables DtcSupport.
+        Enables or disables Distributed Transaction Coordinator (DTC) support for the availability group.
+        Required when applications use distributed transactions across multiple databases in the AG. Set to $false to disable DTC support.
 
     .PARAMETER ClusterType
-        Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.
-        Options include: External, Wsfc or None.
+        Specifies the clustering technology used by the availability group. Only supported in SQL Server 2017 and above.
+        Use 'Wsfc' for Windows Server Failover Clustering, 'External' for third-party cluster managers like Pacemaker on Linux, or 'None' for read-scale AGs without automatic failover.
 
     .PARAMETER AutomatedBackupPreference
-        Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.
+        Controls which replica should be preferred for automated backup operations within the availability group.
+        Use 'Secondary' to offload backups from the primary, 'SecondaryOnly' to prevent backups on primary, 'Primary' to always backup on primary, or 'None' to disable preference-based backup routing.
 
     .PARAMETER FailureConditionLevel
-        Specifies the different conditions that can trigger an automatic failover in Availability Group.
+        Sets the sensitivity level for automatic failover conditions in the availability group.
+        Use 'OnServerDown' for basic failover, 'OnServerUnresponsive' for SQL Service issues, 'OnCriticalServerErrors' for critical SQL errors, 'OnModerateServerErrors' for moderate SQL errors, or 'OnAnyQualifiedFailureCondition' for maximum sensitivity.
 
     .PARAMETER HealthCheckTimeout
-        This setting used to specify the length of time, in milliseconds, that the SQL Server resource DLL should wait for information returned by the sp_server_diagnostics stored procedure before reporting the Always On Failover Cluster Instance (FCI) as unresponsive.
-
-        Changes that are made to the timeout settings are effective immediately and do not require a restart of the SQL Server resource.
-
-        Defaults is 30000 (30 seconds).
+        Sets the timeout in milliseconds for health check responses from sp_server_diagnostics before marking the AG as unresponsive.
+        Increase this value for busy systems or slow storage to reduce false failovers. Decrease for faster failover detection in stable environments.
+        Default is 30000 (30 seconds). Changes take effect immediately without restart.
 
     .PARAMETER BasicAvailabilityGroup
-        Indicates whether the availability group is Basic Availability Group.
-
-        https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/basic-availability-groups-always-on-availability-groups
+        Configures the availability group as a Basic AG with limited functionality for Standard Edition licensing.
+        Basic AGs support only one database, two replicas, and no read-access to secondary replicas. Used when full AG features aren't needed or licensed.
 
     .PARAMETER DatabaseHealthTrigger
-        Indicates whether the availability group triggers the database health.
+        Enables database-level health monitoring that can trigger automatic failovers based on individual database health status.
+        When enabled, databases that become offline or experience critical errors can initiate AG failover. Useful for comprehensive monitoring beyond SQL Server instance health.
 
     .PARAMETER IsDistributedAvailabilityGroup
-        Indicates whether the availability group is distributed.
+        Configures the availability group as a Distributed AG that spans multiple WSFC clusters or standalone instances.
+        Used for disaster recovery scenarios across geographic locations or different domains. Requires SQL Server 2016 or later.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline operations.
+        Use this to pipe specific AG objects directly to the function instead of specifying SqlInstance and AG names separately.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

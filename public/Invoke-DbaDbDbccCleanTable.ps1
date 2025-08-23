@@ -1,12 +1,14 @@
 function Invoke-DbaDbDbccCleanTable {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC CLEANTABLE
+        Reclaims disk space from dropped variable-length columns in tables and indexed views
 
     .DESCRIPTION
-        Executes the command DBCC CLEANTABLE against defined objects and returns results
+        Executes DBCC CLEANTABLE to reclaim disk space after variable-length columns (varchar, nvarchar, varbinary, text, ntext, image, xml, or CLR user-defined types) have been dropped from tables or indexed views.
 
-        Reclaims space from dropped variable-length columns in tables or indexed views
+        When you drop variable-length columns, SQL Server doesn't immediately reclaim the space those columns occupied. This function runs the necessary DBCC command to physically remove that unused space and compact the remaining data, which can significantly reduce table size and improve performance.
+
+        The function accepts either table names (like 'dbo.TableName') or table object IDs for processing. You can control the operation through batch processing to minimize impact on production systems, and optionally suppress informational messages for cleaner output.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-cleantable-transact-sql
@@ -22,17 +24,24 @@ function Invoke-DbaDbDbccCleanTable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to include in the clean table operation. Accepts multiple database names.
+        When omitted, the operation runs against all accessible databases on the instance.
+        Use this to target specific databases where you know variable-length columns have been dropped recently.
 
     .PARAMETER Object
-        The table(s) or indexed view(s) to be cleaned.
+        Specifies the table or indexed view names to clean, or their object IDs for more precise targeting.
+        Accepts schema-qualified names like 'dbo.TableName' or numeric object IDs like 34636372.
+        This parameter is required since DBCC CLEANTABLE must target specific objects, not entire databases.
 
     .PARAMETER BatchSize
-        Is the number of rows processed per transaction.
-        If not specified, or if 0 is specified, the statement processes the whole table in one transaction.
+        Controls how many rows are processed per transaction during the clean operation.
+        Use smaller batch sizes (like 5000-10000) on production systems to reduce lock duration and transaction log impact.
+        When omitted, processes the entire table in a single transaction which is faster but holds locks longer.
 
     .PARAMETER NoInformationalMessages
-        Suppresses all informational messages.
+        Suppresses informational messages from the DBCC CLEANTABLE output, showing only errors and warnings.
+        Use this in automated scripts or when processing multiple tables to reduce console output volume.
+        Equivalent to adding WITH NO_INFOMSGS to the DBCC command.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

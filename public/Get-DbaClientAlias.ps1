@@ -1,13 +1,14 @@
 function Get-DbaClientAlias {
     <#
     .SYNOPSIS
-        Gets any SQL Server alias for the specified server(s)
+        Retrieves SQL Server client aliases from the Windows registry on local or remote computers
 
     .DESCRIPTION
-        Gets SQL Server alias by reading HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+        Retrieves all configured SQL Server client aliases by reading the Windows registry paths where SQL Server Native Client stores alias definitions. Client aliases allow DBAs to create friendly names that map to actual SQL Server instances, making connection strings simpler and more portable across environments. This is particularly useful when managing multiple instances, non-default ports, or when you need to abstract the actual server names from applications and connection strings.
 
     .PARAMETER ComputerName
-        The target computer where the alias has been created
+        Specifies the computer(s) to retrieve SQL Server client aliases from. Accepts multiple computers via pipeline input.
+        Use this when you need to audit client alias configurations across multiple workstations or servers in your environment.
 
     .PARAMETER Credential
         Allows you to login to remote computers using alternative credentials

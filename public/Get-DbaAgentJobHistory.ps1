@@ -1,11 +1,16 @@
 function Get-DbaAgentJobHistory {
     <#
     .SYNOPSIS
-        Gets execution history of SQL Agent Job on instance(s) of SQL Server.
+        Retrieves SQL Server Agent job execution history from msdb database for troubleshooting and compliance reporting.
 
     .DESCRIPTION
-        Get-DbaAgentJobHistory returns all information on the executions still available on each instance(s) of SQL Server submitted.
-        The cleanup of SQL Agent history determines how many records are kept.
+        Get-DbaAgentJobHistory queries the msdb database to retrieve detailed execution records for SQL Server Agent jobs, helping you troubleshoot failures, monitor performance trends, and generate compliance reports. This function accesses the same historical data you'd find in SQL Server Management Studio's Job Activity Monitor, but with powerful filtering and output options.
+
+        The function is essential when investigating why jobs failed, analyzing execution patterns over time, or preparing audit documentation. You can filter results by specific jobs, date ranges, or outcome types (failed, succeeded, retry, etc.), and optionally include job step details or just summary-level information.
+
+        Results include calculated fields like duration, formatted start/end dates, and readable status descriptions. When used with -WithOutputFile, it resolves SQL Agent token placeholders in output file paths, making it easier to locate job logs for further investigation.
+
+        Historical data availability depends on your SQL Agent history cleanup settings - older executions may have been purged based on your retention configuration.
 
         https://msdn.microsoft.com/en-us/library/ms201680.aspx
         https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.agent.jobhistoryfilter(v=sql.120).aspx
@@ -21,29 +26,36 @@ function Get-DbaAgentJobHistory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The name of the job from which the history is wanted. If unspecified, all jobs will be processed.
+        Specifies specific SQL Agent jobs to retrieve history for by name. Accepts wildcards and arrays for multiple jobs.
+        Use this when investigating specific job failures or monitoring particular maintenance routines instead of reviewing all job history.
 
     .PARAMETER ExcludeJob
-        The job(s) to exclude - this list is auto-populated from the server
+        Excludes specified jobs from the history results by name. Accepts arrays for multiple job exclusions.
+        Useful when you want to review most jobs but skip noisy or less critical ones like frequent maintenance jobs.
 
     .PARAMETER StartDate
-        The DateTime starting from which the history is wanted. If unspecified, all available records will be processed.
+        Sets the earliest date and time for job history records to include. Defaults to 1900-01-01 to include all available history.
+        Specify this when investigating issues within a specific timeframe or when older history isn't relevant to your troubleshooting.
 
     .PARAMETER EndDate
-        The DateTime before which the history is wanted. If unspecified, all available records will be processed.
+        Sets the latest date and time for job history records to include. Defaults to current date and time.
+        Use this with StartDate to focus on a specific time window when troubleshooting incidents or analyzing patterns during maintenance windows.
 
     .PARAMETER OutcomeType
-        The CompletionResult to filter the history for. Valid values are: Failed, Succeeded, Retry, Cancelled, InProgress, Unknown
+        Filters job history to only show executions with a specific completion result. Valid values are Failed, Succeeded, Retry, Cancelled, InProgress, Unknown.
+        Most commonly used with 'Failed' when troubleshooting job failures or 'Succeeded' when verifying successful completion patterns.
 
     .PARAMETER ExcludeJobSteps
-        Use this switch to discard all job steps, and return only the job totals
+        Returns only job-level execution summaries, excluding individual step details. Shows overall job success/failure without step-by-step breakdown.
+        Use this when you need high-level job completion status for reporting or when step details aren't needed for your analysis.
 
     .PARAMETER WithOutputFile
-        Use this switch to retrieve the output file (only if you want step details). Bonus points, we handle the quirks
-        of SQL Agent tokens to the best of our knowledge (https://technet.microsoft.com/it-it/library/ms175575(v=sql.110).aspx)
+        Includes resolved output file paths for job steps that write to files. Automatically resolves SQL Agent token placeholders like $(SQLLOGDIR) to actual paths.
+        Essential when you need to locate and review job output files for troubleshooting failures or verifying job step results.
 
     .PARAMETER JobCollection
-        An array of SMO jobs
+        Accepts an array of SQL Server Management Objects (SMO) job objects instead of job names. Enables pipeline input from Get-DbaAgentJob.
+        Use this when you need to filter jobs by complex criteria first, then get their history, such as jobs matching specific patterns or properties.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

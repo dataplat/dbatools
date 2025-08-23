@@ -1,10 +1,13 @@
 function Get-DbaDbMailConfig {
     <#
     .SYNOPSIS
-        Gets database mail configs from SQL Server
+        Retrieves Database Mail configuration settings from SQL Server instances
 
     .DESCRIPTION
-        Gets database mail configs from SQL Server
+        Retrieves all Database Mail configuration values from SQL Server, including settings like MaxFileSize, ProhibitedExtensions, DatabaseMailExeMinLifeTime, and LoggingLevel.
+        This function helps DBAs audit current Database Mail configurations, troubleshoot email delivery issues, and verify compliance with organizational email policies.
+        You can retrieve all configuration settings or filter by specific configuration names to focus on particular settings.
+        The output includes the configuration name, current value, and description for each setting across your SQL Server environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,10 +20,14 @@ function Get-DbaDbMailConfig {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        Specifies one or more config(s) to get. If unspecified, all configs will be returned.
+        Specifies which Database Mail configuration settings to retrieve by name, such as MaxFileSize, ProhibitedExtensions, or LoggingLevel.
+        Use this when you need to check specific configuration values instead of retrieving all Database Mail settings.
+        Accepts multiple configuration names and supports aliases Config and ConfigName.
 
     .PARAMETER InputObject
-        Accepts pipeline input from Get-DbaDbMail
+        Accepts Database Mail objects from Get-DbaDbMail for pipeline processing.
+        Use this when chaining multiple Database Mail functions together or when you already have Database Mail objects loaded.
+        Allows you to retrieve configurations from multiple SQL Server instances efficiently through the pipeline.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

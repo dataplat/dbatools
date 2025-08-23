@@ -1,10 +1,10 @@
 function Remove-DbaRegServerGroup {
     <#
     .SYNOPSIS
-        Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
+        Removes server groups from SQL Server Central Management Server (CMS).
 
     .DESCRIPTION
-        Returns an array of Server Groups found in the CMS.
+        Deletes specified server groups from Central Management Server, including all nested subgroups and registered servers within those groups. This permanently removes the organizational structure you've built in CMS, so use with caution. The function works with both local registered servers and CMS-based groups, and supports piping from Get-DbaRegServerGroup for targeted removal operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,10 +17,12 @@ function Remove-DbaRegServerGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        Specifies one or more groups to include from SQL Server Central Management Server.
+        Specifies the name of one or more server groups to remove from Central Management Server or local registered servers. Supports hierarchical paths like "HR\Development" to target subgroups within parent groups.
+        Use this when you know the exact group names to delete and want to remove specific organizational structures from your CMS or local registered server configuration.
 
     .PARAMETER InputObject
-        Allows results from Get-DbaRegServerGroup to be piped in
+        Accepts ServerGroup objects from Get-DbaRegServerGroup for pipeline operations. This allows you to first filter or query specific server groups, then remove them in a controlled manner.
+        Use this approach when you need to perform complex filtering, review groups before deletion, or process large numbers of groups with conditional logic.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -1,14 +1,16 @@
 function Test-DbaInstanceName {
     <#
     .SYNOPSIS
-        Tests to see if it's possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.
+        Validates SQL Server instance name consistency with the host OS and identifies rename requirements and potential blockers.
 
     .DESCRIPTION
         When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
 
-        This command helps determine if your OS and SQL Server names match, and whether a rename is required.
+        This command compares the SQL Server instance name (from @@servername) with the actual hostname and instance combination to determine if they match. When they don't match, a rename is typically required to prevent authentication issues and ensure proper cluster functionality.
 
-        It then checks conditions that would prevent a rename, such as database mirroring and replication.
+        The function also performs critical safety checks by scanning for conditions that would prevent a safe rename, including active database mirroring, replication configurations (publishing, subscribing, or distribution), and remote login dependencies. Additionally, it identifies SQL Server Reporting Services installations that would require manual updates after a server rename.
+
+        Use this before attempting any server rename operations to understand the scope of work involved and potential complications. The detailed output helps you plan the rename process and address blockers beforehand.
 
         https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 
@@ -23,7 +25,9 @@ function Test-DbaInstanceName {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ExcludeSsrs
-        If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
+        Skips checking for SQL Server Reporting Services installations that would require manual updates after a server rename.
+        Use this switch when you know SSRS isn't installed or when you want to focus only on core SQL Server rename blockers.
+        Without this switch, the function will warn about SSRS configurations that need attention during rename operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

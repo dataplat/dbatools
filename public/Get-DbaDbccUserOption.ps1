@@ -1,10 +1,10 @@
 function Get-DbaDbccUserOption {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC USEROPTIONS
+        Retrieves current session-level SET options and connection settings from SQL Server instances
 
     .DESCRIPTION
-        Returns the results of DBCC USEROPTIONS
+        Executes DBCC USEROPTIONS against SQL Server instances to display current session settings including ANSI options, isolation levels, date formats, language, and timeout values. This is particularly useful when troubleshooting application connection issues or verifying that session-level defaults match across environments. You can filter results to specific options or retrieve all current settings to compare against expected configurations during deployments or performance investigations.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-useroptions-transact-sql
@@ -20,7 +20,7 @@ function Get-DbaDbccUserOption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Option
-        Return only specific options. Returns all results if not specified.
+        Filters results to show only specific session options instead of all DBCC USEROPTIONS output. Use this when troubleshooting specific connection settings like ANSI options, date formats, or isolation levels without seeing the full list of 13 available options.
         Accepts any values in set 'ansi_null_dflt_on', 'ansi_nulls', 'ansi_padding', 'ansi_warnings', 'arithabort', 'concat_null_yields_null', 'datefirst', 'dateformat', 'isolation level', 'language', 'lock_timeout', 'quoted_identifier', 'textsize'
 
     .PARAMETER EnableException

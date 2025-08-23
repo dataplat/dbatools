@@ -1,12 +1,17 @@
 function Copy-DbaCredential {
     <#
     .SYNOPSIS
-        Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
+        Migrates SQL Server credentials between instances while preserving encrypted passwords.
 
     .DESCRIPTION
-        By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
+        Copies SQL Server credentials from source to destination instances without losing the original passwords, which normally can't be retrieved through standard methods. This function uses a Dedicated Admin Connection (DAC) and password decryption techniques to extract the actual credential passwords from the source server and recreate them identically on the destination.
 
-        Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+        This is essential for server migrations, disaster recovery setup, or environment synchronization where you need to move service accounts, proxy credentials, or linked server authentication without having to reset passwords or contact application teams for credentials.
+
+        The function requires sysadmin privileges on both servers, Windows administrator access, and DAC enabled on the source instance. It supports filtering by credential name or identity and can handle cryptographic provider credentials used for Extensible Key Management (EKM).
+
+        Credit: Based on password decryption techniques by Antti Rantasaari (NetSPI, 2014)
+        https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
@@ -34,21 +39,26 @@ function Copy-DbaCredential {
         This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
 
     .PARAMETER Name
-        Only include specific names
+        Specifies the credential names to copy from the source server. Supports wildcards for pattern matching.
+        Use this when you only need to migrate specific credentials instead of all credentials on the server.
         Note: if spaces exist in the credential name, you will have to type "" or '' around it.
 
     .PARAMETER ExcludeName
-        Excluded credential names
+        Specifies credential names to exclude from the copy operation. Supports wildcards for pattern matching.
+        Use this when you want to copy most credentials but skip specific ones like test accounts or deprecated credentials.
 
     .PARAMETER Identity
-        Only include specific identities
+        Specifies the credential identities (user accounts) to copy from the source server. Supports wildcards for pattern matching.
+        Use this when you need to migrate credentials for specific service accounts or domain users rather than filtering by credential name.
         Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
 
     .PARAMETER ExcludeIdentity
-        Excluded identities
+        Specifies credential identities (user accounts) to exclude from the copy operation. Supports wildcards for pattern matching.
+        Use this when you want to copy most credentials but skip those associated with specific service accounts or domain users.
 
     .PARAMETER Force
-        If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
+        Overwrites existing credentials on the destination server by dropping and recreating them with the source values.
+        Use this when you need to update credential passwords or identities that have changed on the source server since the last migration.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

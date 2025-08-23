@@ -1,33 +1,45 @@
 function Import-DbatoolsConfig {
     <#
     .SYNOPSIS
-        Imports a json configuration file into the configuration system.
+        Imports dbatools configuration settings from JSON files or default module paths.
 
     .DESCRIPTION
-        Imports a json configuration file into the configuration system.
+        Loads dbatools configuration settings from JSON files or retrieves module-specific settings from default configuration locations. This lets you restore saved dbatools preferences, share standardized settings across your team, or apply configuration baselines to multiple servers. You can import from local files, web URLs, or raw JSON strings, with optional filtering to selectively apply only the settings you need.
 
     .PARAMETER Path
-        The path to the json file to import.
+        Specifies the path to JSON configuration files, web URLs, or raw JSON strings to import settings from.
+        Use this to restore saved dbatools preferences, apply team-standard configurations, or load settings from remote locations.
+        Accepts local file paths, HTTP/HTTPS URLs, or direct JSON content as strings.
 
     .PARAMETER ModuleName
-        Import configuration items specific to a module from the default configuration paths.
+        Specifies which dbatools module's configuration settings to import from default system locations.
+        Use this to restore module-specific settings that were previously saved using Export-DbatoolsConfig.
+        Common modules include 'message' for logging preferences and 'sql' for connection defaults.
 
     .PARAMETER ModuleVersion
-        The configuration version of the module-settings to load.
+        Specifies which version of the module configuration schema to load when importing persisted settings.
+        Defaults to version 1, which works for most scenarios unless you're working with legacy configuration exports.
+        Only change this if you're importing settings exported with a different version of dbatools.
 
     .PARAMETER Scope
-        Where to import the module specific configuration items form.
-        Only file-based scopes are supported for this.
-        By default, all locations are queried, with user settings beating system settings.
+        Controls which configuration storage locations to search when importing module settings.
+        Options include FileUserLocal (user profile), FileUserShared (shared user settings), and FileSystem (system-wide).
+        User settings override system settings when the same configuration exists in multiple locations.
 
     .PARAMETER IncludeFilter
-        If specified, only elements with names that are similar (-like) to names in this list will be imported.
+        Specifies wildcard patterns to selectively import only matching configuration items from the source.
+        Use this to import specific settings like 'sql.connection.*' for connection-related configs or 'logging.*' for logging preferences.
+        Supports PowerShell -like wildcard matching with * and ? characters.
 
     .PARAMETER ExcludeFilter
-        Elements that are similar (-like) to names in this list will not be imported.
+        Specifies wildcard patterns to exclude specific configuration items during import.
+        Use this to skip sensitive settings like credentials or environment-specific paths when sharing configurations.
+        Applied after IncludeFilter, allowing you to include a category but exclude specific items within it.
 
     .PARAMETER Peek
-        Rather than applying the setting, return the configuration items that would have been applied.
+        Returns the configuration items that would be imported without actually applying them to your session.
+        Use this to preview configuration changes before applying them, especially when importing from unfamiliar sources.
+        Helpful for validating configuration files and understanding what settings will be modified.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

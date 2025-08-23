@@ -43,13 +43,15 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Validate standard output" {
         BeforeAll {
             $props = "ComputerName", "InstanceName", "SqlInstance", "Database", "Cmd", "Output"
-            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Confirm:$false
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1
         }
 
         It "returns results" {
@@ -65,12 +67,12 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate returns results" {
         It "returns results for table" {
-            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Database $dbname -Table $tableName -Confirm:$false
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Database $dbname -Table $tableName
             $result.Output -match "DBCC execution completed. If DBCC printed error messages, contact your system administrator." | Should -BeTrue
         }
 
         It "returns results for index by id" {
-            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Database $dbname -Table $tableName -Index 1 -Confirm:$false
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.instance1 -Database $dbname -Table $tableName -Index 1
             $result.Output -match "DBCC execution completed. If DBCC printed error messages, contact your system administrator." | Should -BeTrue
         }
     }

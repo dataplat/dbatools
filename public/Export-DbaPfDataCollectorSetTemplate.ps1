@@ -1,13 +1,14 @@
 function Export-DbaPfDataCollectorSetTemplate {
     <#
     .SYNOPSIS
-        Exports a new Data Collector Set XML Template.
+        Exports Windows Performance Monitor Data Collector Set configurations as reusable XML templates.
 
     .DESCRIPTION
-        Exports a Data Collector Set XML Template from Get-DbaPfDataCollectorSet. Exports to "$home\Documents\Performance Monitor Templates" by default.
+        Exports Data Collector Set configurations from Windows Performance Monitor as XML template files that can be imported on other SQL Server hosts. This allows you to standardize performance monitoring across your SQL Server environment by saving custom counter collections, sampling intervals, and output settings as portable templates. Particularly useful for creating consistent performance baselines and troubleshooting configurations that can be quickly deployed when performance issues arise.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computer(s) to export data collector sets from. Defaults to localhost.
+        Use this to export performance monitoring templates from remote SQL Server hosts for standardization across your environment.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials. To use:
@@ -15,16 +16,20 @@ function Export-DbaPfDataCollectorSetTemplate {
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
     .PARAMETER CollectorSet
-        The name of the collector set(s) to export.
+        Specifies the name(s) of specific data collector sets to export. If not specified, all collector sets will be exported.
+        Use this when you only need to export particular performance monitoring configurations rather than all available sets.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the directory where XML template files will be created. Each collector set exports as a separate XML file.
+        Defaults to the configured dbatools export path, typically used when exporting multiple collector sets.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Specifies the complete file path including filename for the exported XML template. Use instead of Path when exporting a single collector set.
+        Automatically appends .xml extension if not provided, ideal for creating named templates for specific monitoring scenarios.
 
     .PARAMETER InputObject
-        Accepts the object output by Get-DbaPfDataCollectorSetTemplate via the pipeline.
+        Accepts data collector set objects from Get-DbaPfDataCollectorSet via pipeline input. Enables pipeline workflows for filtering and processing collector sets.
+        Use this when you need to chain commands together, such as filtering collector sets before exporting them.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

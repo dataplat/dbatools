@@ -1,10 +1,10 @@
 function Get-DbaConnectedInstance {
     <#
     .SYNOPSIS
-        Get a list of all connected instances
+        Returns SQL Server instances currently cached in the dbatools connection pool
 
     .DESCRIPTION
-        Get a list of all connected instances
+        Shows all SQL Server connections that are currently active or cached in your PowerShell session. When you connect to instances using dbatools commands like Connect-DbaInstance, those connections are stored in an internal cache for reuse. This command reveals what's in that cache, including connection details like whether pooling is enabled and the connection type (SMO server objects vs raw SqlConnection objects). Use this to track active connections before cleaning them up with Disconnect-DbaInstance or to troubleshoot connection-related issues in long-running scripts.
 
     .NOTES
         Tags: Connection

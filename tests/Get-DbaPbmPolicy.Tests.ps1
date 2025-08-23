@@ -60,10 +60,10 @@ Describe $CommandName -Tag IntegrationTests {
         EXEC msdb.dbo.sp_syspolicy_add_policy @name=N'dbatoolsci_TestPolicy', @condition_name=N'dbatoolsci_Condition', @policy_category=N'', @description=N'', @help_text=N'', @help_link=N'', @schedule_uid=N'00000000-0000-0000-0000-000000000000', @execution_mode=2, @is_enabled=True, @policy_id=@policy_id OUTPUT, @root_condition_name=N'', @object_set=N'dbatoolsci_TestPolicy_ObjectSet'
         SELECT @policy_id"
 
-        $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $global:conditionid = $server.ConnectionContext.ExecuteScalar($sqlconditionid)
-        $global:objectsetid = $server.ConnectionContext.ExecuteScalar($sqlobjectsetid)
-        $global:policyid = $server.ConnectionContext.ExecuteScalar($sqlpolicyid)
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $conditionid = $server.ConnectionContext.ExecuteScalar($sqlconditionid)
+        $objectsetid = $server.ConnectionContext.ExecuteScalar($sqlobjectsetid)
+        $policyid = $server.ConnectionContext.ExecuteScalar($sqlpolicyid)
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -73,9 +73,11 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$global:policyid")
-        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_object_set @object_set_id=$global:objectsetid")
-        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$global:conditionid")
+        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$policyid")
+        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_object_set @object_set_id=$objectsetid")
+        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$conditionid")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When retrieving PBM policies" {

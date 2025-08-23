@@ -27,13 +27,13 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
         $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
-            $global:delmasterkey = $true
+            $delmasterkey = $true
             $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
         }
 
@@ -42,22 +42,22 @@ Describe $CommandName -Tag IntegrationTests {
             Select-Object -First 1
 
         if (-not $mastercert) {
-            $global:delmastercert = $true
+            $delmastercert = $true
             $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
         }
 
-        $global:testDb = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $testDb = New-DbaDatabase -SqlInstance $TestConfig.instance2
         $testDb | New-DbaDbMasterKey -SecurePassword $passwd
         $testDb | New-DbaDbCertificate
         $testDb | New-DbaDbEncryptionKey -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         if ($testDb) {
             $testDb | Remove-DbaDatabase -ErrorAction SilentlyContinue
@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
             $masterkey | Remove-DbaDbMasterKey -ErrorAction SilentlyContinue
         }
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When enabling encryption via pipeline" {

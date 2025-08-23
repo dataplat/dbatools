@@ -1,10 +1,10 @@
 function Get-DbaPbmObjectSet {
     <#
     .SYNOPSIS
-        Returns object sets from policy based management.
+        Retrieves Policy-Based Management object sets from SQL Server instances
 
     .DESCRIPTION
-        Returns object sets from policy based management.
+        Retrieves object sets from SQL Server's Policy-Based Management (PBM) feature, which define collections of SQL Server objects that policies can target for compliance monitoring. Object sets group related database objects like tables, stored procedures, or views based on specific criteria, allowing you to apply policies consistently across similar objects. This is essential for DBAs implementing standardized configurations and compliance rules across multiple databases and instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,13 +17,16 @@ function Get-DbaPbmObjectSet {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ObjectSet
-        Filters results to only show specific object set
+        Specifies the name(s) of specific Policy-Based Management object sets to retrieve. Accepts multiple values and supports wildcards.
+        Use this when you need to examine particular object sets rather than retrieving all available sets from the instance.
 
     .PARAMETER IncludeSystemObject
-        By default system objects are filtered out. Use this parameter to include them.
+        Includes SQL Server system object sets in the results, which are excluded by default to focus on user-defined sets.
+        Use this when you need to audit or examine Microsoft's built-in Policy-Based Management object sets for compliance or educational purposes.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaPbmStore
+        Accepts Policy-Based Management store objects from Get-DbaPbmStore via pipeline input for processing multiple stores.
+        Use this when you need to process object sets from multiple SQL Server instances or when chaining PBM commands together.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,12 +1,10 @@
 function Get-DbaAgentJobOutputFile {
     <#
     .SYNOPSIS
-        Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if
-        required for one or more SQL Instances
+        Retrieves output file paths configured for SQL Agent job steps
 
     .DESCRIPTION
-        This function returns for one or more SQL Instances the output file value for each step of one or many agent job with the Job Names
-        provided dynamically. It will not return anything if there is no Output File
+        This function returns the file paths where SQL Agent job steps write their output logs. When troubleshooting failed jobs or reviewing execution history, DBAs often need to locate these output files to examine detailed error messages and execution details. The function returns both the local file path and the UNC path for remote access, but only displays job steps that have an output file configured.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -19,10 +17,12 @@ function Get-DbaAgentJobOutputFile {
         For MFA support, please use Connect-DbaInstance. be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Job
-        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies specific SQL Agent jobs to examine for output file configurations. Accepts job names as strings and supports multiple values.
+        Use this when you need to check output file paths for specific jobs rather than scanning all jobs on the instance.
 
     .PARAMETER ExcludeJob
-        The job(s) to exclude - this list is auto-populated from the server
+        Specifies SQL Agent jobs to exclude from the output file search. Accepts job names as strings and supports multiple values.
+        Use this when you want to scan most jobs but skip specific ones, such as excluding system maintenance jobs or jobs you know don't use output files.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

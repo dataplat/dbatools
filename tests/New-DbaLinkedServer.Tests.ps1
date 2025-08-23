@@ -61,6 +61,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup test login.
         Remove-DbaLogin -SqlInstance $instance3 -Login $loginName -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "ensure command works" {

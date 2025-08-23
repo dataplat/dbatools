@@ -2,18 +2,17 @@
 function Test-DbaConnection {
     <#
     .SYNOPSIS
-        Tests the connection to a single instance.
+        Validates SQL Server connectivity and gathers comprehensive connection diagnostics
 
     .DESCRIPTION
-        Tests the ability to connect to an SQL Server instance outputting information about the server and instance.
+        Tests SQL Server instance connectivity while collecting detailed connection and environment information for troubleshooting. Returns authentication details, network configuration, TCP ports, and local PowerShell environment data. Essential for diagnosing connectivity issues before running automation scripts or validating access across multiple instances. Combines SQL connection testing with network diagnostics including ping status, PSRemoting access, and DNS resolution.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER Credential
-        Credential object used to connect to the Computer as a different user.
-
-        Utilized for gathering PSRemoting and TCPPort information.
+        Windows credentials for computer-level access to the target server. Required for PSRemoting tests and TCP port detection when running under a different security context.
+        Use this when your current Windows account lacks administrative privileges on the target server or when testing across domain boundaries.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -23,7 +22,8 @@ function Test-DbaConnection {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SkipPSRemoting
-        This switch will skip the test for PSRemoting.
+        Skips the PowerShell remoting connectivity test during the connection assessment.
+        Use this when PSRemoting is disabled or blocked by firewall rules but you still want to test SQL connectivity and gather other diagnostic information.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

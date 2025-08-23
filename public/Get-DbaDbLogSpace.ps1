@@ -1,12 +1,12 @@
 Function Get-DbaDbLogSpace {
     <#
     .SYNOPSIS
-        Gets information on the database transaction log usage for each instance(s) of SQL Server.
+        Retrieves transaction log space usage and capacity information from SQL Server databases.
 
     .DESCRIPTION
-        Returns transaction log size and space used for each database on the SQL Server instance(s).
+        Collects detailed transaction log metrics including total size, used space percentage, and used space in bytes for databases across SQL Server instances. Uses the sys.dm_db_log_space_usage DMV on SQL Server 2012+ or DBCC SQLPERF(logspace) on older versions.
 
-        This can be used to monitor how much of your allocated transaction log space is in use, and whether it is nearing the point where it will need to grow.
+        Essential for proactive log space monitoring to prevent unexpected transaction log growth, identify databases approaching log capacity limits, and plan log file sizing. Helps DBAs avoid transaction failures caused by full transaction logs and optimize log file allocation strategies.
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -19,13 +19,16 @@ Function Get-DbaDbLogSpace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for transaction log space usage. Accepts wildcards for pattern matching.
+        Use this when you need to monitor specific databases instead of checking all databases on the instance, particularly useful for focusing on high-growth or critical databases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server.
+        Specifies databases to skip when checking transaction log space usage. Accepts wildcards for pattern matching.
+        Use this to exclude databases you don't need to monitor regularly, such as test databases, read-only databases, or databases with known stable log usage patterns.
 
     .PARAMETER ExcludeSystemDatabase
-        Allows you to suppress output on system databases.
+        Excludes system databases (master, model, msdb, tempdb) from the transaction log space report.
+        Use this when focusing on user databases only, as system database log usage is typically managed differently and may not require the same monitoring attention.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

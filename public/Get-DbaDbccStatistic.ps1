@@ -1,15 +1,10 @@
 function Get-DbaDbccStatistic {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC SHOW_STATISTICS
+        Retrieves statistics information from tables and indexed views for query performance analysis
 
     .DESCRIPTION
-        Executes the command DBCC SHOW_STATISTICS against defined objects and returns results
-
-        Reclaims space from dropped variable-length columns in tables or indexed views
-
-        Read more:
-            - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-cleantable-transact-sql
+        Executes DBCC SHOW_STATISTICS to extract detailed information about statistics objects, including distribution histograms, density vectors, and header information. This helps DBAs diagnose query performance issues when the optimizer makes poor execution plan choices due to outdated or skewed statistics. You can analyze specific statistics objects or scan all statistics across databases to identify when UPDATE STATISTICS should be run. Returns different data sets based on the selected option: StatHeader shows when statistics were last updated and row counts, DensityVector reveals data uniqueness patterns, Histogram displays value distribution across column ranges, and StatsStream provides the raw binary statistics data.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -22,23 +17,24 @@ function Get-DbaDbccStatistic {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for statistics information. Accepts multiple database names as an array.
+        When omitted, the function processes all accessible databases on the instance, which is useful for instance-wide statistics analysis.
 
     .PARAMETER Object
-        The table or indexed view for which to display statistics information.
-        Any two part object name should be formatted as 'Schema.ObjectName'
+        Specifies the table or indexed view to analyze for statistics information. Use this to focus on a specific object rather than all tables in the database.
+        Format two-part names as 'Schema.ObjectName' (e.g., 'dbo.Orders'). When specified without Target, all statistics on the object are analyzed.
 
     .PARAMETER Target
-        Name of the index, statistics, or column for which to display statistics information.
-        Target can be enclosed in brackets, single quotes, double quotes, or no quotes
+        Specifies the exact statistics object, index, or column name to analyze. Use this when you need to examine a specific statistic rather than all statistics on an object.
+        Accepts statistics names (like '_WA_Sys_CustomerID'), index names (like 'IX_Orders_CustomerID'), or column names. Can be enclosed in brackets, quotes, or left unquoted.
 
     .PARAMETER Option
-        Used to limit the result sets returned by the statement to the specified option.
-        Options are 'StatHeader', 'DensityVector', 'Histogram', 'StatsStream'
-        Default of StatHeader
+        Controls which type of statistics data to return from DBCC SHOW_STATISTICS. Defaults to 'StatHeader' which shows when statistics were last updated and row counts.
+        Use 'Histogram' to analyze data distribution patterns, 'DensityVector' to examine column uniqueness, or 'StatsStream' to get raw binary statistics data for advanced analysis.
 
     .PARAMETER NoInformationalMessages
-        Suppresses all informational messages.
+        Suppresses informational messages from DBCC SHOW_STATISTICS output, providing cleaner results focused only on the statistics data.
+        Use this when running automated scripts or when you only need the statistics data without additional DBCC messaging.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

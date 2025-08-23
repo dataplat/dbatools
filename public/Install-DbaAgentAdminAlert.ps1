@@ -1,14 +1,14 @@
 function Install-DbaAgentAdminAlert {
     <#
     .SYNOPSIS
-        Creates SQL Server Agent alerts commonly needed by DBAs
+        Creates standard SQL Server Agent alerts for critical system errors and disk I/O failures
 
     .DESCRIPTION
-        Creates SQL Server Agent alerts commonly needed by DBAs
+        Creates a predefined set of SQL Server Agent alerts that monitor for critical system errors (severity levels 17-25) and disk I/O corruption errors (messages 823-825). These alerts catch serious issues like hardware failures, database corruption, insufficient resources, and fatal system errors that require immediate DBA attention.
 
-        You can specify an operator to use for the alert, or it will use any operator it finds if there is just one.
+        The function automatically creates alerts for severity levels 17-25 and error messages 823-825 unless specifically excluded. It can create missing operators and alert categories as needed, making it easy to establish consistent monitoring across multiple SQL Server instances.
 
-        Alternatively, if you specify both an operator name and an email, it will create the operator if it does not exist.
+        You can specify an operator to use for the alert, or it will use any operator it finds if there is just one. Alternatively, if you specify both an operator name and an email, it will create the operator if it does not exist.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -21,45 +21,56 @@ function Install-DbaAgentAdminAlert {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ExcludeSeverity
-        Exclude specific severities from the batch. By default, severities 17-25 are included.
+        Excludes specific error severity levels from the standard alert creation. By default, the function creates alerts for severity levels 17-25 which cover resource issues, internal errors, and fatal system problems.
+        Use this when you want to skip certain severities, perhaps because you already have custom alerts configured for them or they're not relevant to your environment.
 
     .PARAMETER ExcludeMessageId
-        Exclude specific message IDs from the batch. By default, mesasage IDs 823-825 are included.
+        Excludes specific SQL Server error message IDs from the standard alert creation. By default, the function creates alerts for messages 823-825 which detect disk I/O hardware errors and database corruption issues.
+        Use this when you want to skip certain message IDs, perhaps because you have existing custom alerts for these errors or they don't apply to your storage configuration.
 
     .PARAMETER Operator
-        The name of the operator to use in the alert
+        Specifies the SQL Server Agent operator who will receive notifications when these alerts are triggered. The operator must already exist on the target instance unless you also provide OperatorEmail.
+        If not specified and only one operator exists on the instance, that operator will be used automatically. Required for alert notifications to function properly.
 
     .PARAMETER OperatorEmail
-        If a the specified operator does not exist and an OperatorEmail is specified, the operator will be created
+        Creates a new SQL Server Agent operator with this email address if the specified operator name doesn't exist. Must be used together with the Operator parameter.
+        This allows you to set up both the operator and alerts in a single command when configuring monitoring on a new instance.
 
     .PARAMETER Category
-        The name of the category for the alert. If not specified, the alert will be created in the 'Uncategorized' category.
-
-        If the category does not exist, it will be created.
+        Assigns the alerts to a specific SQL Server Agent alert category for better organization and management. Defaults to 'Uncategorized' if not specified.
+        Use this to group related alerts together, making it easier to manage alert policies and review alert activity in SQL Server Management Studio. If the category doesn't exist, it will be created automatically.
 
     .PARAMETER Database
-        The name of the database to which the alert applies
+        Restricts the alerts to fire only for errors occurring in the specified database. If not specified, alerts will fire for errors in any database on the instance.
+        Use this when you want to monitor only specific critical databases and avoid noise from test or development databases on the same instance.
 
     .PARAMETER DelayBetweenResponses
-        The delay (in seconds) between responses to the alert
+        Sets the minimum time in seconds that must pass before the alert can fire again for the same condition. Prevents notification spam when errors occur repeatedly.
+        Use this to avoid flooding your inbox during cascading failures or when the same error occurs multiple times in rapid succession.
 
     .PARAMETER Disabled
-        Whether the alert is disabled
+        Creates the alerts in a disabled state, preventing them from firing until manually enabled. By default, alerts are created in an enabled state.
+        Use this when you want to set up the alert infrastructure first and enable specific alerts later after testing or validation.
 
     .PARAMETER NotifyMethod
-        The method to use to notify the user of the alert. Valid values are 'None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll'. It is NotifyAll by default.
+        Specifies how the operator should be notified when the alert fires. Valid options are 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll', or 'None'. Defaults to 'NotifyAll'.
+        Use 'NotifyEmail' for email-only notifications, 'NotifyAll' to use all configured notification methods for the operator, or 'None' to create alerts without notifications (useful for logging only).
 
     .PARAMETER NotificationMessage
-        The message to send when the alert is triggered
+        Customizes the message content sent to operators when an alert fires. If not specified, SQL Server uses the default system-generated message.
+        Use this to include specific instructions, contact information, or troubleshooting steps that help your team respond more effectively to critical errors.
 
     .PARAMETER EventDescriptionKeyword
-        The keyword to search for in the event description
+        Filters alerts to fire only when the error message text contains this specific keyword or phrase. Applied in addition to the standard severity and message ID criteria.
+        Use this to create more targeted alerts that focus on specific error conditions within the broader categories of critical system errors.
 
     .PARAMETER JobId
-        The GUID ID of the job to execute when the alert is triggered
+        Specifies a SQL Server Agent job to execute automatically when any of these alerts fire. Must be a valid job GUID that exists on the target instance.
+        Use this to trigger automated response scripts, such as collecting diagnostic information, attempting automatic recovery, or escalating to additional monitoring systems.
 
     .PARAMETER EventSource
-        The source of the event
+        Restricts alerts to fire only for errors originating from a specific event source or application. If not specified, alerts will fire regardless of the error source.
+        Use this to focus monitoring on specific applications or services that interact with your SQL Server instance when you want to isolate alerts from particular systems.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -150,7 +161,7 @@ function Install-DbaAgentAdminAlert {
 
             if ($Operator) {
                 try {
-                    $newop = Get-DbaAgentOperator -SqlInstance $server
+                    $newop = Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
                     if (-not $newop -and $OperatorEmail) {
                         if ($PSCmdlet.ShouldProcess($instance, "Creating operator $Operator with email $OperatorEmail")) {
                             Write-Message -Level Verbose -Message "Creating operator $Operator with email $OperatorEmail on $instance"
@@ -160,13 +171,14 @@ function Install-DbaAgentAdminAlert {
                                 Email       = $OperatorEmail
                             }
                             $newop = New-DbaAgentOperator @parms
+                            $null = $server.JobServer.Operators.Refresh()
+                            $null = $server.JobServer.Refresh()
 
                             if (-not $newop) {
                                 $parms = @{
-                                    Message     = "Failed to create operator $Operator with email $OperatorEmail on $instance"
-                                    Target      = $instance
-                                    Continue    = $true
-                                    ErrorRecord = $PSItem
+                                    Message  = "Failed to create operator $Operator with email $OperatorEmail on $instance"
+                                    Target   = $instance
+                                    Continue = $true
                                 }
                                 Stop-Function @parms
                             }
@@ -191,10 +203,9 @@ function Install-DbaAgentAdminAlert {
 
                             if (-not $newcat) {
                                 $parms = @{
-                                    Message     = "Failed to create category $Category on $instance"
-                                    Target      = $instance
-                                    Continue    = $true
-                                    ErrorRecord = $PSItem
+                                    Message  = "Failed to create category $Category on $instance"
+                                    Target   = $instance
+                                    Continue = $true
                                 }
                                 Stop-Function @parms
                             }
@@ -288,7 +299,7 @@ function Install-DbaAgentAdminAlert {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the alert $name")) {
                         try {
                             # Supply either a non-zero message ID, non-zero severity, non-null performance condition, or non-null WMI namespace and query.
-                            $null = New-DbaAgentAlert @parms
+                            $null = New-DbaAgentAlert @parms -EnableException
                         } catch {
                             Stop-Function -Message "Something went wrong creating the alert $name on $instance" -Target $name -Continue -ErrorRecord $_
                         }

@@ -1,10 +1,10 @@
 function Remove-DbaDbTable {
     <#
     .SYNOPSIS
-        Removes database table(s) from each database and SQL Server instance.
+        Drops tables from SQL Server databases with safety controls and detailed status reporting.
 
     .DESCRIPTION
-        Removes database table(s), with supported piping from Get-DbaDbTable.
+        Permanently removes tables from one or more databases using SQL Server Management Objects (SMO). This function provides a safer alternative to manual DROP TABLE statements by including built-in confirmation prompts and comprehensive error handling. You can specify tables directly by name or pipe table objects from Get-DbaDbTable for more complex filtering scenarios. Each removal operation returns detailed status information including success confirmation and specific error messages when failures occur.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,16 @@ function Remove-DbaDbTable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to target for table removal operations. Accepts multiple database names as an array.
+        Use this when you need to remove tables from specific databases rather than searching across all databases on the instance.
 
     .PARAMETER Table
-        The name(s) of the table(s).
+        Specifies the names of tables to remove from the target databases. Accepts multiple table names as an array.
+        Tables should be specified by name only (without schema prefix) as the function will find tables regardless of schema. Use Get-DbaDbTable for more complex filtering scenarios.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbTable.
+        Accepts table objects directly from Get-DbaDbTable for removal operations. This approach allows for advanced filtering and validation before deletion.
+        Use this parameter when you need to remove tables based on complex criteria like size, row count, or schema patterns that Get-DbaDbTable can filter.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

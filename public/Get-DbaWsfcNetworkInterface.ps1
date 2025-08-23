@@ -1,15 +1,19 @@
 function Get-DbaWsfcNetworkInterface {
     <#
     .SYNOPSIS
-        Gets information about one or more network adapters in a failover cluster.
+        Retrieves network interface configuration from Windows Server Failover Cluster nodes.
 
     .DESCRIPTION
-        Gets information about one or more network adapters in a failover cluster.
+        Retrieves detailed network adapter information from all nodes in a Windows Server Failover Cluster, including IP addresses, DHCP settings, and network assignments. This information is essential for troubleshooting SQL Server Failover Cluster Instance connectivity issues and verifying cluster network configuration.
+
+        Use this command to identify network misconfigurations that could impact SQL Server availability, document cluster network topology for compliance, or diagnose connectivity problems between cluster nodes.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a Network or the cluster name itself.
+        Specifies the Windows Server Failover Cluster name or any cluster node name to query for network interface information.
+        Use this when troubleshooting SQL Server FCI connectivity issues or documenting cluster network topology.
+        Accepts cluster names, node names, or IP addresses of cluster resources.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

@@ -1,13 +1,14 @@
 function Add-DbaPfDataCollectorCounter {
     <#
     .SYNOPSIS
-        Adds a Performance Data Collector Counter.
+        Adds performance counters to existing Windows Performance Monitor Data Collector Sets for SQL Server monitoring.
 
     .DESCRIPTION
-        Adds a Performance Data Collector Counter.
+        Adds specific performance counters to existing Data Collector Sets within Windows Performance Monitor. This allows DBAs to customize their performance monitoring by adding SQL Server-specific counters like disk queue length, processor time, or SQL Server object counters to existing collection sets. The function modifies the Data Collector Set configuration and immediately applies the changes, so you can start collecting the additional performance metrics without recreating your monitoring setup.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computer where the Data Collector Set is located. Use this when adding counters to performance monitoring on remote SQL Server instances.
+        Defaults to localhost if not specified.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials. To use:
@@ -15,16 +16,20 @@ function Add-DbaPfDataCollectorCounter {
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
     .PARAMETER CollectorSet
-        The Collector Set name.
+        Specifies the name of the Windows Performance Monitor Data Collector Set that contains the collector you want to modify.
+        This is the parent container that organizes related performance data collectors for your monitoring scenario.
 
     .PARAMETER Collector
-        The Collector name.
+        Specifies the name of the individual Data Collector within the CollectorSet where the new counter will be added.
+        Each collector can contain multiple performance counters and defines how the data is gathered and stored.
 
     .PARAMETER Counter
-        The Counter name. This must be in the form of '\Processor(_Total)\% Processor Time'.
+        Specifies the performance counter path to add to the Data Collector. Must use the full counter path format like '\Processor(_Total)\% Processor Time' or '\SQLServer:Buffer Manager\Page life expectancy'.
+        Use Get-DbaPfAvailableCounter to find available SQL Server and system counters with their exact paths.
 
     .PARAMETER InputObject
-        Accepts the object output by Get-DbaPfDataCollector via the pipeline.
+        Accepts Data Collector objects from Get-DbaPfDataCollector via the pipeline. This allows you to target specific collectors for counter addition.
+        Also accepts counter objects from Get-DbaPfAvailableCounter to add available counters directly.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

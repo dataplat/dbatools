@@ -1,14 +1,12 @@
 function Get-DbaAgDatabase {
     <#
     .SYNOPSIS
-        Gets availability group databases from one or more SQL Server instances.
+        Retrieves availability group database information and synchronization status from SQL Server instances.
 
     .DESCRIPTION
-        Gets availability group databases from one or more SQL Server instances.
+        Retrieves detailed information about databases participating in SQL Server availability groups, including their synchronization state, failover readiness, and replica-specific status. This function queries the availability group configuration from each SQL Server instance to return database-level health and status information that varies depending on whether the replica is primary or secondary.
 
-        Default view provides most common set of properties for information on the database in an availability group.
-
-        Information returned on the database will be specific to that replica, whether it is primary or a secondary.
+        Use this command to monitor availability group database health, troubleshoot synchronization issues, verify failover readiness, or generate compliance reports showing which databases are properly synchronized across your availability group replicas. The returned data includes critical operational details like suspension status, join state, and synchronization health that help DBAs quickly identify databases requiring attention.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -21,13 +19,16 @@ function Get-DbaAgDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Specify the availability groups to query.
+        Specifies which availability groups to query for database information. Accepts multiple availability group names.
+        Use this to limit results to specific availability groups when you have multiple AGs on the same instance.
 
     .PARAMETER Database
-        Specify the database or databases to return. This list is auto-populated from the server for tab completion. Multiple databases can be specified. If none are specified all databases will be processed.
+        Specifies which availability group databases to return information for. Accepts multiple database names with tab completion.
+        Use this to focus on specific databases when troubleshooting AG issues or monitoring particular applications.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup via pipeline input.
+        Use this when you want to chain commands to get database details from already retrieved availability groups.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,10 +1,10 @@
 function Get-DbaDbUdf {
     <#
     .SYNOPSIS
-        Gets database User Defined Functions
+        Retrieves User Defined Functions from SQL Server databases with filtering and metadata
 
     .DESCRIPTION
-        Gets database User Defined Functions
+        Retrieves all User Defined Functions (UDFs) from one or more SQL Server databases, returning detailed metadata including schema, creation dates, and data types. This function helps DBAs inventory custom database logic, analyze code dependencies during migrations, and audit user-created functions for security or performance reviews. You can filter results by database, schema, or function name, and exclude system functions to focus on custom business logic.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,25 +17,32 @@ function Get-DbaDbUdf {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get User Defined Functions from specific database(s)
+        Specifies which databases to retrieve User Defined Functions from. Accepts wildcards for pattern matching.
+        Use this when you need to audit UDFs in specific databases rather than scanning the entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Specifies databases to skip when retrieving User Defined Functions. Useful for excluding system databases or databases under maintenance.
+        Commonly used to exclude tempdb, model, or large databases that don't contain custom business logic.
 
     .PARAMETER ExcludeSystemUdf
-        This switch removes all system objects from the UDF collection
+        Filters out built-in SQL Server system functions from the results, showing only custom user-created functions.
+        Essential when auditing business logic since system databases can contain 100+ built-in UDFs that obscure custom code.
 
     .PARAMETER Schema
-        The schema(s) to process. If unspecified, all schemas will be processed.
+        Limits results to User Defined Functions within specific schemas. Accepts multiple schema names.
+        Useful for focusing on functions owned by particular applications or development teams, such as 'Sales' or 'Reporting' schemas.
 
     .PARAMETER ExcludeSchema
-        The schema(s) to exclude.
+        Excludes User Defined Functions from specific schemas when retrieving results.
+        Helpful for filtering out legacy schemas, test schemas, or third-party application schemas that aren't relevant to your analysis.
 
     .PARAMETER Name
-        The name(s) of the user defined functions to process. If unspecified, all user defined functions will be processed.
+        Retrieves specific User Defined Functions by name. Accepts multiple function names and supports wildcards.
+        Use this when searching for particular functions during troubleshooting or when documenting specific business logic components.
 
     .PARAMETER ExcludeName
-        The name(s) of the user defined functions to exclude.
+        Excludes specific User Defined Functions from results by name. Supports wildcards for pattern matching.
+        Useful for filtering out known test functions, deprecated functions, or utility functions that clutter audit reports.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

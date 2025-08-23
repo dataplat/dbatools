@@ -39,32 +39,32 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set test alert names for cleanup tracking
-        $global:testAlertNames = @("Test Alert", "Another Alert")
+        $testAlertNames = @("Test Alert", "Another Alert")
 
         # Clean up any existing test alerts before starting
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $global:testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up all test alerts created during testing
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $global:testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Creating a new SQL Server Agent alert" {
         BeforeEach {
             # Clean up alerts before each test to ensure clean state
-            Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $global:testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+            Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
         }
 
         It "Should create a new alert with severity" {

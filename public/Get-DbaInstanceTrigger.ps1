@@ -1,10 +1,10 @@
 function Get-DbaInstanceTrigger {
     <#
     .SYNOPSIS
-        Get all existing server triggers on one or more SQL instances.
+        Retrieves server-level DDL triggers from SQL Server instances for auditing and documentation
 
     .DESCRIPTION
-        Get all existing server triggers on one or more SQL instances.
+        Returns server-level DDL triggers that monitor and respond to instance-wide events like CREATE, ALTER, and DROP statements. Server triggers are commonly used for security auditing, change tracking, and preventing unauthorized schema modifications across all databases on an instance. This function helps identify what automated responses are configured at the server level, which is essential for troubleshooting unexpected DDL blocking and documenting compliance controls.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

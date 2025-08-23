@@ -1,41 +1,44 @@
 function Copy-DbaDataCollector {
     <#
     .SYNOPSIS
-        Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
+        Copies SQL Data Collector collection sets from one instance to another
 
     .DESCRIPTION
-        By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used.
+        Copies SQL Data Collector collection sets between SQL Server instances, allowing you to replicate performance monitoring configurations across your environment. This command scripts out the collection set definitions from the source instance and recreates them on the destination, preserving all collection items, schedules, and upload settings.
 
-        The -CollectionSet parameter is auto-populated for command-line completion and can be used to copy only specific objects.
+        By default, all user-defined collection sets are migrated. If a collection set already exists on the destination, it will be skipped unless -Force is used to drop and recreate it. Collection sets that were running on the source will automatically be started on the destination after migration.
+
+        The -CollectionSet parameter is auto-populated for command-line completion and can be used to copy only specific collection sets. Note that Data Collector must already be configured and enabled on the destination instance before running this command.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        Source SQL Server instance containing the Data Collector collection sets to copy. Requires sysadmin access and SQL Server 2008 or higher.
+        The Data Collector feature must be configured on this instance for collection sets to exist.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
+        Login credentials for the source SQL Server instance. Accepts PowerShell credentials (Get-Credential).
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        Destination SQL Server instance(s) where collection sets will be created. Requires sysadmin access and SQL Server 2008 or higher.
+        The Data Collector feature must already be configured and enabled on the destination before running this command.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
+        Login credentials for the destination SQL Server instance(s). Accepts PowerShell credentials (Get-Credential).
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER CollectionSet
-        The collection set(s) to process - this list is auto-populated from the server. If unspecified, all collection sets will be processed.
+        Specific collection set names to copy from the source instance. Supports tab completion with available collection sets.
+        When omitted, all user-defined collection sets are copied (system collection sets are always excluded).
 
     .PARAMETER ExcludeCollectionSet
-        The collection set(s) to exclude - this list is auto-populated from the server
+        Collection set names to exclude from the copy operation. Supports tab completion with available collection sets.
+        Useful when you want to copy most collection sets but skip specific ones due to environment differences.
 
     .PARAMETER NoServerReconfig
-        Upcoming parameter to enable server reconfiguration
+        Reserved parameter for future Data Collector server configuration copying functionality.
+        Currently has no effect as server-level configuration copying is not yet implemented.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -44,7 +47,8 @@ function Copy-DbaDataCollector {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        If collection sets exists on destination server, it will be dropped and recreated.
+        Drops and recreates collection sets that already exist on the destination server.
+        Without this switch, existing collection sets are skipped to prevent accidental data loss.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

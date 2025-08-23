@@ -1,11 +1,13 @@
 function Disable-DbaTraceFlag {
     <#
     .SYNOPSIS
-        Disable a Global Trace Flag that is currently running
+        Disables globally running trace flags on SQL Server instances
 
     .DESCRIPTION
-        The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed.
-        These are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.
+        Turns off trace flags that are currently enabled globally across SQL Server instances using DBCC TRACEOFF.
+        Useful when you need to disable diagnostic trace flags that were enabled for troubleshooting or testing without requiring a restart.
+        Only affects flags currently running in memory - does not modify startup parameters or persistent trace flag settings.
+        Use Set-DbaStartupParameter to manage trace flags that persist after restarts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -18,7 +20,9 @@ function Disable-DbaTraceFlag {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER TraceFlag
-        Trace flag number to disable globally
+        Specifies the trace flag numbers to disable globally across all sessions on the SQL Server instance.
+        Only trace flags that are currently running will be disabled - flags not currently active are skipped with a warning.
+        Supports multiple trace flag numbers to disable several flags in a single operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

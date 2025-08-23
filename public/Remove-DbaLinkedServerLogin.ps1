@@ -1,10 +1,10 @@
 function Remove-DbaLinkedServerLogin {
     <#
     .SYNOPSIS
-        Removes a linked server login.
+        Removes linked server login mappings that define credential relationships between local and remote server logins.
 
     .DESCRIPTION
-        Removes a linked server login.
+        Removes linked server login mappings, which are the credential associations that determine how local SQL Server logins authenticate to remote servers through linked server connections. These mappings control which credentials are used when executing queries against remote servers, so removing them effectively blocks access through that linked server for the specified local login. This is commonly used when decommissioning user access, cleaning up security configurations, or removing entire linked server setups.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,13 +18,16 @@ function Remove-DbaLinkedServerLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LinkedServer
-        The name(s) of the linked server(s).
+        Specifies the name of the linked server containing the login mappings to remove. This is the linked server object that holds the credential associations between local and remote server logins.
+        Use this when you need to remove login mappings from a specific linked server, such as when cleaning up security configurations or decommissioning user access.
 
     .PARAMETER LocalLogin
-        The name(s) of the linked server login(s).
+        Specifies the local login names whose linked server login mappings should be removed. These are the local SQL Server login accounts that have credential mappings defined for remote server access.
+        Use this to remove specific login mappings rather than all mappings for a linked server, such as when a user account is being deactivated or their remote access needs to be revoked.
 
     .PARAMETER InputObject
-        Allows piping from Connect-DbaInstance, Get-DbaLinkedServer, and Get-DbaLinkedServerLogin.
+        Accepts SQL Server instance objects, linked server objects, or linked server login objects from the pipeline for batch removal operations. Compatible with output from Connect-DbaInstance, Get-DbaLinkedServer, and Get-DbaLinkedServerLogin.
+        Use this for pipeline operations when you want to remove login mappings from multiple objects or when chaining commands together for bulk security configuration changes.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -39,12 +39,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     BeforeEach {
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert
     }
 
     AfterAll {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
     }
 
     Context "Creating a new SQL Server Agent alert" {

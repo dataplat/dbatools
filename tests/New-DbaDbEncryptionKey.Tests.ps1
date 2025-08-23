@@ -31,7 +31,6 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $PSDefaultParameterValues["*:Confirm"] = $false
 
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object System.Management.Automation.PSCredential "sqladmin", $passwd
@@ -66,6 +65,8 @@ Describe $CommandName -Tag IntegrationTests {
         if ($delmasterkey) {
             $masterkey | Remove-DbaDbMasterKey -ErrorAction SilentlyContinue
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {
@@ -87,7 +88,6 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $PSDefaultParameterValues["*:Confirm"] = $false
 
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
@@ -124,6 +124,8 @@ Describe $CommandName -Tag IntegrationTests {
             if ($delmasterkey) {
                 $masterkey | Remove-DbaDbMasterKey -ErrorAction SilentlyContinue
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         # TODO: I think I need some background on this. Was the intention to create the key or not to creeate the key?

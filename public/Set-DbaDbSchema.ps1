@@ -1,10 +1,10 @@
 function Set-DbaDbSchema {
     <#
     .SYNOPSIS
-        Updates the owner for one or more schemas.
+        Changes the owner of database schemas to reassign security and object ownership responsibilities
 
     .DESCRIPTION
-        Updates the owner for one or more schemas.
+        Modifies the ownership of database schemas by updating the schema owner property in SQL Server. This is commonly needed when reorganizing database security, transferring ownership from developers to service accounts, or standardizing schema ownership after database migrations. The function works by retrieving the schema object and updating its Owner property through SQL Server Management Objects, then applying the change to the database.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,16 +18,20 @@ function Set-DbaDbSchema {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases contain the schemas to be updated. Required when using SqlInstance parameter.
+        Use this to target specific databases where you need to change schema ownership.
 
     .PARAMETER Schema
-        The name(s) of the schema(s)
+        Specifies the name(s) of the database schemas whose ownership will be changed. Accepts multiple schema names.
+        Common scenarios include transferring ownership from developers to service accounts or standardizing ownership after migrations.
 
     .PARAMETER SchemaOwner
-        The name of the database user that will own the schema(s).
+        Specifies the database user or role that will become the new owner of the specified schemas. Must be a valid database principal.
+        Typically used to assign ownership to service accounts, application users, or standardized roles like db_owner.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase via pipeline input. Use this to work with database objects already retrieved.
+        Useful when you want to filter databases first or work with databases from multiple instances in a single operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

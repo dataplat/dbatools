@@ -1,15 +1,17 @@
 function Get-DbaWsfcAvailableDisk {
     <#
     .SYNOPSIS
-        Gets information about the disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.
+        Retrieves shared storage disks available for clustering but not yet assigned to a Windows Server Failover Cluster.
 
     .DESCRIPTION
-        Gets information about the disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.
+        Identifies shared storage disks that are visible to all cluster nodes and eligible for clustering, but have not yet been added to the cluster's storage pool. This is essential when planning to expand SQL Server Failover Cluster Instances (FCIs) or troubleshooting storage connectivity issues. The function queries each cluster node to ensure disks are properly accessible across the entire cluster before attempting to add them as cluster resources.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the Windows Server Failover Cluster name or any cluster node name to query for available disks.
+        Use this when you need to check shared storage from a specific cluster, especially when managing multiple clusters or troubleshooting storage visibility across cluster nodes.
+        Accepts multiple values to query several clusters simultaneously.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

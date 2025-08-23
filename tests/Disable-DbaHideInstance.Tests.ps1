@@ -24,21 +24,21 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When disabling hide instance" {
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # No specific cleanup needed for this test
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Returns result with HideInstance set to false" {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $hideInstanceResults = Disable-DbaHideInstance -SqlInstance $TestConfig.instance1
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             $hideInstanceResults.HideInstance | Should -BeFalse
         }

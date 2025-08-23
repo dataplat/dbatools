@@ -1,41 +1,46 @@
 function Copy-DbaInstanceAudit {
     <#
     .SYNOPSIS
-        Copy-DbaInstanceAudit migrates server audits from one SQL Server to another.
+        Copies SQL Server audit objects from source to destination instances
 
     .DESCRIPTION
-        By default, all audits are copied. The -Audit parameter is auto-populated for command-line completion and can be used to copy only specific audits.
-
-        If the audit already exists on the destination, it will be skipped unless -Force is used.
+        Migrates SQL Server audit objects and their configurations from one instance to another, preserving audit settings and file paths. This function handles the complex task of recreating audit definitions on destination servers, making it essential for server migrations, disaster recovery scenarios, or standardizing auditing policies across multiple SQL Server instances. By default, all audits are copied, but you can specify individual audits to migrate. If an audit already exists on the destination, it will be skipped unless -Force is used to drop and recreate it.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Source SQL Server instance containing the audit objects to copy. Requires sysadmin access to read audit configurations and their associated file paths.
+        Must be SQL Server 2008 or higher since server audits were introduced in SQL Server 2008.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login credentials for the source SQL Server instance. Use this when the current Windows user doesn't have sysadmin access to read audit objects.
+        Must have sysadmin privileges since audit configurations require elevated permissions to access.
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Destination SQL Server instance where audit objects will be created. Requires sysadmin access to create audits and potentially create audit file directories.
+        Must be SQL Server 2008 or higher since server audits were introduced in SQL Server 2008.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login credentials for the destination SQL Server instance. Use this when the current Windows user doesn't have sysadmin access to create audit objects.
+        Must have sysadmin privileges since creating audits and directories requires elevated permissions.
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Audit
-        The audit(s) to process. Options for this list are auto-populated from the server. If unspecified, all audits will be processed.
+        Specifies which server audits to copy by name. Use this when you only need to migrate specific audits rather than all audits on the server.
+        Supports tab completion with audit names from the source server. If not specified, all audits will be copied.
 
     .PARAMETER ExcludeAudit
-        The audit(s) to exclude. Options for this list are auto-populated from the server.
+        Specifies server audits to skip during the copy operation. Use this when you want to copy most audits but exclude specific ones that shouldn't be migrated.
+        Supports tab completion with audit names from the source server. Cannot be used with the -Audit parameter.
 
     .PARAMETER Path
-        Destination file path. If not specified, the file path of the source will be used (or the default data directory).
+        Specifies the directory path where audit files will be created on the destination server. Use this when the original audit file path from the source doesn't exist on the destination.
+        If not specified, the function attempts to use the source audit's original file path, or falls back to the default data directory if the path doesn't exist.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -44,7 +49,8 @@ function Copy-DbaInstanceAudit {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the audits will be dropped and recreated on Destination.
+        Drops and recreates audits that already exist on the destination server. Also creates missing audit file directories if they don't exist.
+        Without this switch, existing audits are skipped and missing directories cause the operation to fail.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

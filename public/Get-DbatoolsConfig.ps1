@@ -1,27 +1,33 @@
 function Get-DbatoolsConfig {
     <#
     .SYNOPSIS
-        Retrieves configuration elements by name.
+        Retrieves dbatools module configuration settings and preferences.
 
     .DESCRIPTION
-        Retrieves configuration elements by name.
-        Can be used to search the existing configuration list.
+        Retrieves dbatools module configuration settings that control how dbatools functions behave. These settings include connection timeouts, default paths, email configurations, and other module preferences that affect dbatools operations. Use this command to view current settings, troubleshoot dbatools behavior, or identify what configurations are available for customization with Set-DbatoolsConfig.
 
     .PARAMETER FullName
         Default: "*"
-        Search for configurations using the full name
+        Specifies the complete configuration key in Module.Name format to retrieve specific dbatools settings.
+        Use this to find exact configuration values like "sql.connection.timeout" or "mail.smtpserver" without needing to specify module and name separately.
+        Supports wildcards for pattern matching across all configuration keys.
 
     .PARAMETER Name
         Default: "*"
-        The name of the configuration element(s) to retrieve.
-        May be any string, supports wildcards.
+        Specifies the configuration name to search for within a specific module.
+        Use this with the Module parameter to find settings like "timeout" within the "sql" module or "smtpserver" within the "mail" module.
+        Supports wildcards for finding multiple related configuration names.
 
     .PARAMETER Module
         Default: "*"
-        Search configuration by module.
+        Specifies which dbatools module's configuration settings to retrieve.
+        Use this to focus on specific areas like "sql" for connection settings, "mail" for email configurations, or "path" for default file locations.
+        Commonly used modules include sql, mail, path, and logging.
 
     .PARAMETER Force
-        Overrides the default behavior and also displays hidden configuration values.
+        Includes hidden configuration values that are normally not displayed in the output.
+        Use this when troubleshooting dbatools behavior or when you need to see internal configuration settings that control advanced module functionality.
+        Hidden settings often include debugging flags and internal module state information.
 
     .NOTES
         Tags: Module

@@ -51,7 +51,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
         # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
@@ -65,7 +65,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatRemoveInitial = @{
             SqlInstance = $TestConfig.instance2, $TestConfig.instance3
             Database    = $backuprestoredb, $detachattachdb
-            Confirm     = $false
         }
         Remove-DbaDatabase @splatRemoveInitial
 
@@ -88,28 +87,26 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Set-DbaDbOwner @splatSetOwner
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatRemoveFinal = @{
             SqlInstance = $TestConfig.instance2, $TestConfig.instance3
             Database    = $backuprestoredb, $detachattachdb, $backuprestoredb2
-            Confirm     = $false
         }
         Remove-DbaDatabase @splatRemoveFinal -ErrorAction SilentlyContinue
 
         $splatRemoveSupport = @{
             SqlInstance = $TestConfig.instance2
             Database    = $supportDbs
-            Confirm     = $false
         }
         Remove-DbaDatabase @splatRemoveSupport -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Support databases are excluded when AllDatabase selected" {
@@ -257,7 +254,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance3
                 Database    = $backuprestoredb
-                Confirm     = $false
             }
             Remove-DbaDatabase @splatRemoveDb
         }
@@ -310,7 +306,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance3
                 Database    = $backuprestoredb
-                Confirm     = $false
             }
             Remove-DbaDatabase @splatRemoveDb
 
@@ -382,7 +377,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $TestConfig.instance3 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance3 -ExcludeSystem | Remove-DbaDatabase
         }
 
         AfterAll {
@@ -391,7 +386,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $TestConfig.instance3 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance3 -ExcludeSystem | Remove-DbaDatabase
         }
 
         It "Should have renamed a single db" {
@@ -456,7 +451,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance3
                 Database    = $backuprestoredb
-                Confirm     = $false
             }
             Remove-DbaDatabase @splatRemoveDb
         }
@@ -475,7 +469,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].DestinationDatabase | Should -Be $newname
             $files = Get-DbaDbFile -Sqlinstance $TestConfig.instance3 -Database $newname
             ($files.PhysicalName -like "*$newname*").Count | Should -Be $files.Count
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newname -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newname
         }
 
         It "Should prefix databasename and files" {
@@ -492,7 +486,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb"
             $files = Get-DbaDbFile -Sqlinstance $TestConfig.instance3 -Database "$prefix$backuprestoredb"
             ($files.PhysicalName -like "*$prefix$backuprestoredb*").Count | Should -Be $files.Count
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database "$prefix$backuprestoredb" -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database "$prefix$backuprestoredb"
         }
 
         It "Should warn and exit if newname and >1 db specified" {
@@ -514,7 +508,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = Copy-DbaDatabase @splatDetachMultiple 3> $null
             $warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "RestoreTimeClean" -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "RestoreTimeClean"
         }
     }
 
@@ -530,7 +524,6 @@ Describe $CommandName -Tag IntegrationTests {
                 $splatRemoveDb = @{
                     SqlInstance = $TestConfig.instance3
                     Database    = $backuprestoredb
-                    Confirm     = $false
                 }
                 Remove-DbaDatabase @splatRemoveDb
 
@@ -548,7 +541,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             AfterAll {
-                Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $backuprestoredb | Remove-DbaDatabase -Confirm:$false
+                Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $backuprestoredb | Remove-DbaDatabase
                 $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
                 $server2.Query("DROP CREDENTIAL [$TestConfig.azureblob]")
                 $server2.Query("DROP CREDENTIAL dbatools_ci")

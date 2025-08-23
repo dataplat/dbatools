@@ -1,11 +1,12 @@
 function Move-DbaDbFile {
     <#
     .SYNOPSIS
-        Moves database files from one local drive or folder to another.
+        Relocates database files to different drives or folders while maintaining database integrity.
 
     .DESCRIPTION
-        Moves database files from one local drive or folder to another.
-        It will put database offline, update metadata and set it online again.
+        Relocates database data and log files to new locations on the same SQL Server instance. The function takes the database offline, copies files to the new location, updates the database metadata with ALTER DATABASE commands, and brings the database back online.
+
+        This is typically used when you need to move databases to faster storage, free up disk space, or reorganize your file layout without restoring from backup. The function handles both local and remote SQL Server instances, preserves file permissions, and optionally removes the original files after successful moves.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -18,29 +19,38 @@ function Move-DbaDbFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database to be moved.
+        Specifies the user database whose files will be relocated to new paths.
+        System databases (master, model, msdb, tempdb) are not supported for safety reasons.
 
     .PARAMETER FileToMove
-        Pass a hashtable that contains a list of database files and their destination path.
-        Key and value should be the logical name and then the path (e.g. 'db1_log' = 'D:\mssql\logs')
+        Defines specific file movements using a hashtable where keys are logical file names and values are destination directory paths.
+        Use this when you need granular control over where each file goes, like separating data and log files to different drives.
+        Example: @{'MyDB_Data'='E:\Data'; 'MyDB_Log'='F:\Logs'}
 
     .PARAMETER FileType
-        Define the file type to move; accepted values: Data, Log or Both.
-        Default value: Both
-        Exclusive, cannot be used in conjunction with FileToMove.
+        Specifies which file types to relocate: Data, Log, or Both (default).
+        Use this with FileDestination when you want to move all files of a specific type to the same directory.
+        Cannot be combined with FileToMove parameter as they serve different movement strategies.
 
     .PARAMETER FileDestination
-        Destination directory of the database file(s).
+        Sets the target directory where all selected database files will be moved.
+        Used with FileType parameter to move all data files, log files, or both to a single location.
+        Must be accessible to the SQL Server service account and have sufficient space for the files.
 
     .PARAMETER DeleteAfterMove
-        Remove the source database file(s) after the successful move operation.
+        Removes the original database files from their source location after successful relocation.
+        Use this to free up disk space on the source drive once files are confirmed copied and database metadata updated.
+        Files are only deleted after successful copy and database metadata update to prevent data loss.
 
     .PARAMETER FileStructureOnly
-        Return a hashtable of the Database file structure.
-        Modifying the hashtable it can then be utilized with the FileToMove parameter
+        Returns the current file structure as a hashtable template without performing any file operations.
+        Use this to discover logical file names and current paths, then modify the output for use with FileToMove.
+        Helpful for planning complex moves or scripting multiple database relocations.
 
     .PARAMETER Force
-        Database(s) is set offline as part of the move process, this will utilize WITH ROLLBACK IMMEDIATE and rollback any open transaction running against the database(s).
+        Forces the database offline using WITH ROLLBACK IMMEDIATE, terminating active transactions and connections.
+        Use this when the database has active connections that would prevent it from going offline gracefully.
+        Without this switch, the operation may fail if users are connected to the database.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -53,6 +53,8 @@ CREATE TRIGGER dbatoolsci_safety
         $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $dropTrigger = "DROP TRIGGER dbatoolsci_safety ON DATABASE;"
         $serverInstance.Query("$dropTrigger")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets Database Trigger" {

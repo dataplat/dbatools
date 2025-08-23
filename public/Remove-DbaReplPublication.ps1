@@ -19,13 +19,16 @@ function Remove-DbaReplPublication {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database that will be replicated.
+        Specifies the database containing the replication publication to remove. Required when using SqlInstance to identify which database's publications to target.
+        Use this to scope the operation to a specific database when multiple databases have replication configured.
 
     .PARAMETER Name
-        The name of the replication publication
+        Specifies the exact name of the replication publication to remove. Required when using SqlInstance to identify which specific publication to target.
+        Use this when you know the publication name and want to remove a specific publication rather than all publications in a database.
 
     .PARAMETER InputObject
-        A publication object retrieved from Get-DbaReplPublication. Enables piping from Get-DbaReplPublication.
+        Accepts replication publication objects from Get-DbaReplPublication for pipeline operations. Use this when you want to filter publications first, then remove selected ones.
+        Particularly useful when removing multiple publications based on specific criteria or when integrating with other replication management workflows.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

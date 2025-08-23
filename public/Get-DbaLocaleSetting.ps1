@@ -1,15 +1,18 @@
 function Get-DbaLocaleSetting {
     <#
     .SYNOPSIS
-        Gets the Locale settings on a computer.
+        Retrieves Windows locale settings from the registry on SQL Server computers for regional configuration analysis.
 
     .DESCRIPTION
-        Gets the Locale settings on one or more computers.
+        Retrieves Windows locale settings from the Control Panel\International registry key on one or more computers. These settings directly impact SQL Server's date/time formatting, currency display, number formatting, and collation behavior.
+
+        Useful for auditing regional configurations across your SQL Server environment, troubleshooting locale-related issues, or ensuring consistent settings before SQL Server installations. The function accesses the current user's locale settings from HKEY_CURRENT_USER\Control Panel\International.
 
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the computer names where you want to retrieve Windows locale settings from the registry. Accepts SQL Server instance names but extracts only the computer portion.
+        Use this to audit regional configurations across your SQL Server environment, especially before installations or when troubleshooting locale-related issues with date formats, currency display, or collation behavior.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.

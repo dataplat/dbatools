@@ -1,29 +1,33 @@
 function Get-DbaBuild {
     <#
     .SYNOPSIS
-        Returns SQL Server Build infos on a SQL instance
+        Retrieves detailed SQL Server build information including service pack, cumulative update, KB articles, and support lifecycle dates
 
     .DESCRIPTION
-        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
-        It also includes End Of Support dates as specified on Microsoft Life Cycle Policy
+        Identifies the specific build version of SQL Server instances and translates build numbers into meaningful patch levels with their corresponding KB articles.
+        This function helps DBAs quickly determine what service packs and cumulative updates are installed, whether builds have been retired by Microsoft, and when support ends.
+        You can query live SQL Server instances, look up specific build numbers, search by KB article numbers, or find builds by specifying major version with service pack and cumulative update combinations.
+        The function maintains an offline reference index that can be updated online to ensure current patch information and accurate support lifecycle dates.
 
     .PARAMETER Build
-        Instead of connecting to a real instance, pass a string identifying the build to get the info back.
+        Specifies SQL Server build numbers to look up without connecting to live instances. Accepts version strings like "12.00.4502" or "13.0.5026".
+        Use this when you need to identify what service pack and cumulative update a specific build number represents, or to verify patch levels from installation logs.
 
     .PARAMETER Kb
-        Get a KB information based on its number. Supported format: KBXXXXXX, or simply XXXXXX.
+        Looks up SQL Server build information using Knowledge Base article numbers. Accepts formats like "KB4057119" or just "4057119".
+        Use this when you have a KB number from Microsoft documentation or patch notes and need to identify the corresponding SQL Server build version and patch level.
 
     .PARAMETER MajorVersion
-        Get a KB information based on SQL Server version. Can be refined further by -ServicePack and -CumulativeUpdate parameters.
-        Examples: SQL2008 | 2008R2 | 2016
+        Specifies the SQL Server major version to look up build information for specific version and patch level combinations. Accepts formats like "SQL2016", "2016", or "2008R2".
+        Use this with -ServicePack and -CumulativeUpdate parameters when you need to find the exact build number for a specific SQL Server version and patch level combination.
 
     .PARAMETER ServicePack
-        Get a KB information based on SQL Server Service Pack version. Can be refined further by -CumulativeUpdate parameter.
-        Examples: SP0 | 2 | RTM
+        Specifies the service pack level when looking up builds by major version. Accepts formats like "SP1", "1", or "RTM" for initial release. Defaults to "RTM".
+        Requires the -MajorVersion parameter and can be combined with -CumulativeUpdate to pinpoint exact patch levels.
 
     .PARAMETER CumulativeUpdate
-        Get a KB information based on SQL Server Cumulative Update version.
-        Examples: CU0 | CU13 | CU0
+        Specifies the cumulative update level when looking up builds by major version and service pack. Accepts formats like "CU5", "5", or "CU0" for base service pack.
+        Requires the -MajorVersion parameter and works in combination with -ServicePack to identify exact patch levels within a service pack.
 
     .PARAMETER SqlInstance
         Target any number of instances, in order to return their build state.
@@ -36,7 +40,8 @@ function Get-DbaBuild {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Update
-        Adding this switch will look online for the most up to date reference, optionally replacing the local one.
+        Forces an online refresh of the local SQL Server build reference index from Microsoft sources. Updates the cached build database with the latest patch information and support lifecycle dates.
+        Use this when the function warns about stale index data or when you need the most current patch and support information for accurate compliance reporting.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,10 +1,10 @@
 function Get-DbaBackupDevice {
     <#
     .SYNOPSIS
-        Gets SQL Backup Device information for each instance(s) of SQL Server.
+        Retrieves configured backup devices from SQL Server instances for inventory and management
 
     .DESCRIPTION
-        The Get-DbaBackupDevice command gets SQL Backup Device information for each instance(s) of SQL Server.
+        This function returns all backup devices configured on SQL Server instances, including their type (disk, tape, URL), physical locations, and settings. Backup devices are logical names that map to physical backup destinations, allowing DBAs to create standardized backup locations that can be referenced in backup scripts and maintenance plans. Use this to audit backup device configurations across your environment, verify backup paths are accessible, or document your backup infrastructure for compliance and disaster recovery planning.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

@@ -1,10 +1,10 @@
 function Get-DbaDbUserDefinedTableType {
     <#
     .SYNOPSIS
-        Gets database user defined table types
+        Retrieves user-defined table types from SQL Server databases
 
     .DESCRIPTION
-        Gets database user defined table types
+        Retrieves user-defined table types from SQL Server databases, which are custom data types used as table-valued parameters in stored procedures and functions. This command helps DBAs audit these schema-bound objects, document their structure and usage, or identify dependencies before making database changes. Returns detailed information including column definitions, ownership, and creation dates across multiple databases and instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,13 +17,16 @@ function Get-DbaDbUserDefinedTableType {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get Stored Procedures from specific database(s)
+        Specifies which databases to retrieve user-defined table types from. Accepts database names and supports wildcards for pattern matching.
+        Use this when you need to examine table types in specific databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Specifies databases to exclude from the search for user-defined table types. Accepts database names and wildcards.
+        Use this when you want to scan most databases but skip specific ones like system databases or inactive databases.
 
     .PARAMETER Type
-        [OPTIONAL] When provided, the output will be filtered to return only the types given otherwise returns all the table types.
+        Filters results to include only specific user-defined table type names. Accepts an array of type names for multiple selections.
+        Use this when you need to examine particular table types across databases, such as auditing usage of a specific custom type.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

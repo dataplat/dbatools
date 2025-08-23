@@ -1,10 +1,10 @@
 function Start-DbaTrace {
     <#
     .SYNOPSIS
-        Starts SQL Server traces
+        Starts existing SQL Server traces that are currently stopped
 
     .DESCRIPTION
-        Starts SQL Server traces
+        Starts SQL Server traces that have been defined but are not currently running. This function activates traces by setting their status to 1 using sp_trace_setstatus, allowing you to begin collecting trace data for performance monitoring, auditing, or troubleshooting. The default trace cannot be started with this function - use Set-DbaSpConfigure to enable it instead.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -17,10 +17,12 @@ function Start-DbaTrace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
-        A list of trace ids
+        Specifies the numeric IDs of specific traces to start. When omitted, all stopped traces on the instance will be started.
+        Use this when you need to start only particular traces rather than all available stopped traces.
 
     .PARAMETER InputObject
-        Internal parameter for piping
+        Accepts trace objects from the pipeline, typically from Get-DbaTrace. This allows you to filter traces first, then start only the selected ones.
+        Use this parameter when piping trace objects or when you have trace objects from a previous Get-DbaTrace command.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -1,12 +1,14 @@
 function Copy-DbaLinkedServer {
     <#
     .SYNOPSIS
-        Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+        Migrates linked servers and their authentication credentials from one SQL Server instance to another
 
     .DESCRIPTION
-        By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
+        Migrates SQL Server linked servers including all authentication credentials and connection settings from a source instance to one or more destination instances. The function preserves usernames and passwords by using password decryption techniques, eliminating the need to manually recreate linked server configurations and re-enter sensitive credentials.
 
-        Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+        This is particularly useful during server migrations, disaster recovery scenarios, or when consolidating environments where maintaining external data connections is critical. The function handles various provider types and can optionally upgrade older SQL Client providers to current versions during migration.
+
+        Credit: Password decryption techniques provided by Antti Rantasaari (NetSPI, 2014) - https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
     .PARAMETER Source
         Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
@@ -29,16 +31,24 @@ function Copy-DbaLinkedServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LinkedServer
-        The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
+        Specifies which linked servers to copy from the source instance. Accepts an array of linked server names.
+        Use this when you only need to migrate specific linked servers rather than all of them.
+        If omitted, all linked servers from the source will be copied to the destination.
 
     .PARAMETER ExcludeLinkedServer
-        The linked server(s) to exclude - this list is auto-populated from the server
+        Specifies linked servers to skip during the copy operation. Accepts an array of linked server names.
+        Use this when you want to copy most linked servers but exclude problematic ones or those that shouldn't be migrated.
+        This parameter is ignored if LinkedServer is specified.
 
     .PARAMETER UpgradeSqlClient
-        Upgrade any SqlClient Linked Server to the current version
+        Updates older SQL Server Native Client providers (SQLNCLI) to the newest version available on the destination server.
+        Use this when migrating from older SQL Server versions to ensure linked servers use current client libraries.
+        The function automatically detects and upgrades to the highest numbered SQLNCLI provider found on the destination.
 
     .PARAMETER ExcludePassword
-        Copies the logins but does not access, decrypt or create sensitive information
+        Copies linked server definitions without migrating stored passwords or sensitive authentication data.
+        Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+        Linked servers will be created but authentication credentials will need to be reconfigured.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -47,7 +57,9 @@ function Copy-DbaLinkedServer {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
+        Drops and recreates linked servers that already exist on the destination instance.
+        Use this when you need to overwrite existing linked server configurations with updated settings from the source.
+        Without this parameter, existing linked servers on the destination are skipped to prevent accidental overwrites.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

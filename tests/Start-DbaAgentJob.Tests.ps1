@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Start a job" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $jobNames = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)"
             $jobName1, $jobName2, $jobName3 = $jobNames
@@ -44,24 +44,26 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName -StepName "step3" -StepId 3 -Subsystem TransactSql -Command "SELECT 1"
             }
 
-            $global:startJobResults = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1 | Start-DbaAgentJob
+            $startJobResults = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1 | Start-DbaAgentJob
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobNames -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Job $jobNames
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "returns a CurrentRunStatus of not Idle and supports pipe" {
-            $global:startJobResults.CurrentRunStatus -ne "Idle" | Should -Be $true
+            $startJobResults.CurrentRunStatus -ne "Idle" | Should -Be $true
         }
 
         It "returns a CurrentRunStatus of not null and supports pipe" {
-            $global:startJobResults.CurrentRunStatus -ne $null | Should -Be $true
+            $startJobResults.CurrentRunStatus -ne $null | Should -Be $true
         }
 
         It "does not run all jobs" {

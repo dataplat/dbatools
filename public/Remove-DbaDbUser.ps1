@@ -1,12 +1,14 @@
 function Remove-DbaDbUser {
     <#
     .SYNOPSIS
-        Drop database user
+        Removes database users from SQL Server databases with intelligent schema ownership handling
 
     .DESCRIPTION
-        If user is the owner of a schema with the same name and if if the schema does not have any underlying objects the schema will be
-        dropped.  If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be
-        changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
+        Safely removes database users from SQL Server databases while automatically handling schema ownership conflicts that would normally prevent user deletion. This eliminates the manual process of identifying and resolving schema ownership issues before removing users.
+
+        When a user owns schemas, the function intelligently manages the cleanup: schemas with the same name as the user are dropped (if empty), while other owned schemas have their ownership transferred to 'dbo'. If schemas contain objects, use -Force to allow ownership transfer and proceed with user removal.
+
+        The function works across multiple databases and instances, making it ideal for cleanup operations during user deprovisioning or database migrations where you need to remove users without leaving orphaned objects or broken ownership chains.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,19 +21,24 @@ function Remove-DbaDbUser {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies the database(s) from which to remove the specified users. Accepts wildcards for pattern matching.
+        When omitted, the function processes all accessible databases on the instance to find and remove the specified users.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies the database(s) to skip during user removal operations. Use this to protect critical databases like system databases.
+        Commonly used to exclude model, tempdb, or production databases during bulk user cleanup operations.
 
     .PARAMETER User
-        Specifies the list of users to remove.
+        Specifies the database user(s) to remove from the target databases. Accepts multiple user names for bulk operations.
+        The function will automatically handle schema ownership conflicts that typically prevent user deletion.
 
     .PARAMETER InputObject
-        Support piping from Get-DbaDbUser.
+        Accepts user objects from Get-DbaDbUser for pipeline operations. This allows for advanced filtering scenarios.
+        Use this when you need to remove users based on complex criteria like creation date, permissions, or other user properties.
 
     .PARAMETER Force
-        If enabled this will force the change of the owner to 'dbo' for any schema which owner is the User.
+        Forces schema ownership transfer to 'dbo' when the user owns schemas containing database objects. Without this, user removal fails if owned schemas contain objects.
+        Use this during user deprovisioning when you need to ensure complete cleanup regardless of schema dependencies.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

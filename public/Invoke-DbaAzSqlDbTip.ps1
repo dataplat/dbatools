@@ -1,17 +1,14 @@
 function Invoke-DbaAzSqlDbTip {
     <#
     .SYNOPSIS
-        Runs the get-sqldb-tips.sql script from the Microsoft SQL PM team against an Azure SQL Database.
+        Executes Microsoft's Azure SQL performance recommendations script against Azure SQL Database instances.
 
     .DESCRIPTION
-        Executes the get-sqldb-tips.sql script against an Azure SQL Database to collect tips for improving database
-        design, health and performance.
+        Executes Microsoft's Azure SQL Tips script against Azure SQL Database instances to identify performance optimization opportunities and design recommendations. This function runs the get-sqldb-tips.sql script developed by the Azure SQL Product Management team, which analyzes your database configuration, query patterns, and resource utilization to provide actionable improvement suggestions.
 
-        Tips are written by the Azure SQL PM team and you can get more details about what is included here:
-        https://github.com/microsoft/azure-sql-tips
+        The script examines database settings, index usage, query performance metrics, and configuration parameters to generate targeted recommendations with confidence percentages. Each tip includes detailed explanations and links to Microsoft documentation for implementation guidance.
 
-        By default the latest script will be downloaded from the Microsoft Github Repository,
-        if you prefer you can pass in a -LocalFile.
+        By default, the latest version of the tips script is automatically downloaded from the Microsoft GitHub repository at https://github.com/microsoft/azure-sql-tips. You can also specify a local copy using the -LocalFile parameter if you prefer to use a cached or customized version of the script.
 
     .PARAMETER SqlInstance
         The target Azure SQL instance or instances.
@@ -24,36 +21,40 @@ function Invoke-DbaAzSqlDbTip {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AzureDomain
-        By default, this is set to database.windows.net In the event your AzureSqlDb is not on a database.windows.net domain,
-        you can set a custom domain using the AzureDomain parameter. This tells Connect-DbaInstance to login to the
-        database using the method that works best with Azure.
+        Specifies the Azure SQL domain for connection. Defaults to database.windows.net for standard Azure SQL Database instances.
+        Use this when connecting to Azure SQL instances in sovereign clouds like Azure Government (.usgovcloudapi.net) or Azure China (.chinacloudapi.cn).
 
     .PARAMETER Tenant
-        The TenantId for an Azure Instance.
-
-        Default: (Get-DbatoolsConfigValue -FullName 'azure.tenantid')
+        Specifies the Azure AD tenant ID (GUID) for authentication to Azure SQL Database.
+        Required when using Azure Active Directory authentication with multi-tenant applications or when the default tenant cannot be determined automatically.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to run AzSqlTips from. This can be either the zip file release from GitHub or just the tips SQL script.
-        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/microsoft/azure-sql-tips/releases
+        Specifies the path to a local copy of the Azure SQL Tips script files instead of downloading from GitHub.
+        Use this when you need to run a specific version, work in environments without internet access, or have customized the tips script for your organization.
 
     .PARAMETER Database
-        The database(s) to process.
+        Specifies which Azure SQL databases to analyze for performance recommendations.
+        Use this when you want to target specific databases rather than analyzing all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude.
+        Specifies which Azure SQL databases to skip when running performance analysis.
+        Use this with -AllUserDatabases to exclude specific databases like development or test environments from the tips analysis.
 
     .PARAMETER AllUserDatabases
-        Run Azure SQL Tips against all user databases.
+        Analyzes all user databases on the Azure SQL instance for performance recommendations.
+        Excludes the master database and automatically discovers all other databases, making it ideal for comprehensive performance audits.
 
     .PARAMETER ReturnAllTips
-        Sets the flag within the get-sqldb-tips.sql file to return all tips regardless of database state.
+        Returns all available performance tips regardless of current database state or configuration.
+        By default, the script only shows relevant tips based on your database's current settings and usage patterns.
 
     .PARAMETER Compat100
-        Uses the get-sqldb-tips-compat-level-100-only.sql script which is only suitable for database is using compatibility level 100
+        Uses a specialized version of the tips script designed for databases running compatibility level 100 (SQL Server 2008).
+        Only use this when analyzing legacy Azure SQL databases that cannot be upgraded to newer compatibility levels.
 
     .PARAMETER StatementTimeout
-        Timeout in minutes.
+        Sets the query timeout in minutes for the Azure SQL Tips analysis script.
+        Increase this value when analyzing large databases or instances with heavy workloads that may cause the default timeout to be exceeded.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -61,7 +62,8 @@ function Invoke-DbaAzSqlDbTip {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, then AzSqlTips will be downloaded from the internet even if previously cached.
+        Forces a fresh download of the Azure SQL Tips script from GitHub, bypassing any locally cached version.
+        Use this when you want to ensure you're running the latest version or when troubleshooting issues with cached files.
 
     .NOTES
         Tags: Azure, Database

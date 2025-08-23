@@ -1,22 +1,18 @@
 function Set-DbaNetworkConfiguration {
     <#
     .SYNOPSIS
-        Sets the network configuration of a SQL Server instance.
+        Modifies SQL Server network protocol settings including TCP/IP, Named Pipes, and Shared Memory configurations.
 
     .DESCRIPTION
-        Sets the network configuration of a SQL Server instance.
+        Modifies SQL Server network protocol settings through WMI, allowing you to enable or disable network protocols and configure TCP/IP properties like static or dynamic ports. This replaces the need to manually use SQL Server Configuration Manager for network changes.
 
-        Parameters are available for typical tasks like enabling or disabling a protocol or switching between dynamic and static ports.
-        The object returned by Get-DbaNetworkConfiguration can be used to adjust settings of the properties
-        and then passed to this command via pipeline or -InputObject parameter.
+        Common DBA scenarios include switching instances from dynamic to static ports for firewall rules, enabling TCP/IP for remote connections, or configuring specific IP addresses for multi-homed servers. You can also pass modified objects from Get-DbaNetworkConfiguration to make complex property changes.
 
-        A change to the network configuration with SQL Server requires a restart to take effect,
-        support for this can be done via the RestartService parameter.
+        Network configuration changes require a SQL Server service restart to take effect - use the RestartService parameter to handle this automatically, otherwise you'll need to restart the service manually afterward.
 
-        Remote SQL WMI is used by default, with PS Remoting used as a fallback.
+        Uses remote SQL WMI by default with PowerShell remoting as a fallback. Requires administrative privileges on the target server.
 
-        For a detailed explanation of the different properties see the documentation at:
-        https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
+        For detailed property explanations see: https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -25,34 +21,39 @@ function Set-DbaNetworkConfiguration {
         Credential object used to connect to the Computer as a different user.
 
     .PARAMETER EnableProtocol
-        Enables one of the following network protocols: SharedMemory, NamedPipes, TcpIp.
+        Enables a specific SQL Server network protocol for client connections.
+        Use SharedMemory for local-only connections, NamedPipes for legacy applications, or TcpIp for remote access.
+        TCP/IP is required for remote connections and most modern applications.
 
     .PARAMETER DisableProtocol
-        Disables one of the following network protocols: SharedMemory, NamedPipes, TcpIp.
+        Disables a specific SQL Server network protocol to prevent client connections via that method.
+        Commonly used to disable unneeded protocols for security or troubleshooting purposes.
+        Be cautious disabling TCP/IP as it will prevent all remote connections to the instance.
 
     .PARAMETER DynamicPortForIPAll
-        Configures the instance to listen on a dynamic port for all IP addresses.
-        Will enable the TCP/IP protocol if needed.
-        Will set TcpIpProperties.ListenAll to $true if needed.
-        Will reset the last used dynamic port if already set.
+        Configures the instance to use a random port assigned by Windows for all IP addresses.
+        Use this for non-production environments or when you don't need predictable port numbers.
+        Automatically enables TCP/IP protocol and sets ListenAll to true, clearing any existing static port configuration.
 
     .PARAMETER StaticPortForIPAll
-        Configures the instance to listen on one or more static ports for all IP addresses.
-        Will enable the TCP/IP protocol if needed.
-        Will set TcpIpProperties.ListenAll to $true if needed.
+        Configures the instance to use specific port numbers for all IP addresses instead of dynamic ports.
+        Essential for production environments where firewall rules require predictable port numbers.
+        Automatically enables TCP/IP protocol and sets ListenAll to true. Accepts multiple ports as comma-separated values.
 
     .PARAMETER IpAddress
-        Configures the instance to listen on specific IP addresses only. Listening on all other IP addresses will be disabled.
-        Takes an array of string with either the IP address (for listening on a dynamic port) or IP address and port seperated by ":".
-        IPv6 addresses must be enclosed in square brackets, e.g. [2001:db8:4006:812::200e] or [2001:db8:4006:812::200e]:1433 to be able to identify the port.
+        Restricts the instance to listen only on specified IP addresses instead of all available interfaces.
+        Use this on multi-homed servers to control which network interfaces accept SQL Server connections.
+        Format as "192.168.1.10" for dynamic ports or "192.168.1.10:1433" for static ports. IPv6 addresses need square brackets like "[::1]:1433".
 
     .PARAMETER RestartService
-        Every change to the network configuration needs a service restart to take effect.
-        This switch will force a restart of the service if the network configuration has changed.
+        Automatically restarts the SQL Server service when network configuration changes are made.
+        Network configuration changes only take effect after a service restart, so use this to avoid manual restarts.
+        Without this parameter, you must manually restart the SQL Server service for changes to become active.
 
     .PARAMETER InputObject
-        The output object from Get-DbaNetworkConfiguration.
-        Get-DbaNetworkConfiguration has to be run with -OutputType Full (default) to get the complete object.
+        Accepts a network configuration object from Get-DbaNetworkConfiguration for making complex property changes.
+        Use this when you need to modify specific TCP/IP properties like KeepAlive values or make multiple configuration changes.
+        The Get-DbaNetworkConfiguration command must use -OutputType Full to provide the complete configuration object.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

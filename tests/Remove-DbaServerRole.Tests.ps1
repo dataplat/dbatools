@@ -41,14 +41,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor -Confirm:$false
+        $null = Remove-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {
         It "It returns info about server-role removed" {
-            $results = Remove-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor -Confirm:$false
+            $results = Remove-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor
             $results.ServerRole | Should -Be $testRoleExecutor
         }
 

@@ -1,17 +1,20 @@
 function Set-DbaDbState {
     <#
     .SYNOPSIS
-        Sets various options for databases, hereby called "states"
+        Modifies database read/write access, online status, and user access modes
 
     .DESCRIPTION
-        Sets some common "states" on databases:
-        - "RW" options (ReadOnly, ReadWrite)
-        - "Status" options (Online, Offline, Emergency, plus a special "Detached")
-        - "Access" options (SingleUser, RestrictedUser, MultiUser)
+        Modifies database access modes and availability states through ALTER DATABASE commands, eliminating the need to write T-SQL manually for common database administration tasks.
 
-        Returns an object with SqlInstance, Database, RW, Status, Access, Notes
+        This function handles three categories of database state changes:
+        - Read/Write access: Sets databases to READ_ONLY for reporting scenarios or READ_WRITE for normal operations
+        - Online status: Brings databases ONLINE, takes them OFFLINE for maintenance, or sets EMERGENCY mode for corruption recovery
+        - User access: Restricts database access to SINGLE_USER for maintenance, RESTRICTED_USER for admin-only access, or MULTI_USER for normal operations
+        - Database detachment: Safely detaches databases by first removing them from Availability Groups and breaking mirroring relationships when -Force is specified
 
-        Notes gets filled when something went wrong setting the state
+        The -Force parameter rolls back open transactions immediately, allowing state changes to proceed even when active connections exist. Without -Force, operations use NO_WAIT and may fail if connections are blocking the change.
+
+        Returns an object with SqlInstance, Database, RW, Status, Access, and Notes properties. The Notes field contains error details when state changes fail.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -24,40 +27,52 @@ function Set-DbaDbState {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
+        Specifies which databases to modify state for. Accepts single database name, comma-separated list, or wildcards.
+        Use this when you need to target specific databases instead of all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the state change operation when using -AllDatabases.
+        Useful when you want to modify most databases but skip critical production databases or those undergoing maintenance.
 
     .PARAMETER AllDatabases
-        This is a parameter that was included for safety, so you don't accidentally set options on all databases without specifying
+        Indicates that the operation should target all user databases on the instance.
+        Required safety parameter to prevent accidental modification of all databases when no specific database is specified.
 
     .PARAMETER ReadOnly
-        RW Option : Sets the database as READ_ONLY
+        Sets the database to read_ONLY mode, preventing any data modifications.
+        Use this for creating reporting databases, preparing for backups, or when you need to ensure data integrity during maintenance.
 
     .PARAMETER ReadWrite
-        RW Option : Sets the database as READ_WRITE
+        Sets the database to read_WRITE mode, allowing normal data modifications.
+        Use this to restore normal operations after maintenance or to enable writes on a previously read-only database.
 
     .PARAMETER Online
-        Status Option : Sets the database as ONLINE
+        Brings the database online and makes it available for normal operations.
+        Use this to restore database availability after maintenance, upgrades, or recovery operations.
 
     .PARAMETER Offline
-        Status Option : Sets the database as OFFLINE
+        Takes the database offline, making it inaccessible to users and applications.
+        Use this for maintenance tasks like file moves, hardware upgrades, or when you need to ensure no connections during critical operations.
 
     .PARAMETER Emergency
-        Status Option : Sets the database as EMERGENCY
+        Sets the database to EMERGENCY mode for corruption recovery scenarios.
+        Use this when the database won't start normally due to corruption and you need to attempt data recovery or run emergency repairs.
 
     .PARAMETER Detached
-        Status Option : Detaches the database
+        Safely detaches the database from the SQL Server instance, removing it from sys.databases.
+        Use this when moving databases between instances or when you need to work with database files directly. Requires -Force for mirrored or AG databases.
 
     .PARAMETER SingleUser
-        Access Option : Sets the database as SINGLE_USER
+        Restricts database access to a single connection, typically for administrative tasks.
+        Use this during maintenance operations, database restores, or when you need exclusive access to prevent user interference.
 
     .PARAMETER RestrictedUser
-        Access Option : Sets the database as RESTRICTED_USER
+        Limits database access to members of db_owner, dbcreator, or sysadmin roles only.
+        Use this during maintenance windows when you need to allow admin access while blocking regular users.
 
     .PARAMETER MultiUser
-        Access Option : Sets the database as MULTI_USER
+        Restores normal multi-user access to the database, allowing all authorized connections.
+        Use this to return the database to normal operations after completing single-user or restricted-user maintenance tasks.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -66,9 +81,9 @@ function Set-DbaDbState {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        For most options, this translates to instantly rolling back any open transactions
-        that may be stopping the process.
-        For -Detached it is required to break mirroring and Availability Groups
+        Rolls back open transactions immediately and kills active connections to allow the state change to proceed.
+        Use this when normal state changes fail due to blocking connections, but be aware it will cause transaction rollbacks and connection drops.
+        Required for detaching databases that are in Availability Groups or mirroring relationships.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -76,7 +91,8 @@ function Set-DbaDbState {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER InputObject
-        Accepts piped database objects
+        Accepts database objects from Get-DbaDatabase or Get-DbaDbState through the pipeline.
+        Use this to chain commands together, allowing you to filter databases first then modify their states in a single operation.
 
     .NOTES
         Tags: Database, State

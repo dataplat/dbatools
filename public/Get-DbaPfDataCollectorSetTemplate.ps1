@@ -1,19 +1,24 @@
 function Get-DbaPfDataCollectorSetTemplate {
     <#
     .SYNOPSIS
-        Parses Perf Monitor templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\).
+        Retrieves Windows Performance Monitor templates designed for SQL Server monitoring and troubleshooting.
 
     .DESCRIPTION
-        Parses Perf Monitor XML templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\).
+        Retrieves information about predefined Windows Performance Monitor (PerfMon) templates specifically created for SQL Server performance analysis. These templates include counter sets for monitoring long-running queries, PAL (Performance Analysis of Logs) configurations for different SQL Server versions, and other SQL Server-focused performance scenarios.
+
+        The function parses XML template files and returns details like template names, descriptions, sources, and file paths. Use this to discover available monitoring templates before deploying them with Import-DbaPfDataCollectorSetTemplate, eliminating the need to manually browse template directories or guess what counters to collect for specific performance issues.
 
     .PARAMETER Path
-        The path to the template directory. Defaults to the dbatools template repository (\bin\perfmontemplates\).
+        Specifies the directory path containing Performance Monitor template XML files. Defaults to the dbatools built-in template repository (\bin\perfmontemplates\collectorsets).
+        Use this when you have custom template files stored in a different location or want to load templates from a network share.
 
     .PARAMETER Pattern
-        Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaPfDataCollectorSetTemplate.
+        Filters templates by matching text patterns against template names and descriptions using regex syntax. Supports wildcards (* becomes .*).
+        Use this to find templates for specific scenarios like "long.*query" to locate long-running query monitoring templates.
 
     .PARAMETER Template
-        Specifies one or more of the templates provided by dbatools. Press tab to cycle through the list to the options.
+        Specifies one or more template names to retrieve by exact match. Accepts multiple values and supports tab completion to browse available templates.
+        Use this when you know the specific template names you need rather than browsing all available templates.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

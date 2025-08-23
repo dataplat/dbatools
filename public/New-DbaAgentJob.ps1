@@ -1,11 +1,13 @@
 function New-DbaAgentJob {
     <#
     .SYNOPSIS
-        New-DbaAgentJob creates a new job
+        Creates SQL Server Agent jobs with notification settings and schedule assignments
 
     .DESCRIPTION
-        New-DbaAgentJob makes is possible to create a job in the SQL Server Agent.
-        It returns an array of the job(s) created
+        Creates SQL Server Agent jobs with full configuration options including owner assignment, job categories, and comprehensive notification settings.
+        You can configure email, event log, pager, and netsend notifications with specific operators and trigger conditions (success, failure, completion).
+        The function also supports attaching existing schedules during job creation and can automatically create missing job categories when using -Force.
+        This replaces the manual process of using SQL Server Management Studio or T-SQL scripts to create and configure Agent jobs across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.

@@ -1,10 +1,10 @@
 function Get-DbaResourceGovernor {
     <#
     .SYNOPSIS
-        Gets the Resource Governor object
+        Retrieves Resource Governor configuration and status from SQL Server instances
 
     .DESCRIPTION
-        Gets the Resource Governor object
+        Retrieves the Resource Governor object containing configuration details, enabled status, and associated resource pools. Resource Governor allows DBAs to manage SQL Server workload and resource consumption by setting limits on CPU, memory, and I/O usage for different workloads. This function helps you quickly check if Resource Governor is enabled, view classifier functions, and examine current resource pool configurations without writing custom T-SQL queries.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

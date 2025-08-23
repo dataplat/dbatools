@@ -1,22 +1,26 @@
 function Export-DbaDbTableData {
     <#
     .SYNOPSIS
-        Exports data from tables
+        Generates INSERT statements from table data for migration and deployment scripts
 
     .DESCRIPTION
-        Exports data from tables
+        Creates executable INSERT statements from existing table data, making it easy to move data between SQL Server instances or environments. This is particularly useful for migrating reference tables, lookup data, or configuration tables where you need the actual data values rather than just the table structure. The generated scripts include proper USE database context and can be saved to files or piped to other commands for further processing.
 
     .PARAMETER InputObject
-        Pipeline input from Get-DbaDbTable
+        Accepts table objects from Get-DbaDbTable through the pipeline.
+        Use this to process specific tables you've already identified rather than specifying table names again.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Sets the directory where output files will be created when not using FilePath.
+        Defaults to the dbatools export directory configured in module settings.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Specifies the complete path and filename for the output SQL script.
+        Use this when you need the INSERT statements saved to a specific file location for deployment or version control.
 
     .PARAMETER Encoding
-        Specifies the file encoding. The default is UTF8.
+        Controls the character encoding of the exported SQL file. Defaults to UTF8.
+        Use UTF8 for compatibility with most modern SQL tools, or ASCII for older systems that don't support Unicode.
 
         Valid values are:
           - ASCII: Uses the encoding for the ASCII (7-bit) character set.
@@ -29,19 +33,24 @@ function Export-DbaDbTableData {
           - Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
 
     .PARAMETER Passthru
-        Output script to console
+        Displays the generated INSERT statements in the PowerShell console in addition to file output.
+        Useful for reviewing the script content before execution or when piping to other commands.
 
     .PARAMETER BatchSeparator
-        Specifies the Batch Separator to use. Default is None
+        Adds batch separators (like GO) between INSERT statements in the output script.
+        Use this when creating deployment scripts that will be executed in SQL Server Management Studio or sqlcmd.
 
     .PARAMETER NoPrefix
-        Do not include a Prefix
+        Excludes the USE database statement and other prefixes from the generated script.
+        Use this when combining output with other scripts or when the database context is already established.
 
     .PARAMETER NoClobber
-        Do not overwrite file
+        Prevents overwriting existing files at the specified FilePath.
+        Use this as a safety measure to avoid accidentally replacing important deployment scripts.
 
     .PARAMETER Append
-        Append to file
+        Adds the INSERT statements to the end of an existing file instead of creating a new one.
+        Useful when building comprehensive deployment scripts from multiple table exports or combining with other SQL operations.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed

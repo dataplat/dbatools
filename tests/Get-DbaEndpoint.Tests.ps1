@@ -23,10 +23,6 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $global:TestConfig = Get-TestConfig
-    }
-
     Context "When connecting to SQL Server" {
         It "gets some endpoints" {
             $results = @(Get-DbaEndpoint -SqlInstance $TestConfig.instance2)

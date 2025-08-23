@@ -1,10 +1,10 @@
 function Get-DbaDbStoredProcedure {
     <#
     .SYNOPSIS
-        Gets database Stored Procedures
+        Retrieves stored procedures from SQL Server databases with detailed metadata and filtering options
 
     .DESCRIPTION
-        Gets database Stored Procedures
+        Retrieves stored procedures from one or more SQL Server databases, returning detailed information including schema, creation dates, and implementation details. This function helps DBAs inventory stored procedures across instances, analyze database objects for documentation or migration planning, and locate specific procedures by name or schema. You can filter results by database, schema, or procedure name, and exclude system stored procedures to focus on user-defined objects. Supports multi-part naming conventions for precise targeting of specific procedures.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,22 +17,28 @@ function Get-DbaDbStoredProcedure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get Stored Procedures from specific database(s)
+        Specifies which databases to search for stored procedures. Accepts database names and supports wildcards.
+        Use this when you need to focus on specific databases instead of searching across all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Excludes specified databases from the stored procedure search. Accepts database names and supports wildcards.
+        Useful when you want results from most databases but need to skip specific ones like development or staging databases.
 
     .PARAMETER ExcludeSystemSp
-        This switch removes all system objects from the Stored Procedure collection
+        Excludes system stored procedures from results, showing only user-defined stored procedures.
+        Use this when you want to focus on custom business logic and avoid the hundreds of built-in SQL Server system procedures.
 
     .PARAMETER Name
-        Name(s) of the stored procedure(s) to return. It is possible to specify two-part names such as schemaname.procname and three-part names such as dbname.schemaname.procname.
+        Specifies exact stored procedure names to retrieve. Supports two-part names (schema.procedure) and three-part names (database.schema.procedure).
+        Use this when searching for specific procedures by name rather than browsing all procedures in a database or schema.
 
     .PARAMETER Schema
-        Only return procedures from the specified schema.
+        Filters results to stored procedures within the specified schema(s). Accepts multiple schema names.
+        Useful for organizing results by application area or when working with multi-tenant databases that separate objects by schema.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline processing.
+        Use this to chain commands when you need to filter databases first, then retrieve stored procedures from the filtered results.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

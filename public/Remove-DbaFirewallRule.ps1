@@ -1,20 +1,16 @@
 function Remove-DbaFirewallRule {
     <#
     .SYNOPSIS
-        Removes firewall rules for SQL Server instances from the target computer.
+        Removes Windows firewall rules for SQL Server Engine, Browser, and DAC connections from target computers.
 
     .DESCRIPTION
-        Removes firewall rules for SQL Server instances from the target computer.
-        As the group and the names of the firewall rules are fixed, this command
-        only works for rules created with New-DbaFirewallRule.
+        Removes Windows firewall rules for SQL Server components from target computers, cleaning up network access rules when decommissioning instances or changing security configurations. This command only works with firewall rules that were previously created using New-DbaFirewallRule, as it relies on specific naming conventions and rule groups.
 
-        This is basically a wrapper around Remove-NetFirewallRule executed at the target computer.
-        So this only works if Remove-NetFirewallRule works on the target computer.
+        The function can remove rules for SQL Server Engine connections (typically port 1433 for default instances), SQL Server Browser service (UDP port 1434), and Dedicated Admin Connection (DAC) ports. This is particularly useful when decommissioning SQL Server instances, changing network security policies, or troubleshooting connectivity issues.
 
-        The functionality is currently limited. Help to extend the functionality is welcome.
+        This command executes Remove-NetFirewallRule remotely on target computers using PowerShell remoting, so it requires appropriate permissions and network connectivity to the target systems. The function provides detailed status reporting for each removal operation, including success status and any warnings or errors encountered.
 
-        As long as you can read this note here, there may be breaking changes in future versions.
-        So please review your scripts using this command after updating dbatools.
+        The functionality is currently limited to rules created by dbatools. Future versions may introduce breaking changes, so review scripts after updating dbatools.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -23,20 +19,13 @@ function Remove-DbaFirewallRule {
         Credential object used to connect to the Computer as a different user.
 
     .PARAMETER Type
-        Removes firewall rules for the given type(s).
-
-        Valid values are:
-        * Engine - for the SQL Server instance
-        * Browser - for the SQL Server Browser
-        * DAC - for the dedicated admin connection (DAC)
-        * AllInstance - for all firewall rules on the target computer related to SQL Server
-
-        The default is @('Engine', 'DAC').
-        As the Browser might be needed by other instances, the firewall rule for the SQL Server Browser is
-        never removed with the firewall rule of the instance but only removed if 'Browser' is used.
+        Specifies which types of SQL Server firewall rules to remove from the target computer.
+        Use this to control exactly which network access rules are cleaned up when decommissioning or reconfiguring SQL Server instances.
+        Engine removes rules for SQL Server database connections, Browser removes UDP port 1434 rules for SQL Server Browser service, DAC removes Dedicated Admin Connection rules, and AllInstance removes all SQL Server-related rules. Defaults to Engine and DAC since Browser rules are often shared between multiple instances.
 
     .PARAMETER InputObject
-        The output object(s) from Get-DbaFirewallRule.
+        Accepts firewall rule objects from Get-DbaFirewallRule for pipeline-based removal operations.
+        Use this when you need to filter or review existing firewall rules before removing them, allowing for more precise control over which rules get deleted.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

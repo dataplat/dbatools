@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sqlDeleteOp2Dest = "EXEC msdb.dbo.sp_delete_operator @name=N'$operatorName2'"
         $null = $destCleanupServer.Query($sqlDeleteOp2Dest)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying operators" {

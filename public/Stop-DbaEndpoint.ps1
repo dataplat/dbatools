@@ -1,10 +1,10 @@
 function Stop-DbaEndpoint {
     <#
     .SYNOPSIS
-        Stops endpoints on a SQL Server instance.
+        Stops SQL Server communication endpoints like Service Broker, Database Mirroring, or custom TCP endpoints.
 
     .DESCRIPTION
-        Stops endpoints on a SQL Server instance.
+        Stops specific or all SQL Server endpoints on target instances. Endpoints are communication channels that SQL Server uses for features like Service Broker messaging, Database Mirroring, Availability Groups, and custom applications. You might need to stop endpoints during maintenance windows, troubleshooting connectivity issues, or when decommissioning specific services. This command safely stops the endpoints without dropping them, so they can be restarted later with Start-DbaEndpoint.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,16 @@ function Stop-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
-        Only stop specific endpoints.
+        Specifies the names of specific endpoints to stop. Accepts multiple endpoint names as an array.
+        Use this when you need to stop only certain endpoints while leaving others running, such as stopping a Service Broker endpoint for maintenance while keeping Database Mirroring endpoints active.
 
     .PARAMETER AllEndpoints
-        Stops all endpoints on an instance.
+        Stops all endpoints on the specified SQL Server instance. Required when using SqlInstance parameter if Endpoint is not specified.
+        Use this during full maintenance windows or when you need to completely disable all endpoint communication for troubleshooting network connectivity issues.
 
     .PARAMETER InputObject
-        Enables piping from Get-Endpoint.
+        Accepts endpoint objects from Get-DbaEndpoint for pipeline operations. Allows filtering and processing endpoints before stopping them.
+        Use this for complex scenarios where you need to filter endpoints based on their properties before stopping them.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

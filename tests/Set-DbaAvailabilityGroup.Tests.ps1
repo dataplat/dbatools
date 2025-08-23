@@ -43,7 +43,6 @@ Describe $CommandName -Tag IntegrationTests {
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
-            Confirm      = $false
         }
         $null = New-DbaAvailabilityGroup @splatPrimary
 
@@ -55,20 +54,20 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "sets ag properties" {
         It "returns modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled:$false
+            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -DtcSupportEnabled:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $false
         }
         It "returns newly modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled
+            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -DtcSupportEnabled
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $true
         }

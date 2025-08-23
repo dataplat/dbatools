@@ -1,10 +1,10 @@
 function Get-DbaDbEncryptionKey {
     <#
     .SYNOPSIS
-        Gets database encryption keys
+        Retrieves Transparent Data Encryption (TDE) database encryption keys from SQL Server databases
 
     .DESCRIPTION
-        Gets database encryption keys
+        Retrieves detailed information about Transparent Data Encryption (TDE) database encryption keys including encryption state, algorithm, and certificate details. This function helps DBAs audit encrypted databases, verify TDE configuration, and gather key information for compliance reporting or troubleshooting encryption issues. Returns comprehensive key properties like thumbprint, encryption type, and important dates for certificate rotation planning.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -17,13 +17,16 @@ function Get-DbaDbEncryptionKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Get encryption key from specific database
+        Specifies which databases to retrieve TDE encryption keys from. Accepts wildcards for pattern matching.
+        Use this when you need to check encryption status for specific databases instead of all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Database(s) to ignore when retrieving encryption keys
+        Excludes specific databases from the encryption key retrieval operation. Useful when scanning all databases except certain ones like system databases or test databases.
+        Commonly used to skip tempdb or databases that are known to be unencrypted.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase or other dbatools commands. This allows you to filter databases using Get-DbaDatabase's extensive filtering options before checking encryption keys.
+        Particularly useful for complex database selection scenarios or when working with specific database collections.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,13 +1,14 @@
 function Remove-DbaPfDataCollectorCounter {
     <#
     .SYNOPSIS
-        Removes a Performance Data Collector Counter.
+        Removes specific performance counters from Windows Performance Monitor Data Collector Sets.
 
     .DESCRIPTION
-        Removes a Performance Data Collector Counter.
+        Removes performance counters from existing Data Collector Sets in Windows Performance Monitor. This allows you to clean up monitoring configurations by removing counters that are no longer needed, reducing resource consumption and focusing on relevant metrics. Commonly used when fine-tuning SQL Server performance monitoring setups or removing counters that were added for troubleshooting specific issues.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computer(s) where the Performance Monitor Data Collector Set is configured. Accepts multiple computer names for bulk operations.
+        Use this when you need to remove counters from collector sets on remote SQL Server machines or when managing performance monitoring across multiple servers.
 
     .PARAMETER Credential
         Allows you to login to the target computer using alternative credentials. To use:
@@ -15,16 +16,20 @@ function Remove-DbaPfDataCollectorCounter {
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
     .PARAMETER CollectorSet
-        The name of the Collector Set to search.
+        Specifies the name of the Performance Monitor Data Collector Set containing the counters to be removed. Supports wildcards for pattern matching across multiple sets.
+        Use this when you know the specific collector set name where your performance counters are configured, such as 'System Correlation' or custom SQL Server monitoring sets.
 
     .PARAMETER Collector
-        The name of the Collector to remove.
+        Specifies the name of the individual data collector within the collector set that contains the performance counters to remove. Supports multiple collector names.
+        Use this to target specific data collectors when your collector set contains multiple collectors, allowing you to remove counters from only the collectors you specify.
 
     .PARAMETER Counter
-        The name of the Counter - in the form of '\Processor(_Total)\% Processor Time'.
+        Specifies the exact performance counter name(s) to remove from the data collector. Must use the full counter path format like '\Processor(_Total)\% Processor Time' or '\SQLServer:Buffer Manager\Buffer cache hit ratio'.
+        Use this when you need to remove specific SQL Server or system performance counters that are no longer needed for monitoring, such as counters added for troubleshooting that are now consuming unnecessary resources.
 
     .PARAMETER InputObject
-        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+        Accepts performance counter objects from Get-DbaPfDataCollectorCounter via the pipeline, allowing you to remove counters discovered through previous queries.
+        Use this when you want to first review existing counters with Get-DbaPfDataCollectorCounter and then selectively remove specific ones through pipeline operations.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

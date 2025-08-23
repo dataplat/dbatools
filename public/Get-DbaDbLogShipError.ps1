@@ -1,11 +1,13 @@
 function Get-DbaDbLogShipError {
     <#
     .SYNOPSIS
-        Get-DbaDbLogShipError returns all the log shipping errors that occurred
+        Retrieves log shipping error details from msdb to troubleshoot failed backup, copy, and restore operations
 
     .DESCRIPTION
-        When your log shipping fails it's sometimes hard to see why is fails.
-        Using this function you'll be able to find out what went wrong in a short amount of time.
+        Queries the log shipping monitor error detail table in msdb to return comprehensive error information when log shipping operations fail.
+        Identifies which specific action failed (backup on primary, copy, or restore on secondary) along with session details and error messages.
+        Saves time by consolidating error details from both primary and secondary instances into a single view, so you don't have to manually query multiple system tables.
+        Essential for troubleshooting log shipping failures and determining whether issues occurred during backup, file copy, or database restore phases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -18,28 +20,32 @@ function Get-DbaDbLogShipError {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Allows you to filter the results to only return the databases you're interested in. This can be one or more values separated by commas.
-        This is not a wildcard and should be the exact database name. See examples for more info.
+        Specifies which databases to include when retrieving log shipping errors. Requires exact database names, not wildcards.
+        Use this when troubleshooting specific databases rather than reviewing all log shipped databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Allows you to filter the results to only return the databases you're not interested in. This can be one or more values separated by commas.
-        This is not a wildcard and should be the exact database name.
+        Excludes specific databases from the log shipping error results. Requires exact database names, not wildcards.
+        Useful when you want to see errors for all databases except certain ones, like excluding test databases from production error reviews.
 
     .PARAMETER Action
-        Filter to get the log shipping action that has occurred like Backup, Copy, Restore.
-        By default all the actions are returned.
+        Filters errors by log shipping operation type: Backup (primary), Copy (between servers), or Restore (secondary).
+        Use this to isolate which phase of log shipping is failing when troubleshooting multi-step log shipping workflows.
 
     .PARAMETER DateTimeFrom
-        Filter the results based on the date starting from datetime X
+        Sets the earliest date and time for error records to include in results.
+        Essential for focusing on recent failures or analyzing errors that occurred after a specific event or change.
 
     .PARAMETER DateTimeTo
-        Filter the results based on the date ending with datetime X
+        Sets the latest date and time for error records to include in results.
+        Combined with DateTimeFrom, this creates a specific time window for analyzing log shipping failures during maintenance windows or incidents.
 
     .PARAMETER Primary
-        Allows to filter the results to only return values that apply to the primary instance.
+        Returns only errors from backup operations that occur on the primary server.
+        Use this when troubleshooting backup failures or primary-side log shipping issues like insufficient disk space or backup device problems.
 
     .PARAMETER Secondary
-        Allows to filter the results to only return values that apply to the secondary instance.
+        Returns only errors from copy and restore operations that occur on secondary servers.
+        Use this when troubleshooting file transfer failures or restore issues on the destination server, such as network connectivity or disk space problems.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

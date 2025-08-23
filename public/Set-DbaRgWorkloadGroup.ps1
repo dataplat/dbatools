@@ -1,12 +1,13 @@
 function Set-DbaRgWorkloadGroup {
     <#
     .SYNOPSIS
-        Sets a workload group for use by the Resource Governor on the specified SQL Server.
+        Modifies Resource Governor workload group settings to control query resource consumption and limits.
 
     .DESCRIPTION
-        Sets a workload group for use by the Resource Governor on the specified SQL Server.
-        A workload group represents a subset of resources of an instance of the Database Engine.
-        When changing a plan affecting setting, the new setting will only take effect in previously cached plans after executing 'DBCC FREEPROCCACHE (pool_name);'.
+        Modifies configuration settings for Resource Governor workload groups, which control how SQL Server allocates CPU, memory, and parallelism resources to different categories of queries and connections.
+        Use this function to adjust resource limits for specific workload groups when you need to prioritize critical applications, limit resource-hungry queries, or enforce service level agreements through resource allocation policies.
+        Changes automatically trigger a Resource Governor reconfiguration unless skipped, and plan-affecting settings only apply to new query plans after clearing the procedure cache.
+        Supports both internal resource pools (standard workloads) and external resource pools (R/Python integration scenarios).
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -15,38 +16,48 @@ function Set-DbaRgWorkloadGroup {
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER WorkloadGroup
-        Name of the workload group to be configured.
+        Name of the specific workload group to modify within the resource pool.
+        Use this to target individual workload groups when you need to adjust resource limits for specific application categories or user groups.
 
     .PARAMETER ResourcePool
-        Name of the resource pool to create the workload group in.
+        Name of the resource pool that contains the workload group to be modified.
+        Required when specifying WorkloadGroup by name rather than piping from Get-DbaRgWorkloadGroup.
 
     .PARAMETER ResourcePoolType
-        Internal or External
+        Specifies whether to target Internal resource pools (standard SQL workloads) or External resource pools (R/Python integration scenarios).
+        Choose Internal for typical database workloads, or External when managing Machine Learning Services resource allocation.
 
     .PARAMETER Importance
-        Specifies the relative importance of a request in the workload group.
+        Sets the relative priority level for requests within this workload group compared to other groups in the same resource pool.
+        Use HIGH for critical business applications, MEDIUM for standard workloads, or LOW for background processes that can tolerate delays.
 
     .PARAMETER RequestMaximumMemoryGrantPercentage
-        Specifies the maximum amount of memory that a single request can take from the pool.
+        Sets the maximum percentage of the resource pool's memory that any single query can request for operations like sorting and hashing.
+        Values range from 1-100 percent. Use lower values to prevent single queries from monopolizing memory resources.
 
     .PARAMETER RequestMaximumCpuTimeInSeconds
-        Specifies the maximum amount of CPU time, in seconds, that a request can use.
+        Defines the maximum CPU time in seconds that any single request can consume before being terminated.
+        Set this to prevent runaway queries from consuming excessive CPU resources. Use 0 for unlimited CPU time.
 
     .PARAMETER RequestMemoryGrantTimeoutInSeconds
-        Specifies the maximum time, in seconds, that a query can wait for a memory grant (work buffer memory) to become available.
+        Sets how long queries can wait for memory grants before timing out with insufficient memory errors.
+        Increase this for environments with heavy memory contention, or decrease to fail fast when memory is unavailable.
 
     .PARAMETER MaximumDegreeOfParallelism
-        Specifies the maximum degree of parallelism (MAXDOP) for parallel query execution.
+        Controls the maximum number of parallel processors that queries in this workload group can use.
+        Override the server-level MAXDOP setting for specific workload groups to optimize resource allocation based on workload characteristics.
 
     .PARAMETER GroupMaximumRequests
-        Specifies the maximum number of simultaneous requests that are allowed to execute in the workload group.
+        Limits the total number of concurrent requests that can execute simultaneously within this workload group.
+        Use this to prevent resource pool saturation by limiting how many queries from this group can run at once.
 
     .PARAMETER SkipReconfigure
-        Resource Governor requires a reconfiguriation for workload group changes to take effect.
-        Use this switch to skip issuing a reconfigure for the Resource Governor.
+        Prevents automatic Resource Governor reconfiguration after making workload group changes.
+        Use this when making multiple configuration changes and you want to reconfigure manually once at the end to minimize disruption.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaRgWorkloadGroup.
+        Accepts workload group objects piped from Get-DbaRgWorkloadGroup for bulk configuration operations.
+        Allows you to modify multiple workload groups across different instances in a single pipeline operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

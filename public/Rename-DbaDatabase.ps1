@@ -1,27 +1,29 @@
 function Rename-DbaDatabase {
     <#
     .SYNOPSIS
-        Changes database name, logical file names, file group names and physical file names (optionally handling the move). BETA VERSION.
+        Renames database names, filegroups, logical files, and physical files using customizable templates with placeholder support.
 
     .DESCRIPTION
-        Can change every database metadata that can be renamed.
-        The ultimate goal is choosing to have a default template to enforce in your environment
-        so your naming convention for every bit can be put in place in no time.
-        The process is as follows (it follows the hierarchy of the entities):
-        - database name is changed (optionally, forcing users out)
-        - filegroup name(s) are changed accordingly
-        - logical name(s) are changed accordingly
-        - physical file(s) are changed accordingly
-        - if Move is specified, the database will be taken offline and the move will initiate, then it will be taken online
-        - if Move is not specified, the database remains online (unless SetOffline), and you are in charge of moving files
-        If any of the above fails, the process stops.
-        Please take a backup of your databases BEFORE using this, and remember to backup AFTER (also a FULL backup of master)
+        Systematically renames all database components using template-based naming conventions to enforce consistent standards across your SQL Server environment.
+        This function addresses the common challenge of standardizing database naming when inheriting inconsistent systems or implementing new naming policies.
 
-        It returns an object for each database with all the renames done, plus hidden properties showing a "human" representation of them.
+        The renaming process follows SQL Server's object hierarchy and executes in this order:
+        - Database name is changed (optionally forcing users out)
+        - Filegroup names are changed accordingly
+        - Logical file names are changed accordingly
+        - Physical file names are changed accordingly
+        - If Move is specified, the database goes offline for file operations, then back online
+        - If Move is not specified, the database remains online (unless SetOffline), and you handle file moves manually
 
-        It's better you store the resulting object in a variable so you can inspect it in case of issues, e.g. "$result = Rename-DbaDatabase ....."
+        The function uses powerful template placeholders like <DBN> for database name, <FGN> for filegroup name, <DATE> for current date, and <FT> for file type.
+        When naming conflicts occur, automatic counters are appended to ensure uniqueness.
+        If any step fails, the entire process stops to prevent partial renames that could leave your database in an inconsistent state.
 
-        To get a grasp without worrying of what would happen under the hood, use "Rename-DbaDatabase .... -Preview | Select-Object *"
+        Always backup your databases before using this function, and take a full backup of master after completion.
+        The function returns detailed objects showing all completed renames, with hidden properties providing human-readable summaries.
+
+        Store results in a variable for troubleshooting: "$result = Rename-DbaDatabase ....."
+        Use the -Preview parameter first to see exactly what changes would occur: "Rename-DbaDatabase .... -Preview | Select-Object *"
 
     .PARAMETER SqlInstance
         Target any number of instances, in order to return their build state.
@@ -34,85 +36,57 @@ function Rename-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Targets only specified databases
+        Specifies which databases to include in the renaming operation. Accepts database names, wildcards, or arrays of database names.
+        Use this when you need to rename specific databases instead of all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Excludes only specified databases
+        Specifies databases to exclude from the renaming operation. Accepts database names, wildcards, or arrays of database names.
+        Use this to protect specific databases when using -AllDatabases or when you want to process most databases except certain ones.
 
     .PARAMETER AllDatabases
-        If you want to apply the naming convention system wide, you need to pass this parameter
+        Applies the renaming operation to all user databases on the SQL Server instance. System databases are automatically excluded.
+        Use this switch when standardizing naming conventions across your entire instance rather than targeting specific databases.
 
     .PARAMETER DatabaseName
-        Pass a template to rename the database name. Valid placeholders are:
-        - <DBN> current database name
-        - <DATE> date (yyyyMMdd)
+        Specifies a template for renaming database names using placeholder substitution. Creates new database names based on the template pattern.
+        Use this when you need to standardize database names according to organizational naming conventions. Common patterns include adding prefixes, suffixes, or date stamps.
+        Valid placeholders are: <DBN> (current database name), <DATE> (current date in yyyyMMdd format).
 
     .PARAMETER FileGroupName
-        Pass a template to rename file group name. Valid placeholders are:
-        - <FGN> current filegroup name
-        - <DBN> current database name
-        - <DATE> date (yyyyMMdd)
-        If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
+        Specifies a template for renaming filegroup names within databases using placeholder substitution. Note that the PRIMARY filegroup cannot be renamed due to SQL Server restrictions.
+        Use this when you need consistent filegroup naming across databases or when implementing data organization strategies that require specific filegroup names.
+        Valid placeholders are: <FGN> (current filegroup name), <DBN> (current database name), <DATE> (current date in yyyyMMdd format). If distinct names cannot be generated, a counter is appended (0001, 0002, etc).
 
     .PARAMETER LogicalName
-        Pass a template to rename logical name. Valid placeholders are:
-        - <FT> file type (ROWS, LOG)
-        - <LGN> current logical name
-        - <FGN> current filegroup name
-        - <DBN> current database name
-        - <DATE> date (yyyyMMdd)
-        If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
+        Specifies a template for renaming the logical names of database files using placeholder substitution. Logical names are used internally by SQL Server to reference files.
+        Use this when you need consistent logical file naming for backup operations, maintenance scripts, or troubleshooting, as logical names are referenced in many SQL commands.
+        Valid placeholders are: <FT> (file type: ROWS, LOG, MMO, FS), <LGN> (current logical name), <FGN> (current filegroup name), <DBN> (current database name), <DATE> (current date in yyyyMMdd format). If distinct names cannot be generated, a counter is appended (0001, 0002, etc).
 
     .PARAMETER FileName
-        Pass a template to rename file name. Valid placeholders are:
-        - <FNN> current file name (the basename, without directory nor extension)
-        - <FT> file type (ROWS, LOG, MMO, FS)
-        - <LGN> current logical name
-        - <FGN> current filegroup name
-        - <DBN> current database name
-        - <DATE> date (yyyyMMdd)
-        If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
+        Specifies a template for renaming physical database file names on disk using placeholder substitution. Changes only the file name, preserving the original directory and file extension.
+        Use this when you need to align physical file names with your database naming standards for easier file management, monitoring, and disaster recovery operations.
+        Valid placeholders are: <FNN> (current file name without directory or extension), <FT> (file type: ROWS, LOG, MMO, FS), <LGN> (current logical name), <FGN> (current filegroup name), <DBN> (current database name), <DATE> (current date in yyyyMMdd format). If distinct names cannot be generated, a counter is appended (0001, 0002, etc).
 
     .PARAMETER ReplaceBefore
-        If you pass this switch, all upper level "current names" will be inspected and replaced BEFORE doing the
-        rename according to the template in the current level (remember the hierarchy):
-        Let's say you have a database named "dbatools_HR", composed by 3 files
-        - dbatools_HR_Data.mdf
-        - dbatools_HR_Index.ndf
-        - dbatools_HR_log.ldf
-        Rename-DbaDatabase .... -Database "dbatools_HR" -DatabaseName "dbatools_HRARCHIVE" -FileName '<DBN><FNN>'
-        would end up with this logic:
-        - database --> no placeholders specified
-        - dbatools_HR to dbatools_HRARCHIVE
-        - filenames placeholders specified
-        <DBN><FNN> --> current database name + current filename"
-        - dbatools_HR_Data.mdf to dbatools_HRARCHIVEdbatools_HR_Data.mdf
-        - dbatools_HR_Index.mdf to dbatools_HRARCHIVEdbatools_HR_Data.mdf
-        - dbatools_HR_log.ldf to dbatools_HRARCHIVEdbatools_HR_log.ldf
-        Passing this switch, instead, e.g.
-        Rename-DbaDatabase .... -Database "dbatools_HR" -DatabaseName "dbatools_HRARCHIVE" -FileName '<DBN><FNN>' -ReplaceBefore
-        end up with this logic instead:
-        - database --> no placeholders specified
-        - dbatools_HR to dbatools_HRARCHIVE
-        - filenames placeholders specified,
-        <DBN><FNN>, plus -ReplaceBefore --> current database name + replace OLD "upper level" names inside the current filename
-        - dbatools_HR_Data.mdf to dbatools_HRARCHIVE_Data.mdf
-        - dbatools_HR_Index.mdf to dbatools_HRARCHIVE_Data.mdf
-        - dbatools_HR_log.ldf to dbatools_HRARCHIVE_log.ldf
+        Modifies how placeholder substitution works by removing old database, filegroup, and logical names from current names before applying templates. This prevents duplicate naming components in nested scenarios.
+        Use this when your existing names already contain components that would be duplicated by the template placeholders, resulting in cleaner final names.
+        For example, with -ReplaceBefore, renaming database "HR_DB" to "PROD_HR" and using template "<DBN>_Data" results in "PROD_HR_Data" instead of "PROD_HR_HR_DB_Data".
 
     .PARAMETER Force
-        Kills any open session to be able to do renames.
+        Terminates all active connections to target databases to allow renaming operations to proceed. Required when databases have active connections that would prevent rename operations.
+        Use this when you need to force database renames in production environments where applications may maintain persistent connections.
 
     .PARAMETER SetOffline
-        Kills any open session and sets the database offline to be able to move files
+        Forces the database offline after renaming operations to prepare for manual file moves. Terminates active connections and sets database state to offline.
+        Use this when you need to rename physical files but want to handle the file movement operations manually rather than having the function move them automatically.
 
     .PARAMETER Move
-        If you want this function to move files, else you're the one in charge of it.
-        This enables the same functionality as SetOffline, killing open transactions and putting the database
-        offline, then do the actual rename and setting it online again afterwards
+        Automatically moves physical database files to match renamed file names. Sets the database offline, performs file operations, then brings the database back online.
+        Use this for a complete automated renaming solution when you want the function to handle all file operations. Requires PowerShell remoting access to the SQL Server's file system.
 
     .PARAMETER Preview
-        Shows the renames without performing any operation (recommended to find your way around this function parameters ;-) )
+        Displays what renaming operations would be performed without executing any changes to the databases. Shows the complete rename plan including all affected components.
+        Use this first to verify your templates and parameters will produce the desired results before committing to actual database changes.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -121,7 +95,8 @@ function Rename-DbaDatabase {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER InputObject
-        Accepts piped database objects
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase. Allows for advanced filtering and database selection before renaming.
+        Use this when you need complex database selection logic or when chaining database operations in a pipeline.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

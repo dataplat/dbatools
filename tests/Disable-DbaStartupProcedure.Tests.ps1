@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up test environment
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -38,17 +38,17 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $server.Query("EXEC sp_procoption '$startupProc', 'startup', 'on'", $dbname)
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up test objects
         $null = $server.Query("DROP PROCEDURE $startupProc", $dbname)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When disabling a startup procedure" {
@@ -56,7 +56,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatDisable = @{
                 SqlInstance      = $TestConfig.instance2
                 StartupProcedure = $startupProc
-                Confirm          = $false
             }
             $result = Disable-DbaStartupProcedure @splatDisable
         }
@@ -87,7 +86,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatDisableAgain = @{
                 SqlInstance      = $TestConfig.instance2
                 StartupProcedure = $startupProc
-                Confirm          = $false
             }
             $result = Disable-DbaStartupProcedure @splatDisableAgain
         }
@@ -118,10 +116,9 @@ Describe $CommandName -Tag IntegrationTests {
             $splatEnable = @{
                 SqlInstance      = $TestConfig.instance2
                 StartupProcedure = $startupProc
-                Confirm          = $false
             }
             $null = Enable-DbaStartupProcedure @splatEnable
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 | Disable-DbaStartupProcedure -Confirm:$false
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 | Disable-DbaStartupProcedure
         }
 
         It "Should return correct schema" {

@@ -1,14 +1,14 @@
 function Find-DbaOrphanedFile {
     <#
     .SYNOPSIS
-        Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
+        Identifies database files on disk that are not attached to any SQL Server database instance
 
     .DESCRIPTION
-        This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
+        Scans filesystem directories for database files (.mdf, .ldf, .ndf) that exist on disk but are not currently attached to the SQL Server instance. This is essential for cleanup operations after database drops, detaches, or failed restores that leave behind orphaned files consuming disk space.
 
-        By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
+        The command compares files found via xp_dirtree against sys.master_files to identify true orphans. By default, it searches the root\data directory, default data and log paths, system paths, and any directory currently used by attached databases.
 
-        You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
+        Perfect for storage cleanup scenarios where you need to reclaim disk space by identifying leftover database files that can be safely removed. You can specify additional file types using -FileType and additional search paths using -Path parameter.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -21,16 +21,16 @@ function Find-DbaOrphanedFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies one or more directories to search in addition to the default data and log directories.
+        Specifies additional directories to search beyond the default SQL Server data and log paths. Use this when databases were stored in non-standard locations or when you suspect orphaned files exist in custom backup/restore directories. Accepts multiple paths and searches them alongside the automatically detected SQL Server directories.
 
     .PARAMETER FileType
-        Specifies file extensions other than mdf, ldf and ndf to search for. Do not include the dot (".") when specifying the extension.
+        Specifies additional file extensions to search for beyond the default database file types (mdf, ldf, ndf). Use this to find orphaned Full-Text catalog files (ftcat), backup files (bak, trn), or other SQL Server-related files. Do not include the dot when specifying extensions (use "bak" not ".bak").
 
     .PARAMETER LocalOnly
-        If this switch is enabled, only local filenames will be returned. Using this switch with multiple servers is not recommended since it does not return the associated server name.
+        Returns only the local file paths without server or UNC information. Use this when you need simple file paths for scripting file removal operations or when working with a single server. Not recommended for multi-server environments since it omits which server the file belongs to.
 
     .PARAMETER RemoteOnly
-        If this switch is enabled, only remote filenames will be returned.
+        Returns only the UNC network paths to orphaned files. Use this when you need to access files remotely for cleanup operations or when building scripts that run from a central management server. Provides the \\server\share\path format needed for remote file operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -38,7 +38,7 @@ function Find-DbaOrphanedFile {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Recurse
-        If this switch is enabled, the command will search subdirectories of the Path parameter.
+        Searches all subdirectories within the specified paths in addition to the root directories. Use this when database files may be organized in nested folder structures or when conducting comprehensive cleanup of complex directory hierarchies. Without this switch, only the immediate directories are searched.
 
     .NOTES
         Tags: Orphan, Database, DatabaseFile, Lookup

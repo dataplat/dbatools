@@ -1,15 +1,19 @@
 function Get-DbaWsfcCluster {
     <#
     .SYNOPSIS
-        Gets information about one or more failover clusters in a given domain.
+        Retrieves Windows Server Failover Cluster configuration and status information for SQL Server high availability environments.
 
     .DESCRIPTION
-        Gets information about one or more failover clusters in a given domain.
+        Retrieves detailed configuration and operational status information from Windows Server Failover Clusters that host SQL Server instances. This function connects to cluster nodes or the cluster name itself to gather essential cluster properties including quorum configuration, shared volume settings, and current operational state.
+
+        DBAs use this when troubleshooting cluster issues, validating cluster health before SQL Server installations, or documenting high availability configurations. The function returns key cluster metadata needed for capacity planning and disaster recovery preparation.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the target Windows Server Failover Cluster to query, either by cluster name or individual node name.
+        Use the cluster name when connecting to an active cluster, or specify a node name when the cluster service may be down.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

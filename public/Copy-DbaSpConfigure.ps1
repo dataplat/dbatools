@@ -1,36 +1,42 @@
 function Copy-DbaSpConfigure {
     <#
     .SYNOPSIS
-        Copy-DbaSpConfigure migrates configuration values from one SQL Server to another.
+        Copies SQL Server configuration settings (sp_configure values) from source to destination instances.
 
     .DESCRIPTION
-        By default, all configuration values are copied. The -ConfigName parameter is auto-populated for command-line completion and can be used to copy only specific configs.
+        This function retrieves all sp_configure settings from the source SQL Server and applies them to one or more destination instances, ensuring consistent configuration across your environment. Only settings that differ between source and destination are updated, making it safe for standardizing existing servers. The function automatically handles settings that require a restart and provides detailed reporting of which configurations were changed, skipped, or failed. Use this when building new servers to match production standards, migrating instances, or ensuring consistent configuration across development and testing environments.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The source SQL Server instance from which sp_configure settings will be copied. Must have sysadmin access to read configuration values.
+        Use this as your template server when standardizing configurations across multiple instances or when setting up new servers to match production standards.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Credentials for connecting to the source SQL Server instance. Accepts PowerShell credentials (Get-Credential).
+        Use this when the source server requires different authentication than your current Windows session, such as SQL Server authentication or domain service accounts.
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        One or more destination SQL Server instances where sp_configure settings will be applied. Must have sysadmin access to modify configuration values.
+        Accepts multiple instances for bulk configuration updates across your environment.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Credentials for connecting to the destination SQL Server instances. Accepts PowerShell credentials (Get-Credential).
+        Use this when destination servers require different authentication than your current Windows session, such as SQL Server authentication or domain service accounts.
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ConfigName
-        Specifies the configuration setting to process. Options for this list are auto-populated from the server. If unspecified, all ConfigNames will be processed.
+        Specifies which sp_configure settings to copy from source to destination. Accepts one or more configuration names such as 'max server memory (MB)' or 'backup compression default'.
+        Use this when you need to update only specific settings rather than copying all configurations, particularly useful for targeted changes like memory settings or backup options.
 
     .PARAMETER ExcludeConfigName
-        Specifies the configuration settings to exclude. Options for this list are auto-populated from the server.
+        Specifies which sp_configure settings to skip during the copy operation. Accepts one or more configuration names to exclude from processing.
+        Use this when copying most settings but need to preserve specific destination values, such as excluding 'max server memory (MB)' when servers have different hardware specifications.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

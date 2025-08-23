@@ -1,19 +1,25 @@
 function Test-DbaDiskAllocation {
     <#
     .SYNOPSIS
-        Checks all disks on a computer to see if they are formatted with allocation units of 64KB.
+        Validates disk allocation unit sizes against SQL Server best practice recommendations.
 
     .DESCRIPTION
-        Checks all disks on a computer for disk allocation units that match best practice recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an IsBestPractice field are returned.
+        Examines all NTFS volumes on target servers to verify they are formatted with 64KB allocation units, which is the recommended cluster size for optimal SQL Server performance. When checking a single server, returns a simple true/false result. For multiple servers, returns detailed information including server name, disk details, and compliance status for each volume.
+
+        The function can automatically detect SQL Server instances and identify which disks contain database files, helping you focus on storage that directly impacts SQL Server performance. System drives are automatically excluded from best practice validation since they typically don't require the 64KB allocation unit size.
+
+        This validation is essential during SQL Server deployment planning and storage configuration audits, as improper allocation unit sizes can significantly impact database I/O performance.
 
         References:
         https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size has been explicitly defined at 64 KB, which is a best practice for SQL Server."
 
     .PARAMETER ComputerName
-        The server(s) to check disk configuration on.
+        Specifies the target server(s) to examine for disk allocation unit compliance. Accepts multiple server names for bulk validation.
+        Use this to verify storage configuration across your SQL Server environment during deployment or storage audits.
 
     .PARAMETER NoSqlCheck
-        If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
+        Skips detection of SQL Server database files and examines all NTFS volumes regardless of their SQL Server usage.
+        Use this when you want to validate allocation units on all drives, not just those containing SQL Server data or log files.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -85,9 +91,6 @@ function Test-DbaDiskAllocation {
 
             try {
                 Write-Message -Level Verbose -Message "Getting disk information from $computer."
-
-                # $query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
-                # $disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
                 $disks = Get-CimInstance -CimSession $CIMsession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
             } catch {
                 Stop-Function -Message "Can't connect to WMI on $computer."
@@ -106,9 +109,9 @@ function Test-DbaDiskAllocation {
                     Write-Message -Level Verbose -Message "Found instance $instanceName."
 
                     if ($instance -eq 'MSSQLSERVER') {
-                        $SqlInstances += $ipaddr
+                        $SqlInstances += $computer
                     } else {
-                        $SqlInstances += "$ipaddr\$instance"
+                        $SqlInstances += "$computer\$instance"
                     }
                 }
                 $sqlcount = $SqlInstances.Count
@@ -182,7 +185,6 @@ function Test-DbaDiskAllocation {
         foreach ($computer in $ComputerName) {
 
             $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
-            $ipaddr = $computer.IpAddress
             $Computer = $computer.FullComputerName
 
             if (!$Computer) {

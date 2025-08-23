@@ -37,7 +37,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $altExportPath = "$env:USERPROFILE\Documents"
         $outputFile1 = "$altExportPath\Dbatoolsci_DbRole_CustomFile1.sql"
@@ -63,20 +63,22 @@ Describe $CommandName -Tag IntegrationTests {
             # Ignore setup errors for now
         }
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         try {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
-            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
+            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1
         } catch {
             # Ignore cleanup errors
         }
 
         Remove-Item -Path $resourcesToCleanup -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Check if output file was created" {
@@ -97,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $role = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Role $dbRole
             $null = $role | Export-DbaDbRole -FilePath $outputFile1
-            $global:results = $role | Export-DbaDbRole -Passthru
+            $results = $role | Export-DbaDbRole -Passthru
         }
 
         It "Exports results to one sql file" {
@@ -109,27 +111,27 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should include the defined BatchSeparator" {
-            $global:results -match "GO"
+            $results -match "GO"
         }
 
         It "should include the role" {
-            $global:results -match "CREATE ROLE [$dbRole]"
+            $results -match "CREATE ROLE [$dbRole]"
         }
 
         It "should include GRANT EXECUTE ON SCHEMA" {
-            $global:results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
+            $results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
         }
 
         It "should include GRANT SELECT ON SCHEMA" {
-            $global:results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
+            $results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
         }
 
         It "should include GRANT VIEW DEFINITION ON SCHEMA" {
-            $global:results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
+            $results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
         }
 
         It "should include ALTER ROLE ADD MEMBER" {
-            $global:results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
+            $results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
         }
     }
 }

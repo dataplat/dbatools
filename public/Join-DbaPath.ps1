@@ -1,19 +1,21 @@
 function Join-DbaPath {
     <#
     .SYNOPSIS
-        Performs multisegment path joins.
+        Constructs file paths with correct separators for Windows and Linux SQL Server instances.
 
     .DESCRIPTION
-        Performs multisegment path joins.
+        Constructs file paths by joining multiple segments while automatically using the correct path separators (backslash for Windows, forward slash for Linux) based on the target SQL Server instance's operating system. This function eliminates the guesswork when building file paths for backup files, exports, scripts, or other SQL Server operations that need to reference files on the remote server. Without specifying a SqlInstance, it defaults to the local machine's path separator conventions.
 
     .PARAMETER Path
-        The basepath to join on.
+        Specifies the base directory path where backup files, scripts, or other SQL Server resources will be stored. This forms the root location for building complete file paths.
+        Use this when you need to define the starting directory for backup operations, export locations, or script file destinations on either local or remote SQL Server instances.
 
     .PARAMETER SqlInstance
         Optional -- tests to see if destination SQL Server is Linux or Windows
 
     .PARAMETER Child
-        Any number of child paths to add.
+        Specifies additional path segments to append to the base path, such as subdirectories, filename prefixes, or date folders. Accepts multiple values to build nested directory structures.
+        Use this to organize files into logical groupings like database names, backup types, or date-based folders (e.g., 'MyDatabase', 'Full', '2024-01-15').
 
     .NOTES
         Tags: Path, Utility

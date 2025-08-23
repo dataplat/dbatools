@@ -1,10 +1,10 @@
 function Get-DbaDbccSessionBuffer {
     <#
     .SYNOPSIS
-        Gets result of Database Console Command DBCC INPUTBUFFER  or DBCC OUTPUTBUFFER
+        Retrieves session input or output buffer contents using DBCC INPUTBUFFER or DBCC OUTPUTBUFFER
 
     .DESCRIPTION
-        Returns the results of DBCC INPUTBUFFER or DBCC OUTPUTBUFFER for input sessions
+        Executes DBCC INPUTBUFFER or DBCC OUTPUTBUFFER to examine what SQL statements a session is executing or what data is being returned to a client. InputBuffer shows the last SQL batch sent by a client session, which is essential for troubleshooting blocking, investigating suspicious activity, or understanding what commands are causing performance issues. OutputBuffer reveals the actual data being transmitted back to the client, useful for debugging connectivity problems or examining result sets. This replaces the need to manually run DBCC commands and parse their output, especially when investigating multiple sessions simultaneously.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-inputbuffer-transact-sql
@@ -21,22 +21,24 @@ function Get-DbaDbccSessionBuffer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Operation
-        DBCC Operation to execute - either InputBuffer or OutputBuffer
+        Specifies which DBCC operation to execute: InputBuffer shows the last SQL statement sent by a client, while OutputBuffer shows data being returned to the client.
+        Use InputBuffer when troubleshooting blocking sessions, investigating suspicious activity, or identifying problematic queries.
+        Use OutputBuffer when debugging client connectivity issues or examining what data is being transmitted to applications.
 
     .PARAMETER SessionId
-        The Session ID(s) to use to get current input or output buffer.
+        Specifies one or more session IDs to examine for buffer contents. Session IDs can be found in sys.dm_exec_sessions or sys.dm_exec_requests.
+        Use this when you need to investigate specific sessions that are causing blocking, consuming resources, or exhibiting unusual behavior.
+        Cannot be used together with the -All parameter.
 
     .PARAMETER RequestId
-        Is the exact request (batch) to search for within the current session
-        The following query returns request_id:
-
-        SELECT request_id
-        FROM sys.dm_exec_requests
-        WHERE session_id = @@spid;
+        Specifies the exact request (batch) to examine within a session when multiple requests are active. Optional parameter that defaults to the current request.
+        Use this when a session has multiple concurrent requests and you need to examine a specific batch rather than the most recent one.
+        Find request IDs by querying sys.dm_exec_requests for the target session_id.
 
     .PARAMETER All
-        If this switch is enabled, results for all User Sessions will be retreived
-        This overides any values for SessionId or RequestId
+        Retrieves buffer information for all active user sessions instead of specific session IDs. Excludes system sessions to focus on user activity.
+        Use this when performing broad troubleshooting to identify which sessions are running problematic queries or consuming resources.
+        This parameter overrides any SessionId or RequestId values and may return large result sets on busy servers.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

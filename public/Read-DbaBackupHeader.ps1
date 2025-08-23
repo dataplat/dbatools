@@ -1,10 +1,14 @@
 function Read-DbaBackupHeader {
     <#
     .SYNOPSIS
-        Reads and displays detailed information about a SQL Server backup.
+        Extracts backup metadata from SQL Server backup files without restoring them
 
     .DESCRIPTION
-        Reads full, differential and transaction log backups. An online SQL Server is required to parse the backup files and the path specified must be relative to that SQL Server.
+        Uses SQL Server's RESTORE HEADERONLY functionality to extract detailed metadata from backup files including database name, backup type, creation date, file lists, and backup size information. This lets you validate backups, plan restores, and audit backup inventory without actually performing a restore operation.
+
+        The function can process full, differential, and transaction log backups from local file systems, network shares, and Azure blob storage. It requires an online SQL Server instance to parse the backup files since it leverages SQL Server's built-in backup reading capabilities.
+
+        Supports multithreaded processing for improved performance when scanning multiple backup files. The backup file paths must be accessible from the target SQL Server instance, not your local workstation.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,16 +21,20 @@ function Read-DbaBackupHeader {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Path to SQL Server backup file. This can be a full, differential or log backup file. Accepts valid filesystem paths and URLs.
+        Specifies the file path to SQL Server backup files including full, differential, and transaction log backups. Supports local paths, UNC network shares, and Azure blob storage URLs.
+        The backup files must be accessible from the target SQL Server instance, not your local workstation. Use this to read backup metadata without performing an actual restore.
 
     .PARAMETER Simple
-        If this switch is enabled, fewer columns are returned, giving an easy overview.
+        Returns a simplified output with only essential columns: DatabaseName, BackupFinishDate, RecoveryModel, BackupSize, CompressedBackupSize, DatabaseCreationDate, UserName, ServerName, SqlVersion, and BackupPath.
+        Use this when you need a quick overview of backup files without the full 50+ columns of detailed metadata.
 
     .PARAMETER FileList
-        If this switch is enabled, detailed information about the files within the backup is returned.
+        Returns detailed information about each data and log file contained within the backup set, including logical names, physical paths, file sizes, and file types.
+        Use this when planning restores to different locations or when you need to understand the file structure before performing a restore operation.
 
     .PARAMETER AzureCredential
-        Name of the SQL Server credential that should be used for Azure storage access.
+        Specifies the name of a SQL Server credential object that contains the authentication information for accessing Azure blob storage.
+        Required when reading backup files stored in Azure blob storage. The credential must already exist on the target SQL Server instance and contain valid Azure storage account keys or SAS tokens.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

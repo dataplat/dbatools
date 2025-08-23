@@ -40,7 +40,6 @@ Describe $CommandName -Tag IntegrationTests {
                     SqlInstance = $TestConfig.instance1
                     Database    = "master"
                     Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-                    Confirm     = $false
                 }
                 $masterkey = New-DbaDbMasterKey @splatMasterKey
             }
@@ -50,7 +49,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance1
                 Database    = "tempdb"
                 Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-                Confirm     = $false
             }
             $tempdbmasterkey = New-DbaDbMasterKey @splatTempDbKey
 
@@ -68,27 +66,26 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Cleanup master keys
             if ($tempdbmasterkey) {
-                $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false
+                $tempdbmasterkey | Remove-DbaDbMasterKey
             }
             if ($masterKey) {
-                $masterkey | Remove-DbaDbMasterKey -Confirm:$false
+                $masterkey | Remove-DbaDbMasterKey
             }
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Successfully creates a new database certificate in default, master database" {
             $splatCert1 = @{
                 SqlInstance = $TestConfig.instance1
                 Name        = $certificateName1
-                Confirm     = $false
             }
             $cert1 = New-DbaDbCertificate @splatCert1
 
             "$($cert1.name)" -match $certificateName1 | Should -Be $true
 
             # Cleanup
-            $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
+            $null = $cert1 | Remove-DbaDbCertificate
         }
 
         It "Successfully creates a new database certificate in the tempdb database" {
@@ -96,14 +93,13 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance1
                 Name        = $certificateName2
                 Database    = "tempdb"
-                Confirm     = $false
             }
             $cert2 = New-DbaDbCertificate @splatCert2
 
             "$($cert2.Database)" -match "tempdb" | Should -Be $true
 
             # Cleanup
-            $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false
+            $null = $cert2 | Remove-DbaDbCertificate
         }
     }
 }

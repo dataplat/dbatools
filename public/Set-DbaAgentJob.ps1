@@ -1,10 +1,10 @@
 function Set-DbaAgentJob {
     <#
     .SYNOPSIS
-        Set-DbaAgentJob updates a job.
+        Modifies existing SQL Server Agent job properties and notification settings.
 
     .DESCRIPTION
-        Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.
+        Updates various properties of SQL Server Agent jobs including job name, description, owner, enabled/disabled status, notification settings, and schedule assignments. This function lets you modify jobs without using SQL Server Management Studio, making it useful for standardizing job configurations across multiple instances or automating job maintenance tasks. You can update individual jobs or perform bulk changes across multiple jobs and SQL Server instances simultaneously.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -17,74 +17,84 @@ function Set-DbaAgentJob {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The name of the job.
+        Specifies the name of the SQL Server Agent job to modify. Accepts wildcards and multiple job names.
+        Use this to target specific jobs for configuration changes rather than modifying all jobs on an instance.
 
     .PARAMETER Schedule
-        Schedule to attach to job. This can be more than one schedule.
+        Attaches existing shared schedules to the job by name. Accepts multiple schedule names.
+        Use this when you need to assign predefined schedules to jobs without recreating scheduling logic.
 
     .PARAMETER ScheduleId
-        Schedule ID to attach to job. This can be more than one schedule ID.
+        Attaches existing shared schedules to the job by their numeric ID. Accepts multiple schedule IDs.
+        Use this when you know the specific schedule ID numbers and want to avoid potential name conflicts.
 
     .PARAMETER NewName
-        The new name for the job.
+        Renames the job to the specified name. The new name must be unique within the SQL Server instance.
+        Use this when standardizing job names across environments or fixing naming conventions.
 
     .PARAMETER Enabled
-        Enabled the job.
+        Enables the job so it can be executed by SQL Server Agent schedules or manual execution.
+        Use this when reactivating disabled jobs or deploying jobs that should run immediately.
 
     .PARAMETER Disabled
-        Disabled the job
+        Disables the job to prevent it from running on schedule or manual execution.
+        Use this when temporarily stopping jobs during maintenance windows or permanently deactivating obsolete jobs.
 
     .PARAMETER Description
-        The description of the job.
+        Updates the job's description field with explanatory text about the job's purpose or functionality.
+        Use this to document what the job does, when it should run, or special requirements for maintenance teams.
 
     .PARAMETER StartStepId
-        The identification number of the first step to execute for the job.
+        Sets which job step should execute first when the job runs. Must correspond to an existing step ID within the job.
+        Use this when you need to change the job's execution flow or skip initial steps during testing or maintenance.
 
     .PARAMETER Category
-        The category of the job.
+        Assigns the job to a specific job category for organizational purposes. Creates the category if it doesn't exist when used with -Force.
+        Use this to group related jobs together for easier management and reporting in SQL Server Management Studio.
 
     .PARAMETER OwnerLogin
-        The name of the login that owns the job.
+        Changes the job owner to the specified SQL Server login. The login must already exist on the instance.
+        Use this when reassigning job ownership for security compliance or when the current owner login is being removed.
 
     .PARAMETER EventLogLevel
-        Specifies when to place an entry in the Microsoft Windows application log for this job.
-        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        Controls when job execution results are logged to the Windows Application Event Log. Values: Never, OnSuccess, OnFailure, Always (or 0-3).
+        Use this to integrate job monitoring with Windows event log monitoring systems or reduce log noise by only logging failures.
 
     .PARAMETER EmailLevel
-        Specifies when to send an e-mail upon the completion of this job.
-        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        Determines when to send email notifications about job completion. Values: Never, OnSuccess, OnFailure, Always (or 0-3).
+        Must be used with EmailOperator parameter. Use this to set up automated job failure notifications to the DBA team.
 
     .PARAMETER NetsendLevel
-        Specifies when to send a network message upon the completion of this job.
-        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        Controls when to send network messages (net send) about job completion. Values: Never, OnSuccess, OnFailure, Always (or 0-3).
+        Must be used with NetsendOperator parameter. Note that net send is deprecated and rarely used in modern environments.
 
     .PARAMETER PageLevel
-        Specifies when to send a page upon the completion of this job.
-        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        Determines when to send pager notifications about job completion. Values: Never, OnSuccess, OnFailure, Always (or 0-3).
+        Must be used with PageOperator parameter. Use this for critical jobs requiring immediate attention when they fail.
 
     .PARAMETER EmailOperator
-        The e-mail name of the operator to whom the e-mail is sent when EmailLevel is reached.
+        Specifies which SQL Server Agent operator receives email notifications when EmailLevel conditions are met. The operator must already exist.
+        Use this to assign job failure notifications to specific DBA team members or distribution lists.
 
     .PARAMETER NetsendOperator
-        The name of the operator to whom the network message is sent.
+        Specifies which SQL Server Agent operator receives network messages when NetsendLevel conditions are met. The operator must already exist.
+        Rarely used in modern environments due to the deprecation of the net send functionality.
 
     .PARAMETER PageOperator
-        The name of the operator to whom a page is sent.
+        Specifies which SQL Server Agent operator receives pager notifications when PageLevel conditions are met. The operator must already exist.
+        Use this for high-priority jobs where immediate mobile notification is required for on-call DBAs.
 
     .PARAMETER DeleteLevel
-        Specifies when to delete the job.
-        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        Controls when the job should automatically delete itself after execution. Values: Never, OnSuccess, OnFailure, Always (or 0-3).
+        Use this for one-time jobs like data migrations or temporary maintenance tasks that should clean up after completion.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Bypasses validation checks and creates missing job categories when specified with the Category parameter.
+        Use this when you want to create new categories during job updates without having to pre-create them separately.
 
     .PARAMETER InputObject
-        Enables piping job objects
+        Accepts SQL Server Agent job objects from the pipeline, typically from Get-DbaAgentJob output.
+        Use this to chain job operations together or when working with job objects retrieved from other dbatools commands.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

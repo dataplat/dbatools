@@ -1,12 +1,14 @@
 function Export-DbaDacPackage {
     <#
     .SYNOPSIS
-        Exports a dacpac from a server.
+        Creates DACPAC or BACPAC deployment packages from SQL Server databases using SqlPackage
 
     .DESCRIPTION
-        Using SQLPackage, export a dacpac from an instance of SQL Server.
+        Creates database deployment packages for version control, migrations, and schema distribution. Generates DACPAC files containing database schema definitions or BACPAC files that include both schema and data. This automates the SqlPackage utility so you don't have to remember complex command-line syntax or manage connection strings manually.
 
-        Note - Extract from SQL Server is notoriously flaky - for example if you have three part references to external databases it will not work.
+        Perfect for creating deployable packages from development databases, capturing schema snapshots for source control, or preparing migration artifacts for different environments. The function handles multiple databases in batch operations and provides flexible table filtering when you only need specific objects.
+
+        Uses Microsoft DAC Services under the hood with automatic SqlPackage installation if needed. Note that extraction can fail with three-part references to external databases or complex cross-database dependencies.
 
         For help with the extract action parameters and properties, refer to https://learn.microsoft.com/en-us/sql/tools/sqlpackage/sqlpackage-extract
 
@@ -19,36 +21,44 @@ function Export-DbaDacPackage {
         Only SQL authentication is supported. When not specified, uses Trusted Authentication.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the directory where DACPAC or BACPAC files will be saved. Defaults to the configured DbatoolsExport path.
+        Use this when you want to organize exports in a specific location or when working with multiple databases that need consistent file placement.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Specifies the complete file path including filename for the export package. Overrides both Path and automatic file naming.
+        Use this when you need a specific filename or when exporting a single database to a predetermined location.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to export as DACPAC or BACPAC packages. Accepts multiple database names and supports wildcards.
+        Use this to target specific databases instead of processing all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during export operations. Works with both Database and AllUserDatabases parameters.
+        Use this to exclude system databases, maintenance databases, or any databases you don't want to package.
 
     .PARAMETER AllUserDatabases
-        Run command against all user databases
+        Exports packages for all user databases on the instance, automatically excluding system databases.
+        Use this for bulk operations when you want to create deployment packages for every application database.
 
     .PARAMETER Type
-        Selecting the type of the export: Dacpac (default) or Bacpac.
+        Specifies the package type to create: Dacpac (schema-only) or Bacpac (schema and data). Defaults to Dacpac.
+        Use Dacpac for version control and schema deployments, or Bacpac when you need to include table data for migrations or testing.
 
     .PARAMETER Table
-        List of the tables to include into the export. Should be provided as an array of strings: dbo.Table1, Table2, Schema1.Table3.
+        Specifies which tables to include in the export package. Provide as schema.table format (e.g., 'dbo.Users', 'Sales.Orders').
+        Use this when you only need specific tables rather than the entire database, such as for partial deployments or data subsets.
 
     .PARAMETER DacOption
-        Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac
+        Configures advanced export settings using a DacExtractOptions or DacExportOptions object created by New-DbaDacOption.
+        Use this to control extraction behavior like command timeouts, table data inclusion, or specific schema elements to include or exclude.
 
     .PARAMETER ExtendedParameters
-        Optional parameters used to extract the DACPAC. More information can be found at
-        https://msdn.microsoft.com/en-us/library/hh550080.aspx
+        Passes additional command-line parameters directly to SqlPackage.exe for advanced scenarios (e.g., '/OverwriteFiles:true /Quiet:true').
+        Use this when you need SqlPackage options not available through DacOption or when integrating with existing SqlPackage workflows.
 
     .PARAMETER ExtendedProperties
-        Optional properties used to extract the DACPAC. More information can be found at
-        https://msdn.microsoft.com/en-us/library/hh550080.aspx
+        Passes additional property settings directly to SqlPackage.exe for fine-tuned control over extraction behavior.
+        Use this when you need to set specific SqlPackage properties that aren't exposed through the standard DacOption parameter.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

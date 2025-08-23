@@ -1,11 +1,14 @@
 function Get-DbaDbExtentDiff {
     <#
     .SYNOPSIS
-        What percentage of a database has changed since the last full backup
+        Calculates the percentage of database extents modified since the last full backup
 
     .DESCRIPTION
-        This is only an implementation of the script created by Paul S. Randal to find what percentage of a database has changed since the last full backup.
-        https://www.sqlskills.com/blogs/paul/new-script-how-much-of-the-database-has-changed-since-the-last-full-backup/
+        Analyzes database extents to determine how much data has changed since the last full backup, helping DBAs decide between differential and full backup strategies. The function examines extent-level modifications (groups of 8 pages) to provide accurate change percentages, which is essential for optimizing backup schedules and storage requirements.
+
+        For SQL Server 2016 SP2 and later, uses the sys.dm_db_file_space_usage DMV for efficient analysis. For older versions, falls back to DBCC PAGE commands to examine differential bitmap pages directly.
+
+        Based on the original script by Paul S. Randal: https://www.sqlskills.com/blogs/paul/new-script-how-much-of-the-database-has-changed-since-the-last-full-backup/
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -18,10 +21,12 @@ function Get-DbaDbExtentDiff {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for extent changes since the last full backup. Accepts multiple database names and supports wildcards.
+        Use this when you need to check specific databases rather than analyzing all databases on the instance, which is helpful for large environments or when focusing on particular applications.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during the extent change analysis. Accepts multiple database names and supports wildcards.
+        Use this to exclude system databases, read-only databases, or databases where you don't need backup planning analysis, reducing execution time and focusing on relevant databases.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

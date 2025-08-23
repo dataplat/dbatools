@@ -17,13 +17,16 @@ function Get-DbaDbServiceBrokerQueue {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get service broker queues from specific database(s)
+        Specifies which databases to retrieve Service Broker queues from. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        Specifies databases to exclude from the Service Broker queue retrieval. Accepts wildcards for pattern matching.
+        Useful when you want to scan most databases but skip specific ones like test or development databases.
 
     .PARAMETER ExcludeSystemQueue
-        This switch removes all system objects from the queue collection
+        Excludes system-created Service Broker queues from the results, showing only user-created queues.
+        Use this to focus on application-specific queues and filter out SQL Server's internal messaging queues.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

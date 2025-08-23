@@ -32,12 +32,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should stop the endpoint" {
             # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
 
             # We want to run all commands outside of the setup without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP'
             $results = $endpoint | Stop-DbaEndpoint

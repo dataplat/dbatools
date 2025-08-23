@@ -1,12 +1,14 @@
 function Stop-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Decrypts all databases on an instance
+        Disables Transparent Data Encryption (TDE) on all user databases across a SQL Server instance
 
     .DESCRIPTION
-        Decrypts all databases on an instance
+        Disables Transparent Data Encryption (TDE) on all user databases within a SQL Server instance by calling Disable-DbaDbEncryption for each encrypted database found. This function automatically excludes system databases (master, model, tempdb, msdb, resource) and only processes databases that currently have encryption enabled.
 
-        Removes the encryption key but does not touch certificates or master keys
+        This is commonly used during instance decommissioning, migration scenarios where TDE is not required in the target environment, or when standardizing security configurations across multiple databases. The function provides a convenient way to decrypt multiple databases at once rather than handling each database individually.
+
+        Each database is fully decrypted and the Database Encryption Key (DEK) is dropped to complete the TDE removal process. Certificates and master keys remain untouched and available for other purposes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

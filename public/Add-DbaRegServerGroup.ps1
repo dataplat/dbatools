@@ -1,10 +1,10 @@
 function Add-DbaRegServerGroup {
     <#
     .SYNOPSIS
-        Adds registered server groups to SQL Server Central Management Server (CMS)
+        Creates organizational server groups within SQL Server Central Management Server (CMS)
 
     .DESCRIPTION
-        Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexibility, look into Import-DbaRegServer which accepts multiple kinds of input and allows you to add reg servers and groups from different CMS.
+        Creates new server groups in SQL Server Central Management Server to organize registered servers into logical hierarchies. This allows DBAs to group servers by environment, application, location, or any other classification system for easier management at scale. Supports nested group structures using backslash notation (Group\SubGroup) and automatically creates parent groups if they don't exist. If you need to import existing groups and servers from other sources, use Import-DbaRegServer instead.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -17,17 +17,20 @@ function Add-DbaRegServerGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The name of the registered server group.
+        Specifies the name for the new server group within Central Management Server. Use descriptive names that reflect your organizational structure like 'Production', 'Development', or 'HR-Databases'.
+        Group names can include backslashes to create nested hierarchies (e.g., 'Production\WebServers' creates a WebServers subgroup under Production).
 
     .PARAMETER Description
-        The description for the registered server group
+        Provides additional details about the server group's purpose or contents. Use this to document the group's role, maintenance schedules, or contact information.
+        Helpful for team environments where multiple DBAs need to understand each group's function.
 
     .PARAMETER Group
-        The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
-        You can pass sub groups using the '\' to split the path. Group\SubGroup will create both folders. Folder 'SubGroup' under 'Group' folder.
+        Specifies the parent group where the new server group will be created. If omitted, creates the group at the root level of Central Management Server.
+        Use backslash notation to specify nested paths like 'Production\WebServers' - this automatically creates any missing parent groups in the hierarchy.
 
     .PARAMETER InputObject
-        Allows results from Get-DbaRegServerGroup to be piped in
+        Accepts server group objects from Get-DbaRegServerGroup through the pipeline. Use this when you need to create subgroups within existing groups from multiple CMS instances.
+        Enables bulk operations where you can pipe existing groups and create new subgroups within each one simultaneously.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

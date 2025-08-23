@@ -1,13 +1,16 @@
 function Get-DbaPfDataCollector {
     <#
     .SYNOPSIS
-        Gets Performance Monitor Data Collectors.
+        Retrieves Windows Performance Monitor data collectors and their configuration details from local or remote computers.
 
     .DESCRIPTION
-        Gets Performance Monitor Data Collectors.
+        Retrieves detailed information about Windows Performance Monitor data collectors within collector sets, commonly used by DBAs to monitor SQL Server performance counters. This function parses the XML configuration of existing data collectors to show their settings, file locations, sample intervals, and the specific performance counters they collect.
+
+        Use this when you need to audit existing performance monitoring setups, verify collector configurations, or identify which performance counters are being captured for SQL Server baseline analysis and troubleshooting. The function works across multiple computers and integrates with Get-DbaPfDataCollectorSet for filtering specific collector sets.
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computer(s) to retrieve performance data collectors from. Defaults to localhost.
+        Use this to monitor performance collectors across multiple SQL Server environments or remote systems where SQL Server performance monitoring is configured.
 
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:
@@ -15,13 +18,16 @@ function Get-DbaPfDataCollector {
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER CollectorSet
-        The Collector Set name.
+        Filters results to data collectors within specific collector sets by name. Accepts wildcards for pattern matching.
+        Use this when you want to examine collectors in a particular performance monitoring setup, such as 'System Correlation' or custom SQL Server baseline collector sets.
 
     .PARAMETER Collector
-        The Collector name.
+        Filters results to specific data collectors by name within the collector sets. Accepts wildcards for pattern matching.
+        Use this when you need to examine a particular collector's configuration, such as one focused on SQL Server counters or system resource monitoring.
 
     .PARAMETER InputObject
-        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+        Accepts collector set objects from Get-DbaPfDataCollectorSet via the pipeline to retrieve their individual data collectors.
+        Use this for pipeline operations when you want to drill down from collector sets to examine the specific performance counters and configuration details of their data collectors.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

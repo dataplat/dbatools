@@ -1,10 +1,10 @@
 function Watch-DbaXESession {
     <#
     .SYNOPSIS
-        Watch live XEvent Data as it happens
+        Monitors Extended Events sessions in real-time, streaming live event data as it occurs
 
     .DESCRIPTION
-        Watch live XEvent Data as it happens. This command runs until you stop the session, kill the PowerShell session, or Ctrl-C.
+        Streams live event data from running Extended Events sessions, allowing real-time monitoring of database activity, performance issues, or security events. Each captured event is processed into a PowerShell object with organized columns for event name, timestamp, fields, and actions. This command runs continuously until you stop the XE session, terminate the PowerShell session, or press Ctrl-C, making it ideal for interactive troubleshooting and live analysis workflows.
 
         Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 
@@ -19,13 +19,16 @@ function Watch-DbaXESession {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
-        Only return a specific session. Options for this parameter are auto-populated from the server.
+        Specifies the name of the Extended Events session to monitor for live event data. Use this when you want to watch a specific XE session instead of requiring pipeline input.
+        Common sessions include system_health for general diagnostics or custom sessions you've created for specific monitoring needs.
 
     .PARAMETER Raw
-        If this switch is enabled, the enumeration object is returned.
+        Returns the raw XEvent enumeration object instead of processed PowerShell objects with organized columns. Use this when you need to work with the native Extended Events data structure for custom processing or integration with other tools.
+        Most DBAs should use the default processed output which provides cleaner, more readable event data.
 
     .PARAMETER InputObject
-        Accepts an XESession object returned by Get-DbaXESession.
+        Accepts one or more XESession objects from Get-DbaXESession via the pipeline. Use this approach when you want to filter, start, or configure XE sessions before monitoring them.
+        This enables workflows like 'Get-DbaXESession | Where Name -like "*perf*" | Start-DbaXESession | Watch-DbaXESession' for batch operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

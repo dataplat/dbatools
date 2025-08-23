@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Reading db statuses" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $db1 = "dbatoolsci_dbstate_online"
@@ -41,7 +41,6 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-                Confirm     = $false
             }
             Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase
 
@@ -62,12 +61,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatSetState = @{
                 SqlInstance = $TestConfig.instance2
@@ -82,11 +81,10 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemoveDbCleanup = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-                Confirm     = $false
             }
             Remove-DbaDatabase @splatRemoveDbCleanup -ErrorAction SilentlyContinue
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Waits for BeforeAll to finish" -Skip:(-not $setupright) {

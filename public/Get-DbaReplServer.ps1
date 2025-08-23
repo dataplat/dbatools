@@ -1,10 +1,10 @@
 function Get-DbaReplServer {
     <#
     .SYNOPSIS
-        Gets a replication server object
+        Retrieves replication configuration and server role information from SQL Server instances
 
     .DESCRIPTION
-        Gets a replication server object.
+        Returns a ReplicationServer object that shows whether each SQL Server instance is configured as a distributor, publisher, or both in the replication topology. This helps DBAs quickly identify server roles and distribution database configurations when troubleshooting replication issues or documenting replication environments. The function reveals which databases are enabled for replication, though these may not necessarily be actively replicated.
 
         Note: The ReplicationDatabases property gets the databases enabled for replication in the connected instance of Microsoft SQL Server/.
         Not necessarily the databases that are actually replicated.

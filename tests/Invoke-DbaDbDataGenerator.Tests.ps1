@@ -68,9 +68,9 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $generatorDb
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command works" {
@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns the proper output" {
             $configFile = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance2 -Database $generatorDb -Path $backupPath -Rows 10
 
-            $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.instance2 -Database $generatorDb -Confirm:$false -FilePath $configFile.FullName
+            $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.instance2 -Database $generatorDb -FilePath $configFile.FullName
 
             foreach ($result in $results) {
                 $result.Rows | Should -Be 10

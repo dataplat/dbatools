@@ -1,12 +1,10 @@
 function Enable-DbaFilestream {
     <#
     .SYNOPSIS
-        Enables FileStream on specified SQL Server instances
+        Configures FILESTREAM feature at both instance and server levels on SQL Server
 
     .DESCRIPTION
-        Connects to the specified SQL Server instances, and Enables the FileStream feature to the required value
-
-        To perform the action, the SQL Server instance must be restarted. By default we will prompt for confirmation for this action, this can be overridden with the -Force switch
+        Configures SQL Server's FILESTREAM feature by setting the FilestreamAccessLevel at the instance level and enabling the Windows service component at the server level. The function supports three access levels: T-SQL only, T-SQL with I/O streaming, or T-SQL with I/O streaming and remote client access. FILESTREAM allows storing large binary data like documents, images, and videos directly on the file system while maintaining transactional consistency with the database. SQL Server requires a restart after enabling FILESTREAM, and the function will prompt for confirmation unless the -Force parameter is used.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.
@@ -22,13 +20,13 @@ function Enable-DbaFilestream {
         Login to the target server using alternative credentials.
 
     .PARAMETER FileStreamLevel
-        The level to of FileStream to be enabled:
-        1 or TSql - T-Sql Access Only
-        2 or TSqlIoStreaming - T-Sql and Win32 access enabled
-        3 or TSqlIoStreamingRemoteClient T-Sql, Win32 and Remote access enabled
+        Specifies the access level for FILESTREAM functionality on the SQL Server instance. Controls how applications can access FILESTREAM data stored on the file system.
+        Use level 1 (TSql) for basic database operations, level 2 (TSqlIoStreaming) when applications need direct file system access, or level 3 (TSqlIoStreamingRemoteClient) for remote client access scenarios.
+        Accepts numeric values (1, 2, 3) or string equivalents (TSql, TSqlIoStreaming, TSqlIoStreamingRemoteClient). Defaults to level 1.
 
     .PARAMETER ShareName
-        Specifies the Windows file share name to be used for storing the FILESTREAM data.
+        Specifies the Windows file share name used by remote clients to access FILESTREAM data over the network. Only applies when FileStreamLevel is set to 2 or 3.
+        Use this when you need to customize the share name for organizational standards or security requirements. If not specified, SQL Server uses the default instance name as the share name.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -36,7 +34,8 @@ function Enable-DbaFilestream {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        Restart SQL Instance after changes. Use this parameter with care as it overrides whatif.
+        Automatically restarts the SQL Server service after enabling FILESTREAM without prompting for confirmation. Required for FILESTREAM changes to take effect immediately.
+        Use with caution in production environments as it will cause brief service interruption. Without this parameter, you must manually restart SQL Server for changes to apply.
 
     .PARAMETER WhatIf
         Shows what would happen if the command runs. The command is not run unless Force is specified.

@@ -1,10 +1,10 @@
 function Invoke-DbaCycleErrorLog {
     <#
     .SYNOPSIS
-        Cycles the current instance or agent log.
+        Cycles the current SQL Server error log and/or SQL Agent error log to start fresh log files
 
     .DESCRIPTION
-        Cycles the current error log for the instance (SQL Server) and/or SQL Server Agent.
+        Archives the current error log files and creates new ones for SQL Server instance and/or SQL Agent. This operation is typically performed during maintenance windows to manage log file sizes and establish clean baselines for troubleshooting. When cycled, the current error log becomes the archived log (errorlog.1) and a new error log starts capturing events.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -17,8 +17,9 @@ function Invoke-DbaCycleErrorLog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Type
-        The log to cycle.
-        Accepts: instance or agent.
+        Specifies which error log to cycle: 'instance' for SQL Server instance log, 'agent' for SQL Agent log.
+        When omitted, cycles both logs simultaneously which is the typical maintenance approach.
+        Use specific values when you need to manage log sizes independently or troubleshoot specific services.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

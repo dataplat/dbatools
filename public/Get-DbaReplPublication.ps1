@@ -1,10 +1,10 @@
 function Get-DbaReplPublication {
     <#
     .SYNOPSIS
-        Displays all publications on a server.
+        Retrieves replication publications from SQL Server instances, including transactional, merge, and snapshot publications.
 
     .DESCRIPTION
-        Quickly find all transactional, merge, and snapshot publications on a server or filter by database, name or type.
+        Scans SQL Server instances to identify and return all replication publications configured as publishers. This function examines each database's replication options to locate published databases, then retrieves detailed information about their publications including associated articles and subscriptions. DBAs use this to audit replication topology, troubleshoot publication configuration issues, and document existing replication setup across their environment. Results can be filtered by specific databases, publication names, or publication types to focus on particular replication components.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,18 @@ function Get-DbaReplPublication {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to examine for replication publications. Accepts wildcards and multiple database names.
+        Use this when you need to focus on specific databases instead of scanning all published databases on the instance.
+        Only databases that have replication enabled will return publication information.
 
     .PARAMETER Name
-        The name of the publication.
+        Filters results to publications with the specified name. Accepts multiple publication names for batch processing.
+        Use this when you need to check the status or configuration of specific publications rather than viewing all publications in a database.
 
     .PARAMETER Type
-        Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot.
+        Limits results to specific publication types: Transactional, Merge, or Snapshot.
+        Use this to focus on a particular replication methodology when troubleshooting or auditing specific replication scenarios.
+        Transactional publications provide real-time data synchronization, while Merge publications handle bidirectional conflicts and Snapshot publications provide point-in-time data distribution.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

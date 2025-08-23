@@ -1,26 +1,31 @@
 function Set-DbaPowerPlan {
     <#
     .SYNOPSIS
-        Sets the SQL Server OS's Power Plan.
+        Configures Windows power plan on SQL Server host computers to optimize database performance.
 
     .DESCRIPTION
-        Sets the SQL Server OS's Power Plan. Defaults to High Performance which is best practice.
+        Changes the Windows power plan on SQL Server host machines using WMI and PowerShell remoting. Defaults to High Performance, which prevents CPU throttling that can severely impact database query performance and response times.
 
-        If your organization uses a different power plan that is considered best practice, specify -PowerPlan.
+        Windows power plans control CPU frequency scaling, and the default "Balanced" plan can cause significant performance degradation under SQL Server workloads. This function ensures your SQL Server hosts are configured for optimal performance rather than power savings.
+
+        If your organization has a custom power plan considered best practice, you can specify it with -PowerPlan. The function will skip computers that already have the target power plan active.
 
         References:
         https://support.microsoft.com/en-us/kb/2207548
         http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
 
     .PARAMETER ComputerName
-        The server(s) to set the Power Plan on.
+        Specifies the Windows host computers where SQL Server instances are running to configure the power plan.
+        Accepts multiple server names and connects via WMI and PowerShell remoting to change OS-level power settings.
+        Use the actual Windows computer names, not SQL Server instance names.
 
     .PARAMETER Credential
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
     .PARAMETER PowerPlan
-        If your organization uses a different Power Plan that's considered best practice, specify it here.
-        Use Get-DbaPowerPlan -List to get all available Power Plans on a computer.
+        Specifies the Windows power plan to set on the target computers. Defaults to "High Performance" when not specified.
+        Use this when your organization has a custom power plan or specific requirements beyond the default recommendation.
+        Run Get-DbaPowerPlan -ComputerName <server> -List to see all available power plans on each computer before setting.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

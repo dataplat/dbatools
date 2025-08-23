@@ -1,15 +1,14 @@
 function Export-DbaInstance {
     <#
     .SYNOPSIS
-        Exports SQL Server *ALL* database restore scripts, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
-        Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
-        system triggers and backup devices from one SQL Server to another.
+        Exports complete SQL Server instance configuration as T-SQL scripts for migration or disaster recovery
 
     .DESCRIPTION
-        Export-DbaInstance consolidates most of the export scripts in dbatools into one command.
+        Export-DbaInstance consolidates most of the export scripts in dbatools into one command that captures everything needed to recreate or migrate a SQL Server instance.
 
-        This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions.
-        Think of it as an easy button. Unless an -Exclude is specified, it exports:
+        This command saves hours of manual work when migrating instances to new servers, creating disaster recovery scripts, or documenting configurations for compliance. It generates individual T-SQL script files for each component type, organized in a timestamped folder structure that's perfect for version control or automated deployment pipelines.
+
+        Unless an -Exclude is specified, it exports:
 
         All database 'restore from backup' scripts.  Note: if a database does not have a backup the 'restore from backup' script won't be generated.
         All logins.
@@ -33,13 +32,18 @@ function Export-DbaInstance {
         All Availability Groups.
         All OLEDB Providers.
 
-        The exported files are written to a folder with a naming convention of "machinename$instance-yyyyMMddHHmmss".
+        The exported files are written to a folder using the naming convention "machinename$instance-yyyyMMddHHmmss", making it easy to identify the source instance and export timestamp.
 
-        This command supports the following use cases related to the output files:
+        This command is particularly valuable for:
+        - Instance migrations when moving to new hardware or cloud platforms
+        - Creating standardized development and test environments that match production
+        - Disaster recovery planning by maintaining current configuration snapshots
+        - Compliance documentation that automatically captures security settings and configurations
+        - Change management workflows where you need baseline configurations before major updates
 
-        1. Export files to a new timestamped folder. This is the default behavior and results in a simple historical archive within the local filesystem.
-        2. Export files to an existing folder and overwrite pre-existing files. This can be accomplished using the -Force parameter.
-        This results in a single folder location with the latest exported files. These files can then be checked into a source control system if needed.
+        Two folder management options are supported:
+        1. Default behavior creates new timestamped folders for historical archiving
+        2. Using -Force overwrites files in the same location, ideal for scheduled exports that feed into version control systems
 
         For more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.
 
@@ -57,60 +61,49 @@ function Export-DbaInstance {
         Alternative Windows credentials for exporting Linked Servers and Credentials. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the root directory where export files will be created in a timestamped subfolder.
+        Defaults to the dbatools export path configuration setting, typically Documents\DbatoolsExport.
 
     .PARAMETER WithReplace
-        If this switch is used, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
+        Adds WITH REPLACE option to generated database restore scripts, allowing restore over existing databases.
+        Use this when you need the restore scripts to overwrite databases that already exist on the target server.
 
     .PARAMETER NoRecovery
-        If this switch is used, databases will be left in the No Recovery state to enable further backups to be added.
+        Generates database restore scripts with NORECOVERY option, leaving databases in restoring state.
+        Essential for log shipping scenarios or when you need to apply additional transaction log backups after the initial restore.
 
     .PARAMETER AzureCredential
-        Optional AzureCredential to connect to blob storage holding the backups
+        Specifies the Azure storage credential name for accessing backups stored in Azure Blob Storage.
+        Required when generating restore scripts for databases backed up to Azure storage containers.
 
     .PARAMETER IncludeDbMasterKey
-        Exports the db master key then logs into the server to copy it to the $Path
+        Exports database master keys from system databases and copies them to the export directory.
+        Critical for environments using Transparent Data Encryption (TDE) or encrypted backups where master keys are required for restoration.
 
     .PARAMETER Exclude
-        Exclude one or more objects to export
-
-        Databases
-        Logins
-        AgentServer
-        Credentials
-        LinkedServers
-        SpConfigure
-        CentralManagementServer
-        DatabaseMail
-        SysDbUserObjects
-        SystemTriggers
-        BackupDevices
-        Audits
-        Endpoints
-        ExtendedEvents
-        PolicyManagement
-        ResourceGovernor
-        ServerAuditSpecifications
-        CustomErrors
-        ServerRoles
-        AvailabilityGroups
-        ReplicationSettings
-        OleDbProvider
+        Skips specific object types from the export to reduce scope or avoid problematic areas.
+        Useful when you only need certain components or when specific features cause export issues in your environment.
+        Valid values: Databases, Logins, AgentServer, Credentials, LinkedServers, SpConfigure, CentralManagementServer, DatabaseMail, SysDbUserObjects, SystemTriggers, BackupDevices, Audits, Endpoints, ExtendedEvents, PolicyManagement, ResourceGovernor, ServerAuditSpecifications, CustomErrors, ServerRoles, AvailabilityGroups, ReplicationSettings, OleDbProvider.
 
     .PARAMETER BatchSeparator
-        Batch separator for scripting output. "GO" by default based on (Get-DbatoolsConfigValue -FullName 'formatting.batchseparator').
+        Defines the T-SQL batch separator used in generated scripts, defaults to "GO".
+        Change this if your deployment tools or target environment requires a different batch separator like semicolon or custom delimiter.
 
     .PARAMETER NoPrefix
-        If this switch is used, the scripts will not include prefix information containing creator and datetime.
+        Removes header comments from generated scripts that normally include creation timestamp and dbatools version.
+        Use this for cleaner scripts when feeding into version control systems or automated deployment pipelines that don't need metadata headers.
 
     .PARAMETER ExcludePassword
-        If this switch is used, the scripts will not include passwords for Credentials, LinkedServers or Logins.
+        Omits passwords from exported scripts for logins, credentials, and linked servers, replacing them with placeholder text.
+        Essential for security compliance when export scripts will be stored in version control or shared with other team members.
 
     .PARAMETER ScriptingOption
-        Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
+        Provides a Microsoft.SqlServer.Management.Smo.ScriptingOptions object to customize script generation behavior.
+        Use this to control advanced scripting options like check constraints, triggers, indexes, or permissions that aren't controlled by other parameters.
 
     .PARAMETER Force
-        Overwrite files in the location specified by -Path. Note: The Server Name is used when creating the folder structure.
+        Overwrites existing export files and uses a static folder name without timestamp.
+        Ideal for scheduled exports that always write to the same location, such as automated backup documentation or CI/CD integration.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

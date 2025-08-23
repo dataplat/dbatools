@@ -26,10 +26,10 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname1 = "dbatoolsci_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $instance2 -Name $dbname1
 
@@ -39,28 +39,28 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $instance2.Query("CREATE VIEW $view2 (b) AS (SELECT 1);", $dbname1)
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $dbname1 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $dbname1
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing views" {
         It "removes a view" {
             (Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view1) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view1 -Confirm:$false
+            Remove-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view1
             (Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view1) | Should -BeNullOrEmpty
         }
 
         It "supports piping view" {
             (Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view2) | Should -Not -BeNullOrEmpty
-            Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view2 | Remove-DbaDbView -Confirm:$false
+            Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view2 | Remove-DbaDbView
             (Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view2) | Should -BeNullOrEmpty
         }
     }

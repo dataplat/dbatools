@@ -2,10 +2,14 @@
 function Add-DbaAgListener {
     <#
     .SYNOPSIS
-        Adds a listener to an availability group on a SQL Server instance.
+        Creates a network listener endpoint for an Availability Group to provide client connectivity
 
     .DESCRIPTION
-        Adds a listener to an availability group on a SQL Server instance.
+        Creates a network listener endpoint that provides a virtual network name and IP address for clients to connect to an Availability Group. The listener automatically routes client connections to the current primary replica, eliminating the need for applications to track which server is currently hosting the primary database.
+
+        This function supports both single-subnet and multi-subnet Availability Group configurations. You can specify static IP addresses for each subnet or use DHCP for automatic IP assignment. For multi-subnet deployments, specify multiple IP addresses and subnet masks to handle failover across geographically dispersed replicas.
+
+        Use this when setting up new Availability Groups or when adding listeners to existing groups that don't have client connectivity configured yet. Without a listener, applications must connect directly to replica server names, which breaks during failover scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -14,33 +18,44 @@ function Add-DbaAgListener {
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER AvailabilityGroup
-        The Availability Group to which a listener will be bestowed upon.
+        Specifies the name of the Availability Group that will receive the listener. Use this when connecting directly to a SQL Server instance rather than piping from Get-DbaAvailabilityGroup.
+        Required when using the SqlInstance parameter to identify which AG on the server needs client connectivity.
 
     .PARAMETER Name
-        The name of the listener. If one is not specified, the Availability Group name will be used.
-
-        Note that Name cannot be used with Multiple Ags.
+        Specifies a custom network name for the listener that clients will use to connect. Defaults to the Availability Group name if not specified.
+        Use this when you need a different DNS name than your AG name, such as for application connection strings that can't be changed.
+        Cannot be used when processing multiple Availability Groups in a single operation.
 
     .PARAMETER IPAddress
-        Sets the IP address(es) of the availability group listener.
+        Specifies one or more static IP addresses for the listener to use across different subnets. Each IP should correspond to a subnet where AG replicas are located.
+        Use this for multi-subnet deployments or when DHCP is not available in your network environment.
+        Cannot be combined with the Dhcp parameter.
 
     .PARAMETER SubnetIP
-        Sets the Subnet IP address(es) of the availability group listener.
+        Specifies the network subnet addresses where the listener IPs will be configured. Auto-calculated from IPAddress and SubnetMask if not provided.
+        Use this when you need explicit control over subnet configuration or when auto-calculation produces incorrect results.
+        Must match the number of IP addresses specified, or provide a single subnet to apply to all IPs.
 
     .PARAMETER SubnetMask
-        Sets the subnet IP mask(s) of the availability group listener. Defaults to 255.255.255.0.
+        Defines the subnet mask for each listener IP address, controlling the network range. Defaults to 255.255.255.0 (/24).
+        Use this when your network uses non-standard subnet sizes or when configuring multi-subnet listeners with different mask requirements.
+        Must match the number of IP addresses, or provide a single mask to apply to all IPs.
 
     .PARAMETER Port
-        Sets the port number used to communicate with the availability group. Defaults to 1433.
+        Specifies the TCP port number that clients will use to connect to the listener. Defaults to 1433.
+        Change this when your environment requires non-standard SQL Server ports due to security policies or port conflicts with other services.
 
     .PARAMETER Dhcp
-        Indicates whether the listener uses DHCP.
+        Configures the listener to obtain IP addresses automatically from DHCP rather than using static IPs. Simplifies network configuration when DHCP reservations are managed centrally.
+        Cannot be used with IPAddress parameter and requires single-subnet AG configurations only.
 
     .PARAMETER Passthru
-        Don't create the listener, just pass thru an object that can be further customized before creation.
+        Returns the listener object without creating it on the server, allowing for additional configuration before calling Create().
+        Use this when you need to set advanced properties not exposed by this function's parameters before committing the listener to SQL Server.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAvailabilityGroup
+        Accepts Availability Group objects from Get-DbaAvailabilityGroup through the pipeline, eliminating the need to specify SqlInstance and AvailabilityGroup parameters.
+        Use this approach when working with multiple AGs or when you need to filter AGs before creating listeners.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

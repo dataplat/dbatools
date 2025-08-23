@@ -45,6 +45,8 @@ Describe $CommandName -Tag IntegrationTests {
             if ($testPools) {
                 $null = $testPools | Remove-DbaRgResourcePool
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Removes a resource pool" {

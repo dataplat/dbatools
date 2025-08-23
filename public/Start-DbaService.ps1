@@ -1,18 +1,20 @@
 function Start-DbaService {
     <#
     .SYNOPSIS
-        Starts SQL Server services on a computer.
+        Starts SQL Server related services across multiple computers while respecting service dependencies.
 
     .DESCRIPTION
-        Starts the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
+        Starts SQL Server services (Engine, Agent, Browser, FullText, SSAS, SSIS, SSRS) on one or more computers following proper dependency order. This function handles the complexity of starting services in the correct sequence so you don't have to manually determine which services depend on others. Commonly used after maintenance windows, server reboots, or when troubleshooting stopped services across an environment.
 
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the computer names where SQL Server services should be started. Accepts multiple computer names for bulk operations.
+        Use this when you need to start services across multiple servers simultaneously, such as after a maintenance window or environment-wide restart.
 
     .PARAMETER InstanceName
-        Only affects services that belong to the specific instances.
+        Filters services to only those belonging to specific named instances. Does not affect default instance (MSSQLSERVER) services.
+        Use this when you have multiple instances on the same server and only want to start services for specific named instances like SQL2019 or REPORTING.
 
     .PARAMETER SqlInstance
         Use a combination of computername and instancename to get the SQL Server related services for specific instances on specific computers.
@@ -23,14 +25,16 @@ function Start-DbaService {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Type
-        Use -Type to collect only services of the desired SqlServiceType.
-        Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
+        Filters to specific SQL Server service types rather than starting all services. Valid types: Agent, Browser, Engine, FullText, SSAS, SSIS, SSRS.
+        Use this when you need to start only specific service types, such as starting just SQL Agent after maintenance or only SSRS services on reporting servers.
 
     .PARAMETER Timeout
-        How long to wait for the start/stop request completion before moving on. Specify 0 to wait indefinitely.
+        Sets the maximum time in seconds to wait for each service to start before moving to the next service. Defaults to 60 seconds.
+        Increase this value for slow-starting services or when starting services on heavily loaded servers. Set to 0 to wait indefinitely.
 
     .PARAMETER InputObject
-        A collection of services from Get-DbaService
+        Accepts service objects from Get-DbaService through the pipeline for targeted service operations.
+        Use this when you need fine-grained control over which specific services to start, such as when Get-DbaService has filtered to stopped services only.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,12 +1,12 @@
 function Get-DbaDbSharePoint {
     <#
     .SYNOPSIS
-        Returns databases that are part of a SharePoint Farm.
+        Identifies all databases belonging to a SharePoint farm by querying the SharePoint Configuration database.
 
     .DESCRIPTION
-        Returns databases that are part of a SharePoint Farm, as found in the SharePoint Configuration database.
+        Discovers and returns database objects for all databases that are part of a SharePoint farm by querying the SharePoint Configuration database's internal tables and stored procedures. This helps DBAs identify which databases on their SQL Server instance are actively used by SharePoint, eliminating guesswork when planning maintenance, migrations, or troubleshooting SharePoint connectivity issues.
 
-        By default, this command checks SharePoint_Config. To use an alternate database, use the ConfigDatabase parameter.
+        The function queries the SharePoint Configuration database to find registered SharePoint databases using SharePoint's internal proc_getObjectsByBaseClass stored procedure and Objects table. By default, this command checks SharePoint_Config. To use an alternate configuration database, use the ConfigDatabase parameter.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -19,10 +19,12 @@ function Get-DbaDbSharePoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ConfigDatabase
-        The name of the SharePoint Configuration database. Defaults to SharePoint_Config.
+        Specifies the name of the SharePoint Configuration database to query for farm database information. Defaults to SharePoint_Config.
+        Use this when your SharePoint farm uses a non-standard configuration database name, such as SharePoint_Config_2016 or when managing multiple SharePoint versions on the same SQL instance.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase to directly analyze specific SharePoint Configuration databases.
+        Use this when you want to target a specific configuration database without connecting to the SQL instance again, or when working with multiple SharePoint farms across different instances.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

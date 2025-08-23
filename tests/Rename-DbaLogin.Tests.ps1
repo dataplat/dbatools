@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Stop-DbaProcess -SqlInstance $TestConfig.instance1 -Login $renamedLogin
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $renamedLogin
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When renaming a login" {

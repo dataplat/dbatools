@@ -1,10 +1,12 @@
 function Export-DbaBinaryFile {
     <#
     .SYNOPSIS
-        Exports binary files from SQL Server
+        Extracts binary data from SQL Server tables and writes it to physical files
 
     .DESCRIPTION
-        Exports binary files from SQL Server
+        Retrieves binary data stored in SQL Server tables and writes it as files to the filesystem. This is useful for extracting documents, images, or other files that have been stored in database columns using binary, varbinary, or image datatypes.
+
+        The function automatically detects filename and binary data columns based on column names and datatypes, but you can specify custom columns if needed. It supports streaming large files efficiently and can process multiple tables or databases in a single operation.
 
         If specific filename and binary columns aren't specified, the command will guess based on the datatype (binary/image) for the binary column and a match for "name" as the filename column.
 
@@ -19,39 +21,42 @@ function Export-DbaBinaryFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to scan for tables containing binary data. Accepts wildcards for pattern matching.
+        Use this to limit the export scope when you only need files from specific databases instead of scanning the entire instance.
 
     .PARAMETER Table
-        Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl.
-
-        If the object has special characters please wrap them in square brackets [ ].
-        Using dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
-        The correct way to find table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table]
-        Any actual usage of the ] must be escaped by duplicating the ] character.
-        The correct way to find a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
+        Specifies the table(s) containing binary data to export. Supports three-part naming (database.schema.table) and wildcards.
+        Use this when you know exactly which tables contain your stored files, such as document management or attachment tables.
+        Wrap table names with special characters in square brackets, like [Documents.Archive] for tables with periods in the name.
 
     .PARAMETER Schema
-        Only return tables from the specified schema
+        Limits the search to tables within specific schemas. Useful in databases with multiple schemas for organizing different application areas.
+        Common schemas include dbo, app, archive, or custom business schemas where file storage tables are organized.
 
     .PARAMETER Path
-        Specifies the directory where files will be exported.
+        Sets the target directory where exported files will be saved using their original filenames from the database.
+        The directory will be created if it doesn't exist. Use this when exporting multiple files and want to preserve their original names.
 
     .PARAMETER FilePath
-        The specific filename of the output file. If not specified, the filename will use the filename column to determine the filename.
+        Specifies the exact path and filename for a single exported file, overriding the stored filename.
+        Use this when exporting one specific file or when you need to rename the output file to a standardized naming convention.
 
     .PARAMETER FileNameColumn
-        The column name that contains the filename. If not specified, we'll try out best to figure it out.
+        Identifies which column contains the original filename or file identifier for the stored binary data.
+        The function auto-detects columns with 'name' in the column name, but specify this when your filename column has a different naming pattern like 'DocumentName' or 'FileID'.
 
     .PARAMETER BinaryColumn
-        The column name that contains the binary data. If not specified, we'll try out best to figure it out.
+        Identifies which column contains the actual binary file data to export.
+        The function auto-detects binary, varbinary, and image columns, but specify this when you have multiple binary columns or non-standard column names like 'DocumentData' or 'FileContent'.
 
     .PARAMETER Query
-        Allows you to specify a custom query to use to return the data. If not specified, we'll try out best to figure it out.
-
-        Example query: "SELECT [fn], [data] FROM tempdb.dbo.files"
+        Provides a custom SQL query to retrieve specific files based on complex criteria or joins.
+        Use this when you need to filter files by metadata, join with other tables, or when the auto-detection doesn't work with your table structure.
+        Your query must return exactly two columns: filename and binary data in that order.
 
     .PARAMETER InputObject
-        Table objects to be piped in from Get-DbaDbTable or Get-DbaBinaryFileTable
+        Accepts table objects from the pipeline, typically from Get-DbaDbTable or Get-DbaBinaryFileTable.
+        Use this for advanced scenarios where you need to pre-filter or analyze tables before exporting their binary content.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed

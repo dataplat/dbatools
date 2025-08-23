@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
         $newDbName = "dbatoolsci_newdb_$random"
         $newDbs = New-DbaDatabase -SqlInstance $server1, $server2 -Name $newDbName
 
@@ -58,10 +58,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = $newDbs | Remove-DbaDatabase -Confirm:$false
-        $null = $logins | Remove-DbaLogin -Confirm:$false
+        $null = $newDbs | Remove-DbaDatabase
+        $null = $logins | Remove-DbaLogin
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "commands work as expected" {

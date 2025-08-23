@@ -1,12 +1,10 @@
 function Get-DbaLastBackup {
     <#
     .SYNOPSIS
-        Get date/time for last known backups of databases.
+        Retrieves last backup dates and times for database backup compliance monitoring
 
     .DESCRIPTION
-        Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.
-
-        Default output includes columns Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup.
+        Queries msdb backup history to retrieve the most recent full, differential, and transaction log backup dates for each database. This function helps DBAs quickly identify backup gaps and verify compliance with backup policies by showing when each backup type was last performed. The function also calculates elapsed time since each backup and provides status indicators to highlight potential issues, such as databases with no recent backups or transaction log backups that are overdue in full recovery model databases. Default output includes Server, Database, LastFullBackup, LastDiffBackup, and LastLogBackup columns.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,10 +17,13 @@ function Get-DbaLastBackup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to check for backup history. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases rather than scanning all databases on the instance.
+        Helpful for monitoring critical production databases or troubleshooting backup issues on particular databases.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more database(s) to exclude from processing.
+        Excludes specific databases from the backup history check. Commonly used to skip system databases or test databases.
+        Use this when you want to check most databases but exclude certain ones like tempdb, development databases, or databases with known backup exemptions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

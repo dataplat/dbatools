@@ -38,7 +38,6 @@ Describe $CommandName -Tag IntegrationTests {
             Name         = $agname
             ClusterType  = "None"
             FailoverMode = "Manual"
-            Confirm      = $false
             Certificate  = "dbatoolsci_AGCert"
         }
         $null = New-DbaAvailabilityGroup @splatAvailabilityGroup
@@ -50,11 +49,11 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance3 -Login "claudio", "port", "tester" -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance3 -Login "claudio", "port", "tester"
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "revokes big perms" {
         It "returns results with proper data" {

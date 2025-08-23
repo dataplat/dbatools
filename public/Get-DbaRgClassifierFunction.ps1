@@ -1,10 +1,10 @@
 function Get-DbaRgClassifierFunction {
     <#
     .SYNOPSIS
-        Gets the Resource Governor custom classifier Function
+        Retrieves the Resource Governor classifier function configured for workload group assignment
 
     .DESCRIPTION
-        Gets the Resource Governor custom classifier Function which is used for customize the workload groups usage
+        Retrieves the custom classifier function that Resource Governor uses to determine which workload group incoming connections are assigned to. The classifier function contains the business logic that evaluates connection properties (like login name, application name, or host name) and returns the appropriate workload group name. This function is always stored in the master database and is essential for understanding how Resource Governor categorizes and manages SQL Server workloads.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,7 +17,8 @@ function Get-DbaRgClassifierFunction {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaResourceGovernor
+        Accepts Resource Governor objects piped from Get-DbaResourceGovernor.
+        Use this when processing multiple instances or when you already have Resource Governor objects to work with, allowing for efficient pipeline operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

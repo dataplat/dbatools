@@ -1,12 +1,14 @@
 function Get-DbaNetworkConfiguration {
     <#
     .SYNOPSIS
-        Returns the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.
+        Retrieves SQL Server network protocols, TCP/IP settings, and SSL certificate configuration from SQL Server Configuration Manager
 
     .DESCRIPTION
-        Returns a PowerShell object with the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.
+        Collects comprehensive network configuration details for SQL Server instances, providing the same information visible in SQL Server Configuration Manager but in a scriptable PowerShell format. This function is essential for network connectivity troubleshooting, security audits, and compliance reporting across multiple SQL Server environments.
 
-        As we get information from SQL WMI and also from the registry, we use PS Remoting to run the core code on the target machine.
+        The function retrieves protocol status for Shared Memory, Named Pipes, and TCP/IP, along with detailed TCP/IP properties including port configurations, IP address bindings, and dynamic port settings. It also extracts SSL certificate information, encryption settings, and advanced security properties like SPNs and extended protection settings.
+
+        Since the function accesses SQL WMI and Windows registry data, it uses PowerShell remoting to execute on the target machine, requiring appropriate permissions on both the local and remote systems.
 
         For a detailed explanation of the different properties see the documentation at:
         https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
@@ -18,23 +20,15 @@ function Get-DbaNetworkConfiguration {
         Credential object used to connect to the Computer as a different user.
 
     .PARAMETER OutputType
-        Defines what information is returned from the command.
-        Options include: Full, ServerProtocols, TcpIpProperties, TcpIpAddresses or Certificate. Full by default.
+        Controls which network configuration details are returned from SQL Server Configuration Manager.
+        Use this to focus on specific troubleshooting areas or reduce output when checking multiple instances.
+        Valid options: Full, ServerProtocols, TcpIpProperties, TcpIpAddresses, Certificate (defaults to Full).
 
-        Full returns one object per SqlInstance with information about the server protocols
-        and nested objects with information about TCP/IP properties and TCP/IP addresses.
-        It also outputs advanced properties including information about the used certificate.
-
-        ServerProtocols returns one object per SqlInstance with information about the server protocols only.
-
-        TcpIpProperties returns one object per SqlInstance with information about the TCP/IP protocol properties only.
-
-        TcpIpAddresses returns one object per SqlInstance and IP address.
-        If the instance listens on all IP addresses (TcpIpProperties.ListenAll), only the information about the IPAll address is returned.
-        Otherwise only information about the individual IP addresses is returned.
-        For more details see: https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-server-to-listen-on-a-specific-tcp-port
-
-        Certificate returns one object per SqlInstance with information about the configured network certificate and whether encryption is enforced.
+        Full provides complete network configuration including all protocols, TCP/IP settings, IP bindings, and SSL certificate details.
+        ServerProtocols shows only whether Shared Memory, Named Pipes, and TCP/IP protocols are enabled.
+        TcpIpProperties returns TCP/IP protocol settings like KeepAlive timeout and whether the instance listens on all IP addresses.
+        TcpIpAddresses displays port configurations and IP address bindings for connection troubleshooting.
+        Certificate outputs SSL certificate information and encryption enforcement settings for security audits.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

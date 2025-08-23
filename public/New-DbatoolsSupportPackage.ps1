@@ -1,30 +1,35 @@
 function New-DbatoolsSupportPackage {
     <#
     .SYNOPSIS
-        Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
+        Creates a comprehensive diagnostic package for troubleshooting dbatools module issues and bugs.
 
     .DESCRIPTION
-        This function creates an extensive debugging package that can help with reproducing and fixing issues.
+        This function creates an extensive diagnostic package specifically designed to help the dbatools team troubleshoot module-related issues, bugs, or unexpected behavior. When you encounter problems with dbatools commands or need to submit a bug report, this package provides all the environmental and runtime information needed for effective debugging.
 
-        The file will be created on the desktop (or in the home directory if $home/Desktop does not exist) by default and will contain quite a bit of information:
-        - OS Information
-        - Hardware Information (CPU, Ram, things like that)
-        - .NET Information
-        - PowerShell Information
-        - Your input history
-        - The In-Memory message log
-        - The In-Memory error log
-        - Screenshot of the console buffer (Basically, everything written in your current console, even if you have to scroll upwards to see it.
+        The resulting compressed file contains comprehensive system and PowerShell environment details that are essential for reproducing and diagnosing issues. This saves you from manually collecting multiple pieces of information and ensures nothing important gets missed when reporting problems.
+
+        The package includes:
+        - Operating system and hardware information (CPU, RAM, OS version)
+        - PowerShell and .NET framework versions and loaded modules
+        - Your PowerShell command history from the current session
+        - dbatools internal message and error logs
+        - Complete console buffer contents (everything currently visible in your PowerShell window)
+        - Loaded assemblies and their versions
+        - Any additional variables you specify
+
+        The output file is automatically created on your desktop (or home directory if desktop doesn't exist) as a timestamped ZIP archive. Always start a fresh PowerShell session and reproduce the minimal steps to trigger your issue before running this command - this keeps the diagnostic data focused and avoids including unrelated information or sensitive data from your session history.
 
     .PARAMETER Path
-        The folder where to place the output xml in.
+        Specifies the directory where the support package ZIP file will be created. Defaults to your desktop, or home directory if desktop doesn't exist.
+        Use this when you need the diagnostic file saved to a specific location for easier access or compliance requirements.
 
     .PARAMETER Variables
-        Name of additional variables to attach.
-        This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
+        Specifies additional PowerShell variables to include in the diagnostic package by name. Only captures variables that exist in your current session.
+        Use this when specific variables contain connection strings, configuration settings, or data relevant to reproducing your issue.
 
     .PARAMETER PassThru
-        Returns file object that was created during execution.
+        Returns the FileInfo object for the created ZIP file instead of just displaying its location.
+        Use this when you need to programmatically work with the support package file, such as uploading it automatically or getting its size.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

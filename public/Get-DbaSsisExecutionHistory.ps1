@@ -1,12 +1,12 @@
 function Get-DbaSsisExecutionHistory {
     <#
     .SYNOPSIS
-        Retrieves SSIS project and package execution History, and environments from one SQL Server to another.
+        Retrieves SSIS package execution history from the SSIS catalog database (SSISDB).
 
     .DESCRIPTION
-        Retrieves SSIS project and package execution History, and environments from one SQL Server to another.
+        Retrieves detailed execution history for SSIS packages from the SSIS catalog database, including execution status, timing, and environment details. This function queries the catalog.executions view in SSISDB to provide comprehensive execution information for troubleshooting failed packages, monitoring performance, and analyzing SSIS workloads.
 
-        This command gets execution history for SSIS execution given one or more instances and can be filtered by Project, Environment,Folder or Status.
+        Useful for identifying failed or long-running packages, tracking execution patterns over time, and investigating SSIS deployment issues. Results can be filtered by project, folder, environment, execution status, or date range to focus on specific troubleshooting scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -21,19 +21,24 @@ function Get-DbaSsisExecutionHistory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Project
-        Specifies a filter by project
+        Filters results to specific SSIS projects deployed to the catalog. Accepts an array of project names for multiple projects.
+        Use this when troubleshooting issues within particular projects or analyzing execution patterns for specific deployments.
 
     .PARAMETER Folder
-        Specifies a filter by folder
+        Filters results to specific SSIS catalog folders that contain projects and packages. Accepts an array of folder names.
+        Useful for focusing on executions within specific organizational folders or when troubleshooting deployments in particular environments.
 
     .PARAMETER Environment
-        Specifies a filter by environment
+        Filters results to specific SSIS environments that were used during package execution. Accepts an array of environment names.
+        Use this to analyze executions that used particular environment variables or to troubleshoot environment-specific configuration issues.
 
     .PARAMETER Status
-        Specifies a filter by status (created,running,cancelled,failed,pending,halted,succeeded,stopping,completed)
+        Filters results to specific execution statuses such as Failed, Succeeded, or Running. Accepts multiple status values.
+        Commonly used to find failed executions for troubleshooting or to monitor currently running packages during peak processing times.
 
     .PARAMETER Since
-        Datetime object used to narrow the results to a date
+        Limits results to executions that started on or after the specified date and time. Accepts datetime objects or strings.
+        Use this to focus on recent executions when analyzing current issues or to exclude older historical data from large catalogs.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -1,12 +1,14 @@
 function Get-DbaSsisEnvironmentVariable {
     <#
     .SYNOPSIS
-        This command gets specified SSIS Environment and all its variables
+        Retrieves environment variables from SSIS Catalog with decrypted sensitive values
 
     .DESCRIPTION
-        This command gets all variables from specified environment from SSIS Catalog. All sensitive values are decrypted.
-        The function communicates directly with SSISDB database, "SQL Server Integration Services" service isn't queried there.
-        Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
+        Retrieves all variables from specified SSIS environments stored in the SSISDB catalog database. All sensitive values are automatically decrypted and returned in plaintext for configuration management and troubleshooting purposes.
+
+        This function queries the SSISDB database directly using symmetric keys and certificates to decrypt sensitive variable values, bypassing the standard SMO limitations that only return encrypted values. This is essential for SSIS environment configuration audits, parameter validation, and deployment verification.
+
+        The function communicates directly with SSISDB database - the SQL Server Integration Services service isn't queried. Each parameter (besides SqlInstance and SqlCredential) acts as a filter to include or exclude specific environments or folders.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -21,18 +23,23 @@ function Get-DbaSsisEnvironmentVariable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Environment
-        The SSIS Environments names that we want to get variables from
+        Specifies one or more SSIS environment names to retrieve variables from within the SSISDB catalog.
+        Use this when you need variables from specific environments like 'DEV', 'QA', or 'PROD' rather than all environments in a folder.
 
     .PARAMETER EnvironmentExclude
-        The SSIS Environments to exclude. Acts as a filter for environments, best used without 'Environment' parameter
-        to get variables for all environments but excluded ones
+        Excludes specified SSIS environment names from the results when retrieving variables.
+        Most effective when used without the Environment parameter to get all environments except those specified.
+        Helpful when you want to audit all non-production environments or exclude specific environments from configuration reviews.
 
     .PARAMETER Folder
-        The Folders names that contain the environments
+        Specifies one or more SSISDB catalog folder names that contain the environments you want to query.
+        Use this to limit your search to specific project folders when you have environments organized by application or team.
+        If omitted, the function searches all folders in the SSISDB catalog.
 
     .PARAMETER FolderExclude
-        The Folders names to exclude. Acts as a filter for folders containing environments, best user without 'Folder' parameter
-        to get variables for all folders but excluded ones
+        Excludes specified SSISDB catalog folder names from the search when retrieving environment variables.
+        Most effective when used without the Folder parameter to search all folders except those specified.
+        Useful when you want to exclude test folders, archived projects, or specific application folders from your audit.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

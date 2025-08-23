@@ -1,10 +1,10 @@
 function Get-DbaDbSequence {
     <#
     .SYNOPSIS
-        Finds a sequence.
+        Retrieves SQL Server sequence objects and their configuration details from specified databases.
 
     .DESCRIPTION
-        Finds a sequence in the database(s) specified.
+        Retrieves sequence objects from SQL Server databases, returning detailed information about each sequence including data type, start value, increment value, and schema location. Sequences provide a flexible alternative to IDENTITY columns for generating sequential numeric values, allowing values to be shared across multiple tables and offering more control over numbering behavior. This function helps DBAs inventory sequences across databases, verify sequence configurations, and identify sequences that may need maintenance or optimization.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,16 +18,20 @@ function Get-DbaDbSequence {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to search for sequence objects. Accepts wildcards and multiple database names.
+        Use this when you need to limit the search to specific databases instead of scanning all databases on the instance.
 
     .PARAMETER Sequence
-        The name of the sequence.
+        Filters results to sequences with specific names. Accepts multiple sequence names and supports exact name matching.
+        Use this when you need to find specific sequences across databases rather than retrieving all sequences.
 
     .PARAMETER Schema
-        The name of the schema for the sequence. The default is dbo.
+        Filters results to sequences within specific schemas. Accepts multiple schema names for searching across different schemas.
+        Use this when you need to examine sequences in particular schemas, such as application-specific schemas or custom organizational structures.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase pipeline input, allowing you to target specific databases already retrieved.
+        Use this approach when you need to chain commands or work with databases that meet specific criteria from previous filtering operations.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

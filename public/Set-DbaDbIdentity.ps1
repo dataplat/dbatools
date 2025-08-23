@@ -1,11 +1,13 @@
 function Set-DbaDbIdentity {
     <#
     .SYNOPSIS
-        Checks and updates the current identity value via DBCC CHECKIDENT
+        Checks and resets identity column values using DBCC CHECKIDENT
 
     .DESCRIPTION
-        Use the command DBCC CHECKIDENT to check and if necessary update the current identity value of a table and return results
-        Can update an individual table via the ReSeedValue and RESEED option of DBCC CHECKIDENT
+        Executes DBCC CHECKIDENT to verify the current identity value for tables with identity columns and optionally reseed them to a specific value.
+        This is essential after bulk data operations, imports, or deletes that can leave identity values out of sync with actual table data.
+        When run without ReSeedValue, it reports the current identity value and the maximum value in the identity column.
+        When ReSeedValue is specified, it resets the identity counter to prevent duplicate key errors or close identity gaps.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkident-transact-sql
@@ -21,15 +23,16 @@ function Set-DbaDbIdentity {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        Only one database should be specified when using a RESEED value
+        Specifies which databases to check for identity values. If not specified, all databases on the instance will be processed.
+        When using ReSeedValue, only a single database can be specified since reseeding requires targeting a specific table location.
 
     .PARAMETER Table
-        The table(s) for which to check the current identity value.
-        Only one table should be specified when using a RESEED value
+        Specifies which tables with identity columns to check or reseed. Use schema.table format for tables not in the default schema.
+        When using ReSeedValue, only a single table can be specified since each table's identity must be reseeded individually.
 
     .PARAMETER ReSeedValue
-        The new reseed value to be used to set as the current identity value.
+        Sets the next identity value that will be assigned to new rows in the specified table.
+        Use this after bulk operations, deletes, or imports that leave gaps in identity sequences or when the identity value needs correction.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

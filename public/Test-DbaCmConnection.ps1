@@ -1,36 +1,37 @@
 function Test-DbaCmConnection {
     <#
     .SYNOPSIS
-        Tests over which paths a computer can be managed.
+        Tests remote computer management connectivity using multiple protocols and caches optimal connection methods
 
     .DESCRIPTION
-        Tests over which paths a computer can be managed.
+        Tests remote computer connectivity across four different management protocols to determine the most reliable connection method for SQL Server administration tasks.
 
-        This function tries out the connectivity for:
-        - Cim over WinRM
-        - Cim over DCOM
-        - Wmi
-        - PowerShellRemoting
-        Results will be written to the connectivity cache and will cause Get-DbaCmObject and Invoke-DbaCmMethod to connect using the way most likely to succeed. This way, it is likely the other commands will take less time to execute. These others too cache their results, in order to dynamically update connection statistics.
+        This function evaluates connectivity for:
+        - CIM over WinRM (Windows Remote Management)
+        - CIM over DCOM (Distributed Component Object Model)
+        - WMI (Windows Management Instrumentation)
+        - PowerShell Remoting
 
-        This function ignores global configuration settings limiting which protocols may be used.
+        Results are cached and automatically used by other dbatools commands like Get-DbaCmObject and Invoke-DbaCmMethod to optimize future connections. This eliminates the need to test connectivity repeatedly and ensures faster execution of subsequent operations. The connectivity cache is dynamically updated as other dbatools commands discover working or failing connection methods.
+
+        This function bypasses global configuration settings that might restrict certain protocols, allowing you to test all available connection types regardless of your dbatools configuration.
 
     .PARAMETER ComputerName
-        The computer to test against.
+        Specifies the target computers to test management connectivity against. Accepts computer names, IP addresses, or FQDN formats.
+        Use this to validate which remote management protocols work before running other dbatools commands that require computer management access.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         The credentials to use when running the test. Bad credentials are automatically cached as non-working. This behavior can be disabled by the 'Cache.Management.Disable.BadCredentialList' configuration.
 
     .PARAMETER Type
-        The connection protocol types to test.
-        By default, all types are tested.
-
-        Note that this function will ignore global configurations limiting the types of connections available and test all connections specified here instead.
-
-        Available connection protocol types: "CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"
+        Specifies which remote management protocols to test for connectivity. Tests all four protocols by default.
+        Use this to focus testing on specific protocols when troubleshooting connectivity issues or when you know certain protocols are blocked in your environment.
+        Available options: CimRM (CIM over WinRM), CimDCOM (CIM over DCOM), Wmi (legacy WMI), PowerShellRemoting.
 
     .PARAMETER Force
-        If this switch is enabled, the Alert will be dropped and recreated on Destination.
+        Forces testing even when credentials are cached as previously failed. Removes bad credential cache entries and retests connectivity.
+        Use this when credentials have been updated or when network connectivity issues have been resolved since the last test.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

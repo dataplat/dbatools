@@ -1,10 +1,10 @@
 function Stop-DbaTrace {
     <#
     .SYNOPSIS
-        Stops SQL Server traces
+        Stops running SQL Server traces using sp_trace_setstatus
 
     .DESCRIPTION
-        Stops SQL Server traces
+        Stops one or more running SQL Server traces by calling sp_trace_setstatus with a status of 0. This is useful when you need to stop traces created for troubleshooting, performance monitoring, or security auditing that are no longer needed or are impacting server performance. The function prevents you from accidentally stopping the default trace and provides guidance to use Set-DbaSpConfigure if you need to disable it. Works with trace IDs or accepts piped input from Get-DbaTrace for selective stopping of traces.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -17,10 +17,12 @@ function Stop-DbaTrace {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
-        A list of trace ids
+        Specifies the trace IDs to stop. Accepts one or more trace ID numbers as integers.
+        Use this when you need to stop specific traces instead of all running traces on the instance.
 
     .PARAMETER InputObject
-        Internal parameter for piping
+        Accepts trace objects from the pipeline, typically from Get-DbaTrace output.
+        This enables selective stopping of traces by piping Get-DbaTrace results through filtering commands like Out-GridView or Where-Object.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

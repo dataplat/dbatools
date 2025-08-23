@@ -1,12 +1,14 @@
 function Get-DbaMaxMemory {
     <#
     .SYNOPSIS
-        Gets the 'Max Server Memory' configuration setting and the memory of the server.  Works on SQL Server 2000-2014.
+        Retrieves SQL Server max memory configuration and compares it to total physical server memory
 
     .DESCRIPTION
-        This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total physical installed on the server.
+        This command retrieves the SQL Server 'Max Server Memory' configuration setting alongside the total physical memory installed on the server. This comparison helps identify potential memory configuration issues that can impact SQL Server performance.
 
-        Results are turned in megabytes (MB).
+        Use this function to audit memory settings across your environment, troubleshoot performance issues related to memory pressure, or verify that SQL Server isn't configured to use more memory than physically available. The function is particularly useful for finding instances with the default max memory setting (2147483647 MB) that should be properly configured based on available physical memory.
+
+        Results are returned in megabytes (MB) for both the configured max memory and total physical memory values.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -57,9 +57,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup any remaining test schedules
-        $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Confirm:$false -Force
+        $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Force
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing schedules" {
@@ -69,13 +69,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should remove specific schedule by name" {
-            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
+            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes
             $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes
             $results | Should -BeNullOrEmpty
         }
 
         It "Should remove all remaining test schedules via pipeline" {
-            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Confirm:$false -Force
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Force
             $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
             $results | Should -BeNullOrEmpty
         }

@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets a certificate" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Set variables. They are available in all the It blocks.
             $keyName = "test4"
@@ -45,7 +45,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance    = $TestConfig.instance2
                 Database       = $databaseName
                 SecurePassword = $tPassword
-                Confirm        = $false
             }
             $null = New-DbaDbMasterKey @splatMasterKey
 
@@ -62,17 +61,17 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbAsymmetricKey @splatFirstKey
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup all created objects.
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should Create new key in GetAsKey called test4" {

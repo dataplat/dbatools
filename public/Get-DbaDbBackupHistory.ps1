@@ -1,14 +1,10 @@
 function Get-DbaDbBackupHistory {
     <#
     .SYNOPSIS
-        Returns backup history details for databases on a SQL Server.
+        Retrieves backup history records from MSDB for analysis and compliance reporting.
 
     .DESCRIPTION
-        Returns backup history details for some or all databases on a SQL Server.
-
-        You can even get detailed information (including file path) for latest full, differential and log files.
-
-        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present.
+        Queries the MSDB database backup tables to extract detailed backup history information including file paths, sizes, compression ratios, and LSN sequences. Essential for compliance auditing, disaster recovery planning, and troubleshooting backup issues without having to manually query system tables. The function automatically groups striped backup sets into single objects and excludes copy-only backups by default, making the output more practical for restoration scenarios. You can filter results by database name, backup type, date range, or retrieve only the most recent backup chains needed for point-in-time recovery.
 
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 
@@ -19,61 +15,77 @@ function Get-DbaDbBackupHistory {
         Credential object used to connect to the SQL Server instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies one or more databases to include in the backup history search. Accepts wildcards for pattern matching.
+        Use this when you need backup history for specific databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more database(s) to exclude from processing.
+        Specifies one or more databases to exclude from the backup history search.
+        Useful when you want history for most databases but need to skip system databases or specific user databases.
 
     .PARAMETER IncludeCopyOnly
-        By default Get-DbaDbBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them.
+        Includes copy-only backups in the results, which are normally excluded by default.
+        Copy-only backups don't break the backup chain and are commonly used for ad-hoc backups or moving databases to other environments.
 
     .PARAMETER Force
-        If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
+        Returns all columns from the MSDB backup tables instead of the filtered standard output.
+        Use this when you need access to additional backup metadata fields for detailed analysis or troubleshooting.
 
     .PARAMETER Since
-        Specifies a starting point for the search for backups.
-        This is compared to the date stored in msdb, which gets stored in the timezone of the running SQL Server instance.
-        If a DateTime object is passed, that will be used.
-        If a TimeSpan object is passed, that will be added to Get-Date and the resulting value will be used.
+        Filters backup history to only include backups taken after the specified date and time.
+        Accepts DateTime objects or TimeSpan objects (which get added to the current time). Times are compared using the SQL Server instance's timezone.
+        Essential for limiting results when dealing with databases that have extensive backup history.
 
     .PARAMETER RecoveryFork
-        Specifies the Recovery Fork you want backup history for.
+        Filters results to a specific recovery fork GUID when a database has multiple recovery paths.
+        Use this when a database has been restored from different backup chains or has experienced recovery fork scenarios, ensuring you get the correct backup sequence.
 
     .PARAMETER Last
-        If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.
+        Returns the most recent complete backup chain (full, differential, and log backups) needed for point-in-time recovery.
+        This provides the exact backup sequence you'd need to restore a database to its most current state.
 
     .PARAMETER LastFull
-        If this switch is enabled, the most recent full backup set is returned.
+        Returns only the most recent full backup for each database.
+        Use this to quickly identify the base backup needed for restore operations or to verify when the last full backup was taken.
 
     .PARAMETER LastDiff
-        If this switch is enabled, the most recent differential backup set is returned.
+        Returns only the most recent differential backup for each database.
+        Useful for verifying differential backup schedules or identifying the latest differential backup in a restore scenario.
 
     .PARAMETER LastLog
-        If this switch is enabled, the most recent log backup is returned.
+        Returns only the most recent transaction log backup for each database.
+        Critical for monitoring log backup frequency and identifying the latest point-in-time recovery option available.
 
     .PARAMETER DeviceType
-        Specifies a filter for backup sets based on DeviceType. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device','URL', in addition to custom integers for your own DeviceType.
+        Filters backups by device type such as 'Disk', 'Tape', 'URL', or 'Virtual Device'.
+        Use this to find backups stored on specific media types, particularly useful when backups go to different destinations like local disk vs cloud storage.
 
     .PARAMETER Raw
-        If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.
+        Returns one object per backup file instead of grouping striped backup sets into single objects.
+        Use this when you need to see individual backup file details for striped backups or need to analyze backup file distribution.
 
     .PARAMETER Type
-        Specifies one or more types of backups to return. Valid options are 'Full', 'Log', 'Differential', 'File', 'Differential File', 'Partial Full', and 'Partial Differential'. Otherwise, all types of backups will be returned unless one of the -Last* switches is enabled.
+        Filters results to specific backup types: 'Full', 'Log', 'Differential', 'File', 'Differential File', 'Partial Full', or 'Partial Differential'.
+        Use this to focus on particular backup types when analyzing backup strategies or troubleshooting specific backup issues.
 
     .PARAMETER LastLsn
-        Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.
+        Filters to only include backups with LSNs greater than the specified value, improving query performance on large backup histories.
+        Use this when you know the LSN range you're interested in, typically when building restore sequences or analyzing backup chains.
 
     .PARAMETER IncludeMirror
-        By default mirrors of backups are not returned, this switch will cause them to be returned.
+        Includes mirror backup copies in the results, which are excluded by default.
+        Use this when you need to see all backup copies created through backup mirroring, useful for verifying mirror backup configurations.
 
     .PARAMETER AgCheck
-        Deprecated. The functionality to also get the history from all replicas if SqlInstance is part on an availability group has been moved to Get-DbaAgBackupHistory.
+        Deprecated parameter. Use Get-DbaAgBackupHistory instead to retrieve backup history from all replicas in an Availability Group.
+        This parameter is maintained for backward compatibility but no longer functions.
 
     .PARAMETER IgnoreDiffBackup
-        When this switch is enabled, Differential backups will be ignored.
+        Excludes differential backups from the results, showing only full and log backups.
+        Useful when analyzing backup chains that don't use differential backups or when you want to focus on full and log backup patterns.
 
     .PARAMETER LsnSort
-        Specifies which of the returned LSN values you would like to use for sorting when using the LastFull, LastDiff and LastLog parameters.
+        Determines which LSN column to use for sorting results: 'FirstLsn', 'DatabaseBackupLsn', or 'LastLsn' (default).
+        Use this to control backup ordering when working with complex backup scenarios or when you need results sorted by specific LSN checkpoints.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

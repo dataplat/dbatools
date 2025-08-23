@@ -1,23 +1,27 @@
 function Test-DbaConnectionAuthScheme {
     <#
     .SYNOPSIS
-        Returns the transport protocol and authentication scheme of the connection. This is useful to determine if your connection is using Kerberos.
+        Tests and reports authentication scheme and transport protocol details for SQL Server connections
 
     .DESCRIPTION
-        By default, this command will return the ConnectName, ServerName, Transport and AuthScheme of the current connection.
+        This command queries sys.dm_exec_connections to retrieve authentication and transport details for your current SQL Server session. By default, it returns key connection properties including ServerName, Transport protocol, and AuthScheme (Kerberos or NTLM).
 
-        ConnectName is the name you used to connect. ServerName is the name that the SQL Server reports as its @@SERVERNAME which is used to register its SPN. If you were expecting a Kerberos connection and got NTLM instead, ensure ConnectName and ServerName match.
+        This is particularly valuable for troubleshooting authentication issues when you expect Kerberos but are getting NTLM instead. The ServerName returned shows what SQL Server reports as its @@SERVERNAME, which must match your connection name for proper SPN registration and Kerberos authentication.
 
-        If -Kerberos or -Ntlm is specified, the $true/$false results of the test will be returned. Returns $true or $false by default for one server. Returns Server name and Results for more than one server.
+        When used with -Kerberos or -Ntlm switches, the command returns simple $true/$false results to verify specific authentication methods. This makes it ideal for automated checks and scripts that need to validate authentication schemes across multiple servers.
+
+        Common scenarios include diagnosing SPN configuration problems, security auditing of connection protocols, and verifying that domain authentication is working as expected in your environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server(s) must be SQL Server 2005 or higher.
 
     .PARAMETER Kerberos
-        If this switch is enabled, checks will be made for Kerberos authentication.
+        Returns $true if the connection uses Kerberos authentication, $false otherwise.
+        Use this switch when you need to verify that domain authentication is working properly and not falling back to NTLM.
 
     .PARAMETER Ntlm
-        If this switch is enabled, checks will be made for NTLM authentication.
+        Returns $true if the connection uses NTLM authentication, $false otherwise.
+        Use this switch to confirm when connections are using NTLM instead of the preferred Kerberos authentication method.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).

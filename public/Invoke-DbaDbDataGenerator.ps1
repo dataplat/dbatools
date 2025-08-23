@@ -1,10 +1,10 @@
 function Invoke-DbaDbDataGenerator {
     <#
     .SYNOPSIS
-        Invoke-DbaDbDataGenerator generates random data for tables
+        Generates realistic test data for SQL Server database tables using configuration-driven rules
 
     .DESCRIPTION
-        Invoke-DbaDbDataMasking is able to generate random data for tables.
+        Populates database tables with randomly generated but realistic test data based on JSON configuration files. Uses the Bogus library to create fake but believable data like names, addresses, phone numbers, and dates that respect column constraints and data types. Perfect for creating development environments, testing scenarios, or demo databases without using production data. Handles identity columns, unique indexes, nullable fields, and foreign key relationships while maintaining data integrity.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,42 +17,52 @@ function Invoke-DbaDbDataGenerator {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Databases to process through
+        Specifies which databases to generate data for. If not provided, uses database names from the configuration file.
+        Use this to limit data generation to specific databases when your config file covers multiple databases.
 
     .PARAMETER Table
-        Tables to process. By default all the tables will be processed
+        Limits data generation to specific tables only, overriding the full table list in the configuration file.
+        Useful when you need to populate just certain tables for testing or during incremental development work.
 
     .PARAMETER Column
-        Columns to process. By default all the columns will be processed
+        Restricts data generation to specific columns within the processed tables.
+        Use this to generate data for only certain columns during testing or when troubleshooting specific column configurations.
 
     .PARAMETER FilePath
-        Configuration file that contains the which tables and columns need to be masked
+        Path to the JSON configuration file that defines data generation rules for tables and columns. Accepts local file paths or HTTP URLs.
+        This file specifies which tables to populate, how many rows to generate, and the data generation rules for each column.
 
     .PARAMETER Locale
-        Set the local to enable certain settings in the masking
+        Sets the locale for generating culture-specific fake data like names, addresses, and phone numbers. Defaults to 'en' for English.
+        Change this when you need realistic data for specific regions, such as 'de' for German or 'fr' for French test data.
 
     .PARAMETER CharacterString
-        The characters to use in string data. 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' by default
+        Defines the character set used for generating random string values. Defaults to alphanumeric characters.
+        Customize this when you need specific character patterns for testing, such as restricting to only uppercase letters or including special characters.
 
     .PARAMETER ExcludeTable
-        Exclude specific tables even if it's listed in the config file.
+        Skips specific tables even if they're included in the configuration file.
+        Use this to temporarily exclude problematic tables during testing or when you want to process most tables but skip a few.
 
     .PARAMETER ExcludeColumn
-        Exclude specific columns even if it's listed in the config file.
+        Skips specific columns even if they're included in the configuration file.
+        Helpful when troubleshooting column-specific issues or when you want to exclude sensitive columns temporarily.
 
     .PARAMETER MaxValue
-        Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.
-
-        Useful for adhoc updates and testing, otherwise, the config file should be used.
+        Overrides the maximum length for string columns, ignoring the data type's natural limits. Lower data type limits still take precedence.
+        Useful for testing with shorter strings or when you need consistent string lengths across different environments.
 
     .PARAMETER ExactLength
-        Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
+        Forces generated strings to match the exact length of existing data in the column.
+        Use this when you need to preserve string length patterns for testing applications that expect specific data formats.
 
     .PARAMETER ModulusFactor
-        Calculating the next nullable by using the remainder from the modulus. Default is every 10.
+        Controls how frequently nullable columns receive NULL values by using modulus calculation. Default is every 10th row gets NULL.
+        Adjust this to increase or decrease NULL frequency in your test data to match realistic data distribution patterns.
 
     .PARAMETER Force
-        Forcefully execute commands when needed
+        Bypasses confirmation prompts and executes data generation without user interaction.
+        Use this in automated scripts or when you're confident about the data generation configuration and want to run unattended.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

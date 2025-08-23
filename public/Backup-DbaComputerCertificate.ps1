@@ -1,25 +1,30 @@
 function Backup-DbaComputerCertificate {
     <#
     .SYNOPSIS
-        Backs up a computer certificate - useful for older systems and backing up remote certs to local disk.
+        Exports computer certificates to disk for SQL Server network encryption backup and disaster recovery.
 
     .DESCRIPTION
-        Backs up a computer certificate - useful for older systems and backing up remote certs to local disk.
+        Exports computer certificates from the local or remote certificate store to files on disk. This is essential for backing up certificates used for SQL Server network encryption before server migrations, certificate renewals, or disaster recovery scenarios. The function works with certificate objects from Get-DbaComputerCertificate and supports multiple export formats including standard .cer files and password-protected .pfx files for complete private key backup.
 
     .PARAMETER InputObject
-        The target certificate object. Accepts input from Get-DbaComputerCertificate.
+        The certificate objects to export, typically from Get-DbaComputerCertificate pipeline output.
+        Use this to specify which certificates to backup for SQL Server network encryption recovery scenarios.
 
     .PARAMETER Path
-        Export to a directory
+        Specifies the target directory where certificate files will be saved with auto-generated filenames.
+        Files are named using the pattern: ComputerName-Thumbprint.cer for easy identification during recovery.
 
     .PARAMETER FilePath
-        Export to a specific file name
+        Specifies the exact file path and name for the exported certificate.
+        Use this when you need to control the output filename or when backing up a single certificate to a specific location.
 
     .PARAMETER Type
-        Export type. Options include: Authenticode, Cert, Pfx, Pkcs12, Pkcs7, SerializedCert.
+        Determines the certificate export format for different backup and deployment scenarios.
+        Use 'Cert' for public key only backups, 'Pfx' for complete certificate with private key backup, or other formats based on your security requirements.
 
     .PARAMETER SecurePassword
-        Export using a password
+        Provides password protection for certificate exports, required when exporting private keys with Pfx format.
+        Essential for securing certificate backups that contain private keys used for SQL Server TLS encryption.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

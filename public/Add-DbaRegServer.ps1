@@ -1,11 +1,10 @@
 function Add-DbaRegServer {
     <#
     .SYNOPSIS
-        Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups
+        Registers SQL Server instances to Central Management Server or Local Server Groups in SSMS
 
     .DESCRIPTION
-        Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups. If you need more flexibility, look into Import-DbaRegServer which
-        accepts multiple kinds of input and allows you to add reg servers from different CMSes.
+        Registers SQL Server instances as managed servers within SSMS, either to a Central Management Server (CMS) for enterprise-wide management or to Local Server Groups for personal organization. This allows DBAs to centrally organize and quickly connect to multiple SQL Server instances from SSMS without manually typing connection details each time. The function automatically creates server groups if they don't exist and supports various authentication methods including SQL Server, Windows, and Azure Active Directory. For importing existing registered servers from other sources, use Import-DbaRegServer instead.
 
     .PARAMETER SqlInstance
         The target SQL Server instance if a CMS is used
@@ -18,35 +17,44 @@ function Add-DbaRegServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerName
-        Server Name is the actual SQL instance name (labeled Server Name)
+        Specifies the actual SQL Server instance name or network address that will be used to connect to the server.
+        This is the technical identifier that SSMS uses for the physical connection (e.g., "sql01.domain.com,1433" or "sql01\INSTANCE").
 
     .PARAMETER Name
-        Name is basically the nickname in SSMS Registered Server interface (labeled Registered Server Name)
+        Sets the display name that appears in the SSMS Registered Servers tree or CMS interface.
+        Use this to give servers meaningful, recognizable names like "Production HR Database" instead of cryptic server names. Defaults to ServerName if not specified.
 
     .PARAMETER Description
-        Adds a description for the registered server
+        Provides additional details about the registered server that appear in SSMS properties.
+        Use this to document the server's purpose, environment, or important notes like "Primary OLTP for HR applications" or "Read-only replica for reporting".
 
     .PARAMETER Group
-        Adds the registered server to a specific group.
-        If group does not exist it will be created
+        Places the registered server into a specific organizational folder within CMS or Local Server Groups.
+        Creates nested groups using backslash notation like "Production\OLTP" or "Dev\Testing". The group structure will be created automatically if it doesn't exist.
 
     .PARAMETER ActiveDirectoryTenant
-        Active Directory Tenant
+        Specifies the Azure Active Directory tenant ID when registering servers that use Azure AD authentication.
+        Required when connecting to Azure SQL Database or SQL Managed Instance with AAD credentials.
 
     .PARAMETER ActiveDirectoryUserId
-        Active Directory User id
+        Sets the Azure Active Directory user principal name for AAD authentication scenarios.
+        Use this when you want the registered server to authenticate with a specific AAD account instead of integrated authentication.
 
     .PARAMETER ConnectionString
-        SQL Server connection string
+        Provides a complete SQL Server connection string with all authentication and connection parameters.
+        Use this when you need specific connection properties like encryption settings, timeout values, or custom authentication methods not covered by other parameters.
 
     .PARAMETER OtherParams
-        Additional parameters to append to the connection string
+        Appends additional connection string parameters to the base connection.
+        Useful for adding specific connection properties like "MultipleActiveResultSets=True" or "TrustServerCertificate=True" without rebuilding the entire connection string.
 
     .PARAMETER ServerObject
-        SMO Server Objects (from Connect-DbaInstance)
+        Accepts an existing SMO Server object from Connect-DbaInstance to register that connection.
+        This preserves all connection settings and authentication from the original connection, making it ideal for registering servers you've already successfully connected to.
 
     .PARAMETER InputObject
-        Allows the piping of a registered server group
+        Accepts a server group object from Get-DbaRegServerGroup to specify where the server should be registered.
+        Use this when you want to programmatically target a specific group or when piping group objects from other dbatools commands.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

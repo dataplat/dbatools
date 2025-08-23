@@ -37,7 +37,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Create a directory for test output files
         $AltExportPath = "$env:USERPROFILE\Documents"
@@ -58,12 +58,12 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $server.Query("GRANT VIEW ANY DATABASE TO [$svRole]")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
         $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole
@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Remove test files
         Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Check if output file was created" {
@@ -93,7 +93,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $role = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole
             $null = $role | Export-DbaServerRole -FilePath $outputFile
-            $global:results = $role | Export-DbaServerRole -Passthru
+            $results = $role | Export-DbaServerRole -Passthru
         }
 
         It "Exports results to one sql file" {
@@ -105,31 +105,31 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should include the defined BatchSeparator" {
-            $global:results -match "GO" | Should -BeTrue
+            $results -match "GO" | Should -BeTrue
         }
 
         It "should include the role" {
-            $global:results -match "CREATE SERVER ROLE \[$svRole\]" | Should -BeTrue
+            $results -match "CREATE SERVER ROLE \[$svRole\]" | Should -BeTrue
         }
 
         It "should include ADD MEMBER" {
-            $global:results -match "ALTER SERVER ROLE \[dbcreator\] ADD MEMBER \[$svRole\]" | Should -BeTrue
+            $results -match "ALTER SERVER ROLE \[dbcreator\] ADD MEMBER \[$svRole\]" | Should -BeTrue
         }
 
         It "should include GRANT CREATE TRACE EVENT" {
-            $global:results -match "GRANT CREATE TRACE EVENT NOTIFICATION TO \[$svRole\]" | Should -BeTrue
+            $results -match "GRANT CREATE TRACE EVENT NOTIFICATION TO \[$svRole\]" | Should -BeTrue
         }
 
         It "should include DENY SELECT ALL USER SECURABLES" {
-            $global:results -match "DENY SELECT ALL USER SECURABLES TO \[$svRole\]" | Should -BeTrue
+            $results -match "DENY SELECT ALL USER SECURABLES TO \[$svRole\]" | Should -BeTrue
         }
 
         It "should include VIEW ANY DEFINITION" {
-            $global:results -match "GRANT VIEW ANY DEFINITION TO \[$svRole\];" | Should -BeTrue
+            $results -match "GRANT VIEW ANY DEFINITION TO \[$svRole\];" | Should -BeTrue
         }
 
         It "should include GRANT VIEW ANY DATABASE" {
-            $global:results -match "GRANT VIEW ANY DATABASE TO \[$svRole\];" | Should -BeTrue
+            $results -match "GRANT VIEW ANY DATABASE TO \[$svRole\];" | Should -BeTrue
         }
     }
 }

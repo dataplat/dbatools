@@ -1,16 +1,13 @@
 function Get-DbaFilestream {
     <#
     .SYNOPSIS
-        Returns the status of Filestream on specified SQL Server for both the Service and Instance levels.
+        Retrieves FileStream configuration status at both the SQL Server service and instance levels.
 
     .DESCRIPTION
-        Returns the status of Filestream on specified SQL Server for both the Service and Instance levels.
+        Retrieves FileStream configuration status by checking both the SQL Server service configuration and the instance-level sp_configure settings. This function helps DBAs quickly identify FileStream configuration mismatches between service and instance levels, which are common causes of FileStream functionality issues. The function returns detailed access levels, share names, and indicates whether a restart is pending to apply configuration changes.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-
-    .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Defaults to localhost.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).

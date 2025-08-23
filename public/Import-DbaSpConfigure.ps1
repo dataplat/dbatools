@@ -1,30 +1,26 @@
 function Import-DbaSpConfigure {
     <#
     .SYNOPSIS
-        Updates sp_configure settings on destination server.
+        Copies sp_configure settings between SQL Server instances or applies settings from a SQL file.
 
     .DESCRIPTION
-        Updates sp_configure settings on destination server.
+        Copies all sp_configure settings from a source SQL Server instance to a destination instance, or applies sp_configure settings from a SQL file to an instance. This function handles advanced options visibility, validates server versions for compatibility, and executes the necessary RECONFIGURE statements. Essential for maintaining consistent configuration across environments during migrations, standardization projects, or when applying saved configuration templates.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Source SQL Server instance to copy sp_configure settings from. Requires sysadmin privileges to read configuration values.
+        Use this when migrating settings between servers or standardizing configurations across your environment.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Target SQL Server instance where sp_configure settings will be applied. Requires sysadmin privileges to modify configuration.
+        This server will have its configuration updated to match the source server's settings.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the source SQL Server instance. Use when Windows authentication is not available.
+        Accepts PowerShell credential objects created with Get-Credential.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the destination SQL Server instance. Use when Windows authentication is not available.
+        Accepts PowerShell credential objects created with Get-Credential.
 
     .PARAMETER SqlInstance
         Specifies a SQL Server instance to set up sp_configure values on using a SQL file.
@@ -39,10 +35,12 @@ function Import-DbaSpConfigure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies the path to a SQL script file holding sp_configure queries for each of the settings to be changed. Export-DbaSPConfigure creates a suitable file as its output.
+        Path to a SQL script file containing sp_configure commands to execute. The file should contain individual sp_configure statements.
+        Use this parameter when applying saved configurations from Export-DbaSpConfigure or custom configuration scripts.
 
     .PARAMETER Force
-        If this switch is enabled, no version check between Source and Destination is performed. By default, the major and minor versions of Source and Destination must match when copying sp_configure settings.
+        Bypasses the SQL Server version compatibility check between source and destination instances. By default, major versions must match.
+        Use with caution as some configuration options may not be available or may behave differently across SQL Server versions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,10 +1,10 @@
 function Get-DbaDbccProcCache {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC PROCCACHE
+        Retrieves plan cache memory usage statistics from SQL Server instances
 
     .DESCRIPTION
-        Returns the results of DBCC PROCCACHE
+        Executes DBCC PROCCACHE against SQL Server instances and returns structured information about plan cache memory utilization. This command reveals how much memory is allocated for storing compiled execution plans, how much is currently being used, and how many plan entries are active. Essential for diagnosing memory pressure issues, understanding plan cache efficiency, and monitoring whether the plan cache is consuming excessive memory or experiencing frequent evictions that could impact query performance.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-proccache-transact-sql

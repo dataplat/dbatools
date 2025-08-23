@@ -1,22 +1,23 @@
 function Invoke-DbaAdvancedRestore {
     <#
     .SYNOPSIS
-        Allows the restore of modified BackupHistory Objects
-        For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
+        Executes database restores from processed BackupHistory objects with advanced customization options
 
     .DESCRIPTION
-        This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from `Restore-DbaDatabase` via the following pipeline:
-        `Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore`
+        This is the final execution step in the dbatools restore pipeline. It takes pre-processed BackupHistory objects and performs the actual SQL Server database restoration with support for complex scenarios that aren't handled by the standard Restore-DbaDatabase command.
 
-        We have exposed these functions publicly to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
+        The typical pipeline flow is: Get-DbaBackupInformation | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
 
-        For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via `Format-DbaBackupInformation`
+        This function handles advanced restore scenarios including point-in-time recovery, page-level restores, Azure blob storage backups, custom file relocations, and specialized options like CDC preservation or standby mode. It can generate T-SQL scripts for review before execution, verify backup integrity, or perform the actual restore operations.
 
-        We would recommend ALWAYS pushing your input through `Test-DbaBackupInformation` just to make sure that it makes sense to us.
+        Most DBAs should use Restore-DbaDatabase for standard scenarios. This function is designed for situations requiring custom backup processing logic, complex migrations with file redirection, or when you need granular control over the restore process that isn't available in the simplified commands.
+
+        Always validate your BackupHistory objects with Test-DbaBackupInformation before using this function to ensure the restore chain is logically consistent.
 
     .PARAMETER BackupHistory
-        The BackupHistory object to be restored.
-        Can be passed in on the pipeline
+        Processed BackupHistory objects from the dbatools restore pipeline containing backup file metadata and restore instructions.
+        Typically comes from Format-DbaBackupInformation after running Get-DbaBackupInformation and Select-DbaBackupInformation.
+        Each object contains the backup file paths, database name, file relocations, and sequencing information needed for the restore operation.
 
     .PARAMETER SqlInstance
         The SqlInstance to which the backups should be restored
@@ -29,52 +30,74 @@ function Invoke-DbaAdvancedRestore {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER OutputScriptOnly
-        If set, the restore will not be performed, but the T-SQL scripts to perform it will be returned
+        Generates T-SQL RESTORE scripts without executing them, allowing you to review the commands before running.
+        Useful for validating complex restores, creating deployment scripts, or troubleshooting restore logic.
+        The generated scripts can be saved and executed manually or through other automation tools.
 
     .PARAMETER VerifyOnly
-        If set, performs a Verify of the backups rather than a full restore
+        Performs RESTORE VERIFYONLY operations to check backup file integrity without actually restoring the database.
+        Use this to validate backup files are readable and not corrupted before attempting a full restore.
+        Particularly valuable when testing backup files from different environments or after transferring backup files.
 
     .PARAMETER RestoreTime
-        Point in Time to which the database should be restored.
-
-        This should be the same value or earlier, as used in the previous pipeline stages
+        Specifies the exact point-in-time for log restore operations when performing point-in-time recovery.
+        Use this for recovering to a specific moment before data corruption or unwanted changes occurred.
+        Must be within the timeframe covered by your transaction log backups and should match the value used in earlier pipeline stages.
 
     .PARAMETER StandbyDirectory
-        A folder path where a standby file should be created to put the recovered databases in a standby mode
+        Directory path where SQL Server creates standby files for read-only access during restore operations.
+        Puts the database in standby mode, allowing read-only queries while maintaining the ability to apply additional transaction log restores.
+        Commonly used for log shipping warm standby servers or when you need to query data during a staged restore process.
 
     .PARAMETER NoRecovery
-        Leave the database in a restoring state so that further restore may be made
+        Leaves the database in RESTORING state after the operation, allowing additional transaction log restores to be applied.
+        Essential for point-in-time recovery scenarios where you need to apply multiple transaction log backups sequentially.
+        The database remains inaccessible until a final restore operation is performed WITH RECOVERY.
 
     .PARAMETER MaxTransferSize
-        Parameter to set the unit of transfer. Values must be a multiple by 64kb
+        Sets the maximum amount of data transferred between SQL Server and backup devices in each read operation.
+        Specify in bytes as a multiple of 64KB to optimize restore performance for large databases or slow storage.
+        Higher values can improve performance but use more memory; typically ranges from 64KB to 4MB depending on your system.
 
     .PARAMETER Blocksize
-        Specifies the block size to use. Must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
-        Can be specified in bytes
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Physical block size used for backup device I/O operations, must be 512, 1024, 2048, 4096, 8192, 16384, 32768, or 65536 bytes.
+        Should match the block size used when the backup was created to avoid performance issues.
+        Most backups use the default 64KB unless created with specific block size requirements for tape devices or storage optimization.
 
     .PARAMETER BufferCount
-        Number of I/O buffers to use to perform the operation.
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Number of I/O buffers SQL Server uses during the restore operation to improve throughput.
+        Higher buffer counts can speed up restores for large databases, especially when reading from multiple backup files.
+        Typically ranges from 2 to 64 buffers depending on available memory and restore performance requirements.
 
     .PARAMETER Continue
-        Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states
-        When specified, WithReplace will be set to true
+        Continues a previously started restore sequence where the database is already in RESTORING or STANDBY state.
+        Use this when applying additional transaction log backups to a database that was restored WITH NORECOVERY.
+        Automatically enables WithReplace to allow the operation on existing database objects.
 
     .PARAMETER AzureCredential
-        AzureCredential required to connect to blob storage holding the backups
+        Name of the SQL Server credential object required to access backup files stored in Azure Blob Storage.
+        The credential must already exist on the target SQL Server instance with proper access keys for the storage account.
+        Required when restoring from URLs that point to Azure blob storage containers instead of local file paths.
 
     .PARAMETER WithReplace
-        Indicated that if the database already exists it should be replaced
+        Allows the restore operation to overwrite an existing database with the same name.
+        Without this parameter, the restore will fail if a database with the target name already exists on the instance.
+        Commonly used during database migrations, refresh operations, or when restoring over development/test databases.
 
     .PARAMETER KeepReplication
-        Indicates whether replication configuration should be restored as part of the database restore operation
+        Preserves replication settings when restoring a database that was part of a replication topology.
+        Use this when restoring a replicated database to maintain publisher, subscriber, or distributor configurations.
+        Without this parameter, replication metadata is removed during the restore process.
 
     .PARAMETER KeepCDC
-        Indicates whether CDC information should be restored as part of the database
+        Preserves Change Data Capture (CDC) configuration and metadata during database restore operations.
+        Essential when restoring databases where CDC is actively capturing data changes for auditing or ETL processes.
+        Cannot be combined with NoRecovery or StandbyDirectory parameters as CDC requires the database to be fully recovered.
 
     .PARAMETER PageRestore
-        The output from Get-DbaSuspect page containing the suspect pages to be restored.
+        Array of page objects from Get-DbaSuspectPage specifying corrupted pages to restore using page-level restore.
+        Use this for targeted repair of specific corrupted pages without restoring the entire database.
+        Each object should contain FileId and PageID properties identifying the exact pages needing restoration.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.
@@ -83,16 +106,24 @@ function Invoke-DbaAdvancedRestore {
         Prompts you for confirmation before running the cmdlet.
 
     .PARAMETER ExecuteAs
-        If set, this will cause the database(s) to be restored (and therefore owned) as the SA user
+        SQL Server login name to impersonate during the restore operation, affecting database ownership.
+        When specified, the restore runs under this login context, making them the database owner.
+        Typically used to ensure specific ownership patterns or when the current login lacks sufficient permissions.
 
     .PARAMETER StopMark
-        Mark in the transaction log to stop the restore at
+        Named transaction mark in the transaction log where the restore operation should stop.
+        Use this for precise point-in-time recovery to a specific marked transaction, typically created with BEGIN TRAN WITH MARK.
+        Provides more granular control than timestamp-based recovery for critical business operations.
 
     .PARAMETER StopBefore
-        Switch to indicate the restore should stop before StopMark
+        Stops the restore operation just before the specified StopMark rather than after it.
+        Use this when you need to exclude a particular marked transaction from the restored database.
+        Only effective when used in combination with the StopMark parameter for mark-based recovery scenarios.
 
     .PARAMETER StopAfterDate
-        By default the restore will stop at the first occurence of StopMark found in the chain, passing a datetime where will cause it to stop the first StopMark atfer that datetime
+        DateTime value specifying that only StopMark occurrences after this date should be considered for restore termination.
+        Use this when the same mark name appears multiple times in your transaction log backups.
+        Ensures the restore stops at the correct instance of the mark when identical mark names exist at different times.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

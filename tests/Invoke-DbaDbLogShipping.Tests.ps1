@@ -101,14 +101,14 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     # This is a placeholder until we decide on sql2016/sql2017
     BeforeAll {
-        $global:dbname = "dbatoolsci_logshipping"
+        $dbname = "dbatoolsci_logshipping"
     }
 
     It "returns success" -Skip:$true {
         $splatLogShipping = @{
             SourceSqlInstance       = $TestConfig.instance2
             DestinationSqlInstance  = $TestConfig.instance
-            Database                = $global:dbname
+            Database                = $dbname
             BackupNetworkPath       = "C:\temp"
             BackupLocalPath         = "C:\temp\logshipping\backup"
             GenerateFullBackup      = $true

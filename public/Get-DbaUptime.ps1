@@ -1,12 +1,10 @@
 function Get-DbaUptime {
     <#
     .SYNOPSIS
-        Returns the uptime of the SQL Server instance, and if required the hosting windows server
+        Retrieves uptime information for SQL Server instances and their hosting Windows servers
 
     .DESCRIPTION
-        By default, this command returns for each SQL Server instance passed in:
-        SQL Instance last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
-        Hosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
+        This function determines SQL Server uptime by checking the tempdb creation date and calculates Windows server uptime using CIM/WMI calls to get the last boot time. Essential for monitoring system stability, troubleshooting unexpected restarts, and generating compliance reports that require uptime documentation. Returns both raw TimeSpan objects for calculations and formatted strings for reporting, covering both the SQL Server service and the underlying Windows host.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,7 +17,8 @@ function Get-DbaUptime {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
+        Specifies Windows credentials to connect to the hosting server for retrieving Windows boot time and uptime information.
+        Use this when you need different credentials to access the Windows server than your current PowerShell session, such as when querying servers in different domains or when running under a service account that lacks WMI access.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,11 +1,14 @@
 function Find-DbaTrigger {
     <#
     .SYNOPSIS
-        Returns all triggers that contain a specific case-insensitive string or regex pattern.
+        Searches trigger code across server, database, and object levels for specific text patterns or regex matches.
 
     .DESCRIPTION
-        This function search on Instance, Database and Object level.
-        If you specify one or more databases, search on Server level will not be preformed.
+        Searches through SQL Server trigger definitions to find specific text patterns, supporting both literal strings and regular expressions. Examines triggers at three levels: server-level triggers, database-level DDL triggers, and object-level DML triggers on tables and views.
+
+        This is particularly useful when you need to find triggers that reference specific objects before making schema changes, locate hardcoded values that need updating, or audit trigger code for compliance requirements. The function returns matching lines with line numbers, making it easy to pinpoint exactly where patterns occur in trigger code.
+
+        When you specify specific databases, server-level trigger searches are skipped to focus the search scope. The function uses efficient SQL queries against system catalog views to examine trigger definitions without loading all trigger objects into memory.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input
@@ -18,24 +21,32 @@ function Find-DbaTrigger {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to search for triggers. Accepts an array of database names for targeting specific databases.
+        When specified, server-level triggers are automatically excluded from the search to focus on database and object-level triggers.
+        If omitted, searches all user databases plus any server-level triggers.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the trigger search. Accepts an array of database names to skip during processing.
+        Use this when you want to search most databases but avoid specific ones like staging or temporary databases.
 
     .PARAMETER Pattern
-        String pattern that you want to search for in the trigger text body
+        The text pattern or regular expression to search for within trigger definitions. Supports full regex syntax for complex pattern matching.
+        Use this to find triggers containing specific table names, column references, or code patterns before making schema changes.
+        Results show matching lines with line numbers to pinpoint exactly where the pattern occurs.
 
     .PARAMETER TriggerLevel
-        Allows specify the trigger level that you want to search. By default is All (Server, Database, Object).
+        Controls which types of triggers to search: Server (instance-level logon triggers), Database (DDL triggers), Object (DML triggers on tables and views), or All.
+        Use specific levels to narrow your search when you know what type of trigger contains the pattern you're looking for.
+        Defaults to All, which searches server-level triggers, database DDL triggers, and object-level DML triggers.
 
     .PARAMETER IncludeSystemObjects
-        By default, system triggers are ignored but you can include them within the search using this parameter.
-
-        Warning - this will likely make it super slow if you run it on all databases.
+        Includes system-created triggers in the search results. By default, only user-created triggers are searched.
+        Use this when you need to examine built-in triggers for troubleshooting or audit purposes.
+        Warning: This significantly impacts performance when searching across multiple databases.
 
     .PARAMETER IncludeSystemDatabases
-        By default system databases are ignored but you can include them within the search using this parameter
+        Includes system databases (master, model, msdb, tempdb) in the trigger search. By default, only user databases are searched.
+        Use this when troubleshooting system-level issues or when you need to examine triggers in system databases for audit purposes.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

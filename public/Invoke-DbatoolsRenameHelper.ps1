@@ -1,26 +1,20 @@
 function Invoke-DbatoolsRenameHelper {
     <#
     .SYNOPSIS
-        Older dbatools command names have been changed. This script helps keep up.
+        Updates PowerShell scripts to replace deprecated dbatools command and parameter names with current equivalents.
 
     .DESCRIPTION
-        Older dbatools command names have been changed. This script helps keep up.
+        Automatically scans and updates PowerShell script files to replace old dbatools command names and parameter names that have been renamed over time. This function searches through your scripts for over 200 deprecated command names and dozens of parameter renames, then updates the file content with the current naming conventions. Instead of manually hunting through scripts to update commands like Get-SqlMaxMemory to Get-DbaMaxMemory or Copy-SqlLogin to Copy-DbaLogin, this function handles the bulk replacement work for you.
 
     .PARAMETER InputObject
-        A piped in object from Get-ChildItem
+        Specifies the PowerShell script files to scan and update for deprecated dbatools command and parameter names.
+        Accept file objects from Get-ChildItem when you need to process multiple scripts containing outdated dbatools commands.
+        Use this when modernizing existing automation scripts or migrating legacy PowerShell code to current dbatools naming conventions.
 
     .PARAMETER Encoding
-        Specifies the file encoding. The default is UTF8.
-
-        Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+        Sets the character encoding used when writing the updated script files back to disk. Defaults to UTF8.
+        Use this when your PowerShell scripts require specific encoding formats for compatibility with source control systems or deployment processes.
+        Most modern environments work well with the default UTF8 encoding, but legacy systems may require ASCII or other specific encodings.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

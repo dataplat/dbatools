@@ -1,34 +1,43 @@
 function Add-DbaComputerCertificate {
     <#
     .SYNOPSIS
-        Adds a computer certificate - useful for older systems.
+        Imports X.509 certificates into the Windows certificate store on local or remote computers.
 
     .DESCRIPTION
-        Adds a computer certificate from a local or remote computer.
+        Imports X.509 certificates (including password-protected .pfx files with private keys) into the specified Windows certificate store on one or more computers. This function is essential for SQL Server TLS/SSL encryption setup, Availability Group certificate requirements, and Service Broker security configurations.
+
+        The function handles both certificate files from disk and certificate objects from the pipeline, supports remote installation via PowerShell remoting, and allows you to control import behavior through various flags like exportable/non-exportable private keys. By default, certificates are installed to the LocalMachine\My (Personal) store with exportable and persistent private keys, which is the standard location for SQL Server service certificates.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances. Defaults to localhost.
+        The target computer or computers where certificates will be installed. Accepts server names, FQDNs, or IP addresses.
+        Use this when installing certificates on remote SQL Server hosts or cluster nodes. Defaults to localhost when not specified.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
 
     .PARAMETER SecurePassword
-        The password for the certificate, if it is password protected.
+        The password for encrypted certificate files (.pfx files with private keys). Required when importing password-protected certificates.
+        Use this when installing SSL certificates or Service Broker certificates that were exported with password protection.
 
     .PARAMETER Certificate
-        The target certificate object.
+        A certificate object from the pipeline or PowerShell variable. Accepts X509Certificate2 objects from Get-ChildItem Cert:\ or other certificate commands.
+        Use this when you already have certificate objects loaded in memory rather than reading from disk files.
 
     .PARAMETER Path
-        The local path to the target certificate object.
+        The local file path to the certificate file (.cer, .crt, .pfx, .p12). The file must be accessible from the machine running the command.
+        Specify this when installing certificates from files on disk, commonly used for SSL certificates or custom CA certificates.
 
     .PARAMETER Store
-        Certificate store. Default is LocalMachine.
+        The certificate store location where certificates will be installed. Options are LocalMachine (system-wide) or CurrentUser (user-specific).
+        Use LocalMachine for SQL Server service certificates and system certificates that need to be available to services. Defaults to LocalMachine.
 
     .PARAMETER Folder
-        Certificate folder. Default is My (Personal).
+        The certificate store folder within the specified store. Common folders include My (Personal), Root (Trusted Root), and CA (Intermediate).
+        Use My for SQL Server SSL certificates and Service Broker certificates. Defaults to My which is the Personal certificate store.
 
     .PARAMETER Flag
-        Defines where and how to import the private key of an X.509 certificate.
+        Controls how certificate private keys are stored and accessed in the Windows certificate store. Determines security and accessibility characteristics.
+        Use NonExportable for production SQL Server certificates to prevent private key extraction. Use Exportable when you need to back up or migrate certificates.
 
         Defaults to: Exportable, PersistKeySet
 

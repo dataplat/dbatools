@@ -1,10 +1,10 @@
 function Get-DbaWaitStatistic {
     <#
     .SYNOPSIS
-        Displays wait statistics
+        Retrieves SQL Server wait statistics for performance analysis and troubleshooting
 
     .DESCRIPTION
-        This command is based off of Paul Randal's post "Wait statistics, or please tell me where it hurts"
+        Analyzes SQL Server wait statistics from sys.dm_os_wait_stats to identify performance bottlenecks and resource contention issues. This function categorizes wait types, calculates timing metrics and percentages, and provides diagnostic explanations based on Paul Randal's methodology. Use this to pinpoint whether your SQL Server is waiting on disk I/O, memory pressure, locking issues, or other resource constraints that are slowing down query performance.
 
         Returns:
         WaitType
@@ -32,10 +32,12 @@ function Get-DbaWaitStatistic {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Threshold
-        Threshold, in percentage of all waits on the system. Default per Paul's post is 95%.
+        Sets the cumulative percentage threshold for filtering wait statistics results. Only wait types that fall within this percentage of total wait time are returned.
+        Use this to focus on the most significant waits rather than seeing every minor wait type on your system. For example, 95% shows waits that make up 95% of all wait time.
 
     .PARAMETER IncludeIgnorable
-        Some waits are no big deal and can be safely ignored in most circumstances. If you've got weird issues with mirroring or AGs.
+        Includes wait types that are typically benign and can be safely ignored during troubleshooting, such as Service Broker idle waits and background task waits.
+        Use this when you need to see all wait activity or when investigating unusual issues with specific features like mirroring or Availability Groups.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

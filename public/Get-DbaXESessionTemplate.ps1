@@ -1,10 +1,14 @@
 function Get-DbaXESessionTemplate {
     <#
     .SYNOPSIS
-        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (/bin/XEtemplates/).
+        Retrieves metadata from Extended Event session templates to help you discover and select pre-built monitoring solutions.
 
     .DESCRIPTION
-        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (/bin/XEtemplates/).
+        Retrieves metadata from Extended Event session templates stored in XML format, showing you what pre-built Extended Event sessions are available before importing them to your SQL Server instances. This saves you from manually browsing template files or guessing what monitoring solutions exist for specific scenarios.
+
+        Use this command when you need to set up Extended Event monitoring but want to start with proven templates rather than building sessions from scratch. It's particularly helpful for discovering templates that monitor specific areas like performance, deadlocks, or security events.
+
+        The function parses templates and returns key information including the template name, category, source, SQL Server compatibility, and description. You can filter results by pattern matching or select specific templates by name.
 
         The default repository contains templates from:
         Microsoft's Templates that come with SSMS
@@ -18,13 +22,16 @@ function Get-DbaXESessionTemplate {
         http://sqlskills.com/blogs/jonathan
 
     .PARAMETER Path
-        The path to the template directory. Defaults to the dbatools template repository (/bin/XEtemplates/).
+        Specifies the directory path containing Extended Event template XML files. Defaults to the built-in dbatools template repository.
+        Use this when you want to browse custom or additional templates stored in your own directory instead of the default collection.
 
     .PARAMETER Pattern
-        Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaXESessionTemplate
+        Filters templates by searching for the specified text pattern across template names, categories, sources, and descriptions.
+        Use this to quickly find templates related to specific monitoring scenarios like "deadlock", "performance", or "security" without browsing all available templates.
 
     .PARAMETER Template
-        Specifies one or more of the templates provided by dbatools. Press tab to cycle through the list of options.
+        Specifies the exact name(s) of specific templates to retrieve, matching the template file names without the .xml extension.
+        Use this when you know the specific template names you want to examine, such as "Deadlock_Tracking" or "Query_Duration_Performance".
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

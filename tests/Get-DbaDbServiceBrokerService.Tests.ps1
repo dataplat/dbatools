@@ -29,13 +29,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up Service Broker components for testing
-        $global:testServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $global:testProcName = "dbatools_{0}" -f $(Get-Random)
-        $global:testServer.Query("CREATE PROCEDURE $global:testProcName AS SELECT 1", "tempdb")
-        $global:testQueueName = "dbatools_{0}" -f $(Get-Random)
-        $global:testServer.Query("CREATE QUEUE $global:testQueueName WITH STATUS = ON , RETENTION = OFF , ACTIVATION (  STATUS = ON , PROCEDURE_NAME = $global:testProcName , MAX_QUEUE_READERS = 1 , EXECUTE AS OWNER  ), POISON_MESSAGE_HANDLING (STATUS = ON)", "tempdb")
-        $global:testServiceName = "dbatools_{0}" -f $(Get-Random)
-        $global:testServer.Query("CREATE SERVICE $global:testServiceName ON QUEUE $global:testQueueName ([DEFAULT])", "tempdb")
+        $testServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $testProcName = "dbatools_{0}" -f $(Get-Random)
+        $testServer.Query("CREATE PROCEDURE $testProcName AS SELECT 1", "tempdb")
+        $testQueueName = "dbatools_{0}" -f $(Get-Random)
+        $testServer.Query("CREATE QUEUE $testQueueName WITH STATUS = ON , RETENTION = OFF , ACTIVATION (  STATUS = ON , PROCEDURE_NAME = $testProcName , MAX_QUEUE_READERS = 1 , EXECUTE AS OWNER  ), POISON_MESSAGE_HANDLING (STATUS = ON)", "tempdb")
+        $testServiceName = "dbatools_{0}" -f $(Get-Random)
+        $testServer.Query("CREATE SERVICE $testServiceName ON QUEUE $testQueueName ([DEFAULT])", "tempdb")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -47,9 +47,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup Service Broker components
-        $null = $global:testServer.Query("DROP SERVICE $global:testServiceName", "tempdb")
-        $null = $global:testServer.Query("DROP QUEUE $global:testQueueName", "tempdb")
-        $null = $global:testServer.Query("DROP PROCEDURE $global:testProcName", "tempdb")
+        $null = $testServer.Query("DROP SERVICE $testServiceName", "tempdb")
+        $null = $testServer.Query("DROP QUEUE $testQueueName", "tempdb")
+        $null = $testServer.Query("DROP PROCEDURE $testProcName", "tempdb")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets the service broker service" {
@@ -61,8 +63,8 @@ Describe $CommandName -Tag IntegrationTests {
             $testResults | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have a name of $global:testServiceName" {
-            $testResults.Name | Should -Be $global:testServiceName
+        It "Should have a name of $testServiceName" {
+            $testResults.Name | Should -Be $testServiceName
         }
 
 
@@ -70,8 +72,8 @@ Describe $CommandName -Tag IntegrationTests {
             $testResults.Owner | Should -Be "dbo"
         }
 
-        It "Should have a queuename of $global:testQueueName" {
-            $testResults.QueueName | Should -Be $global:testQueueName
+        It "Should have a queuename of $testQueueName" {
+            $testResults.QueueName | Should -Be $testQueueName
         }
     }
 }

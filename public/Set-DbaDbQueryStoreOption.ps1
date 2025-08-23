@@ -1,10 +1,12 @@
 function Set-DbaDbQueryStoreOption {
     <#
     .SYNOPSIS
-        Configure Query Store settings for a specific or multiple databases.
+        Configures Query Store settings to control query performance data collection and retention.
 
     .DESCRIPTION
-        Configure Query Store settings for a specific or multiple databases.
+        Modifies Query Store configuration options for one or more databases, allowing you to control how SQL Server captures, stores, and manages query execution statistics. Query Store acts as a performance data recorder, tracking query plans and runtime statistics over time for performance analysis and plan regression troubleshooting.
+
+        This function lets you set the operational state (enabled/disabled), adjust data collection intervals, configure storage limits, control which queries get captured, and manage data retention policies. You can also enable wait statistics capture and configure advanced custom capture policies in SQL Server 2019 and later.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,52 +19,68 @@ function Set-DbaDbQueryStoreOption {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to configure Query Store options for. Accepts database names, wildcards, or database objects from Get-DbaDatabase.
+        Use this when you need to configure Query Store for specific databases instead of all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from Query Store configuration changes. System databases (master, tempdb, model) are automatically excluded.
+        Useful when you want to configure most databases but skip certain ones like staging or temporary databases.
 
     .PARAMETER AllDatabases
-        Run command against all user databases
+        Configures Query Store options for all user databases on the instance. System databases are automatically excluded.
+        Use this switch when you want to apply consistent Query Store settings across all user databases without specifying individual database names.
 
     .PARAMETER State
-        Set the state of the Query Store. Valid options are "ReadWrite", "ReadOnly" and "Off".
+        Controls Query Store operational state: ReadWrite enables full data collection, ReadOnly preserves existing data but stops new collection, Off disables Query Store completely.
+        Set to ReadWrite to start collecting query performance data, or ReadOnly when troubleshooting performance issues without adding new data overhead.
 
     .PARAMETER FlushInterval
-        Set the flush to disk interval of the Query Store in seconds.
+        Sets how frequently Query Store flushes runtime statistics from memory to disk, in seconds. Default is 900 seconds (15 minutes).
+        Lower values provide more real-time data persistence but increase disk I/O; higher values reduce I/O but risk losing recent data during unexpected shutdowns.
 
     .PARAMETER CollectionInterval
-        Set the runtime statistics collection interval of the Query Store in minutes.
+        Defines how often Query Store aggregates runtime statistics into discrete time intervals, in minutes. Default is 60 minutes.
+        Shorter intervals provide finer granularity for performance analysis but consume more storage; longer intervals reduce storage overhead but provide less detailed trending data.
 
     .PARAMETER MaxSize
-        Set the maximum size of the Query Store in MB.
+        Sets the maximum storage space Query Store can consume in the database, in megabytes. Default is 100 MB.
+        Configure based on your database size and query volume; busy OLTP databases may need several GB, while smaller databases can use the default.
 
     .PARAMETER CaptureMode
-        Set the query capture mode of the Query Store. Valid options are "Auto" and "All".
+        Determines which queries Query Store captures: Auto captures relevant queries based on execution count and resource consumption, All captures every query, None captures no new queries, Custom uses defined capture policies (SQL 2019+).
+        Use Auto for most production environments to avoid capturing trivial queries; use All for comprehensive troubleshooting or development environments.
 
     .PARAMETER CleanupMode
-        Set the query cleanup mode policy. Valid options are "Auto" and "Off".
+        Controls automatic cleanup of old Query Store data when approaching the MaxSize limit: Auto removes oldest data first, Off disables automatic cleanup.
+        Set to Auto to prevent Query Store from reaching capacity and stopping data collection; use Off only when you want manual control over data retention.
 
     .PARAMETER StaleQueryThreshold
-        Set the stale query threshold in days.
+        Specifies how many days Query Store retains data for queries that haven't executed recently, used by automatic cleanup processes.
+        Set to 30-90 days for most environments; longer retention helps with historical analysis but consumes more space, shorter retention frees space faster.
 
     .PARAMETER MaxPlansPerQuery
-        Set the max plans per query captured and kept.
+        Limits how many execution plans Query Store retains for each individual query. Default is 200 plans per query (SQL Server 2017+).
+        Higher values help track plan variations in dynamic environments but consume more space; lower values reduce storage but may miss important plan changes.
 
     .PARAMETER WaitStatsCaptureMode
-        Set wait stats capture on or off.
+        Enables or disables wait statistics collection in Query Store (SQL Server 2017+). Options are On or Off.
+        Enable wait stats capture when you need detailed performance analysis including what queries are waiting for; disable to reduce overhead in high-throughput systems.
 
     .PARAMETER CustomCapturePolicyExecutionCount
-        Set the custom capture policy execution count. Only available in SQL Server 2019 and above.
+        Sets minimum execution count threshold for capturing queries when CaptureMode is Custom (SQL Server 2019+). Queries must execute at least this many times to be captured.
+        Use values like 5-10 to capture queries that run regularly but avoid one-time or rarely executed queries that don't impact performance.
 
     .PARAMETER CustomCapturePolicyTotalCompileCPUTimeMS
-        Set the custom capture policy total compile CPU time. Only available in SQL Server 2019 and above.
+        Sets minimum compilation CPU time threshold in milliseconds for capturing queries when CaptureMode is Custom (SQL Server 2019+).
+        Set to values like 1000ms (1 second) to capture queries with significant compilation overhead, helping identify queries that need plan guides or parameter optimization.
 
     .PARAMETER CustomCapturePolicyTotalExecutionCPUTimeMS
-        Set the custom capture policy total execution CPU time. Only available in SQL Server 2019 and above.
+        Sets minimum total execution CPU time threshold in milliseconds for capturing queries when CaptureMode is Custom (SQL Server 2019+).
+        Use values like 100ms to focus on queries consuming significant CPU resources, filtering out lightweight queries that don't impact overall performance.
 
     .PARAMETER CustomCapturePolicyStaleThresholdHours
-        Set the custom capture policy stale threshold. Only available in SQL Server 2019 and above.
+        Defines how many hours a query can remain inactive before Query Store stops tracking new statistics for it when CaptureMode is Custom (SQL Server 2019+).
+        Set to 24-168 hours (1-7 days) to balance between capturing actively used queries and avoiding resource consumption on dormant queries.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run

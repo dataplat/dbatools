@@ -1,14 +1,16 @@
 function Test-DbaDbDataGeneratorConfig {
     <#
     .SYNOPSIS
-        Checks the data generation configuration if it's valid
+        Validates JSON configuration files used for generating realistic test data in SQL Server databases
 
     .DESCRIPTION
-        When you're dealing with large data generation configurations, things can get complicated and messy.
-        This function will test for a range of rules and returns all the tables and columns that contain errors.
+        Validates JSON configuration files created by New-DbaDbDataGeneratorConfig before using them with Invoke-DbaDbDataGenerator to populate tables with realistic fake data. The function performs comprehensive validation including checking for required column properties, verifying data types are supported, confirming masking types exist in the Bogus library, and validating subtypes are available.
+
+        This validation step prevents runtime errors during data generation and helps catch configuration issues early in the test data creation workflow. Returns detailed error information for any invalid configurations, showing exactly which tables and columns have problems so you can fix them before attempting to generate data.
 
     .PARAMETER FilePath
-        Path to the file to test
+        Specifies the path to the JSON configuration file created by New-DbaDbDataGeneratorConfig that needs validation.
+        Use this to verify your data generation configuration before running Invoke-DbaDbDataGenerator to avoid runtime errors.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -20,9 +22,6 @@ function Test-DbaDbDataGeneratorConfig {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-    .PARAMETER Force
-        If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
 
     .NOTES
         Tags: DataGeneration

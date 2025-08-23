@@ -1,10 +1,12 @@
 function New-DbaDbSnapshot {
     <#
     .SYNOPSIS
-        Creates database snapshots
+        Creates database snapshots for point-in-time recovery and testing scenarios
 
     .DESCRIPTION
-        Creates database snapshots without hassles
+        Creates read-only database snapshots that capture the state of a database at a specific moment in time. Snapshots provide a fast way to revert databases to a previous state without restoring from backup files, making them ideal for pre-maintenance snapshots, testing scenarios, or quick rollback points.
+
+        The function automatically generates snapshot file names with timestamps and handles the underlying file structure creation. Snapshots share pages with the source database until changes occur, making them storage-efficient for short-term use. Note that snapshots are not a replacement for regular backups and should be dropped when no longer needed to avoid performance impacts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +19,19 @@ function New-DbaDbSnapshot {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AllDatabases
-        Creates snapshot for all eligible databases
+        Creates snapshots for all user databases on the instance that support snapshotting.
+        Automatically excludes system databases (master, model, tempdb), snapshots, and databases with memory-optimized filegroups.
+        Use this when you need to create snapshots for disaster recovery or before major maintenance operations.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to create snapshots for. Accepts an array of database names.
+        Use this when you need snapshots for specific databases rather than all databases on the instance.
+        Cannot be used together with AllDatabases parameter.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from snapshot creation when using AllDatabases.
+        Useful when you want to snapshot most databases but skip certain ones like development or staging databases.
+        Accepts an array of database names to exclude from the operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run
@@ -32,25 +40,29 @@ function New-DbaDbSnapshot {
         Prompts for confirmation of every step.
 
     .PARAMETER Name
-        The specific snapshot name you want to create. Works only if you target a single database. If you need to create multiple snapshot,
-        you must use the NameSuffix parameter
+        Sets a custom name for the database snapshot. Only works when targeting a single database.
+        Use this when you need a meaningful snapshot name like 'Sales_PreUpgrade' instead of the default timestamped name.
+        For multiple databases, use NameSuffix parameter instead to avoid naming conflicts.
 
     .PARAMETER NameSuffix
-        When you pass a simple string, it'll be appended to use it to build the name of the snapshot. By default snapshots are created with yyyyMMdd_HHmmss suffix
-        You can also pass a standard placeholder, in which case it'll be interpolated (e.g. '{0}' gets replaced with the database name)
+        Customizes the suffix appended to database names when creating snapshots. Defaults to yyyyMMdd_HHmmss format.
+        Use simple strings like '_PrePatch' or templates with {0} placeholder where {0} represents the database name.
+        Examples: '_BeforeMaintenance' creates 'HR_BeforeMaintenance', or 'Snap_{0}_v1' creates 'Snap_HR_v1'.
 
     .PARAMETER Path
-        Snapshot files will be created here (by default the file structure will be created in the same folder as the base db)
+        Specifies the directory where snapshot files will be stored. Defaults to the same location as the source database files.
+        Use this when you need snapshots on different storage for performance or capacity reasons.
+        The SQL Server service account must have write access to the specified path.
 
     .PARAMETER InputObject
-        Allows Piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline operations.
+        Enables scenarios like filtering databases with specific criteria before creating snapshots.
+        Example: Get-DbaDatabase -SqlInstance sql01 | Where-Object Size -gt 1000 | New-DbaDbSnapshot
 
     .PARAMETER Force
-        Databases with Filestream FG can be snapshotted, but the Filestream FG is marked offline
-        in the snapshot. To create a "partial" snapshot, you need to pass -Force explicitly
-
-        NB: You can't then restore the Database from the newly-created snapshot.
-        For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
+        Creates partial snapshots for databases containing FILESTREAM filegroups. FILESTREAM data is excluded and marked offline in the snapshot.
+        Use this when you need to snapshot databases with FILESTREAM for testing or point-in-time analysis of non-FILESTREAM data.
+        Warning: Databases cannot be restored from partial snapshots due to the missing FILESTREAM data.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

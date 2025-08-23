@@ -1,12 +1,14 @@
 function Disable-DbaFilestream {
     <#
     .SYNOPSIS
-        Sets the status of FileStream on specified SQL Server instances both at the server level and the instance level
+        Disables SQL Server FileStream functionality at both the service and instance levels
 
     .DESCRIPTION
-        Connects to the specified SQL Server instances, and sets the status of the FileStream feature to the required value
+        Disables the FileStream feature completely by setting the FilestreamAccessLevel configuration to 0 (disabled) and modifying the corresponding Windows service settings. This is useful when FileStream was previously enabled but is no longer needed, during security hardening, or when troubleshooting FileStream-related issues.
 
-        To perform the action, the SQL Server instance must be restarted. By default we will prompt for confirmation for this action, this can be overridden with the -Force switch
+        The function handles both standalone and clustered SQL Server instances, automatically detecting cluster nodes and applying changes across all nodes. Since disabling FileStream requires changes at both the SQL instance configuration level and the Windows service level, a SQL Server service restart is required for the changes to take effect.
+
+        By default, the function will prompt for confirmation before making changes due to the high impact nature of this operation. Use -Force to bypass confirmation and automatically restart the SQL Server service, or run without -Force to make the configuration changes and restart manually later.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.
@@ -27,7 +29,9 @@ function Disable-DbaFilestream {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        Restart SQL Instance after changes. Use this parameter with care as it overrides whatif.
+        Bypasses confirmation prompts and automatically restarts the SQL Server service to apply FileStream configuration changes immediately.
+        Without this parameter, the function makes configuration changes but requires you to manually restart the SQL service later for changes to take effect.
+        Use with caution in production environments as it causes service downtime during the restart.
 
     .PARAMETER WhatIf
         Shows what would happen if the command runs. The command is not run unless Force is specified.

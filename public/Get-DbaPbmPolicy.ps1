@@ -1,10 +1,10 @@
 function Get-DbaPbmPolicy {
     <#
     .SYNOPSIS
-        Returns policies from Policy-Based Management from an instance.
+        Retrieves Policy-Based Management policies from SQL Server instances for compliance auditing and configuration review.
 
     .DESCRIPTION
-        Returns details of policies with the option to filter on Category and SystemObjects.
+        Retrieves all Policy-Based Management policies configured on SQL Server instances, allowing DBAs to audit compliance configurations and review policy settings across their environment. This function connects to the PBM store and returns policy details including categories, conditions, and evaluation modes. Use this when you need to document existing policies, troubleshoot policy evaluations, or verify compliance configurations without manually navigating through SQL Server Management Studio's Policy-Based Management node.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,16 +17,20 @@ function Get-DbaPbmPolicy {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Policy
-        Filters results to only show specific policy
+        Specifies one or more policy names to retrieve, filtering the results to only those policies. Supports exact name matching for targeted policy retrieval.
+        Use this when you need to examine specific policies rather than all policies on the instance.
 
     .PARAMETER Category
-        Filters results to only show policies in the category selected
+        Filters results to show only policies belonging to specific policy categories. Categories help organize policies by function or compliance framework.
+        Use this to focus on policies related to specific areas like security, performance, or maintenance checks.
 
     .PARAMETER IncludeSystemObject
-        By default system objects are filtered out. Use this parameter to INCLUDE them .
+        Includes Microsoft's built-in system policies in the results, which are excluded by default. System policies cover standard SQL Server best practices.
+        Use this when you need to review or document all policies including Microsoft's predefined compliance policies.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaPbmStore
+        Accepts PBM store objects from Get-DbaPbmStore via pipeline, allowing efficient processing of multiple instances. Enables chaining PBM commands together.
+        Use this when building complex PBM workflows or when you already have PBM store objects from previous commands.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

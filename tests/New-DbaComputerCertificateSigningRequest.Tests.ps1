@@ -29,6 +29,6 @@ Describe $CommandName -Tag IntegrationTests {
     It "generates a new certificate" {
         $files = New-DbaComputerCertificateSigningRequest
         $files.Count | Should -Be 2
-        $global:filesToRemove += $files
+        $filesToRemove += $files
     }
 }

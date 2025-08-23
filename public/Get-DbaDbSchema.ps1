@@ -1,10 +1,10 @@
 function Get-DbaDbSchema {
     <#
     .SYNOPSIS
-        Finds the database schema SMO object(s) based on the given filter params.
+        Retrieves database schema objects from SQL Server instances for inventory, security auditing, and management tasks
 
     .DESCRIPTION
-        Finds the database schema SMO object(s) based on the given filter params.
+        Returns SQL Server Management Object (SMO) schema objects from one or more databases, allowing you to inspect schema ownership, enumerate database organization, and identify schema-level security configurations. This function is essential for database documentation, security auditing when you need to track who owns which schemas, and migration planning where schema ownership and structure must be preserved. You can filter results by specific schema names, schema owners, or databases, and optionally include system schemas like dbo, sys, and INFORMATION_SCHEMA which are excluded by default.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,22 +18,28 @@ function Get-DbaDbSchema {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to retrieve schemas from. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of all databases on the instance.
 
     .PARAMETER Schema
-        The name(s) of the schema(s)
+        Filters results to include only schemas with the specified names. Accepts multiple schema names.
+        Use this when you need to check specific schemas like custom application schemas or verify particular schema configurations.
 
     .PARAMETER SchemaOwner
-        The name(s) of the database user(s) that own(s) the schema(s).
+        Filters results to schemas owned by the specified database users or roles. Accepts multiple owner names.
+        Use this for security audits to identify all schemas owned by specific users, or when troubleshooting schema ownership issues.
 
     .PARAMETER IncludeSystemDatabases
-        Include the system databases.
+        Includes system databases (master, model, msdb, tempdb) in the schema retrieval.
+        Use this when you need to audit or document schema configurations across all databases including system databases.
 
     .PARAMETER IncludeSystemSchemas
-        Include the system schemas.
+        Includes built-in system schemas like dbo, sys, guest, and INFORMATION_SCHEMA in the results.
+        Use this when you need complete schema inventory including system schemas, or when specifically working with dbo schema objects.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase via pipeline input for processing.
+        Use this to chain database operations or when you already have database objects and want to retrieve their schemas efficiently.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

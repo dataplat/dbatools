@@ -1,10 +1,10 @@
 function Remove-DbaDbPartitionFunction {
     <#
     .SYNOPSIS
-        Removes a database partition function(s) from each database and SQL Server instance.
+        Drops partition functions from SQL Server databases to clean up unused partitioning schemes.
 
     .DESCRIPTION
-        Removes a database partition function(s), with supported piping from Get-DbaDbPartitionFunction.
+        Removes partition functions from specified databases across one or more SQL Server instances. Partition functions define the value ranges used to split table data across multiple filegroups, and removing unused functions helps maintain a clean database schema. This command is commonly used during partition cleanup operations, schema migrations, or when decommissioning partitioned tables that no longer require their associated partition functions.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,16 @@ function Remove-DbaDbPartitionFunction {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies the database(s) from which to remove partition functions. Accepts wildcard patterns for matching multiple databases.
+        Use this to target specific databases when you need to clean up partitioning objects from particular databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Excludes the specified database(s) from partition function removal operations. Auto-populated with available databases from the target server.
+        Use this when you want to remove partition functions from most databases but need to preserve them in specific databases like production or critical systems.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbPartitionFunction.
+        Accepts partition function objects from Get-DbaDbPartitionFunction for targeted removal operations.
+        Use this with pipeline operations when you need to selectively remove specific partition functions based on criteria like name patterns, usage, or dependencies.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

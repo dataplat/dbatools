@@ -1,16 +1,10 @@
 function Set-DbaDbCompression {
     <#
     .SYNOPSIS
-        Sets tables and indexes with preferred compression setting.
+        Applies data compression to SQL Server tables and indexes to reduce storage space and improve performance.
 
     .DESCRIPTION
-        This function sets the appropriate compression recommendation, determined either by using the Tiger Team's query or set to the CompressionType parameter.
-
-        Remember Uptime is critical for the Tiger Team query, the longer uptime, the more accurate the analysis is.
-        You would probably be best if you utilized Get-DbaUptime first, before running this command.
-
-        Set-DbaDbCompression script derived from GitHub and the tigertoolbox
-        (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
+        Compresses tables, indexes, and heaps across one or more databases using Row, Page, or intelligent recommendations based on Microsoft's Tiger Team compression analysis. Automatically handles the complex process of analyzing usage patterns, applying appropriate compression types, and rebuilding objects online when possible. Saves significant storage space, reduces backup sizes, and improves I/O performance without requiring manual compression analysis for each object. Particularly valuable for large production databases where storage costs and backup windows are concerns.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -23,29 +17,36 @@ function Set-DbaDbCompression {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to apply compression to. Accepts wildcard patterns and multiple database names.
+        When omitted, all non-system databases on the instance will be processed. Use this to target specific databases when you don't want to compress everything.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Specifies databases to skip during the compression operation. Accepts wildcard patterns and multiple database names.
+        Use this when you want to compress most databases but exclude specific ones like databases under maintenance or with special requirements.
 
     .PARAMETER Table
-        The table(s) to process. If unspecified, all tables will be processed.
+        Specifies which tables to compress within the selected databases. Accepts multiple table names and works with wildcard patterns.
+        When omitted, all eligible tables in the database will be processed. Use this to target specific large tables or avoid compressing certain tables.
 
     .PARAMETER CompressionType
-        Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
+        Specifies the type of compression to apply: Recommended, Page, Row, or None. Default is 'Recommended' which analyzes each object and applies the optimal compression type.
+        Use 'Page' or 'Row' to force all objects to the same compression level, or 'None' to remove compression. Recommended is best for mixed workloads where different objects benefit from different compression types.
 
     .PARAMETER MaxRunTime
-        Will continue to alter tables and indexes for the given amount of minutes.
+        Sets a time limit in minutes for the compression operation to prevent it from running indefinitely. When the time limit is reached, the function stops processing additional objects.
+        Use this during business hours to ensure the operation completes within a maintenance window. A value of 0 (default) means no time limit.
 
     .PARAMETER PercentCompression
-        Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.
+        Sets the minimum space savings threshold (as a percentage) required before an object will be compressed. Only objects that would achieve this level of savings or higher are processed.
+        Use this to focus compression efforts on objects that will provide the most benefit. For example, setting this to 25 will only compress objects that would save at least 25% of their current space.
 
     .PARAMETER ForceOfflineRebuilds
-        By default, this function prefers online rebuilds over offline ones.
-        If you are on a supported version of SQL Server but still prefer to do offline rebuilds, enable this flag
+        Forces compression operations to use offline rebuilds instead of the default online rebuilds when possible. Online rebuilds keep tables accessible during compression but use more resources.
+        Use this switch when you need to minimize resource usage during compression or when experiencing issues with online operations. Offline rebuilds will make tables unavailable during the compression process.
 
     .PARAMETER InputObject
-        Takes the output of Test-DbaDbCompression as an object and applied compression based on those recommendations.
+        Accepts compression recommendations from Test-DbaDbCompression and applies those specific recommendations instead of running a new analysis.
+        Use this when you want to review compression recommendations first, then apply only the ones you approve of. This approach gives you more control over which objects get compressed.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

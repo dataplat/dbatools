@@ -113,7 +113,7 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase
         Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
@@ -123,7 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes Role for User" {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Database $testDatabase -Role $testRole
-            Remove-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $testRole -User "User1" -Database $testDatabase -Confirm:$false
+            Remove-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $testRole -User "User1" -Database $testDatabase
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $contextServer -Database $testDatabase -Role $testRole
 
             $roleDB.UserName | Should -Be "User1"
@@ -132,7 +132,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes Multiple Roles for User" {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $contextServer -Database "msdb" -Role "db_datareader", "SQLAgentReaderRole"
-            $contextServer | Remove-DbaDbRoleMember -Role "db_datareader", "SQLAgentReaderRole" -User "User1" -Database "msdb" -Confirm:$false
+            $contextServer | Remove-DbaDbRoleMember -Role "db_datareader", "SQLAgentReaderRole" -User "User1" -Database "msdb"
 
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $contextServer -Database "msdb" -Role "db_datareader", "SQLAgentReaderRole"
             $roleDB.UserName -contains "User1" | Should -Be $true
@@ -145,7 +145,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Removes Roles for User via piped input from Get-DbaDbRole" {
             $roleInput = Get-DbaDbRole -SqlInstance $contextServer -Database "msdb" -Role "db_datareader", "SQLAgentReaderRole"
             $roleDB = Get-DbaDbRoleMember -SqlInstance $contextServer -Database "msdb" -Role "db_datareader", "SQLAgentReaderRole"
-            $roleInput | Remove-DbaDbRoleMember -User "User2" -Confirm:$false
+            $roleInput | Remove-DbaDbRoleMember -User "User2"
 
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $contextServer -Database "msdb" -Role "db_datareader", "SQLAgentReaderRole"
             $roleDB.UserName -contains "User2" | Should -Be $true

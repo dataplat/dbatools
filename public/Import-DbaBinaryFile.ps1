@@ -1,12 +1,14 @@
 function Import-DbaBinaryFile {
     <#
     .SYNOPSIS
-        Imports binary files into SQL Server
+        Loads binary files from the filesystem into SQL Server database tables
 
     .DESCRIPTION
-        Imports binary files into SQL Server.
+        Reads binary files from disk and stores them in SQL Server tables with binary, varbinary, or image columns. This is useful for storing documents, images, executables, or any file type directly in the database for archival, content management, or application integration scenarios.
 
-        If specific filename and binary columns aren't specified, the command will guess based on the datatype (binary/image) for the binary column and a match for "name" as the filename column.
+        The command automatically detects the appropriate columns for storing file data - it looks for binary-type columns (binary, varbinary, image) for the file contents and columns containing "name" for the filename. You can also specify exact column names or provide a custom INSERT statement for more complex scenarios.
+
+        Files can be imported individually, from directories (with recursion), or piped in from Get-ChildItem. Each file is read as a byte array and inserted using parameterized queries to safely handle binary data of any size within SQL Server's limits.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
@@ -19,11 +21,12 @@ function Import-DbaBinaryFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies the target database where the binary files will be imported. Required when not using InputObject.
+        Use this to identify which database contains the table for storing your binary files.
 
     .PARAMETER Table
-        Define a specific table you would like to upload to. You can specify up to three-part name like db.sch.tbl.
-
+        Specifies the target table where binary files will be stored. Must contain at least one binary-type column (binary, varbinary, image).
+        Use this when importing files into a specific table designed for file storage. Supports three-part naming (db.schema.table).
         If the object has special characters please wrap them in square brackets [ ].
         Using dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
         The correct way to find table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table]
@@ -31,32 +34,38 @@ function Import-DbaBinaryFile {
         The correct way to find a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
 
     .PARAMETER Schema
-        The specific schema to use. If not specified, the default schema will be used.
+        Specifies the schema containing the target table. Defaults to the user's default schema if not specified.
+        Use this when your table exists in a non-default schema or when you need to be explicit about schema ownership.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file. Accepts pipeline input from Get-ChildItem.
+        Specifies one or more individual files to import into the database table. Accepts pipeline input from Get-ChildItem.
+        Use this when importing specific files rather than entire directories. Cannot be used with Path parameter.
 
     .PARAMETER Path
-        A directory full of files to import.
+        Specifies a directory containing files to import. Recursively processes all files within the directory and subdirectories.
+        Use this when bulk importing multiple files from a folder structure. Cannot be used with FilePath parameter.
 
     .PARAMETER Statement
-        To upload files, you basically have to use a statement line this:
-
-        INSERT INTO db.tbl ([FileNameColumn], [bBinaryColumn]) VALUES (@FileName, @FileContents)
-
-        We try our best to guess the column names, but if you need to specify the SQL statement, use this parameter. The only required parameter is @FileContents. If you want to use a filename column, you must use @FileName.
+        Provides a custom INSERT statement for complex import scenarios. Must include @FileContents parameter for binary data.
+        Use this when automatic column detection fails or when you need custom INSERT logic with joins, triggers, or computed columns.
+        Example: INSERT INTO db.tbl ([FileNameColumn], [bBinaryColumn]) VALUES (@FileName, @FileContents)
+        The @FileContents parameter is required. Include @FileName parameter if storing filenames.
 
     .PARAMETER FileNameColumn
-        The column name that will contain the filename. If not specified, we will try to guess based on the column name.
+        Specifies which column will store the original filename. Auto-detects columns containing 'name' if not specified.
+        Use this when your table has multiple name-related columns or when auto-detection fails to identify the correct column.
 
     .PARAMETER BinaryColumn
-        The column name that will contain the binary data. If not specified, we will try to guess based on the column name.
+        Specifies which column will store the binary file data. Auto-detects binary, varbinary, or image columns if not specified.
+        Use this when your table has multiple binary columns or when auto-detection fails to identify the correct storage column.
 
     .PARAMETER NoFileNameColumn
-        If you don't have a filename column, use this switch.
+        Indicates that the target table does not have a column for storing filenames. Only the binary data will be imported.
+        Use this when your table design only stores file content without filename metadata for blob storage scenarios.
 
     .PARAMETER InputObject
-        Table objects to be piped in from Get-DbaDbTable or Get-DbaBinaryFileTable
+        Accepts table objects from Get-DbaDbTable for pipeline-based imports. Alternative to specifying Database and Table parameters.
+        Use this when working with multiple tables or when integrating with other dbatools commands that return table objects.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed

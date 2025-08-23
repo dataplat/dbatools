@@ -14,56 +14,69 @@ function Invoke-DbaPfRelog {
         If you find any input hangs, please send us the output so we can accommodate for it then use -Raw for an immediate solution.
 
     .PARAMETER Path
-        Specifies the pathname of an existing performance counter log or performance counter path. You can specify multiple input files.
+        Specifies the file path to Windows performance counter log files (.blg format) that need to be converted. Accepts multiple file paths and supports pipeline input.
+        Use this when you have perfmon binary logs that need to be converted to readable formats like CSV or TSV for analysis.
 
     .PARAMETER Destination
-        Specifies the pathname of the output file or SQL database where the counters will be written. Defaults to the same directory as the source.
+        Specifies the output file path or directory where converted performance data will be saved. Creates necessary directories automatically if they don't exist.
+        When omitted, files are saved in the same directory as the source with the appropriate extension (.tsv, .csv, etc.).
 
     .PARAMETER Type
-        The output format. Defaults to tsv. Options include tsv, csv, bin, and sql.
-
-        For a SQL database, the output file specifies the DSN!counter_log. You can specify the database location by using the ODBC manager to configure the DSN (Database System Name).
-
-        For more information, read here: https://technet.microsoft.com/en-us/library/bb490958.aspx
+        Specifies the output format for the converted performance data. Defaults to 'tsv' (tab-separated values).
+        Use 'csv' for Excel compatibility, 'tsv' for easy parsing in PowerShell, 'bin' for binary format, or 'sql' to write directly to a SQL database via ODBC.
+        For SQL output, specify the destination as 'DSN!counter_log' where DSN is configured in ODBC Manager.
 
     .PARAMETER Append
-        If this switch is enabled, output will be appended to the specified file instead of overwriting. This option does not apply to SQL format where the default is always to append.
+        Appends performance data to an existing output file instead of overwriting it. Only works with binary (-Type bin) format.
+        Use this when consolidating multiple perfmon logs into a single file for comprehensive analysis over time periods.
 
     .PARAMETER AllowClobber
-        If this switch is enabled, the destination file will be overwritten if it exists.
+        Overwrites existing output files without prompting. Required when the destination file already exists and you want to replace it.
+        Use this in automated scripts or when you need to refresh converted performance data files.
 
     .PARAMETER PerformanceCounter
-        Specifies the performance counter path to log.
+        Specifies specific performance counters to extract from the log files. Accepts counter paths like '\Processor(_Total)\% Processor Time'.
+        Use this to filter large perfmon logs and extract only the counters you need for analysis, reducing output file size.
 
     .PARAMETER PerformanceCounterPath
-        Specifies the pathname of the text file that lists the performance counters to be included in a relog file. Use this option to list counter paths in an input file, one per line. Default setting is all counters in the original log file are relogged.
+        Specifies a text file containing performance counter paths to extract, one counter per line. Alternative to specifying counters directly.
+        Use this when you have a standard set of counters for monitoring SQL Server performance and want to consistently extract the same metrics across multiple log files.
 
     .PARAMETER Interval
-        Specifies sample intervals in "n" records. Includes every nth data point in the relog file. Default is every data point.
+        Specifies the sampling interval by including every nth data point from the original log. Reduces output size by skipping intermediate samples.
+        Use this when working with high-frequency perfmon logs where you need less granular data for trend analysis rather than detailed monitoring.
 
     .PARAMETER BeginTime
-        This is is Get-Date object and we format it for you.
+        Specifies the start time for data extraction using a DateTime object. Only performance data from this time forward will be included in the output.
+        Use this to extract specific time periods from large perfmon logs, such as during a known performance incident or maintenance window.
 
     .PARAMETER EndTime
-        Specifies end time for copying last record from the input file. This is is Get-Date object and we format it for you.
+        Specifies the end time for data extraction using a DateTime object. Performance data after this time will be excluded from the output.
+        Combine with BeginTime to extract data from specific time ranges, useful for analyzing performance during particular events or time periods.
 
     .PARAMETER ConfigPath
-        Specifies the pathname of the settings file that contains command-line parameters.
+        Specifies a configuration file containing relog command-line parameters for complex or frequently-used conversion settings.
+        Use this when you have standardized performance log processing requirements that need consistent parameters across multiple operations.
 
     .PARAMETER Summary
-        If this switch is enabled, the performance counters and time ranges of log files specified in the input file will be displayed.
+        Displays summary information about the performance log files including available counters and time ranges without performing the conversion.
+        Use this to examine perfmon logs before processing them, helping you determine what counters are available and the time span covered.
 
     .PARAMETER Multithread
-        If this switch is enabled, processing will be done in parallel. This may speed up large batches or large files.
+        Processes multiple performance log files in parallel to improve performance when converting large batches of files.
+        Use this when converting many perfmon logs simultaneously, especially beneficial on multi-core systems with large performance monitoring datasets.
 
     .PARAMETER AllTime
-        If this switch is enabled and a datacollector or datacollectorset is passed in via the pipeline, collects all logs, not just the latest.
+        Processes all available log files from data collectors instead of just the most recent ones when used with pipeline input from Get-DbaPfDataCollector.
+        Use this when you need to convert historical performance data from all collection periods, not just the latest monitoring session.
 
     .PARAMETER Raw
-        If this switch is enabled, the results of the DOS command instead of Get-ChildItem will be displayed. This does not run in parallel.
+        Displays the raw output from the relog command instead of returning file objects. Useful for debugging conversion issues or seeing detailed progress.
+        Use this when troubleshooting relog operations or when you need to see the exact command-line output and statistics from the conversion process.
 
     .PARAMETER InputObject
-        Accepts the output of Get-DbaPfDataCollector and Get-DbaPfDataCollectorSet as input via the pipeline.
+        Accepts data collector objects from Get-DbaPfDataCollector and Get-DbaPfDataCollectorSet via pipeline input for automatic log file discovery.
+        Use this to convert performance logs directly from active or configured data collectors without manually specifying file paths.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

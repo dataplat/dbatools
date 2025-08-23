@@ -1,15 +1,18 @@
 function Get-DbaMsdtc {
     <#
     .SYNOPSIS
-        Displays information about the Distributed Transaction Coordinator (MSDTC) on a server
+        Retrieves Microsoft Distributed Transaction Coordinator (MSDTC) service status and configuration details
 
     .DESCRIPTION
-        Returns a custom object with Computer name, state of the MSDTC Service, security settings of MSDTC and CID's
+        Returns comprehensive MSDTC information including service state, security settings, and component identifiers (CIDs) from target servers. MSDTC is essential for SQL Server distributed transactions, linked server operations, and cross-database transactions that span multiple servers or instances.
 
-        Requires: Windows administrator access on Servers
+        This function helps DBAs troubleshoot distributed transaction failures, verify MSDTC configuration for linked servers, and audit security settings across multiple servers. It queries both the Windows service status and registry settings to provide a complete picture of the MSDTC configuration.
+
+        Requires: Windows administrator access on target servers
 
     .PARAMETER ComputerName
-        The target computer.
+        Specifies the server or computer names where MSDTC information should be retrieved. Accepts multiple values and supports pipeline input.
+        Use this when checking MSDTC configuration across multiple SQL Server hosts, especially when troubleshooting distributed transactions or linked server issues.
 
     .PARAMETER Credential
         Alternative credential

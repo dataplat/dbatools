@@ -1,27 +1,28 @@
 function Set-DbatoolsInsecureConnection {
     <#
     .SYNOPSIS
-        Sets the default connection settings to trust all server certificates and not require an encrypted connection.
+        Reverts SQL Server connection security defaults to disable encryption and trust all certificates
 
     .DESCRIPTION
-        Microsoft changed the default connection settings in the SQL Server connection libraries
-        to require an encrypted connection and not trust all server certificates.
+        Microsoft changed the default connection settings in SQL Server client libraries to require encryption and validate certificates, which can break existing dbatools scripts and connections in development environments. This function reverts those security defaults by configuring dbatools to trust all server certificates and disable encryption requirements.
 
-        This command reverts those defaults and sets the default connection settings to trust all server
-        certificates and not require encrypted connections.
+        The function sets two key dbatools configuration values: sql.connection.trustcert (true) and sql.connection.encrypt (false). By default, these settings persist across PowerShell sessions, but you can use -SessionOnly to apply them temporarily.
+
+        This is particularly useful when working with development servers, self-signed certificates, or legacy environments where the new security defaults cause connection failures.
 
         You can read more here: https://dbatools.io/newdefaults
 
     .PARAMETER SessionOnly
-        Does not persist across sessions so the default will return if you close and reopen PowerShell.
+        Applies the insecure connection settings only to the current PowerShell session instead of persisting them permanently.
+        Use this when testing connection settings or when you need insecure connections temporarily without changing your permanent dbatools configuration.
 
     .PARAMETER Scope
-        The configuration scope it should be registered under. Defaults to UserDefault.
-
-        Configuration scopes are the default locations configurations are being stored at.
+        Specifies where to store the persistent connection settings when SessionOnly is not used. Defaults to UserDefault.
+        UserDefault applies to the current user only, while SystemDefault applies to all users on the machine.
 
     .PARAMETER Register
-        Deprecated.
+        This parameter is deprecated and will be removed in a future release.
+        The function now automatically handles registration of settings when SessionOnly is not specified.
 
     .LINK
         https://dbatools.io/Set-DbatoolsInsecureConnection

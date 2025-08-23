@@ -1,14 +1,16 @@
 function Get-DbaDbDbccOpenTran {
     <#
     .SYNOPSIS
-        Execution of Database Console Command DBCC OPENTRAN
+        Identifies the oldest active transactions in database transaction logs using DBCC OPENTRAN
 
     .DESCRIPTION
-        Executes the command DBCC OPENTRAN against the requested databases
+        Executes DBCC OPENTRAN against specified databases to identify long-running or problematic transactions that may be causing blocking, transaction log growth, or replication delays.
 
-        Displays information about the oldest active transaction and
-        the oldest distributed and nondistributed replicated transactions, if any,
-        within the transaction log of the specified database
+        This function helps DBAs troubleshoot performance issues by revealing the oldest active transaction and any distributed or replicated transactions within each database's transaction log. When transactions remain open for extended periods, they prevent log truncation and can cause cascading blocking issues throughout your SQL Server instance.
+
+        The output includes detailed transaction information in structured PowerShell objects, making it easy to identify which transactions need attention. If no active transactions are found, the function clearly indicates this status for each database checked.
+
+        This is particularly valuable when investigating sudden transaction log growth, diagnosing blocking chains, or troubleshooting replication latency issues where old transactions may be preventing log reader processes from advancing.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-opentran-transact-sql
@@ -24,9 +26,9 @@ function Get-DbaDbDbccOpenTran {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
-        The Name or Id of a database can be specified
-        Database names must comply with the rules for identifiers.
+        Specifies which databases to check for open transactions. Accepts database names or database IDs.
+        Use this when investigating transaction issues in specific databases rather than scanning all databases on the instance.
+        If omitted, DBCC OPENTRAN runs against all accessible databases, which may take longer on instances with many databases.
 
 
     .PARAMETER EnableException

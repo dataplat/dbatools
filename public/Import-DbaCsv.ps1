@@ -1,34 +1,32 @@
 function Import-DbaCsv {
     <#
     .SYNOPSIS
-        Efficiently imports very large (and small) CSV files into SQL Server.
+        Imports CSV files into SQL Server tables using high-performance bulk copy operations.
 
     .DESCRIPTION
-        Import-DbaCsv takes advantage of .NET's super fast SqlBulkCopy class to import CSV files into SQL Server.
+        Import-DbaCsv uses .NET's SqlBulkCopy class to efficiently load CSV data into SQL Server tables, handling files of any size from small datasets to multi-gigabyte imports. The function wraps the entire operation in a transaction, so any failure or interruption rolls back all changes automatically.
 
-        The entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
+        When the target table doesn't exist, you can use -AutoCreateTable to create it on the fly with basic nvarchar(max) columns. For production use, create your table first with proper data types and constraints. The function intelligently maps CSV columns to table columns by name, with fallback to ordinal position when needed.
 
-        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
+        Supports various CSV formats including custom delimiters, quoted fields, gzip compression (.csv.gz files), and multi-line values within quoted fields. Column mapping lets you import specific columns or rename them during import, while schema detection can automatically place data in the correct schema based on filename patterns.
 
-        This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
-
-        Able to read gzip compressed CSV files if the filename ends with ".csv.gz"
+        Perfect for ETL processes, data migrations, or loading reference data where you need reliable, fast imports with proper error handling and transaction safety.
 
     .PARAMETER Path
-        Specifies path to the CSV file(s) to be imported. Multiple files may be imported at once.
+        Specifies the file path to CSV files for import. Supports single files, multiple files, or pipeline input from Get-ChildItem.
+        Accepts .csv files and compressed .csv.gz files for large datasets with automatic decompression.
 
     .PARAMETER NoHeaderRow
-        By default, the first row is used to determine column names for the data being imported.
-
-        Use this switch if the first row contains data and not column names.
+        Treats the first row as data instead of column headers. Use this when your CSV file starts directly with data rows.
+        When enabled, columns are mapped by ordinal position and you'll need to ensure your target table column order matches the CSV.
 
     .PARAMETER Delimiter
-        Specifies the delimiter used in the imported file(s). If no delimiter is specified, comma is assumed.
-
-        Valid delimiters are '`t`, '|', ';',' ' and ',' (tab, pipe, semicolon, space, and comma).
+        Sets the field separator character used in the CSV file. Defaults to comma if not specified.
+        Common values include comma (,), tab (`t), pipe (|), semicolon (;), or space for different export formats from various systems.
 
     .PARAMETER SingleColumn
-        Specifies that the file contains a single column of data. Otherwise, the delimiter check bombs.
+        Indicates the CSV contains only one column of data without delimiters. Use this for simple lists or single-value imports.
+        Prevents the function from failing when no delimiter is found in the file content.
 
     .PARAMETER SqlInstance
         The SQL Server Instance to import data into.
@@ -41,137 +39,124 @@ function Import-DbaCsv {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the name of the database the CSV will be imported into. Options for this this parameter are  auto-populated from the server.
+        Specifies the target database for the CSV import. The database must exist on the SQL Server instance.
+        Use this to direct your data load to the appropriate database, whether it's a staging, ETL, or production database.
 
     .PARAMETER Schema
-        Specifies the schema in which the SQL table or view where CSV will be imported into resides. Default is dbo.
-
-        If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default.
-
-        This parameter overrides -UseFileNameForSchema.
+        Specifies the target schema for the table. Defaults to 'dbo' if not specified.
+        If the schema doesn't exist, it will be created automatically when using -AutoCreateTable. This parameter takes precedence over -UseFileNameForSchema.
 
     .PARAMETER Table
-        Specifies the SQL table or view where CSV will be imported into.
-
-        If a table name is not specified, the table name will be automatically determined from the filename.
-
-        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
-
-        If the automatically generated table datatypes do not work for you, please create the table prior to import.
-
-        If you want to import specific columns from a CSV, create a view with corresponding columns.
+        Specifies the destination table name. If omitted, uses the CSV filename as the table name.
+        The table will be created automatically with -AutoCreateTable using nvarchar(max) columns, but for production use, create the table first with proper data types and constraints.
 
     .PARAMETER Column
-        Import only specific columns. To remap column names, use the ColumnMap.
+        Imports only the specified columns from the CSV file, ignoring all others. Column names must match exactly.
+        Use this to selectively load data when you only need certain fields, reducing import time and storage requirements.
 
     .PARAMETER ColumnMap
-        By default, the bulk copy tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
+        Maps CSV columns to different table column names using a hashtable. Keys are CSV column names, values are table column names.
+        Use this when your CSV headers don't match your table structure or when importing from systems with different naming conventions.
 
     .PARAMETER KeepOrdinalOrder
-        By default, the importer will attempt to map exact-match columns names from the source document to the target table. Using this parameter will keep the ordinal order instead.
+        Maps columns by position rather than by name matching. The first CSV column goes to the first table column, second to second, etc.
+        Use this when column names don't match but the order is correct, or when dealing with files that have inconsistent header naming.
 
     .PARAMETER AutoCreateTable
-        Creates a table if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
+        Creates the destination table automatically if it doesn't exist, using nvarchar(max) for all columns.
+        Convenient for quick imports or testing, but for production use, create tables manually with appropriate data types, indexes, and constraints.
 
     .PARAMETER Truncate
-        If this switch is enabled, the destination table will be truncated prior to import.
+        Removes all existing data from the destination table before importing. The truncate operation is part of the transaction.
+        Use this for full data refreshes where you want to replace all existing data with the CSV contents.
 
     .PARAMETER NotifyAfter
-        Specifies the import row count interval for reporting progress. A notification will be shown after each group of this many rows has been imported.
+        Sets how often progress notifications are displayed during the import, measured in rows. Defaults to 50,000.
+        Lower values provide more frequent updates but may slow the import slightly, while higher values reduce overhead for very large files.
 
     .PARAMETER BatchSize
-        Specifies the batch size for the import. Defaults to 50000.
+        Controls how many rows are sent to SQL Server in each batch during the bulk copy operation. Defaults to 50,000.
+        Larger batches are generally more efficient but use more memory, while smaller batches provide better granular control and error isolation.
 
     .PARAMETER UseFileNameForSchema
-        If this switch is enabled, the script will try to find the schema name in the input file by looking for a period (.) in the file name.
-
-        If used with the -Table parameter you may still specify the target table name. If -Table is not used the file name after the first period will
-        be used for the table name.
-
-        For example test.data.csv will import the csv contents to a table in the test schema.
-
-        If it finds one it will use the file name up to the first period as the schema. If there is no period in the filename it will default to dbo.
-
-        If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default.
-
-        This behaviour will be overridden if the -Schema parameter is specified.
+        Extracts the schema name from the filename using the first period as a delimiter. For example, 'sales.customers.csv' imports to the 'sales' schema.
+        If no period is found, defaults to 'dbo'. The schema will be created if it doesn't exist. This parameter is ignored if -Schema is explicitly specified.
 
     .PARAMETER TableLock
-        If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used.
-
-        Per Microsoft "Obtain a bulk update lock for the duration of the bulk copy operation. When not
-        specified, row locks are used."
+        Acquires an exclusive table lock for the duration of the import instead of using row-level locks.
+        Improves performance for large imports by reducing lock overhead, but blocks other operations on the table during the import.
 
     .PARAMETER CheckConstraints
-        If this switch is enabled, the SqlBulkCopy option to check constraints will be used.
-
-        Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
+        Enforces check constraints, foreign keys, and other table constraints during the import. By default, constraints are not checked for performance.
+        Enable this when data integrity validation is critical, but expect slower import performance.
 
     .PARAMETER FireTriggers
-        If this switch is enabled, the SqlBulkCopy option to allow insert triggers to be executed will be used.
-
-        Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the database."
+        Executes INSERT triggers on the destination table during the bulk copy operation. By default, triggers are not fired for performance.
+        Use this when your triggers perform essential business logic like auditing, logging, or cascading updates that must run during import.
 
     .PARAMETER KeepIdentity
-        If this switch is enabled, the SqlBulkCopy option to keep identity values from the source will be used.
-
-        Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
+        Preserves identity column values from the CSV instead of generating new ones. By default, the destination assigns new identity values.
+        Use this when migrating data and you need to maintain existing primary key values or referential integrity.
 
     .PARAMETER KeepNulls
-        If this switch is enabled, the SqlBulkCopy option to keep NULL values in the table will be used.
-
-        Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+        Preserves NULL values from the CSV instead of replacing them with column default values.
+        Use this when your data intentionally contains NULLs that should be maintained, rather than having them replaced by table defaults.
 
     .PARAMETER NoProgress
-        The progress bar is pretty but can slow down imports. Use this parameter to quietly import.
+        Disables the progress bar display during import to improve performance, especially for very large files.
+        Use this in automated scripts or when maximum import speed is more important than visual progress feedback.
 
     .PARAMETER Quote
-        Defines the default quote character wrapping every field.
-        Default: double-quotes
+        Specifies the character used to quote fields containing delimiters or special characters. Defaults to double-quote (").
+        Change this when your CSV uses different quoting conventions, such as single quotes from certain export tools.
 
     .PARAMETER Escape
-        Defines the default escape character letting insert quotation characters inside a quoted field.
-
-        The escape character can be the same as the quote character.
-        Default: double-quotes
+        Specifies the character used to escape quote characters within quoted fields. Defaults to double-quote (").
+        Modify this when dealing with CSV files that use different escaping conventions, such as backslash escaping.
 
     .PARAMETER Comment
-        Defines the default comment character indicating that a line is commented out.
-        Default: hashtag
+        Specifies the character that marks comment lines to be ignored during import. Defaults to hashtag (#).
+        Use this when your CSV files contain comment lines with metadata or instructions that should be skipped.
 
     .PARAMETER TrimmingOption
-        Determines which values should be trimmed. Default is "None". Options are All, None, UnquotedOnly and QuotedOnly.
+        Controls automatic whitespace removal from field values. Options are All, None, UnquotedOnly, or QuotedOnly.
+        Use 'All' to clean up data with inconsistent spacing, or 'None' to preserve exact formatting when whitespace is significant.
 
     .PARAMETER BufferSize
-        Defines the default buffer size. The default BufferSize is 4096.
+        Sets the internal buffer size in bytes for reading the CSV file. Defaults to 4096 bytes.
+        Increase this value for better performance with very large files, but it will use more memory during the import process.
 
     .PARAMETER ParseErrorAction
-        By default, the parse error action throws an exception and ends the import.
-
-        You can also choose AdvanceToNextLine which basically ignores parse errors.
+        Determines how to handle malformed rows during import. 'ThrowException' stops the import, 'AdvanceToNextLine' skips bad rows.
+        Use 'AdvanceToNextLine' for importing data with known quality issues where you want to load as much valid data as possible.
 
     .PARAMETER Encoding
-        By default, set to UTF-8.
-
-        The encoding of the file.
+        Specifies the text encoding of the CSV file. Defaults to UTF-8.
+        Change this when dealing with files from legacy systems that use different encodings like ASCII or when dealing with international character sets.
 
     .PARAMETER NullValue
-        The value which denotes a DbNull-value.
+        Specifies which text value in the CSV should be treated as SQL NULL. Common values include 'NULL', 'null', or empty strings.
+        Use this when your source system exports NULL values as specific text strings that need to be converted to database NULLs.
 
     .PARAMETER MaxQuotedFieldLength
-        The maximum length (in bytes) for any quoted field.
+        Sets the maximum allowed length in bytes for quoted fields to prevent memory issues with malformed data.
+        Increase this when working with legitimate large text fields, or decrease it to catch data quality issues early.
 
     .PARAMETER SkipEmptyLine
-        Skip empty lines.
+        Ignores completely empty lines in the CSV file during import.
+        Use this when your source files contain blank lines for formatting that should not create empty rows in your table.
 
     .PARAMETER SupportsMultiline
-        Indicates if the importer should support multiline fields.
+        Allows field values to span multiple lines when properly quoted, such as addresses or comments with embedded line breaks.
+        Enable this when your CSV contains multi-line text data that should be preserved as single field values.
 
     .PARAMETER UseColumnDefault
-        Use the column default values if the field is not in the record.
+        Applies table column default values when CSV fields are missing or empty.
+        Use this when your CSV doesn't include all table columns and you want defaults applied rather than NULLs or import failures.
 
     .PARAMETER NoTransaction
-        Do not use a transaction when performing the import.
+        Disables the automatic transaction wrapper, allowing partial imports to remain committed even if the operation fails.
+        Use this for very large imports where you want to commit data in batches, but be aware that failed imports may leave partial data.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

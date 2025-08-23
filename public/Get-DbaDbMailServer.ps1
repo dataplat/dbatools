@@ -1,10 +1,10 @@
 function Get-DbaDbMailServer {
     <#
     .SYNOPSIS
-        Gets database mail servers from SQL Server
+        Retrieves SMTP server configurations from SQL Server Database Mail accounts
 
     .DESCRIPTION
-        Gets database mail servers from SQL Server
+        Retrieves detailed SMTP server configuration information from all Database Mail accounts on SQL Server instances. This function pulls the actual mail server settings including port numbers, SSL configuration, authentication methods, and connection details. Useful for auditing email infrastructure, troubleshooting delivery issues, and documenting Database Mail configurations across your environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,16 @@ function Get-DbaDbMailServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Server
-        Specifies one or more server(s) to get. If unspecified, all servers will be returned.
+        Specifies one or more SMTP server names to retrieve from Database Mail accounts. Use this when you need to check configuration for specific mail servers rather than all configured servers.
+        Accepts exact server names like 'smtp.company.com' or 'mail-relay-01'.
 
     .PARAMETER Account
-        Get only the mail server associated with specific accounts
+        Restricts results to mail servers associated with specific Database Mail account names. Use this when troubleshooting email issues for particular applications or services.
+        Helpful for isolating server configurations when you have multiple Database Mail accounts with different SMTP settings.
 
     .PARAMETER InputObject
-        Accepts pipeline input from Get-DbaDbMail
+        Accepts Database Mail objects from Get-DbaDbMail via pipeline. Allows you to chain Database Mail operations together.
+        Use this when you need to process mail server configurations from a filtered set of SQL instances or specific Database Mail setups.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

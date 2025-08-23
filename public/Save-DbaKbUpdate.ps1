@@ -1,30 +1,40 @@
 function Save-DbaKbUpdate {
     <#
     .SYNOPSIS
-        Downloads patches from Microsoft
+        Downloads Microsoft Knowledge Base updates and patches to local storage
 
     .DESCRIPTION
-        Downloads patches from Microsoft
+        Downloads Microsoft KB updates, cumulative updates, and service packs from Microsoft's servers to your local file system. This function handles SQL Server patches as well as any other Microsoft KB updates, making it easy to stage patches for installation across multiple servers. Supports filtering by architecture (x86, x64, ia64) and language, and can download multiple KBs in a single operation. Use this to build a local patch repository or download specific updates for offline installation scenarios.
 
     .PARAMETER Name
-        The KB name or number. For example, KB4057119 or 4057119.
+        Specifies the Microsoft Knowledge Base article number to download. Accepts KB prefix or just the numeric value (e.g., 'KB4057119' or '4057119').
+        Use this to target specific patches, cumulative updates, or service packs for SQL Server or other Microsoft products.
+        Supports multiple KB numbers in a single command for batch downloading.
 
     .PARAMETER Path
-        The directory to save the file.
+        Specifies the directory where downloaded KB files will be saved. Defaults to the current working directory.
+        Use this to organize patches into specific folders or network locations for easier deployment across multiple servers.
+        The directory will be created if it doesn't exist.
 
     .PARAMETER FilePath
-        The exact file name to save to, otherwise, it uses the name given by the webserver
+        Specifies the exact filename and path for the downloaded file, overriding the server-provided filename.
+        Use this when you need custom naming conventions or want to save to a specific location with a particular name.
+        Cannot be used when downloading multiple KBs or when Architecture is set to 'All'.
 
     .PARAMETER Architecture
-        Defaults to x64. Can be x64, x86, ia64 or "All"
+        Specifies the CPU architecture for the downloaded files. Valid values are 'x64', 'x86', 'ia64', or 'All'.
+        Use 'All' to download files for all available architectures when you need to support mixed environments.
+        Most modern SQL Server deployments use 'x64', which is the default.
 
     .PARAMETER Language
-        Cumulative Updates come in one file for all languages, but Service Packs have a file for every language.
-        If you want to download only a specific language, use this parameter.
-        You have to use the three letter code that is part of the filename, e. g. "enu" for english or "deu" for german.
+        Filters downloads to a specific language version using three-letter language codes (e.g., 'enu' for English, 'deu' for German).
+        Primarily useful for SQL Server Service Packs which have separate files per language, unlike Cumulative Updates which are language-neutral.
+        Only downloads files matching the specified language code when multiple language versions are available.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaKbUpdate
+        Accepts pipeline input from Get-DbaKbUpdate, allowing you to filter and select specific files before downloading.
+        Use this workflow to preview available downloads with Get-DbaKbUpdate, then pipe selected results for download.
+        Particularly useful when working with KBs that have multiple file options.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

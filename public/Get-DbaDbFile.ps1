@@ -1,10 +1,10 @@
 function Get-DbaDbFile {
     <#
     .SYNOPSIS
-        Returns detailed information about database files.
+        Retrieves comprehensive database file information including size, growth, I/O statistics, and storage details.
 
     .DESCRIPTION
-        Returns detailed information about database files. Does not use SMO - SMO causes enumeration and this command avoids that.
+        Retrieves detailed information about database files (data and log files) from SQL Server instances using direct T-SQL queries for optimal performance. This function provides comprehensive file metadata including current size, used space, growth settings, I/O statistics, and volume free space information that DBAs need for capacity planning, performance analysis, and storage management. Unlike SMO-based approaches, this command avoids costly enumeration operations and provides faster results when analyzing file configurations across multiple databases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,16 +17,24 @@ function Get-DbaDbFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for file information. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases rather than scanning all databases on the instance.
+        Particularly useful for capacity planning or troubleshooting file growth issues on targeted databases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the file analysis. Accepts wildcards for pattern matching.
+        Use this to skip system databases, test databases, or databases you don't need to analyze.
+        Helpful when performing routine file space reviews while avoiding databases that don't require monitoring.
 
     .PARAMETER FileGroup
-        Filter results to only files within this certain filegroup.
+        Filters results to show only files within the specified filegroup name.
+        Use this when analyzing specific filegroups for space utilization, I/O patterns, or growth planning.
+        Particularly valuable when troubleshooting performance issues or planning filegroup-specific storage migrations.
 
     .PARAMETER InputObject
-        A piped collection of database objects
+        Accepts database objects piped from other dbatools commands like Get-DbaDatabase.
+        Use this for advanced filtering scenarios or when chaining multiple dbatools commands together.
+        Allows you to pre-filter databases using complex criteria before analyzing their file information.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

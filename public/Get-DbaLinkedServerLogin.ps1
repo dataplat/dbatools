@@ -1,10 +1,10 @@
 function Get-DbaLinkedServerLogin {
     <#
     .SYNOPSIS
-        Obtains linked server login(s).
+        Retrieves linked server login mappings and authentication configurations from SQL Server instances.
 
     .DESCRIPTION
-        Obtains linked server login(s).
+        Retrieves the login mappings configured for linked servers, showing how local SQL Server logins are mapped to remote server credentials. This function returns details about each login mapping including the local login name, remote user account, and whether impersonation is enabled. Use this to audit linked server security configurations, troubleshoot authentication issues between servers, or document cross-server login relationships for compliance purposes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,16 +18,20 @@ function Get-DbaLinkedServerLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LinkedServer
-        The name(s) of the linked server(s).
+        Specifies the name(s) of the linked server(s) to retrieve login mappings from. Required when using SqlInstance parameter.
+        Use this to focus on specific linked servers when you have multiple configured on the instance.
 
     .PARAMETER LocalLogin
-        The name(s) of the linked server login(s) to include.
+        Filters results to only include specific local SQL Server login names that have mappings configured for the linked server.
+        Useful when auditing a specific user's access or troubleshooting authentication for particular accounts.
 
     .PARAMETER ExcludeLocalLogin
-        The name(s) of the linked server login(s) to exclude
+        Excludes specific local SQL Server login names from the results, showing all other configured login mappings.
+        Use this to hide system accounts or service accounts when focusing on user login mappings.
 
     .PARAMETER InputObject
-        Allows piping from Connect-DbaInstance and Get-DbaLinkedServer
+        Accepts piped input from Connect-DbaInstance or Get-DbaLinkedServer commands to work with existing connection objects.
+        When piping from Get-DbaLinkedServer, the LinkedServer parameter becomes optional since the linked server context is already established.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -2,18 +2,20 @@
 function Disable-DbaForceNetworkEncryption {
     <#
     .SYNOPSIS
-        Disables Force Encryption for a SQL Server instance
+        Disables Force Network Encryption setting in SQL Server Configuration Manager
 
     .DESCRIPTION
-        Disables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.
-
-        This setting is found in Configuration Manager.
+        Modifies the Windows registry to disable Force Network Encryption for SQL Server instances, allowing unencrypted client connections. This is useful when troubleshooting connectivity issues, working with legacy applications that don't support encryption, or when encryption is handled at the network level. Requires Windows administrator access to the target server and PowerShell remoting. SQL Server service must be restarted for changes to take effect.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Defaults to localhost.
+        The target SQL Server instance or instances where Force Network Encryption will be disabled in the Windows registry.
+        Use this to specify which SQL Server instances need their encryption requirements modified, typically for troubleshooting connectivity issues or supporting legacy applications that don't support encrypted connections.
+        Defaults to localhost.
 
     .PARAMETER Credential
-        Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
+        Specifies Windows credentials for connecting to the target computer to modify registry settings.
+        The account must have local administrator privileges on the target server since this function modifies the Windows registry and uses PowerShell remoting.
+        Use this when your current credentials don't have the required administrative access to the target machine.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

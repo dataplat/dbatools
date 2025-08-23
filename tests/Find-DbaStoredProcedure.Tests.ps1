@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command finds Procedures in a System Database" {
         BeforeAll {
             # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $ServerProcedure = @"
 CREATE PROCEDURE dbo.cp_dbatoolsci_sysadmin
@@ -46,12 +46,12 @@ FROM [master].[sys].[syslogins];
             $null = Invoke-DbaQuery @splatCreateProc
 
             # We want to run the test command without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # Cleanup - We want to run all commands in the cleanup with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
             $splatDropProc = @{
@@ -60,6 +60,8 @@ FROM [master].[sys].[syslogins];
                 Query       = $DropProcedure
             }
             $null = Invoke-DbaQuery @splatDropProc
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
@@ -76,7 +78,7 @@ FROM [master].[sys].[syslogins];
     Context "Command finds Procedures in a User Database" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Set variables. They are available in all the It blocks.
             $testDbName = "dbatoolsci_storedproceduredb"
@@ -103,21 +105,20 @@ AS
             $null = Invoke-DbaQuery @splatCreateProc
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = "dbatoolsci_storedproceduredb"
-                Confirm     = $false
             }
             $null = Remove-DbaDatabase @splatRemoveDb
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should find a specific StoredProcedure named sp_dbatoolsci_custom" {

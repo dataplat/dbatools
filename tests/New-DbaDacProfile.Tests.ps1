@@ -46,14 +46,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "returns the right results" {
         $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database $dbname
         $publishprofile.FileName -match "publish.xml" | Should -Be $true
-        Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
+        Remove-Item -Path $publishprofile.FileName -ErrorAction SilentlyContinue
     }
 }

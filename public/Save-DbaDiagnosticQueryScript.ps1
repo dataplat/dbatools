@@ -1,19 +1,20 @@
 function Save-DbaDiagnosticQueryScript {
     <#
     .SYNOPSIS
-        Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
+        Downloads Glenn Berry's SQL Server Diagnostic Information Queries for performance monitoring and troubleshooting
 
     .DESCRIPTION
-        The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.
+        Downloads the latest versions of Glenn Berry's renowned SQL Server Diagnostic Information Queries from his website. These DMV-based scripts are essential tools for DBAs to assess SQL Server health, identify performance bottlenecks, and gather comprehensive system information across all SQL Server versions including Azure SQL Database and Managed Instance.
 
-        This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
+        The dbatools module includes diagnostic queries pre-installed, but this function lets you update to more recent versions or download specific versions for your environment. This is particularly valuable since Glenn Berry regularly updates these scripts with new insights and compatibility improvements.
 
-        Use this function to pre-download the scripts from a device with an Internet connection.
+        This function is primarily used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the scripts. Use this to pre-download scripts from a device with internet connection for later use on systems without internet access.
 
-        The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
+        The function automatically detects and downloads scripts for all available SQL Server versions found on Glenn Berry's resources page, saving them with version-specific filenames for easy identification.
 
     .PARAMETER Path
-        Specifies the path to the output
+        Specifies the directory path where Glenn Berry's diagnostic query scripts will be downloaded. Defaults to the current user's Documents folder.
+        Use this when you need to organize scripts in a specific location, such as a shared network drive for team access or a local folder structure for different environments.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

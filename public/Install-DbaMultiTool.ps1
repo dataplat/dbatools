@@ -1,10 +1,19 @@
 function Install-DbaMultiTool {
     <#
     .SYNOPSIS
-        Installs or updates the DBA MultiTool stored procedures.
+        Installs five essential T-SQL stored procedures for database documentation, index optimization, and administrative tasks.
 
     .DESCRIPTION
-        Downloads, extracts and installs the DBA MultiTool stored procedures.
+        Downloads and installs the DBA MultiTool collection of T-SQL stored procedures into a specified database. This toolkit provides five key utilities that help DBAs with common documentation and optimization tasks that would otherwise require manual T-SQL scripting.
+
+        The installed procedures include:
+        • sp_helpme - Enhanced version of sp_help that provides detailed object information
+        • sp_doc - Generates comprehensive database documentation
+        • sp_sizeoptimiser - Analyzes and recommends optimal database file sizing
+        • sp_estindex - Estimates potential storage savings from index compression
+        • sp_help_revlogin - Creates scripts to recreate logins with their original SIDs and passwords
+
+        These procedures are particularly valuable for database migrations, compliance reporting, capacity planning, and general administrative documentation. The function automatically handles downloading the latest version from GitHub and can install across multiple instances simultaneously.
 
         DBA MultiTool links:
         https://dba-multitool.org
@@ -21,20 +30,23 @@ function Install-DbaMultiTool {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database to install DBA MultiTool stored procedures into.
+        Specifies the target database where the five DBA MultiTool stored procedures will be installed. Defaults to 'master' database if not specified.
+        Choose a dedicated DBA or utility database to keep administrative procedures organized and separate from application databases.
 
     .PARAMETER Branch
-        Specifies an alternate branch of the DBA MultiTool to install.
-        Allowed values:
-            main (default)
-            development
+        Specifies which branch of the DBA MultiTool repository to download and install. Defaults to 'main' for stable releases.
+        Use 'development' only when you need to test upcoming features or bug fixes before they are officially released.
+        The development branch may contain untested code and should not be used in production environments.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install DBA MultiTool from. This *should* be the zip file as distributed by the maintainers.
-        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/LowlyDBA/dba-multitool/.
+        Specifies the path to a local zip file containing the DBA MultiTool scripts instead of downloading from GitHub.
+        Use this when installing in environments without internet access, when you need to install a specific version, or when your organization requires using pre-approved software packages.
+        The file must be the official zip distribution from the DBA MultiTool maintainers.
 
     .PARAMETER Force
-        If this switch is enabled, the DBA MultiTool will be downloaded from the internet even if previously cached.
+        Forces a fresh download of the DBA MultiTool from GitHub, ignoring any locally cached version.
+        Use this when you need to ensure you have the absolute latest version or when troubleshooting installation issues with cached files.
+        Without this switch, the function will use the cached version if it exists to improve performance and reduce network usage.
 
     .PARAMETER Confirm
         Prompts to confirm actions.

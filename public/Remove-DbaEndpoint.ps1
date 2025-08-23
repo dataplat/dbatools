@@ -1,10 +1,10 @@
 function Remove-DbaEndpoint {
     <#
     .SYNOPSIS
-        Removes endpoints from a SQL Server instance.
+        Removes SQL Server endpoints including DatabaseMirroring, ServiceBroker, Soap, and TSql types.
 
     .DESCRIPTION
-        Removes endpoints from a SQL Server instance.
+        Removes SQL Server endpoints by executing DROP ENDPOINT commands against the target instance. This function handles DatabaseMirroring, ServiceBroker, Soap, and TSql endpoint types, making it useful for decommissioning unused services, cleaning up after failed deployments, or hardening SQL Server instances by removing unnecessary network entry points. You can target specific endpoints by name or remove all endpoints at once, with confirmation prompts to prevent accidental deletions.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,16 @@ function Remove-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
-        Only remove specific endpoints.
+        Specifies the names of specific endpoints to remove from the SQL Server instance. Accepts multiple endpoint names as an array.
+        Use this when you need to selectively remove particular endpoints like 'Mirroring' or custom service broker endpoints while leaving others intact.
 
     .PARAMETER AllEndpoints
-        Remove all endpoints on an instance.
+        Removes all user-defined endpoints from the SQL Server instance, excluding system endpoints that cannot be dropped.
+        Use this for complete endpoint cleanup during decommissioning or when hardening an instance by removing all custom network entry points.
 
     .PARAMETER InputObject
-        Enables piping from Get-Endpoint.
+        Accepts endpoint objects from the pipeline, typically from Get-DbaEndpoint output. Allows for filtering endpoints before removal.
+        Use this when you need to apply complex filtering logic or when chaining endpoint discovery and removal operations together.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

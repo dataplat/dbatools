@@ -1,17 +1,19 @@
 function New-DbaFirewallRule {
     <#
     .SYNOPSIS
-        Creates a new inbound firewall rule for a SQL Server instance and adds the rule to the target computer.
+        Creates Windows firewall rules for SQL Server instances to allow network connectivity
 
     .DESCRIPTION
-        Creates a new inbound firewall rule for a SQL Server instance and adds the rule to the target computer.
+        Creates inbound Windows firewall rules for SQL Server instances, Browser service, and Dedicated Admin Connection (DAC) to allow network connectivity.
+        This automates the tedious post-installation task of configuring firewall access for SQL Server, eliminating the need to manually determine ports and create rules through Windows Firewall GUI or netsh commands.
 
-        This is basically a wrapper around New-NetFirewallRule executed at the target computer.
-        So this only works if New-NetFirewallRule works on the target computer.
+        The function intelligently detects whether instances use static or dynamic ports and creates appropriate rules.
+        For static ports, it creates port-based rules; for dynamic ports, it creates program-based rules targeting sqlservr.exe.
+        When instances use non-default ports, it automatically includes a Browser service rule so clients can discover the instance.
 
-        Both DisplayName and Name are set to the same value, since DisplayName is required
-        but only Name uniquely defines the rule, thus avoiding duplicate rules with different settings.
-        The names and the group for all rules are fixed to be able to get them back with Get-DbaFirewallRule.
+        This is a wrapper around New-NetFirewallRule executed remotely on the target computer via Invoke-Command2.
+        Both DisplayName and Name are set to the same value to ensure unique rule identification and prevent duplicates.
+        All rules use the "SQL Server" group for easy management with Get-DbaFirewallRule.
 
         The functionality is currently limited. Help to extend the functionality is welcome.
 
@@ -59,28 +61,19 @@ function New-DbaFirewallRule {
         Credential object used to connect to the Computer as a different user.
 
     .PARAMETER Type
-        Creates firewall rules for the given type(s).
-
-        Valid values are:
-        * Engine - for the SQL Server instance
-        * Browser - for the SQL Server Browser
-        * DAC - for the dedicated admin connection (DAC)
-
-        If this parameter is not used:
-        * The firewall rule for the SQL Server instance will be created.
-        * In case the instance is listening on a port other than 1433, also the firewall rule for the SQL Server Browser will be created if not already in place.
-        * In case the DAC is configured for listening remotely, also the firewall rule for the DAC will be created.
+        Specifies which firewall rule types to create for SQL Server network access.
+        Use this when you need to create specific rules instead of the automatic detection behavior.
+        Valid values are Engine (SQL Server instance), Browser (SQL Server Browser service), and DAC (Dedicated Admin Connection). When omitted, the function automatically creates Engine rules plus Browser rules for non-default ports and DAC rules when remote DAC is enabled.
 
     .PARAMETER Configuration
-        A hashtable with custom configuration parameters that are used when calling New-NetFirewallRule.
-        These will override the default settings.
-        Parameters Name, DisplayName and Group are not allowed here and will be silently ignored.
-
-        https://docs.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule
+        Provides custom settings to override the default firewall rule configuration when calling New-NetFirewallRule.
+        Use this when you need to restrict rules to specific network profiles (Domain, Private, Public) or modify other advanced firewall settings.
+        Common examples include @{Profile = 'Domain'} to limit rules to domain networks only, or @{RemoteAddress = '192.168.1.0/24'} to restrict source IPs. The Name, DisplayName, and Group parameters are reserved and will be ignored if specified.
 
     .PARAMETER Force
-        If the rule to be created already exists, a warning is displayed.
-        If this switch is enabled, the rule will be deleted and created again.
+        Forces recreation of firewall rules that already exist by deleting and recreating them.
+        Use this when you need to update existing rules with new settings or when troubleshooting connectivity issues.
+        Without this switch, the function will warn you about existing rules and skip their creation.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

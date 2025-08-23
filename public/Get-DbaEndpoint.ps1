@@ -1,10 +1,10 @@
 function Get-DbaEndpoint {
     <#
     .SYNOPSIS
-        Returns endpoint objects from a SQL Server instance.
+        Retrieves SQL Server endpoints with network connectivity details for troubleshooting and documentation.
 
     .DESCRIPTION
-        Returns endpoint objects from a SQL Server instance.
+        Retrieves all SQL Server endpoints including DatabaseMirroring, ServiceBroker, Soap, and TSql types with their network configuration details. This function provides essential information for troubleshooting connectivity issues, documenting high availability setups, and performing security audits. It automatically resolves DNS names and constructs connection strings (FQDN format) for endpoints that have TCP listeners, making it easier to validate network accessibility and plan firewall configurations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,10 +17,12 @@ function Get-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
-        Return only specific endpoints.
+        Specifies one or more endpoint names to retrieve instead of returning all endpoints. Accepts exact endpoint names and supports multiple values.
+        Use this when you need to examine specific endpoints like 'Mirroring' or 'AlwaysOn_health' rather than scanning all configured endpoints.
 
     .PARAMETER Type
-        Return only specific types of endpoints. Options include: DatabaseMirroring, ServiceBroker, Soap, and TSql.
+        Filters endpoints by their functional type. Valid options: DatabaseMirroring, ServiceBroker, Soap, and TSql.
+        Use this to focus on specific endpoint categories, such as 'DatabaseMirroring' for Always On AG troubleshooting or 'ServiceBroker' for message queuing configurations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

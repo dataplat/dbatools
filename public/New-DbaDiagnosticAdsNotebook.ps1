@@ -1,11 +1,10 @@
 function New-DbaDiagnosticAdsNotebook {
     <#
     .SYNOPSIS
-        Creates a new Diagnostic Jupyter Notebook for use with Azure Data Studio
+        Generates a Jupyter Notebook containing Glenn Berry's SQL Server diagnostic queries for Azure Data Studio
 
     .DESCRIPTION
-        Creates a new Jupyter Notebook for use with Azure Data Studio, based on Glenn Berry's
-        popular Diagnostic queries
+        Converts Glenn Berry's well-known SQL Server diagnostic queries into a Jupyter Notebook (.ipynb) file that can be opened and executed in Azure Data Studio. The function automatically detects your SQL Server version or accepts a target version parameter, then creates a notebook with version-specific diagnostic queries formatted as executable cells. Each query includes descriptive markdown explaining what it measures and why it's useful for performance troubleshooting and health monitoring.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to the default instance on localhost.
@@ -18,14 +17,16 @@ function New-DbaDiagnosticAdsNotebook {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER TargetVersion
-        If you are not creating the notebook for a specific instance of SQL Server, you can specify the version that you want to create the notebook for.
-        Must be one of "2005", "2008", "2008R2", "2012", "2014", "2016", "2016SP2", "2017", "2019", "2022", "AzureSQLDatabase"
+        Specifies the SQL Server version to generate diagnostic queries for when not connecting to a live instance. Use this when creating notebooks for offline analysis or different environments than your current connection.
+        Must be one of "2005", "2008", "2008R2", "2012", "2014", "2016", "2016SP2", "2017", "2019", "2022", "AzureSQLDatabase". Cannot be used together with SqlInstance parameter.
 
     .PARAMETER Path
-        Specifies the output path of the Jupyter Notebook
+        Specifies the full file path where the Jupyter Notebook (.ipynb file) will be created. The directory must exist and you must have write permissions to the location.
+        The generated notebook can be opened in Azure Data Studio or any Jupyter-compatible environment for executing Glenn Berry's diagnostic queries.
 
     .PARAMETER IncludeDatabaseSpecific
-        If this switch is enabled, the notebook will also include database-specific queries. Defaults to $false.
+        Includes database-level diagnostic queries in addition to the default instance-level queries. These queries examine database-specific performance metrics, index usage, and database settings.
+        Use this when you need detailed analysis of individual databases rather than just server-wide diagnostics. Defaults to $false.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

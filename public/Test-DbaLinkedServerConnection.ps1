@@ -1,10 +1,10 @@
 function Test-DbaLinkedServerConnection {
     <#
     .SYNOPSIS
-        Test all linked servers from the sql servers passed
+        Tests connectivity to all linked servers on specified SQL Server instances
 
     .DESCRIPTION
-        Test each linked server on the instance
+        Validates that linked servers are properly configured and accessible by attempting to establish connections to each one. This function iterates through all linked servers on the target instances and uses SQL Server's built-in TestConnection() method to verify connectivity. Returns detailed results including success/failure status and specific error messages for troubleshooting connection issues. Essential for validating linked server configurations after setup, during maintenance windows, or when diagnosing cross-server query failures.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

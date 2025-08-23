@@ -1,15 +1,17 @@
 function Get-DbaWsfcNetwork {
     <#
     .SYNOPSIS
-        Gets information about one or more networks in a failover cluster.
+        Retrieves network configuration details from Windows Server Failover Clustering for SQL Server high availability troubleshooting.
 
     .DESCRIPTION
-        Gets information about one or more networks in a failover cluster.
+        Retrieves detailed network information from Windows Server Failover Cluster nodes, including IP addresses, subnet masks, and network roles. This information is essential for diagnosing connectivity issues with SQL Server Failover Cluster Instances (FCIs) and Availability Groups, especially when troubleshooting network-related failures or validating cluster network configuration. The function returns comprehensive network details like IPv4/IPv6 addresses, prefix lengths, and quorum settings that help DBAs understand how cluster networks are configured and identify potential communication problems between nodes.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a Network or the cluster name itself.
+        Specifies the Windows Server Failover Cluster name or any cluster node name to retrieve network configuration from.
+        Use this to target a specific cluster when troubleshooting network connectivity issues with SQL Server FCIs or Availability Groups.
+        Accepts multiple cluster names for bulk network configuration analysis.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

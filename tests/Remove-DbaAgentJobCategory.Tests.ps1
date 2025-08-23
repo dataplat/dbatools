@@ -27,24 +27,24 @@ Describe $CommandName -Tag IntegrationTests {
     Context "New Agent Job Category is changed properly" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Create test job categories
             $testCategories = @("CategoryTest1", "CategoryTest2", "CategoryTest3")
             $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategories
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Clean up any remaining test categories
-            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3" -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3" -ErrorAction SilentlyContinue
 
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have the right name and category type" {
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Remove the job categories" {
-            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3" -Confirm:$false
+            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3"
 
             $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "CategoryTest1", "CategoryTest2", "CategoryTest3"
 

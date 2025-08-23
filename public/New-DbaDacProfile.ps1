@@ -1,15 +1,18 @@
 function New-DbaDacProfile {
     <#
     .SYNOPSIS
-        Creates a new Publish Profile.
+        Creates DAC publish profile XML files for automated dacpac deployment to SQL Server databases.
 
     .DESCRIPTION
-        The New-DbaDacProfile command generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
-        This generates a standard template XML which is enough to dpeloy a dacpac but it is highly recommended that you add additional options to the publish profile.
-        If you use Visual Studio you can open a publish.xml file and use the ui to edit the file -
-        To create a new file, right click on an SSDT project, choose "Publish" then "Load Profile" and load your profile or create a new one.
-        Once you have loaded it in Visual Studio, clicking advanced shows you the list of options available to you.
-        For a full list of options that you can add to the profile, google "sqlpackage.exe command line switches" or (https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx)
+        The New-DbaDacProfile command generates standard publish profile XML files that control how DacFx deploys your dacpac files to SQL Server databases. These profile files define deployment settings like target database, connection details, and deployment options.
+
+        The generated XML template includes basic deployment settings sufficient for most dacpac deployments, but you'll typically want to add additional deployment options to the publish profile for production scenarios.
+
+        If you use Visual Studio with SSDT projects, you can enhance these profiles through the UI. Right-click on an SSDT project, choose "Publish", then "Load Profile" to load your generated profile. The Advanced button reveals the full list of available deployment options.
+
+        For automation scenarios, these profiles work directly with SqlPackage.exe command-line deployments, eliminating the need to specify connection and deployment settings manually each time.
+
+        For a complete list of deployment options you can add to profiles, search for "SqlPackage.exe command line switches" or visit https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Alternatively, you can provide a ConnectionString.
@@ -22,18 +25,22 @@ function New-DbaDacProfile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database name you are targeting
+        Specifies the target database name where the dacpac will be deployed. This sets the TargetDatabaseName property in the generated publish profile.
+        Use this to define which database will receive the dacpac deployment when the profile is used with SqlPackage.exe or Visual Studio publishing.
 
     .PARAMETER ConnectionString
-        The connection string to the database you are upgrading.
-
-        Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connectionstring.
+        Provides a direct connection string for the target SQL Server instance and database. This becomes the TargetConnectionString in the generated publish profile.
+        Use this instead of SqlInstance when you need specific connection parameters, are connecting to non-standard instances like LocalDB, or when working in environments where Connect-DbaInstance may have limitations.
+        If you provide SqlInstance, the function will connect and generate the connection string automatically.
 
     .PARAMETER Path
-        The directory where you would like to save the profile xml file(s).
+        Specifies the directory where the publish profile XML files will be created. Defaults to your Documents folder if not specified.
+        Files are automatically named using the pattern "instancename-databasename-publish.xml" for easy identification and organization.
 
     .PARAMETER PublishOptions
-        Optional hashtable to set publish options. Key/value pairs in the hashtable get converted to strings of "<key>value</key>".
+        Specifies additional deployment options as a hashtable that will be embedded in the publish profile XML. Each key/value pair becomes a PropertyGroup element in the profile.
+        Use this to control dacpac deployment behavior like blocking data loss (BlockOnPossibleDataLoss), ignoring permissions (IgnorePermissions), or script generation options.
+        Common options include IgnoreUserSettingsObjects, GenerateDeploymentScript, and CreateNewDatabase. See SqlPackage.exe documentation for complete option list.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

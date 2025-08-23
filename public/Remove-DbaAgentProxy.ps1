@@ -17,13 +17,19 @@ function Remove-DbaAgentProxy {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Proxy
-        Specifies one or more SQL Agent proxy(s) to delete. If unspecified, all accounts will be removed.
+        Specifies one or more SQL Agent proxy account names to remove. Accepts wildcards for pattern matching.
+        Use this when you need to remove specific proxy accounts instead of all proxies on the instance.
+        Common examples include service account proxies or job-specific proxy accounts that are no longer needed.
 
     .PARAMETER ExcludeProxy
-        Specifies one or more SQL Agent proxy(s) to exclude.
+        Specifies one or more SQL Agent proxy account names to exclude from removal. Accepts wildcards for pattern matching.
+        Use this when removing multiple proxies but want to preserve certain critical proxy accounts.
+        Helpful for bulk cleanup operations while protecting production service account proxies.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaAgentProxy.
+        Accepts SQL Agent proxy objects from the pipeline, typically from Get-DbaAgentProxy.
+        Use this parameter set when you need to filter or select specific proxies before removal.
+        Enables advanced scenarios like interactive selection through Out-GridView or complex filtering logic.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

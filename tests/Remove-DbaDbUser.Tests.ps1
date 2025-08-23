@@ -28,25 +28,25 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Verifying User is removed" {
         BeforeAll {
-            $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $global:db = Get-DbaDatabase $global:server -Database tempdb
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $db = Get-DbaDatabase $server -Database tempdb
             $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
-            $global:loginTest = New-DbaLogin $global:server -Login dbatoolsci_remove_dba_db_user -Password $securePassword -Force
+            $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword -Force
         }
         BeforeEach {
-            $global:user = New-Object Microsoft.SqlServer.Management.SMO.User($global:db, $global:loginTest.Name)
-            $global:user.Login = $global:loginTest.Name
-            $global:user.Create()
+            $user = New-Object Microsoft.SqlServer.Management.SMO.User($db, $loginTest.Name)
+            $user.Login = $loginTest.Name
+            $user.Create()
         }
         AfterEach {
-            $user = $global:db.Users[$global:loginTest.Name]
+            $user = $db.Users[$loginTest.Name]
             if ($user) {
                 $schemaUrns = $user.EnumOwnedObjects() | Where-Object Type -EQ Schema
                 foreach ($schemaUrn in $schemaUrns) {
-                    $schema = $global:server.GetSmoObject($schemaUrn)
+                    $schema = $server.GetSmoObject($schemaUrn)
                     $ownedUrns = $schema.EnumOwnedObjects()
                     foreach ($ownedUrn in $ownedUrns) {
-                        $obj = $global:server.GetSmoObject($ownedUrn)
+                        $obj = $server.GetSmoObject($ownedUrn)
                         $obj.Drop()
                     }
                     $schema.Drop()
@@ -55,34 +55,34 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
         AfterAll {
-            if ($global:loginTest) {
-                $global:loginTest.Drop()
+            if ($loginTest) {
+                $loginTest.Drop()
             }
         }
 
         It "drops a user with no ownerships" {
-            Remove-DbaDbUser $global:server -Database tempdb -User $global:user.Name
-            $global:db.Users[$global:user.Name] | Should -BeNullOrEmpty
+            Remove-DbaDbUser $server -Database tempdb -User $user.Name
+            $db.Users[$user.Name] | Should -BeNullOrEmpty
         }
 
         It "drops a user with a schema of the same name, but no objects owned by the schema" {
-            $schema = New-Object Microsoft.SqlServer.Management.SMO.Schema($global:db, $global:user.Name)
-            $schema.Owner = $global:user.Name
+            $schema = New-Object Microsoft.SqlServer.Management.SMO.Schema($db, $user.Name)
+            $schema.Owner = $user.Name
             $schema.Create()
-            Remove-DbaDbUser $global:server -Database tempdb -User $global:user.Name
-            $global:db.Users[$global:user.Name] | Should -BeNullOrEmpty
+            Remove-DbaDbUser $server -Database tempdb -User $user.Name
+            $db.Users[$user.Name] | Should -BeNullOrEmpty
         }
 
         It "does NOT drop a user that owns objects other than a schema" {
-            $schema = New-Object Microsoft.SqlServer.Management.SMO.Schema($global:db, $global:user.Name)
-            $schema.Owner = $global:user.Name
+            $schema = New-Object Microsoft.SqlServer.Management.SMO.Schema($db, $user.Name)
+            $schema.Owner = $user.Name
             $schema.Create()
-            $table = New-Object Microsoft.SqlServer.Management.SMO.Table($global:db, "dbtoolsci_remove_dba_db_user", $global:user.Name)
+            $table = New-Object Microsoft.SqlServer.Management.SMO.Table($db, "dbtoolsci_remove_dba_db_user", $user.Name)
             $col1 = New-Object Microsoft.SqlServer.Management.SMO.Column($table, "col1", [Microsoft.SqlServer.Management.SMO.DataType]::Int)
             $table.Columns.Add($col1)
             $table.Create()
-            Remove-DbaDbUser $global:server -Database tempdb -User $global:user.Name -WarningAction SilentlyContinue
-            $global:db.Users[$global:user.Name] | Should -Be $global:user
+            Remove-DbaDbUser $server -Database tempdb -User $user.Name -WarningAction SilentlyContinue
+            $db.Users[$user.Name] | Should -Be $user
         }
     }
 }

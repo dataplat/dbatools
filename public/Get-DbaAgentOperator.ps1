@@ -1,10 +1,10 @@
 function Get-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Returns all SQL Agent operators on a SQL Server Agent.
+        Retrieves SQL Server Agent operators with their notification settings and related jobs and alerts.
 
     .DESCRIPTION
-        This function returns SQL Agent operators.
+        Retrieves detailed information about SQL Server Agent operators, including email addresses, enabled status, and relationships to jobs and alerts that notify them. Essential for auditing notification configurations, troubleshooting alert delivery issues, and maintaining disaster recovery contact lists. Shows which jobs notify each operator and tracks the last time each operator received email notifications, helping DBAs verify their monitoring and alerting infrastructure is properly configured.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,10 +17,12 @@ function Get-DbaAgentOperator {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Operator
-        The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
+        Specifies which SQL Agent operators to retrieve by name. Accepts an array of operator names for targeting specific notification contacts.
+        Use this when you need to check configuration or troubleshoot notification issues for particular operators instead of reviewing all operators on the instance.
 
     .PARAMETER ExcludeOperator
-        The operator(s) to exclude - this list is auto-populated from the server
+        Excludes specified SQL Agent operators from the results by name. Useful for filtering out test operators or disabled contacts during audits.
+        Commonly used when reviewing active notification configurations while ignoring legacy or temporary operator accounts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

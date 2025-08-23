@@ -62,11 +62,13 @@ Describe $CommandName -Tag IntegrationTests {
     AfterEach {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup
         $results, $results2, $results3 | Remove-Item -ErrorAction SilentlyContinue
 
         Remove-Item $newDirectory -ErrorAction SilentlyContinue -Recurse -Force
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "should create an xml file" {
@@ -84,8 +86,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "creates an importable xml file" {
         $results3 = $newServer3 | Export-DbaRegServer -Path $newDirectory
-        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup
         $results4 = Import-DbaRegServer -SqlInstance $TestConfig.instance2 -Path $results3
         $newServer3.ServerName | Should -BeIn $results4.ServerName
         $newServer3.Description | Should -BeIn $results4.Description

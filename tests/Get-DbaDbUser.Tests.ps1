@@ -27,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $tempguid = [guid]::newguid()
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
@@ -46,11 +46,11 @@ CREATE USER [$dbUserName2] FOR LOGIN [$dbUserName2]
 "@
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestUser -Database master
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $DropTestUser = @"
 DROP USER [$DBUserName];
@@ -59,6 +59,8 @@ DROP LOGIN [$DBUserName];
 DROP LOGIN [$DBUserName2];
 "@
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestUser -Database master -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Users are correctly located" {

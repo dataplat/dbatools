@@ -32,8 +32,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Store original configuration for restoration after tests
-        $global:originalNetConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
-        $global:originalNetConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+        $originalNetConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+        $originalNetConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -44,24 +44,24 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Restore original configuration
-        $global:originalNetConfPiped.TcpIpProperties.KeepAlive = 30000
-        $null = $global:originalNetConfPiped | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+        $originalNetConfPiped.TcpIpProperties.KeepAlive = 30000
+        $null = $originalNetConfPiped | Set-DbaNetworkConfiguration -WarningAction SilentlyContinue
 
         # Restore Named Pipes to original state
-        if ($global:originalNetConfCommandline.NamedPipesEnabled) {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+        if ($originalNetConfCommandline.NamedPipesEnabled) {
+            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -WarningAction SilentlyContinue
         } else {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -WarningAction SilentlyContinue
         }
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command works with piped input" {
         BeforeAll {
             $netConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
             $netConfPiped.TcpIpProperties.KeepAlive = 60000
-            $pipedResults = $netConfPiped | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+            $pipedResults = $netConfPiped | Set-DbaNetworkConfiguration -WarningAction SilentlyContinue
         }
 
         It "Should Return a Result" {
@@ -77,9 +77,9 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $netConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
             if ($netConfCommandline.NamedPipesEnabled) {
-                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -WarningAction SilentlyContinue
             } else {
-                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -WarningAction SilentlyContinue
             }
         }
 

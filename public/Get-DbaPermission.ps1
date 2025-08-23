@@ -1,20 +1,22 @@
 function Get-DbaPermission {
     <#
     .SYNOPSIS
-        Get a list of Server and Database level permissions
+        Retrieves explicit and implicit permissions across SQL Server instances and databases for security auditing
 
     .DESCRIPTION
-        Retrieves a list of permissions
+        Retrieves comprehensive permission information from SQL Server instances and databases, including both explicit permissions and implicit permissions from fixed roles.
 
-        Permissions link principals to securables.
-        Principals exist on Windows, Instance and Database level.
-        Securables exist on Instance and Database level.
-        A permission state can be GRANT, DENY or REVOKE.
-        The permission type can be SELECT, CONNECT, EXECUTE and more.
-        The CONTROL permission is also returned for dbo users, db_owners, and schema owners.
-        To see server-level implicit permissions via fixed roles run the following command: Get-DbaServerRole -SqlInstance serverName | Select-Object *
+        This function queries sys.server_permissions and sys.database_permissions to capture all granted, denied, and revoked permissions across server and database levels.
+        Perfect for security audits, compliance reporting, troubleshooting access issues, and planning permission migrations between environments.
 
-        See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
+        The output includes permission state (GRANT/DENY/REVOKE), permission type (SELECT, CONNECT, EXECUTE, etc.), grantee information, and the specific securable being protected.
+        Also captures implicit CONTROL permissions for dbo users, db_owner role members, and schema owners that aren't explicitly stored in system tables.
+        Each result includes ready-to-use GRANT and REVOKE statements for easy permission replication or cleanup.
+
+        Permissions link principals (logins, users, roles) to securables (servers, databases, schemas, objects).
+        Principals exist at Windows, instance, and database levels, while securables exist at instance and database levels.
+
+        See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information about SQL Server permissions
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.
@@ -27,16 +29,20 @@ function Get-DbaPermission {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for permissions. Accepts wildcards and multiple database names.
+        When omitted, all accessible databases on the instance are processed, which is useful for comprehensive security audits.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more database(s) to exclude from processing.
+        Excludes specific databases from permission analysis. Accepts wildcards and multiple database names.
+        Commonly used to skip system databases like TempDB or exclude sensitive databases from security reports.
 
     .PARAMETER IncludeServerLevel
-        If this switch is enabled, information about Server Level Permissions will be output.
+        Includes server-level permissions in the output, such as CONTROL SERVER, VIEW SERVER STATE, and fixed server roles like sysadmin.
+        Essential for complete security audits as it captures instance-wide permissions that affect all databases.
 
     .PARAMETER ExcludeSystemObjects
-        If this switch is enabled, permissions on system securables will be excluded.
+        Excludes permissions on system objects like system tables, views, and stored procedures from the output.
+        Use this when focusing on user-created objects to reduce noise in permission reports and compliance audits.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

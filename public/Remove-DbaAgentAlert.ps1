@@ -1,12 +1,13 @@
 function Remove-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Removes SQL Agent agent alert(s).
+        Removes SQL Server Agent alerts from specified instances.
 
     .DESCRIPTION
-        Removes the SQL Agent alert(s) that have passed through the pipeline.
-        If not used with a pipeline, Get-DbaAgentAlert will be executed with the parameters provided
-        and the returned SQL Agent alert(s) will be removed.
+        Deletes SQL Server Agent alerts that monitor for specific errors, performance conditions, or system events.
+        Useful for cleaning up obsolete alerts, removing test configurations, or managing alert policies across multiple instances.
+        Can remove specific alerts by name, exclude certain alerts, or work with piped input from Get-DbaAgentAlert for selective removal.
+        Returns detailed results showing which alerts were successfully removed and any errors encountered.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +18,19 @@ function Remove-DbaAgentAlert {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
-        Specifies one or more SQL Agent alert(s) to delete. If unspecified, all accounts will be removed.
+        Specifies the names of specific SQL Agent alerts to remove from the target instances.
+        Use this when you need to remove particular alerts rather than all alerts on the server.
+        Accepts an array of alert names for bulk removal operations.
 
     .PARAMETER ExcludeAlert
-        Specifies one or more SQL Agent alert(s) to exclude.
+        Excludes specific SQL Agent alerts from removal when processing all alerts on an instance.
+        Useful for bulk cleanup operations where you want to preserve certain critical alerts.
+        Only applies when the Alert parameter is not specified, allowing you to remove all alerts except those listed here.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaAgentAlert.
+        Accepts SQL Agent alert objects from the pipeline, typically from Get-DbaAgentAlert.
+        Use this for selective removal operations where you first query alerts with specific criteria and then remove the filtered results.
+        Enables advanced scenarios like interactive selection using Out-GridView or complex filtering logic.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

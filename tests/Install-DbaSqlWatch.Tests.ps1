@@ -41,7 +41,9 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Uninstall-DbaSqlWatch -SqlInstance $TestConfig.instance2 -Database $database -ErrorAction SilentlyContinue
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Installs to specified database: $database" {

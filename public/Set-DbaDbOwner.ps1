@@ -1,10 +1,12 @@
 function Set-DbaDbOwner {
     <#
     .SYNOPSIS
-        Sets database owners with a desired login if databases do not match that owner.
+        Changes database ownership to a specified login when current ownership doesn't match the target.
 
     .DESCRIPTION
-        This function will alter database ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa', but the function will allow the user to specify a different login for  ownership. The user can also apply this to all databases or only to a select list of databases (passed as either a comma separated list or a string array).
+        Changes database ownership to standardize who owns your databases across an instance. This is particularly useful for maintaining consistent ownership patterns after restoring databases from other environments, where databases may have orphaned owners or inconsistent ownership.
+
+        By default, the function sets ownership to 'sa' (or the renamed sysadmin account), but you can specify any valid login. The function only processes user databases and includes safety checks to ensure the target login exists, isn't a Windows group, and isn't already mapped as a user within the database. You can target all databases on an instance or filter to specific databases.
 
         Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
@@ -19,16 +21,20 @@ function Set-DbaDbOwner {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to change ownership for. Accepts database names and supports wildcards for pattern matching.
+        When omitted, all user databases on the instance will be processed. System databases are automatically excluded.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies databases to skip during ownership changes. Useful when processing all databases but need to exclude specific ones.
+        Accepts database names and supports wildcards for pattern matching.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline operations. Use this when you need to filter databases with specific criteria before changing ownership.
+        Allows for complex database selection logic beyond simple name matching.
 
     .PARAMETER TargetLogin
-        Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
+        Specifies the login to set as the new database owner. Defaults to 'sa' (or the renamed sysadmin account if sa was renamed).
+        The login must exist on the server, cannot be a Windows group, and cannot already be mapped as a user within the target database. Common values include service accounts or standardized admin logins.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

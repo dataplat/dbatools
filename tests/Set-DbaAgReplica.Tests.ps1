@@ -51,7 +51,6 @@ Describe $CommandName -Tag IntegrationTests {
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
-            Confirm      = $false
         }
         $ag = New-DbaAvailabilityGroup @splatAvailabilityGroup
         $replicaName = $ag.PrimaryReplica
@@ -68,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Sets AG properties" {
@@ -78,7 +77,6 @@ Describe $CommandName -Tag IntegrationTests {
                 AvailabilityGroup = $agName
                 Replica           = $replicaName
                 BackupPriority    = 100
-                Confirm           = $false
             }
             $results = Set-DbaAgReplica @splatBackupPriority
             $results.AvailabilityGroup | Should -Be $agName
@@ -91,7 +89,6 @@ Describe $CommandName -Tag IntegrationTests {
                 AvailabilityGroup = $agName
                 Replica           = $replicaName
                 SeedingMode       = "Automatic"
-                Confirm           = $false
             }
             $results = Set-DbaAgReplica @splatSeedingMode
             $results.AvailabilityGroup | Should -Be $agName
@@ -103,7 +100,6 @@ Describe $CommandName -Tag IntegrationTests {
                 ReadOnlyRoutingList = "nondockersql"
                 WarningAction       = "SilentlyContinue"
                 WarningVariable     = "warn"
-                Confirm             = $false
             }
             $null = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName | Select-Object -First 1 | Set-DbaAgReplica @splatRoutingList
             $warn | Should -Match "does not exist. Only availability"

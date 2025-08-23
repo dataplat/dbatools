@@ -50,9 +50,9 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB | Remove-DbaDatabase
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Test getting a Page resource" {
@@ -82,29 +82,29 @@ Describe $CommandName -Tag IntegrationTests {
                 select @pageid=PagePid from #TmpIndex where PageType=10
                 select 'PAGE: '+convert(varchar(3),DB_ID())+':1:'+convert(varchar(15),@pageid)
             "
-            $global:page = (Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
-            $global:file = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq "ROWS"
-            $global:results = Get-DbaWaitResource -SqlInstance $TestConfig.instance1 -WaitResource $global:page
+            $page = (Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
+            $file = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq "ROWS"
+            $results = Get-DbaWaitResource -SqlInstance $TestConfig.instance1 -WaitResource $page
         }
 
         It "Should return databasename $WaitResourceDB" {
-            $global:results.DatabaseName | Should -Be $WaitResourceDB
+            $results.DatabaseName | Should -Be $WaitResourceDB
         }
 
         It "Should return physical filename" {
-            $global:results.DataFilePath | Should -Be $global:file.PhysicalName
+            $results.DataFilePath | Should -Be $file.PhysicalName
         }
 
         It "Should return the correct filename" {
-            $global:results.DatafileName | Should -Be $global:file.LogicalName
+            $results.DatafileName | Should -Be $file.LogicalName
         }
 
         It "Should return ObjectName waittest" {
-            $global:results.ObjectName | Should -Be "waittest"
+            $results.ObjectName | Should -Be "waittest"
         }
 
         It "Should return the correct object type" {
-            $global:results.ObjectType | Should -Be "USER_TABLE"
+            $results.ObjectType | Should -Be "USER_TABLE"
         }
     }
 
@@ -125,36 +125,36 @@ Describe $CommandName -Tag IntegrationTests {
 
                 select 'KEY: '+convert(varchar(3),db_id())+':'+convert(varchar(30),@hobt_id)+' '+ %%lockres%% from keytest  where col1=1
             "
-            $global:key = (Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
-            $global:resultskey = Get-DbaWaitResource -SqlInstance $TestConfig.instance1 -WaitResource $global:key -row
+            $key = (Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
+            $resultskey = Get-DbaWaitResource -SqlInstance $TestConfig.instance1 -WaitResource $key -row
         }
 
         It "Should Return DatabaseName $WaitResourceDB" {
-            $global:results
+            $results
         }
 
         It "Should return databasename $WaitResourceDB" {
-            $global:resultskey.DatabaseName | Should -Be $WaitResourceDB
+            $resultskey.DatabaseName | Should -Be $WaitResourceDB
         }
 
         It "Should return SchemaName dbo" {
-            $global:resultskey.SchemaName | Should -Be "dbo"
+            $resultskey.SchemaName | Should -Be "dbo"
         }
 
         It "Should return indexname is idx_pester" {
-            $global:resultskey.IndexName | Should -Be "idx_pester"
+            $resultskey.IndexName | Should -Be "idx_pester"
         }
 
         It "Should return ObjectName keytest" {
-            $global:resultskey.ObjectName | Should -Be "Keytest"
+            $resultskey.ObjectName | Should -Be "Keytest"
         }
 
         It "SHould return col1 is 1" {
-            $global:resultskey.ObjectData.col1 | Should -Be 1
+            $resultskey.ObjectData.col1 | Should -Be 1
         }
 
         It "Should return col1 is bilbo" {
-            $global:resultskey.ObjectData.col2 | Should -Be "bilbo"
+            $resultskey.ObjectData.col2 | Should -Be "bilbo"
         }
     }
 }

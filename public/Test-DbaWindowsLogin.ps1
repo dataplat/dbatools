@@ -1,10 +1,10 @@
 function Test-DbaWindowsLogin {
     <#
     .SYNOPSIS
-        Test-DbaWindowsLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
+        Validates Windows logins and groups in SQL Server against Active Directory to identify orphaned, disabled, or problematic accounts
 
     .DESCRIPTION
-        The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to keep your logins accurate and up to date by removing accounts that are no longer needed.
+        Queries SQL Server for all Windows-based logins and groups, then validates each against Active Directory to identify security issues and cleanup opportunities. The function checks whether AD accounts still exist, are enabled, and match their SQL Server SID to detect orphaned logins from domain migrations or account deletions. This helps DBAs maintain login security by identifying stale Windows authentication accounts that should be removed from SQL Server.
 
     .PARAMETER SqlInstance
         The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -17,19 +17,24 @@ function Test-DbaWindowsLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        Specifies a list of logins to include in the results. Options for this list are auto-populated from the server.
+        Specifies specific Windows logins to validate against Active Directory. Use this when you want to test only certain logins rather than all Windows accounts on the server.
+        Accepts wildcards and multiple values. Helpful for focused security audits of high-privilege accounts or problem logins.
 
     .PARAMETER ExcludeLogin
-        Specifies a list of logins to exclude from the results. Options for this list are auto-populated from the server.
+        Excludes specific Windows logins from validation checks. Use this to skip service accounts or known system logins that you don't need to audit.
+        Accepts wildcards and multiple values. Common exclusions include application service accounts and break-glass emergency accounts.
 
     .PARAMETER FilterBy
-        Specifies the object types to return. By default, both Logins and Groups are returned. Valid options for this parameter are 'GroupsOnly' and 'LoginsOnly'.
+        Limits validation to either individual user accounts or Active Directory groups. Use 'LoginsOnly' when auditing user access or 'GroupsOnly' when reviewing group-based permissions.
+        Default of 'None' validates both types. GroupsOnly is useful for reviewing role-based access control implementation.
 
     .PARAMETER IgnoreDomains
-        Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
+        Excludes logins from specific Active Directory domains from validation. Use this in multi-domain environments to focus on specific domains or skip legacy/untrusted domains.
+        Helpful when you have old domain trusts or want to audit only production domains while excluding development or test domains.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaLogin.
+        Accepts login objects from Get-DbaLogin for targeted validation. Use this when you want to validate a specific subset of logins already retrieved by another command.
+        Enables powerful filtering scenarios by piping pre-filtered login objects instead of processing all Windows logins on the server.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

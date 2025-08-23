@@ -37,16 +37,16 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Get-DbaProcess -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
-        Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin | Remove-DbaLogin -Confirm:$false
+        Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin | Remove-DbaLogin
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When adding a sql login" {
         It "Should add the login as sysadmin" {
             $password = ConvertTo-SecureString -Force -AsPlainText resetadmin1
             $cred = New-Object System.Management.Automation.PSCredential ("dbatoolsci_resetadmin", $password)
-            $results = Reset-DbaAdmin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
+            $results = Reset-DbaAdmin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin -SecurePassword $password
             $results.Name | Should -Be dbatoolsci_resetadmin
             $results.IsMember("sysadmin") | Should -Be $true
         }

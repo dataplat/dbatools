@@ -1,13 +1,13 @@
 function Export-DbaServerRole {
     <#
     .SYNOPSIS
-        Exports server roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.
+        Generates T-SQL scripts for server-level roles including permissions and memberships
 
     .DESCRIPTION
-        Exports Server roles to a T-SQL file. Export includes Role creation, object permissions and Role Members
+        Creates complete T-SQL scripts that can recreate server-level roles along with their permissions and memberships on another instance. This eliminates the need to manually recreate security configurations during server migrations or disaster recovery scenarios. The function queries sys.server_permissions to capture all role permissions (GRANT, DENY, REVOKE) and generates the appropriate T-SQL statements for role creation and member assignments.
 
-        Applies mostly to SQL Server 2012 or Higher when user defined Server roles were added but can be used on earlier versions to get role members.
-        This command is an extension of John Eisbrener's post "Fully Script out a MSSQL Database Role"
+        Primarily targets SQL Server 2012 and higher where user-defined server roles were introduced, but works on earlier versions to script role memberships for built-in roles.
+        This command extends John Eisbrener's post "Fully Script out a MSSQL Database Role"
         Reference:  https://dbaeyes.wordpress.com/2013/04/19/fully-script-out-a-mssql-database-role/
 
     .PARAMETER SqlInstance
@@ -21,58 +21,46 @@ function Export-DbaServerRole {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaServerRole
+        Accepts server role objects from Get-DbaServerRole for pipeline processing. Use this when you need to filter roles first with Get-DbaServerRole before exporting.
 
-     .PARAMETER ScriptingOptionsObject
-        An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
+    .PARAMETER ScriptingOptionsObject
+        Provides custom SMO scripting options to control the generated T-SQL output format. Use New-DbaScriptingOption to create custom options when you need specific formatting requirements like excluding object owners or database context.
 
     .PARAMETER ServerRole
-        Server-Level role(s) to filter results to that role only.
+        Specifies which server-level roles to export by name. Useful when you only need to script specific custom roles instead of all roles on the instance.
 
     .PARAMETER ExcludeServerRole
-        Server-Level role(s) to exclude from results.
+        Excludes specific server-level roles from the export by name. Use this to skip problematic roles or roles you don't want to migrate to the target instance.
 
     .PARAMETER ExcludeFixedRole
-        Filter the fixed server-level roles. As only SQL Server 2012 or higher supports creation of server-level roles will eliminate all output for earlier versions.
+        Excludes built-in server roles like sysadmin, serveradmin, and dbcreator from the export. Use this when migrating between instances where you only want to transfer custom user-defined roles. On SQL Server 2008/2008R2, this will exclude all roles since user-defined server roles weren't supported.
 
     .PARAMETER IncludeRoleMember
-        Include scripting of role members in script
+        Includes ALTER SERVER ROLE statements to add current role members to the exported script. Essential when you need to recreate both the roles and their membership assignments on the target instance.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
-        Will default to Path.DbatoolsExport Configuration entry
+        Specifies the directory where script files will be saved. Defaults to the Path.DbatoolsExport configuration setting. Use this when you want to organize exports in a specific folder structure for your deployment process.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file. If left blank then filename based on Instance name, Database name and date is created.
-        If more than one database or instance is input then this parameter should normally be blank.
+        Specifies the complete file path for the exported script. When blank, creates timestamped files using the instance name. Use this when you need consistent file naming for deployment pipelines or when exporting from a single instance.
 
     .PARAMETER Passthru
-        Output script to console only
+        Displays the generated T-SQL script in the console instead of saving to file. Perfect for quick review of the script or when you need to copy-paste the output directly into SSMS.
 
     .PARAMETER BatchSeparator
-        Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally "GO"
+        Sets the batch separator used between T-SQL statements in the output. Defaults to the configured value, typically 'GO'. Change this when deploying to tools that use different batch separators or set to empty string to remove separators entirely.
 
     .PARAMETER NoClobber
-        If this switch is enabled, a file already existing at the path specified by Path will not be overwritten. This takes precedence over Append switch
+        Prevents overwriting existing files at the target location. Use this as a safety measure when running automated exports to avoid accidentally replacing important deployment scripts.
 
     .PARAMETER Append
-        If this switch is enabled, content will be appended to a file already existing at the path specified by FilePath. If the file does not exist, it will be created.
+        Adds the exported script to an existing file instead of overwriting it. Useful when building comprehensive deployment scripts that combine multiple exports into a single file.
 
     .PARAMETER NoPrefix
-        Do not include a Prefix
+        Excludes the header comment block that contains generation metadata like timestamp and user information. Use this when you need clean T-SQL output without documentation headers for automated deployments.
 
     .PARAMETER Encoding
-        Specifies the file encoding. The default is UTF8.
-
-        Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+        Sets the character encoding for the output file. Defaults to UTF8 which handles international characters correctly. Change to ASCII only if you're certain the role names contain no special characters and need compatibility with older systems.
 
 
     .PARAMETER EnableException

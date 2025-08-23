@@ -1,10 +1,10 @@
 function Get-DbaAgReplica {
     <#
     .SYNOPSIS
-        Returns the availability group replica object found on the server.
+        Retrieves availability group replica configuration and status information from SQL Server instances.
 
     .DESCRIPTION
-        Returns the availability group replica object found on the server.
+        Retrieves detailed information about availability group replicas including their current role, connection state, synchronization status, and failover configuration. This function helps DBAs monitor replica health, verify failover readiness, and troubleshoot availability group issues without manually querying system views. Returns comprehensive replica properties like backup priority, endpoint URLs, session timeouts, and read-only routing lists for availability group management and compliance reporting.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -17,13 +17,16 @@ function Get-DbaAgReplica {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Specify the availability groups to query.
+        Specifies which availability groups to query for replica information. Accepts multiple values and wildcards for pattern matching.
+        Use this when you need to focus on specific availability groups instead of retrieving replicas from all AGs on the instance.
 
     .PARAMETER Replica
-        Return only specific replicas.
+        Filters results to return only the specified replica names. Accepts multiple values for querying specific replicas across availability groups.
+        Use this when troubleshooting specific replicas or when you only need information about particular secondary replicas in your environment.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup.
+        Accepts availability group objects piped from Get-DbaAvailabilityGroup, allowing for more efficient processing in pipeline scenarios.
+        Use this when chaining commands or when you already have availability group objects and want to retrieve their replica details without additional server queries.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

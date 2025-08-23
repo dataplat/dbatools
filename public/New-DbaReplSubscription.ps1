@@ -1,10 +1,10 @@
 function New-DbaReplSubscription {
     <#
     .SYNOPSIS
-        Creates a subscription for the database on the target SQL instances.
+        Creates SQL Server replication subscriptions to distribute data from publisher to subscriber instances.
 
     .DESCRIPTION
-        Creates a subscription for the database on the target SQL instances.
+        Creates push or pull subscriptions for SQL Server replication, connecting a subscriber instance to an existing publication on a publisher. This function handles the setup of transactional, snapshot, and merge replication subscriptions, automatically creating the subscription database and required schemas if they don't exist. Use this when you need to establish data replication for disaster recovery, reporting databases, or distributing data across multiple SQL Server instances without manually configuring subscription properties through SQL Server Management Studio.
 
     .PARAMETER SqlInstance
         The target publishing SQL Server instance or instances.
@@ -17,29 +17,36 @@ function New-DbaReplSubscription {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database on the publisher that will be replicated.
+        Specifies the source database on the publisher instance that contains the publication data to be replicated.
+        This database must already contain the publication you're subscribing to.
 
     .PARAMETER SubscriberSqlInstance
-        The subscriber SQL instance.
+        The target SQL Server instance that will receive the replicated data from the publisher.
+        Can specify multiple instances to create subscriptions on several subscribers simultaneously.
 
     .PARAMETER SubscriberSqlCredential
-        Login to the subscriber instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login credentials for connecting to the subscriber SQL Server instance. Accepts PowerShell credentials (Get-Credential).
+        Use this when the subscriber requires different authentication than the publisher connection.
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SubscriptionDatabase
-        The database on the subscriber that will be the target of the replicated data.
+        The destination database name on the subscriber instance where replicated data will be stored.
+        If this database doesn't exist, it will be automatically created with default settings.
 
     .PARAMETER PublicationName
-        The name of the replication publication
+        The name of the existing publication on the publisher database that you want to subscribe to.
+        This publication must already exist and be configured for the type of subscription you're creating.
 
     .PARAMETER SubscriptionSqlCredential
-        Credential object that will be saved as the 'subscriber credential' in the subscription properties.
+        SQL Server credentials used by the replication agents to connect to the subscriber database during synchronization.
+        These credentials are stored in the subscription properties and used by the Distribution or Merge Agent.
 
     .PARAMETER Type
-        The flavour of the subscription. Push or Pull.
+        Specifies whether to create a Push or Pull subscription for data synchronization.
+        Push subscriptions are managed by the publisher and typically used for high-frequency replication, while Pull subscriptions are managed by the subscriber.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

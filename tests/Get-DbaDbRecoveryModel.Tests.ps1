@@ -47,12 +47,12 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $dbname = "dbatoolsci_getrecoverymodel"
-            Get-DbaDatabase -SqlInstance $server -Database $dbname | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $server -Database $dbname | Remove-DbaDatabase
             $server.Query("CREATE DATABASE $dbname; ALTER DATABASE $dbname SET RECOVERY BULK_LOGGED WITH NO_WAIT;")
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -ErrorAction SilentlyContinue
         }
 
         It "gets the newly created database with the correct recovery model" {

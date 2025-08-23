@@ -1,12 +1,12 @@
 function Set-DbaAgReplica {
     <#
     .SYNOPSIS
-        Sets the properties for a replica to an availability group on a SQL Server instance.
+        Modifies configuration properties of existing availability group replicas.
 
     .DESCRIPTION
-        Sets the properties for a replica to an availability group on a SQL Server instance.
+        Modifies configuration properties of existing availability group replicas such as availability mode, failover behavior, backup priority, and read-only routing settings. This function is used for ongoing management and tuning of availability groups after initial setup, allowing you to adjust replica behavior without recreating the availability group.
 
-        Automatically creates a database mirroring endpoint if required.
+        Common use cases include changing synchronous replicas to asynchronous for performance, adjusting backup priorities to control where backups run, configuring automatic failover settings, and setting up read-only routing for load balancing read workloads across secondary replicas.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -19,47 +19,56 @@ function Set-DbaAgReplica {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Replica
-        The replicas to modify.
+        Specifies the name of the availability group replica to modify. This is the server instance name that hosts the replica.
+        Use this when targeting a specific replica within an availability group for configuration changes.
 
     .PARAMETER AvailabilityGroup
-        The availability group of the replica.
+        Specifies the name of the availability group that contains the replica to modify.
+        Required when using SqlInstance parameter to identify which availability group the replica belongs to.
 
     .PARAMETER AvailabilityMode
-        Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
+        Controls the data synchronization mode between primary and secondary replicas. SynchronousCommit ensures zero data loss but may impact performance, while AsynchronousCommit prioritizes performance over guaranteed data protection.
+        Change this when you need to balance performance requirements against data protection needs across different replicas.
 
     .PARAMETER FailoverMode
-        Sets the failover mode of the availability group replica. Options are Automatic and Manual.
+        Determines whether the replica can automatically failover when the primary becomes unavailable. Automatic failover requires SynchronousCommit availability mode and is typically used for high availability scenarios.
+        Set to Manual when you want to control failover decisions or when using AsynchronousCommit replicas.
 
     .PARAMETER BackupPriority
-        Sets the backup priority availability group replica. Default is 50.
+        Sets the backup priority for this replica on a scale of 0-100, where higher values indicate higher priority for backup operations.
+        Use this to control which replica should be preferred for automated backup jobs, with 0 excluding the replica from backup consideration entirely.
 
     .PARAMETER EndpointUrl
-        The endpoint URL.
+        Specifies the URL endpoint used for data mirroring communication between replicas, typically in the format 'TCP://servername:port'.
+        Update this when changing network configurations, server names, or port assignments for availability group communication.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAgReplica.
+        Accepts availability group replica objects from Get-DbaAgReplica for pipeline operations.
+        Use this to modify multiple replicas or when working with replica objects retrieved from previous commands.
 
     .PARAMETER ConnectionModeInPrimaryRole
-        Sets the connection intent modes of an Availability Replica in primary role.
+        Controls what types of connections are allowed when this replica is the primary. AllowAllConnections permits both read-write and read-only connections, while AllowReadWriteConnections only allows read-write access.
+        Typically left as AllowAllConnections unless you need to restrict read-only workloads from connecting to the primary.
 
     .PARAMETER ConnectionModeInSecondaryRole
-        Sets the connection modes of an Availability Replica in secondary role.
+        Determines connection access when this replica is secondary. Options include AllowNoConnections, AllowReadIntentConnectionsOnly (for read-only workloads), or AllowAllConnections.
+        Configure this to enable read-only workloads on secondary replicas for reporting or to completely block connections for backup-only replicas.
 
     .PARAMETER ReadonlyRoutingConnectionUrl
-        Sets the read only routing connection url for the availability replica.
+        Specifies the connection string used by the availability group listener to route read-only connections to this secondary replica.
+        Required when setting up read-only routing to distribute read workloads across secondary replicas for load balancing.
 
     .PARAMETER ReadOnlyRoutingList
-        Sets the read-only routing list for when this replica is in the primary role.
+        Defines the ordered list of secondary replicas that should receive read-only connections when this replica is primary. Accepts arrays for load-balanced routing or simple arrays for priority-based routing.
+        Use this to establish read-only routing policies that distribute read workloads across available secondary replicas.
 
     .PARAMETER SeedingMode
-        Specifies how the secondary replica will be initially seeded.
-
-        Automatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
-
-        Manual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
+        Controls the database initialization method for new databases added to the availability group. Automatic performs direct seeding over the network without manual backup/restore steps, while Manual requires traditional backup and restore operations.
+        Choose Automatic for convenience and reduced administrative overhead, or Manual when you need control over backup/restore timing or have network bandwidth constraints.
 
     .PARAMETER SessionTimeout
-        How many seconds an availability replica waits for a ping response from a connected replica before considering the connection to have failed.
+        Sets the timeout period in seconds for detecting communication failures between availability replicas. Values below 10 seconds can cause false failure detection in busy environments.
+        Increase this value in high-latency network environments or decrease it when you need faster failure detection, keeping the 10-second minimum recommendation in mind.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

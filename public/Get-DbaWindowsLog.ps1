@@ -1,35 +1,32 @@
 function Get-DbaWindowsLog {
     <#
     .SYNOPSIS
-        Gets Windows Application events associated with an instance
+        Retrieves and parses SQL Server error log entries from the file system for analysis and troubleshooting
 
     .DESCRIPTION
-        Gets Windows Application events associated with an instance
+        Parses SQL Server error log files directly from the file system to extract structured error information including timestamps, SPIDs, error numbers, severity levels, and messages. Locates error log files by querying Windows Application Event Log for SQL Server startup events (Event ID 17111), then reads and parses the raw log files to provide searchable, filterable results. This is essential for troubleshooting SQL Server issues, compliance reporting, and proactive monitoring since it gives you programmatic access to detailed error information that would otherwise require manual log file review.
 
     .PARAMETER SqlInstance
         The instance(s) to retrieve the event logs from
 
     .PARAMETER Start
-        Default: 1970
-        Retrieve all events starting from this timestamp.
+        Filters log entries to include only those occurring after this timestamp. Defaults to January 1, 1970.
+        Use this to focus on recent issues or events within a specific timeframe when troubleshooting SQL Server problems.
 
     .PARAMETER End
-        Default: Now
-        Retrieve all events that happened before this timestamp
+        Filters log entries to include only those occurring before this timestamp. Defaults to the current date and time.
+        Combine with Start parameter to create specific time windows for analyzing SQL Server events during known problem periods.
 
     .PARAMETER Credential
         Credential to be used to connect to the Server. Note this is a Windows credential, as this command requires we communicate with the computer and not with the SQL instance.
 
     .PARAMETER MaxThreads
-        Default: Unlimited
-        The maximum number of parallel threads used on the local computer.
-        Given that those will mostly be waiting for the remote system, there is usually no need to limit this.
+        Controls the maximum number of parallel threads used on the local computer for processing multiple SQL instances. Defaults to unlimited.
+        Set a specific limit when processing many instances simultaneously to prevent overwhelming the local system with too many concurrent operations.
 
     .PARAMETER MaxRemoteThreads
-        Default: 2
-        The maximum number of parallel threads that are executed on the target sql server.
-        These processes will cause considerable CPU load, so a low limit is advisable in most scenarios.
-        Any value lower than 1 disables the limit
+        Sets the maximum number of parallel threads executed on each target SQL Server for processing error log files. Defaults to 2.
+        Keep this low to avoid excessive CPU load on production servers, as log file parsing is CPU-intensive. Set to 0 or below to remove the limit entirely.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

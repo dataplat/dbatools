@@ -1,10 +1,14 @@
 function Remove-DbaDbCheckConstraint {
     <#
     .SYNOPSIS
-        Removes a database check constraint(s) from each database and SQL Server instance.
+        Removes check constraints from SQL Server database tables
 
     .DESCRIPTION
-        Removes a database check constraint(s), with supported piping from Get-DbaDbCheckConstraint.
+        Removes check constraints from database tables across one or more SQL Server instances. Check constraints enforce data integrity by validating that column values meet specific criteria before allowing INSERT or UPDATE operations.
+
+        This function is useful when modifying table schemas, removing outdated business rules, or preparing databases for data migration where existing constraints might block bulk operations. You can target specific databases or remove constraints across multiple instances simultaneously.
+
+        Supports piping from Get-DbaDbCheckConstraint to remove only specific constraints that match your criteria, such as constraints containing particular patterns or on specific tables.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,16 +21,20 @@ function Remove-DbaDbCheckConstraint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to target for check constraint removal. Accepts wildcards and arrays for multiple databases.
+        Use this when you need to remove constraints from specific databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Excludes specific databases from check constraint removal operations. Accepts wildcards and arrays for multiple databases.
+        Use this to protect critical databases like master, msdb, or production databases when running against multiple instances.
 
     .PARAMETER ExcludeSystemTable
-        This switch removes all system tables from the check collection.
+        Excludes check constraints on system tables from the removal operation, focusing only on user-created tables.
+        Use this switch when you want to modify only business logic constraints while preserving SQL Server's built-in constraints.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbCheckConstraint.
+        Accepts check constraint objects from Get-DbaDbCheckConstraint for targeted removal operations.
+        Use this to remove only specific constraints that match your filtering criteria, such as constraints with certain patterns or on particular tables.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -46,7 +46,6 @@ Describe $CommandName -Tag IntegrationTests {
             Login           = $localLogin1Name, $localLogin2Name
             SecurePassword  = $securePassword
             EnableException = $true
-            Confirm         = $false
         }
         New-DbaLogin @splatLocalLogins
 
@@ -55,7 +54,6 @@ Describe $CommandName -Tag IntegrationTests {
             Login           = $remoteLoginName
             SecurePassword  = $securePassword
             EnableException = $true
-            Confirm         = $false
         }
         New-DbaLogin @splatRemoteLogin
 
@@ -66,7 +64,6 @@ Describe $CommandName -Tag IntegrationTests {
             Provider        = "sqlncli"
             DataSource      = $server3
             EnableException = $true
-            Confirm         = $false
         }
         $linkedServer1 = New-DbaLinkedServer @splatLinkedServer1
 
@@ -77,7 +74,6 @@ Describe $CommandName -Tag IntegrationTests {
             Provider        = "sqlncli"
             DataSource      = $server3
             EnableException = $true
-            Confirm         = $false
         }
         $linkedServer2 = New-DbaLinkedServer @splatLinkedServer2
 
@@ -116,7 +112,6 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance     = $server2
             LinkedServer    = $linkedServer1Name, $linkedServer2Name
             EnableException = $true
-            Confirm         = $false
             Force           = $true
         }
         Remove-DbaLinkedServer @splatRemoveLinkedServers -ErrorAction SilentlyContinue
@@ -125,7 +120,6 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance     = $server2
             Login           = $localLogin1Name, $localLogin2Name
             EnableException = $true
-            Confirm         = $false
         }
         Remove-DbaLogin @splatRemoveLocalLogins -ErrorAction SilentlyContinue
 
@@ -133,9 +127,10 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance     = $server3
             Login           = $remoteLoginName
             EnableException = $true
-            Confirm         = $false
         }
         Remove-DbaLogin @splatRemoveRemoteLogin -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When testing linked server login functionality" {

@@ -1,15 +1,18 @@
 function Get-DbaWsfcResource {
     <#
     .SYNOPSIS
-        Gets information about one or more resources in a failover cluster.
+        Retrieves detailed information about cluster resources in a Windows Server Failover Cluster
 
     .DESCRIPTION
-        Gets information about one or more resources in a failover cluster.
+        Retrieves comprehensive information about cluster resources including SQL Server instances, disks, network names, and other services managed by the failover cluster. Shows current state, ownership, dependencies, restart policies, and timeout settings for each resource, which is essential for troubleshooting cluster issues and monitoring SQL Server FCI health.
+
+        Use this when diagnosing cluster resource failures, planning maintenance windows, or investigating why SQL Server services aren't failing over properly. The state information helps identify stuck resources, while ownership details show which node currently hosts each resource.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the target cluster to query for resource information. Can be any cluster node name or the cluster name itself.
+        Use this when managing multiple clusters or when connecting from outside the cluster to gather resource status and configuration details.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.

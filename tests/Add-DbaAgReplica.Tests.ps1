@@ -55,7 +55,6 @@ Describe $CommandName -Tag IntegrationTests {
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
-            Confirm      = $false
         }
         $primaryAg = New-DbaAvailabilityGroup @splatPrimary
         $replicaName = $primaryAg.PrimaryReplica
@@ -69,10 +68,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName -Confirm:$false -ErrorAction SilentlyContinue
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When adding AG replicas" {
@@ -87,8 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
                 ClusterType  = "None"
                 FailoverMode = "Manual"
                 Certificate  = "dbatoolsci_AGCert"
-                Confirm      = $false
-            }
+                            }
             $replicaAg = New-DbaAvailabilityGroup @splatRepAg
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -100,7 +98,9 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup all created objects.
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $replicaAgName -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $replicaAgName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Returns results with proper data" {

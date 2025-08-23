@@ -37,14 +37,14 @@ Describe $CommandName -Tag IntegrationTests {
 
             # make darn sure suspect pages show up, run twice
             try {
-                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
+                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbname
                 $null = $db.Query("select top 100 from example")
                 $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
                 $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
             } catch { } # should fail
 
             try {
-                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
+                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbname
                 $null = $db.Query("select top 100 from example")
                 $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
                 $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $Server -Database $dbname -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $Server -Database $dbname
         }
 
         It "function should find at least one record in suspect_pages table" {

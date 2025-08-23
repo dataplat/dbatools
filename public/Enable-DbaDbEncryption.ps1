@@ -1,10 +1,10 @@
 function Enable-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Enables encryption on a database
+        Enables Transparent Data Encryption (TDE) on SQL Server databases
 
     .DESCRIPTION
-        Enables encryption on a database
+        Enables Transparent Data Encryption (TDE) on specified databases to protect data at rest. This is essential for compliance with regulations like HIPAA, PCI-DSS, and organizational security policies. The function automatically creates a Database Encryption Key (DEK) if one doesn't exist, using a certificate from the master database to encrypt it. By default, it verifies that the certificate has been backed up before proceeding, helping prevent data loss scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,20 +17,22 @@ function Enable-DbaDbEncryption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database that where encryption will be enabled
+        Specifies which databases to enable Transparent Data Encryption (TDE) on. Accepts multiple database names.
+        Use this when you need to enable encryption on specific databases rather than all databases on the instance.
 
     .PARAMETER EncryptorName
-        If an Encryption Key does not exist in the database, this command will attempt to create one. This parameter specifies the name of the certificate in master that should be used and tries to find one if one is not specified.
-
-        In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
+        Specifies the certificate name in the master database to use for encrypting the Database Encryption Key (DEK).
+        If not specified, the function will attempt to find an existing certificate. Use this when you have multiple certificates and need to specify which one to use for TDE.
+        The certificate must exist in the master database and should be backed up to prevent data loss.
 
     .PARAMETER InputObject
-        Enables pipeline input from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the pipeline.
+        Use this when you want to filter databases first with Get-DbaDatabase and then enable TDE on the results.
 
     .PARAMETER Force
-        By default, this command will not encrypt a database unless the cert has been backed up
-
-        Use Force to enable encryption even though the specified cert has not been backed up
+        Bypasses the certificate backup verification check and enables TDE even if the certificate hasn't been backed up.
+        Use with extreme caution as this could lead to data loss if the certificate is lost without a backup.
+        Only use this in development environments or when you have confirmed the certificate is backed up through other means.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

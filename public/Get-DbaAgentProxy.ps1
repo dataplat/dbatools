@@ -1,10 +1,12 @@
 function Get-DbaAgentProxy {
     <#
     .SYNOPSIS
-        Returns all SQL Agent proxies on a SQL Server Agent.
+        Retrieves SQL Server Agent proxy accounts and their associated credentials from target instances.
 
     .DESCRIPTION
-        This function returns SQL Agent proxies.
+        Retrieves SQL Server Agent proxy accounts which allow job steps to execute under different security contexts than the SQL Agent service account.
+        This function is essential for security auditing, compliance reporting, and troubleshooting job step execution permissions.
+        Returns detailed information including proxy names, associated credentials, descriptions, and enabled status across multiple SQL Server instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,10 +19,14 @@ function Get-DbaAgentProxy {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Proxy
-        The name of the proxies to return. If null, will get all proxies from the server. Note - this parameter accepts wildcards.
+        Specifies which SQL Agent proxy accounts to retrieve by name. Supports wildcards for pattern matching.
+        Use this to filter results when you only need specific proxy accounts instead of all proxies on the instance.
+        Common when auditing specific service accounts or troubleshooting particular job step failures.
 
     .PARAMETER ExcludeProxy
-        The name of the proxies to exclude. If not provided, no proxies will be excluded. Note - this parameter accepts wildcards.
+        Specifies which SQL Agent proxy accounts to exclude from results by name. Supports wildcards for pattern matching.
+        Useful when you want to review all proxies except certain ones, such as excluding system or test proxies from security audits.
+        Can be combined with the Proxy parameter for fine-grained filtering.
 
 
     .PARAMETER EnableException

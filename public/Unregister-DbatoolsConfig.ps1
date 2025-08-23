@@ -1,31 +1,34 @@
 function Unregister-DbatoolsConfig {
     <#
     .SYNOPSIS
-        Removes registered configuration settings.
+        Removes persisted dbatools configuration settings from registry and configuration files.
 
     .DESCRIPTION
-        Removes registered configuration settings.
-        This function can be used to remove settings that have been persisted for either user or computer.
+        Removes dbatools configuration settings that have been persisted to Windows registry or JSON configuration files. This lets you clean up module settings that were previously saved using Register-DbatoolsConfig, removing them from user profiles or system-wide storage locations.
 
-        Note: This command has no effect on configuration settings currently in memory.
+        The function handles settings stored in multiple persistence scopes including user-specific registry entries, computer-wide registry settings, and JSON configuration files in various user and system directories. You can target specific settings by name or module, or remove entire configuration groups.
+
+        Note: This command only removes persisted settings and has no effect on configuration values currently loaded in PowerShell memory.
 
     .PARAMETER ConfigurationItem
-        A configuration object as returned by Get-DbatoolsConfig.
+        Specifies configuration objects to remove from persistent storage, as returned by Get-DbatoolsConfig.
+        Use this when you want to unregister specific settings already identified through Get-DbatoolsConfig.
 
     .PARAMETER FullName
-        The full name of the configuration setting to purge.
+        Specifies the complete name of the configuration setting to remove from persistent storage.
+        Use this when you know the exact setting name in the format 'module.category.setting'.
 
     .PARAMETER Module
-        The module, amongst which settings should be unregistered.
+        Specifies the module name to target for configuration removal.
+        Use this to remove all configuration settings belonging to a specific dbatools module or component.
 
     .PARAMETER Name
-        The name of the setting to unregister.
-        For use together with the module parameter, to limit the amount of settings that are unregistered.
+        Specifies the setting name pattern to match within the targeted module. Supports wildcards.
+        Use with the Module parameter to narrow down which settings to remove, defaults to '*' to match all settings.
 
     .PARAMETER Scope
-        Settings can be set to either default or enforced, for user or the entire computer.
-        By default, only DefaultSettings for the user are unregistered.
-        Use this parameter to choose the actual scope for the command to process.
+        Specifies which configuration storage locations to target for removal: user settings, computer-wide settings, or file-based configurations.
+        Defaults to UserDefault which removes settings from the current user's registry. Use SystemDefault to remove computer-wide settings (requires elevation).
 
     .NOTES
         Tags: Module

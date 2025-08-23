@@ -1,38 +1,39 @@
 function Copy-DbaInstanceAuditSpecification {
     <#
     .SYNOPSIS
-        Copy-DbaInstanceAuditSpecification migrates server audit specifications from one SQL Server to another.
+        Copies server audit specifications from one SQL Server instance to another for compliance standardization.
 
     .DESCRIPTION
-        By default, all audits are copied. The -AuditSpecification parameter is auto-populated for command-line completion and can be used to copy only specific audits.
+        Migrates server audit specifications between SQL Server instances, allowing DBAs to standardize audit configurations across environments or restore audit settings during disaster recovery. The function scripts existing audit specifications from the source server and recreates them on the destination, but only if the corresponding server audits already exist on the target instance.
 
-        If the audit specification already exists on the destination, it will be skipped unless -Force is used.
+        By default, all audit specifications are copied, but you can target specific ones using the -AuditSpecification parameter. Existing specifications on the destination are skipped unless -Force is used to drop and recreate them. This prevents accidental overwrites while enabling intentional updates to audit configurations.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Source SQL Server instance containing the server audit specifications to copy. Requires sysadmin access and SQL Server 2008 or higher.
+        The function will read all existing audit specifications from this instance to migrate to the destination.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
+        Credentials for connecting to the source SQL Server instance to read audit specifications. Use when Windows Authentication is not available.
+        Accepts PowerShell credentials (Get-Credential) and supports SQL Server Authentication, Active Directory authentication modes.
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Destination SQL Server instance where audit specifications will be created. Requires sysadmin access and SQL Server 2008 or higher.
+        The corresponding server audits must already exist on this instance before audit specifications can be successfully copied.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
+        Credentials for connecting to the destination SQL Server instance to create audit specifications. Use when Windows Authentication is not available.
+        Accepts PowerShell credentials (Get-Credential) and supports SQL Server Authentication, Active Directory authentication modes.
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AuditSpecification
-        The Server Audit Specification(s) to process. Options for this list are auto-populated from the server. If unspecified, all Server Audit Specifications will be processed.
+        Specifies which server audit specifications to copy by name. Accepts multiple specification names as an array.
+        Use this when you need to migrate specific audit specifications rather than all specifications from the source instance.
+        If not specified, all audit specifications from the source will be processed.
 
     .PARAMETER ExcludeAuditSpecification
-        The Server Audit Specification(s) to exclude. Options for this list are auto-populated from the server
+        Specifies which server audit specifications to skip during the copy operation. Accepts multiple specification names as an array.
+        Use this to copy all audit specifications except those you want to exclude, such as environment-specific or test specifications.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -41,7 +42,8 @@ function Copy-DbaInstanceAuditSpecification {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Audits Specifications will be dropped and recreated on Destination.
+        Drops and recreates existing audit specifications on the destination instance instead of skipping them.
+        Use this when you need to overwrite existing audit specifications with updated configurations from the source.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

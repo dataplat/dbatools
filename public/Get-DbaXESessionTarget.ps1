@@ -1,10 +1,10 @@
 function Get-DbaXESessionTarget {
     <#
     .SYNOPSIS
-        Get a list of Extended Events Session Targets from the specified SQL Server instance(s).
+        Retrieves Extended Events session targets with their configurations and file locations.
 
     .DESCRIPTION
-        Retrieves a list of Extended Events Session Targets from the specified SQL Server instance(s).
+        Returns detailed information about Extended Events session targets including their properties, file paths, and current status. This function helps DBAs examine where Extended Events data is being captured, whether sessions are running or stopped, and provides both local and UNC file paths for easy access to target files. Use this when you need to locate XE log files, verify target configurations, or troubleshoot Extended Events sessions that aren't capturing data as expected.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -17,13 +17,16 @@ function Get-DbaXESessionTarget {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
-        Only return a specific session. Options for this parameter are auto-populated from the server.
+        Filters results to specific Extended Events sessions by name. Supports wildcards and multiple session names.
+        Use this when you only need target information from particular XE sessions instead of all sessions on the instance.
 
     .PARAMETER Target
-        Only return a specific target.
+        Filters results to specific target types such as 'event_file', 'ring_buffer', or 'event_counter'. Supports multiple target names.
+        Use this when you need information about particular target types, like finding all file-based targets or checking ring buffer configurations.
 
     .PARAMETER InputObject
-        Specifies an XE session returned by Get-DbaXESession to search.
+        Accepts Extended Events session objects from Get-DbaXESession through the pipeline. Allows chaining commands for more complex filtering.
+        Use this when you've already retrieved specific XE sessions and want to examine their targets without re-querying the server.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

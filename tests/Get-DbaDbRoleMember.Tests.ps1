@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # No specific cleanup needed for this test as we're only reading data
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {

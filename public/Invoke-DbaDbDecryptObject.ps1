@@ -1,27 +1,25 @@
 function Invoke-DbaDbDecryptObject {
     <#
     .SYNOPSIS
-        Returns the decrypted version of an object
+        Decrypts encrypted stored procedures, functions, views, and triggers using Dedicated Admin Connection (DAC)
 
     .DESCRIPTION
-        SQL Server provides an option to encrypt the code used in various types of objects.
-        If the original code is no longer available for an encrypted object it won't be possible to view the definition.
-        With this command the dedicated admin connection (DAC) can be used to search for the object and decrypt it.
+        Recovers the original source code from encrypted database objects when the original scripts have been lost or are unavailable. This command uses the Dedicated Admin Connection (DAC) to access binary data from sys.sysobjvalues and performs XOR decryption to retrieve the original T-SQL code.
 
-        The command will output the results to the console by default.
-        There is an option to export all the results to a folder creating .sql files.
+        This is particularly useful in disaster recovery scenarios where you need to recreate objects but only have access to the encrypted versions in the database. The function can decrypt stored procedures, user-defined functions (scalar, inline, table-valued), views, and triggers.
 
-        To connect to a remote SQL instance the remote dedicated administrator connection option will need to be configured.
-        The binary versions of the objects can only be retrieved using a DAC connection.
+        The command outputs results to the console by default, with an option to export all decrypted objects to organized .sql files in a folder structure.
+
+        To connect to a remote SQL instance, the remote dedicated administrator connection option must be configured. The binary versions of encrypted objects can only be retrieved using a DAC connection.
         You can check the remote DAC connection with:
         'Get-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled'
-        It should say 1 in the ConfiguredValue.
+        The ConfiguredValue should be 1.
 
         The local DAC connection is enabled by default.
 
-        To change the configurations you can use the Set-DbaSpConfigure command:
+        To enable remote DAC connections, use:
         'Set-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled -Value 1'
-        In some cases you may need to reboot the instance.
+        In some cases you may need to restart the SQL Server instance after enabling this setting.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -34,17 +32,20 @@ function Invoke-DbaDbDecryptObject {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Database to search for the object.
+        Specifies which databases contain the encrypted objects you want to decrypt. Accepts multiple database names.
+        Use this to target specific databases instead of searching across all databases on the instance.
 
     .PARAMETER ObjectName
-        The name of the object to search for in the database.
+        Specifies the names of encrypted objects to decrypt (stored procedures, functions, views, or triggers). Accepts multiple object names.
+        When omitted, all encrypted objects in the specified databases will be decrypted. Use this to target specific objects when you only need a few items recovered.
 
     .PARAMETER EncodingType
-        The encoding type used to decrypt and encrypt values.
+        Determines the text encoding used during the XOR decryption process to convert binary data back to readable T-SQL code. Defaults to ASCII.
+        Use UTF8 when dealing with databases that contain Unicode characters in object definitions or when ASCII decryption produces garbled text.
 
     .PARAMETER ExportDestination
-        Location to output the decrypted object definitions.
-        The destination will use the instance name, database name and object type i.e.: C:\temp\decrypt\SQLDB1\DB1\StoredProcedure
+        Specifies the folder path where decrypted T-SQL scripts will be saved as individual .sql files.
+        When specified, creates an organized folder structure by instance, database, and object type (e.g., C:\temp\decrypt\SQLDB1\DB1\StoredProcedure). When omitted, results are displayed in the console only.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

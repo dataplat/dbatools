@@ -1,12 +1,14 @@
 function Test-DbaDbRecoveryModel {
     <#
     .SYNOPSIS
-        Find if database is really a specific recovery model or not.
+        Validates whether databases are truly operating in their configured recovery model
 
     .DESCRIPTION
-        When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
+        When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain. This function identifies the gap between configured and actual recovery model behavior.
 
-        However, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.
+        For FULL recovery databases, the function checks if a log backup chain has been established by examining the last_log_backup_lsn in sys.database_recovery_status. Databases without this value are functionally operating in SIMPLE mode despite being configured for FULL recovery.
+
+        This validation is critical for DBAs who need to ensure point-in-time recovery capabilities are actually available, not just configured. It also allows validation of SIMPLE or BULK_LOGGED recovery models on an instance.
 
         Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
 
@@ -21,13 +23,18 @@ function Test-DbaDbRecoveryModel {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to test for recovery model validation. Accepts multiple database names and supports wildcards.
+        When specified, only these databases will be evaluated instead of all databases on the instance.
+        Useful when you need to verify recovery model behavior for specific databases or troubleshoot particular applications.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies which databases to skip during recovery model validation. Accepts multiple database names and supports wildcards.
+        Use this to exclude system databases, test databases, or databases you know are properly configured when testing large instances.
 
     .PARAMETER RecoveryModel
-        Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.
+        Specifies which recovery model to validate against configured settings. Valid values are Full, Simple, or Bulk_Logged.
+        Defaults to Full recovery model, which also checks if databases have established a log backup chain for true point-in-time recovery.
+        Use Simple or Bulk_Logged when auditing databases that should be configured for those specific recovery models.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

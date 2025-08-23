@@ -1,12 +1,14 @@
 function Set-DbaExtendedProtection {
     <#
     .SYNOPSIS
-        Set the Extended Protection setting of the SQL Server network configuration.
+        Configures Extended Protection for Authentication on SQL Server network protocols
 
     .DESCRIPTION
-        Set the Extended Protection setting of the SQL Server network configuration.
+        Modifies the Extended Protection registry setting for SQL Server network protocols to enhance connection security. Extended Protection helps prevent authentication relay attacks by requiring additional authentication at the network protocol level.
 
-        This setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration > Protocols for "InstanceName".
+        This security feature is particularly useful in environments where you need to protect against man-in-the-middle attacks or when connecting over untrusted networks. When set to "Required", clients must support Extended Protection to connect, which may require updating older applications or connection strings.
+
+        The function modifies Windows registry values directly and requires administrative privileges on the target server. Changes take effect immediately for new connections without requiring a SQL Server restart. This setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration > Protocols for "InstanceName".
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -15,7 +17,9 @@ function Set-DbaExtendedProtection {
         Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials
 
     .PARAMETER Value
-        Posible values are Off, Allowed and Always.
+        Specifies the Extended Protection level for SQL Server network protocols. Accepts "Off", "Allowed", or "Required" (or equivalent integers 0, 1, 2).
+        Use "Off" to disable Extended Protection, "Allowed" to accept both protected and unprotected connections, or "Required" to enforce Extended Protection for all client connections.
+        Defaults to "Off" when not specified. Setting to "Required" may prevent older applications from connecting unless they support Extended Protection authentication.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

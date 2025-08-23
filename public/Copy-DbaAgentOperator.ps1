@@ -1,38 +1,38 @@
 function Copy-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Copy-DbaAgentOperator migrates operators from one SQL Server to another.
+        Copies SQL Server Agent operators between instances for migration and standardization.
 
     .DESCRIPTION
-        By default, all operators are copied. The -Operators parameter is auto-populated for command-line completion and can be used to copy only specific operators.
+        Copies SQL Server Agent operators from a source instance to one or more destination instances, preserving all operator properties including email addresses, pager numbers, and notification schedules. This is essential during server migrations, environment standardization, or when setting up identical alerting configurations across multiple instances.
 
-        If the associated credentials for the operator do not exist on the destination, it will be skipped. If the operator already exists on the destination, it will be skipped unless -Force is used.
+        All operators are copied by default, but you can target specific operators or exclude certain ones. Existing operators on the destination are skipped unless you use -Force to overwrite them. The function protects failsafe operators from being accidentally dropped during forced operations.
+
+        Each operator is scripted from the source using SQL Management Objects and recreated on the destination, ensuring all configuration details are preserved exactly as configured on the source instance.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The SQL Server instance containing the operators you want to copy from. Must be SQL Server 2000 or higher.
+        Use this to specify which instance has the existing operators that need to be migrated or replicated to other instances.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the source SQL Server instance when Windows Authentication is not available.
+        Use this when the source server requires SQL Server Authentication or when running under a different user context than your current Windows session.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        One or more SQL Server instances where the operators will be copied to. Must be SQL Server 2000 or higher.
+        Accepts multiple instances to copy operators to several servers at once during migrations or standardization projects.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for connecting to the destination SQL Server instances when Windows Authentication is not available.
+        Use this when the destination servers require SQL Server Authentication or when running under a different user context than your current Windows session.
 
     .PARAMETER Operator
-        The operator(s) to process. This list is auto-populated from the server. If unspecified, all operators will be processed.
+        Specifies which operators to copy by name. Accepts wildcards and multiple operator names.
+        Use this when you only need to migrate specific operators instead of copying all operators from the source instance.
 
     .PARAMETER ExcludeOperator
-        The operators(s) to exclude. This list is auto-populated from the server.
+        Operators to skip during the copy operation. Accepts wildcards and multiple operator names.
+        Use this to copy most operators while excluding specific ones, such as development-only or temporary operators.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -41,7 +41,8 @@ function Copy-DbaAgentOperator {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Operator will be dropped and recreated on Destination.
+        Drops and recreates operators that already exist on the destination instances.
+        Use this when you need to overwrite existing operators with updated configurations from the source, but note that failsafe operators are protected and will be skipped.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

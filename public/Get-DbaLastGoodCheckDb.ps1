@@ -1,12 +1,14 @@
 function Get-DbaLastGoodCheckDb {
     <#
     .SYNOPSIS
-        Get date/time for last known good DBCC CHECKDB
+        Retrieves the last successful DBCC CHECKDB timestamp and integrity status for databases
 
     .DESCRIPTION
-        Retrieves and compares the date/time for the last known good DBCC CHECKDB, as well as the creation date/time for the database.
+        Retrieves and compares the timestamp for the last successful DBCC CHECKDB operation along with database creation dates. This helps DBAs monitor database integrity checking compliance and identify databases that need attention.
 
-        This function supports SQL Server 2005 and higher.
+        The function returns comprehensive information including days since the last good CHECKDB, database creation date, current status assessment (Ok, New database not checked yet, or CheckDB should be performed), and data purity settings. Use this to quickly identify which databases are overdue for integrity checks in your maintenance routines.
+
+        This function supports SQL Server 2005 and higher. For SQL Server 2008 and earlier, it uses DBCC DBINFO() WITH TABLERESULTS to extract the dbi_dbccLastKnownGood field. For newer versions, it uses the LastGoodCheckDbTime property from SMO.
 
         Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak points, such as:
         - DBCC DBINFO is an undocumented feature/command.
@@ -31,13 +33,16 @@ function Get-DbaLastGoodCheckDb {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases to check for their last good CHECKDB status. Accepts wildcards for pattern matching.
+        When omitted, all user and system databases on the instance will be processed. Use this to focus on specific databases or groups of databases when monitoring CHECKDB compliance.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more database(s) to exclude from processing.
+        Excludes specific databases from the CHECKDB status check. Commonly used to skip system databases like TempDB or databases with known maintenance schedules.
+        Accepts wildcards and multiple database names to filter out databases that don't need regular CHECKDB monitoring.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase, allowing for complex filtering scenarios before checking CHECKDB status.
+        Use this when you need to apply advanced database filtering logic or when chaining multiple dbatools commands together.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

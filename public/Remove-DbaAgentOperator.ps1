@@ -1,10 +1,14 @@
 function Remove-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Removes an operator from an instance.
+        Removes SQL Server Agent operators from one or more instances.
 
     .DESCRIPTION
-        Drop an operator from SQL Agent.
+        Removes SQL Server Agent operators from specified instances, cleaning up notification contacts that are no longer needed.
+
+        Operators are notification contacts used by SQL Server Agent to send alerts about job failures, system issues, or other events. This function helps you remove outdated operator accounts when employees leave, contact information changes, or you need to consolidate notification lists.
+
+        The function safely handles dependencies and provides detailed status output for each removal operation, making it suitable for both interactive cleanup and automated operator management scripts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -17,22 +21,22 @@ function Remove-DbaAgentOperator {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Operator
-        Name of the operator in SQL Agent.
+        Specifies the SQL Server Agent operator names to remove from the instance. Accepts multiple operator names for bulk removal.
+        Use this when you need to remove specific operators by name, such as when employees leave or contact information becomes outdated.
 
     .PARAMETER ExcludeOperator
-        The operator(s) to exclude.
+        Specifies operator names to skip during removal operations. Useful when removing multiple operators but want to preserve certain ones.
+        Use this to protect critical operators from accidental deletion when performing bulk removals or scripted cleanup operations.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaAgentOperator.
+        Accepts SQL Server Agent operator objects from Get-DbaAgentOperator for pipeline operations.
+        This parameter enables filtering operators before removal and supports interactive selection workflows using Out-GridView.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-
-    .PARAMETER InputObject
-        SMO Server Objects (pipeline input from Connect-DbaInstance)
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

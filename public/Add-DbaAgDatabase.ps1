@@ -1,12 +1,12 @@
 function Add-DbaAgDatabase {
     <#
     .SYNOPSIS
-        Adds database(s) to an Availability Group on a SQL Server instance.
+        Adds databases to an Availability Group with automated backup, restore, and synchronization handling.
 
     .DESCRIPTION
-        Adds database(s) to an Availability Group on a SQL Server instance.
+        Adds databases to an Availability Group and handles the complete process from backup through synchronization. This command eliminates the manual steps typically required when expanding Availability Groups with new databases, automatically managing seeding modes, backup/restore operations, and replica synchronization.
 
-        After checking for prerequisites, the commands runs these five steps for every database:
+        The command executes a comprehensive five-step process for each database:
         * Step 1: Setting seeding mode if needed.
           - If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.
           - The seeding mode will not be changed back but stay in this mode.
@@ -21,11 +21,9 @@ function Add-DbaAgDatabase {
           - This step is skipped for those replicas, where the database is already joined to the Availability Group.
         * Step 5: Wait for the database to finish joining the Availability Group on the secondary replicas.
 
-        Use Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.
+        Use Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met before running this command.
 
-        If you have special requirements for the setup for the database at the replicas,
-        perform the backup and restore part with Backup-DbaDatabase and Restore-DbaDatabase in advance.
-        Please make sure that the last log backup has been restored before running Add-DbaAgDatabase.
+        For custom backup and restore requirements, perform those operations with Backup-DbaDatabase and Restore-DbaDatabase in advance, ensuring the last log backup has been restored before running Add-DbaAgDatabase.
 
     .PARAMETER SqlInstance
         The primary replica of the Availability Group. Server version must be SQL Server version 2012 or higher.
@@ -38,46 +36,41 @@ function Add-DbaAgDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to add.
+        Specifies which databases to add to the Availability Group. Accepts single database names, arrays, or wildcard patterns.
+        Use this when you need to add specific databases rather than piping database objects from Get-DbaDatabase.
 
     .PARAMETER AvailabilityGroup
-        The name of the Availability Group where the databases will be added.
+        Specifies the target Availability Group name where databases will be added. The AG must already exist and be configured.
+        Use this to identify which existing Availability Group should receive the new database members.
 
     .PARAMETER Secondary
-        Not required - the command will figure this out. But use this parameter if secondary replicas listen on a non default port.
-        This parameter can be used to only add the databases on specific secondary replicas.
+        Specifies secondary replica instances to target for database addition. Auto-discovered if not specified.
+        Use this when replicas use non-standard ports or when you want to limit the operation to specific secondary replicas rather than all replicas in the AG.
 
     .PARAMETER SecondarySqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Authentication credentials for connecting to secondary replica instances when they require different credentials than the primary.
+        Use this when secondary replicas are in different domains, use SQL authentication, or require service accounts with specific permissions for backup/restore operations.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
+        Accepts database objects from pipeline input, typically from Get-DbaDatabase or Get-DbaDbSharePoint.
+        Use this for workflow scenarios where you want to filter databases first, then pipe the results directly into the AG addition process.
 
     .PARAMETER SeedingMode
-        Specifies how the secondary replica will be initially seeded.
-
-        Automatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
-
-        Manual uses full and log backup to initially transfer the data to the secondary replica. The command skips this if the database is found in restoring state at the secondary replica.
-
-        If not specified, the setting from the availability group replica will be used. Otherwise the setting will be updated.
+        Controls how database data is transferred to secondary replicas during AG addition. Valid values are 'Automatic' or 'Manual'.
+        Automatic seeding transfers data directly over the network without requiring backup/restore operations, but needs sufficient network bandwidth and proper endpoint configuration.
+        Manual seeding uses traditional backup/restore through shared storage, giving you more control over timing and storage location but requiring accessible file shares.
 
     .PARAMETER SharedPath
-        The network share where the backups will be backed up and restored from.
-
-        Each SQL Server service account must have access to this share.
-
-        NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
+        Specifies the UNC network path where backups are stored during manual seeding operations. Required when using Manual seeding mode.
+        All SQL Server service accounts from primary and secondary replicas must have read/write access to this location. Backup files remain on the share after completion for potential reuse or cleanup.
 
     .PARAMETER UseLastBackup
-        Use the last full and log backup of the database. A log backup must be the last backup.
+        Uses existing backup history instead of creating new backups for manual seeding. The most recent log backup must be newer than the most recent full backup.
+        Use this when you have recent backups available and want to avoid taking additional backups, reducing backup storage requirements and time.
 
     .PARAMETER AdvancedBackupParams
-        Provide additional parameters to the backup command as a hashtable.
+        Passes additional parameters to Backup-DbaDatabase as a hashtable when creating backups during manual seeding.
+        Use this to control backup compression, file count, or other backup-specific settings like @{CompressBackup=$true; FileCount=4} for faster backup operations.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

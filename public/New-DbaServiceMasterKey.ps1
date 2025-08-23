@@ -1,10 +1,10 @@
 function New-DbaServiceMasterKey {
     <#
     .SYNOPSIS
-        Creates a new service master key.
+        Creates a service master key in the master database for instance-level encryption hierarchy
 
     .DESCRIPTION
-        Creates a new service master key in the master database.
+        Creates a service master key in the master database, which sits at the top of SQL Server's encryption hierarchy. The service master key automatically encrypts and protects database master keys, certificates, and other encryption objects across all databases on the instance. This is typically the first step when implementing any encryption strategy on a SQL Server instance, as it eliminates the need to manually manage individual database master key passwords.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,10 +17,12 @@ function New-DbaServiceMasterKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SecurePassword
-        Secure string used to create the key.
+        Specifies the password used to encrypt the service master key. Must be a SecureString object for security.
+        Use this when you need to set a specific password for the service master key instead of being prompted interactively.
 
     .PARAMETER Credential
-        Enables easy creation of a secure password.
+        Provides an alternative way to specify the service master key password using a PSCredential object.
+        The password from the credential will be used to encrypt the service master key, offering a convenient method when you already have credentials stored.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

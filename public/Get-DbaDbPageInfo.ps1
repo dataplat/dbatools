@@ -1,11 +1,13 @@
 function Get-DbaDbPageInfo {
     <#
     .SYNOPSIS
-        Get-DbaDbPageInfo will return page information for a database
+        Retrieves detailed page allocation information from SQL Server databases for storage analysis and troubleshooting
 
     .DESCRIPTION
-        Get-DbaDbPageInfo is able to return information about the pages in a database.
-        It's possible to return the information for multiple databases and filter on specific databases, schemas and tables.
+        This function queries the sys.dm_db_database_page_allocations dynamic management view to return detailed information about page allocation, including page type, free space percentage, allocation status, and mixed page allocation indicators.
+        Use this when troubleshooting storage issues, analyzing space utilization patterns, or investigating page-level performance problems in your databases.
+        Results can be filtered by specific databases, schemas, and tables to focus your analysis on problem areas.
+        Requires SQL Server 2012 or higher as it depends on the sys.dm_db_database_page_allocations DMV.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -18,16 +20,20 @@ function Get-DbaDbPageInfo {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Filter to only get specific databases
+        Specifies which databases to analyze for page allocation information. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases rather than scanning all databases on the instance.
 
     .PARAMETER Schema
-        Filter to only get specific schemas
+        Limits the analysis to tables within specific schemas only. Multiple schema names can be provided.
+        Helpful when troubleshooting page issues in specific application schemas or when you want to exclude system schemas from results.
 
     .PARAMETER Table
-        Filter to only get specific tables
+        Restricts page information retrieval to specific tables only. Can be combined with Schema parameter for precise targeting.
+        Use this when investigating page allocation problems for known problematic tables or when performing focused storage analysis.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects piped from Get-DbaDatabase, allowing you to chain commands together.
+        This enables scenarios like getting databases from multiple instances and then analyzing their page information in a single pipeline.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

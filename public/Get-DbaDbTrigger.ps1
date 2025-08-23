@@ -1,10 +1,10 @@
 function Get-DbaDbTrigger {
     <#
     .SYNOPSIS
-        Get all existing database triggers on one or more SQL instances.
+        Retrieves database-level DDL triggers from SQL Server instances for security auditing and change tracking analysis.
 
     .DESCRIPTION
-        Get all existing database triggers on one or more SQL instances.
+        Retrieves all database-level DDL triggers from one or more SQL Server instances. Database triggers fire in response to DDL events like CREATE, ALTER, or DROP statements within a specific database, making them useful for change auditing and security monitoring. This function helps DBAs inventory these triggers for compliance reporting, troubleshooting performance issues, or documenting automated database change tracking mechanisms. Returns trigger details including name, enabled status, and last modification date.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,16 @@ function Get-DbaDbTrigger {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to scan for DDL triggers. Accepts wildcards for pattern matching.
+        Use this when you need to audit triggers in specific databases rather than checking all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from the trigger scan. Useful for skipping system databases or databases under maintenance.
+        Commonly used to exclude tempdb, model, or databases that don't require trigger auditing.
 
     .PARAMETER InputObject
-        Allow pipedline input from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase via pipeline input for targeted trigger analysis.
+        Use this when you want to process a pre-filtered set of database objects instead of specifying database names.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

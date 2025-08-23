@@ -56,7 +56,6 @@ Describe $CommandName -Tag IntegrationTests {
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
-            Confirm      = $false
         }
         $null = New-DbaAvailabilityGroup @splatAg
 
@@ -79,9 +78,9 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup, $existingDbWithoutBackup
 
         # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When adding AG database" {
@@ -92,7 +91,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance       = $TestConfig.instance3
                 AvailabilityGroup = $agName
                 Database          = $existingDbWithBackup
-                Confirm           = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDatabase
         }
@@ -118,7 +116,6 @@ Describe $CommandName -Tag IntegrationTests {
                 # As we don't want an output, we suppress the warning.
                 # But we can still test the warning because WarningVariable is set globally to WarnVar.
                 WarningAction     = "SilentlyContinue"
-                Confirm           = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDb
         }
@@ -139,7 +136,6 @@ Describe $CommandName -Tag IntegrationTests {
                 AvailabilityGroup = $agName
                 Database          = $nonexistingDb
                 WarningAction     = "SilentlyContinue"
-                Confirm           = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDb
         }

@@ -1,17 +1,18 @@
 function Get-DbaSpn {
     <#
     .SYNOPSIS
-        Returns a list of set service principal names for a given computer/AD account
+        Retrieves existing Service Principal Names (SPNs) from Active Directory for SQL Server services
 
     .DESCRIPTION
-        Get a list of set SPNs. SPNs are set at the AD account level. You can either retrieve set SPNs for a computer, or any SPNs set for
-        a given active directory account. You can query one, or both. You'll get a list of every SPN found for either search term.
+        Queries Active Directory to return SPNs that are currently registered for SQL Server services on specified computers or service accounts. This is essential for troubleshooting Kerberos authentication issues, as missing or duplicate SPNs prevent clients from authenticating to SQL Server using integrated security. Use this command to audit your current SPN configuration before making changes with Set-DbaSpn or when investigating authentication failures. The function returns detailed information including the service class (MSSQLSvc), port numbers, and associated Active Directory accounts.
 
     .PARAMETER ComputerName
-        The servers you want to return set SPNs for. This is defaulted automatically to localhost.
+        Specifies the SQL Server computer names to retrieve registered SPNs for. Defaults to localhost if not specified.
+        Use this when you need to audit SPN configuration on specific servers or when troubleshooting Kerberos authentication issues across multiple SQL instances.
 
     .PARAMETER AccountName
-        The accounts you want to retrieve set SPNs for.
+        Specifies the Active Directory service accounts to search for registered SQL Server SPNs. Accepts both user accounts and computer accounts ending with '$'.
+        Use this when you need to audit which SPNs are registered under specific service accounts or when investigating authentication issues related to particular accounts.
 
     .PARAMETER Credential
         User credential to connect to the remote servers or active directory.

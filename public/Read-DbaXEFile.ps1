@@ -1,20 +1,22 @@
 function Read-DbaXEFile {
     <#
     .SYNOPSIS
-        Read XEvents from a *.xel or *.xem file.
+        Parses Extended Events trace files (.xel/.xem) into structured PowerShell objects for analysis
 
     .DESCRIPTION
-        Read XEvents from a *.xel or *.xem file.
+        Converts Extended Events trace files into PowerShell objects so you can analyze captured SQL Server events without needing SQL Server Management Studio. This function takes the raw XEvent data from .xel or .xem files and transforms it into structured objects with properties for each field and action in the trace.
 
-        The file that the XESession is currently writing to can not be accessed and will be skipped using pipeline input from Get-DbaXESession.
+        Perfect for post-incident analysis of deadlocks, performance issues, or security events that were captured by your Extended Events sessions. You can pipe the results to other PowerShell cmdlets for filtering, sorting, exporting to CSV, or building reports.
+
+        When using pipeline input from Get-DbaXESession, the function automatically skips the file currently being written to avoid access conflicts, and can read files from remote servers via admin shares.
 
     .PARAMETER Path
-        The path to the *.xem or *.xem file. This is relative to the computer executing the command. UNC paths are supported.
-
-        Piping from Get-DbaXESession is also supported.
+        Specifies the Extended Events file path (.xel or .xem), file objects, or XEvent session objects to read from. Supports local paths, UNC paths for remote files, and pipeline input from Get-ChildItem or Get-DbaXESession.
+        When using session objects from Get-DbaXESession, automatically accesses files via admin shares and skips the current file being written to prevent access conflicts.
 
     .PARAMETER Raw
-        If this switch is enabled, an array of Microsoft.SqlServer.XEvent.XELite.XEvent objects will be returned.
+        Returns the native Microsoft.SqlServer.XEvent.XELite.XEvent objects instead of structured PowerShell objects. Use this when you need direct access to the XEvent object properties and methods for advanced programmatic processing.
+        By default, events are converted to PSCustomObjects with all fields and actions as individual properties for easier analysis and reporting.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

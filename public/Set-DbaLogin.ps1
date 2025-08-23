@@ -1,11 +1,10 @@
 function Set-DbaLogin {
     <#
     .SYNOPSIS
-        Set-DbaLogin makes it possible to make changes to one or more logins.
-        SQL Azure DB is not supported.
+        Modifies SQL Server login properties including passwords, permissions, roles, and account status
 
     .DESCRIPTION
-        Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It's also possible to add or remove server roles from the login.
+        Manages SQL Server login accounts by modifying passwords, account status, security settings, and server role memberships in a single operation. Handles common DBA tasks like unlocking accounts, resetting passwords with force-change requirements, and applying password policies for security compliance. Includes a special unlock feature that preserves existing passwords by temporarily disabling policy checks, eliminating the need to reset passwords when unlocking accounts. Works across multiple instances and logins simultaneously, making it ideal for bulk user management and security maintenance workflows.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -18,54 +17,64 @@ function Set-DbaLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        The login that needs to be changed
+        Specifies one or more SQL Server login names to modify. Accepts an array for batch operations.
+        Use this to target specific login accounts when performing password resets, account management, or role assignments.
 
     .PARAMETER SecurePassword
-        The new password for the login This can be either a credential or a secure string.
+        Sets a new password for the login using either a PSCredential object or SecureString. Required when using -PasswordMustChange.
+        Create secure passwords with Get-Credential or ConvertTo-SecureString to avoid plain text exposure in scripts.
 
     .PARAMETER DefaultDatabase
-        Default database for the login
+        Changes the default database that the login connects to after authentication. Must be an existing database name.
+        Use this when users need to land in a specific database instead of master, such as application-specific databases.
 
     .PARAMETER Unlock
-        Switch to unlock an account. This can be used in conjunction with the -SecurePassword or -Force parameters.
-        The default is false.
+        Unlocks a locked SQL Server login account that has been disabled due to failed authentication attempts.
+        Use with -SecurePassword to set a new password while unlocking, or with -Force to unlock without changing the password.
 
     .PARAMETER PasswordMustChange
-        Does the user need to change his/her password. This will only be used in conjunction with the -SecurePassword parameter.
-        It is required that the login have both PasswordPolicyEnforced (check_policy) and PasswordExpirationEnabled (check_expiration) enabled for the login. See the Microsoft documentation for ALTER LOGIN for more details.
-        The default is false.
+        Forces the user to change their password at next login. Requires -SecurePassword and both PasswordPolicyEnforced and PasswordExpirationEnabled to be enabled.
+        Use this for security compliance when setting temporary passwords or after potential password compromises.
 
     .PARAMETER NewName
-        The new name for the login.
+        Renames the login to a new name. The new name must not already exist on the SQL Server instance.
+        Use this when standardizing login naming conventions or correcting login names during organizational changes.
 
     .PARAMETER Disable
-        Disable the login
+        Disables the login account, preventing authentication while preserving the account and its permissions.
+        Use this for temporary account suspension during investigations or when employees are on extended leave.
 
     .PARAMETER Enable
-        Enable the login
+        Enables a previously disabled login account, restoring authentication access with all existing permissions intact.
+        Use this to reactivate accounts after temporary suspension or when employees return from extended leave.
 
     .PARAMETER DenyLogin
-        Deny access to SQL Server
+        Explicitly denies the login permission to connect to the SQL Server instance. The account remains but cannot authenticate.
+        Use this for permanent access restriction while maintaining the login for audit trails or future reference.
 
     .PARAMETER GrantLogin
-        Grant access to SQL Server
+        Grants or restores the login permission to connect to the SQL Server instance, reversing a previous deny action.
+        Use this to restore access for logins that were previously denied without recreating the entire account.
 
     .PARAMETER PasswordPolicyEnforced
-        Enable the password policy on the login (check_policy = ON). This option must be enabled in order for -PasswordExpirationEnabled to be used.
+        Enables or disables Windows password policy enforcement for the login (check_policy). Must be enabled to use password expiration checks.
+        Use this to apply corporate password complexity and lockout policies to SQL Server authentication accounts.
 
     .PARAMETER PasswordExpirationEnabled
-        Enable the password expiration check on the login (check_expiration = ON). In order to enable this option the PasswordPolicyEnforced (check_policy) must also be enabled for the login.
+        Enables or disables password expiration checking for the login (check_expiration). Requires PasswordPolicyEnforced to be enabled first.
+        Use this to enforce regular password changes according to Windows password age policies for SQL Server accounts.
 
     .PARAMETER AddRole
-        Add one or more server roles to the login
-        The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
+        Grants one or more server-level roles to the login. Accepts: bulkadmin, dbcreator, diskadmin, processadmin, public, securityadmin, serveradmin, setupadmin, sysadmin.
+        Use this to assign specific server privileges without granting full sysadmin rights, following the principle of least privilege.
 
     .PARAMETER RemoveRole
-        Remove one or more server roles to the login
-        The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
+        Revokes one or more server-level roles from the login. Accepts: bulkadmin, dbcreator, diskadmin, processadmin, public, securityadmin, serveradmin, setupadmin, sysadmin.
+        Use this to reduce login privileges during access reviews or when job responsibilities change.
 
     .PARAMETER InputObject
-        Allows logins to be piped in from Get-DbaLogin
+        Accepts login objects from Get-DbaLogin for pipeline operations. Enables processing multiple logins from filtered queries.
+        Use this for bulk operations when you need to modify logins based on specific criteria like locked status or role membership.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -74,7 +83,8 @@ function Set-DbaLogin {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        This switch is used with -Unlock to unlock a login without providing a password. This command will temporarily disable and enable the policy settings as described at https://www.mssqltips.com/sqlservertip/2758/how-to-unlock-a-sql-login-without-resetting-the-password/.
+        Unlocks a login account without requiring a password reset by temporarily manipulating password policy settings.
+        Use this when you need to unlock accounts but cannot change the password, preserving the original password for the user.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

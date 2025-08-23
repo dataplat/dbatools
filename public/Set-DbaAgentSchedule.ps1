@@ -1,10 +1,10 @@
 function Set-DbaAgentSchedule {
     <#
     .SYNOPSIS
-        Set-DbaAgentSchedule updates a schedule in the msdb database.
+        Modifies properties of existing SQL Agent job schedules
 
     .DESCRIPTION
-        Set-DbaAgentSchedule will help update a schedule for a job. It does not attach the schedule to a job.
+        Modifies the timing, frequency, and other properties of existing SQL Agent job schedules without recreating them. You can update schedule frequency (daily, weekly, monthly), change start/end times and dates, enable or disable schedules, and rename them. The function works with schedules already attached to jobs and validates all timing parameters to prevent invalid configurations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -17,71 +17,70 @@ function Set-DbaAgentSchedule {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The name of the job that has the schedule.
+        Specifies the name of the SQL Agent job that contains the schedule to modify. You can provide multiple job names to update schedules across different jobs.
+        Use this when you need to change schedule properties for specific jobs without affecting other jobs that might share the same schedule name.
 
     .PARAMETER ScheduleName
-        The name of the schedule.
+        Specifies the name of the existing schedule to modify within the specified job. Schedule names are case-sensitive.
+        Use this to target the specific schedule when a job has multiple schedules attached to it.
 
     .PARAMETER NewName
-        The new name for the schedule.
+        Renames the schedule to the specified new name. The new name must be unique within the job's schedules.
+        Use this when you need to rename schedules for better organization or to follow naming conventions.
 
     .PARAMETER Enabled
-        Set the schedule to enabled.
+        Activates the schedule so the job will run according to its configured timing. This overrides any disabled state.
+        Use this to reactivate schedules that were previously disabled without changing their timing configuration.
 
     .PARAMETER Disabled
-        Set the schedule to disabled.
+        Deactivates the schedule so the job will not run, even if it meets the timing criteria. The schedule configuration remains unchanged.
+        Use this to temporarily stop jobs without deleting their schedules during maintenance windows or troubleshooting.
 
     .PARAMETER FrequencyType
-        A value indicating when a job is to be executed.
-
-        Allowed values: 'Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle'
-
-        The following synonyms provide flexibility to the allowed values for this function parameter:
-        Once=OneTime
-        AgentStart=AutoStart
-        IdleComputer=OnIdle
-
-        If force is used the default will be "Once".
+        Sets the overall pattern for when the job should execute. This is the primary schedule type that determines how often the job runs.
+        Use 'Daily' for jobs that run every day or every few days, 'Weekly' for jobs on specific weekdays, 'Monthly' for jobs on specific dates, 'MonthlyRelative' for jobs like "first Monday of the month", 'Once' for one-time execution, 'AgentStart' to run when SQL Agent starts, or 'OnIdle' when server is idle.
+        This parameter works with FrequencyInterval to create the complete schedule pattern.
 
     .PARAMETER FrequencyInterval
-        The days that a job is executed
-
-        Allowed values for FrequencyType 'Daily': EveryDay or a number between 1 and 365.
-        Allowed values for FrequencyType 'Weekly': Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
-        Allowed values for FrequencyType 'Monthly': Numbers 1 to 31 for each day of the month.
-
-        If "Weekdays", "Weekend" or "EveryDay" is used it over writes any other value that has been passed before.
-
-        If force is used the default will be 1.
+        Specifies which days or intervals the job should run based on the FrequencyType. The values depend on the schedule type you choose.
+        For 'Daily': Use a number (1-365) for every N days or 'EveryDay'. For 'Weekly': Use day names like Monday, Tuesday or shortcuts like 'Weekdays', 'Weekend'. For 'Monthly': Use day numbers 1-31. For 'MonthlyRelative': Use day names for "first Monday" type schedules.
+        This parameter works together with FrequencyType to define the exact timing pattern for your job schedule.
 
     .PARAMETER FrequencySubdayType
-        Specifies the units for the subday FrequencyInterval.
-        Allowed values are 1, 'Once', 'Time', 2, 'Seconds', 'Second', 4, 'Minutes', 'Minute', 8, 'Hours', 'Hour'
+        Defines the unit of time for running jobs multiple times within a single day. This controls what the FrequencySubdayInterval value represents.
+        Use 'Once' for jobs that run only once per day, 'Hours' for jobs that repeat every few hours, 'Minutes' for jobs that run every few minutes, or 'Seconds' for very frequent execution.
+        This parameter is only relevant when you need jobs to execute more than once per day at regular intervals.
 
     .PARAMETER FrequencySubdayInterval
-        The number of subday type periods to occur between each execution of a job.
+        Specifies how many units of the FrequencySubdayType to wait between job executions within a day. For example, 2 with 'Hours' means every 2 hours.
+        Use this to control the frequency of recurring jobs throughout the day, such as every 15 minutes for monitoring jobs or every 4 hours for maintenance tasks.
+        Valid ranges are 1-59 for seconds/minutes and 1-23 for hours.
 
     .PARAMETER FrequencyRelativeInterval
-        A job's occurrence of FrequencyInterval in each month, if FrequencyType is 32 (MonthlyRelative).
+        Specifies which occurrence of the day within the month for MonthlyRelative schedules. Controls whether you want the first, second, third, fourth, or last occurrence.
+        Use this for schedules like "first Monday of every month" (First + Monday) or "last Friday of every month" (Last + Friday). Only applies when FrequencyType is 'MonthlyRelative'.
+        Common values are 'First', 'Second', 'Third', 'Fourth', or 'Last'.
 
     .PARAMETER FrequencyRecurrenceFactor
-        The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
+        Controls how often the schedule repeats by specifying the interval between occurrences. For weekly schedules, this is the number of weeks between runs; for monthly schedules, it's the number of months.
+        Use this to create schedules like "every 2 weeks on Monday" (FrequencyRecurrenceFactor=2) or "every 3 months on the 15th" (FrequencyRecurrenceFactor=3). Only applies to Weekly, Monthly, and MonthlyRelative frequency types.
+        Must be at least 1, and is commonly used for less frequent maintenance tasks or reports.
 
     .PARAMETER StartDate
-        The date on which execution of a job can begin.
+        Sets the earliest date when the schedule becomes active and the job can start running. Must be in yyyyMMdd format (e.g., '20240315').
+        Use this to delay job execution until a future date or to replace an existing start date. The schedule will not run before this date even if other timing conditions are met.
 
     .PARAMETER EndDate
-        The date on which execution of a job can stop.
+        Sets the last date when the schedule will be active and can execute the job. Must be in yyyyMMdd format and cannot be before StartDate.
+        Use this to automatically disable schedules after a specific date, useful for temporary jobs or time-limited maintenance tasks. After this date, the schedule remains but will not execute.
 
     .PARAMETER StartTime
-        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
+        Sets the daily start time when the job can begin executing, using 24-hour format HHMMSS (e.g., '080000' for 8:00 AM, '143000' for 2:30 PM).
+        Use this to schedule jobs during specific maintenance windows or business hours. For jobs with subday frequency, this is when the recurring pattern starts each day.
 
     .PARAMETER EndTime
-        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-        Example: '010000' for 01:00:00 AM.
-        Example: '140000' for 02:00:00 PM.
+        Sets the daily end time when the job can no longer start executing, using 24-hour format HHMMSS (e.g., '180000' for 6:00 PM, '235959' for just before midnight).
+        Use this to prevent jobs from starting during peak business hours or to ensure long-running jobs complete before critical operations begin. For recurring jobs, this stops new executions but doesn't kill running jobs.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -95,8 +94,9 @@ function Set-DbaAgentSchedule {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
-        It will also remove the any present schedules with the same name for the specific job.
+        Bypasses some parameter validation errors by applying sensible defaults and removes any existing schedules with the same name before creating new ones.
+        Use this when you want to overwrite existing schedules or when working with edge cases where strict validation might prevent legitimate schedule modifications.
+        Be cautious as this can remove existing schedules without prompting.
 
     .NOTES
         Tags: Agent, Job, JobStep

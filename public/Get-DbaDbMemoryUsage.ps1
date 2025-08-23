@@ -1,10 +1,12 @@
 function Get-DbaDbMemoryUsage {
     <#
     .SYNOPSIS
-        Determine buffer pool usage by database.
+        Retrieves detailed buffer pool memory consumption by database and page type for performance analysis.
 
     .DESCRIPTION
-        This command can be utilized to determine which databases on a given instance are consuming buffer pool memory.
+        Analyzes SQL Server buffer pool memory usage by querying sys.dm_os_buffer_descriptors to show exactly how much memory each database consumes, broken down by page type (data pages, index pages, etc.). This helps DBAs identify memory-hungry databases that may be impacting instance performance and guides decisions about memory allocation, database optimization, or server capacity planning.
+
+        The results include both raw page counts and percentage of total buffer pool consumed, making it easy to spot databases that are taking disproportionate memory resources. Use this when troubleshooting memory pressure, planning database migrations, or optimizing buffer pool utilization across multiple databases.
 
         This command is based on query provided by Aaron Bertrand.
         Reference: https://www.mssqltips.com/sqlservertip/2393/determine-sql-server-memory-use-by-database-and-object/
@@ -20,13 +22,16 @@ function Get-DbaDbMemoryUsage {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Restricts analysis to specific databases by name. Accepts multiple database names or wildcard patterns.
+        Use this when investigating memory usage for particular databases rather than analyzing the entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude.
+        Excludes specific databases from the memory analysis by name. Accepts multiple database names.
+        Useful for filtering out known databases that aren't relevant to your current investigation or capacity planning.
 
     .PARAMETER IncludeSystemDb
-        Switch to have the output include system database memory consumption.
+        Includes system databases (master, model, msdb, tempdb, ResourceDb) in the memory consumption analysis.
+        Use this when troubleshooting overall instance memory pressure or when tempdb memory usage is a concern.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,12 +1,14 @@
 function Find-DbaDatabase {
     <#
     .SYNOPSIS
-        Find database/s on multiple servers that match criteria you input
+        Searches multiple SQL Server instances for databases matching name, owner, or Service Broker GUID patterns
 
     .DESCRIPTION
-        Allows you to search SQL Server instances for database that have either the same name, owner or service broker guid.
+        Performs database discovery and inventory across multiple SQL Server instances by searching for databases that match specific criteria. You can search by database name (using regex patterns), database owner, or Service Broker GUID to locate databases across environments.
 
-        There a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000.
+        This is particularly useful for tracking databases across development, test, and production environments, finding databases by ownership for security audits, or identifying databases with matching Service Broker GUIDs. The function returns detailed information including database size, object counts (tables, views, stored procedures), and creation details.
+
+        Service Broker GUIDs can become mismatched on restored databases when using ALTER DATABASE...NEW_BROKER or when Service Broker is disabled, which resets the GUID to all zeros. This function helps identify such scenarios during database migrations and troubleshooting.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,13 +21,16 @@ function Find-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Property
-        What you would like to search on. Either Database Name, Owner, or Service Broker GUID. Database name is the default.
+        Specifies which database property to search against: Name, Owner, or ServiceBrokerGuid. Defaults to Name for database name searches.
+        Use Owner when tracking down databases by their owner for security audits, or ServiceBrokerGuid when identifying databases with matching Service Broker configurations across environments.
 
     .PARAMETER Pattern
-        Value that is searched for. This is a regular expression match but you can just use a plain ol string like 'dbareports'
+        The search value to match against the specified property. Supports regular expressions for flexible pattern matching.
+        Use simple strings like 'Sales' or 'Test', or regex patterns like '^prod.*db$' to match databases starting with 'prod' and ending with 'db'.
 
     .PARAMETER Exact
-        Search for an exact match instead of a pattern
+        Forces an exact string match instead of pattern matching. Use this when you need to find databases with names that exactly match your search term.
+        Particularly useful when searching for database names that contain regex special characters or when you want precise matches without wildcards.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,10 +1,10 @@
 function Get-DbaAgentJob {
     <#
     .SYNOPSIS
-        Gets SQL Agent Job information for each instance(s) of SQL Server.
+        Retrieves SQL Server Agent job details and execution status from one or more instances.
 
     .DESCRIPTION
-        The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+        Retrieves detailed information about SQL Server Agent jobs including their configuration, status, schedules, and execution history. This function connects to SQL instances and queries the msdb database to return job properties like owner, category, last run outcome, and current execution status. Use this to monitor job health across your environment, audit job configurations before deployments, or identify jobs associated with specific databases for maintenance planning.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,28 +17,36 @@ function Get-DbaAgentJob {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Specifies specific SQL Agent job names to retrieve. Accepts an array of job names for targeting multiple jobs.
+        Use this when you need to check status or configuration of specific jobs instead of retrieving all jobs on the instance.
 
     .PARAMETER ExcludeJob
-        The job(s) to exclude - this list is auto-populated from the server.
+        Excludes specific SQL Agent job names from the results. Accepts an array of job names to skip.
+        Useful when you want most jobs except for specific ones like test jobs or jobs you're not responsible for managing.
 
     .PARAMETER ExcludeDisabledJobs
-        Switch will exclude disabled jobs from the output.
+        Excludes disabled SQL Agent jobs from the results, showing only enabled jobs.
+        Use this when focusing on active job monitoring or troubleshooting since disabled jobs won't execute.
 
     .PARAMETER Database
-        Return jobs with T-SQL job steps associated with specific databases
+        Filters jobs to only those containing T-SQL job steps that target specific databases.
+        Essential for database-specific maintenance planning or identifying which jobs will be affected by database operations like restores or migrations.
 
     .PARAMETER Category
-        Return jobs associated with specific category
+        Filters jobs by their assigned category such as 'Database Maintenance', 'Report Server', or custom categories.
+        Helpful for organizing job management tasks by functional area or finding jobs related to specific SQL Server features.
 
     .PARAMETER ExcludeCategory
-        Categories to exclude - jobs associated with these categories will not be returned.
+        Excludes jobs from specific categories from the results. Accepts an array of category names.
+        Use this to filter out jobs you don't manage, such as third-party application jobs or SSRS jobs when focusing on database maintenance.
 
     .PARAMETER IncludeExecution
-        Include Execution details if the job is currently running
+        Adds execution start date information for currently running jobs to the output.
+        Essential for troubleshooting long-running jobs or monitoring active job execution in real-time.
 
     .PARAMETER Type
-        The type of job: MultiServer or Local. Defaults to both MultiServer and Local.
+        Specifies whether to return Local jobs, MultiServer jobs, or both. Local jobs run only on the current instance while MultiServer jobs are managed centrally.
+        Use 'Local' when managing single-instance environments or 'MultiServer' when working with SQL Server multi-server administration setups.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

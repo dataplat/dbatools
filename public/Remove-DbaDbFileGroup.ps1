@@ -1,10 +1,10 @@
 function Remove-DbaDbFileGroup {
     <#
     .SYNOPSIS
-        Removes the specified filegroup(s).
+        Removes empty filegroups from SQL Server databases.
 
     .DESCRIPTION
-        Removes the specified filegroup(s). It is required that the filegroup is empty before it can be removed.
+        Removes one or more filegroups from SQL Server databases after validating they contain no data files. This command is useful for cleaning up unused filegroups after moving data to different filegroups or during database reorganization projects. The function performs safety checks to ensure filegroups are empty before removal and provides detailed error messages if removal fails due to dependencies or constraints.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,13 +18,16 @@ function Remove-DbaDbFileGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to target for filegroup removal. Required when using SqlInstance parameter.
+        Use this to limit the operation to specific databases instead of all databases on the instance.
 
     .PARAMETER FileGroup
-        The name(s) of the filegroup(s).
+        Specifies the name(s) of the filegroup(s) to remove from the target databases. Required when specifying databases directly.
+        Only empty filegroups (containing no data files) can be removed. Common scenarios include removing filegroups after data migration or database cleanup projects.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase and Get-DbaDbFileGroup.
+        Accepts database or filegroup objects from Get-DbaDatabase or Get-DbaDbFileGroup for pipeline operations.
+        Use this when you need to remove filegroups from a filtered set of databases or when working with specific filegroup objects.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

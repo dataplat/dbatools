@@ -1,15 +1,17 @@
 function Get-DbaDbState {
     <#
     .SYNOPSIS
-        Gets various options for databases, hereby called "states"
+        Retrieves database state information including read/write status, availability, and user access mode
 
     .DESCRIPTION
-        Gets some common "states" on databases:
-        - "RW" options : READ_ONLY or READ_WRITE
-        - "Status" options : ONLINE, OFFLINE, EMERGENCY, RESTORING
-        - "Access" options : SINGLE_USER, RESTRICTED_USER, MULTI_USER
+        Gets three key database state properties from sys.databases that DBAs frequently need to check:
+        - "RW" options: READ_ONLY or READ_WRITE (whether database accepts modifications)
+        - "Status" options: ONLINE, OFFLINE, EMERGENCY, RESTORING (database availability state)
+        - "Access" options: SINGLE_USER, RESTRICTED_USER, MULTI_USER (user connection restrictions)
 
-        Returns an object with SqlInstance, Database, RW, Status, Access
+        This function is useful for quickly auditing database configurations across instances, especially when troubleshooting connectivity issues or preparing for maintenance operations. System databases (master, model, msdb, tempdb, distribution) are excluded by default since their states rarely change.
+
+        Returns an object with SqlInstance, DatabaseName, RW, Status, and Access properties for each user database.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -22,10 +24,12 @@ function Get-DbaDbState {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which user databases to check for state information. Accepts multiple database names as an array.
+        Use this when you need to audit specific databases rather than checking all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies which user databases to exclude from the state check. Accepts multiple database names as an array.
+        Use this when you want to check most databases but skip specific ones, such as databases under maintenance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

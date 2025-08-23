@@ -1,10 +1,14 @@
 function Get-DbaPlanCache {
     <#
     .SYNOPSIS
-        Provides information about adhoc and prepared plan cache usage
+        Retrieves single-use plan cache usage to identify memory waste from adhoc and prepared statements
 
     .DESCRIPTION
-        Checks adhoc and prepared plan cache for each database, if over 100 MB you should consider using Remove-DbaQueryPlan to clear the plan caches or turning on "optimize for adhoc workloads" configuration if running 2008 or later.
+        Analyzes the plan cache to identify memory consumed by single-use adhoc and prepared statements that are unlikely to be reused. These plans accumulate over time and can consume significant memory without providing performance benefits.
+
+        When applications generate dynamic SQL without proper parameterization, each unique statement creates its own execution plan. These single-use plans waste memory and can cause plan cache pressure, leading to performance issues and increased compilation overhead.
+
+        The function queries sys.dm_exec_cached_plans to calculate the total size and count of single-use plans. If the results show over 100 MB of single-use plans, consider enabling "optimize for adhoc workloads" (SQL Server 2008+) or use Remove-DbaQueryPlan to clear the cache during maintenance windows.
 
         References: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
 

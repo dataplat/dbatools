@@ -62,22 +62,24 @@ function Invoke-DbaDbLogShipping {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Database to set up log shipping for.
+        Specifies which database(s) to configure for log shipping. The database must be in FULL recovery model.
+        Use this to target specific databases rather than setting up log shipping for all databases on the source instance.
 
     .PARAMETER SharedPath
-        The backup unc path to place the backup files. This is the root directory.
-        A directory with the name of the database will be created in this path.
+        Specifies the network share path where transaction log backup files will be stored. Must be in UNC format (\\server\\share).
+        The function automatically creates a subdirectory for each database under this path. Both source and destination instances need access to this location.
 
     .PARAMETER LocalPath
-        If the backup path is locally for the source server you can also set this value.
+        Sets the local backup path on the source server when different from the shared path.
+        Use this when the source server accesses the backup location via a local path but other servers need to access it via the network share.
 
     .PARAMETER BackupJob
-        Name of the backup that will be created in the SQL Server agent.
-        The parameter works as a prefix where the name of the database will be added to the backup job name.
-        The default is "LSBackup_[databasename]"
+        Specifies the prefix for the SQL Agent backup job name that performs transaction log backups.
+        The database name is automatically appended to create the full job name. Defaults to 'LSBackup_' if not specified.
 
     .PARAMETER BackupRetention
-        The backup retention period in minutes. Default is 4320 / 72 hours
+        Sets how long backup files are retained before deletion, specified in minutes.
+        Defaults to 4320 minutes (72 hours). Consider storage capacity and recovery requirements when setting this value.
 
     .PARAMETER BackupSchedule
         Name of the backup schedule created for the backup job.
@@ -85,12 +87,12 @@ function Invoke-DbaDbLogShipping {
         Default is "LSBackupSchedule_[databasename]"
 
     .PARAMETER BackupScheduleDisabled
-        Parameter to set the backup schedule to disabled upon creation.
-        By default the schedule is enabled.
+        Creates the backup job schedule in a disabled state, preventing automatic execution.
+        Use this when you want to manually control when log shipping backup jobs start running.
 
     .PARAMETER BackupScheduleFrequencyType
-        A value indicating when a job is to be executed.
-        Allowed values are "Daily", "AgentStart", "IdleComputer"
+        Controls how often the backup job runs. Accepts 'Daily' (most common), 'AgentStart', or 'IdleComputer'.
+        Daily scheduling allows for regular transaction log backups to maintain the log shipping chain.
 
     .PARAMETER BackupScheduleFrequencyInterval
         The number of type periods to occur between each execution of the backup job.
@@ -100,7 +102,8 @@ function Invoke-DbaDbLogShipping {
         Allowed values are "Time", "Seconds", "Minutes", "Hours"
 
     .PARAMETER BackupScheduleFrequencySubdayInterval
-        The number of sub-day type periods to occur between each execution of the backup job.
+        Specifies the interval between backup job executions within a day when using Minutes, Seconds, or Hours frequency.
+        For example, setting 15 with FrequencySubdayType of 'Minutes' creates backups every 15 minutes.
 
     .PARAMETER BackupScheduleFrequencyRelativeInterval
         A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
@@ -125,15 +128,16 @@ function Invoke-DbaDbLogShipping {
         Example: '140000' for 02:00:00 PM.
 
     .PARAMETER BackupThreshold
-        Is the length of time, in minutes, after the last backup before a threshold alert error is raised.
-        The default is 60.
+        Sets the alert threshold in minutes for detecting backup delays. An alert is raised if no backup occurs within this timeframe.
+        Defaults to 60 minutes. Use shorter intervals for critical databases requiring frequent log backups.
 
     .PARAMETER CompressBackup
-        Do the backups need to be compressed. By default the backups are not compressed.
+        Enables backup compression for transaction log backups to reduce file size and network transfer time.
+        Only available on SQL Server 2008 and later. Uses server default compression setting if not specified.
 
     .PARAMETER CopyDestinationFolder
-        The path to copy the transaction log backup files to. This is the root directory.
-        A directory with the name of the database will be created in this path.
+        Specifies the destination folder path where backup files are copied on the secondary server.
+        The function creates a database-specific subdirectory under this path. Defaults to the secondary server's backup directory if not provided.
 
     .PARAMETER CopyJob
         Name of the copy job that will be created in the SQL Server agent.
@@ -189,30 +193,32 @@ function Invoke-DbaDbLogShipping {
         Example: '140000' for 02:00:00 PM.
 
     .PARAMETER DisconnectUsers
-        If this parameter is set in combinations of standby the users will be disconnected during restore.
+        Forces disconnection of users from the secondary database during transaction log restore operations.
+        Use this with standby mode when you need to ensure restores complete successfully despite active connections.
 
     .PARAMETER FullBackupPath
-        Path to an existing full backup. Use this when an existing backup needs to used to initialize the database on the secondary instance.
+        Specifies the path to an existing full database backup to initialize the secondary database.
+        Use this when you have a recent backup available and want to avoid creating a new full backup for initialization.
 
     .PARAMETER GenerateFullBackup
-        If the database is not initialized on the secondary instance it can be done by creating a new full backup and
-        restore it for you.
+        Creates a new full backup of the source database and restores it to initialize the secondary database.
+        Use this when no existing backup is available or when you want to ensure the secondary starts with the most current data.
 
     .PARAMETER HistoryRetention
-        Is the length of time in minutes in which the history is retained.
-        The default value is 14420
+        Sets how long log shipping history information is kept in the monitor server, specified in minutes.
+        Defaults to 14420 minutes (approximately 10 days). Longer retention provides more historical data for troubleshooting.
 
     .PARAMETER NoRecovery
-        If this parameter is set the database will be in recovery mode. The database will not be readable.
-        This setting is default.
+        Keeps the secondary database in NORECOVERY mode, making it unavailable for read access but ready for continuous log restores.
+        This is the default mode and maintains the fastest restore performance for log shipping.
 
     .PARAMETER NoInitialization
-        If this parameter is set the secondary database will not be initialized.
-        The database needs to be on the secondary instance in recovery mode.
+        Skips secondary database initialization, assuming the database already exists in NORECOVERY mode on the destination.
+        Use this when you have manually restored the database or used a different method to initialize it.
 
     .PARAMETER PrimaryMonitorServer
-        Is the name of the monitor server for the primary server.
-        Defaults to monitor on the instance provided via SourceSqlInstance param.
+        Specifies the SQL Server instance that monitors the primary server's log shipping operations.
+        Defaults to the source instance itself. Use a dedicated monitor server in production environments for centralized monitoring.
 
     .PARAMETER PrimaryMonitorCredential
         Allows you to login to enter a secure credential. Only needs to be used when the PrimaryMonitorServerSecurityMode is 0 or "sqlserver"
@@ -226,22 +232,20 @@ function Invoke-DbaDbLogShipping {
         Enables the Threshold alert for the primary database
 
     .PARAMETER RestoreDataFolder
-        Folder to be used to restore the database data files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
-        If the parameter is not set the default data folder of the secondary instance will be used.
-        If the folder is set but doesn't exist we will try to create the folder.
+        Sets the destination folder for database data files during secondary database initialization.
+        Only used with GenerateFullBackup or UseExistingFullBackup. Defaults to the secondary instance's default data directory if not specified.
 
     .PARAMETER RestoreLogFolder
-        Folder to be used to restore the database log files. Only used when parameter GenerateFullBackup or UseExistingFullBackup are set.
-        If the parameter is not set the default transaction log folder of the secondary instance will be used.
-        If the folder is set but doesn't exist we will try to create the folder.
+        Sets the destination folder for database log files during secondary database initialization.
+        Only used with GenerateFullBackup or UseExistingFullBackup. Defaults to the secondary instance's default log directory if not specified.
 
     .PARAMETER RestoreDelay
-        In case a delay needs to be set for the restore.
-        The default is 0.
+        Introduces a delay in minutes before applying transaction log restores on the secondary database.
+        Defaults to 0 (no delay). Use this to create a time buffer for recovering from accidental data changes on the primary.
 
     .PARAMETER RestoreAlertThreshold
-        The amount of minutes after which an alert will be raised is no restore has taken place.
-        The default is 45 minutes.
+        Sets the alert threshold in minutes for detecting restore operation delays on the secondary database.
+        An alert is generated if no restore occurs within this timeframe. Defaults to 45 minutes.
 
     .PARAMETER RestoreJob
         Name of the restore job that will be created in the SQL Server agent.
@@ -297,14 +301,16 @@ function Invoke-DbaDbLogShipping {
         Example: '140000' for 02:00:00 PM.
 
     .PARAMETER RestoreThreshold
-        The number of minutes allowed to elapse between restore operations before an alert is generated.
-        The default value = 45
+        Specifies the maximum time in minutes allowed between restore operations before triggering an alert.
+        Defaults to 45 minutes. Set this based on your RTO requirements and backup frequency.
 
     .PARAMETER SecondaryDatabasePrefix
-        The secondary database can be renamed to include a prefix.
+        Adds a prefix to the secondary database name to distinguish it from the primary database.
+        Useful when the secondary database resides on the same instance as the primary or for naming conventions.
 
     .PARAMETER SecondaryDatabaseSuffix
-        The secondary database can be renamed to include a suffix.
+        Adds a suffix to the secondary database name to distinguish it from the primary database.
+        Common suffixes include '_LS' for log shipping or '_DR' for disaster recovery. Automatically applied when source and destination are the same instance.
 
     .PARAMETER SecondaryMonitorServer
         Is the name of the monitor server for the secondary server.
@@ -322,18 +328,20 @@ function Invoke-DbaDbLogShipping {
         Enables the Threshold alert for the secondary database
 
     .PARAMETER Standby
-        If this parameter is set the database will be set to standby mode making the database readable.
-        If not set the database will be in recovery mode.
+        Places the secondary database in STANDBY mode, allowing read-only access for reporting purposes.
+        Users are disconnected during log restores. Alternative to NORECOVERY mode when you need read access to secondary data.
 
     .PARAMETER StandbyDirectory
-        Directory to place the standby file(s) in
+        Specifies the directory where standby files (.tuf) are created when using STANDBY mode.
+        Required when using the Standby parameter. These files contain uncommitted transactions that are temporarily backed out during restore operations.
 
     .PARAMETER UseExistingFullBackup
-        If the database is not initialized on the secondary instance it can be done by selecting an existing full backup
-        and restore it for you.
+        Uses the most recent full backup from backup history to initialize the secondary database.
+        The function automatically locates and uses the latest full backup of the source database for initialization.
 
     .PARAMETER UseBackupFolder
-        This enables the user to specify a specific backup folder containing one or more backup files to initialize the database on the secondary instance.
+        Specifies a folder containing backup files (full and/or differential) to initialize the secondary database.
+        The function processes all backup files in the folder to bring the secondary database up to the latest available point in time.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -347,8 +355,8 @@ function Invoke-DbaDbLogShipping {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
-        It will also remove the any present schedules with the same name for the specific job.
+        Bypasses confirmations and applies default values for missing parameters like copy destination folder.
+        Also removes existing schedules with the same name and sets automatic database suffix when source and destination instances are identical.
 
     .NOTES
         Tags: LogShipping

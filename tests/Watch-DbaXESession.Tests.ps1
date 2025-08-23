@@ -34,6 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             Start-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         # This command is special and runs infinitely so don't actually try to run it

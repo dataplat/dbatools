@@ -1,10 +1,10 @@
 function Export-DbaXESession {
     <#
     .SYNOPSIS
-        Exports Extended Events creation script to a T-SQL file or console.
+        Generates T-SQL creation scripts for Extended Events sessions to files or console
 
     .DESCRIPTION
-        Exports script to create Extended Events Session to sql file  or console.
+        Generates T-SQL scripts that can recreate your Extended Events sessions, making it easy to migrate monitoring configurations between environments or create backups of your XE session definitions. This is particularly useful when moving sessions from development to production, creating deployment scripts, or documenting your current monitoring setup for compliance purposes. The function connects to your SQL Server instances, retrieves the session definitions, and outputs the complete CREATE EVENT SESSION statements with all events, actions, targets, and configuration settings intact.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
@@ -18,45 +18,34 @@ function Export-DbaXESession {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        A SQL Management Object - Microsoft.SqlServer.Management.XEvent.Session such as the one returned from Get-DbaSession
+        Accepts Extended Event session objects from Get-DbaXESession for pipeline processing. Use this when you already have session objects loaded and want to export specific sessions without re-querying the server.
 
     .PARAMETER Session
-        The Extended Event Session(s) to process. If unspecified, all Extended Event Sessions will be processed. This is ignored if An input object from Get-DbaSession is specified
+        Specifies specific Extended Event session names to export instead of all sessions. Accepts multiple session names and supports wildcards for pattern matching. Use this when you only need to export specific monitoring configurations rather than all sessions on the server.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the output directory for the generated T-SQL scripts. Creates automatically named files using the format ServerName-YYYYMMDDHHMMSS-xe.sql. Use this when you want files organized in a specific directory with consistent naming for multiple servers or scheduled exports.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
-        If FilePath is specified and more than one Server is in input then -Append parameter is required to avoid overwriting data
+        Sets the exact file path and name for the output script. Use this when you need precise control over the output file location and naming. When exporting from multiple servers to a single file, you must also use -Append to prevent data loss from overwriting.
 
     .PARAMETER Encoding
-        Specifies the file encoding. The default is UTF8.
-
-        Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+        Controls the character encoding for the output file. Defaults to UTF8 which handles international characters properly. Use ASCII only if you need compatibility with older systems that don't support Unicode. Use Unicode (UTF-16) if required by specific deployment tools or when working with non-Latin scripts.
 
     .PARAMETER Passthru
-        Output script to console
+        Displays the generated T-SQL script in the console instead of writing to a file. Use this for immediate review of the session definitions, copying to clipboard, or redirecting to other tools in your PowerShell pipeline.
 
     .PARAMETER BatchSeparator
-        Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally "GO"
+        Sets the T-SQL batch separator in the output script, typically "GO". Use an empty string to remove batch separators when the target environment doesn't support them, or customize for specific deployment tools that require different separators.
 
     .PARAMETER NoPrefix
-        If this switch is used, the scripts will not include prefix information containing creator and datetime.
+        Removes the header comments that identify when and who created the script. Use this when you need clean T-SQL scripts without metadata comments, or when scripts will be version controlled and you want to avoid unnecessary differences between exports.
 
     .PARAMETER NoClobber
-        Do not overwrite file. Only required if FilePath is specified
+        Prevents overwriting an existing file when using -FilePath. The function will stop with an error if the target file already exists. Use this as a safety check when you want to ensure you don't accidentally replace important script files.
 
     .PARAMETER Append
-        Append to file. Only required if FilePath is specified
+        Adds new content to an existing file instead of overwriting when using -FilePath. Required when exporting sessions from multiple servers to a single consolidated script file. Use this to build comprehensive deployment scripts that include sessions from multiple SQL Server instances.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

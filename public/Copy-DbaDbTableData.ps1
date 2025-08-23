@@ -1,12 +1,14 @@
 function Copy-DbaDbTableData {
     <#
     .SYNOPSIS
-        Copies data between SQL Server tables.
+        Streams table data between SQL Server instances using high-performance bulk copy operations.
 
     .DESCRIPTION
-        Copies data between SQL Server tables using SQL Bulk Copy.
-        The same can be achieved also using Invoke-DbaQuery and Write-DbaDbTableData but it will buffer the contents of that table in memory of the machine running the commands.
-        This function prevents that by streaming a copy of the data in the most speedy and least resource-intensive way.
+        Copies data between SQL Server tables using SQL Bulk Copy for maximum performance and minimal memory usage.
+        Unlike Invoke-DbaQuery and Write-DbaDbTableData which buffer entire table contents in memory, this function streams data directly from source to destination.
+        This approach prevents memory exhaustion when copying large tables and provides the fastest data transfer method available.
+        Supports copying between different servers, databases, and schemas while preserving data integrity options like identity values, constraints, and triggers.
+        Can automatically create destination tables based on source table structure, making it ideal for data migration, ETL processes, and table replication tasks.
 
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -19,86 +21,84 @@ function Copy-DbaDbTableData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        Target SQL Server instance where table data will be copied to. Accepts one or more SQL Server instances.
+        Specify this when copying data to a different server than the source, or when doing cross-instance data transfers.
 
     .PARAMETER DestinationSqlCredential
-        Login to the destination instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for authenticating to the destination instance. Required when your current Windows credentials don't have access to the target server.
+        Use this for cross-domain scenarios, SQL authentication, or when the destination requires different security context than the source.
 
     .PARAMETER Database
-        The database to copy the table from.
+        Source database containing the table or view to copy data from. Required when not using pipeline input.
+        Must exist on the source instance and your account must have read permissions on the specified objects.
 
     .PARAMETER DestinationDatabase
-        The database to copy the table to. If not specified, it is assumed to be the same of Database
+        Target database where copied data will be inserted. Defaults to the same database name as the source.
+        Use this when copying data to a different database name on the destination instance or for cross-database copies within the same server.
 
     .PARAMETER Table
-        Specify a table to use as a source. You can specify a 2 or 3 part name.
-        If the object has special characters please wrap them in square brackets.
-
-        Note: Cannot specify a view if a table value is provided
+        Source table name to copy data from. Accepts 2-part ([schema].[table]) or 3-part ([database].[schema].[table]) names.
+        Use square brackets for names with spaces or special characters. Cannot be used simultaneously with the View parameter.
 
     .PARAMETER View
-        Specify a view to use as a source. You can specify a 2 or 3 part name (see examples).
-        If the object has special characters please wrap them in square brackets.
-
-        Note: Cannot specify a table if a view value is provided
+        Source view name to copy data from. Accepts 2-part ([schema].[view]) or 3-part ([database].[schema].[view]) names.
+        Use square brackets for names with spaces or special characters. Cannot be used simultaneously with the Table parameter.
 
     .PARAMETER DestinationTable
-        The table you want to use as destination. If not specified, it is assumed to be the same of Table
+        Target table name where data will be inserted. Defaults to the same name as the source table.
+        Use this when copying to a table with a different name or schema, or when specifying 3-part names for cross-database operations.
 
     .PARAMETER Query
-        Define a query to use as a source. Note: 3 or 4 part object names may be used (see examples)
-        Ensure to select all required columns.
-        Calculated Columns or columns with default values may be excluded.
-
-        Note: The workflow in the command requires that a valid -Table or -View parameter value be specified.
+        Custom SQL SELECT query to use as the data source instead of copying the entire table or view. Supports 3 or 4-part object names.
+        Use this when you need to filter rows, join multiple tables, or transform data during the copy operation. Still requires specifying a Table or View parameter for metadata purposes.
 
     .PARAMETER AutoCreateTable
-        Creates the destination table if it does not already exist, based off of the "Export..." script of the source table.
+        Automatically creates the destination table if it doesn't exist, using the same structure as the source table.
+        Essential for initial data migrations or when copying to new environments where destination tables haven't been created yet.
 
     .PARAMETER BatchSize
-        The BatchSize for the import defaults to 50000.
+        Number of rows to process in each bulk copy batch. Defaults to 50000 rows.
+        Reduce this value for memory-constrained systems or increase it for faster transfers when copying large tables with sufficient memory.
 
     .PARAMETER NotifyAfter
-        Sets the option to show the notification after so many rows of import. The default is 5000 rows.
+        Number of rows to process before displaying progress updates. Defaults to 5000 rows.
+        Set to a lower value for frequent updates on small tables or higher for less verbose output on large table copies.
 
     .PARAMETER NoTableLock
-        If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
+        Disables the default table lock (TABLOCK) on the destination table during bulk copy operations.
+        Use this when you need to allow concurrent read access to the destination table, though it may reduce bulk copy performance.
 
     .PARAMETER CheckConstraints
-        If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.
-
-        Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
+        Enables constraint checking during bulk copy operations. By default, constraints are ignored for performance.
+        Use this when data integrity validation is more important than copy speed, particularly when copying from untrusted sources.
 
     .PARAMETER FireTriggers
-        If this switch is enabled, the SqlBulkCopy option to fire insert triggers will be enabled.
-
-        Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the Database."
+        Enables INSERT triggers to fire during bulk copy operations. By default, triggers are bypassed for performance.
+        Use this when you need audit trails, logging, or other trigger-based business logic to execute during the data copy.
 
     .PARAMETER KeepIdentity
-        If this switch is enabled, the SqlBulkCopy option to preserve source identity values will be enabled.
-
-        Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
+        Preserves the original identity column values from the source table. By default, the destination generates new identity values.
+        Essential when copying reference tables or when you need to maintain exact ID relationships across systems.
 
     .PARAMETER KeepNulls
-        If this switch is enabled, the SqlBulkCopy option to preserve NULL values will be enabled.
-
-        Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+        Preserves NULL values from the source data instead of replacing them with destination column defaults.
+        Use this when you need exact source data reproduction, especially when NULL has specific business meaning versus default values.
 
     .PARAMETER Truncate
-        If this switch is enabled, the destination table will be truncated after prompting for confirmation.
+        Removes all existing data from the destination table before copying new data. Prompts for confirmation unless -Force is used.
+        Essential for refresh scenarios where you want to replace all destination data with current source data.
 
     .PARAMETER BulkCopyTimeout
-        Value in seconds for the BulkCopy operations timeout. The default is 5000 seconds.
+        Maximum time in seconds to wait for bulk copy operations to complete. Defaults to 5000 seconds (83 minutes).
+        Increase this value when copying very large tables that may take longer than the default timeout period.
 
     .PARAMETER CommandTimeout
-        Gets or sets the wait time (in seconds) before terminating the attempt to execute the reader and bulk copy operation. The default is 0 seconds (no timeout).
+        Maximum time in seconds to wait for the source query execution before timing out. Defaults to 0 (no timeout).
+        Set this when querying large tables or complex views that may take longer to read than typical query timeouts allow.
 
     .PARAMETER InputObject
-        Enables piping of Table objects from Get-DbaDbTable
+        Accepts table or view objects from Get-DbaDbTable or Get-DbaDbView for pipeline operations.
+        Use this to copy multiple tables efficiently by piping them from discovery commands.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -112,9 +112,8 @@ function Copy-DbaDbTableData {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER UseDefaultFileGroup
-        By default, this command will use a filegroup of the same name between
-        source and target. Use this flag if you'd instead like to use the
-        default filegroup in the target database.
+        Creates new tables using the destination database's default filegroup instead of matching the source table's filegroup name.
+        Use this when the destination database has different filegroup configurations or when you want all copied tables in the PRIMARY filegroup.
 
     .NOTES
         Tags: Table, Data

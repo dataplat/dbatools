@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sql = "EXEC msdb.dbo.sp_dropmessage 54321;"
         $server.Query($sql)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets the custom errors" {

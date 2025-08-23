@@ -62,47 +62,47 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $newDb1, $newDb2, $newDb3 | Remove-DbaDatabase -Confirm:$false
+        $newDb1, $newDb2, $newDb3 | Remove-DbaDatabase
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing filegroups" {
         It "Removes filegroups" {
             $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name)
             $results.Count | Should -Be 3
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name -Confirm:$false -WarningAction SilentlyContinue -WarningVariable WarnVar
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "Filegroup FG3 does not exist in the database $db3name"
             $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name)
             $results | Should -BeNullOrEmpty
         }
 
         It "Tries to remove a non-existent filegroup" {
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -Confirm:$false -WarningVariable warnings -WarningAction SilentlyContinue
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -WarningVariable warnings -WarningAction SilentlyContinue
             $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.instance2)"
         }
 
         It "Tries to remove a filegroup that still has files" {
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -Confirm:$false -WarningVariable warnings -WarningAction SilentlyContinue
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -WarningVariable warnings -WarningAction SilentlyContinue
             $warnings | Should -BeLike "*Filegroup $fileGroup2Name is not empty. Before the filegroup can be dropped the files must be removed in $fileGroup2Name on $db1name on $($TestConfig.instance2)"
         }
 
         It "Removes a filegroup using a database from a pipeline and a filegroup from a pipeline" {
             $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db2name -FileGroup $fileGroup1Name)
             $results.Count | Should -Be 1
-            $newDb2 | Remove-DbaDbFileGroup -FileGroup $fileGroup1Name -Confirm:$false
+            $newDb2 | Remove-DbaDbFileGroup -FileGroup $fileGroup1Name
             $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db2name -FileGroup $fileGroup1Name)
             $results | Should -BeNullOrEmpty
 
             $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name)
             $results.Count | Should -Be 2
-            $results[0], $newDb1 | Remove-DbaDbFileGroup -FileGroup $fileGroup5Name -Confirm:$false
+            $results[0], $newDb1 | Remove-DbaDbFileGroup -FileGroup $fileGroup5Name
             $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name)
             $results | Should -BeNullOrEmpty
 
             $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup6Name
             $fileGroup6 | Should -Not -BeNullOrEmpty
-            $fileGroup6 | Remove-DbaDbFileGroup -Confirm:$false
+            $fileGroup6 | Remove-DbaDbFileGroup
             $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup6Name
             $fileGroup6 | Should -BeNullOrEmpty
         }

@@ -1,16 +1,14 @@
 function Remove-DbaReplArticle {
     <#
     .SYNOPSIS
-        Removes an article from a publication for the database on the target SQL instances.
+        Removes articles from SQL Server replication publications and their associated subscriptions.
 
     .DESCRIPTION
-        Removes an article from a publication for the database on the target SQL instances.
+        Removes articles from SQL Server replication publications, automatically handling subscription cleanup when subscribers exist. This function is essential when you need to stop replicating specific tables, views, or stored procedures without dismantling the entire publication.
 
-        Dropping an article from a publication does not remove the object from the publication database or the corresponding object from the subscription database.
-        Use DROP <Object> to remove these objects if necessary.
-        #TODO: add a param for this DropObjectOnSubscriber
+        When articles have active subscriptions, the function first removes them from all subscribers using sp_dropsubscription before removing the article from the publication itself. This prevents orphaned subscription entries that could cause synchronization issues.
 
-        Dropping an article invalidates the current snapshot; therefore a new snapshot must be created.
+        Important considerations: Dropping an article from a publication does not remove the actual object from the publication database or the corresponding object from the subscription database. Use DROP <Object> statements to remove these objects if necessary. Additionally, dropping an article invalidates the current snapshot, so a new snapshot must be created before the next synchronization cycle.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -23,22 +21,27 @@ function Remove-DbaReplArticle {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database on the publisher that contains the article to be removed from replication.
+        Specifies the publication database on the publisher that contains the article to remove from replication.
+        This is the database where the source objects (tables, views, stored procedures) exist and are published for replication.
 
     .PARAMETER Publication
-        The name of the replication publication.
+        Specifies the name of the replication publication from which to remove the article.
+        Use Get-DbaReplPublication to list available publications if you're unsure of the exact name.
 
     .PARAMETER Schema
-        Source schema of the replicated object to remove from the publication.
+        Specifies the schema name of the replicated object to remove from the publication. Defaults to 'dbo'.
+        Required when multiple schemas contain objects with the same name, ensuring you remove the correct article.
 
     .PARAMETER Name
-        The name of the article to remove.
+        Specifies the name of the article to remove from the publication.
+        This corresponds to the source object name (table, view, or stored procedure) that was added to replication.
 
     .PARAMETER DropObjectOnSubscriber
         If this switch is enabled, the object will be dropped from the subscriber database.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaReplArticle
+        Accepts replication article objects from Get-DbaReplArticle for pipeline operations.
+        Use this to remove multiple articles efficiently: Get-DbaReplArticle | Remove-DbaReplArticle.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

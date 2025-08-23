@@ -1,24 +1,26 @@
 function Get-DbatoolsError {
     <#
     .SYNOPSIS
-        Returns detailed dbatools-related error information
+        Retrieves detailed error information from failed dbatools commands for troubleshooting
 
     .DESCRIPTION
-        Returns detailed dbatools-related error information
-
-        By default, it only returns the most recent error ($error[0])
+        Retrieves detailed error information specifically from dbatools command failures, filtering the PowerShell error collection to show only dbatools-related errors. This provides comprehensive diagnostic details including exception messages, stack traces, and invocation information that help troubleshoot SQL Server connection issues, permission problems, or command syntax errors. By default, it returns only the most recent dbatools error, but can retrieve all historical dbatools errors for pattern analysis or support requests.
 
     .PARAMETER First
-        Works like `Select-Object -First 1`
+        Specifies the number of most recent dbatools errors to return. Defaults to 1 if no parameters are specified.
+        Use this when you need to examine the latest few errors after a batch operation or troubleshooting session.
 
     .PARAMETER Last
-        Works like `Select-Object -Last 1`
+        Specifies the number of oldest dbatools errors to return from the error history.
+        Use this when you need to see the earliest errors that occurred during a session or to trace the root cause of cascading failures.
 
     .PARAMETER Skip
-        Works like `Select-Object -Skip 1`
+        Specifies the number of most recent dbatools errors to skip before returning results.
+        Use this when you want to ignore the latest error and examine previous errors, or when paging through error history.
 
     .PARAMETER All
-        Returns detailed information for all dbatools-related errors
+        Returns detailed information for all dbatools-related errors in the current PowerShell session.
+        Use this when creating support tickets, analyzing error patterns, or performing comprehensive troubleshooting of multiple failed commands.
 
     .NOTES
         Tags: Module, Support

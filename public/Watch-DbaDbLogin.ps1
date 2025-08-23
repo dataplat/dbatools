@@ -1,31 +1,37 @@
 function Watch-DbaDbLogin {
     <#
     .SYNOPSIS
-        Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
+        Monitors active connections across SQL Server instances and logs client details to a central tracking table
 
     .DESCRIPTION
-        Watch-DbaDbLogin uses SQL Server DMV's to track logins into a SQL Server table. This is helpful when you need to migrate a SQL Server and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance.
+        Watch-DbaDbLogin queries sys.dm_exec_sessions and sys.dm_exec_requests DMVs to capture real-time connection activity across multiple SQL Server instances. It records login names, client hostnames, application names, database usage, and timestamps into a central monitoring table. This solves the common problem of inadequate connection documentation when planning server migrations or application updates.
 
-        Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
+        The function automatically filters out local server connections and system databases to focus on external client activity. Running this every 5-10 minutes over several weeks builds a comprehensive picture of who connects to what, from where, and when.
 
-        Logins from the same server are excluded from the watched set.
-
-        The inputs for this command are either a Central Management Server (registered server repository), a flat file of server names, or to use pipeline input via Connect-DbaInstance. See the examples for more information.
+        You can monitor servers from a Central Management Server, a text file list, or pipe in pre-connected instances. The captured data helps identify forgotten applications, validate connection strings during migrations, and document actual database usage patterns rather than relying on incomplete documentation.
 
     .PARAMETER SqlInstance
         The SQL Server that stores the Watch database.
 
     .PARAMETER SqlCms
-        Specifies a Central Management Server to query for a list of servers to watch.
+        Specifies a Central Management Server to retrieve registered SQL Server instances for monitoring.
+        Use this when you need to monitor multiple servers that are already organized in CMS groups.
+        The function will connect to each registered server found in the CMS to capture login activity.
 
     .PARAMETER ServersFromFile
-        Specifies a file containing a list of servers to watch. This file must contain one server name per line.
+        Specifies a text file containing SQL Server instance names to monitor, with one instance per line.
+        Use this when you have a custom list of servers not managed through CMS, or when scripting across different environments.
+        Supports both named instances (SERVER\INSTANCE) and default instances (SERVER).
 
     .PARAMETER Database
-        The name of the Watch database.
+        Specifies the target database where connection monitoring data will be stored.
+        This database should be dedicated to audit and monitoring functions, separate from production databases.
+        If not specified, the function will attempt to use a default database on the SqlInstance.
 
     .PARAMETER Table
-        The name of the Watch table. By default, this is DbaTools-WatchDbLogins.
+        Specifies the table name where login monitoring data will be inserted.
+        Defaults to "DbaTools-WatchDbLogins" if not specified, and will be auto-created if it doesn't exist.
+        Use a consistent naming convention across environments for easier reporting and analysis.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -35,7 +41,9 @@ function Watch-DbaDbLogin {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Allows pipeline input from Connect-DbaInstance.
+        Accepts pre-connected SQL Server instances from Connect-DbaInstance via pipeline.
+        Use this method when monitoring servers with different authentication requirements than the storage instance.
+        Allows for more granular credential control when connecting to multiple instances with varying security contexts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

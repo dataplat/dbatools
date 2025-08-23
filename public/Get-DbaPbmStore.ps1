@@ -1,10 +1,10 @@
 function Get-DbaPbmStore {
     <#
     .SYNOPSIS
-        Returns the policy based management store.
+        Retrieves the Policy-Based Management store object from SQL Server instances.
 
     .DESCRIPTION
-        Returns the policy based management store.
+        Retrieves the Policy-Based Management (PBM) store object, which serves as the foundation for managing SQL Server policies, conditions, and categories. This store object is required for accessing and manipulating Policy-Based Management components programmatically. The function connects to the DMF (Declarative Management Framework) policy store and returns it with additional instance identification properties for easier scripting and automation.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -15,15 +15,6 @@ function Get-DbaPbmStore {
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
-
-    .PARAMETER Policy
-        Filters results to only show specific policy
-
-    .PARAMETER Category
-        Filters results to only show policies in the category selected
-
-    .PARAMETER IncludeSystemObject
-        By default system objects are filtered out. Use this parameter to include them.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

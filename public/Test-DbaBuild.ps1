@@ -1,23 +1,30 @@
 function Test-DbaBuild {
     <#
     .SYNOPSIS
-        Returns SQL Server Build "compliance" level on a build.
+        Tests SQL Server build versions against patching compliance requirements
 
     .DESCRIPTION
-        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the "targeted compliance".
-        The build data used can be found here: https://dbatools.io/builds
+        Evaluates SQL Server instances or build versions against organizational patching policies to determine compliance status. Returns detailed build information including service pack level, cumulative update, reference KB, and end-of-support dates with a compliance flag. Helps DBAs audit patch levels across environments and identify instances that fall below minimum security or stability requirements. You can test against specific minimum builds, relative currency policies (like "no more than 1 SP behind"), or require the latest available build.
 
     .PARAMETER Build
-        Instead of connecting to a real instance, pass a string identifying the build to get the info back.
+        Specifies one or more SQL Server build version numbers to test for compliance instead of connecting to live instances.
+        Use this when you want to check specific build versions like "12.0.5540" without querying actual servers.
+        Accepts version strings in the format major.minor.build or major.minor.build.revision.
 
     .PARAMETER MinimumBuild
-        This is the build version to test "compliance" against. Anything below this is flagged as not compliant.
+        Sets the baseline build version that defines compliance requirements for your environment.
+        Any SQL Server instance running a build version below this threshold will be flagged as non-compliant.
+        Commonly used to enforce minimum security patch levels across your SQL Server estate.
 
     .PARAMETER MaxBehind
-        Instead of using a specific MinimumBuild here you can pass "how many service packs and cu back" is the targeted compliance level. You can use xxSP or xxCU or both, where xx is a number. See the Examples for more information.
+        Defines compliance based on how many service packs or cumulative updates behind the latest release is acceptable.
+        Use format like "1SP", "2CU", or "1SP 1CU" to specify maximum allowed gaps from current releases.
+        This approach automatically adjusts compliance targets as new patches are released, unlike fixed MinimumBuild values.
 
     .PARAMETER Latest
-        Shortcut for specifying the very most up-to-date build available.
+        Requires SQL Server instances to be running the most current build available for their version.
+        Use this for environments with strict currency requirements where any outdated build is considered non-compliant.
+        Automatically determines the latest available build for each SQL Server major version.
 
     .PARAMETER SqlInstance
         Target any number of instances, in order to return their compliance state.
@@ -30,10 +37,14 @@ function Test-DbaBuild {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Update
-        Looks online for the most up to date reference, replacing the local one.
+        Downloads the latest SQL Server build reference data from online sources before performing compliance checks.
+        Use this periodically to ensure your compliance testing includes recently released patches and cumulative updates.
+        The updated reference data is cached locally for subsequent function calls.
 
     .PARAMETER Quiet
-        Makes the function just return $true/$false. It's useful if you use Test-DbaBuild in your own scripts.
+        Returns only boolean compliance results ($true/$false) instead of detailed build information objects.
+        Designed for use in automated scripts where you only need to know pass/fail status.
+        Useful for integration with monitoring systems or compliance dashboards.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

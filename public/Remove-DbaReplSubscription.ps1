@@ -20,23 +20,27 @@ function Remove-DbaReplSubscription {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the publication is located.
+        Specifies the publisher database that contains the replication publication.
+        This is the source database where the published data originates from.
 
     .PARAMETER SubscriberSqlInstance
-        The subscriber SQL Server instance.
+        Specifies the SQL Server instance that receives replicated data from the publisher.
+        Use this to identify which subscriber instance should have its subscription removed.
 
     .PARAMETER SubscriberSqlCredential
         Login to the subscriber instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
+        Required when the subscriber instance uses different authentication than the publisher.
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER PublicationName
-        The name of the publication.
+        Specifies the exact name of the replication publication to remove the subscription from.
+        Must match an existing publication name on the publisher database.
 
     .PARAMETER SubscriptionDatabase
-        The database where the subscription is located.
+        Specifies the database on the subscriber instance that receives the replicated data.
+        This is the target database where the subscription will be removed from.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

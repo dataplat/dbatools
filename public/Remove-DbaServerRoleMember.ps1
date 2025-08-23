@@ -1,10 +1,10 @@
 function Remove-DbaServerRoleMember {
     <#
     .SYNOPSIS
-        Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.
+        Revokes server-level role membership from SQL Server logins and roles.
 
     .DESCRIPTION
-        Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.
+        Revokes membership from server-level roles by removing logins or nested roles from target roles like sysadmin, dbcreator, or custom server roles. This is essential for security management when you need to reduce user privileges or clean up role assignments after organizational changes. The function works with both fixed server roles (sysadmin, securityadmin, etc.) and user-defined server roles, supporting bulk operations across multiple instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,16 +17,20 @@ function Remove-DbaServerRoleMember {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
-        The server-level role(s) to process.
+        Specifies the server-level role(s) from which to remove members. Accepts both fixed server roles like sysadmin, securityadmin, dbcreator, and custom user-defined server roles.
+        Use this when you need to revoke specific permissions by removing logins or nested roles from elevated privilege roles.
 
     .PARAMETER Login
-        The login(s) to remove from server-level role(s) specified.
+        Specifies the login name(s) to remove from the target server role(s). Accepts SQL Server logins, Windows logins, and Active Directory accounts.
+        Use this when removing user access after role changes, departures, or security reviews where individual logins need privilege reduction.
 
     .PARAMETER Role
-        The role(s) to remove from server-level role(s) specified.
+        Specifies the server role name(s) to remove from the target server role(s), enabling nested role management.
+        Use this when restructuring role hierarchies or removing inherited permissions where one server role should no longer be a member of another.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaServerRole.
+        Accepts piped server role objects from Get-DbaServerRole, allowing you to chain role discovery with member removal operations.
+        Use this pattern when you need to filter roles first then remove specific members from the filtered results.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

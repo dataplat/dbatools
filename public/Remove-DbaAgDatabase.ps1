@@ -1,10 +1,10 @@
 function Remove-DbaAgDatabase {
     <#
     .SYNOPSIS
-        Removes a database from an availability group on a SQL Server instance.
+        Removes databases from availability groups on SQL Server instances.
 
     .DESCRIPTION
-        Removes a database from an availability group on a SQL Server instance.
+        Removes databases from availability groups, effectively stopping replication and high availability protection for those databases. This is commonly needed when decommissioning databases, reconfiguring availability group membership during maintenance windows, or troubleshooting replication issues. The function safely removes the database from all replicas in the availability group while preserving the actual database files on each replica. You can target specific databases and availability groups, or use pipeline input from Get-DbaAgDatabase to remove multiple databases efficiently.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -17,10 +17,12 @@ function Remove-DbaAgDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases to remove.
+        Specifies which databases to remove from their availability groups. Accepts multiple database names as an array.
+        Required when using SqlInstance parameter. Use this to target specific databases rather than removing all databases from an availability group.
 
     .PARAMETER AvailabilityGroup
-        Only remove databases from specific availability groups.
+        Limits the operation to databases within specific availability groups. When specified, only databases belonging to these availability groups will be removed.
+        Useful when you have databases with the same name across multiple availability groups and need to target specific groups.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -29,7 +31,8 @@ function Remove-DbaAgDatabase {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts availability group database objects from Get-DbaAgDatabase or database objects from Get-DbaDatabase through the pipeline.
+        This enables efficient batch operations and complex filtering scenarios using the pipeline.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

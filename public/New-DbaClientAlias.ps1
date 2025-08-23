@@ -1,25 +1,33 @@
 function New-DbaClientAlias {
     <#
     .SYNOPSIS
-        Creates/updates a sql alias for the specified server - mimics cliconfg.exe
+        Creates SQL Server client aliases in the Windows registry for simplified connection management
 
     .DESCRIPTION
-        Creates/updates a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+        Creates or updates SQL Server client aliases by modifying registry keys in HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client\ConnectTo, replacing the need for manual cliconfg.exe configuration. This allows applications and connections to use simple alias names instead of complex server names, instance names, or custom port numbers. Particularly useful when standardizing connections across multiple workstations, managing port changes, or simplifying named instance connections without modifying application connection strings.
 
     .PARAMETER ComputerName
-        The target computer where the alias will be created
+        Specifies the target computer(s) where the client alias will be created in the registry.
+        Use this when configuring aliases on remote workstations or when managing multiple computers centrally.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Allows you to login to remote computers using alternative credentials
 
     .PARAMETER ServerName
-        The target SQL Server
+        Specifies the actual SQL Server instance that the alias will point to.
+        Can include instance names (server\instance) or custom ports (server,1433) for non-standard configurations.
+        This is the real connection target that applications will reach when using the alias name.
 
     .PARAMETER Alias
-        The alias to be created
+        Defines the short, friendly name that applications will use to connect to SQL Server.
+        Choose a simple name that's easier to remember and type than the full server\instance name.
+        This alias name will appear in connection strings and SQL management tools.
 
     .PARAMETER Protocol
-        The protocol for the connection, either TCPIP or NetBIOS. Defaults to TCPIP.
+        Sets the network protocol for the connection, either TCPIP or NamedPipes.
+        TCPIP is recommended for most scenarios and works across network boundaries.
+        NamedPipes may be preferred for local connections or specific security requirements. Defaults to TCPIP.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

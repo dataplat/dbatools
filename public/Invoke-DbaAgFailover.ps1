@@ -1,10 +1,14 @@
 function Invoke-DbaAgFailover {
     <#
     .SYNOPSIS
-        Failover an availability group.
+        Performs manual failover of an availability group to make the target instance the new primary replica.
 
     .DESCRIPTION
-        Failover an availability group.
+        Performs manual failover of an availability group to make the specified SQL Server instance the new primary replica. The function connects to the target instance (which must be a secondary replica) and promotes it to primary, while the current primary becomes secondary.
+
+        By default, performs a safe failover that waits for all committed transactions to be synchronized to the target replica, preventing data loss. When the -Force parameter is used, performs a forced failover that may result in data loss if transactions haven't been synchronized to the target replica.
+
+        This is commonly used during planned maintenance windows, disaster recovery scenarios, or when rebalancing availability group workloads across replicas. The target instance must already be configured as a secondary replica in the availability group.
 
     .PARAMETER SqlInstance
         The SQL Server instance. Server version must be SQL Server version 2012 or higher.
@@ -17,10 +21,14 @@ function Invoke-DbaAgFailover {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER AvailabilityGroup
-        Only failover specific availability groups.
+        Specifies the name(s) of the availability groups to failover on the target instance. Accepts multiple availability group names.
+        Use this when you need to failover specific availability groups rather than all groups on the instance.
+        Required when using SqlInstance parameter to identify which availability groups should be failed over.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAvailabilityGroup
+        Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline operations.
+        Use this approach when you want to filter or select specific availability groups before failover.
+        Allows for more complex scenarios like failing over multiple groups across different instances in a single operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -29,7 +37,9 @@ function Invoke-DbaAgFailover {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        Force Failover and allow data loss
+        Performs a forced failover that allows potential data loss by not waiting for transaction synchronization.
+        Use this during disaster recovery scenarios when the primary replica is unavailable and you need immediate failover.
+        Without this switch, the function performs a safe failover that waits for all committed transactions to synchronize, preventing data loss.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

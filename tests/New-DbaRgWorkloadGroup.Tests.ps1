@@ -37,10 +37,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up test variables that will be used across all tests
-        $global:testWorkloadGroup = "dbatoolssci_wklgroupTest"
-        $global:testWorkloadGroup2 = "dbatoolssci_wklgroupTest2"
-        $global:testResourcePool = "dbatoolssci_poolTest"
-        $global:testResourcePoolType = "Internal"
+        $testWorkloadGroup = "dbatoolssci_wklgroupTest"
+        $testWorkloadGroup2 = "dbatoolssci_wklgroupTest2"
+        $testResourcePool = "dbatoolssci_poolTest"
+        $testResourcePoolType = "Internal"
 
         # Enable Resource Governor for all tests
         $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
@@ -54,37 +54,37 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up any remaining test workload groups and resource pools
-        $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $global:testWorkloadGroup, $global:testWorkloadGroup2 -ErrorAction SilentlyContinue
-        $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $global:testResourcePool -Type $global:testResourcePoolType -ErrorAction SilentlyContinue
+        $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $testWorkloadGroup, $testWorkloadGroup2 -ErrorAction SilentlyContinue
+        $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $testResourcePool -Type $testResourcePoolType -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When creating workload groups" {
         AfterEach {
             # Clean up after each test
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $global:testWorkloadGroup, $global:testWorkloadGroup2 -ErrorAction SilentlyContinue
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $testWorkloadGroup, $testWorkloadGroup2 -ErrorAction SilentlyContinue
         }
 
         It "Creates a workload group in default resource pool" {
             $splatNewWorkloadGroup = @{
                 SqlInstance   = $TestConfig.instance2
-                WorkloadGroup = $global:testWorkloadGroup
+                WorkloadGroup = $testWorkloadGroup
                 Force         = $true
             }
-            $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $global:testWorkloadGroup
+            $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $testWorkloadGroup
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $global:testWorkloadGroup
+            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $testWorkloadGroup
 
             $newWorkloadGroup | Should -Not -Be $null
             $result.Count | Should -BeLessThan $result2.Count
-            $result2.Name | Should -Contain $global:testWorkloadGroup
+            $result2.Name | Should -Contain $testWorkloadGroup
         }
 
         It "Does nothing without -Force if workload group exists" {
             $splatNewWorkloadGroup = @{
                 SqlInstance   = $TestConfig.instance2
-                WorkloadGroup = $global:testWorkloadGroup
+                WorkloadGroup = $testWorkloadGroup
                 WarningAction = "SilentlyContinue"
             }
             $result1 = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
@@ -97,15 +97,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Creates a workload group in a user defined resource pool" {
             $splatNewResourcePool = @{
                 SqlInstance  = $TestConfig.instance2
-                ResourcePool = $global:testResourcePool
-                Type         = $global:testResourcePoolType
+                ResourcePool = $testResourcePool
+                Type         = $testResourcePoolType
                 Force        = $true
             }
             $splatNewWorkloadGroup = @{
                 SqlInstance                         = $TestConfig.instance2
-                WorkloadGroup                       = $global:testWorkloadGroup
-                ResourcePool                        = $global:testResourcePool
-                ResourcePoolType                    = $global:testResourcePoolType
+                WorkloadGroup                       = $testWorkloadGroup
+                ResourcePool                        = $testResourcePool
+                ResourcePoolType                    = $testResourcePoolType
                 Importance                          = "HIGH"
                 RequestMaximumMemoryGrantPercentage = 26
                 RequestMaximumCpuTimeInSeconds      = 5
@@ -117,10 +117,10 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
 
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $global:testWorkloadGroup -ResourcePool $global:testResourcePool
-            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $global:testResourcePool -Type $global:testResourcePoolType
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $testWorkloadGroup -ResourcePool $testResourcePool
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $testResourcePool -Type $testResourcePoolType
 
-            $newWorkloadGroup.Parent.Name | Should -Be $global:testResourcePool
+            $newWorkloadGroup.Parent.Name | Should -Be $testResourcePool
             $newWorkloadGroup.Parent.GetType().Name | Should -Be "ResourcePool"
             $newWorkloadGroup.Importance | Should -Be $splatNewWorkloadGroup.Importance
             $newWorkloadGroup.RequestMaximumMemoryGrantPercentage | Should -Be $splatNewWorkloadGroup.RequestMaximumMemoryGrantPercentage
@@ -135,9 +135,9 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance2
                 Force       = $true
             }
-            $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $global:testWorkloadGroup, $global:testWorkloadGroup2
-            $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup -WorkloadGroup $global:testWorkloadGroup, $global:testWorkloadGroup2
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $global:testWorkloadGroup, $global:testWorkloadGroup2
+            $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $testWorkloadGroup, $testWorkloadGroup2
+            $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup -WorkloadGroup $testWorkloadGroup, $testWorkloadGroup2
+            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $testWorkloadGroup, $testWorkloadGroup2
 
             $newWorkloadGroups | Should -Not -Be $null
             $result2.Count | Should -Be 2
@@ -147,7 +147,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Skips Resource Governor reconfiguration" {
             $splatNewWorkloadGroup = @{
                 SqlInstance     = $TestConfig.instance2
-                WorkloadGroup   = $global:testWorkloadGroup
+                WorkloadGroup   = $testWorkloadGroup
                 SkipReconfigure = $true
                 Force           = $true
                 WarningAction   = "SilentlyContinue"

@@ -46,20 +46,20 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing registered server groups" {
         It "supports dropping via the pipeline" {
-            $results = $newGroup | Remove-DbaRegServerGroup -Confirm:$false
+            $results = $newGroup | Remove-DbaRegServerGroup
             $results.Name | Should -Be $groupName1
             $results.Status | Should -Be "Dropped"
         }
 
         It "supports dropping manually" {
-            $results = Remove-DbaRegServerGroup -Confirm:$false -SqlInstance $TestConfig.instance1 -Name $groupName2
+            $results = Remove-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $groupName2
             $results.Name | Should -Be $groupName2
             $results.Status | Should -Be "Dropped"
         }

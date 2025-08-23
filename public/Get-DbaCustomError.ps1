@@ -1,10 +1,10 @@
 function Get-DbaCustomError {
     <#
     .SYNOPSIS
-        Gets SQL Custom Error Message information for each instance(s) of SQL Server.
+        Retrieves user-defined error messages from SQL Server instances for auditing and documentation.
 
     .DESCRIPTION
-        The Get-DbaCustomError command gets SQL Custom Error Message information for each instance(s) of SQL Server.
+        Retrieves all custom error messages that have been added to SQL Server using sp_addmessage or through SQL Server Management Studio. These user-defined error messages are stored in the sys.messages system catalog and are commonly used by applications for business logic validation and custom error handling. This function helps DBAs inventory custom errors across multiple instances during migrations, troubleshooting, or compliance audits.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function

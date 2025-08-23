@@ -1,10 +1,10 @@
 function Get-DbaDbFileGrowth {
     <#
     .SYNOPSIS
-        Gets database growth and growth type
+        Retrieves database file auto-growth settings and maximum size limits
 
     .DESCRIPTION
-        Gets database growth and growth type
+        Retrieves auto-growth configuration for data and log files across SQL Server databases, including growth type (percentage or fixed MB), growth increment values, and maximum size limits. This function helps DBAs quickly identify databases with problematic growth settings like percentage-based growth on large files, unlimited growth configurations, or insufficient growth increments that could cause performance issues during auto-growth events.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,10 +17,12 @@ function Get-DbaDbFileGrowth {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The name of the target databases
+        Specifies which databases to analyze for file growth settings. Accepts wildcards for pattern matching.
+        Use this when you need to check growth configuration for specific databases instead of all databases on the instance.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase via pipeline input.
+        Use this when you want to analyze file growth settings for databases already retrieved by another dbatools command.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

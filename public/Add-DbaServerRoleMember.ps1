@@ -1,10 +1,10 @@
 function Add-DbaServerRoleMember {
     <#
     .SYNOPSIS
-        Adds a login to a server-level role(s) for each instance(s) of SQL Server.
+        Adds logins or server roles to server-level roles for SQL Server security administration.
 
     .DESCRIPTION
-        Adds a login to a server-level role(s) for each instance(s) of SQL Server.
+        Grants server-level role membership to SQL logins or nests server roles within other server roles. Use this command when setting up security permissions, implementing role-based access control, or managing server-level privileges across multiple SQL Server instances. Supports both built-in roles (sysadmin, dbcreator, etc.) and custom server roles, so you don't have to manually assign permissions through SSMS or T-SQL scripts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,16 +17,20 @@ function Add-DbaServerRoleMember {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
-        The server-level role(s) to process.
+        Specifies the server-level role(s) that will receive new members. Accepts both built-in roles (sysadmin, dbcreator, securityadmin, etc.) and custom server roles.
+        Use this when you need to grant server-level permissions by adding logins or nesting roles within these target roles.
 
     .PARAMETER Login
-        The login(s) to add to server-level role(s) specified.
+        Specifies the SQL Server login(s) to be granted membership in the target server roles. Accepts Windows accounts, SQL logins, and Active Directory accounts.
+        Use this when you need to give specific users or service accounts server-level permissions rather than nesting entire roles.
 
     .PARAMETER Role
-        The role(s) to add to server-level role(s) specified.
+        Specifies existing server-level role(s) to be nested as members within the target ServerRole(s). Creates a role hierarchy where one role inherits permissions from another.
+        Use this when implementing role-based security designs where you want to group permissions through role membership rather than individual login assignments.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaServerRole or New-DbaServerRole
+        Accepts server role objects piped from Get-DbaServerRole or New-DbaServerRole commands. Allows you to chain commands together for workflow automation.
+        Use this when you want to operate on roles retrieved by other dbatools commands rather than specifying role names as strings.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -27,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $login1 = "dbatoolsci_login1_$(Get-Random)"
@@ -46,21 +46,20 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Owner sa
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatRemoveLogin = @{
             SqlInstance = $TestConfig.instance2
             Login       = $login1, $login2
-            Confirm     = $false
         }
         $null = Remove-DbaLogin @splatRemoveLogin
         $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Confirm:$false
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
@@ -69,7 +68,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance2
                 ServerRole  = $fixedServerRoles[0]
                 Login       = $login1
-                Confirm     = $false
             }
             Add-DbaServerRoleMember @splatAddRole
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
@@ -84,7 +82,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance2
                 ServerRole  = $serverRoles
                 Login       = $login1
-                Confirm     = $false
             }
             Add-DbaServerRoleMember @splatAddRoles
 
@@ -98,7 +95,6 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance2
                 ServerRole  = $customServerRole
                 Role        = $fixedServerRoles[-1]
-                Confirm     = $false
             }
             Add-DbaServerRoleMember @splatAddCustomRole
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[-1]

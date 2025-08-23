@@ -1,10 +1,10 @@
 function Get-DbaCredential {
     <#
     .SYNOPSIS
-        Gets SQL Credential information for each instance(s) of SQL Server.
+        Retrieves SQL Server Credentials configured for external authentication and resource access.
 
     .DESCRIPTION
-        The Get-DbaCredential command gets SQL Credential information for each instance(s) of SQL Server.
+        Retrieves SQL Server Credentials that are stored securely on the server and used by SQL Server services to authenticate to external resources like file shares, web services, or other SQL Server instances. These credentials are essential for operations like backups to network locations, accessing external data sources, or running SQL Agent jobs that interact with external systems. The function returns detailed information about each credential including its name, associated identity, and provider configuration.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,18 +18,22 @@ function Get-DbaCredential {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        Only include specific names
-        Note: if spaces exist in the credential name, you will have to type "" or '' around it.
+        Filters results to only include SQL Server credentials with specific names. Accepts multiple credential names and supports wildcards.
+        Use this when you need to check configuration for specific credentials like backup service accounts or external data source connections.
+        Enclose names with spaces in quotes, such as "My Backup Credential".
 
     .PARAMETER ExcludeCredential
-        Excluded credential names
+        Excludes SQL Server credentials with specified names from the results. Accepts multiple credential names to filter out.
+        Useful when auditing all credentials except system or known service credentials that don't require review.
 
     .PARAMETER Identity
-        Only include specific identities
-        Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
+        Filters results to only include credentials that use specific Windows identities or SQL logins. Accepts multiple identity names.
+        Use this to find all credentials associated with a particular service account or user across different credential objects.
+        Enclose identities with spaces in quotes, such as "DOMAIN\Service Account".
 
     .PARAMETER ExcludeIdentity
-        Excluded identities
+        Excludes credentials that use specified Windows identities or SQL logins from the results. Accepts multiple identity names.
+        Helpful when auditing credentials but excluding known system accounts or service identities from the output.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

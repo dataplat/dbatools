@@ -1,50 +1,52 @@
 function Test-DbaMigrationConstraint {
     <#
     .SYNOPSIS
-        Show if you can migrate the database(s) between the servers.
+        Validates database migration compatibility between SQL Server instances by checking for edition-specific features.
 
     .DESCRIPTION
-        When you want to migrate from a higher edition to a lower one there are some features that can't be used.
-        This function will validate if you have any of this features in use and will report to you.
-        The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
+        Prevents migration failures by identifying databases that use features incompatible with the destination SQL Server edition.
+        This function queries sys.dm_db_persisted_sku_features to detect enterprise-level features that would cause migration issues when moving from higher editions (Enterprise/Developer) to lower ones (Standard/Express).
 
-        This function only validate SQL Server 2008 versions or higher.
-        The editions supported by this function are:
-        - Enterprise
-        - Developer
-        - Evaluation
-        - Standard
-        - Express
+        Common migration scenarios this helps validate include moving databases from development environments running Developer edition to production Standard edition, or consolidating databases from Enterprise to Standard during license optimization.
+        The function also checks FILESTREAM configuration compatibility and validates that Change Data Capture (CDC) isn't used when migrating to Express edition, since Express lacks SQL Server Agent.
 
-        Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
+        Validation works on SQL Server 2008 and higher versions using the sys.dm_db_persisted_sku_features DMV.
+        Supported editions include Enterprise, Developer, Evaluation, Standard, and Express.
+
+        SQL Server 2016 SP1 introduced feature parity across editions for many capabilities, so this function accounts for those changes when validating post-SP1 destinations.
+        For more details see: https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 
         The -Database parameter is auto-populated for command-line completion.
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Specifies the source SQL Server instance containing databases to validate for migration compatibility.
+        Must be SQL Server 2008 or higher since the function uses sys.dm_db_persisted_sku_features DMV to detect edition-specific features.
+        Requires sysadmin access to query system views and database metadata.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for authenticating to the source SQL Server instance when Windows Authentication is not available.
+        Use this when running the function with a different account than your current Windows login, or when connecting to SQL instances that require SQL Authentication.
+        Create with Get-Credential or pass stored credential objects.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Specifies the destination SQL Server instance where databases will be migrated to.
+        The function validates that database features are compatible with this target server's edition (Enterprise, Developer, Standard, or Express).
+        Must be SQL Server 2008 or higher and requires sysadmin access to check server edition and configuration settings like FileStream access level.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Credentials for authenticating to the destination SQL Server instance when Windows Authentication is not available.
+        Required when the destination server uses different authentication than your current context, or when testing migrations across domains.
+        Use Get-Credential to create or pass existing credential objects.
 
     .PARAMETER Database
-        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to validate for migration compatibility.
+        When omitted, checks all user databases on the source instance (excludes system databases master, msdb, tempdb).
+        Use this to focus validation on specific databases when planning selective migrations or troubleshooting particular database features.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. Options for this list are auto-populated from the server.
+        Specifies databases to skip during the migration validation process.
+        Useful when you know certain databases won't be migrated or when focusing validation efforts on a subset of databases.
+        Commonly used to exclude test databases, archived databases, or databases with known compatibility issues.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,21 +1,27 @@
 function Get-DbaWsfcResourceGroup {
     <#
     .SYNOPSIS
-        Gets information about one or more resource groups in a failover cluster.
+        Retrieves Windows Server Failover Cluster resource group status and ownership information
 
     .DESCRIPTION
-        Gets information about one or more resource groups in a failover cluster.
+        Retrieves detailed information about Windows Server Failover Cluster resource groups, including their current state, persistent state, and which node currently owns them. This function helps DBAs monitor and troubleshoot SQL Server Failover Cluster Instances and Availability Groups by providing visibility into the underlying cluster resource groups that control SQL Server services and resources.
+
+        Use this command when you need to verify resource group health during maintenance windows, troubleshoot failover issues, or confirm which node is currently hosting specific SQL Server resources. The function translates numeric state codes into readable status values (Online, Offline, Failed, Unknown) so you can quickly identify problematic resource groups.
 
         All Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.
 
     .PARAMETER ComputerName
-        The target cluster name. Can be a node or the cluster name itself.
+        Specifies the target Windows Server Failover Cluster to query, either as a cluster name or any node name within the cluster.
+        Use this when connecting to specific failover clusters hosting SQL Server FCI or Availability Group resources.
+        Defaults to the local computer if not specified.
 
     .PARAMETER Credential
         Allows you to login to the cluster using alternative credentials.
 
     .PARAMETER Name
-        Allows you to login to the cluster using alternative credentials.
+        Filters results to only include resource groups with the specified names. Supports multiple values.
+        Use this when you need to check specific SQL Server resource groups like 'SQL Server (MSSQLSERVER)' or named Availability Groups.
+        Omit this parameter to retrieve all resource groups in the cluster.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

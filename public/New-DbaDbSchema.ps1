@@ -1,10 +1,10 @@
 function New-DbaDbSchema {
     <#
     .SYNOPSIS
-        Creates a new database schema and assigns an owner.
+        Creates new database schemas with specified ownership for organizing objects and implementing security boundaries.
 
     .DESCRIPTION
-        Creates a new database schema and assigns an owner.
+        Creates new database schemas within SQL Server databases, allowing you to organize database objects into logical groups and implement security boundaries. Schemas provide a way to separate tables, views, procedures, and other objects by ownership or function, which is essential for multi-tenant applications, security models, and organized database development. You can create multiple schemas across multiple databases in a single operation and specify the database user who will own each schema.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,16 +18,20 @@ function New-DbaDbSchema {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies the target database(s) where the new schemas will be created. Accepts multiple database names.
+        Required when using SqlInstance parameter, and supports wildcards for pattern matching across database names.
 
     .PARAMETER Schema
-        The name(s) of the new schema(s)
+        Specifies the name(s) of the schema(s) to create within the target databases. Accepts multiple schema names for batch creation.
+        Schema names must be valid SQL Server identifiers and will fail if they already exist in the target database.
 
     .PARAMETER SchemaOwner
-        The name of the database user that will own the schema(s).
+        Specifies the database user who will own the created schema(s). Must be an existing user in the target database.
+        When omitted, the schema owner defaults to 'dbo'. Use this to implement security boundaries or assign schemas to application users.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase via pipeline input, eliminating the need to specify SqlInstance and Database parameters.
+        Use this approach when you need to work with a pre-filtered set of databases or want to chain multiple dbatools commands together.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

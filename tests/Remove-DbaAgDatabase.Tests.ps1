@@ -42,31 +42,30 @@ Describe $CommandName -Tag IntegrationTests {
             ClusterType   = "None"
             FailoverMode  = "Manual"
             Database      = $dbname
-            Confirm       = $false
             Certificate   = "dbatoolsci_AGCert"
             UseLastBackup = $true
         }
         $ag = New-DbaAvailabilityGroup @splatAvailabilityGroup
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname
         Remove-Item -Path "$($TestConfig.Temp)\$dbname.bak", "$($TestConfig.Temp)\$dbname.trn" -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "removes ag db" {
         It "returns removed results" {
-            $results = Remove-DbaAgDatabase -SqlInstance $TestConfig.instance3 -Database $dbname -Confirm:$false
+            $results = Remove-DbaAgDatabase -SqlInstance $TestConfig.instance3 -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Database | Should -Be $dbname
             $results.Status | Should -Be "Removed"

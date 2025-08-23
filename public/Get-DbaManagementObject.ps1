@@ -1,21 +1,21 @@
 function Get-DbaManagementObject {
     <#
     .SYNOPSIS
-        Gets SQL Management Object versions installed on the machine.
+        Discovers installed SQL Server Management Object (SMO) assemblies and their load status
 
     .DESCRIPTION
-        The Get-DbaManagementObject returns an object with the Version and the
-        Add-Type Load Template for each version on the server.
+        Scans the system for SQL Server Management Object (SMO) assemblies, SqlClient libraries, and SNI modules to help troubleshoot version conflicts and connectivity issues. This function checks both the Global Assembly Cache (GAC) and currently loaded assemblies in the PowerShell session, returning version information, load status, file paths, and ready-to-use Add-Type commands. Particularly useful when diagnosing why different SQL Server tools behave differently or when you need to load specific SMO versions in PowerShell scripts.
 
     .PARAMETER ComputerName
-        The name of the Windows Server(s) you would like to check.
+        Specifies the Windows server(s) where you want to scan for SMO assemblies and SQL Client libraries.
+        Use this when troubleshooting SMO version conflicts across multiple servers or when checking which SQL Server tools are installed on remote machines.
 
     .PARAMETER Credential
         This command uses Windows credentials. This parameter allows you to connect remotely as a different user.
 
     .PARAMETER VersionNumber
-        This is the specific version number you are looking for. The function will look
-        for that version only.
+        Filters results to show only assemblies matching the specified major version number (e.g., 13 for SQL Server 2016, 14 for 2017, 15 for 2019).
+        Use this when you need to verify if a specific SQL Server version's SMO libraries are installed, particularly when troubleshooting version compatibility issues between different SQL Server tools.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

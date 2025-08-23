@@ -1,18 +1,20 @@
 function Get-DbaMemoryUsage {
     <#
     .SYNOPSIS
-        Get amount of memory in use by *all* SQL Server components and instances
+        Collects memory usage statistics from all SQL Server services using Windows performance counters
 
     .DESCRIPTION
-        Retrieves the amount of memory per performance counter. Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
-        SSAS and SSIS are included.
+        Collects detailed memory usage from SQL Server Database Engine, Analysis Services (SSAS), and Integration Services (SSIS) using Windows performance counters. This helps you troubleshoot memory pressure issues and understand how memory is allocated across different SQL Server components on the same server.
+
+        Gathers counters from Memory Manager (server memory, connection memory, lock memory), Plan Cache (procedure plans, ad-hoc plans), Buffer Manager (total pages, free pages, stolen pages), and service-specific memory usage. Each result shows the counter name, instance, page count where applicable, and memory in both KB and MB.
 
         SSRS does not have memory counters, only memory shrinks and memory pressure state.
 
         This function requires local admin role on the targeted computers.
 
     .PARAMETER ComputerName
-        The Windows Server that you are connecting to. Note that this will return all instances, but Out-GridView makes it easy to filter to specific instances.
+        Specifies the Windows server to collect memory usage statistics from. Returns data for all SQL Server instances on the server.
+        Use this when you need to monitor memory usage across multiple instances on a single server or compare memory allocation between different servers.
 
     .PARAMETER Credential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -22,39 +24,29 @@ function Get-DbaMemoryUsage {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER MemoryCounterRegex
-        Regular expression that is applied to the paths of the counters returned for the counter list set '*sql*:Memory Manager*' to display relevant Memory Manager counters.
-
-        Default: '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-
-        The default works for English language systems and has to be adapted for other languages.
+        Filters which SQL Server Memory Manager counters to collect using a regular expression pattern. Controls memory allocation tracking for server memory, connections, locks, cache, optimizer, and workspace usage.
+        Customize this when you need specific memory counters or when working with non-English SQL Server installations where counter names are localized.
+        Default pattern captures the most critical memory allocation counters that DBAs monitor for memory pressure troubleshooting.
 
     .PARAMETER PlanCounterRegex
-        Regular expression that is applied to the paths of the counters returned for the counter list set '*sql*:Plan Cache*' to display relevant Plan Cache counters.
-
-        Default: '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
-
-        The default works for English language systems and has to be adapted for other languages.
+        Filters which SQL Server Plan Cache counters to collect using a regular expression pattern. Tracks memory usage for cached execution plans including stored procedures, ad-hoc queries, and prepared statements.
+        Use this to focus on specific plan cache types when investigating plan cache bloat or when working with non-English SQL Server installations.
+        Default pattern captures all major plan cache memory consumers that affect query performance and memory allocation.
 
     .PARAMETER BufferCounterRegex
-        Regular expression that is applied to the paths of the counters returned for the counter list set '*Buffer Manager*' to display relevant Buffer Manager counters.
-
-        Default: '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
-
-        The default works for English language systems and has to be adapted for other languages.
+        Filters which SQL Server Buffer Manager counters to collect using a regular expression pattern. Monitors buffer pool memory usage including data pages, free pages, stolen pages, and buffer pool extensions.
+        Modify this when troubleshooting specific buffer pool issues or working with non-English SQL Server installations where counter names are translated.
+        Default pattern includes essential buffer pool metrics that indicate memory pressure and buffer pool health.
 
     .PARAMETER SSASCounterRegex
-        Regular expression that is applied to the paths of the counters returned for the counter list set 'MSAS*:Memory' to display relevant SSAS counters.
-
-        Default: '(\\memory )'
-
-        The default works for English language systems and has to be adapted for other languages.
+        Filters which SQL Server Analysis Services (SSAS) memory counters to collect using a regular expression pattern. Tracks memory consumption for SSAS instances and processing operations.
+        Customize this when monitoring specific SSAS memory usage patterns or working with non-English installations where SSAS counter names are localized.
+        Use when troubleshooting SSAS memory issues or when SSAS and Database Engine compete for server memory resources.
 
     .PARAMETER SSISCounterRegex
-        Regular expression that is applied to the paths of the counters returned for the counter list set '*SSIS*' to display relevant SSIS counters.
-
-        Default: '(memory)'
-
-        The default works for English language systems and has to be adapted for other languages.
+        Filters which SQL Server Integration Services (SSIS) memory counters to collect using a regular expression pattern. Monitors memory usage for SSIS package execution and service operations.
+        Adjust this when investigating SSIS memory consumption during ETL operations or working with non-English installations where SSIS counter names are translated.
+        Useful for identifying memory bottlenecks in SSIS packages or when multiple SQL Server services compete for available memory.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

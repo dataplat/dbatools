@@ -1,10 +1,10 @@
 function Get-DbaDbRole {
     <#
     .SYNOPSIS
-        Get the database roles for each instance(s) of SQL Server.
+        Retrieves database roles from SQL Server instances for security auditing and permission analysis.
 
     .DESCRIPTION
-        The Get-DbaDbRole returns connected SMO object for database roles for each instance(s) of SQL Server.
+        Retrieves all database roles (both fixed and custom) from one or more SQL Server databases, returning detailed role information for security audits and compliance reporting. This function examines the roles collection in each accessible database, allowing you to identify custom roles, exclude built-in fixed roles, or focus on specific roles by name. Essential for documenting role structures across environments, troubleshooting permission issues, and ensuring consistent security configurations during migrations or standardization projects.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,22 +17,34 @@ function Get-DbaDbRole {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to examine for role information. Accepts wildcards for pattern matching.
+        Use this when you need to audit roles in specific databases rather than scanning all databases on the instance.
+        Particularly useful for focusing on user databases while skipping system databases, or for compliance audits of specific applications.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Excludes specified databases from role enumeration. Accepts wildcards for pattern matching.
+        Use this to skip databases you don't need to audit, such as development databases during production security reviews.
+        Commonly used to exclude system databases or databases with known standard configurations.
 
     .PARAMETER Role
-        The role(s) to process. If unspecified, all roles will be processed.
+        Specifies which database roles to retrieve by name. Accepts wildcards for pattern matching.
+        Use this when investigating specific roles across databases, such as checking for custom application roles or finding all instances of a particular role name.
+        Particularly useful for security audits focusing on elevated permissions like 'db_owner' or custom admin roles.
 
     .PARAMETER ExcludeRole
-        The role(s) to exclude.
+        Excludes specified roles from the results by name. Accepts wildcards for pattern matching.
+        Use this to filter out roles you're not interested in, such as excluding standard fixed roles when focusing on custom application roles.
+        Helpful for reducing noise in reports when you want to see only non-standard or suspicious role configurations.
 
     .PARAMETER ExcludeFixedRole
-        Excludes all fixed roles.
+        Excludes all built-in fixed database roles from the results, showing only custom user-defined roles.
+        Use this when auditing custom role implementations or when you need to focus on application-specific security configurations.
+        Fixed roles like db_owner, db_datareader, and db_datawriter are filtered out, along with the public role.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase through the pipeline for role enumeration.
+        Use this when you need to chain database selection criteria with role analysis, such as filtering databases by size, compatibility level, or other properties first.
+        Allows for more complex filtering scenarios than the basic Database parameter provides.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

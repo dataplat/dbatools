@@ -1,10 +1,10 @@
 function Add-DbaDbRoleMember {
     <#
     .SYNOPSIS
-        Adds a Database User to a database role for each instance(s) of SQL Server.
+        Adds database users or roles as members to database roles across SQL Server instances
 
     .DESCRIPTION
-        The Add-DbaDbRoleMember adds users in a database to a database role or roles for each instance(s) of SQL Server.
+        Manages database security by adding users or roles as members to database roles, automating what would otherwise require manual T-SQL commands or SQL Server Management Studio clicks. This function handles membership validation to ensure the user or role exists in the database before attempting to add them, and checks existing membership to prevent duplicate assignments. You can add multiple users to multiple roles across multiple databases and instances in a single operation, making it ideal for bulk security configuration or automated permission management workflows.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,16 +17,20 @@ function Add-DbaDbRoleMember {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to process for role membership changes. Accepts multiple database names and supports wildcards.
+        When omitted, the function processes all databases on the target instances, making it useful for organization-wide security standardization.
 
     .PARAMETER Role
-        The role(s) to process.
+        Specifies the database role(s) to add members to. Accepts multiple role names including built-in roles like db_datareader, db_datawriter, db_owner, or custom database roles.
+        Use this when you need to grant specific database permissions by adding users or roles to appropriate database roles.
 
     .PARAMETER Member
-        The member(s) (user or role) to add to the Roles specified.
+        Specifies the database user(s) or role(s) to add as members to the target roles. Can be individual users, Windows groups, or other database roles.
+        The function validates that each member exists in the database before attempting to add them, preventing errors from typos or missing objects.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+        Accepts piped input from Get-DbaDbRole, Get-DbaDatabase, or SQL Server instances for streamlined workflows.
+        Use this when chaining commands together, such as filtering specific roles first then adding members to those filtered results.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

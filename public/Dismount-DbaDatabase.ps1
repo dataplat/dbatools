@@ -1,10 +1,10 @@
 function Dismount-DbaDatabase {
     <#
     .SYNOPSIS
-        Detach a SQL Server Database.
+        Detaches one or more databases from a SQL Server instance with built-in safety checks and validation.
 
     .DESCRIPTION
-        This command detaches one or more SQL Server databases. If necessary, -Force can be used to break mirrors and remove databases from availability groups prior to detaching.
+        Safely detaches databases from SQL Server instances while performing comprehensive validation checks before detachment. This function automatically validates that databases aren't system databases, replicated, or have active snapshots, preventing common detachment failures. When databases are part of mirroring or Availability Groups, the -Force parameter allows automatic cleanup by breaking mirrors and removing databases from AGs before detaching. Active user connections can also be forcibly terminated when needed. This command is essential for database migration scenarios, decommissioning databases, or moving databases between instances without using backup/restore methods.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,19 +17,20 @@ function Dismount-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to detach.
-
-    .PARAMETER FileStructure
-        A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
+        Specifies the name(s) of databases to detach from the SQL Server instance. Accepts wildcards for pattern matching.
+        Use this when you need to detach specific databases by name rather than passing database objects through the pipeline.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase), to be detached.
+        Accepts database objects from the pipeline for detachment operations. Typically used with Get-DbaDatabase output.
+        This allows you to filter and select databases using Get-DbaDatabase before detaching them, providing more control over the selection process.
 
     .PARAMETER UpdateStatistics
-        If this switch is enabled, statistics for the database will be updated prior to detaching it.
+        Updates database statistics before detaching the database to ensure optimal performance if the database is later reattached.
+        Use this when you plan to reattach the database later and want to maintain current statistics for query optimization.
 
     .PARAMETER Force
-        If this switch is enabled and the database is part of a mirror, the mirror will be broken. If the database is part of an Availability Group, it will be removed from the AG.
+        Bypasses safety checks and handles blocking conditions that prevent database detachment. Automatically breaks database mirroring, removes databases from Availability Groups, and terminates active user connections.
+        Use this when you need to detach databases that are part of high availability configurations or have active connections that cannot be closed gracefully.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

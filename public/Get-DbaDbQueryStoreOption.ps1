@@ -1,12 +1,10 @@
 function Get-DbaDbQueryStoreOption {
     <#
     .SYNOPSIS
-        Get the Query Store configuration for Query Store enabled databases.
+        Retrieves Query Store configuration settings from databases across SQL Server instances.
 
     .DESCRIPTION
-        Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.
-
-        Due to SMO limitations, the model database is not checked.
+        Returns the complete Query Store configuration for user databases, including capture modes, storage limits, cleanup policies, and retention settings. This function helps DBAs audit Query Store configurations across their environment, identify databases with suboptimal settings, and ensure consistent Query Store policies. Query Store settings directly impact query performance monitoring, plan regression detection, and storage consumption, so regular configuration reviews are essential for maintaining optimal performance insights.
 
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.QueryStoreOptions
@@ -22,10 +20,12 @@ function Get-DbaDbQueryStoreOption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which user databases to retrieve Query Store configuration from. Accepts database names, wildcards, or arrays for multiple databases.
+        Use this when you need to audit Query Store settings for specific databases rather than scanning your entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from Query Store configuration retrieval. System databases (master, tempdb, model) are automatically excluded.
+        Useful for skipping databases that you know don't need Query Store monitoring or have restricted access permissions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

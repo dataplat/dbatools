@@ -118,6 +118,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
         Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Test Starting Trace" {

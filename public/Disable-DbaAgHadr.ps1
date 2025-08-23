@@ -1,11 +1,12 @@
 function Disable-DbaAgHadr {
     <#
     .SYNOPSIS
-        Disables the Hadr service setting on the specified SQL Server.
+        Disables High Availability Disaster Recovery (HADR) capability on SQL Server instances.
 
     .DESCRIPTION
-        In order to build an AG a cluster has to be built and then the Hadr enabled for the SQL Server
-        service. This function disables that feature for the SQL Server service.
+        Disables the HADR service setting at the SQL Server instance level, effectively removing the instance's ability to participate in Availability Groups. This is commonly needed when decommissioning servers from AGs, troubleshooting AG setup issues, or converting instances back to standalone operation after removing them from Availability Groups.
+
+        The function modifies the HADR setting through WMI but requires a SQL Server service restart to take effect. Use the -Force parameter to automatically restart both SQL Server and SQL Agent services immediately, or manually restart later to apply the change.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -20,7 +21,7 @@ function Disable-DbaAgHadr {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        Will restart SQL Server and SQL Server Agent service to apply the change.
+        Automatically restarts both SQL Server and SQL Server Agent services to immediately apply the HADR setting change. Without this switch, the HADR disable setting is changed but requires manual service restart to take effect.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

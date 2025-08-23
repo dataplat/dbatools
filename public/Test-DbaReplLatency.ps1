@@ -1,11 +1,14 @@
 function Test-DbaReplLatency {
     <#
     .SYNOPSIS
-        Displays replication latency for all transactional publications for a server or database.
+        Measures transactional replication latency using tracer tokens across publisher, distributor, and subscriber instances.
 
     .DESCRIPTION
-        Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber
-        for all transactional publications for a server, database, or publication.
+        Creates tracer tokens in transactional replication publications and measures the time it takes for those tokens to travel from the publisher to the distributor, and from the distributor to each subscriber. This provides real-time latency measurements that help DBAs identify replication performance bottlenecks and validate that data changes are flowing through the replication topology within acceptable timeframes.
+
+        The function connects to both the publisher and distributor instances to inject tracer tokens and retrieve timing information. You can monitor latency for all publications on an instance, specific databases, or individual publications. The latency measurements include publisher-to-distributor time, distributor-to-subscriber time, and total end-to-end latency for each subscriber.
+
+        This is particularly useful when troubleshooting slow replication, validating replication performance after configuration changes, or establishing baseline performance metrics for replication monitoring.
 
         All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
         Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
@@ -14,7 +17,8 @@ function Test-DbaReplLatency {
         The target SQL Server instance or instances.
 
     .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
+        Specifies which databases containing transactional replication publications to test for latency. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific publication databases instead of testing all replicated databases on the instance.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -24,17 +28,20 @@ function Test-DbaReplLatency {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER PublicationName
-        The publication(s) to process. If unspecified, all publications will be processed.
+        Specifies which transactional replication publications to test for latency. Accepts wildcards for pattern matching.
+        Use this when you need to test specific publications instead of all transactional publications in the specified databases.
 
     .PARAMETER TimeToLive
-        How long, in seconds, to wait for a tracer token to complete its journey from the publisher to the subscriber.
-        If unspecified, all tracer tokens will take as long as they need to process results.
+        Sets the maximum time in seconds to wait for tracer tokens to travel from publisher through distributor to all subscribers.
+        Use this to prevent the function from hanging indefinitely when replication is severely delayed or broken. If the timeout is reached, the function reports incomplete latency data and continues to the next publication.
 
     .PARAMETER RetainToken
-        Retains the tracer tokens created for each publication. If unspecified, all tracer tokens created will be discarded.
+        Keeps the tracer tokens in the distribution database after latency testing is complete instead of automatically cleaning them up.
+        Use this when you need to preserve tracer token history for further analysis or troubleshooting. Without this switch, tokens are automatically removed to prevent distribution database bloat.
 
     .PARAMETER DisplayTokenHistory
-        Displays all tracer tokens in each publication. If unspecified, the current tracer token created will be only token displayed.
+        Shows latency measurements for all existing tracer tokens in each publication instead of just the newly created token.
+        Use this to see historical latency patterns and trends for ongoing replication monitoring. Without this switch, only the current test token results are displayed.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

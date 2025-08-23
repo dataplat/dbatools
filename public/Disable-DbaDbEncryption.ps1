@@ -1,14 +1,14 @@
 function Disable-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Disables encryption on a database
+        Disables Transparent Data Encryption (TDE) on SQL Server databases and removes encryption keys
 
     .DESCRIPTION
-        Disables encryption on a database
+        Disables Transparent Data Encryption (TDE) on specified databases by setting EncryptionEnabled to false and monitoring the decryption process until completion. Since TDE is not fully disabled until the Database Encryption Key (DEK) is removed, this command drops the encryption key by default to complete the decryption process.
 
-        Encryption is not fully disabled until the Encryption Key is dropped
+        This is commonly used when decommissioning databases that no longer require encryption, migrating databases to environments without TDE requirements, or troubleshooting TDE-related performance issues. The function monitors the decryption state and waits for the database to reach an "Unencrypted" state before proceeding with key removal.
 
-        Consequently, this command will drop the key by default
+        Use the -NoEncryptionKeyDrop parameter if you want to disable TDE but retain the encryption key for future use, though the database will remain in a partially encrypted state until the key is manually dropped.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -21,15 +21,16 @@ function Disable-DbaDbEncryption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database that where encryption will be disabled
+        Specifies which databases to disable TDE encryption on. Accepts multiple database names as an array.
+        Required when using SqlInstance parameter to target specific databases instead of processing all encrypted databases on the instance.
 
     .PARAMETER NoEncryptionKeyDrop
-        Encryption is not fully disabled until the Encryption Key is dropped. Consequently, Disable-DbaDbEncryption will drop the key by default.
-
-        Use this to keep the encryption key. Note that if you keep your key, your database will not be fully decrypted.
+        Prevents the Database Encryption Key (DEK) from being automatically dropped after disabling TDE. By default, the function removes the DEK to complete the decryption process.
+        Use this switch when you need to retain the encryption key for future re-encryption or compliance requirements, though the database will remain in a partially encrypted state until the key is manually removed.
 
     .PARAMETER InputObject
-        Enables pipeline input from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase for pipeline processing. This allows you to filter databases using Get-DbaDatabase criteria before disabling TDE.
+        Useful when you need to disable encryption on databases that match specific conditions like owner, compatibility level, or encryption status.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

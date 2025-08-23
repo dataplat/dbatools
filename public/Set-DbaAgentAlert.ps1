@@ -1,10 +1,10 @@
 function Set-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Set-DbaAgentAlert updates the status of a SQL Agent Alert.
+        Modifies properties of existing SQL Agent alerts including enabled status and name.
 
     .DESCRIPTION
-        Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.
+        Modifies existing SQL Agent alerts on one or more SQL Server instances, allowing you to enable, disable, or rename alerts without using SQL Server Management Studio. This function is particularly useful for bulk operations across multiple servers, standardizing alert configurations between environments, or temporarily disabling noisy alerts during maintenance windows. The function works with the JobServer.Alerts collection and uses the SMO Alter() method to commit changes to existing alerts. You can specify alerts by name or pipe in alert objects from other dbatools commands like Get-DbaAgentAlert.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -17,22 +17,28 @@ function Set-DbaAgentAlert {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
-        The name of the alert.
+        Specifies the name(s) of the SQL Agent alerts to modify. Accepts multiple alert names for bulk operations.
+        Use this when you need to update specific alerts by name across one or more instances.
 
     .PARAMETER NewName
-        The new name for the alert.
+        Sets a new name for the alert being modified. Only works when modifying a single alert.
+        Use this when standardizing alert names across environments or fixing naming conventions.
 
     .PARAMETER Enabled
-        Enabled the alert.
+        Enables the specified SQL Agent alert(s) by setting IsEnabled to true.
+        Use this to reactivate alerts after maintenance or to ensure critical alerts are active across all instances.
 
     .PARAMETER Disabled
-        Disabled the alert.
+        Disables the specified SQL Agent alert(s) by setting IsEnabled to false.
+        Use this during maintenance windows or to silence noisy alerts that are firing incorrectly.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Bypasses confirmation prompts by setting ConfirmPreference to 'none'.
+        Use this in automated scripts where you want to suppress interactive prompts.
 
     .PARAMETER InputObject
-        Enables piping alert objects
+        Accepts SQL Agent alert objects from the pipeline, typically from Get-DbaAgentAlert.
+        Use this when you want to filter alerts first, then modify the results in a pipeline operation.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

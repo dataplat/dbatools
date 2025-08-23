@@ -1,47 +1,48 @@
 function Copy-DbaPolicyManagement {
     <#
     .SYNOPSIS
-        Migrates SQL Policy Based Management Objects, including both policies and conditions.
+        Copies Policy-Based Management policies, conditions, and categories between SQL Server instances
 
     .DESCRIPTION
-        By default, all policies and conditions are copied. If an object already exist on the destination, it will be skipped unless -Force is used.
+        Transfers your entire Policy-Based Management framework from one SQL Server instance to another, including custom policies, conditions, and categories. This streamlines environment standardization and disaster recovery scenarios where you need identical compliance policies across multiple servers.
 
-        The -Policy and -Condition parameters are auto-populated for command-line completion and can be used to copy only specific objects.
+        By default, all non-system policies and conditions are copied. Existing objects on the destination are skipped unless -Force is used to overwrite them. You can selectively copy specific policies or conditions using the include/exclude parameters, which provide auto-completion from the source server.
 
     .PARAMETER Source
-        Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        Specifies the source SQL Server instance containing the Policy-Based Management objects to copy. Must be SQL Server 2008 or higher with sysadmin access.
+        Use this to identify which server contains your existing policies, conditions, and categories that need to be replicated to other instances.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the source SQL Server instance. Use when the current Windows credentials don't have access to the source.
+        Commonly needed when copying from production servers that require SQL Authentication or different Active Directory accounts.
 
     .PARAMETER Destination
-        Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        Specifies one or more destination SQL Server instances where Policy-Based Management objects will be created. Must be SQL Server 2008 or higher with sysadmin access.
+        Use this when standardizing compliance policies across multiple environments like development, staging, and production servers.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Alternative credentials for connecting to the destination SQL Server instances. Use when the current Windows credentials don't have access to the destination servers.
+        Particularly useful when copying to servers in different domains or when using SQL Authentication on destination instances.
 
     .PARAMETER Policy
-        The policy(ies) to process - this list is auto-populated from the server. If unspecified, all policies will be processed.
+        Specifies which policies to copy by name, with auto-completion from the source server. Only the specified policies and their dependent conditions are copied.
+        Use this when you need to copy specific compliance policies rather than the entire Policy-Based Management framework, such as copying only security-related policies.
 
     .PARAMETER ExcludePolicy
-        The policy(ies) to exclude - this list is auto-populated from the server
+        Specifies which policies to skip during the copy operation, with auto-completion from the source server. All other policies will be copied.
+        Use this to exclude environment-specific policies or policies that shouldn't be replicated, such as development-only or deprecated policies.
 
     .PARAMETER Condition
-        The condition(s) to process - this list is auto-populated from the server. If unspecified, all conditions will be processed.
+        Specifies which conditions to copy by name, with auto-completion from the source server. Only the specified conditions are copied without their associated policies.
+        Use this when you need to copy reusable conditions that can be referenced by multiple policies, such as server configuration or database naming conditions.
 
     .PARAMETER ExcludeCondition
-        The condition(s) to exclude - this list is auto-populated from the server
+        Specifies which conditions to skip during the copy operation, with auto-completion from the source server. All other conditions will be copied.
+        Use this to exclude conditions that are environment-specific or no longer needed, while copying the rest of your condition library.
 
     .PARAMETER Force
-        If policies exists on destination server, it will be dropped and recreated.
+        Overwrites existing policies and conditions on the destination server by dropping and recreating them. Without this switch, existing objects are skipped.
+        Use this when updating existing Policy-Based Management objects or when you need to ensure destination objects match the source exactly.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

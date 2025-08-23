@@ -1,10 +1,10 @@
 function Get-DbaAgHadr {
     <#
     .SYNOPSIS
-        Gets the Hadr service setting on the specified SQL Server instance.
+        Retrieves the High Availability Disaster Recovery (HADR) service status for SQL Server instances.
 
     .DESCRIPTION
-        Gets the Hadr setting, from the service level, and returns true or false for the specified SQL Server instance.
+        Checks whether Availability Groups are enabled at the service level on SQL Server instances. This is a prerequisite for creating and managing Availability Groups, as HADR must be enabled before you can configure any AG functionality. Returns the computer name, instance name, and the current HADR enabled status (true/false) for each specified instance, making it useful for environment audits and troubleshooting AG setup issues.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

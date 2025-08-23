@@ -1,19 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaAgentSchedule",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Owner', 'Force', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "Schedule",
+                "Disabled",
+                "FrequencyType",
+                "FrequencyInterval",
+                "FrequencySubdayType",
+                "FrequencySubdayInterval",
+                "FrequencyRelativeInterval",
+                "FrequencyRecurrenceFactor",
+                "StartDate",
+                "EndDate",
+                "StartTime",
+                "EndTime",
+                "Owner",
+                "Force",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
         $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $TestConfig.instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser dbo
@@ -22,7 +44,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule'
     }
 
     Context "Should create schedules based on frequency type" {
@@ -51,7 +73,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
             Remove-Variable -Name results
         }
 
@@ -110,7 +132,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
             Remove-Variable -Name results
         }
 
@@ -170,7 +192,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
             Remove-Variable -Name results
         }
 
@@ -228,7 +250,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+                Remove-DbaAgentSchedule -Force
             Remove-Variable -Name results
         }
 

@@ -1,14 +1,14 @@
 function Invoke-DbaXEReplay {
     <#
     .SYNOPSIS
-        This command replays events from Read-DbaXEFile on one or more target servers
+        Replays SQL queries captured in Extended Event files against target SQL Server instances
 
     .DESCRIPTION
-        This command replays events from Read-DbaXEFile. It is simplistic in its approach.
+        This command replays SQL workloads captured in Extended Event files against one or more target SQL Server instances for performance testing and load simulation. It extracts SQL statements from Extended Event data piped from Read-DbaXEFile and executes them sequentially against your specified targets.
 
-        - Writes all queries to a temp sql file
-        - Executes temp file using sqlcmd so that batches are executed properly
-        - Deletes temp file
+        The function works by collecting SQL queries from the Extended Event stream, writing them to a temporary SQL file with proper batch separators, then executing the file using sqlcmd to ensure batches run correctly. This approach allows you to replay production workloads in test environments to validate performance changes, test capacity, or troubleshoot query behavior under realistic conditions.
+
+        By default, it processes sql_batch_completed and rcp_completed events, but you can filter to specific event types. The replay maintains the original SQL structure while allowing you to redirect the workload to different databases or instances as needed.
 
     .PARAMETER SqlInstance
         Target SQL Server(s)
@@ -21,16 +21,20 @@ function Invoke-DbaXEReplay {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The initial starting database.
+        Sets the initial database context for the replayed SQL statements. This determines which database sqlcmd connects to before executing the captured queries.
+        Use this when you need to replay workloads in a specific database context, especially when the captured queries don't include explicit database references.
 
     .PARAMETER Event
-        Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
+        Filters which Extended Event types to replay from the input stream. Defaults to sql_batch_completed and rcp_completed events.
+        Use this to replay only specific event types when you want to test particular workload patterns or exclude certain query types from the replay.
 
     .PARAMETER Raw
-        By dafault, the results of sqlcmd are collected, cleaned up and displayed. If you'd like to see all results immeidately, use Raw.
+        Shows all sqlcmd output immediately without cleanup or formatting. By default, results are collected, cleaned, and filtered for readability.
+        Use this when you need to see complete sqlcmd output including headers and formatting, or when troubleshooting query execution issues during replay.
 
     .PARAMETER InputObject
-        Accepts the object output of Read-DbaXESession.
+        Accepts Extended Event objects from Read-DbaXEFile or Read-DbaXESession containing captured SQL statements for replay.
+        This is typically piped from Read-DbaXEFile when processing Extended Event files or from Read-DbaXESession for live session data.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

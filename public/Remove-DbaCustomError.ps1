@@ -1,10 +1,10 @@
 function Remove-DbaCustomError {
     <#
     .SYNOPSIS
-        Removes a user defined message from sys.messages. This command does not support Azure SQL Database.
+        Removes user-defined error messages from the sys.messages system catalog
 
     .DESCRIPTION
-        This command provides a wrapper for the sp_dropmessage system procedure that allows for user defined messages to be removed from sys.messages.
+        Removes custom error messages that applications have added to SQL Server's sys.messages catalog, cleaning up obsolete or unwanted user-defined messages with IDs between 50001 and 2147483647. This is essential when decommissioning applications, cleaning up test environments, or managing custom error message lifecycles during application deployments. You can remove messages for specific languages or all language versions of a message ID at once.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -16,10 +16,14 @@ function Remove-DbaCustomError {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER MessageID
-        An integer between 50001 and 2147483647.
+        Specifies the custom error message ID to remove from the sys.messages catalog.
+        Must be between 50001 and 2147483647, which is the valid range for user-defined error messages.
+        Use this to target specific custom errors that applications have registered with SQL Server.
 
     .PARAMETER Language
-        Language for the message to be removed. The valid values for Language are contained in the Name and Alias columns from sys.syslanguages.
+        Specifies which language version of the custom error message to remove.
+        Accepts language names or aliases from sys.syslanguages (like 'English', 'French', 'Deutsch').
+        Use 'All' to remove all language versions of the message ID at once. Defaults to 'English'.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

@@ -1,12 +1,13 @@
 function Disable-DbaStartupProcedure {
     <#
     .SYNOPSIS
-        Disables the automatic execution of procedure(s) that are set to execute automatically each time the SQL Server service is started
+        Removes stored procedures from SQL Server's automatic startup execution list
 
     .DESCRIPTION
-         Used to revoke the designation of one or more stored procedures to automatically execute when the SQL Server service is started.
-         Equivalent to running the system stored procedure sp_procoption with @OptionValue = off
-         Returns the SMO StoredProcedure object for procedures affected.
+        Prevents stored procedures from automatically executing when the SQL Server service starts by clearing their startup designation in the master database.
+        This is essential when troubleshooting startup issues or removing procedures that were previously configured to run at service startup.
+        Equivalent to running sp_procoption with @OptionValue = off, but provides object-based management with detailed status reporting.
+        Returns enhanced SMO StoredProcedure objects showing the action results and current startup status.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,10 +20,12 @@ function Disable-DbaStartupProcedure {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER StartupProcedure
-        The Procedure(s) to process.
+        Specifies the stored procedure names to remove from automatic startup execution. Accepts schema-qualified names like '[dbo].[MyStartupProc]'.
+        Use this when you know the specific procedure names that need their startup designation disabled.
 
-   .PARAMETER InputObject
-        Piped objects from Get-DbaStartup
+    .PARAMETER InputObject
+        Accepts stored procedure objects from Get-DbaStartupProcedure via pipeline input.
+        Use this when working with the results of Get-DbaStartupProcedure to disable multiple startup procedures at once.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

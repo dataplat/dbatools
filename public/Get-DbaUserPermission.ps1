@@ -1,14 +1,16 @@
 function Get-DbaUserPermission {
     <#
     .SYNOPSIS
-        Displays detailed permissions information for the server and database roles and securables.
+        Audits comprehensive security permissions across SQL Server instances using DISA STIG methodology
 
     .DESCRIPTION
-        This command will display all server logins, server level securables, database logins and database securables.
+        Performs a comprehensive security audit by analyzing all server logins, server-level permissions, database users, database roles, and object-level permissions across SQL Server instances. Creates temporary STIG (Security Technical Implementation Guide) objects in tempdb to gather detailed permission information for both direct and inherited access rights.
 
-        DISA STIG implementors will find this command useful as it uses Permissions.sql provided by DISA.
+        This command is essential for security compliance audits, particularly for organizations implementing DISA STIG requirements. It reveals the complete permission landscape including role memberships, explicit grants/denials, and securable object permissions, giving DBAs the detailed visibility needed for access reviews and compliance reporting.
 
-        Note that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.
+        The function uses DISA-provided Permissions.sql scripts to ensure thorough analysis of security configurations. By default, it excludes public/guest permissions and system objects to focus on meaningful security grants, but these can be included for complete visibility.
+
+        Note that if you interrupt this command prematurely (Ctrl-C), it will leave behind a STIG schema in tempdb that should be manually cleaned up.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -21,22 +23,28 @@ function Get-DbaUserPermission {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to audit for user permissions and role memberships. Accepts multiple database names and supports wildcards.
+        Use this when you need to focus the security audit on specific databases rather than scanning the entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip during the security audit. Useful for excluding databases that don't require security review.
+        Common scenarios include excluding development databases or databases with known compliant configurations.
 
     .PARAMETER ExcludeSystemDatabase
-        Allows you to suppress output on system databases
+        Excludes system databases (master, model, msdb, tempdb) from the security audit. Focuses the output on user databases only.
+        Use this when compliance requirements only apply to application databases and not SQL Server system databases.
 
     .PARAMETER IncludePublicGuest
-        Allows you to include output for public and guest grants.
+        Includes permissions granted to the public database role and guest user account in the audit results.
+        Use this for complete security visibility, as public and guest permissions affect all users and can create unintended access paths.
 
     .PARAMETER IncludeSystemObjects
-        Allows you to include output on sys schema objects.
+        Includes permissions on system schema objects (sys, INFORMATION_SCHEMA) in the audit results.
+        Enable this when security policies require auditing access to metadata views and system functions that could expose sensitive information.
 
     .PARAMETER ExcludeSecurables
-        Allows you to exclude object-level permissions from the output, and only return role permission(s).
+        Excludes object-level permissions (tables, views, procedures, functions) from the audit and returns only role memberships.
+        Use this for high-level security reviews focused on role-based access rather than granular object permissions.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

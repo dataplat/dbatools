@@ -1,10 +1,10 @@
 function Resume-DbaAgDbDataMovement {
     <#
     .SYNOPSIS
-        Resumes data movement for an availability group database on a SQL Server instance.
+        Resumes suspended data synchronization for availability group databases.
 
     .DESCRIPTION
-        Resumes data movement for an availability group database on a SQL Server instance.
+        Resumes data movement for availability group databases that have been suspended due to errors, maintenance, or storage issues. When data movement is suspended, secondary replicas stop receiving transaction log records from the primary, causing synchronization lag. This function reconnects the synchronization process so secondary replicas can catch up to the primary replica.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -17,13 +17,16 @@ function Resume-DbaAgDbDataMovement {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases to resume movement upon.
+        Specifies which availability group databases to resume data movement for. Accepts multiple database names.
+        Use this to target specific databases when you don't want to resume movement for all databases in the availability group.
 
     .PARAMETER AvailabilityGroup
-        The availability group where the database movement will be resumed.
+        Specifies the name of the availability group containing the databases with suspended data movement.
+        Required when using the SqlInstance parameter to identify which AG context to work within.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAgDatabase
+        Accepts availability group database objects from Get-DbaAgDatabase for pipeline operations.
+        Use this when you want to filter or select specific AG databases before resuming data movement.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

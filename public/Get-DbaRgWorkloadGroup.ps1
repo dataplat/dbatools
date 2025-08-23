@@ -1,10 +1,10 @@
 function Get-DbaRgWorkloadGroup {
     <#
     .SYNOPSIS
-        Gets all Resource Governor workload group objects
+        Retrieves Resource Governor workload groups from SQL Server instances
 
     .DESCRIPTION
-        Gets all Resource Governor workload group objects
+        Retrieves Resource Governor workload groups along with their configuration settings including CPU limits, memory grants, and parallelism controls. Workload groups define how resource requests are classified and managed within resource pools, allowing DBAs to control resource consumption for different types of workloads. This function is essential for monitoring and troubleshooting Resource Governor configurations to ensure optimal performance isolation between competing workloads.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,7 +17,8 @@ function Get-DbaRgWorkloadGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaRgResourcePool
+        Accepts resource pool objects from Get-DbaRgResourcePool to retrieve workload groups from specific pools only.
+        Use this to filter workload groups when you need to examine groups within particular resource pools instead of all workload groups across the instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,10 +1,10 @@
 function Grant-DbaAgPermission {
     <#
     .SYNOPSIS
-        Grants endpoint and availability group permissions to a login.
+        Grants specific permissions to logins for availability groups and database mirroring endpoints.
 
     .DESCRIPTION
-        Grants endpoint and availability group permissions to a login. If the account is a Windows login and does not exist, it will be automatically added.
+        Grants permissions to SQL Server logins for availability groups (Alter, Control, TakeOwnership, ViewDefinition) and database mirroring endpoints (Connect, Alter, Control, and others). Essential for setting up high availability and disaster recovery scenarios where service accounts or users need access to manage or connect to availability group resources. Windows logins are automatically created if they don't exist on the target instance, simplifying multi-server availability group deployments.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,40 +17,25 @@ function Grant-DbaAgPermission {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
-        The login or logins to modify.
+        Specifies the SQL Server logins that will receive the permissions. Windows logins are automatically created if they don't exist on the target instance.
+        Use this when you need to grant permissions to specific service accounts or users for availability group operations.
 
     .PARAMETER AvailabilityGroup
-        Only modify specific availability groups.
+        Specifies which availability groups to grant permissions on. Required when using Type 'AvailabilityGroup'.
+        Use this to limit permission grants to specific AGs rather than all availability groups on the instance.
 
     .PARAMETER Type
-        Specify the object type to grant the provided Permission. Values accepted are Endpoint and/or AvailabilityGroup. Endpoint type will update the DatabaseMirroring object type found on the instance.
+        Specifies whether to grant permissions on database mirroring endpoints or availability groups. Use 'Endpoint' for database mirroring endpoint permissions or 'AvailabilityGroup' for AG-level permissions.
+        Endpoint permissions are needed for replicas to communicate, while AvailabilityGroup permissions control AG management operations.
 
     .PARAMETER Permission
-        Grants one or more permissions:
-            Alter
-            Connect
-            Control
-            CreateSequence
-            CreateAnyDatabase
-            Delete
-            Execute
-            Impersonate
-            Insert
-            Receive
-            References
-            Select
-            Send
-            TakeOwnership
-            Update
-            ViewChangeTracking
-            ViewDefinition
-
-            CreateAnyDatabase
-
-        Connect is default.
+        Specifies which permissions to grant. Defaults to 'Connect' for basic endpoint access.
+        For endpoints: Connect, Alter, Control, and others. For availability groups: Alter, Control, TakeOwnership, ViewDefinition only.
+        Use 'CreateAnyDatabase' for AGs to allow automatic seeding of new databases to replicas.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaLogin.
+        Accepts login objects from Get-DbaLogin pipeline input. Use this when you've already retrieved specific logins and want to grant them permissions.
+        Provides an alternative to specifying individual login names with the -Login parameter.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

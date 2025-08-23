@@ -1,10 +1,12 @@
 function Remove-DbaDbMirror {
     <#
     .SYNOPSIS
-        Removes database mirrors.
+        Breaks database mirroring partnerships and stops mirroring sessions
 
     .DESCRIPTION
-        Removes database mirrors. Does not set databases in recovery to recovered.
+        Terminates database mirroring sessions by breaking the partnership between principal and mirror databases. This command stops the mirroring relationship completely, which is useful when decommissioning mirrors, performing maintenance that requires breaking the partnership, or during disaster recovery scenarios where you need to bring a database online independently.
+
+        Important: This function only breaks the mirroring partnership - it does not automatically recover databases that are left in a "Restoring" state. You'll need to manually restore those databases with RECOVERY to make them accessible for normal operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,10 +20,12 @@ function Remove-DbaDbMirror {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database.
+        Specifies the names of databases whose mirroring partnerships should be terminated. Accepts multiple database names.
+        Required when using SqlInstance parameter. Use this to target specific mirrored databases rather than processing all databases on the instance.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase.
+        Use this when you want to filter databases using Get-DbaDatabase's capabilities before breaking mirroring partnerships.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

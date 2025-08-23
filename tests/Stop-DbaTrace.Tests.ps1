@@ -1,26 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Stop-DbaTrace",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Id', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Id",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
         $sql = "-- Create a Queue
                 declare @rc int
                 declare @TraceID int
                 declare @maxfilesize bigint
                 set @maxfilesize = 5
-                exec @rc = sp_trace_create @TraceID output, 0, N'C:\windows\temp\temptrace', @maxfilesize, NULL
+                exec @rc = sp_trace_create @TraceID output, 0, N'$backupPath\temptrace', @maxfilesize, NULL
 
                 -- Set the events
                 declare @on bit
@@ -86,7 +103,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 declare @intfilter int
                 declare @bigintfilter bigint
 
-                exec sp_trace_setfilter @TraceID, 10, 0, 7, N'SQL Server Profiler - 934a8575-0dc1-4937-bde1-edac1cb9691f'
                 -- Set the trace status to start
                 exec sp_trace_setstatus @TraceID, 1
 
@@ -95,21 +111,34 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $traceid = ($server.Query($sql)).TraceID
         $null = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Start-DbaTrace
+
+        # we want to run all commands outside of the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Remove-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
-        Remove-Item C:\windows\temp\temptrace.trc
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     Context "Test Stopping Trace" {
-        $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
         It "starts in a running state" {
-            $results.Id | Should Be $traceid
-            $results.IsRunning | Should Be $true
+            $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
+            $results.Id | Should -Be $traceid
+            $results.IsRunning | Should -BeTrue
         }
-        $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Stop-DbaTrace
+
         It "is now in a stopped state" {
-            $results.Id | Should Be $traceid
-            $results.IsRunning | Should Be $false
+            $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Stop-DbaTrace
+            $results.Id | Should -Be $traceid
+            $results.IsRunning | Should -BeFalse
         }
     }
 }

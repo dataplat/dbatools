@@ -1,19 +1,25 @@
 function Get-DbaComputerSystem {
     <#
     .SYNOPSIS
-        Gets computer system information from the server.
+        Retrieves comprehensive hardware and system information from Windows computers hosting SQL Server instances.
 
     .DESCRIPTION
-        Gets computer system information from the server and returns as an object.
+        Collects detailed system specifications including processor details, memory configuration, domain membership, and hardware information from target computers. This function is essential for SQL Server capacity planning, pre-installation system verification, and troubleshooting performance issues by providing complete hardware inventory data.
+
+        The function queries WMI classes (Win32_ComputerSystem and Win32_Processor) to gather CPU details, determines hyperthreading status, checks total physical memory, and identifies domain roles. It also detects pending reboots that could affect SQL Server operations and optionally retrieves AWS EC2 metadata for cloud-hosted instances.
+
+        Use this command when documenting SQL Server environments, verifying system requirements before installations or upgrades, or investigating hardware-related performance bottlenecks.
 
     .PARAMETER ComputerName
-        Target computer(s). If no computer name is specified, the local computer is targeted
+        Specifies the target computer(s) to collect system information from. Defaults to the local computer when not specified.
+        Use this to inventory multiple SQL Server hosts at once or to gather system details from remote servers for capacity planning and troubleshooting.
 
     .PARAMETER Credential
         Alternate credential object to use for accessing the target computer(s).
 
     .PARAMETER IncludeAws
-        If computer is hosted in AWS Infrastructure as a Service (IaaS), additional information will be included.
+        Retrieves additional AWS EC2 metadata when the target computer is hosted on Amazon Web Services. Adds properties like AMI ID, instance type, availability zone, and IAM role information.
+        Use this switch when documenting cloud-hosted SQL Server environments or when you need AWS-specific details for compliance or cost management purposes.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

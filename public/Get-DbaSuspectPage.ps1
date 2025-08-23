@@ -1,10 +1,10 @@
 function Get-DbaSuspectPage {
     <#
     .SYNOPSIS
-        Returns data that is stored in SQL for Suspect Pages on the specified SQL Server Instance
+        Retrieves suspect page records from msdb database for corruption detection and analysis
 
     .DESCRIPTION
-        This function returns any records that were stored due to suspect pages in databases on a SQL Server Instance.
+        Queries the msdb.dbo.suspect_pages table to identify database pages that have experienced corruption events such as checksum failures, torn pages, or I/O errors. SQL Server automatically logs corrupt pages to this system table when encountered during read operations, making this function essential for proactive corruption monitoring and troubleshooting. Returns detailed information including the specific database, file, page location, error type, occurrence count, and last detection date to help DBAs prioritize remediation efforts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,7 +17,8 @@ function Get-DbaSuspectPage {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database to return. If unspecified, all records will be returned.
+        Filters suspect page results to a specific database name. When omitted, returns suspect pages from all databases on the instance.
+        Use this when investigating corruption issues in a particular database or when you need to focus troubleshooting efforts on a single database.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

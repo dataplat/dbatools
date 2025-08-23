@@ -1,18 +1,20 @@
 function Copy-DbaXESessionTemplate {
     <#
     .SYNOPSIS
-        Copies non-Microsoft templates from the dbatools template repository (/bin/XEtemplates/) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
+        Copies Extended Event session templates from dbatools repository to SSMS template directory for GUI access.
 
     .DESCRIPTION
-        Copies non-Microsoft templates from the dbatools template repository (/bin/XEtemplates/) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
-
-        Useful for when you want to use the SSMS GUI.
+        Installs curated Extended Event session templates into SQL Server Management Studio's template directory so you can access them through the SSMS GUI.
+        The templates include common monitoring scenarios like deadlock detection, query performance tracking, connection monitoring, and database health checks.
+        Only copies non-Microsoft templates, preserving any custom templates already in your SSMS directory while adding the community-contributed ones from the dbatools collection.
 
     .PARAMETER Path
-        The path to the template directory. Defaults to the dbatools template repository (/bin/XEtemplates/).
+        Specifies the directory containing Extended Event session template files to copy from. Defaults to the dbatools template repository (/bin/XEtemplates/).
+        Use this when you want to copy templates from a custom directory instead of the built-in dbatools collection, such as organization-specific templates or downloaded templates from other sources.
 
     .PARAMETER Destination
-        Path to the Destination directory, defaults to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
+        Specifies the target directory where Extended Event templates will be installed for SSMS access. Defaults to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
+        Use this when you need to install templates to a different SSMS profile or custom template location, such as when SSMS is installed in a non-standard directory or for shared template repositories.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

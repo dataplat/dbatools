@@ -29,10 +29,6 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $global:TestConfig = Get-TestConfig
-    }
-
     Context "Verifying command works" {
         It "returns a result with the right computername and name is not null" {
             $results = Get-DbaPfDataCollectorCounterSample | Select-Object -First 1

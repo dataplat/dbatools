@@ -1,10 +1,10 @@
 function Test-DbaDbCollation {
     <#
     .SYNOPSIS
-        Compares Database Collations to Server Collation
+        Identifies databases with collations that differ from the SQL Server instance default collation
 
     .DESCRIPTION
-        Compares Database Collations to Server Collation
+        Compares each database's collation against the SQL Server instance's default collation to identify mismatches. Database collation mismatches can cause string comparison issues, join failures, and stored procedure errors when working across databases. This function helps you audit collation consistency across your databases, which is especially important before migrations, mergers, or when troubleshooting application issues related to character sorting and comparison behavior.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,10 +17,12 @@ function Test-DbaDbCollation {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for collation mismatches against the server's default collation. Accepts wildcards for pattern matching.
+        Use this when you need to focus collation testing on specific databases rather than scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies which databases to skip during collation testing. Useful for excluding system databases or databases you know have intentional collation differences.
+        Common scenarios include skipping databases with different language requirements or legacy databases scheduled for decommission.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

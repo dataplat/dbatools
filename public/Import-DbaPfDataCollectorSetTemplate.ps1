@@ -1,19 +1,20 @@
 function Import-DbaPfDataCollectorSetTemplate {
     <#
     .SYNOPSIS
-        Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
+        Creates Windows Performance Monitor data collector sets with SQL Server-specific performance counters from predefined templates.
 
     .DESCRIPTION
-        Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
-        When importing data collector sets from the local instance, Run As Admin is required.
+        Creates Windows Performance Monitor data collector sets using XML templates containing SQL Server performance counters. This eliminates the need to manually configure dozens of performance counters through the Performance Monitor GUI. The function can use built-in templates from the dbatools repository (like 'Long Running Query' or 'db_ola_health') or custom XML template files you specify.
 
-        Note: The included counters will be added for all SQL instances on the machine by default.
-        For specific instances in addition to the default, use -Instance.
+        Performance counters are automatically configured for all SQL Server instances detected on the target machine. When multiple instances exist, the function duplicates relevant counters for each instance so you get complete coverage across your SQL Server environment.
+
+        Requires local administrator privileges on the target computer when importing data collector sets.
 
         See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the Windows server where the Performance Monitor data collector set will be created. Defaults to the local machine.
+        Use this when monitoring SQL Server instances on remote servers or when centralizing performance monitoring from a management workstation.
 
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:
@@ -21,57 +22,72 @@ function Import-DbaPfDataCollectorSetTemplate {
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER Path
-        The path to the xml file or files.
+        Specifies the file path to custom XML template files containing performance counter definitions. Accepts multiple file paths.
+        Use this when you have custom performance monitoring templates or need to import templates from sources other than the built-in dbatools repository.
 
     .PARAMETER Template
-        From one or more of the templates from the dbatools repository. Press Tab to cycle through the available options.
+        Selects predefined performance monitoring templates from the dbatools repository such as 'Long Running Query' or 'db_ola_health'. Press Tab to see available options.
+        Use this for quick deployment of SQL Server-specific performance monitoring without creating custom XML templates.
 
     .PARAMETER RootPath
-        Sets the base path where the subdirectories are created.
+        Specifies the base directory where performance log files will be stored. Defaults to %systemdrive%\PerfLogs\Admin\[CollectorSetName].
+        Change this when you need to store performance logs on a different drive with more space or faster storage for high-frequency data collection.
 
     .PARAMETER DisplayName
-        Sets the display name of the data collector set.
+        Sets the display name for the data collector set as it appears in Performance Monitor. Defaults to the template name.
+        Use this to create meaningful names when deploying multiple collector sets or to distinguish between environments like 'Prod-SQL-Perf' or 'Dev-Query-Analysis'.
 
     .PARAMETER SchedulesEnabled
-        If this switch is enabled, sets a value that indicates whether the schedules are enabled.
+        Enables scheduled data collection for the collector set if defined in the template. When disabled, the collector set must be started manually.
+        Use this switch when you want the collector set to automatically start and stop based on predefined schedules rather than manual intervention.
 
     .PARAMETER Segment
-        Sets a value that indicates whether PLA creates new logs if the maximum size or segment duration is reached before the data collector set is stopped.
+        Enables automatic log file segmentation when maximum file size or duration limits are reached during data collection.
+        Use this to prevent single log files from becoming too large and to maintain manageable file sizes for analysis tools and storage management.
 
     .PARAMETER SegmentMaxDuration
-        Sets the duration that the data collector set can run before it begins writing to new log files.
+        Specifies the maximum time duration (in seconds) before a new log file is created during data collection. Requires -Segment to be enabled.
+        Set this to control how long each performance log file covers, which helps with organizing data by time periods for analysis.
 
     .PARAMETER SegmentMaxSize
-        Sets the maximum size of any log file in the data collector set.
+        Specifies the maximum size (in bytes) for each performance log file before a new file is created. Requires -Segment to be enabled.
+        Set this to prevent individual log files from consuming excessive disk space and to maintain consistent file sizes for easier management.
 
     .PARAMETER Subdirectory
-        Sets a base subdirectory of the root path where the next instance of the data collector set will write its logs.
+        Specifies a subdirectory name under the root path where log files will be stored for this collector set instance.
+        Use this to organize performance logs by purpose, environment, or time period within your monitoring directory structure.
 
     .PARAMETER SubdirectoryFormat
-        Sets flags that describe how to decorate the subdirectory name. PLA appends the decoration to the folder name. For example, if you specify plaMonthDayHour, PLA appends the current month, day, and hour values to the folder name. If the folder name is MyFile, the result could be MyFile110816.
+        Controls how Performance Monitor decorates the subdirectory name with timestamp information. Uses numeric flags where 3 includes day/hour formatting.
+        This automatically creates time-stamped subdirectories to organize log files chronologically, making it easier to locate performance data from specific time periods.
 
     .PARAMETER SubdirectoryFormatPattern
-        Sets a format pattern to use when decorating the folder name. Default is 'yyyyMMdd\-NNNNNN'.
+        Specifies the timestamp format pattern used for decorating subdirectory names. Default is 'yyyyMMdd\-NNNNNN' (year-month-day-sequence).
+        Customize this pattern when you need specific date/time formatting for your log file organization or to match existing naming conventions.
 
     .PARAMETER Task
-        Sets the name of a Task Scheduler job to start each time the data collector set stops, including between segments.
+        Specifies a Windows Task Scheduler job name to execute automatically when the data collector set stops or between log segments.
+        Use this to trigger post-processing tasks like data analysis scripts, log file compression, or alerting when performance data collection completes.
 
     .PARAMETER TaskRunAsSelf
-        If this switch is enabled, sets a value that determines whether the task runs as the data collector set user or as the user specified in the task.
+        Forces the scheduled task to run using the same user account as the data collector set rather than the account specified in the task definition.
+        Use this when you need consistent security context between data collection and post-processing tasks for file access permissions.
 
     .PARAMETER TaskArguments
-        Sets the command-line arguments to pass to the Task Scheduler job specified in the IDataCollectorSet::Task property.
-        See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371992 for more information.
+        Specifies command-line arguments to pass to the scheduled task when it executes after data collection stops.
+        Use this to pass parameters like log file paths, collection timestamps, or processing options to your post-collection analysis scripts.
 
     .PARAMETER TaskUserTextArguments
-        Sets the command-line arguments that are substituted for the {usertext} substitution variable in the IDataCollectorSet::TaskArguments property.
-        See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more information.
+        Provides replacement text for the {usertext} placeholder variable in task arguments when the scheduled task executes.
+        Use this to dynamically pass environment-specific information like server names, database names, or custom identifiers to your post-processing tasks.
 
     .PARAMETER StopOnCompletion
-        If this switch is enabled, sets a value that determines whether the data collector set stops when all the data collectors in the set are in a completed state.
+        Automatically stops the data collector set when all individual data collectors within the set have finished their collection tasks.
+        Use this switch when you want the collector set to terminate cleanly after completing defined collection tasks rather than running indefinitely.
 
     .PARAMETER Instance
-        By default, the template will be applied to all instances. If you want to set specific ones in addition to the default, supply just the instance name.
+        Specifies additional SQL Server named instances to include in performance monitoring beyond the default instance. The template applies to all detected instances by default.
+        Use this when you have multiple SQL Server instances on a server and want to add specific named instances like 'SHAREPOINT' or 'REPORTING' to the monitoring scope.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -1,12 +1,14 @@
 function Get-DbaDbMirrorMonitor {
     <#
     .SYNOPSIS
-        Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.
+        Retrieves database mirroring performance metrics and monitoring history from SQL Server instances
 
     .DESCRIPTION
-        Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.
+        Retrieves detailed database mirroring performance statistics from the msdb monitoring tables, helping you track mirroring health and identify performance bottlenecks. This function executes sp_dbmmonitorresults to pull metrics like log generation rates, send rates, transaction delays, and recovery progress from both principal and mirror databases.
 
-        Basically executes sp_dbmmonitorresults.
+        Use this when troubleshooting mirroring performance issues, monitoring replication lag, or generating compliance reports for high availability configurations. You can optionally refresh the monitoring data before retrieval and filter results by time periods or row counts to focus on specific timeframes.
+
+        The function returns comprehensive metrics including unsent log size, recovery rates, average delays, and witness status - all the key indicators DBAs need to assess mirroring health without manually querying system tables.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -19,17 +21,16 @@ function Get-DbaDbMirrorMonitor {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database.
-
-    .PARAMETER Database
-        The target database.
+        Specifies which mirrored databases to monitor. Only databases configured for mirroring will return results.
+        Use this to focus monitoring on specific databases instead of checking all mirrored databases on the instance.
 
     .PARAMETER Update
-        Updates the status for the database by calling sp_dbmmonitorupdate before computing the results.
-        However, if the status table has been updated within the previous 15 seconds, or the user is not a member of the sysadmin fixed server role, the command runs without updating the status.
+        Forces a refresh of mirroring statistics before retrieving results by calling sp_dbmmonitorupdate.
+        Use this when you need the most current metrics, though SQL Server automatically limits updates to once every 15 seconds and requires sysadmin privileges.
 
     .PARAMETER LimitResults
-        Limit results. Defaults to last two hours.
+        Controls how much historical monitoring data to retrieve from the msdb.dbo.dbm_monitor_data table.
+        Choose shorter time periods for recent performance analysis or longer periods for trend analysis. Row-based options return the most recent entries regardless of time.
 
         Options include:
         LastRow
@@ -44,7 +45,8 @@ function Get-DbaDbMirrorMonitor {
         Last1000000Rows
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase pipeline input.
+        Use this when you want to filter databases first before checking their mirroring status.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

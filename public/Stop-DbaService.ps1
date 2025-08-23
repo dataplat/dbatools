@@ -1,18 +1,24 @@
 function Stop-DbaService {
     <#
     .SYNOPSIS
-        Stops SQL Server services on a computer.
+        Stops SQL Server-related Windows services with proper dependency handling.
 
     .DESCRIPTION
-        Stops the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
+        Stops SQL Server services including Database Engine, SQL Agent, Reporting Services, Analysis Services, Integration Services, and other components across one or more computers. Automatically handles service dependencies to prevent dependency conflicts during shutdown operations.
+
+        Particularly useful for planned maintenance windows, troubleshooting service issues, or preparing servers for patching and reboots. The Force parameter allows stopping dependent services automatically, which is essential when stopping Database Engine services that have SQL Agent dependencies.
+
+        Supports targeting specific service types or instances, making it ideal for selective service management in multi-instance environments. Can be combined with Get-DbaService for advanced filtering and bulk operations across entire SQL Server environments.
 
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        Specifies the target computer(s) containing SQL Server services to stop. Accepts multiple computer names for bulk service management.
+        Use this when you need to stop SQL Server services across multiple servers during maintenance windows or troubleshooting scenarios.
 
     .PARAMETER InstanceName
-        Only affects services that belong to the specific instances.
+        Targets services belonging to specific SQL Server named instances. Filters results to match only the specified instance names.
+        Essential in multi-instance environments where you need to stop services for particular instances while leaving others running.
 
     .PARAMETER SqlInstance
         Use a combination of computername and instancename to get the SQL Server related services for specific instances on specific computers.
@@ -23,17 +29,20 @@ function Stop-DbaService {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Type
-        Use -Type to collect only services of the desired SqlServiceType.
-        Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
+        Filters which SQL Server service types to stop. Valid options: Agent, Browser, Engine, FullText, SSAS, SSIS, SSRS.
+        Use this when you need to stop specific service types across instances, such as stopping all SQL Agent services for patching while keeping Database Engine services running.
 
     .PARAMETER Timeout
-        How long to wait for the start/stop request completion before moving on. Specify 0 to wait indefinitely.
+        Sets the maximum wait time in seconds for each service stop operation before timing out. Default is 60 seconds, specify 0 to wait indefinitely.
+        Increase this value for services that take longer to shut down gracefully, particularly in environments with large databases or heavy workloads.
 
     .PARAMETER InputObject
-        A collection of services from Get-DbaService
+        Accepts service objects directly from Get-DbaService, allowing for advanced filtering and pipeline operations.
+        Use this approach when you need complex service filtering that goes beyond the built-in ComputerName, InstanceName, and Type parameters.
 
     .PARAMETER Force
-        Use this switch to stop dependent services before proceeding with the specified service
+        Automatically stops dependent services when stopping SQL Server Database Engine services. Prevents dependency conflicts that would otherwise block the stop operation.
+        Required when stopping Engine services that have dependent SQL Agent services running, as SQL Agent must be stopped first to avoid service dependency errors.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

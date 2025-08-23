@@ -1,25 +1,26 @@
 function New-DbaReplCreationScriptOptions {
     <#
     .SYNOPSIS
-        Creates a new Microsoft.SqlServer.Replication.CreationScriptOptions enumeration object.
+        Creates replication article creation script options for controlling which database objects are replicated
 
     .DESCRIPTION
-        Creates a new Microsoft.SqlServer.Replication.CreationScriptOptions enumeration object that allows you to specify article options.
+        Creates a Microsoft.SqlServer.Replication.CreationScriptOptions object that controls which database objects and properties are included when replicating tables through SQL Server replication. This determines what gets scripted at the subscriber when articles are added to publications - things like indexes, constraints, triggers, and identity columns.
+
+        By default, includes the same options that SQL Server Management Studio uses when adding articles: primary objects, custom procedures, identity properties, timestamps, clustered indexes, primary keys, collation, unique keys, and constraint replication settings. Use -NoDefaults to start with a blank slate and specify only the options you want.
+
+        This object is typically used with Add-DbaReplArticle to precisely control what database schema elements are replicated to subscribers, avoiding common issues like missing indexes or constraints that can impact subscriber performance.
 
         See https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.replication.creationscriptoptions for more information
 
     .PARAMETER Options
-        The options to set on published articles.
-        See https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.replication.creationscriptoptions for a list of available options
+        Specifies which database object properties to include when creating replicated tables at subscribers. Controls what gets scripted beyond the basic table structure.
+        Use this to add specific elements like NonClusteredIndexes, Statistics, CheckConstraints, or ForeignKeys that aren't included in the default set.
+        Common values include Statistics for performance, NonClusteredIndexes for query optimization, or Triggers for business logic replication.
 
     .PARAMETER NoDefaults
-        If specified, no default options will be set on the object
-
-        Defaults are copied from when you add an article in SQL Server Management Studio and include:
-            PrimaryObject, CustomProcedures, Identity, KeepTimestamp,
-            ClusteredIndexes, DriPrimaryKey, Collation, DriUniqueKeys,
-            MarkReplicatedCheckConstraintsAsNotForReplication,
-            MarkReplicatedForeignKeyConstraintsAsNotForReplication, and Schema
+        Excludes the standard replication options that SQL Server Management Studio applies automatically when adding articles.
+        Use this when you need precise control over which schema elements are replicated and want to avoid the default behavior.
+        Without this switch, includes PrimaryObject, CustomProcedures, Identity, KeepTimestamp, ClusteredIndexes, DriPrimaryKey, Collation, DriUniqueKeys, and constraint replication settings.
 
     .NOTES
         Tags: repl, Replication, Script

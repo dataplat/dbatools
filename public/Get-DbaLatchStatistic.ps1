@@ -1,10 +1,10 @@
 function Get-DbaLatchStatistic {
     <#
     .SYNOPSIS
-        Displays latch statistics from sys.dm_os_latch_stats
+        Retrieves latch contention statistics from SQL Server to identify performance bottlenecks
 
     .DESCRIPTION
-        This command is based off of Paul Randal's post "Advanced SQL Server performance tuning"
+        Analyzes latch wait statistics from sys.dm_os_latch_stats to help identify latch contention issues that may be causing performance problems. This function implements Paul Randal's methodology for latch troubleshooting by returning the most significant latch classes based on cumulative wait time percentage. Each result includes direct links to SQLSkills documentation explaining what each latch class means and how to resolve related issues, making it easier to diagnose and fix latch-related performance bottlenecks without manually querying system DMVs.
 
         Returns:
                 LatchClass
@@ -28,7 +28,8 @@ function Get-DbaLatchStatistic {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Threshold
-        Threshold, in percentage of all latch stats on the system. Default per Paul's post is 95%.
+        Specifies the cumulative percentage threshold for filtering which latch classes to return. Only returns latch classes that contribute to the specified percentage of total wait time.
+        Use this to focus on the most significant latch contention issues by excluding less impactful latch classes from the results. Default is 95% per Paul Randal's methodology.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

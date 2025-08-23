@@ -1,10 +1,10 @@
 function Set-DbaDbRecoveryModel {
     <#
     .SYNOPSIS
-        Set-DbaDbRecoveryModel sets the Recovery Model.
+        Changes the recovery model for specified databases on SQL Server instances.
 
     .DESCRIPTION
-        Set-DbaDbRecoveryModel sets the Recovery Model for all databases except TEMPDB.
+        Changes the recovery model setting for one or more databases, allowing you to switch between Simple, Full, and BulkLogged recovery modes. This is commonly used when preparing databases for different backup strategies, reducing transaction log growth in development environments, or configuring production databases for point-in-time recovery. The function excludes tempdb and database snapshots automatically, and requires explicit database specification for safety.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,19 +17,20 @@ function Set-DbaDbRecoveryModel {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
+        Specifies which databases to change the recovery model for. Accepts database names as strings or wildcard patterns.
+        Use this when you need to target specific databases instead of all databases on the instance. Required unless using -AllDatabases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to skip when changing recovery models. Useful when combined with -AllDatabases to exclude specific databases.
+        Commonly used to exclude databases that should maintain their current recovery model for operational reasons.
 
     .PARAMETER AllDatabases
-        This is a parameter that was included for safety, so you don't accidentally set options on all databases without specifying
+        Required switch when you want to change the recovery model for all databases on the instance.
+        This safety parameter prevents accidentally modifying all databases without explicit confirmation. Automatically excludes tempdb and database snapshots.
 
     .PARAMETER RecoveryModel
-        Recovery Model to be set. Valid options are 'Simple', 'Full', 'BulkLogged'
-
-        Details about the recovery models can be found here:
-        https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/recovery-models-sql-server
+        Sets the recovery model for the specified databases. Choose Simple for minimal transaction log usage in development environments, Full for production databases requiring point-in-time recovery, or BulkLogged for bulk operations with reduced logging.
+        This change affects backup strategy requirements and transaction log growth patterns for the target databases.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -47,7 +48,8 @@ function Set-DbaDbRecoveryModel {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase)
+        Accepts database objects from Get-DbaDatabase or similar commands through the pipeline.
+        Use this when you need to apply recovery model changes to a filtered set of databases based on specific criteria like size, last backup date, or other properties.
 
     .NOTES
         Tags: RecoveryModel, Database

@@ -1,10 +1,12 @@
 function Mount-DbaDatabase {
     <#
     .SYNOPSIS
-        Attach a SQL Server Database - aliased to Attach-DbaDatabase
+        Attaches detached database files to a SQL Server instance
 
     .DESCRIPTION
-        This command will attach a SQL Server database.
+        Attaches detached database files (.mdf, .ldf, .ndf) back to a SQL Server instance, making the database available for use again. When database files exist on disk but the database is not registered in the SQL Server instance, this command reconnects them using the SQL Server Management Objects (SMO) AttachDatabase method.
+
+        If you don't specify the file structure, the command attempts to determine the correct database files by examining backup history for the most recent full backup. This is particularly useful when restoring databases from file copies or moving databases between instances where the files already exist but need to be reattached.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,16 +19,23 @@ function Mount-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to attach.
+        Specifies the names of the detached databases to attach to the SQL Server instance.
+        Use this when you have database files (.mdf, .ldf, .ndf) on disk but the database is no longer registered in SQL Server.
 
     .PARAMETER FileStructure
-        A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
+        Specifies the complete collection of database file paths (.mdf, .ldf, .ndf) required to attach the database.
+        When omitted, the command attempts to determine file locations automatically using backup history from the most recent full backup.
+        Use this parameter when files are in non-standard locations or when automatic detection fails.
 
     .PARAMETER DatabaseOwner
-        Sets the database owner for the database. The sa account (or equivalent) will be used if DatabaseOwner is not specified.
+        Sets the login account that will own the attached database.
+        When not specified, defaults to the sa account or the SQL Server sysadmin with ID 1 if sa is not available.
+        Use this to assign ownership to a specific login for security or administrative requirements.
 
     .PARAMETER AttachOption
-        An AttachOptions object value that contains the attachment options. Valid options are "None", "RebuildLog", "EnableBroker", "NewBroker" and "ErrorBrokerConversations".
+        Controls how SQL Server handles the database attachment process and Service Broker configuration.
+        Use 'RebuildLog' when transaction log files are missing or corrupt, 'EnableBroker' to activate Service Broker, or 'NewBroker' to create a new Service Broker identifier.
+        Defaults to 'None' for standard attachment without special handling.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

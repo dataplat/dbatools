@@ -1,12 +1,14 @@
 function Test-DbaDbOwner {
     <#
     .SYNOPSIS
-        Checks database owners against a login to validate which databases do not match that owner.
+        Identifies databases with incorrect ownership for security compliance and best practice enforcement.
 
     .DESCRIPTION
-        This function will check all databases on an instance against a SQL login to validate if that
-        login owns those databases or not. By default, the function will check against 'sa' for
-        ownership, but the user can pass a specific login if they use something else.
+        This function compares the current owner of each database against a target login and returns only databases that do NOT match the expected owner. By default, it checks against 'sa' (or the renamed sysadmin account if 'sa' was changed), but you can specify any valid login.
+
+        This addresses a common security compliance requirement where databases should be owned by a specific account rather than individual user accounts. Mismatched ownership can cause issues with scheduled jobs, maintenance plans, and security policies.
+
+        The function automatically detects if the 'sa' account was renamed and uses the actual sysadmin login name. It returns detailed information including current owner, target owner, and ownership status for easy identification of databases requiring ownership changes.
 
         Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
@@ -21,16 +23,20 @@ function Test-DbaDbOwner {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for ownership compliance. Accepts wildcards for pattern matching.
+        Use this when you need to audit ownership for specific databases rather than all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies databases to skip during the ownership compliance check. Accepts wildcards for pattern matching.
+        Useful for excluding system databases or databases with intentionally different ownership from standard policy.
 
     .PARAMETER TargetLogin
-        Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
+        Specifies the expected database owner login for compliance checking. Defaults to 'sa' or the renamed sysadmin account if 'sa' was changed.
+        Use this to enforce organizational standards where databases should be owned by a service account or specific login rather than individual users.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDatabase.
+        Accepts database objects piped from Get-DbaDatabase for ownership verification.
+        Use this to check ownership on a pre-filtered set of databases or when chaining with other database operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,10 +1,12 @@
 function Sync-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Syncs dependent objects such as jobs, logins and custom errors for availability groups
+        Synchronizes server-level objects from primary to secondary replicas in availability groups
 
     .DESCRIPTION
-        Syncs dependent objects for availability groups. Such objects include:
+        Copies server-level objects from the primary replica to all secondary replicas in an availability group. Availability groups only synchronize databases, not the server-level dependencies that applications need to function properly after failover.
+
+        This command ensures that logins, SQL Agent jobs, linked servers, and other critical server objects exist on all replicas so your applications work seamlessly regardless of which replica becomes primary. By default, it synchronizes these object types:
 
         SpConfigure
         CustomErrors
@@ -22,12 +24,13 @@ function Sync-DbaAvailabilityGroup {
         AgentSchedule
         AgentJob
 
-        Note that any of these can be excluded. For specific object exclusions (such as a single job), using the underlying Copy-Dba* command will be required.
+        Any of these object types can be excluded using the -Exclude parameter. For granular control over specific objects (like excluding individual jobs or logins), use the -ExcludeJob, -ExcludeLogin parameters or the underlying Copy-Dba* commands directly.
 
-        This command does not filter by which logins are in use by the ag databases or which linked servers are used. All objects that are not excluded will be copied like hulk smash.
+        The command copies ALL objects of each enabled type - it doesn't filter based on which objects are actually used by the availability group databases. Use the exclusion parameters to limit scope when needed.
 
     .PARAMETER Primary
-        The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
+        The primary replica SQL Server instance for the availability group. This is the source server from which all server-level objects will be copied.
+        Required when not using InputObject parameter. Server version must be SQL Server 2012 or higher.
 
     .PARAMETER PrimarySqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -37,7 +40,8 @@ function Sync-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Secondary
-        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
+        The secondary replica SQL Server instances where server-level objects will be copied to. Can specify multiple instances.
+        If not specified, the function will automatically discover all secondary replicas in the availability group. Server version must be SQL Server 2012 or higher.
 
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -47,47 +51,43 @@ function Sync-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        The name of the Availability Group.
+        The name of the specific availability group to synchronize server objects for.
+        When specified, the function will identify all replicas in this AG and sync objects from primary to all secondaries.
 
     .PARAMETER Exclude
-        Exclude one or more objects to export
+        Excludes specific object types from being synchronized to avoid conflicts or reduce sync time.
+        Useful when you need to manually manage certain objects or when some object types cause issues in your environment. Valid values:
 
-        SpConfigure
-        CustomErrors
-        Credentials
-        DatabaseMail
-        LinkedServers
-        Logins
-        LoginPermissions
-        SystemTriggers
-        DatabaseOwner
-        AgentCategory
-        AgentOperator
-        AgentAlert
-        AgentProxy
-        AgentSchedule
-        AgentJob
+        SpConfigure, CustomErrors, Credentials, DatabaseMail, LinkedServers, Logins, LoginPermissions,
+        SystemTriggers, DatabaseOwner, AgentCategory, AgentOperator, AgentAlert, AgentProxy, AgentSchedule, AgentJob
 
     .PARAMETER Login
-        Specific logins to sync. If unspecified, all logins will be processed.
+        Specifies which login accounts to synchronize to secondary replicas. Accepts an array of login names.
+        Use this when you only need to sync specific service accounts or application logins rather than all logins on the server.
 
     .PARAMETER ExcludeLogin
-        Specific logins to exclude when performing the sync. If unspecified, all logins will be processed.
+        Specifies login accounts to skip during synchronization. Accepts an array of login names.
+        Commonly used to exclude system accounts, sa, or logins that should remain unique per replica for monitoring or maintenance purposes.
 
     .PARAMETER Job
-        Specific jobs to sync. If unspecified, all jobs will be processed.
+        Specifies which SQL Agent jobs to synchronize to secondary replicas. Accepts an array of job names.
+        Use this when you only need to sync critical jobs like backup jobs or maintenance tasks rather than all jobs on the server.
 
     .PARAMETER ExcludeJob
-        Specific jobs to exclude when performing the sync. If unspecified, all jobs will be processed.
+        Specifies SQL Agent jobs to skip during synchronization. Accepts an array of job names.
+        Commonly used to exclude replica-specific jobs like log shipping, local backups, or jobs that should only run on the primary replica.
 
     .PARAMETER DisableJobOnDestination
-        If this switch is enabled, the newly migrated job will be disabled on the destination server.
+        Disables all synchronized jobs on secondary replicas after copying them from the primary.
+        Use this when jobs should only run on the primary replica or when you need to manually control which jobs run on each replica after failover.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline processing.
+        Use this to sync multiple availability groups at once or to process specific AGs returned by filtering commands.
 
     .PARAMETER Force
-        If this switch is enabled, the objects will dropped and recreated on Destination.
+        Drops and recreates existing objects on secondary replicas instead of skipping them.
+        Use this when you need to update objects that already exist on secondaries or when objects have configuration differences that need to be synchronized.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

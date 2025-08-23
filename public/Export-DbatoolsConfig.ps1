@@ -1,43 +1,46 @@
 function Export-DbatoolsConfig {
     <#
     .SYNOPSIS
-        Exports configuration items to a Json file.
+        Exports dbatools module configuration settings to a JSON file for backup or migration.
 
     .DESCRIPTION
-        Exports configuration items to a Json file.
+        Exports dbatools configuration settings to a JSON file, allowing you to backup your current settings or migrate them to other machines. This function captures customized settings like connection timeouts, default database paths, and other module preferences that have been changed from their default values. You can export all settings or filter by specific modules, and optionally exclude settings that haven't been modified from defaults.
 
     .PARAMETER FullName
-        Select the configuration objects to export by filtering by their full name.
+        Specifies the complete configuration setting name to export, including the module prefix (e.g., 'dbatools.path.dbatoolsdata').
+        Use this when you need to export a specific configuration setting and know its exact full name.
 
     .PARAMETER Module
-        Select the configuration objects to export by filtering by their module name.
+        Filters configuration settings to export only those belonging to a specific dbatools module (e.g., 'sql', 'path', 'message').
+        Use this when you want to export all settings related to a particular functional area of dbatools rather than individual settings.
 
     .PARAMETER Name
-        Select the configuration objects to export by filtering by their name.
+        Specifies a pattern to match configuration setting names within the selected module, supporting wildcards.
+        Use this with the Module parameter to narrow down which settings to export when you don't need all settings from a module.
 
     .PARAMETER Config
-        The configuration object(s) to export.
-        Returned by Get-DbatoolsConfig.
+        Accepts configuration objects directly from Get-DbatoolsConfig for export to JSON.
+        Use this when you want to filter or manipulate configuration objects before export, typically in pipeline operations.
 
     .PARAMETER ModuleName
-        Exports all configuration pertinent to a module to a predefined path.
-        Exported configuration items include all settings marked as 'ModuleExport' that have been changed from the default value.
+        Exports module-specific configuration settings to predefined system locations rather than a custom path.
+        Only exports settings marked as 'ModuleExport' that have been modified from defaults, useful for creating standardized module configuration packages.
 
     .PARAMETER ModuleVersion
-        The configuration version of the module-settings to write.
+        Specifies the version number to include in the exported configuration filename when using ModuleName parameter.
+        Defaults to 1 and helps track different versions of module configuration exports for change management.
 
     .PARAMETER Scope
-        Which predefined path to write module specific settings to.
-        Only file scopes are considered.
-        By default it writes to the suer profile.
+        Determines where to save module configuration files when using ModuleName parameter - user profile, shared location, or system-wide.
+        Only file-based scopes are supported (registry scopes are blocked). Defaults to FileUserShared for cross-user accessibility.
 
     .PARAMETER OutPath
-        The path (filename included) to export to.
-        Will fail if the folder does not exist, will overwrite the file if it exists.
+        Specifies the complete file path where the JSON configuration export will be saved, including the filename.
+        The parent directory must exist or the export will fail, and any existing file at this location will be overwritten.
 
     .PARAMETER SkipUnchanged
-        If set, configuration objects whose value was not changed from its original value will not be exported.
-        (Note: Settings that were updated with the same value as the original default will still be considered changed)
+        Excludes configuration settings that still have their original default values from the export.
+        Use this to create smaller backup files containing only your customized settings, making configuration migration more focused.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,13 +1,18 @@
 function Remove-DbaExtendedProperty {
     <#
     .SYNOPSIS
-        Drops an extended property
+        Removes custom metadata and documentation stored as extended properties from SQL Server objects
 
     .DESCRIPTION
-        Drops an extended property
+        Removes extended properties that contain custom metadata, documentation, and business descriptions from SQL Server objects. Extended properties are commonly used to store object documentation, version information, compliance tags, and business rules directly within the database schema.
+
+        This function accepts piped input from Get-DbaExtendedProperty, making it easy to remove outdated documentation, clean up deprecated metadata, or bulk-remove properties during database restructuring projects. Works with all SQL Server object types including databases, tables, columns, stored procedures, and views.
+
+        The command uses sp_dropextendedproperty internally and returns status information for each removed property, so you can verify successful cleanup operations or track what was removed for audit purposes.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaExtendedProperty
+        Specifies the extended property objects to remove from SQL Server objects. Accepts ExtendedProperty objects from Get-DbaExtendedProperty.
+        Use this to remove outdated documentation, compliance tags, or metadata stored as extended properties on databases, tables, columns, and other SQL Server objects.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

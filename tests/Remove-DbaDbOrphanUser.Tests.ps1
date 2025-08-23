@@ -57,9 +57,9 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login "$computerName\$loginWindows" -Username "$computerName\$loginWindows" -Force
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $login1 -Username $login1 -IncludeSystem
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $login2 -Username $login2 -IncludeSystem
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login "$computerName\$loginWindows" -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login "$computerName\$loginWindows"
     }
     AfterEach {
         $users = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname, msdb
@@ -74,10 +74,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -ErrorAction SilentlyContinue
         $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $loginWindows -ComputerName $TestConfig.instance2 -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "Removes Orphan Users" {
@@ -136,8 +136,8 @@ Describe $CommandName -Tag IntegrationTests {
         $results1.Name -contains $login1 | Should -Be $false
         $results1.Name -contains $login2 | Should -Be $true
 
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2
 
     }
 

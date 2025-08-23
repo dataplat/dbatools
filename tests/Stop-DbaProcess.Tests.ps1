@@ -29,11 +29,6 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Command execution and functionality" {
-        BeforeAll {
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-        }
-
         It "kills only this specific process" {
             $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -ClientName 'dbatoolsci test app'
             $results = Stop-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatoolsci test app'

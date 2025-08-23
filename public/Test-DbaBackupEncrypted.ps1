@@ -1,10 +1,10 @@
 function Test-DbaBackupEncrypted {
     <#
     .SYNOPSIS
-        Tests to see if a backup is encrypted
+        Analyzes backup files to determine encryption status and retrieve encryption details
 
     .DESCRIPTION
-        Tests to see if a backup is encrypted
+        Examines SQL Server backup files to identify whether they contain encrypted data, either through backup encryption or Transparent Data Encryption (TDE). Uses RESTORE HEADERONLY and RESTORE FILELISTONLY commands to inspect backup headers and file metadata without actually restoring the database. This helps DBAs verify encryption compliance, troubleshoot restore issues, and maintain inventory of encrypted backups across their environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,7 +17,9 @@ function Test-DbaBackupEncrypted {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER FilePath
-        The path to the backups
+        Specifies the file path(s) to the backup files (.bak, .trn, .dif) that need to be analyzed for encryption status.
+        Accepts multiple paths and supports pipeline input from Get-ChildItem or other file discovery commands.
+        Use this to verify encryption compliance across backup files or troubleshoot restore failures caused by missing encryption certificates.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

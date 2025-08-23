@@ -1,10 +1,14 @@
 function Install-DbaFirstResponderKit {
     <#
     .SYNOPSIS
-        Installs or updates the First Responder Kit stored procedures.
+        Downloads and installs Brent Ozar's First Responder Kit diagnostic stored procedures.
 
     .DESCRIPTION
-        Downloads, extracts and installs the First Responder Kit stored procedures
+        Downloads and installs the First Responder Kit (FRK), a collection of stored procedures designed for SQL Server health checks, performance analysis, and troubleshooting. The FRK includes essential procedures like sp_Blitz for overall health assessment, sp_BlitzCache for query performance analysis, sp_BlitzIndex for index recommendations, and sp_BlitzFirst for real-time performance monitoring.
+
+        This function automatically downloads the latest version from GitHub, caches it locally, and installs the procedures into your specified database. You can install the complete toolkit or select specific procedures based on your needs. The function handles version compatibility automatically, skipping procedures that aren't supported on older SQL Server versions.
+
+        Perfect for DBAs who need standardized diagnostic tools across multiple SQL Server instances without manually downloading and deploying scripts.
 
         First Responder Kit links:
         http://FirstResponderKit.org
@@ -21,26 +25,24 @@ function Install-DbaFirstResponderKit {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database to install the First Responder Kit stored procedures into
+        Specifies the target database where the First Responder Kit stored procedures will be installed. Defaults to master.
+        Consider using a dedicated DBA or utility database instead of master for better organization and maintenance.
 
     .PARAMETER Branch
-        Specifies an alternate branch of the First Responder Kit to install.
-        Allowed values:
-            main (default)
-            dev
+        Specifies which GitHub branch of the First Responder Kit to download and install. Defaults to 'main' for the stable release.
+        Use 'dev' to install the development branch when you need the latest features or bug fixes that haven't been released yet.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install FRK from. This *should* be the zip file as distributed by the maintainers.
-        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
+        Specifies the path to a local zip file containing the First Responder Kit scripts instead of downloading from GitHub.
+        Use this when you have a specific version cached locally, when internet access is restricted, or when you need to install a customized version of the toolkit.
 
     .PARAMETER OnlyScript
-        Specifies the name(s) of the script(s) to run for installation. Wildcards are permitted.
-        This way only part of the First Responder Kit can be installed.
-        Using one of the three official Install-* scripts (Install-All-Scripts.sql, Install-Core-Blitz-No-Query-Store.sql, Install-Core-Blitz-With-Query-Store.sql) is possible this way.
-        Even removing the First Responder Kit is possible by using the official Uninstall.sql.
+        Specifies specific script files to install instead of the entire First Responder Kit. Accepts multiple script names and wildcards.
+        Use this to install only the procedures you need (like sp_Blitz.sql, sp_BlitzCache.sql) or to run official install scripts (Install-All-Scripts.sql, Install-Azure.sql). Also supports Uninstall.sql to remove the toolkit.
 
     .PARAMETER Force
-        If this switch is enabled, the FRK will be downloaded from the internet even if previously cached.
+        Forces a fresh download of the First Responder Kit from GitHub even if a cached version already exists locally.
+        Use this when you want to ensure you have the absolute latest version or when the cached version may be corrupted.
 
     .PARAMETER Confirm
         Prompts to confirm actions

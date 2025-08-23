@@ -1,10 +1,10 @@
 function Get-DbaDbTable {
     <#
     .SYNOPSIS
-        Returns a summary of information on the tables
+        Retrieves table metadata including space usage, row counts, and table features from SQL Server databases
 
     .DESCRIPTION
-        Shows table information around table row and data sizes and if it has any table type information.
+        Returns detailed table information including row counts, space usage (IndexSpaceUsed, DataSpaceUsed), and special table characteristics like memory optimization, partitioning, and FileTable status. Essential for database capacity planning, documentation, and finding tables with specific features across multiple databases. Supports complex three-part naming with special characters and can filter by database, schema, or specific table names.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
@@ -17,27 +17,29 @@ function Get-DbaDbTable {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to retrieve table information from. Accepts multiple database names and wildcards.
+        Use this when you need table data from specific databases instead of scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specific databases from table retrieval. Accepts multiple database names and wildcards.
+        Helpful when you want most databases but need to skip problematic or irrelevant ones like temp databases.
 
     .PARAMETER IncludeSystemDBs
-        Switch parameter that when used will display system database information
+        Includes system databases (master, model, msdb, tempdb) in the table scan.
+        By default system databases are excluded since they rarely contain user tables of interest.
 
     .PARAMETER Table
-        Define a specific table you would like to query. You can specify up to three-part name such as db.sch.tbl.
-
-        If the object has special characters wrap them in square brackets [ ].
-        The correct way to find table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table]
-        Any actual usage of the ] must be escaped by duplicating the ] character.
-        The correct way to find a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
+        Specifies specific tables to retrieve using one, two, or three-part naming (table, schema.table, or database.schema.table).
+        Use this when you need information on particular tables instead of all tables in the database.
+        Wrap names containing special characters in square brackets and escape actual ] characters by doubling them.
 
     .PARAMETER Schema
-        Only return tables from the specified schema
+        Filters results to tables within specific schemas. Accepts multiple schema names.
+        Useful for focusing on application schemas while excluding utility or system schemas.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from Get-DbaDatabase via pipeline input.
+        Use this when you have already filtered databases and want to pass them directly for table processing.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

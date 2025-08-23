@@ -1,10 +1,10 @@
 function New-DbaScriptingOption {
     <#
     .SYNOPSIS
-        Creates a new Microsoft.SqlServer.Management.Smo.ScriptingOptions object
+        Creates a customizable SMO ScriptingOptions object for controlling T-SQL script generation
 
     .DESCRIPTION
-        Creates a new Microsoft.SqlServer.Management.Smo.ScriptingOptions object. Basically saves you the time from remembering the SMO assembly name ;)
+        Creates a Microsoft.SqlServer.Management.Smo.ScriptingOptions object that controls how SQL Server objects get scripted into T-SQL CREATE statements. This object lets you customize what gets included when using Export-DbaScript and other dbatools scripting commands - things like whether to include indexes, triggers, permissions, dependencies, or batch separators. Perfect for creating deployment scripts where you need specific control over what gets scripted and how it's formatted.
 
         See https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.scriptingoptions.aspx for more information
 

@@ -1,10 +1,10 @@
 function New-DbaDbMailProfile {
     <#
     .SYNOPSIS
-        Creates a new database mail profile
+        Creates a new Database Mail profile for organizing SQL Server email notifications
 
     .DESCRIPTION
-        Creates a new database mail profile, and optionally associates it to a database mail account
+        Creates a new Database Mail profile on SQL Server instances, which serves as a container for organizing mail accounts used by SQL Server for notifications, alerts, and reports. Database Mail profiles allow you to group multiple mail accounts and set priorities for failover scenarios. You can optionally associate an existing mail account to the profile during creation, making this useful for setting up complete email notification systems or organizing different notification types into separate profiles.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -17,16 +17,20 @@ function New-DbaDbMailProfile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Profile
-        The name of the profile to be created.
+        Specifies the name for the new Database Mail profile. Profile names must be unique within each SQL Server instance.
+        Use descriptive names like 'DBA Alerts', 'Application Notifications', or 'Backup Reports' to organize different types of email notifications.
 
     .PARAMETER Description
-        Sets the description of the purpose of the mail profile.
+        Provides a detailed description explaining the purpose or intended use of the Database Mail profile.
+        This helps document what types of emails will be sent through this profile, making it easier for other DBAs to understand the profile's purpose.
 
     .PARAMETER MailAccountName
-        Associates a db mail account to link to this db mail profile.
+        Specifies an existing Database Mail account to associate with this profile during creation.
+        The mail account must already exist on the SQL Server instance and will be used to send emails through this profile.
 
     .PARAMETER MailAccountPriority
-        Sets the priority of the linked db mail account when linking to this db mail profile.
+        Sets the priority level for the associated mail account within the profile, with 1 being the highest priority.
+        Lower priority accounts serve as failover options when higher priority accounts are unavailable. Defaults to 1 if not specified.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

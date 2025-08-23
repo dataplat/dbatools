@@ -1,10 +1,10 @@
 function Backup-DbaServiceMasterKey {
     <#
     .SYNOPSIS
-        Backs up specified service master key.
+        Exports SQL Server Service Master Key to an encrypted backup file for disaster recovery.
 
     .DESCRIPTION
-        Backs up specified service master key.
+        Creates an encrypted backup of the SQL Server Service Master Key (SMK), which sits at the top of SQL Server's encryption hierarchy. The Service Master Key encrypts Database Master Keys and certificates, making its backup critical for disaster recovery scenarios where encrypted databases need to be restored or moved between servers. The backup file is password-protected and can be stored in the default backup directory or a custom location. This prevents the need to manually recreate encryption keys and certificates when rebuilding servers or migrating encrypted databases.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,17 +17,20 @@ function Backup-DbaServiceMasterKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER KeyCredential
-        Pass a credential object for the password
+        Provides an alternative way to pass the encryption password using a PowerShell credential object.
+        Use this when you need to automate the backup process without interactive password prompts or when integrating with credential management systems.
 
     .PARAMETER Path
-        The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
+        Specifies the directory where the Service Master Key backup file will be created. Defaults to the SQL Server instance's configured backup directory if not specified.
+        Use this when you need to store the backup in a specific location for compliance, network storage, or organizational requirements.
 
     .PARAMETER FileBaseName
-        Override the default naming convention with a fixed name for the service master key, useful when exporting a single one.
-        ".key" will be appended to the filename.
+        Overrides the default naming convention to use a custom base name for the backup file. The system automatically appends ".key" to whatever name you provide.
+        Use this when you need predictable file names for automation scripts or when following specific naming standards in your environment.
 
     .PARAMETER SecurePassword
-        The password to encrypt the exported key. This must be a SecureString.
+        Sets the password used to encrypt the Service Master Key backup file. Must be provided as a SecureString object for security.
+        If not specified, you'll be prompted to enter the password interactively. Store this password securely as it's required to restore the Service Master Key during disaster recovery.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

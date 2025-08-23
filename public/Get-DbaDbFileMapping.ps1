@@ -1,10 +1,10 @@
 function Get-DbaDbFileMapping {
     <#
     .SYNOPSIS
-        Provides an easy way to build the FileMapping Hashtable for Restore-DbaDatabase from an existing database
+        Creates file mapping hashtable from existing database for use in restore operations
 
     .DESCRIPTION
-        Provides an easy way to build the FileMapping Hashtable for Restore-DbaDatabase from an existing database
+        Extracts the logical-to-physical file name mappings from an existing database and returns them in a hashtable format compatible with Restore-DbaDatabase. This eliminates the need to manually specify file paths when restoring databases to different servers or locations. The function reads both data files and log files from the database's file groups and creates a complete mapping that preserves the original file structure during restore operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
@@ -17,10 +17,12 @@ function Get-DbaDbFileMapping {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to extract file mappings from. Accepts wildcards for pattern matching.
+        Use this when you need file mappings for specific databases instead of all databases on the instance.
 
     .PARAMETER InputObject
-        Database object piped in from Get-DbaDatabase
+        Accepts database objects directly from Get-DbaDatabase or other dbatools database functions via pipeline.
+        Use this when you want to chain database operations or work with pre-filtered database collections.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

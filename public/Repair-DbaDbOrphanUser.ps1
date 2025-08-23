@@ -1,18 +1,14 @@
 function Repair-DbaDbOrphanUser {
     <#
     .SYNOPSIS
-        Finds orphan users with existing login and remaps them.
+        Repairs orphaned database users by remapping them to matching server logins or optionally removing them.
 
     .DESCRIPTION
-        An orphan user is defined by a user that does not have a matching login (Login property = "").
+        Identifies and repairs orphaned database users - users that exist in a database but are no longer associated with a server login. This commonly occurs after database restores, migrations, or when logins are recreated.
 
-        If the matching login exists it must be:
-        Enabled
-        Not a system object
-        Not locked
-        Have the same name that user
+        The function searches each database for users where the Login property is empty, then attempts to remap them to existing server logins with matching names. For a login to be eligible for remapping, it must be enabled, not a system object, not locked, and have the exact same name as the orphaned user.
 
-        You can drop users that does not have their matching login by specifying the parameter -RemoveNotExisting.
+        Uses modern ALTER USER syntax for SQL Server 2005+ or the legacy sp_change_users_login procedure for SQL Server 2000. Optionally removes orphaned users that have no matching server login when -RemoveNotExisting is specified.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -25,19 +21,24 @@ function Repair-DbaDbOrphanUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to scan for orphaned users. Accepts wildcards for pattern matching and multiple database names.
+        Use this when you only need to repair orphaned users in specific databases rather than scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
+        Specifies databases to skip when scanning for orphaned users. Useful for avoiding system databases or databases under maintenance.
+        Commonly used to exclude tempdb, distribution databases, or databases where orphaned users should remain untouched.
 
     .PARAMETER Users
-        Specifies the list of usernames to repair.
+        Specifies specific database users to repair rather than processing all orphaned users found.
+        Use this when you need to target specific problematic users or when working with large databases where selective repair is preferred.
 
     .PARAMETER Force
-        Forces alter schema to dbo owner so users can be dropped.
+        Bypasses confirmation prompts and forces schema ownership changes to dbo when removing orphaned users.
+        Required when orphaned users own database schemas that prevent their removal. Use with caution as it can affect database object ownership.
 
     .PARAMETER RemoveNotExisting
-        If this switch is enabled, all users that do not have a matching login will be dropped from the database.
+        Removes orphaned database users that have no corresponding server login instead of just reporting them.
+        Use this after database migrations or when cleaning up databases where some users should no longer exist. Exercise caution as this permanently removes users.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

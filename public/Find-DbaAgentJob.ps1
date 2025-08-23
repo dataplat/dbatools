@@ -1,10 +1,10 @@
 function Find-DbaAgentJob {
     <#
     .SYNOPSIS
-        Find-DbaAgentJob finds agent jobs that fit certain search filters.
+        Searches and filters SQL Agent jobs across SQL Server instances using multiple criteria.
 
     .DESCRIPTION
-        This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
+        Searches SQL Agent jobs across one or more SQL Server instances using various filter criteria including job name, step name, execution status, schedule status, and notification settings. Helps DBAs identify problematic jobs that have failed, haven't run recently, are disabled, lack schedules, or missing email notifications. Useful for maintenance audits, troubleshooting job issues, and identifying cleanup candidates in environments with many automated processes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -17,39 +17,56 @@ function Find-DbaAgentJob {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER JobName
-        Filter agent jobs to only the name(s) you list.
-        Supports regular expression (e.g. MyJob*) being passed in.
+        Specifies agent job names to search for using exact matches or wildcard patterns.
+        Supports wildcards like *backup*, MyJob*, or *ETL* to find jobs with specific naming conventions.
+        Useful when you need to focus on particular job types or troubleshoot specific processes.
 
     .PARAMETER ExcludeJobName
-        Allows you to enter an array of agent job names to ignore
+        Excludes specific job names from the search results using exact name matches.
+        Use this to filter out known good jobs when searching for problematic ones, like excluding maintenance jobs when looking for failed application jobs.
 
     .PARAMETER StepName
-        Filter based on StepName.
-        Supports regular expression (e.g. MyJob*) being passed in.
+        Searches for jobs containing steps with specific names or patterns.
+        Supports wildcards to find jobs with steps like *backup*, *index*, or *cleanup*.
+        Helpful when troubleshooting issues in multi-step jobs or finding jobs that perform specific operations.
 
     .PARAMETER LastUsed
-        Find all jobs that haven't ran in the INT number of previous day(s)
+        Finds jobs that haven't executed successfully in the specified number of days.
+        Use this to identify stale or potentially broken jobs that may need attention.
+        Common values are 7, 30, or 90 days depending on job frequency and business requirements.
 
     .PARAMETER IsDisabled
-        Find all jobs that are disabled
+        Finds all jobs with disabled status (not scheduled to run automatically).
+        Use this during maintenance windows to identify jobs that were disabled for troubleshooting or may have been forgotten after maintenance.
 
     .PARAMETER IsFailed
-        Find all jobs that have failed
+        Finds jobs where the last execution resulted in a failure status.
+        Essential for daily health checks and identifying jobs that need immediate attention.
+        Combine with Since parameter to focus on recent failures or look at historical patterns.
 
     .PARAMETER IsNotScheduled
-        Find all jobs with no schedule assigned
+        Finds jobs that exist but have no schedule defined (manual execution only).
+        Useful for identifying orphaned jobs, temporary jobs that should be cleaned up, or jobs awaiting proper scheduling configuration.
 
     .PARAMETER IsNoEmailNotification
-        Find all jobs without email notification configured
+        Finds jobs that lack email notification setup for failures or completion.
+        Important for ensuring critical jobs will alert DBAs when they fail.
+        Use this during compliance audits or when establishing monitoring standards.
 
     .PARAMETER Category
-        Filter based on agent job categories
+        Filters jobs by their assigned categories such as 'Database Maintenance', 'REPL-Distribution', or custom categories.
+        Useful for focusing on specific types of jobs like replication jobs, maintenance tasks, or application-specific processes.
+        Categories help organize and manage jobs in environments with many different job types.
 
     .PARAMETER Owner
-        Filter based on owner of the job/s
+        Filters jobs by their owner login name, or excludes jobs by prefixing with a dash (-).
+        Use 'DOMAIN\\User' to find jobs owned by specific accounts, or '-sa' to exclude sa-owned jobs.
+        Helpful for security audits, identifying jobs that may need ownership changes, or finding jobs created by specific users.
 
     .PARAMETER Since
-        Datetime object used to narrow the results to a date
+        Limits results to jobs that last ran on or after the specified date and time.
+        Use with IsFailed to find jobs that failed since a specific incident, or combine with other filters to focus on recent activity.
+        Accepts standard datetime formats like '2023-01-01' or '2023-01-01 14:30:00'.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

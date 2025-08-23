@@ -1,10 +1,10 @@
 function Get-DbaLinkedServer {
     <#
     .SYNOPSIS
-        Gets all linked servers and a summary of information from the linked servers listed.
+        Retrieves linked server configurations and connection details from SQL Server instances.
 
     .DESCRIPTION
-        Retrieves information about each linked server on the instance(s).
+        Pulls complete linked server information from one or more SQL Server instances, including remote server names, authentication methods, and security settings. This helps DBAs audit cross-server connections for compliance reporting, troubleshoot connectivity issues, and document distributed database architectures. Returns details about the remote server, product type, impersonation settings, and login mappings for each configured linked server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,10 +18,12 @@ function Get-DbaLinkedServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LinkedServer
-        The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
+        Specifies one or more linked server names to retrieve information for. Accepts an array of server names for filtering results.
+        Use this when you need details on specific linked servers instead of all configured linked servers on the instance.
 
     .PARAMETER ExcludeLinkedServer
-        The linked server(s) to exclude - this list is auto-populated from the server
+        Specifies one or more linked server names to exclude from the results. Accepts an array of server names to filter out.
+        Use this when you want to skip specific linked servers, such as excluding test or deprecated connections from your inventory.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

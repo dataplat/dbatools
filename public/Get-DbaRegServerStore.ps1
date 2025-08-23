@@ -1,14 +1,15 @@
 function Get-DbaRegServerStore {
     <#
     .SYNOPSIS
-        Returns a SQL Server Registered Server Store Object
+        Creates a RegisteredServersStore object for managing Central Management Server configurations
 
     .DESCRIPTION
-        Returns a SQL Server Registered Server Store object - useful for working with Central Management Store
+        Creates a RegisteredServersStore object that serves as the foundation for working with SQL Server Central Management Server (CMS). This object provides access to server groups and registered servers stored in the CMS repository, allowing you to programmatically manage multiple SQL Server instances from a centralized location. When no SqlInstance is specified, it returns the local file store which contains your locally registered servers from SQL Server Management Studio. The returned object can be used with other dbatools CMS commands like Get-DbaRegServer and Get-DbaRegServerGroup to retrieve and manage your registered server configurations.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
-        to be executed against multiple SQL Server instances.
+        Specifies the SQL Server instance hosting the Central Management Server to retrieve the registered server store from.
+        When omitted, returns the local file store containing your locally registered servers from SQL Server Management Studio.
+        Use this when you need to access server groups and registered servers stored in a centralized CMS repository.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).

@@ -30,14 +30,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $global:db1 = "dbatoolsci_testMigrationConstraint"
-        $global:db2 = "dbatoolsci_testMigrationConstraint_2"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $global:db1"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $global:db2"
-        $needed = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:db1, $global:db2
-        $global:setupright = $true
+        $db1 = "dbatoolsci_testMigrationConstraint"
+        $db2 = "dbatoolsci_testMigrationConstraint_2"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $db1"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $db2"
+        $needed = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1, $db2
+        $setupright = $true
         if ($needed.Count -ne 2) {
-            $global:setupright = $false
+            $setupright = $false
         }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -47,12 +47,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database $global:db1, $global:db2 -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1, $db2 -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When setup is successful" {
         It "Should have setup correctly" {
-            $global:setupright | Should -Be $true
+            $setupright | Should -Be $true
         }
     }
 
@@ -67,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate single database" {
         It "Databases are migratable" {
-            (Test-DbaMigrationConstraint -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Database $global:db1).IsMigratable | Should -Be $true
+            (Test-DbaMigrationConstraint -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Database $db1).IsMigratable | Should -Be $true
         }
     }
 }

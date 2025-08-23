@@ -1,10 +1,14 @@
 function Start-DbaXESession {
     <#
     .SYNOPSIS
-        Starts Extended Events sessions.
+        Starts Extended Events sessions on SQL Server instances for monitoring and troubleshooting.
 
     .DESCRIPTION
-        This script starts Extended Events sessions on a SQL Server instance.
+        Activates Extended Events sessions that have been created but are not currently running. Extended Events sessions are SQL Server's lightweight monitoring framework used for troubleshooting performance issues, security auditing, and capturing specific database activity patterns.
+
+        The function can start individual sessions by name, all user-created sessions at once, or sessions scheduled to start and stop at specific times. When using -AllSessions, it automatically excludes built-in system sessions (AlwaysOn_health, system_health, telemetry_xevents) so you don't accidentally interfere with SQL Server's internal monitoring.
+
+        For scheduled operations, the function creates temporary SQL Agent jobs that execute at the specified times and then delete themselves. This is particularly useful for capturing data during specific time windows or off-hours troubleshooting sessions.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -17,20 +21,24 @@ function Start-DbaXESession {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
-        Only start specific Extended Events sessions.
+        Specifies the names of specific Extended Events sessions to start. Accepts multiple session names as an array.
+        Use this when you need to start only certain sessions rather than all user-created sessions on the instance.
 
     .PARAMETER AllSessions
-        Start all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
+        Starts all user-created Extended Events sessions on the instance while excluding system sessions (AlwaysOn_health, system_health, telemetry_xevents).
+        Use this when you want to activate all custom monitoring sessions without interfering with SQL Server's built-in diagnostics.
 
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaXESession
+        Accepts Extended Events session objects from Get-DbaXESession for pipeline operations.
+        Use this when you need to filter sessions with Get-DbaXESession first, then start only the matching sessions.
 
     .PARAMETER StartAt
-        Specifies a datetime at which the session will be started. This is done via a self-deleting schedule.
-        The command returns immediately and returns the affected sessions in their current state.
+        Schedules the Extended Events sessions to start at a specific date and time using a temporary SQL Agent job.
+        The command returns immediately while the job handles starting sessions at the scheduled time, useful for capturing activity during specific time windows.
 
     .PARAMETER StopAt
-        Specifies a datetime at which the session will be stopped. This is done via a self-deleting schedule.
+        Schedules the Extended Events sessions to stop at a specific date and time using a temporary SQL Agent job.
+        Use this with StartAt or on already running sessions to create time-bounded monitoring windows for troubleshooting specific issues.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

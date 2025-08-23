@@ -1,10 +1,10 @@
 function Remove-DbaDbSchema {
     <#
     .SYNOPSIS
-        Drops one or more schemas from the specified database(s).
+        Removes database schemas from one or more SQL Server databases.
 
     .DESCRIPTION
-        Drops one or more schemas from the specified database(s). As noted in the remarks section of the documentation for DROP SCHEMA there must not be any objects in the schema.
+        Removes database schemas from SQL Server databases using the DROP SCHEMA T-SQL command. This function is useful for cleaning up unused schemas during database maintenance, development environment resets, or application decommissioning. The schema must be completely empty before removal - any tables, views, functions, or other objects within the schema will prevent the drop operation from succeeding. You'll need to remove or relocate all schema objects first before running this command.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,13 +18,16 @@ function Remove-DbaDbSchema {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies the target database(s) where schemas will be removed. Required when using SqlInstance parameter.
+        Use this to limit schema removal to specific databases rather than affecting all databases on the instance.
 
     .PARAMETER Schema
-        The name(s) of the schema(s)
+        Specifies the name(s) of the schema(s) to remove from the target databases. The schema must be completely empty before removal.
+        Any tables, views, functions, stored procedures, or other objects within the schema must be dropped or moved first.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase via pipeline input. Use this when you need to work with pre-filtered database collections.
+        Eliminates the need to specify SqlInstance and Database parameters when database objects are already available.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

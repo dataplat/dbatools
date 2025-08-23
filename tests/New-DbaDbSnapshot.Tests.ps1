@@ -30,16 +30,6 @@ Describe $CommandName -Tag UnitTests {
 
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        $global:TestConfig = Get-TestConfig
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
     Context "Parameter validation" {
         It "Stops if no Database or AllDatabases" {
             { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should -Throw "*You must specify*"
@@ -66,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $server = Connect-DbaInstance @splatConnection
 
-            Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+            Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
 
             $db1 = "dbatoolsci_SnapMe"
             $db2 = "dbatoolsci_SnapMe2"
@@ -86,8 +76,10 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -Confirm:$false -ErrorAction SilentlyContinue
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -ErrorAction SilentlyContinue
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2, $db3, $db4 -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Skips over offline databases nicely" {

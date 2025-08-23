@@ -1,13 +1,14 @@
 function Remove-DbaDbSequence {
     <#
     .SYNOPSIS
-        Removes sequences.
+        Removes database sequence objects from SQL Server instances.
 
     .DESCRIPTION
-        Removes the sequences that have passed through the pipeline.
+        Removes sequence objects from SQL Server databases, freeing up schema namespace and cleaning up unused database objects.
+        Sequences are commonly used for generating unique numeric values and may need removal during application changes or database cleanup.
 
-        If not used with a pipeline, Get-DbaDbSequence will be executed with the parameters provided
-        and the returned sequences will be removed.
+        When used without a pipeline, the function will first retrieve matching sequences using Get-DbaDbSequence with the provided parameters, then remove them.
+        Pipeline input from Get-DbaDbSequence allows for selective removal after review or filtering.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -20,16 +21,20 @@ function Remove-DbaDbSequence {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to search for sequences to remove. Accepts wildcards for pattern matching.
+        Use this to limit sequence removal to specific databases instead of searching all databases on the instance.
 
     .PARAMETER Sequence
-        The name(s) of the sequence(s).
+        Specifies the name(s) of the sequences to remove. Accepts wildcards for pattern matching.
+        Use this when you know the exact sequence names or want to remove sequences matching a naming pattern.
 
     .PARAMETER Schema
-        The name(s) of the schema for the sequence(s).
+        Filters sequences to remove by schema name. Accepts wildcards for pattern matching.
+        Useful when you need to remove sequences from specific schemas only, such as during application module cleanup.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbSequence.
+        Accepts sequence objects piped from Get-DbaDbSequence for removal.
+        This allows you to first review sequences with Get-DbaDbSequence before selectively removing them.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

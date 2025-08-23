@@ -43,6 +43,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = $server.Query("DROP PROCEDURE $startupProc", $dbname)
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When retrieving all startup procedures" {

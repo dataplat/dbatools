@@ -1,19 +1,25 @@
 function Get-DbaRandomizedType {
     <#
     .SYNOPSIS
-        Get the randomized types and sub types
+        Lists available data types and subtypes for generating realistic test data during database masking operations
 
     .DESCRIPTION
-        Retrieves the types and sub types available
+        Returns all available randomizer types and subtypes that can be used with Get-DbaRandomizedValue for data masking and test data generation. These types include realistic data patterns like Person names, Address components, Finance data, Internet values, and Random data types. This command helps you discover what fake data options are available when building data masking rules or generating test datasets for non-production environments.
 
     .PARAMETER RandomizedType
-        Filter the randomized types
+        Filters results to specific main data categories for realistic test data generation.
+        Use this when you need to focus on particular data types like Person, Address, Finance, Internet, or Random data.
+        Available types include Address, Commerce, Company, Database, Date, Finance, Hacker, Image, Internet, Lorem, Name, Person, Phone, Random, System, and more.
 
     .PARAMETER RandomizedSubType
-        Filter the randomized sub types
+        Filters results to specific data subtypes within the main categories for precise data masking scenarios.
+        Use this when you need exact data patterns like FirstName, LastName, Email, CreditCardNumber, or ZipCode.
+        Subtypes provide granular control over the fake data generation for targeted column masking.
 
     .PARAMETER Pattern
-        Get the types and sub types based on a pattern
+        Searches both main types and subtypes using pattern matching to find relevant data generators.
+        Use this when you're unsure of exact type names or want to discover related options like searching 'Addr' to find Address-related types.
+        Supports wildcard matching against both Type and SubType columns for flexible discovery.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

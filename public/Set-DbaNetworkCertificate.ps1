@@ -20,14 +20,19 @@ function Set-DbaNetworkCertificate {
         Allows you to login to the computer (not sql instance) using alternative credentials.
 
     .PARAMETER Certificate
-        The target certificate object
+        Specifies the X509Certificate2 object to configure as the network certificate for SQL Server.
+        Use this when piping certificate objects from other dbatools commands like New-DbaComputerCertificate.
+        The certificate must exist in the LocalMachine certificate store and have a private key for SQL Server to use it for SSL connections.
 
     .PARAMETER Thumbprint
-        The thumbprint of the target certificate
+        Specifies the thumbprint (SHA-1 hash) of the certificate to configure as the network certificate.
+        Use this when you know the specific certificate thumbprint from certificates already installed in LocalMachine\My.
+        The certificate must have a private key and the SQL Server service account will be granted read permissions to it.
 
     .PARAMETER RestartService
-        Every change to the network certificate needs a service restart to take effect.
-        This switch will force a restart of the service.
+        Forces an automatic restart of the SQL Server service after setting the network certificate.
+        Certificate changes require a service restart to take effect - without this switch you'll need to manually restart SQL Server.
+        Use this when you want the SSL configuration to be immediately active, but be aware it will cause a brief service interruption.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

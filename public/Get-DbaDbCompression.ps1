@@ -1,10 +1,10 @@
 function Get-DbaDbCompression {
     <#
     .SYNOPSIS
-        Gets tables and indexes size and current compression settings.
+        Retrieves compression settings, sizes, and row counts for tables and indexes across SQL Server databases.
 
     .DESCRIPTION
-        This function gets the current size and compression for all objects in the specified database(s), if no database is specified it will return all objects in all user databases.
+        This function analyzes data compression usage across your SQL Server databases by examining tables, indexes, and their physical partitions. It returns detailed information including current compression type (None, Row, Page, Columnstore), space usage, and row counts for each object. This is essential for compression optimization analysis, identifying candidates for compression to save storage space, and generating compliance reports on compression usage across your database environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,13 +17,16 @@ function Get-DbaDbCompression {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for compression information. Accepts multiple database names as an array.
+        Use this when you want to focus compression analysis on specific databases rather than scanning all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Specifies which databases to skip during compression analysis. Accepts multiple database names as an array.
+        Use this to exclude system databases, maintenance databases, or other databases you don't want included in compression reporting.
 
     .PARAMETER Table
-        The table(s) to process. If unspecified, all tables will be processed.
+        Specifies which tables to analyze for compression information. Accepts multiple table names as an array.
+        Use this when you need compression details for specific tables rather than all tables in the target databases, particularly useful for large databases where you want to focus on specific objects.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

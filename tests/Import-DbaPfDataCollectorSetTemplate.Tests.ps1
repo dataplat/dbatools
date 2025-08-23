@@ -43,18 +43,20 @@ Describe $CommandName -Tag IntegrationTests {
         $collectorSetName = "Long Running Queries"
 
         # Clean up any existing collector sets before starting
-        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     BeforeEach {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
     }
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command returns all the required results with pipe" {

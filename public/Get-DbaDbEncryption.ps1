@@ -1,10 +1,10 @@
 function Get-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Returns a summary of encryption used on databases passed to it.
+        Retrieves comprehensive encryption inventory from SQL Server databases including TDE status, certificates, and keys.
 
     .DESCRIPTION
-        Shows if a database has Transparent Data Encryption (TDE), any certificates, asymmetric keys or symmetric keys with details for each.
+        Audits database-level encryption across SQL Server instances by examining TDE encryption status, certificates, asymmetric keys, and symmetric keys within each database. Returns detailed information including key algorithms, lengths, owners, backup dates, and expiration dates for compliance reporting and security assessments. Particularly useful for encryption audits, certificate lifecycle management, and ensuring regulatory compliance across your SQL Server environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
@@ -17,13 +17,16 @@ function Get-DbaDbEncryption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to examine for encryption objects including TDE, certificates, and keys. Accepts database names as strings or arrays.
+        Use this to focus encryption audits on specific databases rather than scanning all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server.
+        Excludes specific databases from the encryption inventory scan. Useful when you need to audit most databases but skip certain ones.
+        Commonly used to exclude databases with known encryption issues or maintenance databases that don't require encryption compliance checks.
 
     .PARAMETER IncludeSystemDBs
-        Switch parameter that when used will display system database information.
+        Includes system databases (master, model, msdb, tempdb) in the encryption inventory. By default, only user databases are scanned.
+        Use this when conducting comprehensive security audits that require visibility into system database encryption objects and TDE configurations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

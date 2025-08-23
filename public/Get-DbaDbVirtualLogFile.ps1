@@ -2,12 +2,14 @@
 function Get-DbaDbVirtualLogFile {
     <#
     .SYNOPSIS
-        Returns database virtual log file information for database files on a SQL instance.
+        Retrieves detailed virtual log file (VLF) metadata from transaction logs for performance analysis and troubleshooting.
 
     .DESCRIPTION
-        Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.
+        This function uses DBCC LOGINFO to return detailed metadata about each virtual log file (VLF) within database transaction logs. The output includes VLF size, file offsets, sequence numbers, status, and parity information that's essential for analyzing transaction log structure and performance.
 
-        Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
+        Having a transaction log file with too many virtual log files (VLFs) can hurt database performance. Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
+
+        Common use cases include identifying databases with excessive VLF counts (typically over 50-100), analyzing VLF size distribution to spot fragmentation issues, and monitoring VLF status during active transactions. This data helps DBAs make informed decisions about log file growth settings and maintenance schedules.
 
         References:
         http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
@@ -26,13 +28,16 @@ function Get-DbaDbVirtualLogFile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to analyze for VLF information. Accepts wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of checking all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies which databases to skip during VLF analysis. Accepts wildcards for pattern matching.
+        Use this to exclude problematic databases or those you don't need to monitor for VLF issues.
 
     .PARAMETER IncludeSystemDBs
-        If this switch is enabled, system database information will be displayed.
+        Include system databases (master, model, msdb, tempdb) in the VLF analysis.
+        By default, only user databases are checked since system database VLF counts are typically less critical for performance tuning.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

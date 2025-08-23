@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dropQuery = "EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$conditionId"
         $null = $server.Query($dropQuery)
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command returns results" {

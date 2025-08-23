@@ -1,10 +1,14 @@
 function Get-DbaDbIdentity {
     <#
     .SYNOPSIS
-        Checks the current identity value via DBCC CHECKIDENT with NORESEED optuin
+        Retrieves current identity values from tables without reseeding using DBCC CHECKIDENT
 
     .DESCRIPTION
-        Use the command DBCC CHECKIDENT with NORESEED option to checks the current identity value of a table and return results
+        Executes DBCC CHECKIDENT with the NORESEED option to retrieve current identity seed and column values from specified tables without modifying anything. This provides a safe way to inspect identity column status across multiple tables, databases, and instances simultaneously.
+
+        DBAs use this when troubleshooting identity gaps, planning bulk operations, or auditing identity column usage before performing maintenance tasks. Unlike running DBCC CHECKIDENT manually, this command structures the output into readable PowerShell objects that show both the current identity value and the actual highest value in the column.
+
+        The NORESEED option ensures no changes are made to your tables - it's purely informational. The function parses the DBCC output to extract specific identity metrics, making it ideal for scripted monitoring and reporting workflows.
 
         Read more:
             - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkident-transact-sql
@@ -20,10 +24,12 @@ function Get-DbaDbIdentity {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for identity column values. If not specified, all accessible databases on the instance are processed.
+        Use this to focus on specific databases when you don't need identity information from every database on the server.
 
     .PARAMETER Table
-        The table(s) for which to check the current identity value.
+        Specifies the table names to check for current identity seed and column values. Accepts schema-qualified names like 'Production.ScrapReason'.
+        This parameter is required since DBCC CHECKIDENT must target specific tables. Use a query against sys.columns to find all tables with identity columns if needed.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.

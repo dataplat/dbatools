@@ -1,10 +1,12 @@
 function New-DbaReplPublication {
     <#
     .SYNOPSIS
-        Creates a publication for the database on the target SQL instances.
+        Creates a SQL Server replication publication for transactional, snapshot, or merge replication
 
     .DESCRIPTION
-        Creates a publication for the database on the target SQL instances.
+        Creates a new replication publication on a SQL Server instance that's already configured as a publisher. This function enables publishing on the specified database, creates necessary replication agents (Log Reader for transactional/snapshot, Snapshot Agent for all types), and establishes the publication object that defines what data will be replicated to subscribers.
+
+        Use this command when setting up the publisher side of SQL Server replication to distribute data across multiple servers. The publication acts as a container for the articles (tables, views, stored procedures) you want to replicate. After creating the publication, you'll typically add articles using Add-DbaReplArticle and create subscriptions on target servers.
 
         https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/create-a-publication?view=sql-server-ver16
 
@@ -19,22 +21,22 @@ function New-DbaReplPublication {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database that contains the articles to be replicated.
+        Specifies the database where the publication will be created and which contains the objects to be replicated.
+        This database must already exist on the publisher instance and will be enabled for the specified replication type.
 
     .PARAMETER Name
-        The name of the replication publication.
+        Sets the unique name for the publication within the database.
+        Use a descriptive name that identifies the purpose or content of the publication, as this name will be referenced when creating subscriptions and managing replication.
 
     .PARAMETER Type
-        The flavour of replication.
-        Options are Transactional, Snapshot, Merge
+        Determines the replication method used for distributing data to subscribers.
+        Transactional provides near real-time synchronization for frequently changing data, Snapshot creates point-in-time copies for less volatile data, and Merge allows bidirectional changes with conflict resolution.
+        Choose based on your data synchronization requirements and network constraints.
 
     .PARAMETER LogReaderAgentCredential
-        Used to provide the credentials for the Microsoft Windows account under which the Log Reader Agent runs
-
-        Setting LogReaderAgentProcessSecurity is not required when the publication is created by a member of the sysadmin fixed server role.
-        In this case, the agent will impersonate the SQL Server Agent account. For more information, see Replication Agent Security Model.
-
-        TODO: test LogReaderAgentCredential parameters
+        Specifies the Windows account credentials for the Log Reader Agent, which is required for Transactional and Snapshot replication types.
+        This agent reads the transaction log to identify changes for replication. Only needed when not running as sysadmin, as sysadmin members default to using the SQL Server Agent service account.
+        Use a domain account with appropriate permissions to the publisher database and distributor.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

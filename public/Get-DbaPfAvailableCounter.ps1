@@ -1,16 +1,17 @@
 function Get-DbaPfAvailableCounter {
     <#
     .SYNOPSIS
-        Gathers list of all available counters on local or remote machines.
+        Retrieves all Windows performance counters available on local or remote machines for monitoring setup.
 
     .DESCRIPTION
-        Gathers list of all available counters on local or remote machines. Note, if you pass a credential object, it will be included in the output for easy reuse in your next piped command.
+        Retrieves all Windows performance counters available on specified machines by reading directly from the registry for fast enumeration. This is essential when setting up SQL Server monitoring because you need to know which specific counters are available before configuring data collectors or performance monitoring solutions. The function uses a registry-based approach that's much faster than traditional Get-Counter methods, making it practical for discovering hundreds of available counters across multiple servers. When credentials are provided, they're included in the output for easy piping to other dbatools commands like Add-DbaPfDataCollectorCounter.
 
         Thanks to Daniel Streefkerk for this super fast way of counters
         https://daniel.streefkerkonline.com/2016/02/18/use-powershell-to-list-all-windows-performance-counters-and-their-numeric-ids
 
     .PARAMETER ComputerName
-        The target computer. Defaults to localhost.
+        Specifies the target computers to query for available performance counters. Defaults to localhost.
+        Use this when you need to discover counters on remote SQL Server instances or other servers in your environment before setting up monitoring.
 
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:
@@ -18,7 +19,8 @@ function Get-DbaPfAvailableCounter {
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER Pattern
-        Specify a pattern for filtering.
+        Filters counter names using wildcard pattern matching (supports * and ? wildcards).
+        Use this to find specific SQL Server counters like "*sql*" or "*buffer*" when you need to identify relevant performance metrics for monitoring setup.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

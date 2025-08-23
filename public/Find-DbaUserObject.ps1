@@ -1,21 +1,13 @@
 function Find-DbaUserObject {
     <#
     .SYNOPSIS
-        Searches SQL Server to find user-owned objects (i.e. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.
+        Finds SQL Server objects owned by users other than sa or dbo, or searches for objects owned by a specific user pattern.
 
     .DESCRIPTION
-        Looks at the below list of objects to see if they are either owned by a user or a specific user (using the parameter -Pattern)
-        Database Owner
-        Agent Job Owner
-        Used in Credential
-        USed in Proxy
-        SQL Agent Steps using a Proxy
-        Endpoints
-        Server Roles
-        Database Schemas
-        Database Roles
-        Database Assembles
-        Database Synonyms
+        Scans SQL Server instances to identify objects with non-standard ownership, which is critical for security auditing and user management.
+        When removing user accounts or performing security reviews, you need to know what objects they own to avoid breaking dependencies.
+        This function searches databases, SQL Agent jobs, credentials, proxies, endpoints, server roles, schemas, database roles, assemblies, and synonyms.
+        Use the Pattern parameter to search for objects owned by a specific user, or run without it to find all user-owned objects that aren't owned by system accounts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input
@@ -28,7 +20,8 @@ function Find-DbaUserObject {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Pattern
-        The regex pattern that the command will search for
+        Searches for objects owned by accounts matching this regex pattern. Use this when looking for objects owned by a specific user or group of users.
+        When omitted, finds all objects not owned by system accounts (sa/dbo). Supports Windows domain accounts like 'DOMAIN\username' or SQL logins.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

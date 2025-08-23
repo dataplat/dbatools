@@ -1,10 +1,14 @@
 function Remove-DbaDbRole {
     <#
     .SYNOPSIS
-        Removes a database role from database(s) for each instance(s) of SQL Server.
+        Removes custom database roles from SQL Server databases
 
     .DESCRIPTION
-        The Remove-DbaDbRole removes role(s) from database(s) for each instance(s) of SQL Server.
+        Removes user-defined database roles from SQL Server databases while protecting against accidental deletion of system roles. This function automatically excludes fixed database roles (like db_owner, db_datareader) and the public role, ensuring only custom roles created for specific security requirements can be removed.
+
+        The function performs safety checks before removal, preventing deletion of roles that own database schemas to avoid orphaning database objects. This is particularly useful when cleaning up deprecated security configurations or removing roles from development databases that were copied from production.
+
+        You can target specific roles across multiple databases and instances, making it ideal for standardizing security configurations or bulk cleanup operations. By default, system databases are excluded unless explicitly included with the IncludeSystemDbs parameter.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,22 +21,28 @@ function Remove-DbaDbRole {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to remove roles from. Accepts multiple database names and supports wildcards for pattern matching.
+        When omitted, the function processes all user databases on the instance. Use this when you need to clean up roles from specific databases only.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Excludes specific databases from role removal operations. Accepts multiple database names and supports wildcards.
+        Use this when processing all databases except certain ones, such as excluding production databases during cleanup operations.
 
     .PARAMETER Role
-        The role(s) to process. If unspecified, all roles will be processed.
+        Specifies which custom database roles to remove. Accepts multiple role names and supports wildcards for pattern matching.
+        When omitted, all custom roles in the target databases will be removed. Fixed database roles (db_owner, db_datareader, etc.) and the public role are automatically protected from deletion.
 
     .PARAMETER ExcludeRole
-        The role(s) to exclude.
+        Excludes specific roles from removal operations. Accepts multiple role names and supports wildcards.
+        Use this when you want to remove most custom roles but preserve certain ones, such as keeping application-specific roles while cleaning up deprecated security configurations.
 
     .PARAMETER IncludeSystemDbs
-        If this switch is enabled, roles can be removed from system databases.
+        Allows role removal operations to target system databases (master, model, msdb, tempdb).
+        By default, system databases are excluded to prevent accidental removal of roles that may be required for SQL Server operations. Only use this when you specifically need to clean up custom roles from system databases.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+        Accepts piped objects from Get-DbaDbRole, Get-DbaDatabase, or SQL Server instances for processing.
+        Use this for pipeline operations where you first retrieve specific roles or databases, then remove roles from them. This allows for more complex filtering and processing scenarios.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

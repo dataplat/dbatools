@@ -1,10 +1,10 @@
 function Remove-DbaDbSnapshot {
     <#
     .SYNOPSIS
-        Removes database snapshots
+        Drops database snapshots from SQL Server instances
 
     .DESCRIPTION
-        Removes (drops) database snapshots from the server
+        Removes database snapshots by executing DROP DATABASE statements against the target SQL Server instances. Database snapshots are point-in-time, read-only copies of databases that consume minimal space through copy-on-write technology. This function helps DBAs clean up obsolete snapshots that are no longer needed for reporting, testing, or recovery purposes. The Force parameter can terminate active connections to snapshots that might otherwise prevent the drop operation from succeeding.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,19 +17,24 @@ function Remove-DbaDbSnapshot {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Removes snapshots for only this specific base db
+        Specifies the base database(s) whose snapshots should be removed. Only snapshots created from these source databases will be dropped.
+        Use this when you need to clean up snapshots for specific databases while leaving other snapshots intact.
 
     .PARAMETER ExcludeDatabase
-        Removes snapshots excluding this specific base dbs
+        Excludes snapshots from the specified base database(s) from removal. All other snapshots on the instance will be removed.
+        Use this when you want to remove most snapshots but preserve those from critical databases.
 
     .PARAMETER Snapshot
-        Restores databases from snapshot with this name only
+        Specifies the exact snapshot name(s) to remove. Accepts multiple snapshot names for targeted removal operations.
+        Use this when you know the specific snapshot names you want to drop, such as outdated test or reporting snapshots.
 
     .PARAMETER AllSnapshots
-        Specifies that you want to remove all snapshots from the server
+        Removes all database snapshots found on the target SQL Server instance(s). This affects every snapshot regardless of source database.
+        Use this for complete snapshot cleanup operations, typically during maintenance windows or server decommissioning.
 
     .PARAMETER Force
-        Will forcibly kill all running queries that prevent the drop process.
+        Terminates active connections and running queries against snapshots to allow the drop operation to complete successfully.
+        Use this when snapshots have active sessions that would normally block the removal process.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run
@@ -38,7 +43,8 @@ function Remove-DbaDbSnapshot {
         Prompts for confirmation of every step.
 
     .PARAMETER InputObject
-        Enables input from Get-DbaDbSnapshot
+        Accepts database snapshot objects from Get-DbaDbSnapshot for pipeline operations. This allows filtering and processing snapshots before removal.
+        Use this for complex filtering scenarios where you first identify specific snapshots with Get-DbaDbSnapshot.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,10 +1,10 @@
 function Set-DbaDbCompatibility {
     <#
     .SYNOPSIS
-        Sets the compatibility level for SQL Server databases.
+        Changes database compatibility levels to match SQL Server instance version or specified target level.
 
     .DESCRIPTION
-        Sets the current database compatibility level for all databases on a server or list of databases passed in to the function.
+        Updates database compatibility levels across one or more SQL Server instances. When no specific compatibility level is provided, automatically sets each database to match the SQL Server instance version it resides on. This is particularly useful after SQL Server upgrades when databases retain their original compatibility levels and need updating to take advantage of newer engine features and optimizations. The function processes only databases where the current compatibility level differs from the target level, making it safe to run repeatedly.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,14 +17,17 @@ function Set-DbaDbCompatibility {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database or databases to process. If unspecified, all databases will be processed.
+        Specifies which databases to update compatibility levels for. Accepts wildcards for pattern matching.
+        When omitted, processes all user databases on the target instance, excluding system databases.
 
     .PARAMETER Compatibility
-        The target compatibility level version. Same format as returned by Get-DbaDbCompatibility
-        Availability values: https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.compatibilitylevel
+        Sets a specific target compatibility level for all processed databases. Must be a valid CompatibilityLevel enum value like Version160, Version150, etc.
+        When omitted, automatically updates each database to match its SQL Server instance version, which is typically desired after SQL Server upgrades.
+        Use this parameter when you need databases to remain at a specific compatibility level rather than matching the current server version.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase)
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase or other dbatools functions.
+        Use this when you need to apply compatibility level changes to a pre-filtered set of databases or when chaining multiple dbatools commands together.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run

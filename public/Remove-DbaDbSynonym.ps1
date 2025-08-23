@@ -1,10 +1,10 @@
 function Remove-DbaDbSynonym {
     <#
     .SYNOPSIS
-        Removes synonym(s) from database(s) / instance(s) of SQL Server.
+        Removes database synonyms from SQL Server databases
 
     .DESCRIPTION
-        The Remove-DbaDbSynonym removes synonym(s) from database(s) / instance(s) of SQL Server.
+        Removes one or more database synonyms from SQL Server databases by executing DROP SYNONYM commands. Synonyms are database objects that provide alternate names for tables, views, or other objects, often used to simplify complex object names or provide abstraction layers. This function helps clean up obsolete synonyms during database refactoring, migrations, or general maintenance activities, so you don't have to manually script DROP statements across multiple databases or instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,25 +17,32 @@ function Remove-DbaDbSynonym {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to remove synonyms from. Accepts wildcards for pattern matching.
+        Use this to target specific databases instead of processing all databases on the instance. If unspecified, all databases will be processed.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
+        Specifies databases to skip during synonym removal operations.
+        Use this when you want to process most databases but exclude specific ones like system databases or production databases during maintenance windows.
 
     .PARAMETER Schema
-        The schema(s) to process. If unspecified, all schemas will be processed.
+        Specifies which schemas to target for synonym removal within the selected databases.
+        Use this to limit removal to synonyms in specific schemas like 'dbo', 'reporting', or custom application schemas. If unspecified, all schemas will be processed.
 
     .PARAMETER ExcludeSchema
-        The schema(s) to exclude.
+        Specifies schemas to skip during synonym removal operations.
+        Use this to avoid removing synonyms from critical schemas while processing others, such as excluding 'sys' or application-specific schemas.
 
     .PARAMETER Synonym
-        The synonym(s) to process. If unspecified, all synonyms will be processed.
+        Specifies the exact synonym names to remove from the target databases.
+        Use this when you need to remove specific synonyms by name rather than all synonyms. Supports multiple synonym names for bulk operations. If unspecified, all synonyms will be processed.
 
     .PARAMETER ExcludeSynonym
-        The synonym(s) to exclude.
+        Specifies synonym names to skip during the removal operation.
+        Use this when you want to remove most synonyms but preserve specific ones that are still in use by applications or reports.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDbSynonym or Get-DbaDatabase
+        Accepts piped input from Get-DbaDbSynonym, Get-DbaDatabase, or SQL Server instances.
+        Use this to remove synonyms that were identified by Get-DbaDbSynonym or to process multiple server instances from pipeline input. This enables more precise control over which synonyms to remove.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

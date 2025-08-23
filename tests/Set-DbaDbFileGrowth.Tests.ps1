@@ -35,7 +35,6 @@ Describe $CommandName -Tag IntegrationTests {
         $splatNewDatabase = @{
             SqlInstance = $TestConfig.instance2
             Name        = $testDbName
-            Confirm     = $false
         }
         $newdb = New-DbaDatabase @splatNewDatabase
 
@@ -51,11 +50,10 @@ Describe $CommandName -Tag IntegrationTests {
         $splatRemoveDatabase = @{
             SqlInstance = $TestConfig.instance2
             Database    = $testDbName
-            Confirm     = $false
         }
         Remove-DbaDatabase @splatRemoveDatabase
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Should return file information for only test database" {

@@ -1,15 +1,14 @@
 function Resolve-DbaNetworkName {
     <#
     .SYNOPSIS
-        Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
+        Resolves network names and returns detailed network information for SQL Server connection troubleshooting and validation.
 
     .DESCRIPTION
-        Retrieves the IPAddress, ComputerName from one computer.
-        The object can be used to take action against its name or IPAddress.
+        Performs comprehensive network name resolution to gather detailed connection information for SQL Server instances and computers.
+        This function is essential when you need to verify connectivity, troubleshoot connection issues, or validate network configurations before connecting to SQL Server.
 
-        First ICMP is used to test the connection, and get the connected IPAddress.
-
-        Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
+        Uses multiple resolution methods including DNS lookups, ICMP ping tests, and WMI/CIM queries to ensure accurate results across different network configurations.
+        First tests connectivity using ICMP to identify the responding IP address, then gathers comprehensive network details through various protocols.
 
         Important: Remember that FQDN doesn't always match "ComputerName dot Domain" as AD intends.
         There are network setup (google "disjoint domain") where AD and DNS do not match.
@@ -35,8 +34,9 @@ function Resolve-DbaNetworkName {
         So, if you need to use something, go with FullComputerName, always, as it is the most correct in every scenario.
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
-        This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
+        Specifies the target computer name, IP address, or SQL Server instance to resolve network information for.
+        Use this when troubleshooting connectivity issues or validating network configurations before connecting to SQL Server.
+        Accepts computer names (SERVER01), IP addresses (192.168.1.100), SQL Server instances (SERVER01\INSTANCE), or SMO objects from Get-DbaRegServer.
 
     .PARAMETER Credential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -46,9 +46,9 @@ function Resolve-DbaNetworkName {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Turbo
-        Resolves without accessing the server itself. Faster but may be less accurate because it relies on DNS only,
-        so it may fail spectacularly for disjoin-domain setups. Also, everyone has its own DNS (i.e. results may vary
-        changing the computer where the function runs)
+        Enables DNS-only resolution mode for faster network name resolution without connecting to the target computer.
+        Use this when you need quick DNS lookups but don't require comprehensive network details or WMI/CIM information.
+        Results may be less accurate in disjoint-domain environments where AD and DNS configurations don't align, and may vary depending on your local DNS configuration.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

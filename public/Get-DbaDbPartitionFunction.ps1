@@ -1,10 +1,10 @@
 function Get-DbaDbPartitionFunction {
     <#
     .SYNOPSIS
-        Gets database Partition Functions.
+        Retrieves partition function definitions and metadata from SQL Server databases.
 
     .DESCRIPTION
-        Gets database Partition Functions.
+        Retrieves partition function definitions and their metadata from one or more SQL Server databases. Partition functions define how table or index data is distributed across multiple partitions based on the values of a partitioning column. This function returns details like creation date, function name, and number of partitions, making it useful for documenting partitioning schemes, analyzing partition distribution strategies, and auditing partitioned table configurations before maintenance operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,16 @@ function Get-DbaDbPartitionFunction {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get users from specific database(s).
+        Specifies which databases to search for partition functions. Accepts multiple database names as an array.
+        Use this when you need to examine partition functions in specific databases rather than scanning all accessible databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Specifies which databases to skip when searching for partition functions. Accepts multiple database names as an array.
+        Use this to avoid scanning system databases or databases where you know partition functions don't exist, improving performance on instances with many databases.
 
     .PARAMETER PartitionFunction
-        The name(s) of the partition function(s).
+        Specifies which partition functions to retrieve by name. Accepts multiple function names as an array and supports wildcards.
+        Use this when you need details about specific partition functions rather than retrieving all partition functions from the target databases.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,12 +1,14 @@
 function Get-DbaEstimatedCompletionTime {
     <#
     .SYNOPSIS
-        Gets execution and estimated completion time information for queries
+        Monitors progress and estimated completion times for long-running SQL Server operations
 
     .DESCRIPTION
-        Gets execution and estimated completion time information for queries
+        Retrieves real-time progress information for long-running SQL Server maintenance and administrative operations by querying sys.dm_exec_requests. This function helps DBAs monitor the status of time-intensive tasks without having to guess when they'll complete or manually check SQL Server Management Studio.
 
-        Percent complete will show for the following commands
+        Shows progress details including percent complete, running time, estimated time remaining, and projected completion time. Only returns operations that SQL Server can provide completion estimates for - quick queries and standard SELECT statements won't appear in the results.
+
+        Percent complete will show for the following commands:
 
         ALTER INDEX REORGANIZE
         AUTO_SHRINK option with ALTER DATABASE
@@ -22,9 +24,9 @@ function Get-DbaEstimatedCompletionTime {
         ROLLBACK
         TDE ENCRYPTION
 
-        For additional information, check out https://blogs.sentryone.com/loriedwards/patience-dm-exec-requests/ and https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-exec-requests-transact-sql
+        Particularly useful during scheduled maintenance windows, large database restores, or when troubleshooting performance issues where you need visibility into what's currently running and how much longer it will take.
 
-        The command will only return queries that provide estimated completion time, all other running queries will be filtered out.
+        For additional information, check out https://blogs.sentryone.com/loriedwards/patience-dm-exec-requests/ and https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-exec-requests-transact-sql
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -37,10 +39,12 @@ function Get-DbaEstimatedCompletionTime {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Filters results to show only long-running operations within the specified database(s). Accepts multiple database names or wildcards.
+        Use this when you need to monitor specific databases during maintenance windows or troubleshoot performance issues in particular databases.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes long-running operations from the specified database(s) when monitoring across the entire instance.
+        Helpful when you want to monitor all databases except system databases or exclude databases with known maintenance operations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

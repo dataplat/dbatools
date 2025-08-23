@@ -1,31 +1,43 @@
 function Invoke-DbaAdvancedInstall {
     <#
     .SYNOPSIS
-        Designed for internal use, implements parallel execution for Install-DbaInstance.
+        Executes SQL Server installation on a single computer with automated restart handling.
 
     .DESCRIPTION
-        Invokes an install process for a single computer and restarts it if needed
+        Performs the complete SQL Server installation workflow on a target computer, including pre and post-installation restart management. This internal function handles copying configuration files to remote machines, executing setup.exe with specified parameters, configuring TCP ports, enabling volume maintenance tasks, and managing required system restarts. It provides detailed installation logging and error reporting to track the success or failure of each installation attempt.
 
     .PARAMETER ComputerName
-        Target computer with SQL instance or instances.
+        Specifies the target computer where SQL Server will be installed.
+        Can be a hostname, FQDN, or IP address for remote installations.
 
     .PARAMETER Port
-        After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.
+        Sets the TCP port for the SQL Server instance after installation completes.
+        Use this when you need a specific port for firewall rules or application connectivity requirements.
+        The service will be automatically restarted to apply the new port setting.
 
     .PARAMETER InstallationPath
-        Path to setup.exe
+        Specifies the full path to the SQL Server setup.exe file.
+        This should point to the setup.exe in your SQL Server installation media or extracted ISO.
 
     .PARAMETER ConfigurationPath
-        Path to Configuration.ini on a local machine
+        Specifies the path to the SQL Server configuration file (Configuration.ini) on the local machine.
+        This file contains all installation settings and will be copied to the target computer during remote installations.
+        Generate this file using SQL Server Installation Center or create it manually with your desired settings.
 
     .PARAMETER ArgumentList
-        Array of command line arguments for setup.exe
+        Provides additional command-line arguments to pass directly to setup.exe.
+        Use this for installation options not covered by other parameters, such as /IACCEPTSQLSERVERLICENSETERMS.
+        These arguments supplement the configuration file settings.
 
     .PARAMETER Version
-        Canonic version of SQL Server, e.g. 10.50, 11.0
+        Specifies the SQL Server version being installed using the canonical version number.
+        Examples: 10.50 for SQL Server 2008 R2, 11.0 for SQL Server 2012, 13.0 for SQL Server 2016.
+        This helps the function locate installation logs and perform version-specific operations.
 
     .PARAMETER InstanceName
-        Instance name to be used for the installation
+        Specifies the name for the SQL Server instance being installed.
+        Use 'MSSQLSERVER' for the default instance or provide a custom name for named instances.
+        This parameter is used for post-installation configuration like port changes and service restarts.
 
     .PARAMETER Configuration
         A hashtable with custom configuration items that you want to use during the installation.
@@ -36,32 +48,38 @@ function Invoke-DbaAdvancedInstall {
         Full list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install
 
     .PARAMETER Restart
-        Restart computer automatically after a successful installation of Sql Server and wait until it comes back online.
-        Using this parameter is the only way to chain-install more than 1 instance, since every single patch will require a restart of said computer.
+        Automatically restarts the target computer when required by the SQL Server installation and waits for it to come back online.
+        Essential for multi-instance installations since most SQL Server components require a restart to complete installation.
+        Without this parameter, you must manually restart the computer when installation exit code 3010 is returned.
 
     .PARAMETER Credential
         Windows Credential with permission to log on to the remote server.
         Must be specified for any remote connection if installation media is located on a network folder.
 
     .PARAMETER Authentication
-        Chooses an authentication protocol for remote connections.
-        If the protocol fails to establish a connection
-
-        Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
-        * Default when -Credential is not specified. Will likely fail if a network path is specified.
+        Specifies the authentication protocol for PowerShell remoting to the target computer.
+        CredSSP is used by default when credentials are provided to handle network share access during installation.
+        Change to Kerberos or Negotiate if your environment restricts CredSSP usage.
 
     .PARAMETER PerformVolumeMaintenanceTasks
-        Allow SQL Server service account to perform Volume Maintenance tasks.
+        Grants the SQL Server service account the 'Perform Volume Maintenance Tasks' privilege after installation.
+        This enables instant file initialization, significantly improving database file creation and growth performance.
+        Recommended for production environments where large databases are created or restored frequently.
 
     .PARAMETER SaveConfiguration
-        Save installation configuration file in a custom location. Will not be preserved otherwise.
+        Specifies a path where the installation configuration file will be saved for future reference.
+        Use this to preserve your installation settings for documentation or to replicate the same configuration on other servers.
+        The temporary configuration file is normally deleted after installation completes.
 
     .PARAMETER SaCredential
-        Securely provide the password for the sa account when using mixed mode authentication.
+        Provides the sa account password when installing SQL Server with mixed mode authentication.
+        Pass a PSCredential object with 'sa' as the username and your desired password.
+        Required only when your configuration file specifies mixed mode authentication (SECURITYMODE=SQL).
 
     .PARAMETER NoPendingRenameCheck
-        Disables pending rename validation when checking for a pending reboot.
+        Skips the check for pending file rename operations when determining if a reboot is required.
+        Use this switch if you encounter false positive reboot requirements due to pending renames that don't affect SQL Server installation.
+        Only disable this check if you're certain no critical system files are waiting to be renamed.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

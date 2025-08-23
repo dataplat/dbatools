@@ -1,10 +1,10 @@
 function Get-DbaXEStore {
     <#
     .SYNOPSIS
-        Get a Extended Events store
+        Retrieves the Extended Events store object for managing XEvent sessions and configurations
 
     .DESCRIPTION
-        Get a Extended Events store
+        Retrieves the Extended Events store object from SQL Server instances, which serves as the foundation for working with Extended Events sessions, packages, and configurations. The store object provides access to session management, event package information, and running session counts. This is typically the first step when building Extended Events monitoring solutions or auditing XEvent configurations across your environment.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

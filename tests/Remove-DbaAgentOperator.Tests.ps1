@@ -45,7 +45,6 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created operators
         $splatCleanup = @{
             SqlInstance = $instanceConnection
-            Confirm     = $false
         }
         $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorEmail1 -ErrorAction SilentlyContinue
         $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorEmail2 -ErrorAction SilentlyContinue
@@ -53,11 +52,13 @@ Describe $CommandName -Tag IntegrationTests {
         foreach ($operatorName in $operatorsToCleanup) {
             $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorName -ErrorAction SilentlyContinue
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Remove Agent Operator is removed properly" {
         It "Should have no operator with that name" {
-            Remove-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorEmail1 -Confirm:$false
+            Remove-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorEmail1
             $results = (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorEmail1).Count
             $results | Should -BeExactly 0
         }
@@ -67,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
             $operatorsToCleanup += $operatorName
             $null = New-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName
             (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName | Remove-DbaAgentOperator -Confirm:$false
+            Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName | Remove-DbaAgentOperator
             (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName) | Should -BeNullOrEmpty
         }
     }

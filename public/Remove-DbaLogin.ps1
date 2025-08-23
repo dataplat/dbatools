@@ -1,10 +1,10 @@
 function Remove-DbaLogin {
     <#
     .SYNOPSIS
-        Drops a Login
+        Removes SQL Server logins from target instances
 
     .DESCRIPTION
-        Tries a bunch of different ways to remove a Login or two or more.
+        Removes one or more SQL Server logins from specified instances using the SMO Drop() method. This function handles the complete removal process including dependency checks and provides proper error handling when logins cannot be dropped due to existing sessions or database ownership. Use the -Force parameter to automatically terminate active sessions associated with the login before removal, which is useful when cleaning up test environments or decommissioning user accounts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -13,13 +13,16 @@ function Remove-DbaLogin {
         Allows you to login to servers using alternative credentials.
 
     .PARAMETER Login
-        The Login(s) to process - this list is auto-populated from the server. If unspecified, all Logins will be processed.
+        Specifies the SQL Server login names to remove from the target instance. Accepts multiple login names as an array.
+        Use this when you know the specific logins to delete, such as when cleaning up test accounts or decommissioned user logins.
 
     .PARAMETER InputObject
-        A collection of Logins (such as returned by Get-DbaLogin), to be removed.
+        Accepts login objects piped from Get-DbaLogin or other dbatools functions that return SQL Server login objects.
+        Use this for advanced filtering scenarios or when chaining multiple dbatools commands together in a pipeline.
 
     .PARAMETER Force
-        Kills any sessions associated with the login prior to drop
+        Automatically terminates any active database connections and sessions associated with the login before attempting removal.
+        Use this when you need to forcibly remove logins that have active sessions, common in development environments or during emergency cleanup.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

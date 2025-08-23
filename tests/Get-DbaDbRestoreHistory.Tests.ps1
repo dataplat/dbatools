@@ -31,13 +31,13 @@ Describe $CommandName -Tag IntegrationTests {
 
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
         $dbname1 = "dbatoolsci_restorehistory1_$random"
         $dbname2 = "dbatoolsci_restorehistory2_$random"
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase
 
         $splatRestore1 = @{
             SqlInstance           = $TestConfig.instance2
@@ -77,19 +77,19 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Restore-DbaDatabase @splatRestoreFinal
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase
         Remove-Item -Path $fullBackup.BackupPath -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $logBackup.BackupPath -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $diffBackup.BackupPath -Force -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Preparation" {
         It "Should have prepared" {

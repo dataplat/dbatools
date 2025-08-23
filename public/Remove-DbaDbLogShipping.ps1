@@ -1,22 +1,21 @@
 <#
     .SYNOPSIS
-        Remove-DbaDbLogShipping will remove one or more databases from log shipping
+        Dismantles SQL Server log shipping configurations and removes associated jobs and monitoring
 
     .DESCRIPTION
-        The command Remove-DbaDbLogShipping will remove one or more databases from log shipping
+        Completely removes log shipping setup from both primary and secondary instances by cleaning up all associated SQL Agent jobs, monitor configurations, and database relationships stored in msdb. This function calls the proper SQL Server system stored procedures (sp_delete_log_shipping_primary_secondary, sp_delete_log_shipping_primary_database, and sp_delete_log_shipping_secondary_database) to ensure clean removal without orphaned objects.
 
-        After running the command it will remove all the jobs, configurations set up for log shipping
+        Use this when migrating to different disaster recovery solutions, cleaning up failed log shipping setups, or decommissioning secondary servers. The function automatically discovers secondary server information from the log shipping configuration if not specified.
 
-        By default the secondary database will NOT be removed.
-        Use -RemoveSecondaryDatabase to make the command the secondary database
+        By default, the secondary database remains intact and accessible after log shipping removal. Use -RemoveSecondaryDatabase to completely drop the secondary database as part of the cleanup process.
 
     .PARAMETER PrimarySqlInstance
-        Primary SQL Server instance which contains the primary database(s).
-        You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        The SQL Server instance hosting the primary database(s) in the log shipping configuration. This server contains the source database that is being shipped to secondary instances.
+        You must have sysadmin access to execute the log shipping removal stored procedures. Requires SQL Server 2000 or later.
 
     .PARAMETER SecondarySqlInstance
-        Secondary SQL Server instance which contains the secondary database(s)
-        You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        The SQL Server instance hosting the secondary database(s) in the log shipping configuration. If not specified, the function automatically discovers this from the log shipping metadata in msdb.
+        Required when removing log shipping from multiple secondary instances or when automatic discovery fails. You must have sysadmin access to clean up secondary database configurations.
 
     .PARAMETER PrimarySqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -33,13 +32,12 @@
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Database to remove from log shipping.
-
-        This is the name of the database located on the primary instance
+        The primary database name(s) to remove from log shipping configuration. Accepts multiple databases via pipeline or array input.
+        Must specify the database name as it exists on the primary instance, not the secondary instance name which may be different.
 
     .PARAMETER RemoveSecondaryDatabase
-        By default the command will not remove the database from the secondary instance.
-        Use this parameter to make the command remove that database
+        Completely drops the secondary database from the secondary instance after removing the log shipping configuration. By default, the secondary database remains intact and accessible.
+        Use this when decommissioning the secondary server or when you need to start fresh with a new log shipping setup.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

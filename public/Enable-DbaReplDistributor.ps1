@@ -1,10 +1,10 @@
 function Enable-DbaReplDistributor {
     <#
     .SYNOPSIS
-        Enables replication distribution for the target SQL instances.
+        Configures a SQL Server instance as a replication distributor with distribution database
 
     .DESCRIPTION
-        Enables replication distribution for the target SQL instances.
+        Configures the specified SQL Server instance to act as a replication distributor by creating the distribution database and installing the distributor role. This is the first step in setting up SQL Server replication, as the distributor manages the flow of replicated transactions between publishers and subscribers. Once configured, the instance can store replication metadata, track publication and subscription information, and coordinate data movement for transactional and snapshot replication scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,9 +17,9 @@ function Enable-DbaReplDistributor {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DistributionDatabase
-        Name of the distribution database that will be created.
-
-        Default is 'distribution'.
+        Specifies the name of the distribution database that will be created to store replication metadata and transaction logs.
+        This database holds subscription information, publication details, and queued transactions for distribution to subscribers.
+        Defaults to 'distribution' if not specified, which is the standard convention for most replication configurations.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

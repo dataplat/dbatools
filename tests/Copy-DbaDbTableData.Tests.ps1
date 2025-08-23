@@ -44,7 +44,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
         $destinationDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
@@ -66,12 +66,12 @@ Describe $CommandName -Tag IntegrationTests {
             FROM sys.objects")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example")
         $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example2")
@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example")
         $null = $sourceDb.Query("DROP TABLE tempdb.dbo.dbatoolsci_willexist")
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying table data within same instance" {

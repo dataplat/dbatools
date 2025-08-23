@@ -1,17 +1,17 @@
 function Enable-DbaAgHadr {
     <#
     .SYNOPSIS
-        Enables the Hadr service setting on the specified SQL Server.
+        Enables HADR service setting on SQL Server instances to allow Availability Group creation.
 
     .DESCRIPTION
-        In order to build an AG a cluster has to be built and then the Hadr enabled for the SQL Server
-        service. This function enables that feature for the SQL Server service.
+        Configures the High Availability Disaster Recovery (HADR) service setting on SQL Server instances, which is a required prerequisite before you can create Availability Groups. This setting must be enabled at the instance level and requires a service restart to take effect. Use this command when preparing SQL Server instances for Availability Group participation after your Windows Server Failover Cluster is already configured.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
     .PARAMETER Credential
-        Credential object used to connect to the Windows server as a different user
+        Windows credential object used to connect to the target server with different authentication context.
+        Required when the current user lacks administrative privileges on the SQL Server host or when connecting across domain boundaries.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -20,7 +20,8 @@ function Enable-DbaAgHadr {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
-        Will restart SQL Server and SQL Server Agent service to apply the change.
+        Automatically restarts the SQL Server Database Engine and SQL Server Agent services to immediately apply the HADR setting change.
+        Without this parameter, the HADR setting change requires a manual service restart before Availability Groups can be created.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

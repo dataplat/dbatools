@@ -1,10 +1,10 @@
 function Remove-DbaDbMasterKey {
     <#
     .SYNOPSIS
-        Deletes specified database master key
+        Removes database master keys from SQL Server databases
 
     .DESCRIPTION
-        Deletes specified database master key
+        Removes database master keys from specified SQL Server databases by executing DROP MASTER KEY. Database master keys are used to encrypt other database-level encryption keys, including those for Transparent Data Encryption (TDE), Always Encrypted, and certificate private keys. This function is typically used when decommissioning database encryption, migrating to different encryption strategies, or cleaning up unused encryption infrastructure during database maintenance or compliance changes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,16 +17,20 @@ function Remove-DbaDbMasterKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the master key will be removed.
+        Specifies which databases to remove master keys from. Accepts multiple database names.
+        Use this when you need to remove encryption from specific databases during TDE decommissioning or security policy changes.
 
     .PARAMETER ExcludeDatabase
-        List of databases to exclude from clearing all master keys
+        Specifies databases to skip when using the -All parameter to remove master keys from all databases.
+        Use this to protect critical databases that must retain their encryption while cleaning up master keys from other databases on the instance.
 
     .PARAMETER All
-        Purge the master keys from all databases on an instance
+        Removes master keys from all user databases on the SQL Server instance.
+        Use this when decommissioning encryption across an entire instance or during major security architecture changes.
 
     .PARAMETER InputObject
-        Enables pipeline input from Get-DbaDatabase
+        Accepts master key objects from Get-DbaDbMasterKey through the pipeline.
+        Use this approach when you need to filter or inspect master keys before removing them, providing more control over the removal process.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

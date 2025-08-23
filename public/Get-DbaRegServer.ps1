@@ -1,12 +1,14 @@
 function Get-DbaRegServer {
     <#
     .SYNOPSIS
-        Gets list of SQL Server objects stored in local registered groups, azure data studio and central management server.
+        Retrieves registered SQL Server instances from SSMS, Azure Data Studio, and Central Management Server
 
     .DESCRIPTION
-       Gets list of SQL Server objects stored in local registered groups, azure data studio and central management server.
+        Retrieves SQL Server instances from registered server configurations stored in SQL Server Management Studio (SSMS), Azure Data Studio, and Central Management Server (CMS). DBAs use registered servers to organize and quickly connect to multiple SQL Server instances across their environment.
 
-       Local Registered Servers and Azure Data Studio support alternative authentication (excluding MFA) but Central Management Studio does not.
+        When no SqlInstance is specified, returns local registered servers from SSMS and Azure Data Studio. When SqlInstance is provided, connects to that Central Management Server to retrieve its registered server inventory. This is essential for discovering what SQL Server instances are documented and organized in your environment.
+
+        Local Registered Servers and Azure Data Studio support alternative authentication (excluding MFA) but Central Management Server does not.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,28 +21,36 @@ function Get-DbaRegServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        Specifies one or more names to include. Name is the visible name in SSMS interface (labeled Registered Server Name)
+        Filters results to registered servers with specific display names as they appear in SSMS Registered Servers pane.
+        Use this when you need to find servers by their friendly names rather than actual server names.
 
     .PARAMETER ServerName
-        Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
+        Filters results to registered servers with specific server instance names (the actual SQL Server connection strings).
+        Use this when you need to find servers by their network names or instance names rather than display names.
 
     .PARAMETER Group
-        Specifies one or more groups to include from SQL Server Central Management Server.
+        Filters results to registered servers within specific Central Management Server groups.
+        Supports hierarchical paths using backslash notation (e.g., "Production\Database Servers"). Use this to target servers organized by environment, department, or function.
 
     .PARAMETER ExcludeGroup
-        Specifies one or more Central Management Server groups to exclude.
+        Excludes registered servers from specific Central Management Server groups.
+        Use this when you want to retrieve most servers but skip certain groups like "Test" or "Decommissioned" environments.
 
     .PARAMETER IncludeLocal
-        Include local registered servers or Azure Data Studio registered servers in results when specifying SqlInstance.
+        Includes local SSMS and Azure Data Studio registered servers in addition to Central Management Server results.
+        Use this when querying a CMS but also want to see servers registered locally on your workstation.
 
     .PARAMETER Id
-        Get server by Id(s)
+        Filters results to registered servers with specific internal ID numbers.
+        Use this when you need to retrieve specific servers by their unique identifiers, typically when working with programmatic scripts or automation.
 
     .PARAMETER IncludeSelf
-        If this switch is enabled and you're connecting to a Central Management Server, the CMS server itself will be included in the results, along with all other Registered Servers.
+        Includes the Central Management Server instance itself in the results along with all registered servers.
+        Use this when you need to perform operations on both the CMS and its registered servers in the same workflow.
 
     .PARAMETER ResolveNetworkName
-        If this switch is enabled, the NetBIOS name and IP address(es) of each server will be returned.
+        Performs DNS lookups to return NetBIOS names, FQDN, and IP addresses for each registered server.
+        Use this when you need network information for servers, but be aware this adds processing time due to DNS queries.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

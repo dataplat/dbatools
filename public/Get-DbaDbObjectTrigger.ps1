@@ -1,10 +1,10 @@
 function Get-DbaDbObjectTrigger {
     <#
     .SYNOPSIS
-        Get all existing triggers on object level (table or view) on one or more SQL instances.
+        Retrieves triggers attached to tables and views across SQL Server databases.
 
     .DESCRIPTION
-        Get all existing triggers on object level (table or view) on one or more SQL instances.
+        Retrieves all DML triggers that are attached to tables and views within specified databases. This function helps DBAs inventory trigger-based business logic, identify potential performance bottlenecks, and document database dependencies. You can filter results by database, object type (tables vs views), or pipe in specific objects from Get-DbaDbTable and Get-DbaDbView. Returns trigger details including enabled status and last modified date for impact analysis and change management.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,16 +17,20 @@ function Get-DbaDbObjectTrigger {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to search for table and view triggers. Accepts wildcards for pattern matching.
+        Use this when you need to audit triggers in specific databases rather than scanning the entire instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to exclude from trigger enumeration. Accepts wildcards for pattern matching.
+        Useful when you want to skip system databases or databases known to have no custom triggers.
 
     .PARAMETER Type
-        Allows specify the object type associated with the trigger. Available options All, Table and View. By default is All.
+        Filters triggers by the type of object they are attached to: Table, View, or All (default).
+        Use 'Table' or 'View' when you need to focus on triggers for specific object types during auditing or troubleshooting.
 
     .PARAMETER InputObject
-        Allow pipedline input from Get-DbaDbTable and/or Get-DbaDbView
+        Accepts specific table or view objects from Get-DbaDbTable and Get-DbaDbView via pipeline input.
+        Use this when you want to check triggers on particular tables or views rather than scanning entire databases.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

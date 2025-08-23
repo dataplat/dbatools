@@ -1,11 +1,10 @@
 function Get-DbaSchemaChangeHistory {
     <#
     .SYNOPSIS
-        Gets DDL changes logged in the system trace.
+        Retrieves DDL change history from the SQL Server default system trace
 
     .DESCRIPTION
-        Queries the default system trace for any DDL changes in the specified time frame
-        Only works with SQL 2005 and later, as the system trace didn't exist before then
+        Queries the default system trace to track CREATE, DROP, and ALTER operations performed on database objects, providing a complete audit trail of schema modifications. This helps DBAs identify who made changes, when they occurred, and which objects were affected without needing to manually parse trace files or enable custom auditing. Returns detailed information including login names, timestamps, application sources, and operation types for compliance reporting and troubleshooting. Only works with SQL Server 2005 and later, as the system trace didn't exist before then.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -18,16 +17,20 @@ function Get-DbaSchemaChangeHistory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to include when searching for schema changes. Accepts multiple database names and wildcards for pattern matching.
+        Use this when you need to focus on specific databases instead of scanning all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Specifies databases to exclude from the schema change search. Accepts multiple database names for filtering out unwanted databases.
+        Use this to skip system databases, test databases, or any databases you don't want included in the change history results.
 
     .PARAMETER Since
-        A date from which DDL changes should be returned. Default is to start at the beginning of the current trace file
+        Filters results to show only DDL changes that occurred after the specified date and time. Accepts standard PowerShell date formats.
+        Use this to focus on recent changes or changes within a specific time period, especially helpful for troubleshooting recent issues or compliance reporting.
 
     .PARAMETER Object
-        The name of a SQL Server object you want to look for changes on
+        Specifies the names of specific database objects to search for in the change history. Accepts multiple object names for targeted searches.
+        Use this when investigating changes to particular tables, views, stored procedures, or other database objects rather than reviewing all schema changes.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

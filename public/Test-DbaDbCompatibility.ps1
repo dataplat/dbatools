@@ -1,10 +1,10 @@
 function Test-DbaDbCompatibility {
     <#
     .SYNOPSIS
-        Compares Database Compatibility level to Server Compatibility
+        Identifies databases running at lower compatibility levels than the SQL Server instance supports
 
     .DESCRIPTION
-        Compares Database Compatibility level to Server Compatibility
+        Compares each database's compatibility level against the SQL Server instance's maximum supported compatibility level. This helps identify databases that may not be leveraging newer SQL Server features and performance improvements available after an instance upgrade. Returns detailed comparison results showing which databases could benefit from compatibility level updates to match the server version.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,10 +17,12 @@ function Test-DbaDbCompatibility {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to test for compatibility level mismatches. Accepts database names, wildcards, or arrays.
+        Use this when you need to check specific databases instead of testing all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies which databases to skip during compatibility level testing. Accepts database names, wildcards, or arrays.
+        Use this to exclude system databases, maintenance databases, or any databases you don't want included in the results.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

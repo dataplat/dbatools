@@ -1,10 +1,12 @@
 function Export-DbaReplServerSetting {
     <#
     .SYNOPSIS
-        Exports replication server settings to file.
+        Generates T-SQL scripts to recreate SQL Server replication distributor and publication configurations
 
     .DESCRIPTION
-        Exports replication server settings to file.
+        Creates T-SQL scripts that can recreate your SQL Server replication setup, including distributor configuration, publications, subscriptions, and all related settings. The generated scripts include both creation commands and a distributor cleanup statement, making this perfect for disaster recovery planning, environment migrations, or replication topology documentation.
+
+        The function scripts out the complete replication configuration using SQL Server's replication management objects, so you can rebuild identical replication setups on different servers or restore replication after system failures.
 
         All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
         Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
@@ -20,38 +22,36 @@ function Export-DbaReplServerSetting {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies the directory where the file or files will be exported.
+        Specifies the directory where the replication script file will be created. Defaults to the dbatools export path configuration.
+        Use this when you want to organize replication scripts in a specific directory structure for disaster recovery or documentation purposes.
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file.
+        Specifies the complete file path including filename for the exported replication script. Overrides both Path parameter and default naming.
+        Use this when you need precise control over the output file location and name, especially for automated backup processes.
 
     .PARAMETER Passthru
-        Output script to console
+        Returns the generated T-SQL replication script to the console instead of writing to a file.
+        Use this for immediate review of the script content or when piping output to other commands for further processing.
 
     .PARAMETER NoClobber
-        Do not overwrite file
+        Prevents overwriting an existing file with the same name. The operation will fail if the target file already exists.
+        Use this as a safety measure to avoid accidentally replacing existing replication scripts during routine exports.
 
     .PARAMETER Encoding
-        Specifies the file encoding. The default is UTF8.
-
-        Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+        Specifies the character encoding for the output script file. Defaults to UTF8 which handles international characters properly.
+        Use ASCII for maximum compatibility with older systems, or Unicode when working with databases containing non-English characters.
 
     .PARAMETER Append
-        Append to file
+        Adds the replication script to the end of an existing file instead of overwriting it.
+        Use this when consolidating multiple replication configurations into a single script file for bulk operations.
 
     .PARAMETER ScriptOption
-        Not real sure how to use this yet
+        Specifies custom Microsoft.SqlServer.Replication.ScriptOptions flags to control which replication components are scripted.
+        Advanced parameter for fine-tuning script output when the default options don't meet specific requirements.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaReplServer
+        Accepts replication server objects from Get-DbaReplServer pipeline input for batch processing.
+        Use this when scripting replication settings from multiple servers or when combining with other replication commands in a pipeline.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

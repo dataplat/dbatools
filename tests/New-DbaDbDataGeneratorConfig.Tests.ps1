@@ -55,10 +55,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup database and temp directory
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbNameGenerator -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbNameGenerator -ErrorAction SilentlyContinue
         Remove-Item -Path $tempConfigPath -Recurse -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command works" {
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $configResults.FullName | Should -FileContentMatch "FirstName"
 
-            $configResults | Remove-Item -Confirm:$false -ErrorAction SilentlyContinue
+            $configResults | Remove-Item -ErrorAction SilentlyContinue
         }
     }
 }

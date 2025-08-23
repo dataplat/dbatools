@@ -1,10 +1,10 @@
 function Get-DbaInstanceAudit {
     <#
     .SYNOPSIS
-        Gets SQL Security Audit information for each instance(s) of SQL Server.
+        Retrieves SQL Server audit objects from instance-level security auditing configurations.
 
     .DESCRIPTION
-        The Get-DbaInstanceAudit command gets SQL Security Audit information for each instance(s) of SQL Server.
+        Retrieves all configured SQL Server audit objects at the instance level, which define where security audit events are stored and how they're managed. These audits capture login attempts, permission changes, and other security-related activities across the entire SQL Server instance. The function returns detailed information including audit file paths, size limits, rollover settings, and current status, helping DBAs monitor compliance and troubleshoot security configurations without manually querying system views.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,10 +18,12 @@ function Get-DbaInstanceAudit {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Audit
-        Return only specific audits
+        Specifies which audit objects to retrieve by name. Accepts multiple audit names to return only those specific audits.
+        Use this when you need to check configuration or status for particular audits instead of retrieving all instance-level audits.
 
     .PARAMETER ExcludeAudit
-        Exclude specific audits
+        Specifies which audit objects to exclude from results by name. Accepts multiple audit names to filter out unwanted audits.
+        Use this when you want to retrieve most audits but skip specific ones, such as excluding test or temporary audits from compliance reports.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

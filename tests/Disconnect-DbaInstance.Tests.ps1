@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup - disconnect any remaining connections
         $null = Get-DbaConnectedInstance | Disconnect-DbaInstance
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When disconnecting a server" {

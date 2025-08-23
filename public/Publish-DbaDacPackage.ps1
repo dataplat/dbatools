@@ -1,10 +1,10 @@
 function Publish-DbaDacPackage {
     <#
     .SYNOPSIS
-        The Publish-DbaDacPackage command takes a dacpac or bacpac and publishes it to a database.
+        Deploys DACPAC or BACPAC files to SQL Server databases using the DacFx framework
 
     .DESCRIPTION
-        Publishes the dacpac taken from SSDT project or Export-DbaDacPackage. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts) or bacpac.
+        Deploys database schema changes from DACPAC files created by SSDT projects or Export-DbaDacPackage, automatically updating target database structure and executing embedded pre/post deployment scripts. Also imports data from BACPAC files for complete database restoration scenarios. This replaces manual schema synchronization and deployment processes, making it essential for CI/CD pipelines and environment promotions. You can generate deployment scripts without applying changes for review, or use publish profiles to control deployment behavior and variable substitution.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -15,34 +15,44 @@ function Publish-DbaDacPackage {
         Only SQL authentication is supported. When not specified, uses Trusted Authentication.
 
     .PARAMETER Path
-        Specifies the filesystem path to the DACPAC
+        Specifies the filesystem path to the DACPAC or BACPAC file to deploy. The function automatically detects file type based on the extension.
+        Use this to point to your compiled database project (.dacpac) or exported database backup with data (.bacpac).
 
     .PARAMETER PublishXml
-        Specifies the publish profile which will include options and sqlCmdVariables.
+        Specifies the path to a publish profile XML file that defines deployment options and SqlCmd variables. Created by SQL Server Data Tools (SSDT) or New-DbaDacProfile.
+        Use this to control deployment behavior like dropping objects not in source, ignoring permissions, or setting variable values for different environments.
 
     .PARAMETER Database
-        Specifies the name of the database being published.
+        Specifies the target database name(s) to deploy the DACPAC or BACPAC to. Accepts multiple database names for deploying the same package to multiple databases.
+        The database will be created if it doesn't exist, or updated to match the schema if it already exists.
 
     .PARAMETER ConnectionString
-        Specifies the connection string to the database you are upgrading. This is not required if SqlInstance is specified.
+        Specifies the connection string to connect to the target SQL Server instance. Alternative to using SqlInstance and SqlCredential parameters.
+        Use this when you need specific connection properties or when connecting through alternative authentication methods not supported by SqlInstance.
 
     .PARAMETER GenerateDeploymentReport
-        If this switch is enabled, the publish XML report  will be generated.
+        Creates an XML deployment report showing what changes were made during the deployment. The report is saved to the OutputPath directory.
+        Use this for deployment auditing, troubleshooting failed deployments, or documenting changes applied to production databases.
 
     .PARAMETER Type
-        Selecting the type of the export: Dacpac (default) or Bacpac.
+        Specifies whether to deploy a DACPAC (schema only) or BACPAC (schema and data) file. Defaults to DACPAC.
+        Use DACPAC for deploying database schema changes from development to production, or BACPAC for full database restore including data.
 
     .PARAMETER DacOption
-        Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac
+        Specifies deployment options object controlling how the deployment behaves. Created using New-DbaDacOption with specific deployment settings.
+        Use this to programmatically control deployment behavior instead of using a publish profile XML file, such as dropping objects not in source or ignoring permissions.
 
     .PARAMETER OutputPath
-        Specifies the filesystem path (directory) where output files will be generated.
+        Specifies the directory where deployment scripts and reports will be saved when using ScriptOnly or GenerateDeploymentReport. Defaults to the dbatools export path configuration.
+        Use this to organize output files in a specific location for review, version control, or automated deployment processes.
 
     .PARAMETER ScriptOnly
-        If this switch is enabled the publish script will be generated.
+        Generates the deployment script without executing it against the target database. The script is saved to the OutputPath directory for review.
+        Use this for change approval processes, manual deployment scenarios, or to review what changes would be applied before executing them.
 
     .PARAMETER IncludeSqlCmdVars
-        If this switch is enabled, SqlCmdVars in publish.xml will have their values overwritten.
+        Enables replacement of SqlCmd variables in the publish profile with their actual values during deployment.
+        Use this when your deployment scripts or publish profile contain variables like $(Environment) or $(ServerName) that need to be substituted with environment-specific values.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -56,7 +66,8 @@ function Publish-DbaDacPackage {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER DacFxPath
-        Path to the dac dll. If this is omitted, then the version of dac dll which is packaged with dbatools is used.
+        Specifies the path to a specific version of the Microsoft.SqlServer.Dac.dll library to use for deployment operations.
+        Use this when you need a specific DacFx version for compatibility with your SQL Server version or to use features from a newer DacFx release.
 
     .NOTES
         Tags: Deployment, Dacpac, Bacpac

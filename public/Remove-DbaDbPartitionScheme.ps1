@@ -1,10 +1,14 @@
 function Remove-DbaDbPartitionScheme {
     <#
     .SYNOPSIS
-        Removes a database partition scheme(s) from each database and SQL Server instance.
+        Removes database partition schemes from SQL Server databases.
 
     .DESCRIPTION
-        Removes a database partition scheme(s), with supported piping from Get-DbaDbPartitionScheme.
+        Removes partition schemes from specified databases across one or more SQL Server instances. Partition schemes define how partitioned tables and indexes map to filegroups, and this function helps clean up unused schemes during database reorganization or migration projects.
+
+        The function integrates seamlessly with Get-DbaDbPartitionScheme through pipeline support, allowing you to first identify partition schemes and then selectively remove them. This is particularly useful when consolidating databases or simplifying partition strategies.
+
+        Each removal operation includes confirmation prompts by default to prevent accidental deletion of partition schemes that may still be referenced by tables or indexes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +21,16 @@ function Remove-DbaDbPartitionScheme {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies which databases to scan for partition schemes to remove. Accepts multiple database names.
+        Use this when you need to remove partition schemes from specific databases rather than all databases on the instance, such as during database decommissioning or partition strategy simplification.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        Specifies databases to skip when scanning for partition schemes to remove. Accepts multiple database names.
+        Use this to exclude system databases or specific databases you want to preserve during bulk partition scheme cleanup operations.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbPartitionScheme.
+        Accepts partition scheme objects piped from Get-DbaDbPartitionScheme for targeted removal operations.
+        Use this for selective removal workflows where you first identify specific partition schemes and then remove only those schemes.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

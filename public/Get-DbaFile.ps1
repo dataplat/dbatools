@@ -1,10 +1,12 @@
 function Get-DbaFile {
     <#
     .SYNOPSIS
-        Get-DbaFile finds files in any directory specified on a remote SQL Server
+        Enumerates files and directories on remote SQL Server instances using xp_dirtree
 
     .DESCRIPTION
-        This command searches all specified directories, allowing a DBA to see file information on a server without direct access
+        Searches directories on SQL Server machines remotely without requiring direct file system access or RDP connections. Uses the xp_dirtree extended stored procedure to return file listings that can be filtered by extension and searched recursively to specified depths. Defaults to the instance's data directory but accepts additional paths for comprehensive file system exploration.
+
+        Common use cases include locating orphaned database files, finding backup files for restores, auditing disk usage, and preparing for file migrations.
 
         You can filter by extension using the -FileType parameter. By default, the default data directory will be returned. You can provide and additional paths to search using the -Path parameter.
 
@@ -17,13 +19,19 @@ function Get-DbaFile {
         Allows you to login to servers using alternative credentials
 
     .PARAMETER Path
-        Used to specify extra directories to search in addition to the default data directory.
+        Specifies additional directory paths to search beyond the instance's default data directory. Accepts multiple paths as an array.
+        Use this when you need to scan specific locations for orphaned files, backup locations, or custom database file directories.
+        Defaults to the instance's data directory if not specified.
 
     .PARAMETER FileType
-        Used to specify filter by filetype. No dot required, just pass the extension.
+        Filters results to only show files with specific extensions. Pass extensions without the dot (e.g., 'mdf', 'ldf', 'bak').
+        Use this to find specific database files like data files (mdf, ndf), log files (ldf), or backup files (bak, trn).
+        Accepts multiple extensions to search for different file types simultaneously.
 
     .PARAMETER Depth
-        Used to specify recursive folder depth.  Default is 1, non-recursive.
+        Controls how many subdirectory levels to search recursively. Default is 1 (current directory only).
+        Increase this value when searching deep folder structures for scattered database files or backup archives.
+        Higher values take more time but ensure comprehensive file discovery across complex directory trees.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -191,14 +199,14 @@ function Get-DbaFile {
                     foreach ($type in $FileTypeComparison) {
                         if ($row.filename.ToLowerInvariant().EndsWith(".$type")) {
                             $fullpath = $row.fullpath.Replace("\", $separator)
-                            
+
                             # Replacing all instances of '\\' with single backslashes '\', and maintain the leading SMB share path represented by the initial '\\'.
                             $is_smb_share_path = $fullpath.SubString(0, 2) -eq "\\"
                             $fullpath = $fullpath.Replace("\\", "\")
                             if ($is_smb_share_path) {
                                 $fullpath = $fullpath -replace "^\\", "\\"
                             }
-                            
+
                             $fullpath = $fullpath.Replace("//", "/")
                             [PSCustomObject]@{
                                 ComputerName   = $server.ComputerName

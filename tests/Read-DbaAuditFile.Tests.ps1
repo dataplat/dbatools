@@ -58,6 +58,8 @@ Describe $CommandName -Tag IntegrationTests {
                 DROP SERVER AUDIT SPECIFICATION $specName
                 DROP SERVER AUDIT $auditName"
         $server.Query($sql)
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Verifying command output" {
         It "returns some results with Raw parameter" {

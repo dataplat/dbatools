@@ -1,30 +1,27 @@
 function Reset-DbaAdmin {
     <#
     .SYNOPSIS
-        This function allows administrators to regain access to SQL Servers in the event that passwords or access was lost.
-
-        Supports SQL Server 2005 and above. Windows administrator access is required.
+        Regains administrative access to SQL Server instances when passwords or access has been lost
 
     .DESCRIPTION
-        This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding the sysadmin role to existing login, or adding a new login (SQL or Windows) and granting it sysadmin privileges.
+        Recovers access to SQL Server instances when you're locked out due to forgotten passwords, disabled accounts, or authentication issues. This emergency recovery tool stops the SQL Server service and restarts it in single-user mode, allowing exclusive access to reset credentials and restore administrative privileges.
+
+        The function handles both standalone and clustered SQL Server instances, working with SQL authentication logins (like sa) and Windows authentication accounts. It automatically enables mixed mode authentication when working with SQL logins and ensures the target login is enabled, unlocked, and granted sysadmin privileges.
 
         This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-DbaAdmin parameter which starts the server in Single-User mode and only allows this script to connect.
 
         Once the service is restarted, the following tasks are performed:
         - Login is added if it doesn't exist
         - If login is a Windows User, an attempt is made to ensure it exists
-        - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.
+        - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode
         - Login will be enabled and unlocked
         - Login will be added to sysadmin role
 
-        If failures occur at any point, a best attempt is made to restart the SQL Server.
+        If failures occur at any point, a best attempt is made to restart the SQL Server normally. The function uses Microsoft.Data.SqlClient and Get-WmiObject for maximum compatibility across different environments without requiring additional tools.
 
-        In order to make this script as portable as possible, Microsoft.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
+        For remote SQL Server instances, ensure WinRM is configured and accessible. If remote access isn't possible, run the script locally on the target server. Requires Windows administrator access to the server hosting SQL Server.
 
-        If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
-
-        Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.
-        Tested on SQL Server 2005 SP4 through 2016 CTP2.
+        Supports SQL Server 2005 and above on clustered and standalone configurations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
@@ -33,12 +30,14 @@ function Reset-DbaAdmin {
         Instead of using Login and SecurePassword, you can just pass in a credential object.
 
     .PARAMETER Login
-        By default, the Login parameter is "sa" but any other SQL or Windows account can be specified. If a login does not currently exist, it will be added.
-
-        When adding a Windows login to remote servers, ensure the SQL Server can add the login (ie, don't add WORKSTATION\Admin to remoteserver\instance. Domain users and Groups are valid input.
+        Specifies the login account to reset or create with sysadmin privileges. Defaults to "sa" if not specified.
+        Use this when you need to regain access through a specific account rather than the default sa login. Accepts both SQL authentication logins (like "sqladmin") and Windows authentication accounts (like "DOMAIN\User" or "DOMAIN\Group").
+        If the login doesn't exist, it will be created automatically. For Windows logins on remote servers, use domain accounts that the SQL Server can validate, not local machine accounts.
 
     .PARAMETER SecurePassword
-        By default, if a SQL Login is detected, you will be prompted for a password. Use this to securely bypass the prompt.
+        Provides the password for SQL authentication logins as a SecureString to avoid interactive prompts.
+        Use this when automating the reset process or when you don't want to be prompted to enter the password manually. Only required for SQL logins, not Windows authentication accounts.
+        The password will be applied during login creation or when resetting an existing SQL login's password.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -47,7 +46,9 @@ function Reset-DbaAdmin {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
+        Bypasses all confirmation prompts and proceeds with the service restart and login reset operations.
+        Use this when you need to automate the recovery process or when you're certain about proceeding without manual confirmation. This includes the high-impact confirmation for stopping and restarting SQL Server services.
+        Does not actually drop and recreate logins - the existing description appears to be incorrect for this function.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

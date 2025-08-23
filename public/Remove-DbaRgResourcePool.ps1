@@ -1,11 +1,14 @@
 function Remove-DbaRgResourcePool {
     <#
     .SYNOPSIS
-        Removes a resource pool from the Resource Governor on the specified SQL Server.
+        Removes internal or external resource pools from SQL Server Resource Governor configuration
 
     .DESCRIPTION
-        Removes a resource pool from the Resource Governor on the specified SQL Server.
-        A resource pool represents a subset of the physical resources (memory, CPUs and IO) of an instance of the Database Engine.
+        Removes user-defined resource pools from SQL Server's Resource Governor, freeing up the allocated memory, CPU, and IO resources for redistribution to other workloads. This is typically done when cleaning up unused resource pools, consolidating workload management, or reconfiguring resource allocation strategies.
+
+        Resource pools define the physical resource boundaries (memory, CPU, IO) that can be assigned to different database workloads through workload groups. Removing unused pools helps maintain a clean Resource Governor configuration and prevents resource fragmentation.
+
+        The function automatically reconfigures Resource Governor after pool removal to ensure changes take effect immediately, unless you specify -SkipReconfigure for batch operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -14,17 +17,20 @@ function Remove-DbaRgResourcePool {
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER ResourcePool
-        Name of the resource pool to be created.
+        Name of the resource pool to remove from Resource Governor configuration. Accepts multiple pool names.
+        Use this when you need to clean up specific unused pools or consolidate resource management by removing obsolete pools.
 
     .PARAMETER Type
-        Internal or External.
+        Specifies whether to remove Internal or External resource pools. Defaults to Internal.
+        Internal pools manage CPU and memory for regular SQL Server workloads, while External pools manage resources for R/Python/Java external scripts.
 
     .PARAMETER SkipReconfigure
-        Resource Governor requires a reconfiguriation for resource pool changes to take effect.
-        Use this switch to skip issuing a reconfigure for the Resource Governor.
+        Skips the automatic Resource Governor reconfiguration after removing resource pools. By default, Resource Governor is reconfigured to apply changes immediately.
+        Use this when removing multiple pools in batch operations to avoid repeated reconfigurations, then manually reconfigure once at the end.
 
     .PARAMETER InputObject
-        Allows input to be piped from Get-DbaRgResourcePool.
+        Accepts resource pool objects piped from Get-DbaRgResourcePool for removal. Supports both Internal and External resource pool objects.
+        Use this for pipeline operations when you need to filter pools before removal or process multiple pools efficiently.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

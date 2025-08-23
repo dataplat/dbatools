@@ -1,10 +1,10 @@
 function Get-DbaDbMailProfile {
     <#
     .SYNOPSIS
-        Gets database mail profile(s) from SQL Server
+        Retrieves Database Mail profiles and their configuration details from SQL Server instances
 
     .DESCRIPTION
-        Gets database mail profile(s) from SQL Server
+        Retrieves Database Mail profiles from one or more SQL Server instances, returning detailed configuration information for each profile including ID, name, description, and status properties. This function is essential for auditing Database Mail configurations across your environment, troubleshooting email notification issues, and documenting mail profile setups for compliance or change management. You can target specific profiles by name or exclude certain profiles from the results, making it useful for both broad configuration reviews and focused troubleshooting scenarios.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,16 @@ function Get-DbaDbMailProfile {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Profile
-        Specifies one or more profile(s) to get. If unspecified, all profiles will be returned.
+        Specifies one or more Database Mail profile names to retrieve. Use this when you need to check configuration details for specific profiles rather than reviewing all profiles.
+        Accepts exact profile names and is case-sensitive to match SQL Server Database Mail profile naming.
 
     .PARAMETER ExcludeProfile
-        Specifies one or more profile(s) to exclude.
+        Specifies one or more Database Mail profile names to exclude from the results. Useful when auditing multiple profiles but want to skip certain ones like test or deprecated profiles.
+        Helps focus on production profiles during compliance reviews or troubleshooting scenarios.
 
     .PARAMETER InputObject
-        Accepts pipeline input from Get-DbaDbMail
+        Accepts Database Mail server objects from Get-DbaDbMail cmdlet through the pipeline. This allows you to chain commands when working with multiple SQL instances.
+        Eliminates the need to specify SqlInstance when you already have Database Mail objects from a previous command.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

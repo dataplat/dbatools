@@ -1,10 +1,12 @@
 function Invoke-DbaDbUpgrade {
     <#
     .SYNOPSIS
-        Take a database and upgrades it to compatibility of the SQL Instance its hosted on and updates the target recovery time to the new default of 60 seconds.
+        Upgrades database compatibility level and performs post-upgrade maintenance tasks
 
     .DESCRIPTION
-        Updates compatibility level and target recovery time, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views.
+        Performs the essential steps needed after upgrading SQL Server or moving databases to a newer instance. Updates database compatibility level to match the hosting SQL Server version and sets target recovery time to 60 seconds for SQL Server 2016 and newer.
+
+        Executes critical post-upgrade maintenance including DBCC CHECKDB with DATA_PURITY to detect data corruption, DBCC UPDATEUSAGE to correct page counts, sp_updatestats to refresh statistics, and sp_refreshview to update all user views with new metadata. This automates the manual checklist DBAs typically follow after SQL Server upgrades to ensure databases function optimally on the new version.
 
         Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
 
@@ -19,31 +21,40 @@ function Invoke-DbaDbUpgrade {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is autopopulated from the server. If unspecified, you have to use -ExcludeDatabase to exclude some user databases or -AllUserDatabases to process all user databases.
+        Specifies which databases to upgrade and run post-upgrade maintenance tasks on. Accepts wildcards for pattern matching.
+        Use this when you need to target specific databases rather than processing all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is autopopulated from the server
+        Excludes specific databases from the upgrade process when using -AllUserDatabases. Accepts wildcards for pattern matching.
+        Useful for skipping system-critical databases or those with special maintenance windows during bulk upgrade operations.
 
     .PARAMETER AllUserDatabases
-        Run command against all user databases
+        Processes all user databases on the instance, excluding system databases. Cannot be used with -Database parameter.
+        Use this for instance-wide upgrades after SQL Server version changes or when standardizing all databases to current compatibility levels.
 
     .PARAMETER Force
-        Don't skip over databases that are already at the same level the instance is
+        Runs all maintenance tasks even on databases already at the correct compatibility level and target recovery time.
+        Use this when you need to ensure CHECKDB, UPDATEUSAGE, statistics updates, and view refreshes run regardless of compatibility status.
 
     .PARAMETER NoCheckDb
-        Skip checkdb
+        Skips the DBCC CHECKDB with DATA_PURITY validation step during the upgrade process.
+        Use this when you've recently run integrity checks or need to reduce upgrade time, though this removes corruption detection from the process.
 
     .PARAMETER NoUpdateUsage
-        Skip usage update
+        Skips the DBCC UPDATEUSAGE step that corrects inaccuracies in page and row count information.
+        Use this when you're confident space usage statistics are accurate or need to minimize upgrade time for very large databases.
 
     .PARAMETER NoUpdateStats
-        Skip stats update
+        Skips running sp_updatestats to refresh all user table statistics with current data distribution.
+        Use this when statistics were recently updated or when you have a separate statistics maintenance plan in place.
 
     .PARAMETER NoRefreshView
-        Skip view update
+        Skips executing sp_refreshview on all user views to update their metadata for the new SQL Server version.
+        Use this when you have no views or prefer to refresh view metadata manually to avoid potential view compilation issues.
 
     .PARAMETER InputObject
-        A collection of databases (such as returned by Get-DbaDatabase)
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase output. Cannot be used with -Database or -AllUserDatabases.
+        Use this for targeted upgrades based on complex filtering criteria or when integrating with other dbatools commands in a pipeline.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run

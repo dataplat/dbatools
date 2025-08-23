@@ -1,10 +1,10 @@
 function Find-DbaDbGrowthEvent {
     <#
     .SYNOPSIS
-        Finds any database AutoGrow events in the Default Trace.
+        Retrieves database auto-growth and auto-shrink events from the SQL Server Default Trace
 
     .DESCRIPTION
-        Finds any database AutoGrow events in the Default Trace.
+        Queries the SQL Server Default Trace to identify when database files have automatically grown or shrunk, providing detailed timing and size change information essential for performance troubleshooting and capacity planning. This function helps DBAs investigate unexpected performance slowdowns caused by auto-growth events, analyze storage growth patterns to optimize initial file sizing, and track which applications or processes are triggering unplanned database expansions. Returns comprehensive details including the exact time of each event, size change in MB, duration, and the application/user that caused the growth, so you don't have to manually parse trace files or write custom T-SQL queries.
 
         The following events are included:
         92 - Data File Auto Grow
@@ -23,23 +23,33 @@ function Find-DbaDbGrowthEvent {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to search for growth events. Accepts wildcards for pattern matching.
+        Use this to focus on specific databases when investigating growth patterns or troubleshooting performance issues.
+        If not specified, searches all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server
+        Excludes specified databases from the growth event search. Accepts wildcards for pattern matching.
+        Useful when you want to skip system databases like tempdb or exclude databases with known frequent growth events.
+        Commonly used with tempdb, master, model, and msdb to focus on user databases only.
 
     .PARAMETER EventType
-        Provide a filter on growth event type to filter the results.
+        Filters results to show only specific types of database size change events.
+        Use 'Growth' to identify when files expanded automatically, which can indicate undersized initial allocations or unexpected data volume increases.
+        Use 'Shrink' to find auto-shrink events that may be causing performance problems due to file fragmentation.
 
         Allowed values: Growth, Shrink
 
     .PARAMETER FileType
-        Provide a filter on file type to filter the results.
+        Filters results to show only data file or log file growth events.
+        Use 'Data' when investigating storage capacity issues or unexpected table growth patterns.
+        Use 'Log' when troubleshooting transaction log growth, often caused by long-running transactions or delayed log backups.
 
         Allowed values: Data, Log
 
     .PARAMETER UseLocalTime
-        Return the local time of the instance instead of converting to UTC.
+        Returns timestamps in the SQL Server instance's local time zone instead of converting to UTC.
+        Use this when correlating growth events with local application schedules, maintenance windows, or business hours.
+        By default, times are converted to UTC for consistency across multiple time zones.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -181,7 +191,6 @@ function Find-DbaDbGrowthEvent {
                         FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
                         WHERE
                             [EventClass] IN ($eventClassFilter)
-                            AND [ServerName] = @@SERVERNAME
                             AND [DatabaseName] IN (_DatabaseList_)
                         ORDER BY [StartTime] DESC;
                     END

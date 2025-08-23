@@ -1,11 +1,13 @@
 function Remove-DbaAgentJobCategory {
     <#
     .SYNOPSIS
-        Remove-DbaAgentJobCategory removes a job category.
+        Removes SQL Server Agent job categories from one or more instances.
 
     .DESCRIPTION
-        Remove-DbaAgentJobCategory makes it possible to remove a job category.
-        Be assured that the category you want to remove is not used with other jobs. If another job uses this category it will be get the category [Uncategorized (Local)].
+        Removes custom SQL Server Agent job categories that are no longer needed for job organization and management.
+        This is useful when cleaning up obsolete categories after reorganizing jobs or migrating workloads between environments.
+        Any jobs currently assigned to a removed category will automatically be reassigned to the default "[Uncategorized (Local)]" category.
+        The function provides safety controls and detailed status reporting to ensure successful cleanup operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -18,14 +20,16 @@ function Remove-DbaAgentJobCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category.
+        Specifies the name of the SQL Agent job category to remove from the instance. Accepts multiple category names for batch operations.
+        Use this when you need to clean up specific custom categories that are no longer needed for job organization.
 
     .PARAMETER CategoryType
-        The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-        If no category is used all categories types will be removed.
+        Filters categories by their type: "LocalJob" for single-server jobs, "MultiServerJob" for multi-server administration jobs, or "None" for uncategorized jobs.
+        Use this to target specific category types when cleaning up job organization structures. If omitted, all category types will be processed.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaAgentJobCategory.
+        Accepts SQL Agent job category objects from the pipeline, typically from Get-DbaAgentJobCategory.
+        Use this for interactive category selection workflows or when you need to filter categories before removal using Get-DbaAgentJobCategory's filtering options.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

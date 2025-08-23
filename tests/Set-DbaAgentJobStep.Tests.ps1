@@ -81,13 +81,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $instance2 -Database "dbatoolsci_newdb_$random" -Confirm:$false
-        Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random" -Confirm:$false
-        Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "dbatoolsci_job_1_$random" -Confirm:$false
-        Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_job_1_$random" -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $instance2 -Database "dbatoolsci_newdb_$random"
+        Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random"
+        Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "dbatoolsci_job_1_$random"
+        Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_job_1_$random"
         $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName
         $credential.Drop()
         $agentProxyInstance2.Drop()
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "command works" {
         It "Change the job step name" {

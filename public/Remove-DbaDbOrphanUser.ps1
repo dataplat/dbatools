@@ -1,19 +1,21 @@
 function Remove-DbaDbOrphanUser {
     <#
     .SYNOPSIS
-        Drop orphan users with no existing login to map
+        Removes orphaned database users that no longer have corresponding SQL Server logins
 
     .DESCRIPTION
-        Allows the removal of orphan users from one or more databases
+        Removes orphaned database users from one or more databases, handling schema ownership transfers automatically to prevent dependency issues.
 
-        Orphaned users in SQL Server occur when a database user is based on a login in the master database, but the login no longer exists in master.
-        This can occur when the login is deleted, or when the database is moved to another server where the login does not exist.
+        Orphaned users occur when a database user exists but its corresponding login in the master database has been deleted or doesn't exist on the current server. This commonly happens after login deletions, database migrations, or restores to servers where the original logins don't exist.
 
-        If user is the owner of the schema with the same name and if if the schema does not have any underlying objects the schema will be dropped.
+        The function intelligently handles schema ownership:
+        - Drops empty schemas that have the same name as the orphaned user
+        - Transfers ownership of other schemas to 'dbo' to maintain database integrity
+        - Requires -Force parameter when schemas contain objects, ensuring you make conscious decisions about ownership changes
 
-        If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
+        When a login with the same name exists on the server (suggesting the user could be repaired with Repair-DbaDbOrphanUser instead), removal is blocked unless -Force is specified. This safety check prevents accidental deletions when remediation might be more appropriate than removal.
 
-        If a login of the same name exists (which could be re-mapped with Repair-DbaDbOrphanUser)  the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaDbOrphanUser.
+        Contained databases are automatically skipped since they manage authentication differently and cannot have orphaned users in the traditional sense.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -26,18 +28,21 @@ function Remove-DbaDbOrphanUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies which databases to check for orphaned users. Accepts single database names, comma-separated lists, or arrays.
+        When omitted, all accessible, non-read-only databases on the instance are processed. Contained databases are automatically skipped since they cannot have orphaned users.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
+        Specifies databases to skip during orphaned user removal. Useful when you want to process most databases but avoid specific ones.
+        Commonly used to exclude system databases, databases undergoing maintenance, or databases where user cleanup should be handled separately.
 
     .PARAMETER User
-        Specifies the list of users to remove.
+        Specifies specific orphaned users to target for removal instead of processing all orphaned users found.
+        Use this when you need to remove only certain orphaned users rather than all orphans in the database. The function will verify these users are actually orphaned before removal.
 
     .PARAMETER Force
-        If this switch is enabled:
-        If exists any schema which owner is the User, this will force the change of the owner to 'dbo'.
-        If a login of the same name exists the drop will not be performed unless you specify this parameter.
+        Bypasses safety checks that normally prevent orphaned user removal in potentially problematic scenarios.
+        Required when the user owns schemas containing objects (ownership transfers to 'dbo') or when a matching login exists on the server (suggesting repair might be more appropriate than removal).
+        Use with caution as this can change schema ownership and remove users that could potentially be repaired instead.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

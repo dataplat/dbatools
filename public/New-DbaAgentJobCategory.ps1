@@ -1,11 +1,10 @@
 function New-DbaAgentJobCategory {
     <#
     .SYNOPSIS
-        New-DbaAgentJobCategory creates a new job category.
+        Creates new SQL Server Agent job categories for organizing and managing jobs.
 
     .DESCRIPTION
-        New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.
-        It returns an array of the job categories created .
+        Creates custom job categories in SQL Server Agent to help organize and classify jobs by function, department, or priority level. Job categories provide a way to group related jobs together for easier management and reporting, replacing the need to manually create categories through SQL Server Management Studio. You can specify whether the category is for local jobs, multi-server jobs, or general use, with LocalJob being the default type.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -18,14 +17,16 @@ function New-DbaAgentJobCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category
+        Specifies the name of the SQL Agent job category to create. Accepts multiple category names when you need to create several categories at once.
+        Use descriptive names that reflect job functions like 'Database Maintenance', 'ETL Jobs', or 'Reporting' to help organize jobs by purpose or department.
 
     .PARAMETER CategoryType
-        The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-        The default is "LocalJob" and will automatically be set when no option is chosen.
+        Defines the scope and purpose of the job category. Valid options are "LocalJob" for jobs that run on the local instance, "MultiServerJob" for jobs in multi-server environments, or "None" for general-purpose categories.
+        Defaults to "LocalJob" when not specified, which is appropriate for most standalone SQL Server instances.
 
     .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+        Suppresses confirmation prompts during category creation. Sets the confirmation preference to bypass interactive confirmation requests.
+        Use this when automating category creation in scripts where manual confirmation is not desired or possible.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

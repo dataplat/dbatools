@@ -1,12 +1,12 @@
 function Remove-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Removes availability groups on a SQL Server instance.
+        Removes availability groups from SQL Server instances using DROP AVAILABILITY GROUP.
 
     .DESCRIPTION
-        Removes availability groups on a SQL Server instance.
+        Removes availability groups from SQL Server instances by executing the DROP AVAILABILITY GROUP T-SQL command. This is typically used when decommissioning high availability setups, migrating to different solutions, or cleaning up test environments.
 
-        If possible, remove the availability group only while connected to the server instance that hosts the primary replica.
+        The function handles the complex considerations around properly removing availability groups to avoid leaving databases in problematic states. If possible, remove the availability group only while connected to the server instance that hosts the primary replica.
         When the availability group is dropped from the primary replica, changes are allowed in the former primary databases (without high availability protection).
         Deleting an availability group from a secondary replica leaves the primary replica in the RESTORING state, and changes are not allowed on the databases.
 
@@ -27,13 +27,16 @@ function Remove-DbaAvailabilityGroup {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
-        Only remove specific availability groups.
+        Specifies the name(s) of specific availability groups to remove. Accepts multiple values and wildcards for pattern matching.
+        Use this when you need to remove only certain availability groups rather than all groups on the instance.
 
     .PARAMETER AllAvailabilityGroups
-        Remove all availability groups on an instance.
+        Removes all availability groups found on the specified SQL Server instance.
+        Use this switch when decommissioning a server or performing bulk cleanup operations.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaAvailabilityGroup.
+        Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline operations.
+        Use this when you need to filter or pre-process availability groups before removal.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

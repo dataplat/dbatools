@@ -1,12 +1,12 @@
 function Get-DbaStartupParameter {
     <#
     .SYNOPSIS
-        Displays values for a detailed list of SQL Server Startup Parameters.
+        Retrieves SQL Server startup parameters from the Windows service configuration
 
     .DESCRIPTION
-        Displays values for a detailed list of SQL Server Startup Parameters including Master Data Path, Master Log path, Error Log, Trace Flags, Parameter String and much more.
+        Extracts and parses SQL Server startup parameters directly from the Windows service configuration using WMI. Returns detailed information about file paths (master database, transaction log, error log), trace flags, debug flags, and special startup modes like single-user or minimal start.
 
-        This command relies on remote Windows Server (SQL WMI/WinRm) access. You can pass alternative Windows credentials by using the -Credential parameter.
+        Useful for troubleshooting startup issues, documenting server configurations, and verifying trace flag settings without connecting to SQL Server itself. Requires Windows credentials and WMI access to the target server.
 
         See https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.
 
@@ -19,7 +19,8 @@ function Get-DbaStartupParameter {
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER Simple
-        If this switch is enabled, simplified output will be produced including only Server, Master Data path, Master Log path, ErrorLog, TraceFlags and ParameterString.
+        Returns only essential startup information: file paths (master data, master log, error log), trace flags, and the complete parameter string.
+        Use this when you need a quick overview without detailed startup mode flags like single-user, minimal start, or monitoring settings.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

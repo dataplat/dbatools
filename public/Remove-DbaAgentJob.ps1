@@ -1,10 +1,10 @@
 function Remove-DbaAgentJob {
     <#
     .SYNOPSIS
-        Remove-DbaAgentJob removes a job.
+        Removes SQL Server Agent jobs from one or more instances with options to preserve history and schedules.
 
     .DESCRIPTION
-        Remove-DbaAgentJob removes a job in the SQL Server Agent.
+        Removes SQL Server Agent jobs from the target instances using the sp_delete_job system stored procedure. By default, both job history and unused schedules are deleted along with the job itself. You can optionally preserve job execution history for compliance or troubleshooting purposes, and keep unused schedules that might be reused for other jobs. This function is commonly used when decommissioning applications, cleaning up test environments, or removing obsolete maintenance jobs during server consolidation projects.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -17,17 +17,20 @@ function Remove-DbaAgentJob {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
-        The name of the job. Can be null if the the job id is being used.
+        Specifies the name of the SQL Server Agent job to remove. Accepts one or more job names.
+        Use this when you know the specific job names you want to delete, rather than piping job objects.
 
     .PARAMETER KeepHistory
-        Specifies to keep the history for the job. By default history is deleted.
+        Preserves job execution history in the msdb.dbo.sysjobhistory tables when removing the job.
+        Use this when you need to retain audit trails or troubleshooting information for compliance or analysis purposes.
 
     .PARAMETER KeepUnusedSchedule
-        Specifies to keep the schedules attached to this job if they are not attached to any other job.
-        By default the unused schedule is deleted.
+        Preserves job schedules that aren't used by other jobs when removing this job.
+        Use this when you plan to reuse the schedule for new jobs or want to maintain schedule definitions for documentation purposes.
 
     .PARAMETER InputObject
-        Accepts piped input from Get-DbaAgentJob
+        Accepts SQL Server Agent job objects from the pipeline, typically from Get-DbaAgentJob.
+        Use this approach when you need to filter jobs with complex criteria before removal or when processing jobs from multiple instances.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

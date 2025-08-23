@@ -1,10 +1,13 @@
 function Get-DbaDbAsymmetricKey {
     <#
     .SYNOPSIS
-        Gets database Asymmetric Key
+        Retrieves asymmetric keys from SQL Server databases for encryption management and security auditing
 
     .DESCRIPTION
-        Gets database Asymmetric Key
+        Retrieves asymmetric keys stored in SQL Server databases, including their encryption algorithms, key lengths, owners, and thumbprints.
+        This function is essential for security audits and encryption key management, allowing DBAs to inventory all asymmetric keys across databases without manually querying system catalogs.
+        Asymmetric keys are used for encryption, digital signatures, and certificate creation in SQL Server's transparent data encryption and column-level encryption features.
+        Returns detailed key properties to help with compliance reporting and security assessments.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -17,16 +20,24 @@ function Get-DbaDbAsymmetricKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Get Asymmetric Keys from specific database
+        Specifies which databases to scan for asymmetric keys. Accepts wildcards for pattern matching.
+        Use this when you need to audit encryption keys in specific databases instead of scanning all databases on the instance.
+        Essential for targeted security assessments or compliance audits of particular applications.
 
     .PARAMETER ExcludeDatabase
-        Database(s) to ignore when retrieving Asymmetric Keys
+        Excludes specific databases from the asymmetric key scan. Accepts wildcards for pattern matching.
+        Use this to skip system databases, test databases, or databases known to not contain encryption keys.
+        Helps focus audits on production databases and reduces noise in security assessments.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Accepts database objects from the pipeline, typically from Get-DbaDatabase.
+        Use this to chain database filtering with key retrieval, such as getting keys from databases with specific properties.
+        Enables advanced filtering scenarios like scanning only databases created after a certain date or with particular owners.
 
     .PARAMETER Name
-        Get specific Asymmetric Key by name
+        Filters results to asymmetric keys with specific names. Accepts wildcards and multiple key names.
+        Use this when tracking specific keys during key rotation, compliance audits, or troubleshooting encryption issues.
+        Common when validating that required encryption keys exist across multiple databases.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -1,10 +1,10 @@
 function Remove-DbaDbEncryptionKey {
     <#
     .SYNOPSIS
-        Deletes specified database encryption key
+        Removes database encryption keys from SQL Server databases to disable Transparent Data Encryption
 
     .DESCRIPTION
-        Deletes specified database encryption key
+        Removes database encryption keys (DEK) from specified databases by executing DROP DATABASE ENCRYPTION KEY. This is typically used when disabling Transparent Data Encryption (TDE) on a database or during encryption key rotation workflows. The database must be unencrypted before the key can be removed, so run ALTER DATABASE [database] SET ENCRYPTION OFF first if TDE is currently active.
 
     .PARAMETER SqlInstance
         The SQL Server to create the encryption keys on.
@@ -17,7 +17,8 @@ function Remove-DbaDbEncryptionKey {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the encryption key will be removed.
+        Specifies the database(s) from which to remove the database encryption key (DEK).
+        Required when using SqlInstance parameter to target specific databases for encryption key removal.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -31,7 +32,8 @@ function Remove-DbaDbEncryptionKey {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER InputObject
-        Piped encryption key objects
+        Accepts database encryption key objects from Get-DbaDbEncryptionKey via pipeline.
+        Use this when you need to remove keys from a filtered set of databases or when chaining commands together.
 
     .NOTES
         Tags: Certificate, Security

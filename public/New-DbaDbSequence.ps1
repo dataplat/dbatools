@@ -1,10 +1,10 @@
 function New-DbaDbSequence {
     <#
     .SYNOPSIS
-        Creates a sequence.
+        Creates a new sequence object in SQL Server databases with configurable properties and data types.
 
     .DESCRIPTION
-        Creates a sequence in the database(s) specified. SQL Server 2012 and higher are supported.
+        Creates a new sequence object in one or more SQL Server databases, providing an alternative to IDENTITY columns for generating sequential numbers. This function allows you to configure all sequence properties including data type (system or user-defined), starting value, increment, min/max bounds, cycling behavior, and cache settings. Sequences are particularly useful when you need to share sequential numbers across multiple tables, require more control over number generation than IDENTITY provides, or need to reset or alter the sequence values. The function automatically creates the target schema if it doesn't exist and supports SQL Server 2012 and higher.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -18,37 +18,48 @@ function New-DbaDbSequence {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The target database(s).
+        Specifies the target database(s) where the sequence will be created. Accepts multiple database names.
+        Required when using SqlInstance parameter to specify which databases should contain the new sequence.
 
     .PARAMETER Sequence
-        The name of the new sequence
+        Specifies the name of the sequence object to create. Must be unique within the target schema.
+        Use descriptive names like 'OrderNumber' or 'InvoiceID' to indicate the sequence's purpose.
 
     .PARAMETER Schema
-        The name of the schema for the sequence. The default is dbo.
+        Specifies the schema where the sequence will be created. Defaults to 'dbo' if not specified.
+        The function will automatically create the schema if it doesn't exist in the target database.
 
     .PARAMETER IntegerType
-        The integer type for the sequence. The default is bigint. User defined integer types can be used.
+        Specifies the data type for the sequence values. Defaults to 'bigint' for maximum range.
+        Supports system types (tinyint, smallint, int, bigint) and user-defined integer types using 'schema.typename' format.
 
     .PARAMETER StartWith
-        The first value for the sequence to start with. The default is 1.
+        Sets the initial value for the sequence. Defaults to 1 if not specified.
+        Use higher starting values like 10000 when you need to reserve lower numbers or maintain existing numbering schemes.
 
     .PARAMETER IncrementBy
-        The value to increment by. The default is 1.
+        Controls how much the sequence increases with each call to NEXT VALUE FOR. Defaults to 1.
+        Use negative values for descending sequences or larger increments like 10 for spaced numbering.
 
     .PARAMETER MinValue
-        The minimum bound for the sequence.
+        Sets the lowest value the sequence can generate. When omitted, uses the data type's minimum value.
+        Specify this to prevent sequences from generating values below a certain threshold.
 
     .PARAMETER MaxValue
-        The maximum bound for the sequence.
+        Sets the highest value the sequence can generate. When omitted, uses the data type's maximum value.
+        Define this to limit sequence values or enable cycling at a specific upper bound.
 
     .PARAMETER Cycle
-        Switch parameter that indicates if the sequence should cycle the values
+        Enables the sequence to restart from MinValue after reaching MaxValue (or vice versa for descending sequences).
+        Use this for sequences that should continuously cycle through a range of values rather than stopping at the boundary.
 
     .PARAMETER CacheSize
-        The integer size of the cache. To specify NO CACHE for a sequence use -CacheSize 0. As noted in the Microsoft documentation if the cache size is not specified the Database Engine will select a size.
+        Controls how many sequence values SQL Server pre-allocates in memory for performance. Set to 0 for NO CACHE.
+        Higher cache sizes improve performance for frequently accessed sequences but may cause gaps if the instance restarts.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Accepts database objects from Get-DbaDatabase via pipeline input.
+        Use this for pipeline operations when you want to create sequences across multiple databases returned by Get-DbaDatabase.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

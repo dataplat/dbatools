@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Setup removes, restores and backups on the local drive for Mount-DbaDatabase
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase
         $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\detachattach\detachattach.bak" -WithReplace
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Backup-DbaDatabase -BackupFileName C:\Temp\detachattach.bak
         $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach -Force
@@ -44,27 +44,27 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase
         Remove-Item -Path C:\Temp\detachattach.bak -ErrorAction SilentlyContinue
 
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Attaches a single database and tests to ensure the alias still exists" {
         BeforeAll {
-            $global:results = Mount-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach
+            $results = Mount-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach
         }
 
         It "Should return success" {
-            $global:results.AttachResult | Should -Be "Success"
+            $results.AttachResult | Should -Be "Success"
         }
 
         It "Should return that the database is only Database" {
-            $global:results.Database | Should -Be "detachattach"
+            $results.Database | Should -Be "detachattach"
         }
 
         It "Should return that the AttachOption default is None" {
-            $global:results.AttachOption | Should -Be "None"
+            $results.AttachOption | Should -Be "None"
         }
     }
 }

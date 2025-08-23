@@ -36,15 +36,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             if (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily) {
-                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily -Confirm:$false
+                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have deleted job: dbatoolsci_testjob" {
@@ -70,15 +72,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             if (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly) {
-                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly -Confirm:$false
+                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly
             }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have deleted job: dbatoolsci_testjob_schedule" {
@@ -106,10 +110,12 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $server.Query("delete from sysjobhistory where job_id = '$jobId'", "msdb")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have deleted job: dbatoolsci_testjob_history" {
-            $null = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory -Confirm:$false
+            $null = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory
             (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history) | Should -BeNullOrEmpty
         }
 
