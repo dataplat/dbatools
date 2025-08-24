@@ -41,45 +41,43 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-
-    BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
-        $randomDb = New-DbaDatabase -SqlInstance $instance2
-        $newDbName = "dbatoolsci_newdb_$random"
-        $newDb1Name = "dbatoolsci_newdb1_$random"
-        $newDb2Name = "dbatoolsci_newdb2_$random"
-        $bug6780DbName = "dbatoolsci_6780_$random"
-        $collationDbName = "dbatoolsci_collation_$random"
-        $secondaryFileTestDbName = "dbatoolsci_secondaryfiletest_$random"
-        $secondaryFileCountTestDbName = "dbatoolsci_secondaryfilecounttest_$random"
-        $simpleRecoveryModelDbName = "dbatoolsci_simple_$random"
-        $fullRecoveryModelDbName = "dbatoolsci_full_$random"
-        $bulkLoggedRecoveryModelDbName = "dbatoolsci_bulklogged_$random"
-        $primaryFileGroupDbName = "dbatoolsci_primary_filegroup_$random"
-        $secondaryFileGroupDbName = "dbatoolsci_secondary_filegroup_$random"
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
-    AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        # Cleanup all created databases.
-        $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $randomDb.Name, $newDbName, $newDb1Name, $newDb2Name, $bug6780DbName, $collationDbName, $simpleRecoveryModelDbName, $fullRecoveryModelDbName, $bulkLoggedRecoveryModelDbName -ErrorAction SilentlyContinue
-        $null = Remove-DbaDatabase -SqlInstance $instance3 -Database $newDbName, $newDb1Name, $newDb2Name, $secondaryFileTestDbName, $secondaryFileCountTestDbName, $primaryFileGroupDbName, $secondaryFileGroupDbName -ErrorAction SilentlyContinue
-
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
     Context "When creating databases" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $random = Get-Random
+            $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+
+            $randomDb = New-DbaDatabase -SqlInstance $instance2
+
+            $newDbName = "dbatoolsci_newdb_$random"
+            $newDb1Name = "dbatoolsci_newdb1_$random"
+            $newDb2Name = "dbatoolsci_newdb2_$random"
+            $bug6780DbName = "dbatoolsci_6780_$random"
+            $collationDbName = "dbatoolsci_collation_$random"
+            $secondaryFileTestDbName = "dbatoolsci_secondaryfiletest_$random"
+            $secondaryFileCountTestDbName = "dbatoolsci_secondaryfilecounttest_$random"
+            $simpleRecoveryModelDbName = "dbatoolsci_simple_$random"
+            $fullRecoveryModelDbName = "dbatoolsci_full_$random"
+            $bulkLoggedRecoveryModelDbName = "dbatoolsci_bulklogged_$random"
+            $primaryFileGroupDbName = "dbatoolsci_primary_filegroup_$random"
+            $secondaryFileGroupDbName = "dbatoolsci_secondary_filegroup_$random"
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Cleanup all created databases.
+            Get-DbaDatabase -SqlInstance $instance2, $instance3 -ExcludeSystem | Remove-DbaDatabase
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
 
         It "creates one new randomly named database" {
             $randomDb.Name | Should -Match random

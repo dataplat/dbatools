@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $safeTraceFlag = 3226
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $startingTfs = $server.Query("DBCC TRACESTATUS(-1)")
+            $startingTfs = @( $server.Query("DBCC TRACESTATUS(-1)") )
             $startingTfsCount = $startingTfs.Count
 
             if ($startingTfs.TraceFlag -notcontains $safeTraceFlag) {

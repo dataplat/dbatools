@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "stops specific services based on instance name through pipeline" {
-            $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService
+            $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService -Force
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Stopped'
