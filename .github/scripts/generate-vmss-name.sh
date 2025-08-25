@@ -20,10 +20,10 @@ CLEAN_BRANCH=$(echo "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-
 # Create VMSS name: dbatools-{user}-{branch}-{type}
 VMSS_NAME="dbatools-${CLEAN_USER}-${CLEAN_BRANCH}-${PREFIX}"
 
-# Ensure it's not too long (Azure limit is 64 chars)
-if [[ ${#VMSS_NAME} -gt 60 ]]; then
+# In generate-vmss-name.sh, after creating VMSS_NAME:
+if [[ ${#VMSS_NAME} -gt 50 ]]; then
     # Truncate and add hash for uniqueness
-    HASH=$(echo "$GITHUB_ACTOR-$BRANCH_NAME" | sha256sum | cut -c1-8)
+    HASH=$(echo "$GITHUB_ACTOR-$BRANCH_NAME-$GITHUB_EVENT_NAME" | sha256sum | cut -c1-8)
     VMSS_NAME="dbatools-${CLEAN_USER:0:8}-${HASH}"
 fi
 

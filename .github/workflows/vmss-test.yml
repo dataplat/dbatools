@@ -92,22 +92,33 @@ jobs:
 
         echo "Configuring all instances in $VMSS_NAME as GitHub runners..."
 
-        # Get all instance resource IDs and pipe to run-command
-        az vmss list-instances \
+        # Get all VM names in the flexible VMSS
+        VM_NAMES=$(az vmss list-instances \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --name "$VMSS_NAME" \
-          --query "[].id" \
-          --output tsv | \
-        az vmss run-command invoke \
-          --command-id RunPowerShellScript \
-          --scripts @.github/scripts/setup-github-runner.ps1 \
-          --parameters \
-            GitHubToken="${{ steps.get-token.outputs.runner-token }}" \
-            BuildId="$BUILD_ID" \
-            VmssName="$VMSS_NAME" \
-            Repository="${{ github.repository }}" \
-          --ids @-
+          --query "[].name" \
+          --output tsv)
 
+        echo "Found VMs: $VM_NAMES"
+
+        # Run command on each VM individually
+        for vm_name in $VM_NAMES; do
+          echo "Configuring VM: $vm_name"
+          az vm run-command invoke \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name "$vm_name" \
+            --command-id RunPowerShellScript \
+            --scripts @.github/scripts/setup-github-runner.ps1 \
+            --parameters \
+              GitHubToken="${{ steps.get-token.outputs.runner-token }}" \
+              BuildId="$BUILD_ID" \
+              VmssName="$VMSS_NAME" \
+              Repository="${{ github.repository }}" &
+        done
+
+        # Wait for all background jobs to complete
+        wait
+        echo "All VMs configured"
   wait-for-runners:
     needs: [prepare-build, provision-vmss]
     runs-on: ubuntu-latest
