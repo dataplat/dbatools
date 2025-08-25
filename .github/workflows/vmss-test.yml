@@ -8,7 +8,7 @@ on:
       vmss_capacity:
         description: 'Number of VMSS instances to provision'
         required: false
-        default: '2'
+        default: '3'
 
 env:
   AZURE_RESOURCE_GROUP: dbatools-ci-runners
