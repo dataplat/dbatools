@@ -20,12 +20,14 @@ function Get-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more databases to include in the results. Supports wildcards and exact name matching.
+        Specifies one or more databases to include in the results. Supports PowerShell wildcards (* ? []) and exact name matching.
         Use this when you need to retrieve specific databases instead of all databases on the instance.
+        Examples: 'MyDB', 'Test*', 'DB[0-9]', '?empDB'
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more databases to exclude from the results. Supports wildcards and exact name matching.
+        Specifies one or more databases to exclude from the results. Supports PowerShell wildcards (* ? []) and exact name matching.
         Use this to filter out specific databases like test or staging environments from your inventory.
+        Examples: 'tempdb', 'Test*', 'Staging_*', '*_backup'
 
     .PARAMETER ExcludeUser
         Returns only system databases (master, model, msdb, tempdb).
@@ -163,6 +165,16 @@ function Get-DbaDatabase {
         PS C:\> Get-DbaDatabase -SqlInstance SQL2,SQL3 -Database OneDB,OtherDB
 
         Returns databases 'OneDb' and 'OtherDB' from SQL Server instances SQL2 and SQL3 if databases by those names exist on those instances.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance SQL2,SQL3 -Database "dbatools_*"
+
+        Returns all databases that start with "dbatools_" from SQL Server instances SQL2 and SQL3.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance SQL2 -ExcludeDatabase "*_test", "*_staging"
+
+        Returns all databases except those ending with "_test" or "_staging" from SQL Server instance SQL2.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
@@ -307,8 +319,56 @@ function Get-DbaDatabase {
 
             $backed_info = Invoke-QueryRawDatabases
             $backed_info = $backed_info | Where-Object {
-                ($_.name -in $Database -or !$Database) -and
-                ($_.name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                # Handle Database parameter with wildcard support
+                $databaseMatch = if (!$Database) {
+                    $true
+                } else {
+                    $matchFound = $false
+                    foreach ($dbPattern in $Database) {
+                        # Check if pattern contains PowerShell wildcards
+                        if ($dbPattern.IndexOfAny(@('*', '?', '[')) -ge 0) {
+                            # Use -like for wildcard patterns
+                            if ($_.name -like $dbPattern) {
+                                $matchFound = $true
+                                break
+                            }
+                        } else {
+                            # Use exact match for non-wildcard patterns
+                            if ($_.name -eq $dbPattern) {
+                                $matchFound = $true
+                                break
+                            }
+                        }
+                    }
+                    $matchFound
+                }
+
+                # Handle ExcludeDatabase parameter with wildcard support
+                $excludeMatch = if (!$ExcludeDatabase) {
+                    $false
+                } else {
+                    $shouldExclude = $false
+                    foreach ($excludePattern in $ExcludeDatabase) {
+                        # Check if pattern contains PowerShell wildcards
+                        if ($excludePattern.IndexOfAny(@('*', '?', '[')) -ge 0) {
+                            # Use -like for wildcard patterns
+                            if ($_.name -like $excludePattern) {
+                                $shouldExclude = $true
+                                break
+                            }
+                        } else {
+                            # Use exact match for non-wildcard patterns
+                            if ($_.name -eq $excludePattern) {
+                                $shouldExclude = $true
+                                break
+                            }
+                        }
+                    }
+                    $shouldExclude
+                }
+
+                $databaseMatch -and
+                (-not $excludeMatch) -and
                 ($_.Owner -in $Owner -or !$Owner) -and
                 ($_.state -ne 6 -or !$OnlyAccessible)
             }
@@ -329,8 +389,56 @@ function Get-DbaDatabase {
             if ($server.isAzure) {
                 $inputObject = $inputObject |
                     Where-Object {
-                        ($_.Name -in $Database -or !$Database) -and
-                        ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                        # Handle Database parameter with wildcard support
+                        $databaseMatch = if (!$Database) {
+                            $true
+                        } else {
+                            $matchFound = $false
+                            foreach ($dbPattern in $Database) {
+                                # Check if pattern contains PowerShell wildcards
+                                if ($dbPattern.IndexOfAny(@('*', '?', '[')) -ge 0) {
+                                    # Use -like for wildcard patterns
+                                    if ($_.Name -like $dbPattern) {
+                                        $matchFound = $true
+                                        break
+                                    }
+                                } else {
+                                    # Use exact match for non-wildcard patterns
+                                    if ($_.Name -eq $dbPattern) {
+                                        $matchFound = $true
+                                        break
+                                    }
+                                }
+                            }
+                            $matchFound
+                        }
+
+                        # Handle ExcludeDatabase parameter with wildcard support
+                        $excludeMatch = if (!$ExcludeDatabase) {
+                            $false
+                        } else {
+                            $shouldExclude = $false
+                            foreach ($excludePattern in $ExcludeDatabase) {
+                                # Check if pattern contains PowerShell wildcards
+                                if ($excludePattern.IndexOfAny(@('*', '?', '[')) -ge 0) {
+                                    # Use -like for wildcard patterns
+                                    if ($_.Name -like $excludePattern) {
+                                        $shouldExclude = $true
+                                        break
+                                    }
+                                } else {
+                                    # Use exact match for non-wildcard patterns
+                                    if ($_.Name -eq $excludePattern) {
+                                        $shouldExclude = $true
+                                        break
+                                    }
+                                }
+                            }
+                            $shouldExclude
+                        }
+
+                        $databaseMatch -and
+                        (-not $excludeMatch) -and
                         ($_.Owner -in $Owner -or !$Owner) -and
                         ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
                         $_.EncryptionEnabled -in $Encrypt
@@ -338,8 +446,56 @@ function Get-DbaDatabase {
             } else {
                 $inputObject = $inputObject |
                     Where-Object {
-                        ($_.Name -in $Database -or !$Database) -and
-                        ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                        # Handle Database parameter with wildcard support
+                        $databaseMatch = if (!$Database) {
+                            $true
+                        } else {
+                            $matchFound = $false
+                            foreach ($dbPattern in $Database) {
+                                # Check if pattern contains PowerShell wildcards
+                                if ($dbPattern.IndexOfAny(@('*', '?', '[')) -ge 0) {
+                                    # Use -like for wildcard patterns
+                                    if ($_.Name -like $dbPattern) {
+                                        $matchFound = $true
+                                        break
+                                    }
+                                } else {
+                                    # Use exact match for non-wildcard patterns
+                                    if ($_.Name -eq $dbPattern) {
+                                        $matchFound = $true
+                                        break
+                                    }
+                                }
+                            }
+                            $matchFound
+                        }
+
+                        # Handle ExcludeDatabase parameter with wildcard support
+                        $excludeMatch = if (!$ExcludeDatabase) {
+                            $false
+                        } else {
+                            $shouldExclude = $false
+                            foreach ($excludePattern in $ExcludeDatabase) {
+                                # Check if pattern contains PowerShell wildcards
+                                if ($excludePattern.IndexOfAny(@('*', '?', '[')) -ge 0) {
+                                    # Use -like for wildcard patterns
+                                    if ($_.Name -like $excludePattern) {
+                                        $shouldExclude = $true
+                                        break
+                                    }
+                                } else {
+                                    # Use exact match for non-wildcard patterns
+                                    if ($_.Name -eq $excludePattern) {
+                                        $shouldExclude = $true
+                                        break
+                                    }
+                                }
+                            }
+                            $shouldExclude
+                        }
+
+                        $databaseMatch -and
+                        (-not $excludeMatch) -and
                         ($_.Owner -in $Owner -or !$Owner) -and
                         $_.ReadOnly -in $Readonly -and
                         $_.IsAccessible -in $AccessibleFilter -and
