@@ -81,6 +81,92 @@ Describe $CommandName -Tag IntegrationTests {
             ($results).Count | Should -Be 1
         }
     }
+
+    Context "Wildcard functionality" {
+        BeforeAll {
+            $random = Get-Random
+            $dbname1 = "dbatoolsci_wildcard_test1_$random"
+            $dbname2 = "dbatoolsci_wildcard_test2_$random"
+            $dbname3 = "dbatoolsci_wildcard_example_$random"
+            $dbname4 = "dbatoolsci_wildcard_example2_$random"
+            $dbname5 = "dbatoolsci_exclude_test_$random"
+
+            # Create test databases
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname1
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname2
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname3
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname4
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname5
+        }
+
+        AfterAll {
+            # Clean up test databases
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1, $dbname2, $dbname3, $dbname4, $dbname5 -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "supports * wildcard at the end of database name in Database parameter" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_wildcard_example*"
+            $results.Count | Should -Be 2
+            $results.Name | Should -Contain $dbname3
+            $results.Name | Should -Contain $dbname4
+        }
+
+        It "supports * wildcard at the beginning of database name in Database parameter" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "*_example_$random"
+            $results.Count | Should -Be 1
+            $results.Name | Should -Contain $dbname3
+        }
+
+        It "supports ? wildcard for single character matching in Database parameter" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_wildcard_test?_$random"
+            $results.Count | Should -Be 2
+            $results.Name | Should -Contain $dbname1
+            $results.Name | Should -Contain $dbname2
+        }
+
+        It "combines exact matches and wildcards in Database parameter" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "master", "dbatoolsci_wildcard_example*"
+            $results.Count | Should -Be 3  # master + 2 wildcard matches
+            $results.Name | Should -Contain "master"
+            $results.Name | Should -Contain $dbname3
+            $results.Name | Should -Contain $dbname4
+        }
+
+        It "supports * wildcard in ExcludeDatabase parameter" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -ExcludeDatabase "dbatoolsci_wildcard_test*"
+            $results.Name | Should -Not -Contain $dbname1
+            $results.Name | Should -Not -Contain $dbname2
+            $results.Name | Should -Contain $dbname3  # Should still include example databases
+        }
+
+        It "supports ? wildcard in ExcludeDatabase parameter" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -ExcludeDatabase "dbatoolsci_wildcard_test?_$random"
+            $results.Name | Should -Not -Contain $dbname1
+            $results.Name | Should -Not -Contain $dbname2
+            $results.Name | Should -Contain $dbname3  # Should still include example databases
+        }
+
+        It "works correctly when both Database and ExcludeDatabase use wildcards" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_wildcard*" -ExcludeDatabase "*_exclude_*"
+            $results.Count | Should -Be 4  # Should include dbname1, dbname2, dbname3, dbname4 but exclude dbname5
+            $results.Name | Should -Contain $dbname1
+            $results.Name | Should -Contain $dbname2
+            $results.Name | Should -Contain $dbname3
+            $results.Name | Should -Contain $dbname4
+            $results.Name | Should -Not -Contain $dbname5
+        }
+
+        It "maintains exact matching behavior for non-wildcard patterns" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1
+            $results.Count | Should -Be 1
+            $results.Name | Should -Be $dbname1
+        }
+
+        It "returns no results for wildcard pattern with no matches" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "NoMatchPattern_*_XYZ"
+            $results.Count | Should -Be 0
+        }
+    }
 }
 
 # TODO: Do we want these tests? Skipping for now
