@@ -85,6 +85,33 @@ jobs:
           "${{ github.actor }}" \
           "${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}"
 
+    - name: Wait for VMSS instances to be ready
+      run: |
+        VMSS_NAME="${{ needs.prepare-build.outputs.vmss-name }}"
+        echo "Waiting for VMSS instances to be in running state..."
+
+        for i in {1..20}; do
+          RUNNING_COUNT=$(az vmss list-instances \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name "$VMSS_NAME" \
+            --query "[?instanceView.statuses[?code=='PowerState/running']] | length(@)" \
+            --output tsv)
+
+          echo "Running instances: $RUNNING_COUNT/${{ needs.prepare-build.outputs.vmss-capacity }}"
+
+          if [ "$RUNNING_COUNT" -eq "${{ needs.prepare-build.outputs.vmss-capacity }}" ]; then
+            echo "All instances are running"
+            break
+          fi
+
+          if [ $i -eq 20 ]; then
+            echo "Timeout waiting for instances to start"
+            exit 1
+          fi
+
+          sleep 15
+        done
+
     - name: Configure VMSS instances as GitHub runners
       run: |
         VMSS_NAME="${{ needs.prepare-build.outputs.vmss-name }}"
@@ -92,33 +119,24 @@ jobs:
 
         echo "Configuring all instances in $VMSS_NAME as GitHub runners..."
 
-        # Get all VM names in the flexible VMSS
-        VM_NAMES=$(az vmss list-instances \
+        az vmss run-command invoke \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --name "$VMSS_NAME" \
-          --query "[].name" \
-          --output tsv)
+          --command-id RunPowerShellScript \
+          --scripts @.github/scripts/runner-setup.ps1 \
+          --parameters \
+            GitHubToken="${{ steps.get-token.outputs.runner-token }}" \
+            BuildId="$BUILD_ID" \
+            VmssName="$VMSS_NAME" \
+            Repository="${{ github.repository }}"
 
-        echo "Found VMs: $VM_NAMES"
+        if [ $? -ne 0 ]; then
+          echo "Failed to configure runners on VMSS"
+          exit 1
+        fi
 
-        # Run command on each VM individually
-        for vm_name in $VM_NAMES; do
-          echo "Configuring VM: $vm_name"
-          az vm run-command invoke \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --name "$vm_name" \
-            --command-id RunPowerShellScript \
-            --scripts @.github/scripts/setup-github-runner.ps1 \
-            --parameters \
-              GitHubToken="${{ steps.get-token.outputs.runner-token }}" \
-              BuildId="$BUILD_ID" \
-              VmssName="$VMSS_NAME" \
-              Repository="${{ github.repository }}" &
-        done
+        echo "Runner configuration command sent to all VMSS instances"
 
-        # Wait for all background jobs to complete
-        wait
-        echo "All VMs configured"
   wait-for-runners:
     needs: [prepare-build, provision-vmss]
     runs-on: ubuntu-latest
@@ -131,23 +149,32 @@ jobs:
         EXPECTED_RUNNERS="${{ needs.prepare-build.outputs.vmss-capacity }}"
 
         echo "Waiting for runners from VMSS: $VMSS_NAME"
+        echo "Expected runners: $EXPECTED_RUNNERS"
+
         for i in {1..30}; do
           RUNNER_COUNT=$(curl -s -H "Authorization: token ${{ secrets.VMSS_GH_PAT }}" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
             jq "[.runners[] | select(.labels[].name | contains(\"$VMSS_NAME\"))] | length")
 
           echo "Registered runners: $RUNNER_COUNT/$EXPECTED_RUNNERS"
-          if [ "$RUNNER_COUNT" -ge "$((EXPECTED_RUNNERS - 1))" ]; then
-            echo "Sufficient runners available"
+
+          if [ "$RUNNER_COUNT" -ge "$EXPECTED_RUNNERS" ]; then
+            echo "All expected runners are available!"
             break
           fi
+
+          if [ $i -eq 30 ]; then
+            echo "Timeout: Not all runners came online"
+            echo "Continuing with available runners..."
+          fi
+
           sleep 20
         done
 
   # Simple test that runs on each VMSS instance
   test-connectivity:
     needs: [prepare-build, provision-vmss, wait-for-runners]
-    runs-on: [self-hosted, windows, sql-server, "${{ needs.prepare-build.outputs.vmss-name }}"]
+    runs-on: [self-hosted, "${{ needs.prepare-build.outputs.vmss-name }}"]
     timeout-minutes: 5
     strategy:
       matrix:
@@ -155,30 +182,17 @@ jobs:
     steps:
     - name: Test VMSS connectivity
       run: |
-        Write-Host "=== VMSS Test ==="
-        Write-Host "Machine: $env:COMPUTERNAME"
-        Write-Host "Test Job: ${{ matrix.test }}"
-        Write-Host "VMSS Name: ${{ needs.prepare-build.outputs.vmss-name }}"
-        Write-Host "Build ID: ${{ needs.prepare-build.outputs.build-id }}"
+        Write-Host "=== VMSS Test ===" -ForegroundColor Green
+        Write-Host "Machine: $env:COMPUTERNAME" -ForegroundColor Yellow
+        Write-Host "Test Job: ${{ matrix.test }}" -ForegroundColor Yellow
+        Write-Host "VMSS Name: ${{ needs.prepare-build.outputs.vmss-name }}" -ForegroundColor Yellow
+        Write-Host "Build ID: ${{ needs.prepare-build.outputs.build-id }}" -ForegroundColor Yellow
 
         # Simulate some work
-        Write-Host "Simulating work for 60 seconds..."
+        Write-Host "Simulating work for 60 seconds..." -ForegroundColor Cyan
         Start-Sleep -Seconds 60
 
-        Write-Host "Test completed on $(Get-Date)"
-
-  # Add watchdog for cost protection
-  vmss-watchdog:
-    needs: [prepare-build, provision-vmss]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Emergency cleanup after 10 minutes
-      run: |
-        echo "Watchdog: Sleeping for 10 minutes"
-        sleep 600
-
-        echo "Watchdog triggered - forcing cleanup"
-        # Force cleanup code here
+        Write-Host "Test completed on $(Get-Date)" -ForegroundColor Green
 
   cleanup-vmss:
     needs: [prepare-build, provision-vmss, test-connectivity]

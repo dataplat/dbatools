@@ -122,15 +122,13 @@ jobs:
         VMSS_NAME="${{ needs.prepare-build.outputs.vmss-name }}"
         BUILD_ID="${{ needs.prepare-build.outputs.build-id }}"
 
-        echo "Configuring instances in $VMSS_NAME as GitHub runners..."
+        echo "Configuring all instances in $VMSS_NAME as GitHub runners..."
 
-        # Deploy the PowerShell script to all instances
         az vmss run-command invoke \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --name "$VMSS_NAME" \
           --command-id RunPowerShellScript \
-          --instance-ids "*" \
-          --scripts @.github/scripts/setup-github-runner.ps1 \
+          --scripts @.github/scripts/runner-setup.ps1 \
           --parameters \
             GitHubToken="${{ steps.get-token.outputs.runner-token }}" \
             BuildId="$BUILD_ID" \
