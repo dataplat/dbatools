@@ -201,4 +201,4 @@ jobs:
           "${{ env.AZURE_RESOURCE_GROUP }}" \
           "${{ secrets.VMSS_GH_PAT }}" \
           "${{ github.repository }}" \
-          "false"
+          "true"
