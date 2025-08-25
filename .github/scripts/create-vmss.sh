@@ -49,7 +49,7 @@ else
         --admin-username runneradmin \
         --admin-password "dbatools.I00" \
         --instance-count "$CAPACITY" \
-        --vm-sku Standard_D4s_v3 \
+        --vm-sku Standard_B4ms \
         --location eastus2 \
         --license-type Windows_Server \
         --orchestration-mode Flexible \
