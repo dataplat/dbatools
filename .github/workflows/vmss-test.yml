@@ -35,7 +35,7 @@ jobs:
     - name: Generate VMSS name
       id: generate-vmss-name
       run: |
-        dos2unix .github/scripts/generate-vmss-name.sh
+        sed -i 's/\r$//' .github/scripts/generate-vmss-name.sh
         chmod +x .github/scripts/generate-vmss-name.sh
         .github/scripts/generate-vmss-name.sh \
           "${{ github.actor }}" \
@@ -75,7 +75,7 @@ jobs:
 
     - name: Create or update VMSS
       run: |
-        dos2unix .github/scripts/create-vmss.sh
+        sed -i 's/\r$//' .github/scripts/create-vmss.sh
         chmod +x .github/scripts/create-vmss.sh
         .github/scripts/create-vmss.sh \
           "${{ needs.prepare-build.outputs.vmss-name }}" \
@@ -174,7 +174,7 @@ jobs:
 
     - name: Cleanup VMSS and runners
       run: |
-        dos2unix .github/scripts/cleanup-vmss.sh
+        sed -i 's/\r$//' .github/scripts/cleanup-vmss.sh
         chmod +x .github/scripts/cleanup-vmss.sh
         .github/scripts/cleanup-vmss.sh \
           "${{ needs.prepare-build.outputs.vmss-name }}" \
