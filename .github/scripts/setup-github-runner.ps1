@@ -48,8 +48,10 @@ try {
     Write-Host "Runner configured successfully" -ForegroundColor Green
     Write-Host "Starting runner service..." -ForegroundColor Yellow
 
-    # Start the runner (blocks until job completes due to --ephemeral)
-    .\run.cmd
+    # Start runner service in background (non-blocking)
+    Start-Process -FilePath ".\run.cmd" -WindowStyle Hidden -WorkingDirectory $RunnerPath
+
+    Write-Host "Runner service started in background" -ForegroundColor Green
 
 } catch {
     Write-Error "Runner setup failed: $_"
