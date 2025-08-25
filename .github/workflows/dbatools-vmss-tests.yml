@@ -1,0 +1,191 @@
+name: dbatools Comprehensive Tests
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      test_scenarios:
+        description: 'Test scenarios to run (comma-separated): all, 2008R2, 2016, 2017, service_restarts, default'
+        required: false
+        default: 'all'
+      vmss_capacity:
+        description: 'Number of VMSS instances to provision'
+        required: false
+        default: '10'
+
+env:
+  AZURE_RESOURCE_GROUP: dbatools-ci-runners
+  VMSS_SUBSCRIPTION_ID: ${{ secrets.VMSS_AZURE_SUBSCRIPTION_ID }}
+  VMSS_CUSTOM_IMAGE_ID: ${{ secrets.VMSS_AZURE_CUSTOM_IMAGE_ID }}
+
+jobs:
+  prepare-build:
+    runs-on: ubuntu-latest
+    outputs:
+      build-id: ${{ steps.generate-id.outputs.build-id }}
+      vmss-name: ${{ steps.generate-vmss-name.outputs.vmss-name }}
+      vmss-capacity: ${{ steps.determine-capacity.outputs.capacity }}
+      scenarios: ${{ steps.determine-scenarios.outputs.scenarios }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Generate build ID
+      id: generate-id
+      run: |
+        BUILD_ID="${{ github.run_id }}-$(date +%s)"
+        echo "build-id=$BUILD_ID" >> $GITHUB_OUTPUT
+        echo "Generated build ID: $BUILD_ID"
+
+    - name: Generate VMSS name
+      id: generate-vmss-name
+      run: |
+        chmod +x .github/scripts/generate-vmss-name.sh
+        .github/scripts/generate-vmss-name.sh \
+          "${{ github.actor }}" \
+          "${{ github.event_name }}" \
+          "${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}"
+
+    - name: Determine capacity and scenarios
+      id: determine-capacity
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          CAPACITY="${{ github.event.inputs.vmss_capacity || '10' }}"
+          SCENARIOS="${{ github.event.inputs.test_scenarios || 'all' }}"
+        elif [[ "${{ github.ref_name }}" == "main" ]]; then
+          CAPACITY="10"
+          SCENARIOS="all"
+        elif [[ "${{ github.ref_name }}" == "development" ]]; then
+          CAPACITY="8"
+          SCENARIOS="2016,2017,default"
+        else
+          CAPACITY="6"
+          SCENARIOS="2016,default"
+        fi
+
+        echo "capacity=$CAPACITY" >> $GITHUB_OUTPUT
+        echo "scenarios=$SCENARIOS" >> $GITHUB_OUTPUT
+        echo "VMSS capacity: $CAPACITY"
+        echo "Test scenarios: $SCENARIOS"
+
+  provision-vmss:
+    needs: prepare-build
+    runs-on: ubuntu-latest
+    outputs:
+      runner-token: ${{ steps.get-token.outputs.runner-token }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
+
+    - name: Get GitHub runner registration token
+      id: get-token
+      run: |
+        TOKEN=$(curl -X POST \
+          -H "Authorization: token ${{ secrets.VMSS_GH_PAT }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/actions/runners/registration-token | jq -r .token)
+
+        if [[ "$TOKEN" == "null" || -z "$TOKEN" ]]; then
+          echo "Failed to get runner registration token"
+          exit 1
+        fi
+
+        echo "::add-mask::$TOKEN"
+        echo "runner-token=$TOKEN" >> $GITHUB_OUTPUT
+
+    - name: Create or update VMSS
+      run: |
+        chmod +x .github/scripts/create-vmss.sh
+        .github/scripts/create-vmss.sh \
+          "${{ needs.prepare-build.outputs.vmss-name }}" \
+          "${{ needs.prepare-build.outputs.vmss-capacity }}" \
+          "${{ env.AZURE_RESOURCE_GROUP }}" \
+          "${{ env.VMSS_CUSTOM_IMAGE_ID }}" \
+          "${{ github.actor }}" \
+          "${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}"
+
+    - name: Configure VMSS instances as GitHub runners
+      run: |
+        VMSS_NAME="${{ needs.prepare-build.outputs.vmss-name }}"
+        BUILD_ID="${{ needs.prepare-build.outputs.build-id }}"
+
+        echo "Configuring instances in $VMSS_NAME as GitHub runners..."
+
+        # Deploy the PowerShell script to all instances
+        az vmss run-command invoke \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name "$VMSS_NAME" \
+          --command-id RunPowerShellScript \
+          --instance-ids "*" \
+          --scripts @.github/scripts/setup-github-runner.ps1 \
+          --parameters \
+            GitHubToken="${{ steps.get-token.outputs.runner-token }}" \
+            BuildId="$BUILD_ID" \
+            VmssName="$VMSS_NAME" \
+            Repository="${{ github.repository }}"
+
+  wait-for-runners:
+    needs: [prepare-build, provision-vmss]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Wait for dedicated runners
+      run: |
+        VMSS_NAME="${{ needs.prepare-build.outputs.vmss-name }}"
+        BUILD_ID="${{ needs.prepare-build.outputs.build-id }}"
+        EXPECTED_RUNNERS="${{ needs.prepare-build.outputs.vmss-capacity }}"
+
+        echo "Waiting for runners from dedicated VMSS: $VMSS_NAME"
+
+        for i in {1..30}; do
+          RUNNER_COUNT=$(curl -s -H "Authorization: token ${{ secrets.VMSS_GH_PAT }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
+            jq "[.runners[] | select(.labels[].name | contains(\"$VMSS_NAME\") and .labels[].name | contains(\"build-$BUILD_ID\"))] | length")
+
+          echo "Registered runners: $RUNNER_COUNT/$EXPECTED_RUNNERS"
+
+          if [ "$RUNNER_COUNT" -ge "$((EXPECTED_RUNNERS - 1))" ]; then
+            echo "Sufficient runners available"
+            break
+          fi
+
+          if [ $i -eq 30 ]; then
+            echo "Timeout waiting for runners"
+            exit 1
+          fi
+
+          sleep 20
+        done
+
+  # Your existing test matrix generation and test-scenarios jobs here...
+  # Just change the runs-on to use the new vmss-name output
+
+  cleanup-vmss:
+    needs: [prepare-build, provision-vmss]  # Add your test jobs here
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
+
+    - name: Cleanup VMSS and runners
+      run: |
+        chmod +x .github/scripts/cleanup-vmss.sh
+        .github/scripts/cleanup-vmss.sh \
+          "${{ needs.prepare-build.outputs.vmss-name }}" \
+          "${{ env.AZURE_RESOURCE_GROUP }}" \
+          "${{ secrets.VMSS_GH_PAT }}" \
+          "${{ github.repository }}" \
+          "${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}"
