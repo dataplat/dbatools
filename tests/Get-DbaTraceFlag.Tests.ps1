@@ -61,11 +61,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns filtered results" {
             $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2 -TraceFlag $safeTraceFlag
             $results.TraceFlag.Count | Should -Be 1
+            $results.TraceFlag | Should -Be $safeTraceFlag
+            $results.Status | Should -Be 1
         }
 
         It "Returns all TFs" {
             $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
-            $results.TraceFlag.Count | Should -Be $startingTfsCount
+            #$results.TraceFlag.Count | Should -Be $startingTfsCount
+            $results.TraceFlag | Should -Be $safeTraceFlag
         }
     }
 }
