@@ -71,6 +71,11 @@ jobs:
         echo "VMSS capacity: $CAPACITY"
         echo "Test scenarios: $SCENARIOS"
 
+    - name: Determine scenarios
+      id: determine-scenarios
+      run: |
+        echo "scenarios=${{ steps.determine-capacity.outputs.scenarios }}" >> $GITHUB_OUTPUT
+
   provision-vmss:
     needs: prepare-build
     runs-on: ubuntu-latest
@@ -164,8 +169,40 @@ jobs:
           sleep 20
         done
 
+  vmss-watchdog:
+    needs: [prepare-build, provision-vmss]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Emergency VMSS cleanup after timeout
+      run: |
+        echo "Starting 30-minute watchdog timer..."
+        sleep 1800  # 30 minutes
+
+        echo "30-minute timeout reached - forcing VMSS cleanup"
+
+        # Azure Login
+        echo "${{ secrets.VMSS_AZURE_CREDENTIALS }}" | base64 -d > /tmp/azure_creds.json
+        az login --service-principal --username $(jq -r .clientId /tmp/azure_creds.json) --password $(jq -r .clientSecret /tmp/azure_creds.json) --tenant $(jq -r .tenantId /tmp/azure_creds.json)
+        rm /tmp/azure_creds.json
+
+        # Force cleanup regardless of other job status
+        VMSS_NAME="${{ needs.prepare-build.outputs.vmss-name }}"
+
+        echo "Force scaling down VMSS: $VMSS_NAME"
+        az vmss scale \
+          --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+          --name "$VMSS_NAME" \
+          --new-capacity 0 \
+          --no-wait
+
+        echo "VMSS watchdog cleanup completed"
+
   # Your existing test matrix generation and test-scenarios jobs here...
   # Just change the runs-on to use the new vmss-name output
+  # Add timeout-minutes: 25 to each test job
 
   cleanup-vmss:
     needs: [prepare-build, provision-vmss]  # Add your test jobs here
