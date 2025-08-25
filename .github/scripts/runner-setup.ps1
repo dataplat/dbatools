@@ -11,6 +11,48 @@ function Write-Log {
     Add-Content -Path "C:\runner-setup.log" -Value $logMessage -ErrorAction SilentlyContinue
 }
 
+# Wait for set-registry.ps1 file to appear and execute it
+function Wait-ForRegistryScript {
+    $registryScriptPath = "C:\scripts\set-registry.ps1"
+    $maxWaitMinutes = 10
+    $waitIntervalSeconds = 10
+    $maxAttempts = ($maxWaitMinutes * 60) / $waitIntervalSeconds
+
+    Write-Log "Waiting for registry script: $registryScriptPath"
+    Write-Log "Max wait time: $maxWaitMinutes minutes"
+
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        if (Test-Path $registryScriptPath) {
+            Write-Log "Registry script found after $($attempt * $waitIntervalSeconds) seconds"
+
+            try {
+                Write-Log "Executing registry script..."
+                & $registryScriptPath
+
+                if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq $null) {
+                    Write-Log "Registry script executed successfully"
+                    return $true
+                } else {
+                    throw "Registry script failed with exit code $LASTEXITCODE"
+                }
+            } catch {
+                Write-Log "ERROR executing registry script: $($_.Exception.Message)"
+                throw $_
+            }
+        }
+
+        if ($attempt -eq $maxAttempts) {
+            throw "Timeout: Registry script not found after $maxWaitMinutes minutes"
+        }
+
+        Write-Log "Registry script not found, waiting... (attempt $attempt/$maxAttempts)"
+        Start-Sleep -Seconds $waitIntervalSeconds
+    }
+}
+
+# Wait for and execute the registry script before proceeding
+Wait-ForRegistryScript
+
 try {
     Write-Log "=== GitHub Actions Runner Setup Starting ==="
     Write-Log "Machine: $env:COMPUTERNAME"
