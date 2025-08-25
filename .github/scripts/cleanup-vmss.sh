@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Temporary disable — bail out immediately
+echo "Skipping VMSS deletion script"
+exit 0
+
 VMSS_NAME="$1"
 RESOURCE_GROUP="$2"
 GITHUB_PAT="$3"
