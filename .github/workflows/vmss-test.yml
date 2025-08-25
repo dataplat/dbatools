@@ -122,7 +122,7 @@ jobs:
   wait-for-runners:
     needs: [prepare-build, provision-vmss]
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
     - name: Wait for dedicated runners
       run: |
@@ -148,7 +148,7 @@ jobs:
   test-connectivity:
     needs: [prepare-build, provision-vmss, wait-for-runners]
     runs-on: [self-hosted, windows, sql-server, "${{ needs.prepare-build.outputs.vmss-name }}"]
-    timeout-minutes: 10
+    timeout-minutes: 5
     strategy:
       matrix:
         test: [1, 2, 3] # This will create 3 jobs that can run on different instances
