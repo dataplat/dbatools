@@ -81,12 +81,10 @@ function Find-DbaDbDuplicateIndex {
 
     begin {
         $exactDuplicateQuery2005 = "
-            WITH CTE_IndexCols
+        WITH CTE_IndexCols
             AS (
                 SELECT i.[object_id]
                     ,i.index_id
-                    ,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
-                    ,OBJECT_NAME(i.[object_id]) AS TableName
                     ,NAME AS IndexName
                     ,ISNULL(STUFF((
                                 SELECT ', ' + col.NAME + ' ' + CASE
@@ -145,7 +143,7 @@ function Find-DbaDbDuplicateIndex {
                     ,s.index_id
                 )
             SELECT DB_NAME() AS DatabaseName
-                ,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+                ,OBJECT_SCHEMA_NAME(CI1.[object_id]) + '.' + OBJECT_NAME(CI1.[object_id]) as 'TableName'
                 ,CI1.IndexName
                 ,CI1.KeyColumns
                 ,CI1.IncludedColumns
@@ -160,20 +158,17 @@ function Find-DbaDbDuplicateIndex {
             WHERE EXISTS (
                     SELECT 1
                     FROM CTE_IndexCols CI2
-                    WHERE CI1.SchemaName = CI2.SchemaName
-                        AND CI1.TableName = CI2.TableName
+                    WHERE CI1.[object_id] = CI2.[object_id]
                         AND CI1.KeyColumns = CI2.KeyColumns
                         AND CI1.IncludedColumns = CI2.IncludedColumns
                         AND CI1.IndexName <> CI2.IndexName
                     )"
 
         $overlappingQuery2005 = "
-            WITH CTE_IndexCols
+          WITH CTE_IndexCols
             AS (
                 SELECT i.[object_id]
                     ,i.index_id
-                    ,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
-                    ,OBJECT_NAME(i.[object_id]) AS TableName
                     ,NAME AS IndexName
                     ,ISNULL(STUFF((
                                 SELECT ', ' + col.NAME + ' ' + CASE
@@ -232,7 +227,7 @@ function Find-DbaDbDuplicateIndex {
                     ,s.index_id
                 )
             SELECT DB_NAME() AS DatabaseName
-                ,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+                ,OBJECT_SCHEMA_NAME(CI1.[object_id]) + '.' + OBJECT_NAME(CI1.[object_id]) AS 'TableName'
                 ,CI1.IndexName
                 ,CI1.KeyColumns
                 ,CI1.IncludedColumns
@@ -247,8 +242,7 @@ function Find-DbaDbDuplicateIndex {
             WHERE EXISTS (
                     SELECT 1
                     FROM CTE_IndexCols CI2
-                    WHERE CI1.SchemaName = CI2.SchemaName
-                        AND CI1.TableName = CI2.TableName
+                    WHERE CI1.[object_id] = CI2.[object_id]
                         AND (
                             (
                                 CI1.KeyColumns LIKE CI2.KeyColumns + '%'
@@ -268,8 +262,6 @@ function Find-DbaDbDuplicateIndex {
             AS (
                 SELECT i.[object_id]
                     ,i.index_id
-                    ,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
-                    ,OBJECT_NAME(i.[object_id]) AS TableName
                     ,NAME AS IndexName
                     ,ISNULL(STUFF((
                                 SELECT ', ' + col.NAME + ' ' + CASE
@@ -331,7 +323,7 @@ function Find-DbaDbDuplicateIndex {
                     ,p.data_compression_desc
                 )
             SELECT DB_NAME() AS DatabaseName
-                ,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+                ,OBJECT_SCHEMA_NAME(CI1.[object_id]) + '.' + OBJECT_NAME(CI1.[object_id]) AS 'TableName'
                 ,CI1.IndexName
                 ,CI1.KeyColumns
                 ,CI1.IncludedColumns
@@ -348,8 +340,7 @@ function Find-DbaDbDuplicateIndex {
             WHERE EXISTS (
                     SELECT 1
                     FROM CTE_IndexCols CI2
-                    WHERE CI1.SchemaName = CI2.SchemaName
-                        AND CI1.TableName = CI2.TableName
+                    WHERE CI1.[object_id] = CI2.[object_id]
                         AND CI1.KeyColumns = CI2.KeyColumns
                         AND CI1.IncludedColumns = CI2.IncludedColumns
                         AND CI1.IsFiltered = CI2.IsFiltered
@@ -362,8 +353,6 @@ function Find-DbaDbDuplicateIndex {
                 SELECT
                         i.[object_id]
                         ,i.index_id
-                        ,OBJECT_SCHEMA_NAME(i.[object_id]) AS SchemaName
-                        ,OBJECT_NAME(i.[object_id]) AS TableName
                         ,Name AS IndexName
                         ,ISNULL(STUFF((SELECT ', ' + col.NAME + ' ' + CASE
                                                                     WHEN idxCol.is_descending_key = 1 THEN 'DESC'
@@ -419,7 +408,7 @@ function Find-DbaDbDuplicateIndex {
             )
             SELECT
                     DB_NAME() AS DatabaseName
-                    ,CI1.SchemaName + '.' + CI1.TableName AS 'TableName'
+                    ,OBJECT_SCHEMA_NAME(CI1.[object_id]) + '.' + OBJECT_NAME(CI1.[object_id]) AS 'TableName'
                     ,CI1.IndexName
                     ,CI1.KeyColumns
                     ,CI1.IncludedColumns
@@ -436,8 +425,7 @@ function Find-DbaDbDuplicateIndex {
                 AND CI1.index_id = CSPC.index_id
             WHERE EXISTS (SELECT 1
                             FROM CTE_IndexCols CI2
-                        WHERE CI1.SchemaName = CI2.SchemaName
-                            AND CI1.TableName = CI2.TableName
+                        WHERE CI1.[object_id] = CI2.[object_id]
                             AND (
                                         (CI1.KeyColumns like CI2.KeyColumns + '%' and SUBSTRING(CI1.KeyColumns,LEN(CI2.KeyColumns)+1,1) = ' ')
                                     OR (CI2.KeyColumns like CI1.KeyColumns + '%' and SUBSTRING(CI2.KeyColumns,LEN(CI1.KeyColumns)+1,1) = ' ')
