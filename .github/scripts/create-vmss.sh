@@ -1,3 +1,5 @@
+# Modified create-vmss.sh with VM Extension approach
+
 #!/bin/bash
 set -e
 
@@ -36,6 +38,21 @@ if az vmss show --resource-group "$RESOURCE_GROUP" --name "$VMSS_NAME" &>/dev/nu
             --resource-group "$RESOURCE_GROUP" \
             --name "$VMSS_NAME" \
             --new-capacity "$CAPACITY"
+
+        # Apply extension to new instances
+        echo "Applying extension to scaled instances..."
+        az vmss extension set \
+            --resource-group "$RESOURCE_GROUP" \
+            --vmss-name "$VMSS_NAME" \
+            --name CustomScriptExtension \
+            --publisher Microsoft.Compute \
+            --version 1.10 \
+            --settings "$(cat <<EOF
+{
+    "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -Command \"[Environment]::SetEnvironmentVariable('VMSS_GH_TOKEN', '$RUNNER_TOKEN', 'Machine'); [Environment]::SetEnvironmentVariable('GITHUB_REPOSITORY', '$GITHUB_REPOSITORY', 'Machine'); [Environment]::SetEnvironmentVariable('BUILD_ID', '$BUILD_ID', 'Machine'); [Environment]::SetEnvironmentVariable('VMSS_NAME', '$VMSS_NAME', 'Machine'); Write-Host 'Environment variables set via extension'; Restart-Service -Name 'CustomSetup' -ErrorAction SilentlyContinue\""
+}
+EOF
+            )"
     else
         echo "VMSS already at desired capacity ($CAPACITY)"
     fi
@@ -44,6 +61,7 @@ if az vmss show --resource-group "$RESOURCE_GROUP" --name "$VMSS_NAME" &>/dev/nu
 else
     echo "Creating new VMSS: $VMSS_NAME"
 
+    # Create VMSS with boot diagnostics
     az vmss create \
         --resource-group "$RESOURCE_GROUP" \
         --name "$VMSS_NAME" \
@@ -58,19 +76,30 @@ else
         --orchestration-mode Flexible \
         --priority Regular \
         --ephemeral-os-disk true \
+        --boot-diagnostics-storage "" \
         --tags \
             owner="$GITHUB_ACTOR" \
             branch="$BRANCH_NAME" \
             purpose="dbatools-ci" \
-            created="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-        --custom-data @- <<EOF
-#ps1_sysnative
-[Environment]::SetEnvironmentVariable("VMSS_GH_TOKEN", "$RUNNER_TOKEN", "Machine")
-[Environment]::SetEnvironmentVariable("GITHUB_REPOSITORY", "$GITHUB_REPOSITORY", "Machine")
-[Environment]::SetEnvironmentVariable("BUILD_ID", "$BUILD_ID", "Machine")
-[Environment]::SetEnvironmentVariable("VMSS_NAME", "$VMSS_NAME", "Machine")
-EOF
+            created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
     echo "VMSS $VMSS_NAME created successfully"
+
+    # Apply Custom Script Extension to set environment variables
+    echo "Applying Custom Script Extension..."
+    az vmss extension set \
+        --resource-group "$RESOURCE_GROUP" \
+        --vmss-name "$VMSS_NAME" \
+        --name CustomScriptExtension \
+        --publisher Microsoft.Compute \
+        --version 1.10 \
+        --settings "$(cat <<EOF
+{
+    "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -Command \"[Environment]::SetEnvironmentVariable('VMSS_GH_TOKEN', '$RUNNER_TOKEN', 'Machine'); [Environment]::SetEnvironmentVariable('GITHUB_REPOSITORY', '$GITHUB_REPOSITORY', 'Machine'); [Environment]::SetEnvironmentVariable('BUILD_ID', '$BUILD_ID', 'Machine'); [Environment]::SetEnvironmentVariable('VMSS_NAME', '$VMSS_NAME', 'Machine'); Write-Host 'Environment variables set via extension completed'\""
+}
+EOF
+        )"
+
+    echo "Custom Script Extension applied successfully"
     echo "vmss-existed=false" >> $GITHUB_OUTPUT
 fi
