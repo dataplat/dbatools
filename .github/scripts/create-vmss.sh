@@ -76,7 +76,6 @@ if az vmss show --resource-group "$RESOURCE_GROUP" --name "$VMSS_NAME" &>/dev/nu
             --name CustomScriptExtension \
             --publisher Microsoft.Compute \
             --version 1.10 \
-            --force-update-tag "$(date +%s)" \
             --settings "$EXTENSION_SETTINGS"
     else
         echo "VMSS already at desired capacity ($CAPACITY)"
@@ -113,7 +112,6 @@ else
         --name CustomScriptExtension \
         --publisher Microsoft.Compute \
         --version 1.10 \
-        --force-update-tag "$(date +%s)" \
         --settings "$EXTENSION_SETTINGS"
 
     echo "Custom Script Extension applied successfully"
