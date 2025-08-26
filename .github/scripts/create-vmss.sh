@@ -63,7 +63,7 @@ else
         --vm-sku Standard_B4ms \
         --location eastus2 \
         --license-type Windows_Server \
-        --orchestration-mode Flexible \
+        --orchestration-mode Uniform \
         --priority Regular \
         --ephemeral-os-disk true \
         --assign-identity \
