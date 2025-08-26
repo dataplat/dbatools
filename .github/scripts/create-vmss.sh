@@ -30,7 +30,7 @@ echo "Resource Group: $RESOURCE_GROUP"
 echo "Image: $CUSTOM_IMAGE_ID"
 
 # Create PowerShell payload (no bash substitution yet)
-read -r -d '' POWERSHELL_SCRIPT <<'EOF'
+POWERSHELL_SCRIPT=$(cat <<'EOF'
 [Environment]::SetEnvironmentVariable('VMSS_GH_TOKEN', '${RUNNER_TOKEN}', 'Machine')
 [Environment]::SetEnvironmentVariable('GITHUB_REPOSITORY', '${GITHUB_REPOSITORY}', 'Machine')
 [Environment]::SetEnvironmentVariable('BUILD_ID', '${BUILD_ID}', 'Machine')
@@ -38,6 +38,7 @@ read -r -d '' POWERSHELL_SCRIPT <<'EOF'
 Write-Host 'Environment variables set via extension'
 Restart-Service -Name 'CustomSetup' -ErrorAction SilentlyContinue
 EOF
+)
 
 # Replace bash vars and encode as UTF-16LE base64 for PowerShell
 ENCODED_COMMAND=$(echo "$POWERSHELL_SCRIPT" | envsubst | iconv -t UTF-16LE | base64 -w 0)
