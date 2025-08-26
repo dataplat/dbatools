@@ -65,37 +65,41 @@ function Set-FileSystemSetting {
             $ognamespace = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace root\Microsoft\SQLServer -Query "SELECT NAME FROM __NAMESPACE WHERE NAME LIKE 'ComputerManagement%'"
             $namespace = $ognamespace | Where-Object {
                 (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0
-            } |
-            Sort-Object Name -Descending | Select-Object -First 1
+            } | Sort-Object Name -Descending | Select-Object -First 1
 
-        if (-not $namespace) {
-            $namespace = $ognamespace
-        }
+            if (-not $namespace) {
+                $namespace = $ognamespace
+            }
 
-        if ($namespace.Name) {
-            if ($Credential) {
-                $wmi = Get-WmiObject -Credential $Credential -ErrorAction Stop -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Class FilestreamSettings | Where-Object InstanceName -eq $instanceName | Select-Object -First 1
-            } else {
-                $wmi = Get-WmiObject -ErrorAction Stop -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Class FilestreamSettings | Where-Object InstanceName -eq $instanceName | Select-Object -First 1
+            if ($namespace.Name) {
+                $namespacePath = "root/Microsoft/SQLServer/$($namespace.Name)"
+                $filter = "InstanceName = '$instanceName'"
+
+                if ($Credential) {
+                    $wmi = Get-CimInstance -Credential $Credential -ComputerName $computerName -Namespace $namespacePath -ClassName FilestreamSettings -Filter $filter | Select-Object -First 1
+                } else {
+                    $wmi = Get-CimInstance -ComputerName $computerName -Namespace $namespacePath -ClassName FilestreamSettings -Filter $filter | Select-Object -First 1
+                }
             }
-        }
-        $wmi
-    }
-}
-process {
-    # Server level
-    if ($Force -or $PSCmdlet.ShouldProcess($instance, "Enabling filestream")) {
-        try {
-            $wmi = Get-WmiFilestreamSetting -Instance $instance -ErrorAction Stop
-            if ($ShareName) {
-                $null = $wmi.ShareName = $ShareName
-            }
-            $return = $wmi.EnableFilestream($FileStreamLevel, $instance.InstanceName)
-            $returnvalue = Get-WmiFilestreamReturnValue -Value $return.ReturnValue
-        } catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            $wmi
         }
     }
-    $returnvalue
-}
+    process {
+        # Server level
+        if ($Force -or $PSCmdlet.ShouldProcess($instance, "Enabling filestream")) {
+            try {
+                $wmi = Get-WmiFilestreamSetting -Instance $instance -ErrorAction Stop
+                # TODO: The next lines need to be changed as well to use the new CIM method
+                if ($ShareName) {
+                    $null = $wmi.ShareName = $ShareName
+                }
+
+                $return = Invoke-CimMethod -InputObject $wmi -MethodName EnableFilestream -Arguments @{ AccessLevel = $FileStreamLevel ; ShareName = $instance.InstanceName }
+                $returnvalue = Get-WmiFilestreamReturnValue -Value $return.ReturnValue
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
+        }
+        $returnvalue
+    }
 }
