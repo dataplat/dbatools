@@ -36,7 +36,6 @@ POWERSHELL_SCRIPT=$(cat <<'EOF'
 [Environment]::SetEnvironmentVariable('BUILD_ID', '${BUILD_ID}', 'Machine')
 [Environment]::SetEnvironmentVariable('VMSS_NAME', '${VMSS_NAME}', 'Machine')
 Write-Host 'Environment variables set via extension'
-Restart-Service -Name 'CustomSetup' -ErrorAction SilentlyContinue
 EOF
 )
 
