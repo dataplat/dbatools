@@ -83,7 +83,10 @@ jobs:
           "${{ env.AZURE_RESOURCE_GROUP }}" \
           "${{ env.VMSS_CUSTOM_IMAGE_ID }}" \
           "${{ github.actor }}" \
-          "${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}"
+          "${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}" \
+          "${{ steps.get-token.outputs.runner-token }}" \
+          "${{ github.repository }}" \
+          "${{ needs.prepare-build.outputs.build-id }}"
 
     - name: Wait for VMSS instances to be ready
       run: |
