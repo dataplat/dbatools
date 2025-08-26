@@ -7,6 +7,9 @@ RESOURCE_GROUP="$3"
 CUSTOM_IMAGE_ID="$4"
 GITHUB_ACTOR="$5"
 BRANCH_NAME="$6"
+RUNNER_TOKEN="$7"
+GITHUB_REPOSITORY="$8"
+BUILD_ID="$9"
 
 echo "=== VMSS Creation Script ==="
 echo "VMSS Name: $VMSS_NAME"
@@ -59,7 +62,14 @@ else
             owner="$GITHUB_ACTOR" \
             branch="$BRANCH_NAME" \
             purpose="dbatools-ci" \
-            created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            created="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        --custom-data @- <<EOF
+#ps1_sysnative
+[Environment]::SetEnvironmentVariable("VMSS_GH_TOKEN", "$RUNNER_TOKEN", "Machine")
+[Environment]::SetEnvironmentVariable("GITHUB_REPOSITORY", "$GITHUB_REPOSITORY", "Machine")
+[Environment]::SetEnvironmentVariable("BUILD_ID", "$BUILD_ID", "Machine")
+[Environment]::SetEnvironmentVariable("VMSS_NAME", "$VMSS_NAME", "Machine")
+EOF
 
     echo "VMSS $VMSS_NAME created successfully"
     echo "vmss-existed=false" >> $GITHUB_OUTPUT
