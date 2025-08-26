@@ -14,7 +14,7 @@ echo "[DEBUG] Arguments:"
 echo "VMSS_NAME=$VMSS_NAME"
 echo "CAPACITY=$CAPACITY"
 echo "RESOURCE_GROUP=$RESOURCE_GROUP"
-echo "CUSTOM_IMAGE_ID=$CUSTOM_IMAGE_ID"
+echo "CUSTOM_IMAGE_ID=***MASKED***"
 echo "GITHUB_ACTOR=$GITHUB_ACTOR"
 echo "BRANCH_NAME=$BRANCH_NAME"
 echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
@@ -24,9 +24,21 @@ echo "=== VMSS Creation Script ==="
 echo "VMSS Name: $VMSS_NAME"
 echo "Capacity: $CAPACITY"
 echo "Resource Group: $RESOURCE_GROUP"
-echo "Image: $CUSTOM_IMAGE_ID"
 
-# Function to retry Azure operations (fixed)
+# Function to mask sensitive data in output
+mask_sensitive_output() {
+    sed -E '
+        s/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/***MASKED-ID***/gi
+        s/"systemAssignedIdentity": "[^"]*"/"systemAssignedIdentity": "***MASKED-IDENTITY***"/g
+        s/"principalId": "[^"]*"/"principalId": "***MASKED-PRINCIPAL***"/g
+        s/"clientId": "[^"]*"/"clientId": "***MASKED-CLIENT***"/g
+        s/--assignee [0-9a-f-]{36}/--assignee ***MASKED-ASSIGNEE***/g
+        s/object id '\''[0-9a-f-]{36}'\''/object id '\''***MASKED-OBJECT***'\''/g
+        s/The client '\''[0-9a-f-]{36}'\''/The client '\''***MASKED-CLIENT***'\''/g
+    '
+}
+
+# Function to retry Azure operations with output masking
 retry_azure_op() {
     local cmd="$1"
     local max_attempts=3
@@ -34,7 +46,7 @@ retry_azure_op() {
 
     while [ $attempt -le $max_attempts ]; do
         echo "Attempt $attempt/$max_attempts for Azure operation"
-        if bash -c "$cmd"; then
+        if bash -c "$cmd" 2>&1 | mask_sensitive_output; then
             return 0
         fi
 
@@ -79,7 +91,7 @@ if az vmss show --resource-group "$RESOURCE_GROUP" --name "$VMSS_NAME" &>/dev/nu
 
         # If another process has been modifying for more than 10 minutes, assume it's stale
         if [ $TIME_DIFF -lt 600 ]; then
-            echo "Another process is currently modifying this VMSS (started $(date -d @$TAG_TIMESTAMP))"
+            echo "Another process is currently modifying this VMSS"
             echo "Waiting up to 5 minutes for it to complete..."
 
             for i in {1..30}; do
@@ -109,7 +121,7 @@ fi
 CURRENT_TIME=$(date +%s)
 MODIFICATION_TAG="$BUILD_ID:$CURRENT_TIME"
 
-echo "Setting modification lock tag: $MODIFICATION_TAG"
+echo "Setting modification lock tag"
 
 if [ "$VMSS_EXISTS" = true ]; then
     # Update existing VMSS with coordination tag
@@ -166,7 +178,7 @@ else
         --orchestration-mode Uniform \
         --priority Regular \
         --ephemeral-os-disk true \
-        --assign-identity \
+        --assign-identity '/subscriptions/65a430fb-5a9a-49ff-969e-05d1beaa88fb/resourcegroups/dbatools-ci-runners/providers/Microsoft.ManagedIdentity/userAssignedIdentities/dbatools-keyvault-identity' \
         --tags \
             owner='$GITHUB_ACTOR' \
             branch='$BRANCH_NAME' \
@@ -178,40 +190,7 @@ else
     echo "vmss-existed=false" >> "$GITHUB_OUTPUT"
 fi
 
-# Grant Key Vault access using RBAC (not access policies)
-echo "Setting up Key Vault RBAC permissions..."
-IDENTITY_PRINCIPAL_ID=$(az vmss show \
-    --resource-group "$RESOURCE_GROUP" \
-    --name "$VMSS_NAME" \
-    --query "identity.principalId" \
-    --output tsv)
-
-if [[ -n "$IDENTITY_PRINCIPAL_ID" && "$IDENTITY_PRINCIPAL_ID" != "null" ]]; then
-    KEYVAULT_NAME="dbatoolsci"
-
-    # Use RBAC role assignment instead of access policy
-    echo "Assigning 'Key Vault Secrets User' role to VMSS managed identity..."
-
-    # Get Key Vault resource ID
-    KEYVAULT_ID=$(az keyvault show \
-        --name "$KEYVAULT_NAME" \
-        --query "id" \
-        --output tsv)
-
-    # Assign the Key Vault Secrets User role (built-in role)
-    retry_azure_op "az role assignment create \
-        --assignee '$IDENTITY_PRINCIPAL_ID' \
-        --role 'Key Vault Secrets User' \
-        --scope '$KEYVAULT_ID'"
-
-    echo "Key Vault RBAC permissions configured successfully"
-
-    # Wait a moment for permissions to propagate
-    echo "Waiting for RBAC permissions to propagate..."
-    sleep 15
-else
-    echo "WARNING: Could not retrieve managed identity, Key Vault access may not work"
-fi
+echo "Key Vault access pre-configured via user-assigned managed identity"
 
 # Remove modification lock tag
 echo "Removing modification lock tag..."
