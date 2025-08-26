@@ -114,7 +114,7 @@ try {
     # Authenticate using the VM's managed identity with retry
     Write-Log "Authenticating using managed identity..."
     $accessToken = Retry-Operation -OperationName "Getting managed identity token" -MaxAttempts 5 -DelaySeconds 15 -Operation {
-        $tokenResponse = Invoke-RestMethod -Method Get -Uri 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net' -Headers @{Metadata = "true"} -TimeoutSec 30
+        $tokenResponse = Invoke-RestMethod -Method Get -Uri 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net&client_id=8f2f754a-181c-4ba3-adc7-886ccd928406' -Headers @{Metadata = "true" }
 
         if (-not $tokenResponse.access_token) {
             throw "No access token received from managed identity"
