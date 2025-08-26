@@ -37,6 +37,51 @@ function Retry-Operation {
     }
 }
 
+function Wait-ForManagedIdentity {
+    param([int]$MaxWaitMinutes = 5)
+
+    $deadline = (Get-Date).AddMinutes($MaxWaitMinutes)
+    $clientId = "8f2f754a-181c-4ba3-adc7-886ccd928406"
+
+    Write-Log "Waiting for managed identity to become available..."
+
+    while ((Get-Date) -lt $deadline) {
+        try {
+            # First, check if identity service is responding
+            $identityInfo = Invoke-RestMethod -Method Get `
+                -Uri 'http://169.254.169.254/metadata/identity/info?api-version=2021-02-01' `
+                -Headers @{Metadata = "true" } `
+                -TimeoutSec 10
+
+            # Check if our specific user-assigned identity is available
+            $ourIdentity = $identityInfo | Where-Object { $_.clientId -eq $clientId }
+            if ($ourIdentity) {
+                Write-Log "User-assigned identity found: $($ourIdentity.clientId)"
+
+                # Try to get a token to verify it's working
+                $testToken = Invoke-RestMethod -Method Get `
+                    -Uri "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2021-02-01&resource=https://vault.azure.net&client_id=$clientId" `
+                    -Headers @{Metadata = "true" } `
+                    -TimeoutSec 30
+
+                if ($testToken.access_token) {
+                    Write-Log "Managed identity is fully functional"
+                    return $true
+                }
+            } else {
+                Write-Log "User-assigned identity not yet available. Available identities: $($identityInfo | ConvertTo-Json -Compress)"
+            }
+        } catch {
+            Write-Log "Identity not ready yet: $($_.Exception.Message)"
+        }
+
+        Write-Log "Waiting 15 seconds for identity propagation..."
+        Start-Sleep -Seconds 15
+    }
+
+    throw "Managed identity did not become available within $MaxWaitMinutes minutes"
+}
+
 function Get-KeyVaultSecret {
     param (
         [string]$SecretName,
@@ -48,7 +93,9 @@ function Get-KeyVaultSecret {
 
     return Retry-Operation -OperationName "Getting secret '$SecretName'" -MaxAttempts 5 -DelaySeconds 15 -Operation {
         try {
-            $response = Invoke-RestMethod -Method Get -Uri $uri -Headers @{ Authorization = "Bearer $AccessToken" } -TimeoutSec 30
+            $response = Invoke-RestMethod -Method Get -Uri $uri `
+                -Headers @{ Authorization = "Bearer $AccessToken" } `
+                -TimeoutSec 30
 
             if (-not $response.value -or $response.value -eq "") {
                 throw "Secret '$SecretName' returned empty value"
@@ -70,10 +117,12 @@ function Test-RunnerToken {
     try {
         $headers = @{
             "Authorization" = "token $Token"
-            "Accept" = "application/vnd.github.v3+json"
+            "Accept"        = "application/vnd.github.v3+json"
         }
 
-        $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository" -Headers $headers -TimeoutSec 30
+        $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository" `
+            -Headers $headers `
+            -TimeoutSec 30
         return $true
     } catch {
         Write-Log "Runner token validation failed: $($_.Exception.Message)"
@@ -111,10 +160,17 @@ try {
     Write-Log "Machine: $env:COMPUTERNAME"
     Write-Log "PowerShell Version: $($PSVersionTable.PSVersion)"
 
+    # Wait for managed identity to be available
+    Wait-ForManagedIdentity -MaxWaitMinutes 5
+
     # Authenticate using the VM's managed identity with retry
     Write-Log "Authenticating using managed identity..."
-    $accessToken = Retry-Operation -OperationName "Getting managed identity token" -MaxAttempts 5 -DelaySeconds 15 -Operation {
-        $tokenResponse = Invoke-RestMethod -Method Get -Uri 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net&client_id=8f2f754a-181c-4ba3-adc7-886ccd928406' -Headers @{Metadata = "true" }
+    $accessToken = Retry-Operation -OperationName "Getting managed identity token" `
+        -MaxAttempts 3 -DelaySeconds 10 -Operation {
+        $tokenResponse = Invoke-RestMethod -Method Get `
+            -Uri 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2021-02-01&resource=https://vault.azure.net&client_id=8f2f754a-181c-4ba3-adc7-886ccd928406' `
+            -Headers @{Metadata = "true" } `
+            -TimeoutSec 30
 
         if (-not $tokenResponse.access_token) {
             throw "No access token received from managed identity"
@@ -131,9 +187,9 @@ try {
     # Pull required secrets with validation
     Write-Log "Retrieving secrets from Key Vault: $KeyVaultName"
     $env:GITHUB_REPOSITORY = Get-KeyVaultSecret -SecretName "GITHUB-REPOSITORY" -AccessToken $accessToken -KeyVaultName $KeyVaultName
-    $env:RUNNER_TOKEN      = Get-KeyVaultSecret -SecretName "GITHUB-RUNNER-TOKEN" -AccessToken $accessToken -KeyVaultName $KeyVaultName
-    $env:BUILD_ID          = Get-KeyVaultSecret -SecretName "GITHUB-BUILD-ID" -AccessToken $accessToken -KeyVaultName $KeyVaultName
-    $env:VMSS_NAME         = Get-KeyVaultSecret -SecretName "VMSS-NAME" -AccessToken $accessToken -KeyVaultName $KeyVaultName
+    $env:RUNNER_TOKEN = Get-KeyVaultSecret -SecretName "GITHUB-RUNNER-TOKEN" -AccessToken $accessToken -KeyVaultName $KeyVaultName
+    $env:BUILD_ID = Get-KeyVaultSecret -SecretName "GITHUB-BUILD-ID" -AccessToken $accessToken -KeyVaultName $KeyVaultName
+    $env:VMSS_NAME = Get-KeyVaultSecret -SecretName "VMSS-NAME" -AccessToken $accessToken -KeyVaultName $KeyVaultName
 
     # Validate all secrets were retrieved
     $requiredVars = @("GITHUB_REPOSITORY", "RUNNER_TOKEN", "BUILD_ID", "VMSS_NAME")
@@ -160,7 +216,9 @@ try {
     # Get instance name with retry
     $instanceName = Retry-Operation -OperationName "Getting instance metadata" -MaxAttempts 3 -DelaySeconds 5 -Operation {
         try {
-            return (Invoke-RestMethod -Uri "http://169.254.169.254/metadata/instance/compute/name?api-version=2021-02-01" -Headers @{"Metadata" = "true"} -TimeoutSec 10)
+            return (Invoke-RestMethod -Uri "http://169.254.169.254/metadata/instance/compute/name?api-version=2021-02-01" `
+                    -Headers @{"Metadata" = "true" } `
+                    -TimeoutSec 10)
         } catch {
             Write-Log "Failed to get instance metadata, using computer name as fallback"
             return $env:COMPUTERNAME
@@ -193,7 +251,8 @@ try {
     # Get latest runner version with retry
     Write-Log "Getting latest GitHub Actions runner version..."
     $runnerVersion = Retry-Operation -OperationName "Getting latest runner version" -MaxAttempts 3 -DelaySeconds 10 -Operation {
-        $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/actions/runner/releases/latest" -TimeoutSec 30
+        $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/actions/runner/releases/latest" `
+            -TimeoutSec 30
 
         if (-not $latestRelease.tag_name) {
             throw "No tag_name found in latest release"
@@ -252,7 +311,10 @@ try {
             "--unattended"
         )
 
-        $configProcess = Start-Process -FilePath ".\config.cmd" -ArgumentList $configArgs -WorkingDirectory $runnerDir -Wait -PassThru -NoNewWindow
+        $configProcess = Start-Process -FilePath ".\config.cmd" `
+            -ArgumentList $configArgs `
+            -WorkingDirectory $runnerDir `
+            -Wait -PassThru -NoNewWindow
 
         if ($configProcess.ExitCode -ne 0) {
             throw "Runner configuration failed with exit code $($configProcess.ExitCode)"
@@ -263,7 +325,9 @@ try {
 
     # Start the runner with monitoring
     Write-Log "Starting GitHub Actions runner..."
-    $runnerProcess = Start-Process -FilePath ".\run.cmd" -WorkingDirectory $runnerDir -PassThru -WindowStyle Hidden
+    $runnerProcess = Start-Process -FilePath ".\run.cmd" `
+        -WorkingDirectory $runnerDir `
+        -PassThru -WindowStyle Hidden
 
     if ($runnerProcess) {
         Write-Log "Runner started with Process ID: $($runnerProcess.Id)"
@@ -283,7 +347,9 @@ try {
         Start-Sleep -Seconds 30
         try {
             $headers = @{ "Authorization" = "token $env:RUNNER_TOKEN" }
-            $runners = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/runners" -Headers $headers -TimeoutSec 30
+            $runners = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/runners" `
+                -Headers $headers `
+                -TimeoutSec 30
 
             $ourRunner = $runners.runners | Where-Object { $_.name -eq $runnerName }
             if ($ourRunner) {
