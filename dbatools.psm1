@@ -363,8 +363,8 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaNetworkLatency',
         'Find-DbaDbDuplicateIndex',
         'Remove-DbaDatabaseSafely',
-        'Set-DbaTempdbConfig',
-        'Test-DbaTempdbConfig',
+        'Set-DbaTempDbConfig',
+        'Test-DbaTempDbConfig',
         'Repair-DbaDbOrphanUser',
         'Remove-DbaDbOrphanUser',
         'Find-DbaDbUnusedIndex',
@@ -408,7 +408,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'New-DbaDbAsymmetricKey',
         'Remove-DbaDbAsymmetricKey',
         'Invoke-DbaDbTransfer',
-        'Invoke-DbaDbAzSqlTips',
         'New-DbaDbTransfer',
         'Remove-DbaDbData',
         'Resolve-DbaNetworkName',
@@ -612,7 +611,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaRegServerGroup',
         'New-DbaDbUser',
         'Measure-DbaDiskSpaceRequirement',
-        'Invoke-DbaXeReplay',
         'Find-DbaInstance',
         'Test-DbaDiskSpeed',
         'Get-DbaDbExtentDiff',
@@ -769,7 +767,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Add-DbaDbRoleMember',
         'Disable-DbaStartupProcedure',
         'Enable-DbaStartupProcedure',
-        'Get-DbaDbFilegroup',
+        'Get-DbaDbFileGroup',
         'Get-DbaDbObjectTrigger',
         'Get-DbaStartupProcedure',
         'Get-DbatoolsChangeLog',
@@ -860,6 +858,26 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaLinkedServerLogin',
         'Remove-DbaCredential',
         'Remove-DbaAgentProxy',
+        'Invoke-DbaDbAzSqlTip',
+        'New-DbaAgentAlert',
+        'Set-DbatoolsInsecureConnection',
+        'Test-DbaAgSpn'
+    )
+    $script:noncoresmo = @(
+        # SMO issues
+        'Copy-DbaSsisCatalog',
+        'Get-DbaSsisEnvironmentVariable',
+        'New-DbaSsisCatalog',
+        'Copy-DbaPolicyManagement',
+        'Copy-DbaDataCollector',
+        'Get-DbaPbmCategory',
+        'Get-DbaPbmCategorySubscription',
+        'Get-DbaPbmCondition',
+        'Get-DbaPbmObjectSet',
+        'Get-DbaPbmPolicy',
+        'Get-DbaPbmStore',
+        'Test-DbaReplLatency',
+        'Export-DbaReplServerSetting',
         'Disable-DbaReplDistributor',
         'Enable-DbaReplDistributor',
         'Disable-DbaReplPublishing',
@@ -876,20 +894,8 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaReplSubscription',
         'Get-DbaReplDistributor',
         'Get-DbaReplPublication',
-        'Get-DbaReplServer'
-    )
-    $script:noncoresmo = @(
-        # SMO issues
-        'Copy-DbaPolicyManagement',
-        'Copy-DbaDataCollector',
-        'Get-DbaPbmCategory',
-        'Get-DbaPbmCategorySubscription',
-        'Get-DbaPbmCondition',
-        'Get-DbaPbmObjectSet',
-        'Get-DbaPbmPolicy',
-        'Get-DbaPbmStore',
-        'Test-DbaReplLatency',
-        'Export-DbaReplServerSetting'
+        'Get-DbaReplServer',
+        'Get-DbaReplPublisher'
     )
     $script:windowsonly = @(
         # filesystem (\\ related),
@@ -984,7 +990,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaComputerCertificateExpiration',
         'Get-DbaNetworkCertificate',
         'Set-DbaNetworkCertificate',
-        'Remove-DbaDbLogshipping',
+        'Remove-DbaDbLogShipping',
         'Invoke-DbaDbLogShipping',
         'New-DbaCmConnection',
         'Get-DbaCmConnection',

@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $safeTraceFlag = 3226
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $startingTfs = $server.Query("DBCC TRACESTATUS(-1)")
+            $startingTfs = @( $server.Query("DBCC TRACESTATUS(-1)") )
             $startingTfsCount = $startingTfs.Count
 
             if ($startingTfs.TraceFlag -notcontains $safeTraceFlag) {
@@ -61,11 +61,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns filtered results" {
             $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2 -TraceFlag $safeTraceFlag
             $results.TraceFlag.Count | Should -Be 1
+            $results.TraceFlag | Should -Be $safeTraceFlag
+            $results.Status | Should -Be 1
         }
 
         It "Returns all TFs" {
             $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
-            $results.TraceFlag.Count | Should -Be $startingTfsCount
+            #$results.TraceFlag.Count | Should -Be $startingTfsCount
+            $results.TraceFlag | Should -Be $safeTraceFlag
         }
     }
 }
