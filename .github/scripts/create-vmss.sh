@@ -26,15 +26,15 @@ echo "Capacity: $CAPACITY"
 echo "Resource Group: $RESOURCE_GROUP"
 echo "Image: $CUSTOM_IMAGE_ID"
 
-# Function to retry Azure operations
+# Function to retry Azure operations (fixed)
 retry_azure_op() {
     local cmd="$1"
     local max_attempts=3
     local attempt=1
 
     while [ $attempt -le $max_attempts ]; do
-        echo "Attempt $attempt/$max_attempts: $cmd"
-        if eval "$cmd"; then
+        echo "Attempt $attempt/$max_attempts for Azure operation"
+        if bash -c "$cmd"; then
             return 0
         fi
 
@@ -152,10 +152,6 @@ if [ "$VMSS_EXISTS" = true ]; then
 else
     echo "Creating new VMSS: $VMSS_NAME"
 
-    # Ensure Key Vault permissions are set BEFORE creating VMSS
-    # Create a temporary managed identity to get the object ID format
-    echo "Pre-configuring Key Vault access pattern..."
-
     retry_azure_op "az vmss create \
         --resource-group '$RESOURCE_GROUP' \
         --name '$VMSS_NAME' \
@@ -179,26 +175,42 @@ else
             modifying_process='$MODIFICATION_TAG' \
             created='$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
 
-    # Grant Key Vault access immediately after creation
-    echo "Setting up Key Vault permissions..."
-    IDENTITY_PRINCIPAL_ID=$(retry_azure_op "az vmss show \
-        --resource-group '$RESOURCE_GROUP' \
-        --name '$VMSS_NAME' \
-        --query 'identity.principalId' \
-        --output tsv")
-
-    if [[ -n "$IDENTITY_PRINCIPAL_ID" && "$IDENTITY_PRINCIPAL_ID" != "null" ]]; then
-        KEYVAULT_NAME="dbatoolsci"
-        retry_azure_op "az keyvault set-policy \
-            --name '$KEYVAULT_NAME' \
-            --object-id '$IDENTITY_PRINCIPAL_ID' \
-            --secret-permissions get"
-        echo "Key Vault permissions configured"
-    else
-        echo "WARNING: Could not retrieve managed identity, Key Vault access may not work"
-    fi
-
     echo "vmss-existed=false" >> "$GITHUB_OUTPUT"
+fi
+
+# Grant Key Vault access using RBAC (not access policies)
+echo "Setting up Key Vault RBAC permissions..."
+IDENTITY_PRINCIPAL_ID=$(az vmss show \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$VMSS_NAME" \
+    --query "identity.principalId" \
+    --output tsv)
+
+if [[ -n "$IDENTITY_PRINCIPAL_ID" && "$IDENTITY_PRINCIPAL_ID" != "null" ]]; then
+    KEYVAULT_NAME="dbatoolsci"
+
+    # Use RBAC role assignment instead of access policy
+    echo "Assigning 'Key Vault Secrets User' role to VMSS managed identity..."
+
+    # Get Key Vault resource ID
+    KEYVAULT_ID=$(az keyvault show \
+        --name "$KEYVAULT_NAME" \
+        --query "id" \
+        --output tsv)
+
+    # Assign the Key Vault Secrets User role (built-in role)
+    retry_azure_op "az role assignment create \
+        --assignee '$IDENTITY_PRINCIPAL_ID' \
+        --role 'Key Vault Secrets User' \
+        --scope '$KEYVAULT_ID'"
+
+    echo "Key Vault RBAC permissions configured successfully"
+
+    # Wait a moment for permissions to propagate
+    echo "Waiting for RBAC permissions to propagate..."
+    sleep 15
+else
+    echo "WARNING: Could not retrieve managed identity, Key Vault access may not work"
 fi
 
 # Remove modification lock tag
