@@ -18,12 +18,6 @@ try {
     Write-Log "VMSS Name: $env:VMSS_NAME"
     Write-Log "Repository: $env:GITHUB_REPOSITORY"
 
-    # Validate required environment variables
-    if (-not $env:VMSS_GH_TOKEN) { throw "VMSS_GH_TOKEN environment variable is required" }
-    if (-not $env:GITHUB_REPOSITORY) { throw "GITHUB_REPOSITORY environment variable is required" }
-    if (-not $env:BUILD_ID) { throw "BUILD_ID environment variable is required" }
-    if (-not $env:VMSS_NAME) { throw "VMSS_NAME environment variable is required" }
-
     # Get instance name
     $instanceName = try {
         (Invoke-RestMethod -Uri "http://169.254.169.254/metadata/instance/compute/name?api-version=2021-02-01" -Headers @{"Metadata" = "true"} -TimeoutSec 10)
@@ -76,7 +70,7 @@ try {
 
     # Configure runner
     Write-Log "Running runner configuration..."
-    .\config.cmd --url "https://github.com/$env:GITHUB_REPOSITORY" --token $env:VMSS_GH_TOKEN --name $runnerName --labels $runnerLabels --work _work --replace --ephemeral --unattended
+    .\config.cmd --url "https://github.com/$env:GITHUB_REPOSITORY" --token $env:RUNNER_TOKEN --name $runnerName --labels $runnerLabels --work _work --replace --ephemeral --unattended
 
     if ($LASTEXITCODE -ne 0) {
         throw "Runner configuration failed with exit code $LASTEXITCODE"

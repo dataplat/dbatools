@@ -115,38 +115,6 @@ jobs:
           sleep 15
         done
 
-    - name: Deploy set-registry script to VMSS instances
-      run: |
-        VMSS_NAME="${{ needs.prepare-build.outputs.vmss-name }}"
-        TEMP_FILE="temp-set-registry-${VMSS_NAME}.ps1"
-
-        # Read the template and replace placeholders
-        cp .github/scripts/set-registry.ps1 "$TEMP_FILE"
-        sed -i "s/--VMSS_GH_TOKEN--/${{ steps.get-token.outputs.runner-token }}/g" "$TEMP_FILE"
-        sed -i "s/--GITHUB_REPOSITORY--/${{ github.repository }}/g" "$TEMP_FILE"
-        sed -i "s/--BUILD_ID--/${{ needs.prepare-build.outputs.build-id }}/g" "$TEMP_FILE"
-        sed -i "s/--VMSS_NAME--/${{ needs.prepare-build.outputs.vmss-name }}/g" "$TEMP_FILE"
-
-        echo "Deploying set-registry.ps1 to VMSS instances..."
-
-        # Create the script content as a variable and deploy it
-        SCRIPT_CONTENT=$(cat "$TEMP_FILE" | base64 -w 0)
-
-        az vmss run-command invoke \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name "$VMSS_NAME" \
-          --command-id RunPowerShellScript \
-          --scripts "
-            New-Item -ItemType Directory -Path 'C:\scripts' -Force | Out-Null
-            [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('$SCRIPT_CONTENT')) | Set-Content -Path 'C:\scripts\set-registry.ps1' -Encoding UTF8
-            Write-Host 'set-registry.ps1 deployed successfully' -ForegroundColor Green
-          "
-
-        # Clean up temp file
-        rm "$TEMP_FILE"
-
-        echo "set-registry.ps1 deployed to all VMSS instances for $VMSS_NAME"
-
   wait-for-runners:
     needs: [prepare-build, provision-vmss]
     runs-on: ubuntu-latest
@@ -181,14 +149,13 @@ jobs:
           sleep 20
         done
 
-  # Simple test that runs on each VMSS instance
   test-connectivity:
     needs: [prepare-build, provision-vmss, wait-for-runners]
     runs-on: [self-hosted, "${{ needs.prepare-build.outputs.vmss-name }}"]
     timeout-minutes: 5
     strategy:
       matrix:
-        test: [1, 2, 3] # This will create 3 jobs that can run on different instances
+        test: [1, 2, 3]
     steps:
     - name: Test VMSS connectivity
       run: |
@@ -198,7 +165,6 @@ jobs:
         Write-Host "VMSS Name: ${{ needs.prepare-build.outputs.vmss-name }}" -ForegroundColor Yellow
         Write-Host "Build ID: ${{ needs.prepare-build.outputs.build-id }}" -ForegroundColor Yellow
 
-        # Simulate some work
         Write-Host "Simulating work for 60 seconds..." -ForegroundColor Cyan
         Start-Sleep -Seconds 60
 

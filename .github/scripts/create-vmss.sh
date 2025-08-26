@@ -18,10 +18,8 @@ echo "RESOURCE_GROUP=$RESOURCE_GROUP"
 echo "CUSTOM_IMAGE_ID=$CUSTOM_IMAGE_ID"
 echo "GITHUB_ACTOR=$GITHUB_ACTOR"
 echo "BRANCH_NAME=$BRANCH_NAME"
-echo "RUNNER_TOKEN=$RUNNER_TOKEN"
 echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
 echo "BUILD_ID=$BUILD_ID"
-
 
 echo "=== VMSS Creation Script ==="
 echo "VMSS Name: $VMSS_NAME"
@@ -29,22 +27,15 @@ echo "Capacity: $CAPACITY"
 echo "Resource Group: $RESOURCE_GROUP"
 echo "Image: $CUSTOM_IMAGE_ID"
 
-# Create PowerShell payload (no bash substitution yet)
-POWERSHELL_SCRIPT=$(cat <<'EOF'
-[Environment]::SetEnvironmentVariable('VMSS_GH_TOKEN', '${RUNNER_TOKEN}', 'Machine')
-[Environment]::SetEnvironmentVariable('GITHUB_REPOSITORY', '${GITHUB_REPOSITORY}', 'Machine')
-[Environment]::SetEnvironmentVariable('BUILD_ID', '${BUILD_ID}', 'Machine')
-[Environment]::SetEnvironmentVariable('VMSS_NAME', '${VMSS_NAME}', 'Machine')
-Write-Host 'Environment variables set via extension'
-EOF
-)
-
-# Replace bash vars and encode as UTF-16LE base64 for PowerShell
-ENCODED_COMMAND=$(echo "$POWERSHELL_SCRIPT" | envsubst | iconv -t UTF-16LE | base64 -w 0)
-
-EXTENSION_SETTINGS=$(cat <<EOF
+# Create protected settings with environment variables
+PROTECTED_SETTINGS=$(cat <<EOF
 {
-  "commandToExecute": "powershell.exe -EncodedCommand $ENCODED_COMMAND"
+  "environmentVariables": {
+    "GITHUB_REPOSITORY": "$GITHUB_REPOSITORY",
+    "RUNNER_TOKEN": "$RUNNER_TOKEN",
+    "BUILD_ID": "$BUILD_ID",
+    "VMSS_NAME": "$VMSS_NAME"
+  }
 }
 EOF
 )
@@ -68,14 +59,14 @@ if az vmss show --resource-group "$RESOURCE_GROUP" --name "$VMSS_NAME" &>/dev/nu
             --name "$VMSS_NAME" \
             --new-capacity "$CAPACITY"
 
-        echo "Reapplying extension to scaled instances..."
+        echo "Setting environment variables for scaled instances..."
         az vmss extension set \
             --resource-group "$RESOURCE_GROUP" \
             --vmss-name "$VMSS_NAME" \
             --name CustomScriptExtension \
             --publisher Microsoft.Compute \
             --version 1.10 \
-            --settings "$EXTENSION_SETTINGS"
+            --protected-settings "$PROTECTED_SETTINGS"
     else
         echo "VMSS already at desired capacity ($CAPACITY)"
     fi
@@ -104,15 +95,13 @@ else
             purpose="dbatools-ci" \
             created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-    echo "Applying Custom Script Extension..."
+    # Set environment variables for the newly created VMSS
+    echo "Setting environment variables for new VMSS instances..."
     az vmss extension set \
         --resource-group "$RESOURCE_GROUP" \
         --vmss-name "$VMSS_NAME" \
         --name CustomScriptExtension \
         --publisher Microsoft.Compute \
         --version 1.10 \
-        --settings "$EXTENSION_SETTINGS"
-
-    echo "Custom Script Extension applied successfully"
-    echo "vmss-existed=false" >> "$GITHUB_OUTPUT"
+        --protected-settings "$PROTECTED_SETTINGS"
 fi
