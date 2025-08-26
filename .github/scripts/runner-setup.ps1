@@ -11,7 +11,40 @@ function Write-Log {
     Add-Content -Path "C:\runner-setup.log" -Value $logMessage -ErrorAction SilentlyContinue
 }
 
+function Get-KeyVaultSecret {
+    param (
+        [string]$SecretName
+    )
+    $uri = "https://$KeyVaultName.vault.azure.net/secrets/$SecretName?api-version=7.2"
+    try {
+        $response = Invoke-RestMethod -Method Get -Uri $uri -Headers @{ Authorization = "Bearer $accessToken" }
+        return $response.value
+    } catch {
+        Write-Host "Failed to get secret '$SecretName': $_"
+        return $null
+    }
+}
+
 try {
+    # Authenticate using the VM's managed identity
+    Write-Log "Authenticating using managed identity..."
+    $tokenResponse = Invoke-RestMethod -Method Get -Uri 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net' -Headers @{Metadata = "true"}
+    $accessToken = $tokenResponse.access_token
+
+    # Set your Key Vault name here
+    $KeyVaultName = "dbatoolsci"
+
+    # Pull required secrets
+    $env:GITHUB_REPOSITORY = Get-KeyVaultSecret -SecretName "GITHUB-REPOSITORY"
+    $env:RUNNER_TOKEN      = Get-KeyVaultSecret -SecretName "GITHUB-RUNNER-TOKEN"
+    $env:BUILD_ID          = Get-KeyVaultSecret -SecretName "GITHUB-BUILD-ID"
+    $env:VMSS_NAME         = Get-KeyVaultSecret -SecretName "VMSS-NAME"
+
+    Write-Log "Retrieved secrets from Key Vault:"
+    Write-Log "GITHUB_REPOSITORY=$env:GITHUB_REPOSITORY"
+    Write-Log "BUILD_ID=$env:BUILD_ID"
+    Write-Log "VMSS_NAME=$env:VMSS_NAME"
+
     Write-Log "=== GitHub Actions Runner Setup Starting ==="
     Write-Log "Machine: $env:COMPUTERNAME"
     Write-Log "Build ID: $env:BUILD_ID"

@@ -52,8 +52,6 @@ jobs:
   provision-vmss:
     needs: prepare-build
     runs-on: ubuntu-latest
-    outputs:
-      runner-token: ${{ steps.get-token.outputs.runner-token }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -63,15 +61,12 @@ jobs:
       with:
         creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
 
-    - name: Get GitHub runner registration token
-      id: get-token
+    - name: Set secrets in Key Vault
       run: |
-        TOKEN=$(curl -X POST \
-          -H "Authorization: token ${{ secrets.VMSS_GH_PAT }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/${{ github.repository }}/actions/runners/registration-token | jq -r .token)
-        echo "::add-mask::$TOKEN"
-        echo "runner-token=$TOKEN" >> $GITHUB_OUTPUT
+        az keyvault secret set --vault-name dbatoolsci --name "GITHUB-RUNNER-TOKEN" --value "${{ secrets.VMSS_GH_PAT }}"
+        az keyvault secret set --vault-name dbatoolsci --name "GITHUB-REPOSITORY" --value "${{ github.repository }}"
+        az keyvault secret set --vault-name dbatoolsci --name "GITHUB-BUILD-ID" --value "${{ needs.prepare-build.outputs.build-id }}"
+        az keyvault secret set --vault-name dbatoolsci --name "VMSS-NAME" --value "${{ needs.prepare-build.outputs.vmss-name }}"
 
     - name: Create or update VMSS
       run: |
@@ -84,7 +79,6 @@ jobs:
           "${{ env.VMSS_CUSTOM_IMAGE_ID }}" \
           "${{ github.actor }}" \
           "${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}" \
-          "${{ steps.get-token.outputs.runner-token }}" \
           "${{ github.repository }}" \
           "${{ needs.prepare-build.outputs.build-id }}"
 
