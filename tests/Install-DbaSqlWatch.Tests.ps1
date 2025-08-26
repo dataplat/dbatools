@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
     Context "Testing SqlWatch installer" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

@@ -33,11 +33,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
         $random = Get-Random
         $dbname1 = "dbatoolsci_restorehistory1_$random"
         $dbname2 = "dbatoolsci_restorehistory2_$random"
-
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase
 
         $splatRestore1 = @{
             SqlInstance           = $TestConfig.instance2
@@ -64,9 +67,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = Restore-DbaDatabase @splatRestore3
 
-        $fullBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Full
-        $diffBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Diff
-        $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Log
+        $fullBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Full -Path $backupPath
+        $diffBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Diff -Path $backupPath
+        $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Log -Path $backupPath
 
         $splatRestoreFinal = @{
             SqlInstance  = $TestConfig.instance2
@@ -85,17 +88,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase
-        Remove-Item -Path $fullBackup.BackupPath -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $logBackup.BackupPath -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $diffBackup.BackupPath -Force -ErrorAction SilentlyContinue
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
-    Context "Preparation" {
-        It "Should have prepared" {
-            1 | Should -Be 1
-        }
-    }
+
     Context "Get last restore history for single database" {
         BeforeAll {
             $results = @(Get-DbaDbRestoreHistory -SqlInstance $TestConfig.instance2 -Database $dbname2 -Last)
@@ -104,12 +103,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "Results holds 1 object" {
             $results.Count | Should -Be 1
         }
+
         It "Should return the full restore with the correct properties" {
             $results[0].RestoreType | Should -Be "Database"
             $results[0].From | Should -Be "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
             $results[0].To | Should -Match "\\rsh_pre_$dbname2"
         }
     }
+
     Context "Get last restore history for multiple database" {
         BeforeAll {
             $results = @(Get-DbaDbRestoreHistory -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 -Last)
@@ -118,6 +119,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Results holds 2 objects" {
             $results.Count | Should -Be 2
         }
+
         It "Should return the full restore with the correct properties" {
             $results[0].RestoreType | Should -Be "Database"
             $results[1].RestoreType | Should -Be "Log"
@@ -127,6 +129,7 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Where-Object Database -eq $dbname2).To | Should -Match "\\rsh_pre_$dbname2"
         }
     }
+
     Context "Get complete restore history for multiple database" {
         BeforeAll {
             $results = @(Get-DbaDbRestoreHistory -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2)
@@ -135,11 +138,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "Results holds correct number of objects" {
             $results.Count | Should -Be 6
         }
+
         It "Should return the full restore with the correct properties" {
             @($results | Where-Object Database -eq $dbname1).Count | Should -Be 4
             @($results | Where-Object Database -eq $dbname2).Count | Should -Be 2
         }
     }
+
     Context "return object properties" {
         It "has the correct properties" {
             $results = Get-DbaDbRestoreHistory -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2
@@ -183,6 +188,7 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
+
     Context "Get restore history by restore type" {
         It "returns the correct history records for full db restore" {
             $results = Get-DbaDbRestoreHistory -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 -RestoreType Database
