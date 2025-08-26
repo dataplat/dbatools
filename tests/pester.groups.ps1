@@ -23,19 +23,19 @@ $TestsRunGroups = @{
     # do not run on appveyor
     "appveyor_disabled" = @(
         # tests that work locally against SQL Server 2022 instances without problems but fail on AppVeyor
-        'ConvertTo-DbaXESession',
-        'Dismount-DbaDatabase',
-        'Export-DbaInstance',
-        'Export-DbaUser',
-        'Get-DbaPermission',
-        'Get-DbaUserPermission',
-        'Install-DbaDarlingData',
-        'Invoke-DbaWhoisActive',
-        'New-DbaAgentSchedule',
-        'Remove-DbaAvailabilityGroup',
-        'Remove-DbaLinkedServer',
-        'Set-DbaAgentJobStep',   # This outputs the message "[New-DbaAgentJob] Something went wrong creating the job. | Value cannot be null. / Parameter name: newParent" and failes in Describe with "Cannot bind argument to parameter 'SqlInstance' because it is null."
-        'Sync-DbaLoginPermission',
+        #'ConvertTo-DbaXESession',
+        #'Dismount-DbaDatabase',
+        #'Export-DbaInstance',
+        #'Export-DbaUser',
+        #'Get-DbaPermission',
+        #'Get-DbaUserPermission',
+        #'Install-DbaDarlingData',
+        #'Invoke-DbaWhoisActive',
+        #'New-DbaAgentSchedule',
+        #'Remove-DbaAvailabilityGroup',
+        #'Remove-DbaLinkedServer',
+        #'Set-DbaAgentJobStep',   # This outputs the message "[New-DbaAgentJob] Something went wrong creating the job. | Value cannot be null. / Parameter name: newParent" and failes in Describe with "Cannot bind argument to parameter 'SqlInstance' because it is null."
+        #'Sync-DbaLoginPermission',
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
