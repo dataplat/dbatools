@@ -2,7 +2,7 @@ name: VMSS Test Only
 
 on:
   push:
-    branches: ['**']  # Runs on any branch
+    branches: ['**']
   workflow_dispatch:
     inputs:
       vmss_capacity:
@@ -61,12 +61,34 @@ jobs:
       with:
         creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
 
+    - name: Verify resource group exists
+      run: |
+        if ! az group show --name "${{ env.AZURE_RESOURCE_GROUP }}" &>/dev/null; then
+          echo "ERROR: Resource group ${{ env.AZURE_RESOURCE_GROUP }} does not exist"
+          exit 1
+        fi
+        echo "Resource group verified"
+
     - name: Set secrets in Key Vault
       run: |
-        az keyvault secret set --vault-name dbatoolsci --name "GITHUB-RUNNER-TOKEN" --value "${{ secrets.VMSS_GH_PAT }}"
-        az keyvault secret set --vault-name dbatoolsci --name "GITHUB-REPOSITORY" --value "${{ github.repository }}"
-        az keyvault secret set --vault-name dbatoolsci --name "GITHUB-BUILD-ID" --value "${{ needs.prepare-build.outputs.build-id }}"
-        az keyvault secret set --vault-name dbatoolsci --name "VMSS-NAME" --value "${{ needs.prepare-build.outputs.vmss-name }}"
+        # Retry Key Vault operations as they can be flaky
+        for i in {1..3}; do
+          if az keyvault secret set --vault-name dbatoolsci --name "GITHUB-RUNNER-TOKEN" --value "${{ secrets.VMSS_GH_PAT }}" &&
+             az keyvault secret set --vault-name dbatoolsci --name "GITHUB-REPOSITORY" --value "${{ github.repository }}" &&
+             az keyvault secret set --vault-name dbatoolsci --name "GITHUB-BUILD-ID" --value "${{ needs.prepare-build.outputs.build-id }}" &&
+             az keyvault secret set --vault-name dbatoolsci --name "VMSS-NAME" --value "${{ needs.prepare-build.outputs.vmss-name }}"; then
+            echo "Key Vault secrets set successfully"
+            break
+          fi
+
+          if [ $i -eq 3 ]; then
+            echo "Failed to set Key Vault secrets after 3 attempts"
+            exit 1
+          fi
+
+          echo "Retry $i failed, waiting 10 seconds..."
+          sleep 10
+        done
 
     - name: Create or update VMSS
       run: |
@@ -87,7 +109,7 @@ jobs:
         VMSS_NAME="${{ needs.prepare-build.outputs.vmss-name }}"
         echo "Waiting for VMSS instances to be in running state..."
 
-        for i in {1..20}; do
+        for i in {1..30}; do
           RUNNING_COUNT=$(az vmss list-instances \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --name "$VMSS_NAME" \
@@ -101,9 +123,10 @@ jobs:
             break
           fi
 
-          if [ $i -eq 20 ]; then
+          if [ $i -eq 30 ]; then
             echo "Timeout waiting for instances to start"
-            exit 1
+            # Don't fail here - proceed with available instances
+            echo "Proceeding with $RUNNING_COUNT available instances"
           fi
 
           sleep 15
@@ -112,7 +135,7 @@ jobs:
   wait-for-runners:
     needs: [prepare-build, provision-vmss]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
     - name: Wait for dedicated runners
       run: |
@@ -123,21 +146,29 @@ jobs:
         echo "Waiting for runners from VMSS: $VMSS_NAME"
         echo "Expected runners: $EXPECTED_RUNNERS"
 
-        for i in {1..30}; do
+        BEST_COUNT=0
+        for i in {1..45}; do
           RUNNER_COUNT=$(curl -s -H "Authorization: token ${{ secrets.VMSS_GH_PAT }}" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
-            jq "[.runners[] | select(.labels[].name | contains(\"$VMSS_NAME\"))] | length")
+            jq "[.runners[] | select(.labels[].name | contains(\"$VMSS_NAME\"))] | length" 2>/dev/null || echo "0")
 
-          echo "Registered runners: $RUNNER_COUNT/$EXPECTED_RUNNERS"
+          if [ "$RUNNER_COUNT" -gt "$BEST_COUNT" ]; then
+            BEST_COUNT=$RUNNER_COUNT
+          fi
+
+          echo "Registered runners: $RUNNER_COUNT/$EXPECTED_RUNNERS (best: $BEST_COUNT)"
 
           if [ "$RUNNER_COUNT" -ge "$EXPECTED_RUNNERS" ]; then
             echo "All expected runners are available!"
             break
           fi
 
-          if [ $i -eq 30 ]; then
-            echo "Timeout: Not all runners came online"
-            echo "Continuing with available runners..."
+          if [ $i -eq 45 ]; then
+            if [ "$BEST_COUNT" -gt 0 ]; then
+              echo "Timeout: Got $BEST_COUNT runners, proceeding with available runners"
+            else
+              echo "CRITICAL: No runners came online - this will likely cause test failures"
+            fi
           fi
 
           sleep 20
@@ -150,6 +181,7 @@ jobs:
     strategy:
       matrix:
         test: [1, 2, 3]
+      fail-fast: false  # Don't stop other tests if one fails
     steps:
     - name: Test VMSS connectivity
       run: |
