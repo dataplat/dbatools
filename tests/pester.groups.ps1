@@ -22,21 +22,6 @@ $TestsRunGroups = @{
     )
     # do not run on appveyor
     "appveyor_disabled" = @(
-        # takes too long
-        'Install-DbaSqlWatch',
-        'Uninstall-DbaSqlWatch',
-        'Get-DbaExecutionPlan',
-        # Non-useful info from newly started sql servers
-        'Get-DbaCpuRingBuffer',
-        'Get-DbaLatchStatistic',
-        # uses a backup that only works on SQL Server 2022
-        'Get-DbaEstimatedCompletionTime'
-        # fails so often
-        #'Get-DbaDbMasterKey',
-        #'Backup-DbaDbCertificate',
-        #'Set-DbaDbQueryStoreOption',
-        #'Install-DbaInstance',
-        #'Invoke-DbaAdvancedUpdate'
     )
     # do not run everywhere
     "disabled"          = @()

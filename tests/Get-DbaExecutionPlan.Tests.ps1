@@ -26,7 +26,8 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+# takes too long on AppVeyor
+Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     Context "Gets Execution Plan" {
         BeforeAll {
             $allResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 | Where-Object statementtype -eq "SELECT" | Select-Object -First 1)
