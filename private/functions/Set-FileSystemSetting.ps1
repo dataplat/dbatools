@@ -63,9 +63,7 @@ function Set-FileSystemSetting {
 
             Write-Message -Level Verbose -Message "Attempting to connect to $computer's WMI"
             $ognamespace = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace root\Microsoft\SQLServer -Query "SELECT NAME FROM __NAMESPACE WHERE NAME LIKE 'ComputerManagement%'"
-            $namespace = $ognamespace | Where-Object {
-                (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0
-            } | Sort-Object Name -Descending | Select-Object -First 1
+            $namespace = $ognamespace | Where-Object { (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0 } | Sort-Object Name -Descending | Select-Object -First 1
 
             if (-not $namespace) {
                 $namespace = $ognamespace
