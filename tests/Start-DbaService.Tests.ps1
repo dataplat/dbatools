@@ -39,17 +39,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Single service restart" {
             BeforeAll {
-                #Stop services using native cmdlets
-                if ($instanceName -eq 'MSSQLSERVER') {
-                    $serviceName = "SQLSERVERAGENT"
-                } else {
-                    $serviceName = "SqlAgent`$$instanceName"
-                }
-                Get-Service -ComputerName $computerName -Name $serviceName | Stop-Service -WarningAction SilentlyContinue | Out-Null
+                $null = Stop-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
             }
 
             It "starts the services back" {
-                $services = Start-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
+                $services = Start-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
                 $services | Should -Not -BeNullOrEmpty
                 foreach ($service in $services) {
                     $service.State | Should -Be 'Running'
@@ -60,13 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Multiple services through pipeline" {
             BeforeAll {
-                #Stop services using native cmdlets
-                if ($instanceName -eq 'MSSQLSERVER') {
-                    $serviceName = "SQLSERVERAGENT", "MSSQLSERVER"
-                } else {
-                    $serviceName = "SqlAgent`$$instanceName", "MsSql`$$instanceName"
-                }
-                foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
+                $null = Stop-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine -Force
             }
 
             It "starts the services back through pipeline" {

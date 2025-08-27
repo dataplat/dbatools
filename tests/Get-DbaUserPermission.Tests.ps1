@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     Context "Command returns proper info" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

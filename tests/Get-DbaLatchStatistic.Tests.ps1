@@ -21,7 +21,8 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+# Non-useful info from newly started sql servers
+Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     Context "Command returns proper info" {
         BeforeAll {
             $results = Get-DbaLatchStatistic -SqlInstance $TestConfig.instance2 -Threshold 100

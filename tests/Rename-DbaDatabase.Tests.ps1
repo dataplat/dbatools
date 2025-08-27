@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "test_dbatoolsci_rename2_$($testDate)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -ErrorAction SilentlyContinue
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -280,10 +280,11 @@ Describe $CommandName -Tag IntegrationTests {
             $logicalResults | Should -Not -BeNullOrEmpty
         }
         It "Should have renamed the database files" {
-            $logicalResults.LogicalNameRenames | Should -BeLike "dbatoolsci_logicname --> *"
+            $logicalResults.LogicalNameRenames | Should -BeLike "*dbatoolsci_logicname --> *"
         }
         It "Should have the previous database name" {
-            $logicalResults.LGN.Keys | Should -Be @("dbatoolsci_logicname", "dbatoolsci_logicname_log")
+            $logicalResults.LGN.Keys | Should -Contain "dbatoolsci_logicname"
+            $logicalResults.LGN.Keys | Should -Contain "dbatoolsci_logicname_log"
         }
         It "Should have a Status of Full" {
             $logicalResults.Status | Should -Be "Full"

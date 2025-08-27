@@ -77,8 +77,8 @@ function Get-DbaStub {
         It "Returns the expected results" {
             foreach ($result in $results) {
                 $result.Path | Should -Be $tempPath
-                $result.Pattern -in "Export-SqlUser", "Find-SqlDuplicateIndex", "UseLastBackups", "NoSystem" | Should -Be $true
-                $result.ReplacedWith -in "Export-DbaUser", "Find-DbaDbDuplicateIndex", "UseLastBackup", "ExcludeSystemLogins" | Should -Be $true
+                $result.Pattern | Should -BeIn "Export-SqlUser", "Find-SqlDuplicateIndex", "UseLastBackups", "NoSystem"
+                $result.ReplacedWith | Should -BeIn "Export-DbaUser", "Find-DbaDbDuplicateIndex", "UseLastBackup", "ExcludeSystemLogins"
             }
         }
 

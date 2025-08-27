@@ -42,13 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $service.Status | Should -Be 'Successful'
             }
 
-            # Start services using native cmdlets
-            if ($instanceName -eq 'MSSQLSERVER') {
-                $serviceName = "SQLSERVERAGENT"
-            } else {
-                $serviceName = "SqlAgent`$$instanceName"
-            }
-            Get-Service -ComputerName $computerName -Name $serviceName | Start-Service -WarningAction SilentlyContinue | Out-Null
+            $null = Start-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
         }
 
         It "stops specific services based on instance name through pipeline" {
@@ -59,13 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $service.Status | Should -Be 'Successful'
             }
 
-            # Start services using native cmdlets
-            if ($instanceName -eq 'MSSQLSERVER') {
-                $serviceName = "MSSQLSERVER", "SQLSERVERAGENT"
-            } else {
-                $serviceName = "MsSql`$$instanceName", "SqlAgent`$$instanceName"
-            }
-            foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Start-Service -WarningAction SilentlyContinue | Out-Null }
+            $null = Start-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Engine, Agent
         }
     }
 }
