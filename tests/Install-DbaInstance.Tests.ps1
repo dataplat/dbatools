@@ -68,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
         Mock -CommandName Set-DbaPrivilege -ModuleName dbatools -MockWith { }
         Mock -CommandName Set-DbaTcpPort -ModuleName dbatools -MockWith { }
         Mock -CommandName Restart-DbaService -ModuleName dbatools -MockWith { }
-        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{NumberOfCores = 24 } } -ParameterFilter { $ClassName -eq "Win32_processor" }
+        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{ NumberOfLogicalProcessors = 24 } } -ParameterFilter { $ClassName -eq "Win32_processor" }
         # mock searching for setup, proper file should always it find
         Mock -CommandName Find-SqlInstanceSetup -MockWith {
             Get-ChildItem $Path -Filter "dummy.exe" -ErrorAction Stop | Select-Object -ExpandProperty FullName -First 1
