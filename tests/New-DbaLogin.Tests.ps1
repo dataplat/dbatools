@@ -92,11 +92,6 @@ Describe $CommandName -Tag IntegrationTests {
         #create credential
         $null = New-DbaCredential -SqlInstance $server1 -Name $credLogin -CredentialIdentity $credLogin -Password $securePassword -Force
 
-        #create master key if not exists
-        if (!($mkey = Get-DbaDbMasterKey -SqlInstance $server1 -Database master)) {
-            $null = New-DbaDbMasterKey -SqlInstance $server1 -Database master -Password $securePassword
-        }
-
         try {
             #create certificate
             if ($crt = $server1.Databases["master"].Certificates[$certificateName]) {
@@ -132,9 +127,6 @@ Describe $CommandName -Tag IntegrationTests {
             $computer.Delete("User", $credLogin)
             $server1.Credentials[$credLogin].Drop()
             $server1.Databases["master"].Certificates[$certificateName].Drop()
-            if (!$mkey) {
-                $null = Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master
-            }
         } catch { <#nbd #> }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

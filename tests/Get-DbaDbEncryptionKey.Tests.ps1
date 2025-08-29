@@ -42,13 +42,6 @@ Describe $CommandName -Tag IntegrationTests {
         $shouldDeleteMasterCert = $false
         $testDbName = "dbatoolsci_encryptiontest_$(Get-Random)"
 
-        # Create the objects.
-        $masterKey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
-        if (-not $masterKey) {
-            $shouldDeleteMasterKey = $true
-            $masterKey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $encryptionPassword
-        }
-
         $masterCert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $masterCert) {
             $shouldDeleteMasterCert = $true
@@ -74,9 +67,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
         if ($shouldDeleteMasterCert) {
             $masterCert | Remove-DbaDbCertificate
-        }
-        if ($shouldDeleteMasterKey) {
-            $masterKey | Remove-DbaDbMasterKey
         }
 
         # Remove the backup directory.

@@ -42,9 +42,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
 
-            # Create master key on instance2
-            $masterKey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -SecurePassword $securePassword -ErrorAction SilentlyContinue
-
             # Create test databases
             $testDatabases = New-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name dbatoolscopycred
 
@@ -72,9 +69,6 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $null = $testDatabases | Remove-DbaDatabase -ErrorAction SilentlyContinue
-            if ($masterKey) {
-                $masterKey | Remove-DbaDbMasterKey -ErrorAction SilentlyContinue
-            }
 
             # Remove the backup directory.
             Remove-Item -Path $backupPath -Recurse

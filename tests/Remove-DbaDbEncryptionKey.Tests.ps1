@@ -29,11 +29,6 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $encryptionPasswd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterKeyExists = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
-        if (-not $masterKeyExists) {
-            $delmasterkey = $true
-            $masterKeyExists = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $encryptionPasswd
-        }
         $masterCertExists = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $masterCertExists) {
             $delmastercert = $true
@@ -58,9 +53,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
         if ($delmastercert) {
             $masterCertExists | Remove-DbaDbCertificate
-        }
-        if ($delmasterkey) {
-            $masterKeyExists | Remove-DbaDbMasterKey
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

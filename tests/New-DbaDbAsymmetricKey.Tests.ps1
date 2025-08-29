@@ -51,9 +51,6 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "commands work as expected" {
         It "Should create new key in master called test1" {
-            if (!(Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master )) {
-                New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -SecurePassword $tPassword
-            }
             $keyname1 = "test1"
             $key1 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname1
             $results1 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname1 -Database master -WarningVariable warnvar1

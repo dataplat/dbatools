@@ -38,12 +38,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $agName = "dbatoolsci_getagdb_agroup"
-        $dbName = "dbatoolsci_getagdb_agroupdb"
+        $dbName = "dbatoolsci_getagdb_agroupdb-$(Get-Random)"
 
         # Create the objects.
         $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $server.Query("create database $dbName")
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Backup-DbaDatabase -Path $backupPath
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Backup-DbaDatabase -Path $backupPath -Type Log
 
