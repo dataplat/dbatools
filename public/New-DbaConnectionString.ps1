@@ -222,6 +222,20 @@ function New-DbaConnectionString {
         [string]$AppendConnectionString
     )
     begin {
+        # Get config values for encryption settings
+        $encryptConfig = Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'
+        $trustCertConfig = Get-DbatoolsConfigValue -FullName 'sql.connection.trustcert'
+
+        $IsCoreCLR = $PSVersionTable.PSEdition -eq 'Core'
+
+        if (-not $script:SqlClientVersion) {
+            try {
+                $script:SqlClientVersion = [System.Reflection.Assembly]::Load('Microsoft.Data.SqlClient').GetName().Version
+            } catch {
+                $script:SqlClientVersion = [Version]'0.0.0.0'
+            }
+        }
+
         function Test-Azure {
             Param (
                 [DbaInstanceParameter[]]$SqlInstance
@@ -283,9 +297,8 @@ function New-DbaConnectionString {
                 if (Test-Bound -Not -ParameterName 'PacketSize') {
                     $PacketSize = (Get-DbatoolsConfigValue -FullName 'sql.connection.packetsize')
                 }
-                if (Test-Bound -Not -ParameterName 'TrustServerCertificate') {
-                    $TrustServerCertificate = (Get-DbatoolsConfigValue -FullName 'sql.connection.trustcert')
-                }
+                # Note: TrustServerCertificate logic is now handled in the connection string building section
+                # to properly respect config values even when parameters are not passed
                 # TODO: Maybe put this in a config item:
                 $AzureDomain = "database.windows.net"
 
@@ -319,12 +332,30 @@ function New-DbaConnectionString {
                         if ($ConnectTimeout) { $connStringBuilder['Connect Timeout'] = $ConnectTimeout }
                         if ($Database) { $connStringBuilder['Initial Catalog'] = $Database }
                         # https://learn.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlconnectionstringbuilder.encrypt?view=sqlclient-dotnet-standard-5.0
+
+                        # Enhanced encryption and trust certificate logic - respect config values even when no parameter is passed
                         if ($instance -notmatch "localdb") {
-                            if ($EncryptConnection) { $connStringBuilder['Encrypt'] = 'Mandatory' }
-                            if (-not $EncryptConnection -and (Test-Bound -ParameterName 'EncryptConnection')) { $connStringBuilder['Encrypt'] = 'False' }
+                            # Determine encryption setting - respect config values even when no parameter is passed
+                            if ($PSBoundParameters.ContainsKey('EncryptConnection')) {
+                                $encryptValue = if ($EncryptConnection) { 'Mandatory' } else { 'False' }
+                            } elseif ($encryptConfig -eq $false) {
+                                $encryptValue = if ($IsCoreCLR -and ($script:SqlClientVersion.Major -ge 5)) { 'Optional' } else { 'False' }
+                            } else {
+                                $encryptValue = 'Mandatory'
+                            }
+                            $connStringBuilder['Encrypt'] = $encryptValue
+
+                            # Determine trust certificate setting - respect config values even when no parameter is passed
+                            if ($PSBoundParameters.ContainsKey('TrustServerCertificate')) {
+                                $trustCertValue = if ($TrustServerCertificate) { $true } else { $false }
+                            } else {
+                                $trustCertValue = if ($trustCertConfig -eq $true) { $true } else { $false }
+                            }
+                            $connStringBuilder['TrustServerCertificate'] = $trustCertValue
                         } else {
                             Write-Message -Level Verbose -Message "localdb detected, skipping unsupported keyword 'Encryption'"
                         }
+
                         if ($FailoverPartner) { $connStringBuilder['Failover Partner'] = $FailoverPartner }
                         if ($MaxPoolSize) { $connStringBuilder['Max Pool Size'] = $MaxPoolSize }
                         if ($MinPoolSize) { $connStringBuilder['Min Pool Size'] = $MinPoolSize }
@@ -333,7 +364,6 @@ function New-DbaConnectionString {
                         if ($NonPooledConnection) { $connStringBuilder['Pooling'] = $false }
                         if ($PacketSize) { $connStringBuilder['Packet Size'] = $PacketSize }
                         if ($PooledConnectionLifetime) { $connStringBuilder['Load Balance Timeout'] = $PooledConnectionLifetime }
-                        if ($TrustServerCertificate) { $connStringBuilder['TrustServerCertificate'] = $true } else { $connStringBuilder['TrustServerCertificate'] = $false }
                         if ($WorkstationId) { $connStringBuilder['Workstation Id'] = $WorkstationId }
                         if ($SqlCredential) {
                             Write-Message -Level Debug -Message "We have a SqlCredential"
