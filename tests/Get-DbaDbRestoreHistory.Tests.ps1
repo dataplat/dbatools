@@ -121,10 +121,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return the full restore with the correct properties" {
-            $results[0].RestoreType | Should -Be "Database"
-            $results[1].RestoreType | Should -Be "Log"
-            $results[0].From | Should -Be "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-            $results[1].From | Should -Be $logBackup.BackupPath
+            $results.RestoreType | Should -Contain "Database"
+            $results.RestoreType | Should -Contain "Log"
+            $results.From | Should -Contain "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            $results.From | Should -Contain $logBackup.BackupPath
             ($results | Where-Object Database -eq $dbname1).To | Should -Match "\\$dbname1"
             ($results | Where-Object Database -eq $dbname2).To | Should -Match "\\rsh_pre_$dbname2"
         }

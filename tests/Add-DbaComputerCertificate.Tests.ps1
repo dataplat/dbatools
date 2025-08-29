@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 

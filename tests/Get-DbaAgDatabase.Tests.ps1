@@ -65,9 +65,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agName
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
