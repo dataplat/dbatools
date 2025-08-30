@@ -145,7 +145,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Create new key in enctest called filekey" {
-            $skip6 = $false
             $keyname6 = "filekey"
             $dbuser6 = "keyowner"
             $database6 = "enctest"
