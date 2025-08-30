@@ -65,22 +65,26 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         BeforeAll {
             Start-Job -Name $waitingTaskJobName -ScriptBlock {
                 Import-Module $args[0];
-                (Connect-DbaInstance -SqlInstance $args[1] -ClientName dbatools-waiting).Query($args[2])
+                (Connect-DbaInstance -SqlInstance $args[1] -ClientName dbatools-waiting).ConnectionContext.ExecuteNonQuery($args[2])
             } -ArgumentList $waitingTaskModulePath, $waitingTaskInstance, $waitingTaskSql
 
-            <#
-                **This has to sleep as it can take a couple seconds for the job to start**
-                Setting it lower will cause issues, you have to consider the Start-Job has to load the module which takes on average 3-4 seconds itself before it executes the command.
+            # The job needs some seconds to load the module and to open the connection
+            foreach ($second in 1..30) {
+                $waitingTaskProcess = Get-DbaProcess -SqlInstance $waitingTaskInstance | Where-Object Program -eq "dbatools-waiting" | Select-Object -ExpandProperty Spid
+                if ($waitingTaskProcess) {
+                    break
+                }
+                Start-Sleep -Seconds 1
+            }
 
-                If someone knows a cleaner method by all means adjust this test.
-            #>
-            Start-Sleep -Seconds 8
+            # Wait another second for the query to start
+            Start-Sleep -Seconds 1
 
-            $waitingTaskProcess = Get-DbaProcess -SqlInstance $waitingTaskInstance | Where-Object Program -eq "dbatools-waiting" | Select-Object -ExpandProperty Spid
+            # Get the results
+            $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
         }
 
         It "Should have correct properties" {
-            $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
             $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
@@ -103,7 +107,6 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
 
         It "Should have command of WAITFOR" {
-            $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
             $results.WaitType | Should -BeLike "*WAITFOR*"
         }
     }
