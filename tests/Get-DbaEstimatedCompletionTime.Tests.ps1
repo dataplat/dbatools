@@ -22,8 +22,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-# uses a backup that only works on SQL Server 2022
 Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabaseBackup) -or $env:appveyor) {
+    # Skip IntegrationTests on AppVeyor because the backup we use only works on SQL Server 2022 and skip if no BigDatabaseBackup is configured.
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

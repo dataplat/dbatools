@@ -294,8 +294,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    # The Copy-DbaDatabase fails, but I don't know why. So skipping for now.
-    Context "UseLastBackup with -Continue" {
+    Context "UseLastBackup with -Continue" -Skip {
+        # Skip Context because tests fail for unknown reasons.
+
         BeforeAll {
             $splatStopProcess = @{
                 SqlInstance = $TestConfig.instance2, $TestConfig.instance3
@@ -341,7 +342,7 @@ Describe $CommandName -Tag IntegrationTests {
             $backupPaths | Select-Object -Unique | Remove-Item -ErrorAction SilentlyContinue
         }
 
-        It "continues the restore over existing database using backup history" -Skip:$true {
+        It "continues the restore over existing database using backup history" {
             # It should already have a backup history (full+diff) by this time
             $splatCopyContinue = @{
                 Source        = $TestConfig.instance2
@@ -356,7 +357,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
         }
 
-        It "retains its name, recovery model, and status." -Skip:$true {
+        It "retains its name, recovery model, and status." {
             $splatGetDbs = @{
                 SqlInstance = $TestConfig.instance2, $TestConfig.instance3
                 Database    = $backuprestoredb

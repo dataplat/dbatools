@@ -97,8 +97,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "parameters work" {
-        # Fails on appveyor with: Invalid object name 'sys.availability_replicas'
-        It "returns server level permissions with -IncludeServerLevel" -Skip:$env:appveyor{
+        It "returns server level permissions with -IncludeServerLevel" -Skip:$env:appveyor {
+            # Skip It on AppVeyor because test failes with "Invalid object name 'sys.availability_replicas'"
+
             $results = Get-DbaPermission -SqlInstance $server -IncludeServerLevel
             $results | Where-Object Database -eq "" | Should -Not -BeNullOrEmpty
         }

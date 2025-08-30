@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
             $regexPath = "Software\\Microsoft\\Microsoft SQL Server"
         }
 
-        It "returns at least one named instance if more than one result is returned" -Skip:($results.Count -le 1) {
+        It "returns at least one named instance if more than one result is returned" {
             $named = $results | Where-Object SqlInstance -match '\\'
             $named.SqlInstance.Count -gt 0 | Should -BeTrue
         }

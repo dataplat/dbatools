@@ -56,7 +56,9 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.instance1 -Database $db1 -TargetLogSize 128
         }
 
-        It "Should have correct properties" -Skip:$true {
+        It "Should have correct properties" -Skip {
+            # Skip It because tests fail for unknown reasons.
+
             $ExpectedProps = "ComputerName", "InstanceName", "SqlInstance", "Database", "ID", "Name", "LogFileCount", "InitialSize", "CurrentSize", "InitialVLFCount", "CurrentVLFCount"
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }

@@ -98,13 +98,15 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip {
+    # Skip IntegrationTests because LogShipping need additional setup.
+
     # This is a placeholder until we decide on sql2016/sql2017
     BeforeAll {
         $dbname = "dbatoolsci_logshipping"
     }
 
-    It "returns success" -Skip:$true {
+    It "returns success" {
         $splatLogShipping = @{
             SourceSqlInstance       = $TestConfig.instance2
             DestinationSqlInstance  = $TestConfig.instance

@@ -74,8 +74,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have renamed all RestoreTimeCleans to Eldritch" {
             ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Where-Object { $_.Database -ne 'Eldritch' }).count | Should -Be 0
         }
-        # TODO: Test is broken, fix later
-        It -Skip "Should have renamed all the RestoreTimeClean files to Eldritch" {
+        It "Should have renamed all the RestoreTimeClean files to Eldritch" -Skip {
+            # Skip It because tests fail for unknown reasons.
+
             ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'RestoreTimeClean' }).count | Should -Be 0
             ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'eldritch' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
 
@@ -83,8 +84,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have renamed all ContinuePointTest to Spiggy" {
             ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Where-Object { $_.Database -ne 'Spiggy' }).count | Should -Be 0
         }
-        # TODO: Test is broken, fix later
-        It -Skip "Should have renamed all the ContinuePointTest files to Spiggy" {
+        It "Should have renamed all the ContinuePointTest files to Spiggy" -Skip {
+            # Skip It because tests fail for unknown reasons.
+
             ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should -Be 0
             ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'spiggy' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
 
@@ -107,8 +109,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have renamed all ContinuePointTest to Alice" {
             ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Where-Object { $_.Database -ne 'Alice' }).count | Should -Be 0
         }
-        # TODO: Test is broken, fix later
-        It -Skip "Should have renamed all the ContinuePointTest files to Alice" {
+        It "Should have renamed all the ContinuePointTest files to Alice" -Skip {
+            # Skip It because tests fail for unknown reasons.
+
             ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should -Be 0
             ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'alice' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
         }

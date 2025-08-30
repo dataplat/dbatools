@@ -75,8 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AvailabilityMode | Should -Be "SynchronousCommit"
         }
 
-        # Skipping because this adds like 30 seconds to test times
-        It "Passes EnableException to Get-DbaAvailabilityGroup" -Skip:$true {
+        It "Passes EnableException to Get-DbaAvailabilityGroup" {
             $results = Get-DbaAgReplica -SqlInstance invalidSQLHostName -ErrorVariable agerror
             $results | Should -BeNullOrEmpty
             ($agerror | Where-Object Message -match "The network path was not found") | Should -Not -BeNullOrEmpty

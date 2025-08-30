@@ -96,8 +96,9 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Owner 'sa'
             $results | Should -Not -BeNullOrEmpty
         }
-        # TODO: Fix later, this is not working as expected
         It -Skip "Should find jobs that have been failed since July of 2016" {
+            # Skip It because tests fail for unknown reasons.
+
             $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -IsFailed -Since '2016-07-01 10:47:00'
             $results | Should -Not -BeNullOrEmpty
         }

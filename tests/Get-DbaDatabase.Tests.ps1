@@ -83,8 +83,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 }
 
-# TODO: Do we want these tests? Skipping for now
-Describe -Skip $CommandName -Tag UnitTests {
+Describe $CommandName -Tag UnitTests -Skip {
+    # Skip UnitTests because they need refactoring.
+
     BeforeAll {
         ## Ensure it is the module that is being coded that is in the session when running just this Pester test
         #  Remove-Module dbatools -Force -ErrorAction SilentlyContinue

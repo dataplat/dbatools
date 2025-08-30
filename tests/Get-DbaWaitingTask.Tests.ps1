@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
             $waitingTaskProcess = Get-DbaProcess -SqlInstance $waitingTaskInstance | Where-Object Program -eq "dbatools-waiting" | Select-Object -ExpandProperty Spid
         }
 
-        It "Should have correct properties" -Skip:($null -eq $waitingTaskProcess) {
+        It "Should have correct properties" {
             $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
             $expectedProps = @(
                 "ComputerName",
@@ -100,7 +100,7 @@ Describe $CommandName -Tag IntegrationTests {
             ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
-        It "Should have command of WAITFOR" -Skip:($null -eq $waitingTaskProcess) {
+        It "Should have command of WAITFOR" {
             $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
             $results.WaitType | Should -BeLike "*WAITFOR*"
         }

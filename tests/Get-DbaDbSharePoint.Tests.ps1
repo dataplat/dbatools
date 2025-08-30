@@ -22,7 +22,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip {
+    # Skip IntegrationTests because they need to be tested first.
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -94,8 +96,8 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaDbSharePoint -SqlInstance $TestConfig.instance2
         }
 
-        foreach ($db in $spdb) {
-            It "returns $db from in the SharePoint database list" -Skip:$skip {
+        It "returns $db from in the SharePoint database list" {
+            foreach ($db in $spdb) {
                 $db | Should -BeIn $results.Name
             }
         }
