@@ -76,9 +76,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Passes EnableException to Get-DbaAvailabilityGroup" {
-            $results = Get-DbaAgReplica -SqlInstance invalidSQLHostName -ErrorVariable agerror
+            $results = Get-DbaAgReplica -SqlInstance invalidSQLHostName -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "The network path was not found"
             $results | Should -BeNullOrEmpty
-            ($agerror | Where-Object Message -match "The network path was not found") | Should -Not -BeNullOrEmpty
 
             { Get-DbaAgReplica -SqlInstance invalidSQLHostName -EnableException } | Should -Throw
         }
