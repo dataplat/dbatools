@@ -300,7 +300,6 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         }
     }
 
-    # Note: this integration test takes about 3.5 minutes because it searches all objects and can be commented out if troubleshooting the other tests.
     Context "Decrypt all encrypted objects and use a destination folder" {
         It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ExportDestination .

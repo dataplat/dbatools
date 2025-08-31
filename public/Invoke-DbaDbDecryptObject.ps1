@@ -180,15 +180,7 @@ function Invoke-DbaDbDecryptObject {
 
             # Try to connect to instance
             try {
-                $server = New-Object Microsoft.SqlServer.Management.Smo.Server "ADMIN:$instance"
-
-                # credential usage
-                if ($null -ne $SqlCredential) {
-                    $context = $server.ConnectionContext
-                    $context.LoginSecure = $false  # this allows for SQL auth to be done
-                    $context.Login = $SqlCredential.UserName
-                    $context.SecurePassword = $SqlCredential.Password
-                }
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -DedicatedAdminConnection
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -359,6 +351,7 @@ function Invoke-DbaDbDecryptObject {
                     }
                 }
             }
+            $null = $server | Disconnect-DbaInstance
         }
     }
     end {
