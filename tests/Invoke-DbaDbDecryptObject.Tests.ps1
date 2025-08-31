@@ -24,9 +24,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
-    # Skip IntegrationTests on AppVeyor to ensure the AppVeyor sql instances are not impacted negatively.
-
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
