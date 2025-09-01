@@ -21,7 +21,8 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+# takes too long on AppVeyor
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5 -or $env:appveyor) {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

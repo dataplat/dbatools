@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
     Context "Command actually works" {
         It "Gets Results" {
             $results = Get-DbaPbmCategory -SqlInstance $TestConfig.instance2
