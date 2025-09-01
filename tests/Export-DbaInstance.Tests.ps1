@@ -325,8 +325,9 @@ Describe $CommandName -Tag IntegrationTests {
         $results.Length | Should -BeGreaterThan 0
     }
 
-    # not supported by PowerShell Core
     It "Export policies" -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
+        # Skip It on pwsh because working with policies is not supported.
+
         $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
         $results.FullName | Should -Exist
@@ -376,6 +377,6 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     # placeholder for a future test with availability groups
-    It -Skip "Export availability groups" {
-    }
+    # It "Export availability groups" {
+    # }
 }

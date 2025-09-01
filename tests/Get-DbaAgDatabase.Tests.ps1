@@ -38,12 +38,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $agName = "dbatoolsci_getagdb_agroup"
-        $dbName = "dbatoolsci_getagdb_agroupdb"
+        $dbName = "dbatoolsci_getagdb_agroupdb-$(Get-Random)"
 
         # Create the objects.
         $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $server.Query("create database $dbName")
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Backup-DbaDatabase -Path $backupPath
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Backup-DbaDatabase -Path $backupPath -Type Log
 
@@ -66,9 +65,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agName
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse

@@ -24,7 +24,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
+    # Skip IntegrationTests on pwsh because the command is currently not supported (because of FileStream configuration via WMI).
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

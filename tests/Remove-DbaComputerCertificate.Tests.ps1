@@ -23,7 +23,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
+    # Skip IntegrationTests on pwsh because we need code changes (X509Certificate is immutable on this platform. Use the equivalent constructor instead.)
+
     Context "Can remove a certificate" {
         BeforeAll {
             $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -EnableException

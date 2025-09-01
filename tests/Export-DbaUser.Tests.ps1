@@ -122,17 +122,14 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $userExists = Get-DbaDbUser -SqlInstance $TestConfig.instance1 -Database $dbname | Where-Object Name -eq $user
-            if ($userExists) {
-                $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -User $user -FilePath $outputFile
-            }
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -User $user -FilePath $outputFile
         }
 
-        It "Exports results to one sql file" -Skip:(-not $userExists) {
+        It "Exports results to one sql file" {
             @(Get-ChildItem $outputFile).Count | Should -BeExactly 1
         }
 
-        It "Exported file is bigger than 0" -Skip:(-not $userExists) {
+        It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
         }
     }

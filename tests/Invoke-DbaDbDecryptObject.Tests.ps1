@@ -226,7 +226,6 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    # these tests are marked as skip to ensure the AppVeyor sql instances are not impacted negatively. These tests can be run locally.
     Context "DAC enabled" {
         It "Should throw error" {
             Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -Name RemoteDacConnectionsEnabled -Value $false

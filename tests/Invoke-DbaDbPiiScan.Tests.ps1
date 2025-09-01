@@ -53,6 +53,8 @@ Pattern        : [A-Z][ -]?[0-9]{6}
 Description    : National ID (Tautotita)
 #>
 Describe $CommandName -Tag IntegrationTests -Skip {
+    # Skip IntegrationTests because command probably has bugs and needs to be reviewed.
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

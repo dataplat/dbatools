@@ -31,8 +31,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
         $agname = "dbatoolsci_removeagdb_agroup"
-        $dbname = "dbatoolsci_removeagdb_agroupdb"
-        $server.Query("create database $dbname")
+        $dbname = "dbatoolsci_removeagdb_agroupdb-$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.bak"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.trn" -Type Log
 

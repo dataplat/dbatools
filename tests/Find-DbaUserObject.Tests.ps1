@@ -52,8 +52,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    # TODO: What do we need to setup to find user objects? Skipping for now...
-    Context -Skip "Command finds User Objects" {
+    Context "Command finds User Objects" -Skip {
+        # Skip Context because tests fail for unknown reasons. (TODO: What do we need to setup to find user objects?)
+
         BeforeAll {
             $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
         }

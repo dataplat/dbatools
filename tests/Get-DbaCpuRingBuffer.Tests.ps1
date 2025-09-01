@@ -21,8 +21,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-# Non-useful info from newly started sql servers
 Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
+    # Skip IntegrationTests on AppVeyor because non-useful info from newly started sql servers.
+
     Context "When retrieving CPU ring buffer data" {
         It "Returns CPU performance metrics from ring buffer" {
             $results = @(Get-DbaCpuRingBuffer -SqlInstance $TestConfig.instance2 -CollectionMinutes 100)

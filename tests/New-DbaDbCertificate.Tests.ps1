@@ -34,16 +34,6 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            # Check if master key exists and create if needed
-            if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
-                $splatMasterKey = @{
-                    SqlInstance = $TestConfig.instance1
-                    Database    = "master"
-                    Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-                }
-                $masterkey = New-DbaDbMasterKey @splatMasterKey
-            }
-
             # Create tempdb master key for testing
             $splatTempDbKey = @{
                 SqlInstance = $TestConfig.instance1
@@ -67,9 +57,6 @@ Describe $CommandName -Tag IntegrationTests {
             # Cleanup master keys
             if ($tempdbmasterkey) {
                 $tempdbmasterkey | Remove-DbaDbMasterKey
-            }
-            if ($masterKey) {
-                $masterkey | Remove-DbaDbMasterKey
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
