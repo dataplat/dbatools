@@ -26,7 +26,10 @@
     Copyright          = 'Copyright (c) 2025 by dbatools, licensed under MIT'
 
     # Description of the functionality provided by this module
-    Description        = "The community module that enables SQL Server Pros to automate database development and server administration"
+    Description        = 'The community module that enables SQL Server Pros to automate database development and server administration'
+
+    # Script files () that are run in the caller's environment prior to importing this module
+    ScriptsToProcess   = @('bin\library\preload.AppContextSwitch.ps1')
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
@@ -37,15 +40,12 @@
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies = @()
 
-    # Script files () that are run in the caller's environment prior to importing this module
-    ScriptsToProcess   = @()
-
     # Type files (xml) to be loaded when importing this module
-    TypesToProcess     = @("xml\dbatools.Types.ps1xml")
+    TypesToProcess     = @('xml\dbatools.Types.ps1xml')
 
     # Format files (xml) to be loaded when importing this module
-    # "xml\dbatools.Format.ps1xml"
-    FormatsToProcess   = @("xml\dbatools.Format.ps1xml")
+    # 'xml\dbatools.Format.ps1xml'
+    FormatsToProcess   = @('xml\dbatools.Format.ps1xml')
 
     # Modules to import as nested modules of the module specified in ModuleToProcess
     NestedModules      = @()
@@ -788,25 +788,25 @@
         # https://connect.microsoft.com/PowerShell/feedback/details/421837
         PSData = @{
             # The primary categorization of this module (from the TechNet Gallery tech tree).
-            Category     = "Databases"
+            Category     = 'Databases'
 
             # Keyword tags to help users find this module via navigations and search.
             Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases', 'mac', 'linux', 'core')
 
             # The web address of an icon which can be used in galleries to represent this module
-            IconUri      = "https://dbatools.io/logo.png"
+            IconUri      = 'https://dbatools.io/logo.png'
 
             # The web address of this module's project or support homepage.
-            ProjectUri   = "https://dbatools.io"
+            ProjectUri   = 'https://dbatools.io'
 
             # The web address of this module's license. Points to a page that's embeddable and linkable.
-            LicenseUri   = "https://opensource.org/licenses/MIT"
+            LicenseUri   = 'https://opensource.org/licenses/MIT'
 
             # Release notes for this particular version of the module
-            ReleaseNotes = "https://dbatools.io/changelog"
+            ReleaseNotes = 'https://dbatools.io/changelog'
 
             # If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
-            # RequireLicenseAcceptance = ""
+            # RequireLicenseAcceptance = ''
 
             # Indicates this is a pre-release/testing version of the module.
         }
