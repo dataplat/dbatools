@@ -155,7 +155,6 @@ function Test-DbaAvailabilityGroup {
 
         foreach ($dbName in $AddDatabase) {
             $db = $server.Databases[$dbName]
-            $null = $db.Refresh()
 
             if ($SeedingMode -eq 'Automatic' -and $server.VersionMajor -lt 13) {
                 Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Target $server
@@ -165,6 +164,8 @@ function Test-DbaAvailabilityGroup {
             if (-not $db) {
                 Stop-Function -Message "Database [$dbName] is not found on $server." -Continue
             }
+
+            $null = $db.Refresh()
 
             if ($db.RecoveryModel -ne 'Full') {
                 Stop-Function -Message "RecoveryModel of database $db is not Full, but $($db.RecoveryModel)." -Continue
