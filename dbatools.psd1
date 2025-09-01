@@ -29,7 +29,7 @@
     Description        = 'The community module that enables SQL Server Pros to automate database development and server administration'
 
     # Script files () that are run in the caller's environment prior to importing this module
-    ScriptsToProcess   = @('bin\library\preload.AppContextSwitch.ps1')
+    ScriptsToProcess   = @('bin\preload.AppContextSwitch.ps1')
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
