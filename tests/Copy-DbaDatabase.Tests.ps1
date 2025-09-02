@@ -294,9 +294,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "UseLastBackup with -Continue" -Skip {
-        # Skip Context because tests fail for unknown reasons.
-
+    Context "UseLastBackup with -Continue" {
         BeforeAll {
             $splatStopProcess = @{
                 SqlInstance = $TestConfig.instance2, $TestConfig.instance3
@@ -327,12 +325,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $fullBackupResults | Restore-DbaDatabase @splatRestore
 
-            #Run diff now
+            #Run log now
             $splatBackupDiff = @{
                 SqlInstance     = $TestConfig.instance2
                 Database        = $backuprestoredb
                 BackupDirectory = $NetworkPath
-                Type            = "Diff"
+                Type            = "Log"
             }
             $diffBackupResults = Backup-DbaDatabase @splatBackupDiff
             $backupPaths += $diffBackupResults.FullName
