@@ -53,17 +53,15 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Ensure command functionality" {
         BeforeAll {
-            $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.instance1 -Database $db1 -TargetLogSize 128
+            $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.instance1 -Database $db1Name -TargetLogSize 128
         }
 
-        It "Should have correct properties" -Skip {
-            # Skip It because tests fail for unknown reasons.
-
-            $ExpectedProps = "ComputerName", "InstanceName", "SqlInstance", "Database", "ID", "Name", "LogFileCount", "InitialSize", "CurrentSize", "InitialVLFCount", "CurrentVLFCount"
+        It "Should have correct properties" {
+            $ExpectedProps = "ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseID", "ID", "Name", "LogFileCount", "InitialSize", "CurrentSize", "InitialVLFCount", "CurrentVLFCount"
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
-        It "Should have database name and ID of $db1" {
+        It "Should have database name and ID" {
             foreach ($result in $results) {
                 $result.Database | Should -Be $db1Name
                 $result.DatabaseID | Should -Be $db1.ID
