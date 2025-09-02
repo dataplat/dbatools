@@ -5,10 +5,10 @@
 
 if ($IsWindows) {
     try {
-        [System.AppContext]::SetSwitch(
-            "Switch.Microsoft.Data.SqlClient.UseManagedNetworkingOnWindows",
-            $true
-        )
+        [System.AppContext]::SetSwitch("Switch.Microsoft.Data.SqlClient.UseManagedNetworkingOnWindows", $true)
+        [System.AppContext]::SetSwitch('Switch.Microsoft.Data.SqlClient.UseSystemDefaultSecureProtocols', $true)
+        [System.AppContext]::SetSwitch('Switch.Microsoft.Data.SqlClient.DisableTNIRByDefaultInConnectionString', $true)
+
         Write-Verbose "dbatools: Using managed networking for SqlClient (no native SNI)."
     } catch {
         Write-Verbose "dbatools: Could not set managed networking switch: $_"
