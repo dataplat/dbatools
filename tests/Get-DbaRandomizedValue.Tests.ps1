@@ -44,9 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Length | Should -BeGreaterThan 1
         }
 
-        It "Should return a random address zipcode" -Skip {
-            # Skip It because tests fail for unknown reasons.
-
+        It "Should return a random address zipcode" {
             $result = Get-DbaRandomizedValue -RandomizerSubType Zipcode -Format "#####"
 
             $result.Length | Should -Be 5

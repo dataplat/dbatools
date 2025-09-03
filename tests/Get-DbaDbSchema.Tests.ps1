@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $userName = "user_$random"
         $userName2 = "user2_$random"
-        $password = "MyV3ry$ecur3P@ssw0rd"
+        $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $logins = New-DbaLogin -SqlInstance $server1, $server2 -Login $userName, $userName2 -Password $securePassword -Force
 

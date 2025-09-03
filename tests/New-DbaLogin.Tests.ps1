@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $credLogin = "credologino"
         $certificateName = "dbatoolsPesterlogincertificate"
-        $password = "MyV3ry$ecur3P@ssw0rd"
+        $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $sid = "0xDBA700131337C0D30123456789ABCDEF"
         $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
