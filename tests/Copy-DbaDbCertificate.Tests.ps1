@@ -30,10 +30,8 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip {
-    # Skip IntegrationTests because they fail for unknown reasons.
-
-    Context "Can create a database certificate" {
+Describe $CommandName -Tag IntegrationTests {
+    Context "Can copy a database certificate" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -52,16 +50,6 @@ Describe $CommandName -Tag IntegrationTests -Skip {
             $certificateName = "Cert_$(Get-Random)"
             $null = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Name $certificateName -Database dbatoolscopycred
 
-            # Setup copy parameters
-            $splatCopyCert = @{
-                Source             = $TestConfig.instance2
-                Destination        = $TestConfig.instance3
-                EncryptionPassword = $securePassword
-                MasterKeyPassword  = $securePassword
-                Database           = "dbatoolscopycred"
-                SharedPath         = $backupPath
-            }
-
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -79,7 +67,15 @@ Describe $CommandName -Tag IntegrationTests -Skip {
         }
 
         It "Successfully copies a certificate" {
-            $results = Copy-DbaDbCertificate @splatCopyCert | Where-Object SourceDatabase -eq "dbatoolscopycred" | Select-Object -First 1
+            $splatCopyCert = @{
+                Source             = $TestConfig.instance2
+                Destination        = $TestConfig.instance3
+                EncryptionPassword = $securePassword
+                MasterKeyPassword  = $securePassword
+                Database           = "dbatoolscopycred"
+                SharedPath         = $backupPath
+            }
+            $results = Copy-DbaDbCertificate @splatCopyCert
 
             $results.Notes | Should -BeNullOrEmpty
             $results.Status | Should -Be "Successful"
