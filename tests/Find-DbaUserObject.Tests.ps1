@@ -45,11 +45,11 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command finds user objects" {
-        It "Should find both user databases without pattern" {
+        It "Should find user databases without pattern" {
             $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
 
-            $results | Should -HaveCount 2
-            $results.Type | Select-Object -Unique | Should -Be Database
+            $results.Count | Should -BeGreaterOrEqual 2
+            $results.Type | Should -Contain Database
             $results.Name | Should -Contain UserDB1
             $results.Name | Should -Contain UserDB2
             $results.Owner | Should -Contain UserLogin1

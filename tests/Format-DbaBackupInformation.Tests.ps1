@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
             $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName @{'ContinuePointTest' = 'Spiggy'; 'RestoreTimeClean' = 'Eldritch' }
+            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName @{'ContinuePointTest' = 'Spiggy'; 'RestoreTimeClean' = 'Eldritch' }  -ReplaceDbNameInFile
         }
 
         It "Should have no databases other than spiggy and eldritch" {
@@ -74,22 +74,16 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have renamed all RestoreTimeCleans to Eldritch" {
             ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Where-Object { $_.Database -ne 'Eldritch' }).count | Should -Be 0
         }
-        It "Should have renamed all the RestoreTimeClean files to Eldritch" -Skip {
-            # Skip It because tests fail for unknown reasons.
-
-            ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'RestoreTimeClean' }).count | Should -Be 0
-            ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'eldritch' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
-
+        It "Should have renamed all the RestoreTimeClean files to Eldritch" {
+            ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*RestoreTimeClean*' }).count | Should -Be 0
+            ($output | Where-Object { $_.OriginalDatabase -eq 'RestoreTimeClean' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*Eldritch*' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
         }
         It "Should have renamed all ContinuePointTest to Spiggy" {
             ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Where-Object { $_.Database -ne 'Spiggy' }).count | Should -Be 0
         }
-        It "Should have renamed all the ContinuePointTest files to Spiggy" -Skip {
-            # Skip It because tests fail for unknown reasons.
-
-            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should -Be 0
-            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'spiggy' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
-
+        It "Should have renamed all the ContinuePointTest files to Spiggy" {
+            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count | Should -Be 0
+            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*Spiggy*' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
         }
     }
 
@@ -97,7 +91,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
             $history += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
-            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName @{'ContinuePointTest' = 'Alice' }
+            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName @{'ContinuePointTest' = 'Alice' } -ReplaceDbNameInFile
         }
 
         It "Should have no databases other than spiggy and eldritch" {
@@ -109,11 +103,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have renamed all ContinuePointTest to Alice" {
             ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Where-Object { $_.Database -ne 'Alice' }).count | Should -Be 0
         }
-        It "Should have renamed all the ContinuePointTest files to Alice" -Skip {
-            # Skip It because tests fail for unknown reasons.
-
-            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'ContinuePointTest' }).count | Should -Be 0
-            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like 'alice' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
+        It "Should have renamed all the ContinuePointTest files to Alice" {
+            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count | Should -Be 0
+            ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*Alice*' }).count | Should -Be ($output | Where-Object { $_.OriginalDatabase -eq 'ContinuePointTest' } | Select-Object -ExpandProperty filelist).count
         }
     }
 
