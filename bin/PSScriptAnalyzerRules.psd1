@@ -3,7 +3,6 @@
     IncludeRules = @(
         'PSUseCompatibleSyntax',
         'PSAvoidUsingCmdletAliases',
-        'PSAvoidUsingWriteHost',
         'PSAvoidDefaultValueSwitchParameter',
         'PSReservedCmdletChar',
         'PSReservedParams',
