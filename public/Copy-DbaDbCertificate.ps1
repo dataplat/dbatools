@@ -304,6 +304,20 @@ function Copy-DbaDbCertificate {
                                         $usingtempfiles = $true
                                     } else {
                                         $export = Backup-DbaDbCertificate @params
+
+                                        # The exported files are only readable by the source instance account
+                                        # But for the restore they need to be readable by the targe instance account
+                                        # Current solution is to try to make them readable to everyone and remove them after the restore
+                                        foreach ($filePath in $export.Path, $export.Key) {
+                                            try {
+                                                $acl = Get-Acl $filePath
+                                                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "ReadAndExecute", "None", "None", "Allow")
+                                                $acl.SetAccessRule($accessRule)
+                                                Set-Acl -Path $filePath -AclObject $acl
+                                            } catch {
+                                                Write-Message -Level Verbose -Message "Failed to set permission for [$filePath]: $_"
+                                            }
+                                        }
                                     }
                                 } catch {
                                     $copyDbCertificateStatus.Status = "Failed $PSItem"
@@ -329,12 +343,6 @@ function Copy-DbaDbCertificate {
                                 $copyDbCertificateStatus.Status = "Successful"
                                 $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             } catch {
-                                if ($export.Path) {
-                                    $null = Remove-Item -Force $export.Path -ErrorAction SilentlyContinue
-                                }
-                                if ($export.Key) {
-                                    $null = Remove-Item -Force $export.Key -ErrorAction SilentlyContinue
-                                }
                                 $copyDbCertificateStatus.Status = "Failed"
                                 $copyDbCertificateStatus.Notes = $PSItem
                                 $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -342,6 +350,13 @@ function Copy-DbaDbCertificate {
                                     Write-Message -Level Verbose -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name). Note that $($export.Path) and $($export.Key) already existed so we tried to use them. If this is an issue, please move or rename both files and try again."
                                 } else {
                                     Write-Message -Level Verbose -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name) | $PSItem"
+                                }
+                            } finally {
+                                if ($export.Path -and -not $usingtempfiles) {
+                                    $null = Remove-Item -Path $export.Path -Force -ErrorAction SilentlyContinue
+                                }
+                                if ($export.Key -and -not $usingtempfiles) {
+                                    $null = Remove-Item -Path $export.Key -Force -ErrorAction SilentlyContinue
                                 }
                             }
                         }
