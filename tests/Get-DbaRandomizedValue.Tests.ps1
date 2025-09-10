@@ -44,8 +44,8 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Length | Should -BeGreaterThan 1
         }
 
-        It "Should return a random address zipcode" -Skip {
-            # Skip It because tests fail for unknown reasons.
+        It "Should return a random address zipcode" -Skip:$env:AppVeyor {
+            # Skip It on AppVeyor because: Method invocation failed because [Bogus.DataSets.Name] does not contain a method named 'ZipCode'.
 
             $result = Get-DbaRandomizedValue -RandomizerSubType Zipcode -Format "#####"
 

@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Set variables. They are available in all the It blocks.
         $loginName = "dbatoolsci_renamelogin"
         $renamedLogin = "dbatoolsci_renamelogin2"
-        $password = "MyV3ry$ecur3P@ssw0rd"
+        $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
 
         # Create the test login
