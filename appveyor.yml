@@ -12,7 +12,6 @@ skip_commits:
   files:
     - '**/*.md'
     - '**/*.json'
-    - '!.github/dbatools-library-version.json'
     - 'docs/**'
     - '.github/FUNDING.yml'
     - '.github/ISSUE_TEMPLATE/**'
@@ -22,6 +21,9 @@ skip_commits:
     - '.vscode/**'
     - 'bin/**'
     - 'en-us/**'
+    - '!.github/dbatools-library-version.json'
+    - '!bin/dbatools-buildref-index.json'
+    - '!bin/dbatools-sqlinstallationcomponents.json'
   message: /\[skip ci\]/
 
 build_script:
