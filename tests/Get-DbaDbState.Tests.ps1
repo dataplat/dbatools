@@ -53,13 +53,6 @@ Describe $CommandName -Tag IntegrationTests {
             $server.Query("CREATE DATABASE $db7; ALTER DATABASE $db7 SET READ_WRITE WITH ROLLBACK IMMEDIATE")
             $server.Query("CREATE DATABASE $db8; ALTER DATABASE $db8 SET READ_ONLY WITH ROLLBACK IMMEDIATE")
 
-            $setupright = $true
-            $needed_ = $server.Query("select name from sys.databases")
-            $needed = $needed_ | Where-Object name -in $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-            if ($needed.Count -ne 8) {
-                $setupright = $false
-            }
-
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -82,23 +75,23 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance2
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
             }
-            Remove-DbaDatabase @splatRemoveDbCleanup -ErrorAction SilentlyContinue
+            Remove-DbaDatabase @splatRemoveDbCleanup
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Waits for BeforeAll to finish" -Skip:(-not $setupright) {
+        It "Waits for BeforeAll to finish" {
             $true | Should -BeTrue
         }
 
-        It "Honors the Database parameter" -Skip:(-not $setupright) {
+        It "Honors the Database parameter" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db2
             $result.DatabaseName | Should -Be $db2
             $results = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1, $db2
             $results.Count | Should -Be 2
         }
 
-        It "Honors the ExcludeDatabase parameter" -Skip:(-not $setupright) {
+        It "Honors the ExcludeDatabase parameter" {
             $alldbs_ = $server.Query("select name from sys.databases")
             $alldbs = ($alldbs_ | Where-Object Name -notin @($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8)).name
             $results = Get-DbaDbState -SqlInstance $TestConfig.instance2 -ExcludeDatabase $alldbs
@@ -106,55 +99,55 @@ Describe $CommandName -Tag IntegrationTests {
             $comparison.Count | Should -Be 0
         }
 
-        It "Identifies online database" -Skip:(-not $setupright) {
+        It "Identifies online database" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1
             $result.DatabaseName | Should -Be $db1
             $result.Status | Should -Be "ONLINE"
         }
 
-        It "Identifies offline database" -Skip:(-not $setupright) {
+        It "Identifies offline database" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db2
             $result.DatabaseName | Should -Be $db2
             $result.Status | Should -Be "OFFLINE"
         }
 
-        It "Identifies emergency database" -Skip:(-not $setupright) {
+        It "Identifies emergency database" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db3
             $result.DatabaseName | Should -Be $db3
             $result.Status | Should -Be "EMERGENCY"
         }
 
-        It "Identifies single_user database" -Skip:(-not $setupright) {
+        It "Identifies single_user database" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db4
             $result.DatabaseName | Should -Be $db4
             $result.Access | Should -Be "SINGLE_USER"
         }
 
-        It "Identifies restricted_user database" -Skip:(-not $setupright) {
+        It "Identifies restricted_user database" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db5
             $result.DatabaseName | Should -Be $db5
             $result.Access | Should -Be "RESTRICTED_USER"
         }
 
-        It "Identifies multi_user database" -Skip:(-not $setupright) {
+        It "Identifies multi_user database" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db6
             $result.DatabaseName | Should -Be $db6
             $result.Access | Should -Be "MULTI_USER"
         }
 
-        It "Identifies read_write database" -Skip:(-not $setupright) {
+        It "Identifies read_write database" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db7
             $result.DatabaseName | Should -Be $db7
             $result.RW | Should -Be "READ_WRITE"
         }
 
-        It "Identifies read_only database" -Skip:(-not $setupright) {
+        It "Identifies read_only database" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db8
             $result.DatabaseName | Should -Be $db8
             $result.RW | Should -Be "READ_ONLY"
         }
 
-        It "Has the correct properties" -Skip:(-not $setupright) {
+        It "Has the correct properties" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1
             $ExpectedProps = @(
                 "SqlInstance",
@@ -169,7 +162,7 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
-        It "Has the correct default properties" -Skip:(-not $setupright) {
+        It "Has the correct default properties" {
             $result = Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1
             $ExpectedPropsDefault = @(
                 "SqlInstance",

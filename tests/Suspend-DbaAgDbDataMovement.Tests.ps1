@@ -29,9 +29,9 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-Item -Path $backupPath -ItemType Directory
         $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $agname = "dbatoolsci_resumeagdb_agroup"
-        $dbname = "dbatoolsci_resumeagdb_agroupdb"
-        $server.Query("create database $dbname")
+        $agname = "dbatoolsci_suspendagdb_agroup"
+        $dbname = "dbatoolsci_suspendagdb_agroupdb-$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbname
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupPath
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupPath -Type Log
         $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Certificate dbatoolsci_AGCert -UseLastBackup

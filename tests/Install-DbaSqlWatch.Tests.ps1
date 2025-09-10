@@ -24,7 +24,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5 -or $env:appveyor) {
+    # Skip IntegrationTests on AppVeyor because they take too long and skip on pwsh because the command is not supported.
+
     Context "Testing SqlWatch installer" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

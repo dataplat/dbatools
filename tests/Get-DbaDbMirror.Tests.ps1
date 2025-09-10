@@ -22,7 +22,9 @@ Describe $CommandName -Tag UnitTests {
 }
 
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip {
+    # Skip IntegrationTests because Mirroring need additional setup.
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -57,17 +59,17 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    It "returns more than one database" -Skip:$true {
+    It "returns more than one database" {
         $null = Invoke-DbaDbMirroring -Primary $TestConfig.instance2 -Mirror $TestConfig.instance3 -Database $db1, $db2 -Force -SharedPath $TestConfig.Temp -WarningAction Continue
         @(Get-DbaDbMirror -SqlInstance $TestConfig.instance3).Count | Should -Be 2
     }
 
 
-    It "returns just one database" -Skip:$true {
+    It "returns just one database" {
         @(Get-DbaDbMirror -SqlInstance $TestConfig.instance3 -Database $db2).Count | Should -Be 1
     }
 
-    It "returns 2x1 database" -Skip:$true {
+    It "returns 2x1 database" {
         @(Get-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db2).Count | Should -Be 2
     }
 }

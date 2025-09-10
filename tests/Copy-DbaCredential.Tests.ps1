@@ -147,21 +147,25 @@ Describe $CommandName -Tag IntegrationTests {
 
     # See https://github.com/dataplat/dbatools/issues/7896 and comments above in BeforeAll
     Context "Crypto provider cred" {
-        It -Skip:(-not $cryptoProvider) "ensure copied credential is using the same crypto provider" {
-            $results = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thor_crypto
-            $results.Status | Should -Be "Successful"
-            $results = Get-DbaCredential -SqlInstance $server3 -Name thor_crypto
-            $results.Name | Should -Be "thor_crypto"
-            $results.ProviderName | Should -Be $cryptoProvider
+        It "ensure copied credential is using the same crypto provider" {
+            if ($cryptoProvider) {
+                $results = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thor_crypto
+                $results.Status | Should -Be "Successful"
+                $results = Get-DbaCredential -SqlInstance $server3 -Name thor_crypto
+                $results.Name | Should -Be "thor_crypto"
+                $results.ProviderName | Should -Be $cryptoProvider
+            }
         }
 
-        It -Skip:(-not $cryptoProvider) "check warning message if crypto provider is not configured/enabled on destination" {
-            Remove-DbaCredential -SqlInstance $server3 -Credential thor_crypto
-            $server3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider DISABLE")
-            $results = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thor_crypto
-            $server3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider ENABLE")
-            $results.Status | Should -Be "Failed"
-            $results.Notes | Should -Match "The cryptographic provider $cryptoProvider needs to be configured and enabled on"
+        It "check warning message if crypto provider is not configured/enabled on destination" {
+            if ($cryptoProvider) {
+                Remove-DbaCredential -SqlInstance $server3 -Credential thor_crypto
+                $server3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider DISABLE")
+                $results = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thor_crypto
+                $server3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider ENABLE")
+                $results.Status | Should -Be "Failed"
+                $results.Notes | Should -Match "The cryptographic provider $cryptoProvider needs to be configured and enabled on"
+            }
         }
     }
 }

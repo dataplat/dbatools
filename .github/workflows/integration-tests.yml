@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/*.json'
-      - '!.github/dbatools-library-version.json'
       - 'docs/**'
       - '.github/FUNDING.yml'
       - '.github/ISSUE_TEMPLATE/**'
@@ -16,6 +15,9 @@ on:
       - '.vscode/**'
       - 'bin/**'
       - 'en-us/**'
+      - '!.github/dbatools-library-version.json'
+      - '!bin/dbatools-buildref-index.json'
+      - '!bin/dbatools-sqlinstallationcomponents.json'
 defaults:
   run:
     shell: pwsh

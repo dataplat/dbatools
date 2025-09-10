@@ -28,27 +28,33 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $remotequerytimeout = (Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout).ConfiguredValue
             $newtimeout = $remotequerytimeout + 1
+        }
 
-            # Sanity check
+        It "changes the remote query timeout from the original to new value" {
             if ($null -eq $remotequerytimeout) {
                 Set-ItResult -Skipped -Because "Remote query timeout value is null"
                 return
             }
-        }
-
-        It "changes the remote query timeout from the original to new value" -Skip:($null -eq $remotequerytimeout) {
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
             $results.PreviousValue | Should -Be $remotequerytimeout
             $results.NewValue | Should -Be $newtimeout
         }
 
-        It "changes the remote query timeout back to original value" -Skip:($null -eq $remotequerytimeout) {
+        It "changes the remote query timeout back to original value" {
+            if ($null -eq $remotequerytimeout) {
+                Set-ItResult -Skipped -Because "Remote query timeout value is null"
+                return
+            }
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
             $results.PreviousValue | Should -Be $newtimeout
             $results.NewValue | Should -Be $remotequerytimeout
         }
 
-        It "returns a warning when if the new value is the same as the old" -Skip:($null -eq $remotequerytimeout) {
+        It "returns a warning when if the new value is the same as the old"  {
+            if ($null -eq $remotequerytimeout) {
+                Set-ItResult -Skipped -Because "Remote query timeout value is null"
+                return
+            }
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
             $warning -match "existing" | Should -Be $true
         }

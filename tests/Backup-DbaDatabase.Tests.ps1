@@ -480,7 +480,6 @@ go
         # TODO: Should the master key be created at lab startup like in instance3?
         BeforeAll {
             $securePass = ConvertTo-SecureString "MyStrongPassword123!" -AsPlainText -Force
-            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -SecurePassword $securePass -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
             $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master -Name BackupCertt -Subject BackupCertt
             $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName "encryptiontest.bak" -Description "Encrypted backup"
             Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $encBackupResults.FullName
@@ -488,7 +487,6 @@ go
 
         AfterAll {
             Remove-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master -Certificate BackupCertt
-            Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
         }
 
         It "Should encrypt the backup" {

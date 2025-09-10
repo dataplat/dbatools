@@ -37,14 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         $newDb1 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1name
         $newDb2 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db2name
 
-        $fileStreamStatus = Get-DbaFilestream -SqlInstance $TestConfig.instance2
-
-        if ($fileStreamStatus.InstanceAccessLevel -eq 0) {
-            Enable-DbaFilestream -SqlInstance $TestConfig.instance2 -Force
-            $resetFileStream = $true
-        } else {
-            $resetFileStream = $false
-        }
+        $null = Enable-DbaFilestream -SqlInstance $TestConfig.instance2 -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -56,9 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $newDb1, $newDb2 | Remove-DbaDatabase
 
-        if ($resetFileStream) {
-            Disable-DbaFilestream -SqlInstance $TestConfig.instance2 -Force
-        }
+        $null = Disable-DbaFilestream -SqlInstance $TestConfig.instance2 -Force
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

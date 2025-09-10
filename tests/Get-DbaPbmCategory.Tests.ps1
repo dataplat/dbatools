@@ -23,7 +23,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
+    # Skip IntegrationTests on pwsh because working with policies is not supported.
+
     Context "Command actually works" {
         It "Gets Results" {
             $results = Get-DbaPbmCategory -SqlInstance $TestConfig.instance2

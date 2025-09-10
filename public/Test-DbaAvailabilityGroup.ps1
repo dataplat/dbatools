@@ -165,6 +165,8 @@ function Test-DbaAvailabilityGroup {
                 Stop-Function -Message "Database [$dbName] is not found on $server." -Continue
             }
 
+            $null = $db.Refresh()
+
             if ($db.RecoveryModel -ne 'Full') {
                 Stop-Function -Message "RecoveryModel of database $db is not Full, but $($db.RecoveryModel)." -Continue
             }

@@ -23,7 +23,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
+    # Skip IntegrationTests on AppVeyor because every call to Remove-DbaAvailabilityGroup failes on appveyor with: Failed to delete SQL Server instance name to Windows Server Failover Clustering node name map entry for the local availability replica of availability group '...'.  The operation encountered SQL Server error 35222 and has been terminated.
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

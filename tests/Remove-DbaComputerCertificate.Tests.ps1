@@ -23,24 +23,26 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
+    # Skip IntegrationTests on pwsh because we need code changes (X509Certificate is immutable on this platform. Use the equivalent constructor instead.)
+
     Context "Can remove a certificate" {
         BeforeAll {
-            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
+            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -EnableException
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
             $results = Remove-DbaComputerCertificate -Thumbprint $thumbprint
         }
 
         It "returns the store Name" {
-            $results.Store -eq "LocalMachine" | Should -Be $true
+            $results.Store | Should -Be "LocalMachine"
         }
 
         It "returns the folder Name" {
-            $results.Folder -eq "My" | Should -Be $true
+            $results.Folder | Should -Be "My"
         }
 
         It "reports the proper status of Removed" {
-            $results.Status -eq "Removed" | Should -Be $true
+            $results.Status | Should -Be "Removed"
         }
 
         It "really removed it" {

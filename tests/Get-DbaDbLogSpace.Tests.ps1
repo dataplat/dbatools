@@ -78,6 +78,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Calculation for space used should work for servers < 2012" -Skip:$((Connect-DbaInstance -SqlInstance $TestConfig.instance2).versionMajor -ge 11) {
+            # Skip It on newer versions (so maybe remove test because it only targets unsupported versions)
+
             $db1Result = $results | Where-Object Database -eq $db1
             $db1Result.LogSpaceUsed | Should -Be ($db1Result.LogSize * ($db1Result.LogSpaceUsedPercent / 100))
         }

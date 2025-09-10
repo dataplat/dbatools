@@ -515,8 +515,6 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path "$($TestConfig.appveyorlabrepo)\RestoreTimeClean2016\restoretimeclean.bak" -WarningAction SilentlyContinue
             $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database RestoreTimeClean -BackupDirectory $backupPath
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database RestoreTimeClean
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have restored everything successfully" {
@@ -701,6 +699,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Page level restores" {
         BeforeAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
+            $null = Remove-DbaDbBackupRestoreHistory -SqlInstance $TestConfig.instance2 -KeepDays -1
 
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName PageRestore -DestinationFilePrefix PageRestore
             $sql = @"
@@ -817,15 +816,13 @@ use master
         BeforeAll {
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name EncRestTest
             $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
-            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master -SecurePassword $securePass
-            $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database Master -Name RestoreTestCert -Subject RestoreTestCert
+            $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master -Name RestoreTestCert -Subject RestoreTestCert
 
             $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database EncRestTest -EncryptionAlgorithm AES128 -EncryptionCertificate RestoreTestCert -FilePath "$backupPath\EncRestTest.bak"
         }
 
         AfterAll {
-            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database Master -Certificate RestoreTestCert
-            $null = Remove-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master
+            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master -Certificate RestoreTestCert
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database EncRestTest, certEncRestTest
         }
 

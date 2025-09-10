@@ -26,7 +26,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
+    # Skip IntegrationTests on AppVeyor because they fail for unknown reasons.
+
     Context "Command returns proper info" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

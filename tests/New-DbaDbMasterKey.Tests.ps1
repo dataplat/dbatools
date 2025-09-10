@@ -24,29 +24,12 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master
-        if (-not $masterkey) {
-            $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $passwd
-        }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
-        if (-not $mastercert) {
-            $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance1
-        }
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1
         $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1
+        $db2 = New-DbaDatabase -SqlInstance $TestConfig.instance1
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -54,33 +37,22 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        if ($db) {
-            $db | Remove-DbaDatabase
-        }
-        if ($db1) {
-            $db1 | Remove-DbaDatabase
-        }
-        if ($delmastercert) {
-            $mastercert | Remove-DbaDbCertificate
-        }
-        if ($delmasterkey) {
-            $masterkey | Remove-DbaDbMasterKey
-        }
+        $db1, $db2 | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {
         It "should create master key on a database using piping" {
-            $PSDefaultParameterValues["*:Confirm"] = $false
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $results = $db | New-DbaDbMasterKey -SecurePassword $passwd
-            $results.IsEncryptedByServer | Should -Be $true
+            $results = $db1 | New-DbaDbMasterKey -SecurePassword $passwd
+            $results.IsEncryptedByServer | Should -BeTrue
         }
 
         It "should create master key on a database" {
-            $results = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db1.Name -SecurePassword $passwd
-            $results.IsEncryptedByServer | Should -Be $true
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $results = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db2.Name -SecurePassword $passwd
+            $results.IsEncryptedByServer | Should -BeTrue
         }
     }
 }

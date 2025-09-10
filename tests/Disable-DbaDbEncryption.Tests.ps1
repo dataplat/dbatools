@@ -28,13 +28,6 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
-        # Setup master key if needed
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
-        if (-not $masterkey) {
-            $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
-        }
-
         # Setup master certificate if needed
         $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master |
             Where-Object Name -notmatch "##" |
@@ -58,9 +51,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
         if ($delmastercert) {
             $mastercert | Remove-DbaDbCertificate
-        }
-        if ($delmasterkey) {
-            $masterkey | Remove-DbaDbMasterKey
         }
     }
 

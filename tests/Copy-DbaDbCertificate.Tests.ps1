@@ -31,7 +31,7 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Can create a database certificate" {
+    Context "Can copy a database certificate" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -42,9 +42,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
 
-            # Create master key on instance2
-            $masterKey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -SecurePassword $securePassword -ErrorAction SilentlyContinue
-
             # Create test databases
             $testDatabases = New-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name dbatoolscopycred
 
@@ -52,16 +49,6 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database dbatoolscopycred -SecurePassword $securePassword
             $certificateName = "Cert_$(Get-Random)"
             $null = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Name $certificateName -Database dbatoolscopycred
-
-            # Setup copy parameters
-            $splatCopyCert = @{
-                Source             = $TestConfig.instance2
-                Destination        = $TestConfig.instance3
-                EncryptionPassword = $securePassword
-                MasterKeyPassword  = $securePassword
-                Database           = "dbatoolscopycred"
-                SharedPath         = $backupPath
-            }
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -72,9 +59,6 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $null = $testDatabases | Remove-DbaDatabase -ErrorAction SilentlyContinue
-            if ($masterKey) {
-                $masterKey | Remove-DbaDbMasterKey -ErrorAction SilentlyContinue
-            }
 
             # Remove the backup directory.
             Remove-Item -Path $backupPath -Recurse
@@ -82,8 +66,16 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Successfully copies a certificate" -Skip:$true {
-            $results = Copy-DbaDbCertificate @splatCopyCert | Where-Object SourceDatabase -eq "dbatoolscopycred" | Select-Object -First 1
+        It "Successfully copies a certificate" {
+            $splatCopyCert = @{
+                Source             = $TestConfig.instance2
+                Destination        = $TestConfig.instance3
+                EncryptionPassword = $securePassword
+                MasterKeyPassword  = $securePassword
+                Database           = "dbatoolscopycred"
+                SharedPath         = $backupPath
+            }
+            $results = Copy-DbaDbCertificate @splatCopyCert
 
             $results.Notes | Should -BeNullOrEmpty
             $results.Status | Should -Be "Successful"

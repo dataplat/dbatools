@@ -190,10 +190,6 @@ Describe $CommandName -Tag UnitTests {
                 It "No multiple Names around" {
                     ($Versions.Name | Where-Object { $PSItem }).Count | Should -Be 1
                 }
-                # Skip for now bc a prerelease has been added
-                It -Skip "has one version tagged as RTM" {
-                    ($Versions.SP -eq "RTM").Count | Should -Be 1
-                }
                 It "SP Property is formatted correctly" {
                     $Versions.SP | Where-Object { $PSItem } | Should -Match "^RTM$|^SP[\d]+$|^RC"
                 }

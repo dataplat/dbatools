@@ -31,12 +31,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
-        if (-not $masterkey) {
-            $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
-        }
-
         $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master |
             Where-Object Name -notmatch "##" |
             Select-Object -First 1
@@ -64,9 +58,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
         if ($delmastercert) {
             $mastercert | Remove-DbaDbCertificate -ErrorAction SilentlyContinue
-        }
-        if ($delmasterkey) {
-            $masterkey | Remove-DbaDbMasterKey -ErrorAction SilentlyContinue
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

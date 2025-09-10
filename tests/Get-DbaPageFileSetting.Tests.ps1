@@ -20,7 +20,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:(-not $env:appveyor) {
+    # Skip on local tests as we don't get any results on SQL Server 2022
+
     Context "Gets PageFile Settings" {
         It "Gets results" {
             $results = Get-DbaPageFileSetting -ComputerName $env:ComputerName

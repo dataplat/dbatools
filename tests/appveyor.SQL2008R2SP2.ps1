@@ -25,3 +25,4 @@ $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name RemoteDacConnectionsE
 # To conserve resources, SQL Server Express doesn't listen on the DAC port unless started with a trace flag 7806.
 $null = Set-DbaStartupParameter -SqlInstance $sqlinstance -TraceFlagOverride -TraceFlag 7806 -EnableException -Confirm:$false
 Restart-Service -Name "MSSQL`$SQL2008R2SP2" -Force
+Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'" -EnableException
