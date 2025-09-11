@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
                 PRINT 'hello'"
 
         # Create the server trigger on the source instance.
-        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sourceServer.Query($sql)
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sourceServer.Query("DROP TRIGGER [$triggerName] ON ALL SERVER")
 
         try {
-            $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $destServer.Query("DROP TRIGGER [$triggerName] ON ALL SERVER")
         } catch {
             # Ignore cleanup errors
@@ -65,8 +65,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying server triggers between instances" {
         It "Should report successful copy operation" {
             $splatCopy = @{
-                Source        = $TestConfig.instance1
-                Destination   = $TestConfig.instance2
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
                 WarningAction = "SilentlyContinue"
             }
             $results = Copy-DbaInstanceTrigger @splatCopy

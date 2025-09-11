@@ -41,8 +41,8 @@ Describe $CommandName -Tag IntegrationTests {
         # Set variables. They are available in all the It blocks.
         $deviceName = "dbatoolsci-backupdevice-$(Get-Random)"
         $backupFileName = "$backupPath\$deviceName.bak"
-        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
         # Create the objects.
         $sourceServer.Query("EXEC master.dbo.sp_addumpdevice @devtype = N'disk', @logicalname = N'$deviceName', @physicalname = N'$backupFileName'")
@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When copying backup device between instances" {
         It "Should copy the backup device successfully or warn about local copy" {
-            $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -WarningVariable WarnVar -WarningAction SilentlyContinue 3> $null
+            $results = Copy-DbaBackupDevice -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -WarningVariable WarnVar -WarningAction SilentlyContinue 3> $null
 
             if ($WarnVar) {
                 $WarnVar | Should -Match "backup device to destination"
@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should skip copying when device already exists" {
-            $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2
+            $results = Copy-DbaBackupDevice -Source $TestConfig.instance2 -Destination $TestConfig.instance3
             $results.Status | Should -Not -Be "Successful"
         }
     }

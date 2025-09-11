@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         $newGroup.Drop()
-        $destServer = Connect-DbaInstance $TestConfig.instance1
+        $destServer = Connect-DbaInstance $TestConfig.instance3
         $destRegStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destServer.ConnectionContext.SqlConnectionObject)
         $destDbStore = $destRegStore.DatabaseEngineServerGroup
         $destGroupStore = $destDbStore.ServerGroups[$groupName]
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should complete successfully" {
             $splatCopy = @{
                 Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance1
+                Destination = $TestConfig.instance3
                 CMSGroup    = $groupName
             }
             $results = Copy-DbaRegServer @splatCopy
