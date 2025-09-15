@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 4, 2025
+-- Last Modified: September 10, 2025
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -60,6 +60,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- Build			Description							Release Date	URL to KB Article
 -- 17.0.700.9		CTP 2.0								5-19-2025
 -- 17.0.800.9		CTP 2.1								6-12-2025
+-- 17.0.900.7		RC0									8-22-2025
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
