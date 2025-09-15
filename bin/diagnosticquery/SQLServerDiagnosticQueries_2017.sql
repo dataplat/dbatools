@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 12, 2025
+-- Last Modified: September 10, 2025
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -114,6 +114,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3480.1		CU31 + GDR							10/8/2024		https://support.microsoft.com/en-us/topic/kb5046061-description-of-the-security-update-for-sql-server-2017-cu31-october-8-2024-af669e75-bc43-4679-bfbe-e153e679dd2f
 -- 14.0.3485.1		CU31 + GDR						   11/12/2024		https://support.microsoft.com/en-us/topic/kb5046858-description-of-the-security-update-for-sql-server-2017-cu31-november-12-2024-2984d3a5-0683-4f9b-9e6a-3888e67bd859
 -- 14.0.3500.1		CU31 + GDR							8/12/2025		https://support.microsoft.com/en-us/topic/kb5063759-description-of-the-security-update-for-sql-server-2017-cu31-august-12-2025-7f5dfab6-e32b-4af3-87fe-0e527b5729d3
+-- 14.0.3505.1		CU31 + GDR							9/9/2025		https://support.microsoft.com/en-us/topic/kb5065225-description-of-the-security-update-for-sql-server-2017-cu31-september-9-2025-b1addb22-3bfd-4870-b914-c020c2a3d2be	
 
 -- SQL Server 2017 Azure Connect Pack builds
 -- Azure Connect Feature Pack is optional and should be installed only if you intend to connect SQL Server with Azure SQL Managed Instance

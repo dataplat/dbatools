@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 12, 2025
+-- Last Modified: September 10, 2025
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -114,7 +114,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4420.2		CU31								2/13/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate31
 -- 15.0.4430.1      CU32                                2/27/2025       https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate32
 -- 15.0.4440.1		CU32 + GDR							8/12/2025	    https://support.microsoft.com/en-us/topic/kb5063757-description-of-the-security-update-for-sql-server-2019-cu32-august-12-2025-d4df46ef-6b1e-4a6c-aa8c-914d25f74345
-
+-- 15.0.4445.1      CU32 + GDR							9/9/2025		https://support.microsoft.com/en-us/topic/kb5065222-description-of-the-security-update-for-sql-server-2019-cu32-september-9-2025-152ac456-cb04-4b88-8177-a77fe24ac80d		
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
