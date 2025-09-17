@@ -54,6 +54,16 @@ function New-DbaFirewallRule {
         The firewall rule for the DAC will only be created if the DAC is configured for listening remotely.
         Use `Set-DbaSpConfigure -SqlInstance SRV1 -Name RemoteDacConnectionsEnabled -Value 1` to enable remote DAC before running this command.
 
+        The firewall rule for database mirroring or Availability Groups will have the following configuration (parameters for New-NetFirewallRule):
+
+            DisplayName = 'SQL Server default instance (DatabaseMirroring)' or 'SQL Server instance <InstanceName> (DatabaseMirroring)'
+            Name        = 'SQL Server default instance (DatabaseMirroring)' or 'SQL Server instance <InstanceName> (DatabaseMirroring)'
+            Group       = 'SQL Server'
+            Enabled     = 'True'
+            Direction   = 'Inbound'
+            Protocol    = 'TCP'
+            LocalPort   = '5022' (can be overwritten by using the parameter Configuration)
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -63,7 +73,7 @@ function New-DbaFirewallRule {
     .PARAMETER Type
         Specifies which firewall rule types to create for SQL Server network access.
         Use this when you need to create specific rules instead of the automatic detection behavior.
-        Valid values are Engine (SQL Server instance), Browser (SQL Server Browser service), and DAC (Dedicated Admin Connection). When omitted, the function automatically creates Engine rules plus Browser rules for non-default ports and DAC rules when remote DAC is enabled.
+        Valid values are Engine (SQL Server instance), Browser (SQL Server Browser service), DAC (Dedicated Admin Connection) and DatabaseMirroring (database mirroring or Availability Groups). When omitted, the function automatically creates Engine rules plus Browser rules for non-default ports and DAC rules when remote DAC is enabled.
 
     .PARAMETER Configuration
         Provides custom settings to override the default firewall rule configuration when calling New-NetFirewallRule.
@@ -113,13 +123,23 @@ function New-DbaFirewallRule {
 
         Creates or recreates the firewall rule for the instance TEST on SRV1. Does not prompt for confirmation.
 
+    .EXAMPLE
+        PS C:\> New-DbaFirewallRule -SqlInstance SQL01 -Type DatabaseMirroring
+
+        Creates the firewall rule for database mirroring or Availability Groups on the default instance on SQL01 using the default port 5022.
+
+    .EXAMPLE
+        PS C:\> New-DbaFirewallRule -SqlInstance SQL02 -Type DatabaseMirroring -Configuration @{ LocalPort = '5023' }
+
+        Creates the firewall rule for database mirroring or Availability Groups on the default instance on SQL02 using the custom port 5023.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [ValidateSet('Engine', 'Browser', 'DAC')]
+        [ValidateSet('Engine', 'Browser', 'DAC', 'DatabaseMirroring')]
         [string[]]$Type,
         [hashtable]$Configuration,
         [switch]$Force,
@@ -326,6 +346,35 @@ function New-DbaFirewallRule {
 
                     $rules += $rule
                 }
+            }
+
+            # Create rule for database mirroring or Availability Groups
+            if ('DatabaseMirroring' -in $PSBoundParameters.Type) {
+                # Apply the defaults
+                $rule = @{
+                    Type         = 'DatabaseMirroring'
+                    InstanceName = $instance.InstanceName
+                    Config       = @{
+                        Group     = 'SQL Server'
+                        Enabled   = 'True'
+                        Direction = 'Inbound'
+                        Protocol  = 'TCP'
+                        LocalPort = '5022'
+                    }
+                }
+
+                # Test for default or named instance
+                if ($instance.InstanceName -eq 'MSSQLSERVER') {
+                    $rule.Config.DisplayName = 'SQL Server default instance (DatabaseMirroring)'
+                    $rule.Config.Name = 'SQL Server default instance (DatabaseMirroring)'
+                    $rule.SqlInstance = $instance.ComputerName
+                } else {
+                    $rule.Config.DisplayName = "SQL Server instance $($instance.InstanceName) (DatabaseMirroring)"
+                    $rule.Config.Name = "SQL Server instance $($instance.InstanceName) (DatabaseMirroring)"
+                    $rule.SqlInstance = $instance.ComputerName + '\' + $instance.InstanceName
+                }
+
+                $rules += $rule
             }
 
             foreach ($rule in $rules) {

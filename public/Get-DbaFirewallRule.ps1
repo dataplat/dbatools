@@ -29,6 +29,7 @@ function Get-DbaFirewallRule {
         * Engine - Returns firewall rules for the SQL Server Database Engine service
         * Browser - Returns firewall rules for the SQL Server Browser service (UDP 1434)
         * DAC - Returns firewall rules for the Dedicated Admin Connection
+        * DatabaseMirroring - Returns firewall rules for database mirroring or Availability Groups
         * AllInstance - Returns all SQL Server-related firewall rules on the target computer
 
         When omitted, returns Engine and DAC rules for the specified instance, plus Browser rules if the instance uses a non-standard port.
@@ -79,7 +80,7 @@ function Get-DbaFirewallRule {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [ValidateSet('Engine', 'Browser', 'DAC', 'AllInstance')]
+        [ValidateSet('Engine', 'Browser', 'DAC', 'DatabaseMirroring', 'AllInstance')]
         [string[]]$Type,
         [switch]$EnableException
     )
@@ -183,6 +184,10 @@ function Get-DbaFirewallRule {
                     $typeName = 'DAC'
                     $instanceName = 'MSSQLSERVER'
                     $sqlInstanceName = $instance.ComputerName
+                } elseif ($rule.Name -eq 'SQL Server default instance (DatabaseMirroring)') {
+                    $typeName = 'DatabaseMirroring'
+                    $instanceName = 'MSSQLSERVER'
+                    $sqlInstanceName = $instance.ComputerName
                 } elseif ($rule.Name -eq 'SQL Server default instance') {
                     $typeName = 'Engine'
                     $instanceName = 'MSSQLSERVER'
@@ -190,6 +195,10 @@ function Get-DbaFirewallRule {
                 } elseif ($rule.Name -match 'SQL Server instance .+ \(DAC\)') {
                     $typeName = 'DAC'
                     $instanceName = $rule.Name -replace '^SQL Server instance (.+) \(DAC\)$', '$1'
+                    $sqlInstanceName = $instance.ComputerName + '\' + $instanceName
+                } elseif ($rule.Name -match 'SQL Server instance .+ \(DatabaseMirroring\)') {
+                    $typeName = 'DatabaseMirroring'
+                    $instanceName = $rule.Name -replace '^SQL Server instance (.+) \(DatabaseMirroring\)$', '$1'
                     $sqlInstanceName = $instance.ComputerName + '\' + $instanceName
                 } elseif ($rule.Name -match 'SQL Server instance .+') {
                     $typeName = 'Engine'
@@ -240,6 +249,10 @@ function Get-DbaFirewallRule {
                 if ('DAC' -in $Type) {
                     Write-Message -Level Verbose -Message 'Returning rule for DAC'
                     $outputRules += $rules | Where-Object { $_.Type -eq 'DAC' -and $_.InstanceName -eq $instance.InstanceName }
+                }
+                if ('DatabaseMirroring' -in $Type) {
+                    Write-Message -Level Verbose -Message 'Returning rule for DatabaseMirroring'
+                    $outputRules += $rules | Where-Object { $_.Type -eq 'DatabaseMirroring' -and $_.InstanceName -eq $instance.InstanceName }
                 }
             }
             $outputRules | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Type, Protocol, LocalPort, Program
