@@ -88,6 +88,23 @@ function New-DbaAgentSchedule {
 
         FrequencyRecurrenceFactor is used only if FrequencyType is "Weekly", "Monthly" or "MonthlyRelative".
 
+    .PARAMETER FrequencyText
+        Describe common frequencies as a text. Sample text:
+
+        Every minute
+        Every 5 minutes
+        Every 10 minutes starting at 00:02:30
+        Every hour
+        Every 2 hours
+        Every 4 hours starting at 02:00:00
+        Every day at 05:00:00
+        Every sunday at 02:00:00
+
+        This is the used regex: every(\s+(?<interval>\d+))?\s+(?<unit>minute|hour|day|sunday|monday|tuesday|wednesday|thursday|friday|saturday)s?(\s+starting)?(\s+at\s+(?<start>\d\d:\d\d:\d\d))?
+
+        If parameter Schedule is not provided, the FrequencyText will be used as the name of the schedule.
+        Parameter Force will be set to $true.
+
     .PARAMETER StartDate
         The earliest date this schedule can execute jobs, formatted as yyyyMMdd (e.g., "20240315" for March 15, 2024).
         Use this to delay schedule activation until a future date or to document when recurring maintenance should begin.
@@ -157,6 +174,12 @@ function New-DbaAgentSchedule {
         PS C:\> New-DbaAgentSchedule -SqlInstance sstad-pc -Schedule RunWeekly -FrequencyType Weekly -FrequencyInterval Sunday -StartTime 010000 -Force
 
         Create a schedule that will run jobs once a week on Sunday @ 1:00AM
+
+    .EXAMPLE
+        PS C:\> New-DbaAgentSchedule -SqlInstance sstad-pc -FrequencyText 'Every sunday at 02:00:00'
+
+        Create a schedule with the name "Every sunday at 02:00:00" that will run jobs once a week on Sunday @ 2:00AM
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -176,6 +199,7 @@ function New-DbaAgentSchedule {
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
         [object]$FrequencyRelativeInterval,
         [int]$FrequencyRecurrenceFactor,
+        [string]$FrequencyText,
         [string]$StartDate,
         [string]$EndDate,
         [string]$StartTime,
@@ -187,6 +211,42 @@ function New-DbaAgentSchedule {
 
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
+
+        if ($FrequencyText) {
+            if ($FrequencyText -match 'every(\s+(?<interval>\d+))?\s+(?<unit>minute|hour|day|sunday|monday|tuesday|wednesday|thursday|friday|saturday)s?(\s+starting)?(\s+at\s+(?<start>\d\d:\d\d:\d\d))?') {
+                $textInterval = $Matches['interval']
+                $textUnit     = $Matches['unit']
+                $textStart    = $Matches['start']
+
+                if (-not $textInterval) {
+                    $textInterval = 1
+                }
+
+                if ($textUnit -in 'minute', 'hour', 'day') {
+                    $FrequencyType = 'Daily'
+                    if ($textUnit -in 'minute', 'hour') {
+                        $FrequencySubdayType = $textUnit
+                        $FrequencySubdayInterval = $textInterval
+                    }
+                } else {
+                    $FrequencyType = 'Weekly'
+                    $FrequencyInterval = $textUnit
+                }
+
+                if ($textStart) {
+                    $StartTime = $textStart.Replace(':', '')
+                }
+
+                if (-not $Schedule) {
+                    $Schedule = $FrequencyText
+                }
+
+                $Force = $true
+            } else {
+                Stop-Function -Message "FrequencyText can not be parsed."
+                return
+            }
+        }
 
         if ($FrequencyType -eq "Daily" -and -not $FrequencyInterval) {
             $FrequencyInterval = 1
