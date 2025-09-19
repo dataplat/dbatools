@@ -11,19 +11,13 @@ skip_tags: true
 skip_commits:
   files:
     - '**/*.md'
-    - '**/*.json'
-    - 'docs/**'
     - '.github/FUNDING.yml'
     - '.github/ISSUE_TEMPLATE/**'
     - '.github/PULL_REQUEST_TEMPLATE.md'
     - '.aider/**'
     - '.devcontainer/**'
     - '.vscode/**'
-    - 'bin/**'
     - 'en-us/**'
-    - '!.github/dbatools-library-version.json'
-    - '!bin/dbatools-buildref-index.json'
-    - '!bin/dbatools-sqlinstallationcomponents.json'
   message: /\[skip ci\]/
 
 build_script:
