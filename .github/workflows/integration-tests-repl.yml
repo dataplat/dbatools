@@ -1,6 +1,8 @@
 name: Run Replication Tests
 on:
   push:
+    branches-ignore:
+      - master
     tags-ignore:
       - '**'
     paths-ignore:

@@ -2,8 +2,8 @@ name: Test version in Gallery
 on:
  workflow_dispatch:
  push:
-   # branches:  # Removed to apply to all branches
-   #   - master
+   branches-ignore:
+     - master
    tags-ignore:
      - '**'
    paths-ignore:
