@@ -21,7 +21,7 @@ function Remove-DbaFirewallRule {
     .PARAMETER Type
         Specifies which types of SQL Server firewall rules to remove from the target computer.
         Use this to control exactly which network access rules are cleaned up when decommissioning or reconfiguring SQL Server instances.
-        Engine removes rules for SQL Server database connections, Browser removes UDP port 1434 rules for SQL Server Browser service, DAC removes Dedicated Admin Connection rules, and AllInstance removes all SQL Server-related rules. Defaults to Engine and DAC since Browser rules are often shared between multiple instances.
+        Engine removes rules for SQL Server database connections, Browser removes UDP port 1434 rules for SQL Server Browser service, DAC removes Dedicated Admin Connection rules, DatabaseMirroring removes database mirroring or Availability Groups rules, and AllInstance removes all SQL Server-related rules. Defaults to Engine and DAC since Browser rules are often shared between multiple instances.
 
     .PARAMETER InputObject
         Accepts firewall rule objects from Get-DbaFirewallRule for pipeline-based removal operations.
@@ -77,7 +77,7 @@ function Remove-DbaFirewallRule {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [ValidateSet('Engine', 'Browser', 'DAC', 'AllInstance')]
+        [ValidateSet('Engine', 'Browser', 'DAC', 'DatabaseMirroring', 'AllInstance')]
         [string[]]$Type = @('Engine', 'DAC'),
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [object[]]$InputObject,

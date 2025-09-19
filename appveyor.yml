@@ -5,25 +5,24 @@ configuration: "Debug"
 # skip PR builds when there's already a push build
 skip_branch_with_pr: true
 
+# skip builds on master branch (archival branch)
+branches:
+  except:
+    - master
+
 # skip tag commits entirely
 skip_tags: true
 
 skip_commits:
   files:
     - '**/*.md'
-    - '**/*.json'
-    - 'docs/**'
     - '.github/FUNDING.yml'
     - '.github/ISSUE_TEMPLATE/**'
     - '.github/PULL_REQUEST_TEMPLATE.md'
     - '.aider/**'
     - '.devcontainer/**'
     - '.vscode/**'
-    - 'bin/**'
     - 'en-us/**'
-    - '!.github/dbatools-library-version.json'
-    - '!bin/dbatools-buildref-index.json'
-    - '!bin/dbatools-sqlinstallationcomponents.json'
   message: /\[skip ci\]/
 
 build_script:

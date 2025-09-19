@@ -281,7 +281,7 @@ For more troubleshooting help, visit our [troubleshooting guide](https://dbatool
 - ⭐ Star this repository
 - 🐛 [Report issues](https://github.com/dataplat/dbatools/issues)
 - 💡 [Request features](https://github.com/dataplat/dbatools/issues)
-- 🤝 [Contribute code](CONTRIBUTING.md)
+- 🤝 [Contribute code](contributing.md)
 
 **Community Channels:**
 - [#dbatools on SQL Community Slack](https://sqlcommunity.slack.com/messages/C1M2WEASG/)
@@ -296,7 +296,7 @@ For more troubleshooting help, visit our [troubleshooting guide](https://dbatool
 
 ## Contributing
 
-We'd love to have you join us! Check out our [Contributing Guide](CONTRIBUTING.md) and the [dbatools-dev Slack channel](https://sqlcommunity.slack.com/messages/C3EJ852JD/).
+We'd love to have you join us! Check out our [Contributing Guide](contributing.md) and the [dbatools-dev Slack channel](https://sqlcommunity.slack.com/messages/C3EJ852JD/).
 
 ## License
 

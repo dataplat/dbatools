@@ -22,6 +22,7 @@ Describe $CommandName -Tag UnitTests {
                 "FrequencySubdayInterval",
                 "FrequencyRelativeInterval",
                 "FrequencyRecurrenceFactor",
+                "FrequencyText",
                 "StartDate",
                 "EndDate",
                 "StartTime",
@@ -265,6 +266,43 @@ Describe $CommandName -Tag IntegrationTests {
                 $results[$key].FrequencyRelativeIntervals | Should -BeIn $scheduleOptions
                 $results[$key].FrequencyRelativeIntervals | Should -Be $key
             }
+        }
+    }
+
+    Context "Should create schedules based on frequency texts" {
+        It "Should create a schedule for: Every minute" {
+            $results = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -FrequencyText 'Every minute'
+            $results.Name | Should -Be 'Every minute'
+            $results.Description | Should -BeLike 'Occurs every day every 1 minute(s) between 12:00:00 AM and 11:59:59 PM*'
+            $results | Remove-DbaAgentSchedule
+        }
+
+        It "Should create a schedule for: Every 10 minutes starting at 00:02:30" {
+            $results = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -FrequencyText 'Every 10 minutes starting at 00:02:30'
+            $results.Name | Should -Be 'Every 10 minutes starting at 00:02:30'
+            $results.Description | Should -BeLike 'Occurs every day every 10 minute(s) between 12:02:30 AM and 11:59:59 PM*'
+            $results | Remove-DbaAgentSchedule
+        }
+
+        It "Should create a schedule for: Every 2 hours" {
+            $results = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -FrequencyText 'Every 2 hours'
+            $results.Name | Should -Be 'Every 2 hours'
+            $results.Description | Should -BeLike 'Occurs every day every 2 hour(s) between 12:00:00 AM and 11:59:59 PM*'
+            $results | Remove-DbaAgentSchedule
+        }
+
+        It "Should create a schedule for: Every day at 05:00:00" {
+            $results = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -FrequencyText 'Every day at 05:00:00'
+            $results.Name | Should -Be 'Every day at 05:00:00'
+            $results.Description | Should -BeLike 'Occurs every day at 5:00:00 AM*'
+            $results | Remove-DbaAgentSchedule
+        }
+
+        It "Should create a schedule for: Every sunday at 02:00:00" {
+            $results = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -FrequencyText 'Every sunday at 02:00:00'
+            $results.Name | Should -Be 'Every sunday at 02:00:00'
+            $results.Description | Should -BeLike 'Occurs every week on Sunday at 2:00:00 AM*'
+            $results | Remove-DbaAgentSchedule
         }
     }
 }

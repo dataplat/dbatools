@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 10, 2025
+-- Last Modified: September 17, 2025
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -61,6 +61,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 17.0.700.9		CTP 2.0								5-19-2025
 -- 17.0.800.9		CTP 2.1								6-12-2025
 -- 17.0.900.7		RC0									8-22-2025
+-- 17.0.925.4		RC1									9-16-2025
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -979,15 +980,12 @@ CONVERT(DECIMAL(18,2), ds.cntr_value/1024.0) AS [Total Data File Size on Disk (M
 CONVERT(DECIMAL(18,2), ls.cntr_value/1024.0) AS [Total Log File Size on Disk (MB)], 
 CONVERT(DECIMAL(18,2), lu.cntr_value/1024.0) AS [Log File Used (MB)],
 CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT)AS DECIMAL(18,2)) * 100 AS [Log Used %], 
-db.page_verify_option_desc AS [Page Verify Option], db.user_access_desc, db.state_desc, db.containment_desc,
-db.is_mixed_page_allocation_on,  
+db.page_verify_option_desc AS [Page Verify Option], db.user_access_desc, db.state_desc, db.containment_desc, db.is_mixed_page_allocation_on,  
 db.is_auto_create_stats_on, db.is_auto_update_stats_on, db.is_auto_update_stats_async_on, db.is_parameterization_forced, 
-db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_accelerated_database_recovery_on,
-db.is_auto_close_on, db.is_auto_shrink_on, db.target_recovery_time_in_seconds, db.is_cdc_enabled, 
-db.is_published, db.is_distributor, db.is_sync_with_backup, 
+db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_accelerated_database_recovery_on, db.is_optimized_locking_on,
+db.is_query_store_on, db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor, db.is_sync_with_backup, 
 db.group_database_id, db.replica_id, db.is_memory_optimized_enabled, db.is_memory_optimized_elevate_to_snapshot_on, 
-db.delayed_durability_desc, db.is_query_store_on, 
-db.is_temporal_history_retention_enabled, db.is_optimized_locking_on,
+db.delayed_durability_desc, db.is_temporal_history_retention_enabled, db.is_auto_close_on, db.is_auto_shrink_on, 
 db.is_data_retention_enabled, db.is_ledger_on, db.is_change_feed_enabled,
 db.is_master_key_encrypted_by_server, db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length
 FROM sys.databases AS db WITH (NOLOCK)
@@ -1677,6 +1675,12 @@ FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 -- https://bit.ly/2sOH7nb
 
 -- New in SQL Server 2025
+-- READABLE_SECONDARY_TEMPORARY_STATS_AUTO_CREATE
+-- READABLE_SECONDARY_TEMPORARY_STATS_AUTO_UPDATE
+-- OPTIMIZED_SP_EXECUTESQL
+-- FULLTEXT_INDEX_VERSION
+-- CE_FEEDBACK_FOR_EXPRESSIONS
+-- OPTIONAL_PARAMETER_OPTIMIZATION
 
 
 
