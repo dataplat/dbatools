@@ -94,6 +94,11 @@ function Get-DbaSchemaChangeHistory {
 
             $TraceFile = $server.Query($TraceFileQuery) | Select-Object Path
 
+            if (!$TraceFile -or !$TraceFile.Path) {
+                Write-Message -Level Warning -Message "No default trace file found on $instance. Schema change tracking requires the default trace to be enabled."
+                continue
+            }
+
             $Databases = $server.Databases
 
             if ($Database) { $Databases = $Databases | Where-Object Name -in $database }
