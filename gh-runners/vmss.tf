@@ -59,7 +59,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
 
   # Ephemeral OS disk for faster provisioning and auto-cleanup
   os_disk {
-    caching              = "ReadWrite"
+    caching              = "ReadOnly"
     storage_account_type = "Standard_LRS"
     diff_disk_settings {
       option = "Local"
