@@ -1,3 +1,5 @@
+# Load GitHub Actions helpers
+. "$PSScriptRoot\github-helpers.ps1"
 <#
 .SYNOPSIS
 This script will invoke Pester tests, then serialize XML results and pull them in appveyor.yml
@@ -29,19 +31,19 @@ This will extract ALL properties from test results and provide detailed exceptio
 Use this when you need to "try hard as hell to get the error message" with maximum fallbacks.
 
 .EXAMPLE
-.\appveyor.pester.ps1
+.\runner/pester.ps1
 Executes the test
 
 .EXAMPLE
-.\appveyor.pester.ps1 -Finalize
+.\runner/pester.ps1 -Finalize
 Finalizes the tests
 
 .EXAMPLE
-.\appveyor.pester.ps1 -DebugErrorExtraction
+.\runner/pester.ps1 -DebugErrorExtraction
 Executes tests with ultra-verbose error extraction for maximum error message capture
 
 .EXAMPLE
-.\appveyor.pester.ps1 -Finalize -DebugErrorExtraction
+.\runner/pester.ps1 -Finalize -DebugErrorExtraction
 Finalizes tests with comprehensive error message extraction and debugging
 #>
 param (
@@ -474,13 +476,13 @@ function Export-TestFailureSummary {
 
         $summaryFile = "$ModuleBase\TestFailureSummary_Pester${PesterVersion}_${Counter}.json"
         $summary | ConvertTo-Json -Depth 10 | Out-File $summaryFile -Encoding UTF8
-        Push-AppveyorArtifact $summaryFile -FileName "TestFailureSummary_Pester${PesterVersion}_${Counter}.json"
+        Push-GitHubArtifact $summaryFile -FileName "TestFailureSummary_Pester${PesterVersion}_${Counter}.json"
     }
 }
 
 if (-not $Finalize) {
     # Invoke appveyor.common.ps1 to know which tests to run
-    . "$ModuleBase\tests\appveyor.common.ps1"
+    . "$ModuleBase\\tests\\runner\\common.ps1"
     $AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $ModuleBase
 }
 
@@ -497,7 +499,7 @@ if (-not $Finalize) {
     Remove-Module -Name pester -ErrorAction SilentlyContinue
     # Import pester 4
     Import-Module pester -RequiredVersion 4.4.2
-    Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
+    Write-Host -Object "runner/pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
 
     # invoking a single invoke-pester consumes too much memory, let's go file by file
     $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
@@ -542,7 +544,7 @@ if (-not $Finalize) {
             } else {
                 $appvTestName = "$($f.Name), attempt #$trialNo"
             }
-            Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+            Add-GitHubTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
             $PesterRun = Invoke-Pester @PesterSplat
             $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
 
@@ -559,7 +561,7 @@ if (-not $Finalize) {
                 }
                 $errorMessageDetail = $failedTestsList -join " | "
 
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Time.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                Update-GitHubTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Time.TotalMilliseconds -ErrorMessage $errorMessageDetail
 
                 # Add to summary
                 $allTestsSummary.TestRuns += @{
@@ -571,7 +573,7 @@ if (-not $Finalize) {
                     PesterVersion = '4'
                 }
             } else {
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Time.TotalMilliseconds
+                Update-GitHubTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Time.TotalMilliseconds
 
                 # Add to summary
                 $allTestsSummary.TestRuns += @{
@@ -591,7 +593,7 @@ if (-not $Finalize) {
     Remove-Module -Name pester -ErrorAction SilentlyContinue
     # Import pester 5
     Import-Module pester -RequiredVersion 5.6.1
-    Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
+    Write-Host -Object "runner/pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
     $TestConfig = Get-TestConfig
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
@@ -626,7 +628,7 @@ if (-not $Finalize) {
                 $appvTestName = "$($f.Name), attempt #$trialNo"
             }
             Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
-            Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+            Add-GitHubTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
             $PesterRun = Invoke-Pester -Configuration $pester5config
             Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
             $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
@@ -645,7 +647,7 @@ if (-not $Finalize) {
                 }
                 $errorMessageDetail = $failedTestsList -join " | "
 
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                Update-GitHubTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
 
                 # Add to summary
                 $allTestsSummary.TestRuns += @{
@@ -657,7 +659,7 @@ if (-not $Finalize) {
                     PesterVersion = '5'
                 }
             } else {
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
+                Update-GitHubTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
 
                 # Add to summary
                 $allTestsSummary.TestRuns += @{
@@ -675,7 +677,7 @@ if (-not $Finalize) {
     # Save overall test summary
     $summaryFile = "$ModuleBase\OverallTestSummary.json"
     $allTestsSummary | ConvertTo-Json -Depth 10 | Out-File $summaryFile -Encoding UTF8
-    Push-AppveyorArtifact $summaryFile -FileName "OverallTestSummary.json"
+    Push-GitHubArtifact $summaryFile -FileName "OverallTestSummary.json"
 
     # Gather support package as an artifact
     # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
@@ -689,7 +691,7 @@ if (-not $Finalize) {
             # Uncomment this when needed
             #Get-DbatoolsError -All -ErrorAction Stop | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction Stop
         } catch {
-            Set-Content -Path $errorFile -Value 'Uncomment line 386 in appveyor.pester.ps1 if needed'
+            Set-Content -Path $errorFile -Value 'Uncomment line 386 in runner/pester.ps1 if needed'
         }
         if (-not (Test-Path $errorFile)) {
             Set-Content -Path $errorFile -Value 'None'
@@ -722,7 +724,7 @@ if (-not $Finalize) {
 
     #Publish the support package regardless of the outcome
     if (Test-Path $ModuleBase\dbatools_messages_and_errors.xml.zip) {
-        Get-ChildItem $ModuleBase\dbatools_messages_and_errors.xml.zip | ForEach-Object { Push-AppveyorArtifact $PSItem.FullName -FileName $PSItem.Name }
+        Get-ChildItem $ModuleBase\dbatools_messages_and_errors.xml.zip | ForEach-Object { Push-GitHubArtifact $PSItem.FullName -FileName $PSItem.Name }
     }
 
     #$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
@@ -770,8 +772,9 @@ if (-not $Finalize) {
 
         $detailedFailureFile = "$ModuleBase\DetailedTestFailures_Pester5.json"
         $detailedFailureSummary | ConvertTo-Json -Depth 10 | Out-File $detailedFailureFile -Encoding UTF8
-        Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester5.json"
+        Push-GitHubArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester5.json"
 
         throw "$failedcount tests failed."
     }
 }
+

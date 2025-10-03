@@ -1,0 +1,182 @@
+name: CI Tests
+
+on:
+  push:
+    branches-ignore:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - '.github/FUNDING.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.aider/**'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - 'en-us/**'
+
+  pull_request:
+    branches-ignore:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - '.github/FUNDING.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.aider/**'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - 'en-us/**'
+
+  workflow_dispatch:
+
+# Limit concurrent runs to available runners
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test ${{ matrix.scenario }} (${{ matrix.part }})
+    runs-on: [self-hosted, azure-vmss, windows, sqlserver]
+    timeout-minutes: 60
+
+    # Skip if commit message contains [skip ci] or if it's a tag
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !startsWith(github.ref, 'refs/tags/')
+
+    strategy:
+      fail-fast: false
+      max-parallel: 3  # Maximum 3 concurrent runners
+
+      matrix:
+        include:
+          # SQL 2008R2 tests (2 parts)
+          - scenario: 2008R2
+            part: "1/2"
+            main_instance: "localhost\\SQL2008R2SP2"
+            setup_scripts: "\\tests\\runner\\setup-sql2008r2sp2.ps1"
+
+          - scenario: 2008R2
+            part: "2/2"
+            main_instance: "localhost\\SQL2008R2SP2"
+            setup_scripts: "\\tests\\runner\\setup-sql2008r2sp2.ps1"
+
+          # SQL 2016 tests (2 parts)
+          - scenario: 2016
+            part: "1/2"
+            main_instance: "localhost\\SQL2016"
+            setup_scripts: "\\tests\\runner\\setup-sql2016.ps1"
+
+          - scenario: 2016
+            part: "2/2"
+            main_instance: "localhost\\SQL2016"
+            setup_scripts: "\\tests\\runner\\setup-sql2016.ps1"
+
+          # Service restart tests (2 parts)
+          - scenario: service_restarts
+            part: "1/2"
+            main_instance: "localhost\\SQL2017,localhost\\SQL2016"
+            setup_scripts: "\\tests\\runner\\setup-sql2017.ps1,\\tests\\runner\\setup-sql2016.ps1"
+
+          - scenario: service_restarts
+            part: "2/2"
+            main_instance: "localhost\\SQL2017,localhost\\SQL2016"
+            setup_scripts: "\\tests\\runner\\setup-sql2017.ps1,\\tests\\runner\\setup-sql2016.ps1"
+
+          # SQL 2016+2017 combined tests (2 parts)
+          - scenario: 2016_2017
+            part: "1/2"
+            main_instance: "localhost\\SQL2017,localhost\\SQL2016"
+            setup_scripts: "\\tests\\runner\\setup-sql2017.ps1,\\tests\\runner\\setup-sql2016.ps1"
+
+          - scenario: 2016_2017
+            part: "2/2"
+            main_instance: "localhost\\SQL2017,localhost\\SQL2016"
+            setup_scripts: "\\tests\\runner\\setup-sql2017.ps1,\\tests\\runner\\setup-sql2016.ps1"
+
+          # Default scenario (2 parts)
+          - scenario: default
+            part: "1/2"
+            main_instance: "localhost\\SQL2008R2SP2,localhost\\SQL2016"
+            setup_scripts: "\\tests\\runner\\setup-sql2008r2sp2.ps1,\\tests\\runner\\setup-sql2016.ps1"
+
+          - scenario: default
+            part: "2/2"
+            main_instance: "localhost\\SQL2008R2SP2,localhost\\SQL2016"
+            setup_scripts: "\\tests\\runner\\setup-sql2008r2sp2.ps1,\\tests\\runner\\setup-sql2016.ps1"
+
+    env:
+      SCENARIO: ${{ matrix.scenario }}
+      PART: ${{ matrix.part }}
+      MAIN_INSTANCE: ${{ matrix.main_instance }}
+      SETUP_SCRIPTS: ${{ matrix.setup_scripts }}
+      GITHUB_WORKSPACE: ${{ github.workspace }}
+      GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+
+      - name: Set build version
+        shell: pwsh
+        run: |
+          $version = "2.1.${{ github.run_number }}"
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Prepare environment
+        shell: pwsh
+        run: |
+          Write-Host "::group::Prepare Environment"
+          Set-Service wuauserv -StartupType Manual
+          .\tests\runner\prep.ps1
+          Write-Host "::endgroup::"
+
+      - name: Setup SQL Server instances
+        shell: pwsh
+        run: |
+          Write-Host "::group::Setup SQL Server"
+          .\tests\runner\sqlserver.ps1
+          Write-Host "::endgroup::"
+
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          Write-Host "::group::Run Tests"
+          .\tests\runner\pester.ps1
+          Write-Host "::endgroup::"
+
+      - name: Finalize test results
+        shell: pwsh
+        run: |
+          Write-Host "::group::Finalize Tests"
+          .\tests\runner\pester.ps1 -Finalize
+          Write-Host "::endgroup::"
+
+      - name: Post-test cleanup
+        if: always()
+        shell: pwsh
+        run: |
+          Write-Host "::group::Post-test Cleanup"
+          .\tests\runner\post.ps1
+          Write-Host "::endgroup::"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.scenario }}-part-${{ matrix.part }}
+          path: TestResults*.xml
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.scenario }}-part-${{ matrix.part }}
+          path: Pester5Coverage*.xml
+          if-no-files-found: ignore
+          retention-days: 30

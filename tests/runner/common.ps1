@@ -68,11 +68,27 @@ function Get-TestsForBuildScenario {
     $AllDbatoolsTests = Get-ChildItem -File -Path "$ModuleBase\tests\*.Tests.ps1"
     # exclude "disabled"
     $AllTests = $AllDbatoolsTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
-    # only in appveyor, disable uncooperative tests
+    # only in CI, disable uncooperative tests
     $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
 
     # Inspect special words
-    $TestsToRunMessage = "$($env:APPVEYOR_REPO_COMMIT_MESSAGE) $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)"
+    # GitHub Actions equivalent - get commit message from environment or git
+    $TestsToRunMessage = if ($env:GITHUB_EVENT_NAME -eq 'pull_request') {
+        # For PRs, get the PR title + body from event
+        $prTitle = $env:GITHUB_EVENT_HEAD_COMMIT_MESSAGE
+        if (-not $prTitle) {
+            $prTitle = git log -1 --pretty=%B HEAD
+        }
+        $prTitle
+    } else {
+        # For push events, use commit message
+        if ($env:GITHUB_EVENT_HEAD_COMMIT_MESSAGE) {
+            $env:GITHUB_EVENT_HEAD_COMMIT_MESSAGE
+        } else {
+            git log -1 --pretty=%B HEAD
+        }
+    }
+
     $TestsToRunRegex = [regex] '(?smi)\(do (?<do>[^)]+)\)'
     $TestsToRunMatch = $TestsToRunRegex.Match($TestsToRunMessage).Groups['do'].Value
     if ($TestsToRunMatch.Length -gt 0) {

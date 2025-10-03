@@ -1,0 +1,66 @@
+name: Deploy VMSS Infrastructure
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+    paths:
+      - 'gh-runners/**'
+      - '.github/workflows/vmss-deploy.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    name: Deploy Azure VMSS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Terraform Init
+        working-directory: ./gh-runners
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ./gh-runners
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ./gh-runners
+        run: |
+          terraform plan \
+            -var-file="variables.tfvars" \
+            -var="github_token=${{ secrets.VMSS_GH_PAT }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event_name == 'push'
+        working-directory: ./gh-runners
+        run: terraform apply -auto-approve tfplan
+
+      - name: Deployment Summary
+        if: github.event_name == 'push'
+        working-directory: ./gh-runners
+        run: |
+          echo "## VMSS Deployment Complete 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Resource Group: dbatools-ci-runners" >> $GITHUB_STEP_SUMMARY
+          echo "- VMSS Name: dbatools-runner-vmss" >> $GITHUB_STEP_SUMMARY
+          echo "- Max Instances: 3" >> $GITHUB_STEP_SUMMARY
+          echo "- Runner Group: azure-vmss-runners" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Next: Scale VMSS to 1 instance to test runner registration" >> $GITHUB_STEP_SUMMARY

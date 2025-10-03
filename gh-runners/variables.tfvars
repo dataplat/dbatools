@@ -1,0 +1,13 @@
+resource_group_name  = "dbatools-ci-runners"
+location             = "eastus"
+vmss_name            = "dbatools-runner-vmss"
+image_resource_group = "dbatools-ci-images"
+image_name           = "dbatools-golden-image"
+keyvault_name        = "dbatoolsci"
+min_instances        = 0
+max_instances        = 3
+github_organization  = "dataplat"
+github_repository    = "dbatools"
+vm_sku               = "Standard_B4ms"
+admin_username       = "runneradmin"
+admin_password       = "dbatools.I00"
