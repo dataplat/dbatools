@@ -1,6 +1,13 @@
 terraform {
   required_version = ">= 1.0"
 
+  backend "azurerm" {
+    resource_group_name  = "dbatools-ci-runners"
+    storage_account_name = "dbatoolstfstate"
+    container_name       = "tfstate"
+    key                  = "vmss.tfstate"
+  }
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
