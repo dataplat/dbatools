@@ -1,0 +1,94 @@
+name: VMSS Autoscaler
+
+on:
+  schedule:
+    # Every 2 minutes - fast response, low cost
+    - cron: '*/2 * * * *'
+  workflow_dispatch:
+  # Trigger on workflow run events for faster scaling
+  workflow_run:
+    workflows: ["CI Tests"]
+    types: [requested, completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  scale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check queued and in-progress jobs
+        id: queue
+        run: |
+          # Count queued jobs waiting for self-hosted runners
+          QUEUED=$(gh api /repos/${{ github.repository }}/actions/runs \
+            --jq '[.workflow_runs[] | select(.status == "queued" or .status == "in_progress")] | length')
+
+          echo "Active workflows: $QUEUED"
+          echo "queued_jobs=$QUEUED" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
+
+      - name: Calculate target capacity
+        id: target
+        run: |
+          QUEUED=${{ steps.queue.outputs.queued_jobs }}
+
+          # Each workflow has 10 jobs, max 3 concurrent per workflow
+          # If 1 workflow: need 3 runners
+          # If 2+ workflows: still max 3 runners (they'll share)
+
+          if [ $QUEUED -eq 0 ]; then
+            TARGET=0
+            echo "No active workflows - scaling to 0"
+          elif [ $QUEUED -ge 1 ]; then
+            TARGET=3
+            echo "Active workflows detected - scaling to 3"
+          fi
+
+          echo "target_capacity=$TARGET" >> $GITHUB_OUTPUT
+
+      - name: Get current VMSS capacity
+        id: current
+        run: |
+          CURRENT=$(az vmss show \
+            --resource-group dbatools-ci-runners \
+            --name dbatools-runner-vmss \
+            --query sku.capacity \
+            -o tsv)
+
+          echo "Current capacity: $CURRENT"
+          echo "current_capacity=$CURRENT" >> $GITHUB_OUTPUT
+
+      - name: Scale VMSS if needed
+        run: |
+          CURRENT=${{ steps.current.outputs.current_capacity }}
+          TARGET=${{ steps.target.outputs.target_capacity }}
+
+          if [ "$CURRENT" != "$TARGET" ]; then
+            echo "📊 Scaling VMSS: $CURRENT → $TARGET instances"
+
+            az vmss scale \
+              --resource-group dbatools-ci-runners \
+              --name dbatools-runner-vmss \
+              --new-capacity $TARGET
+
+            echo "✅ Scaled successfully"
+          else
+            echo "✓ Already at target capacity ($TARGET)"
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Autoscaler Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Queued Workflows:** ${{ steps.queue.outputs.queued_jobs }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Current Capacity:** ${{ steps.current.outputs.current_capacity }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target Capacity:** ${{ steps.target.outputs.target_capacity }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY

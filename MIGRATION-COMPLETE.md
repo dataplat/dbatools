@@ -4,7 +4,7 @@
 
 Successfully migrated from AppVeyor to GitHub Actions with Azure VMSS self-hosted runners.
 
-### Files Created (19 files)
+### Files Created (20 files)
 
 #### Test Runner Scripts (`tests/runner/`)
 - ✅ `github-helpers.ps1` - GitHub Actions equivalents of AppVeyor cmdlets
@@ -29,6 +29,7 @@ Successfully migrated from AppVeyor to GitHub Actions with Azure VMSS self-hoste
 #### GitHub Actions Workflows (`.github/workflows/`)
 - ✅ `vmss-deploy.yml` - Infrastructure deployment workflow
 - ✅ `ci.yml` - Main CI workflow (10-job matrix, max 3 concurrent)
+- ✅ `autoscaler.yml` - VMSS autoscaler (monitors queue, scales 0-3)
 
 ### Files Modified
 - ✅ `appveyor.yml` → `appveyor.yml.disabled` (renamed)
@@ -45,6 +46,25 @@ Successfully migrated from AppVeyor to GitHub Actions with Azure VMSS self-hoste
 
 ---
 
+---
+
+## How It Works (Zero Manual Intervention)
+
+### When You Push Code:
+1. **Infrastructure deploys** (vmss-deploy.yml) - Creates VMSS at 0 instances
+2. **CI tests queue** (ci.yml) - 10 jobs waiting for runners
+3. **Autoscaler detects queue** (autoscaler.yml) - Scales VMSS to 3 instances within 1 minute
+4. **Runners register** - VMs boot, register with GitHub (3 minutes)
+5. **Tests run** - Jobs execute automatically (2.5 hours for full matrix)
+6. **Runners destroy** - Ephemeral runners self-destruct after each job
+7. **Autoscaler scales down** - Detects empty queue, scales VMSS to 0 (2 minutes after completion)
+
+**Total cost per push: ~$1.25** (3 runners × 2.5 hours × $0.166/hr)
+
+**Your involvement: Push code. That's it.** ✅
+
+---
+
 ## Next Steps
 
 ### 1. Review Changes
@@ -53,98 +73,65 @@ git diff --stat
 git status
 ```
 
-### 2. Create Feature Branch and Commit
-```powershell
-git checkout -b migrate-to-github-actions
+### 2. Commit and Push
+```bash
 git add .
-git status  # Verify all files
 git commit -m "Migrate from AppVeyor to GitHub Actions with Azure VMSS runners
 
 - Created tests/runner/ directory with migrated test scripts
-- Created gh-runners/ Terraform infrastructure
-- Created GitHub Actions workflows (vmss-deploy.yml, ci.yml)
+- Created gh-runners/ Terraform infrastructure for VMSS
+- Created GitHub Actions workflows (vmss-deploy.yml, ci.yml, autoscaler.yml)
 - Disabled appveyor.yml
 - Removed old AppVeyor test scripts
 
 Infrastructure:
 - Azure VMSS with Windows golden image
-- Max 3 concurrent runners (ephemeral)
-- Self-hosted runners with SQL Server instances
+- Auto-scales 0-3 instances based on GitHub Actions queue
+- Ephemeral runners (self-destruct after each job)
 - Key Vault integration for secrets
 
 CI Workflow:
-- 10-job matrix (same as AppVeyor)
+- 10-job matrix (identical to AppVeyor)
 - Max 3 concurrent jobs
+- Automatic scaling (no manual intervention)
 - Triggers on push/PR (except master branch)
 - Skip conditions: [skip ci], paths-ignore
-"
+
+🎉 Works exactly like AppVeyor - just push and it runs!"
+
+git push origin vms
 ```
 
-### 3. Push to GitHub
-```powershell
-git push origin migrate-to-github-actions
-```
+**That's it!** Infrastructure deploys automatically, autoscaler handles everything else.
 
-### 4. Deploy Infrastructure
-The `vmss-deploy.yml` workflow will automatically run when you push because it contains `gh-runners/**` files.
+---
 
-**Monitor the workflow:**
-1. Go to: https://github.com/dataplat/dbatools/actions
-2. Find "Deploy VMSS Infrastructure" workflow
-3. Watch it create your Azure resources
+## What Happens After Push
 
-### 5. Verify Infrastructure in Azure
-```powershell
-# Check VMSS was created
-az vmss show --resource-group dbatools-ci-runners --name dbatools-runner-vmss
+### Automatic Sequence (No Manual Steps Required):
+1. **vmss-deploy.yml** runs → Creates VMSS infrastructure (5 min)
+2. **ci.yml** triggers → 10 jobs queue
+3. **autoscaler.yml** detects queue → Scales VMSS to 3 instances (1 min)
+4. VMs boot → Runners register (3 min)
+5. Tests run → Full matrix completes (2.5 hours)
+6. **autoscaler.yml** detects completion → Scales VMSS to 0 (2 min)
 
-# Check runner group in GitHub
-# Go to: https://github.com/dataplat/dbatools/settings/actions/runner-groups
-```
+**Cost: ~$1.25 per push**
 
-### 6. Test Single Runner
-```powershell
-# Scale VMSS to 1 instance
-az vmss scale --resource-group dbatools-ci-runners --name dbatools-runner-vmss --new-capacity 1
+### Monitor Progress:
+- https://github.com/dataplat/dbatools/actions
 
-# Wait 5-10 minutes, then check GitHub runners
-# Go to: https://github.com/dataplat/dbatools/settings/actions/runners
-# You should see a runner with labels: self-hosted, azure-vmss, windows, sqlserver
-```
+---
 
-### 7. Test Single CI Job
-1. Go to: https://github.com/dataplat/dbatools/actions/workflows/ci.yml
-2. Click "Run workflow"
-3. Select branch: `migrate-to-github-actions`
-4. Click "Run workflow"
-5. Watch the job execute
-6. Verify runner auto-unregisters after job completes
+## Merge to Development (When Ready)
 
-### 8. Test Full Matrix
-```powershell
-# Make a small test commit
-echo "# Test commit" >> README.md
-git add README.md
-git commit -m "Test: Trigger full CI matrix"
-git push
-```
-
-**Expected behavior:**
-- 10 jobs queued
-- First 3 jobs run concurrently
-- Remaining 7 jobs wait in queue
-- Each job completes and runner self-destructs
-- VMSS scales back to 0 when all jobs complete
-
-### 9. Merge to Development
-```powershell
-# After successful tests
+```bash
 git checkout development
-git merge migrate-to-github-actions
+git merge vms
 git push origin development
 ```
 
-### 10. Disable AppVeyor
+### Disable AppVeyor
 1. Go to: https://ci.appveyor.com/project/dataplat/dbatools/settings
 2. Disable builds OR delete the project
 3. OR remove webhook from GitHub:
