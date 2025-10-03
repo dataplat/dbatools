@@ -33,6 +33,8 @@ jobs:
 
       - name: Terraform Init
         working-directory: ./gh-runners
+        env:
+          ARM_USE_AZUREAD: true
         run: terraform init
 
       - name: Terraform Validate
