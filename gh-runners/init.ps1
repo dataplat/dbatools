@@ -52,13 +52,12 @@ try {
     $KeyVaultName = "dbatoolsci"
     $GithubOrg = "dataplat"
     $Repository = "dbatools"
-    $RunnerGroup = "azure-vmss-runners"
 
     Write-Log "Configuration:"
     Write-Log "  - Key Vault: $KeyVaultName"
     Write-Log "  - Organization: $GithubOrg"
     Write-Log "  - Repository: $Repository"
-    Write-Log "  - Runner Group: $RunnerGroup"
+    Write-Log "  - Runner Group: Default (no custom group)"
     Write-Log "  - VM Name: $($env:COMPUTERNAME)"
 
     Write-Log "Retrieving GitHub PAT from Key Vault..."
@@ -110,7 +109,6 @@ try {
         "--url", "https://github.com/$GithubOrg/$Repository",
         "--token", $RegistrationToken,
         "--name", $env:COMPUTERNAME,
-        "--runnergroup", $RunnerGroup,
         "--labels", "self-hosted,azure-vmss,windows,sqlserver",
         "--work", "_work",
         "--ephemeral",
