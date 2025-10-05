@@ -55,6 +55,11 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
+      - name: Unlock Terraform state if locked
+        working-directory: ./gh-runners
+        continue-on-error: true
+        run: terraform force-unlock -force 92cd93af-50cd-cede-d0fb-1d4a5fce69b2
+
       - name: Terraform Init
         working-directory: ./gh-runners
         run: terraform init
