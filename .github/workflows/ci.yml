@@ -42,7 +42,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
 
       - name: Scale VMSS to 6 instances
         run: |
@@ -213,7 +213,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
 
       - name: Scale VMSS back to 0
         run: |
