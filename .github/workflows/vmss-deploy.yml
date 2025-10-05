@@ -71,26 +71,6 @@ jobs:
             -var="github_token=${{ secrets.VMSS_GH_PAT }}" \
             -out=tfplan
 
-      - name: Import existing resources (self-healing)
-        if: github.event_name == 'push'
-        continue-on-error: true
-        working-directory: ./gh-runners
-        run: |
-          # Import VNet if it exists outside Terraform state
-          terraform import azurerm_virtual_network.vnet /subscriptions/65a430fb-5a9a-49ff-969e-05d1beaa88fb/resourceGroups/dbatools-ci-runners/providers/Microsoft.Network/virtualNetworks/dbatools-runner-vmss-vnet 2>/dev/null || true
-
-          # Import subnet if it exists outside Terraform state
-          terraform import azurerm_subnet.subnet /subscriptions/65a430fb-5a9a-49ff-969e-05d1beaa88fb/resourceGroups/dbatools-ci-runners/providers/Microsoft.Network/virtualNetworks/dbatools-runner-vmss-vnet/subnets/dbatools-runner-vmss-subnet 2>/dev/null || true
-
-          # Import VMSS if it exists outside Terraform state
-          terraform import azurerm_windows_virtual_machine_scale_set.vmss /subscriptions/65a430fb-5a9a-49ff-969e-05d1beaa88fb/resourceGroups/dbatools-ci-runners/providers/Microsoft.Compute/virtualMachineScaleSets/dbatools-runner-vmss 2>/dev/null || true
-
-          # Import VMSS extension if it exists outside Terraform state
-          terraform import azurerm_virtual_machine_scale_set_extension.vmss /subscriptions/65a430fb-5a9a-49ff-969e-05d1beaa88fb/resourceGroups/dbatools-ci-runners/providers/Microsoft.Compute/virtualMachineScaleSets/dbatools-runner-vmss/extensions/CustomScriptExtension 2>/dev/null || true
-
-          # Import role assignment if it exists outside Terraform state
-          terraform import azurerm_role_assignment.vmss_kv_secrets_user /subscriptions/65a430fb-5a9a-49ff-969e-05d1beaa88fb/resourceGroups/dbatools-ci-runners/providers/Microsoft.KeyVault/vaults/dbatoolsci|Key_Vault_Secrets_User 2>/dev/null || true
-
       - name: Terraform Apply
         if: github.event_name == 'push'
         working-directory: ./gh-runners
