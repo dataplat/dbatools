@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.0"
 
   backend "azurerm" {
-    resource_group_name  = "dbatools-ci-runners"
+    resource_group_name  = "dbatools-ci-images"
     storage_account_name = "dbatoolstfstate"
     container_name       = "tfstate"
     key                  = "vmss.tfstate"
