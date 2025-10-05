@@ -25,6 +25,80 @@ defaults:
     shell: pwsh
 
 jobs:
+  azure-vmss-tests:
+    name: Azure VMSS Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Scale VMSS to 6 instances
+        run: |
+          echo "Scaling VMSS to 6 instances..."
+          az vmss scale \
+            --name dbatools-runner-vmss \
+            --resource-group dbatools-ci-runners \
+            --new-capacity 6
+
+          echo "Waiting for instances to provision..."
+          sleep 60
+
+      - name: Wait for runners to register
+        timeout-minutes: 10
+        run: |
+          echo "Waiting for self-hosted runners to become available..."
+          for i in {1..60}; do
+            runner_count=$(gh api repos/dataplat/dbatools/actions/runners --jq '[.runners[] | select(.status == "online" and .busy == false)] | length')
+            echo "Available runners: $runner_count"
+            if [ "$runner_count" -ge 6 ]; then
+              echo "All 6 runners are online and ready!"
+              break
+            fi
+            sleep 10
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  vmss-sql-tests:
+    name: SQL Server Tests on VMSS
+    needs: azure-vmss-tests
+    runs-on: [self-hosted, Windows]
+    strategy:
+      fail-fast: false
+      matrix:
+        test_group: [1, 2, 3, 4, 5, 6]
+    steps:
+      - name: Checkout dbatools repo
+        uses: actions/checkout@v3
+
+      - name: Run SQL Server tests
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Write-Host "Running test group ${{ matrix.test_group }} on $(hostname)"
+          # Your actual test commands here
+
+  cleanup-vmss:
+    name: Scale down VMSS
+    needs: vmss-sql-tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Scale VMSS back to 0
+        run: |
+          echo "Scaling VMSS back to 0 instances..."
+          az vmss scale \
+            --name dbatools-runner-vmss \
+            --resource-group dbatools-ci-runners \
+            --new-capacity 0
+
   linux-tests:
     env:
         SMODefaultModuleName: dbatools
