@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+#Requires -Version 3.0
 <#
 .SYNOPSIS
     GitHub Actions runner configuration script for Azure VMSS
@@ -61,14 +61,16 @@ try {
     Write-Log "  - VM Name: $($env:COMPUTERNAME)"
 
     Write-Log "Retrieving GitHub PAT from Key Vault..."
-    $GithubToken = Get-AzKeyVaultSecret `
+    $secretObj = Get-AzKeyVaultSecret `
         -VaultName $KeyVaultName `
-        -Name "GITHUB-RUNNER-TOKEN" `
-        -AsPlainText
+        -Name "GITHUB-RUNNER-TOKEN"
 
-    if (-not $GithubToken) {
+    if (-not $secretObj) {
         throw "Failed to retrieve GitHub token from Key Vault"
     }
+
+    # PS 3.0 compatible way to get plaintext secret
+    $GithubToken = $secretObj.SecretValueText
     Write-Log "GitHub PAT retrieved successfully"
 
     Write-Log "Requesting runner registration token from GitHub API..."
