@@ -26,6 +26,15 @@ jobs:
         with:
           creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
 
+      - name: Ensure resource group exists
+        run: |
+          if ! az group show --name dbatools-ci-runners &>/dev/null; then
+            echo "Creating resource group dbatools-ci-runners..."
+            az group create --name dbatools-ci-runners --location eastus
+          else
+            echo "Resource group dbatools-ci-runners already exists"
+          fi
+
       - name: Extract Azure credentials for Terraform
         id: azure-creds
         run: |
