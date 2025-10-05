@@ -35,8 +35,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  scale-up:
+    name: Scale VMSS to 6 instances
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Scale VMSS to 6 instances
+        run: |
+          echo "Scaling VMSS to 6 instances..."
+          az vmss scale \
+            --name dbatools-runner-vmss \
+            --resource-group dbatools-ci-runners \
+            --new-capacity 6
+
+      - name: Wait for instances to provision
+        run: |
+          echo "Waiting for instances to provision and runners to register..."
+          sleep 120
+
   test:
     name: Test ${{ matrix.scenario }} (${{ matrix.part }})
+    needs: scale-up
     runs-on: [self-hosted, azure-vmss, windows, sqlserver]
     timeout-minutes: 60
 
@@ -47,7 +70,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 3  # Maximum 3 concurrent runners
+      max-parallel: 6  # Maximum 6 concurrent runners
 
       matrix:
         include:
@@ -180,3 +203,22 @@ jobs:
           path: Pester5Coverage*.xml
           if-no-files-found: ignore
           retention-days: 30
+
+  scale-down:
+    name: Scale VMSS to 0 instances
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Scale VMSS back to 0
+        run: |
+          echo "Scaling VMSS back to 0 instances..."
+          az vmss scale \
+            --name dbatools-runner-vmss \
+            --resource-group dbatools-ci-runners \
+            --new-capacity 0

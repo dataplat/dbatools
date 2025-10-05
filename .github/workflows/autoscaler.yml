@@ -40,16 +40,16 @@ jobs:
         run: |
           QUEUED=${{ steps.queue.outputs.queued_jobs }}
 
-          # Each workflow has 10 jobs, max 3 concurrent per workflow
-          # If 1 workflow: need 3 runners
-          # If 2+ workflows: still max 3 runners (they'll share)
+          # Each workflow has 10 jobs, scale to 6 runners for parallel execution
+          # If 1+ workflows: scale to 6 runners
+          # If 0 workflows: scale to 0
 
           if [ $QUEUED -eq 0 ]; then
             TARGET=0
             echo "No active workflows - scaling to 0"
           elif [ $QUEUED -ge 1 ]; then
-            TARGET=3
-            echo "Active workflows detected - scaling to 3"
+            TARGET=6
+            echo "Active workflows detected - scaling to 6"
           fi
 
           echo "target_capacity=$TARGET" >> $GITHUB_OUTPUT
