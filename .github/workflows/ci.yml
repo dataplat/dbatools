@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   scale-up:
-    name: Scale VMSS to 5 instances
+    name: Scale VMSS to 1 instance
     runs-on: ubuntu-latest
     steps:
       - name: Azure Login
@@ -44,13 +44,13 @@ jobs:
         with:
           creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
 
-      - name: Scale VMSS to 5 instances
+      - name: Scale VMSS to 1 instance
         run: |
-          echo "Scaling VMSS to 5 instances (quota limit: 20 cores)..."
+          echo "Scaling VMSS to 1 instance (troubleshooting mode)..."
           az vmss scale \
             --name dbatools-runner-vmss \
             --resource-group dbatools-ci-runners \
-            --new-capacity 5
+            --new-capacity 1
 
       - name: Wait for instances to provision
         run: |
@@ -70,7 +70,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 5  # Maximum 5 concurrent runners (quota limited)
+      max-parallel: 1  # Troubleshooting with 1 runner
 
       matrix:
         include:

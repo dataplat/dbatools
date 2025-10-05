@@ -1,14 +1,14 @@
 name: VMSS Autoscaler
 
 on:
-  schedule:
-    # Every 2 minutes - fast response, low cost
-    - cron: '*/2 * * * *'
+  # DISABLED FOR TROUBLESHOOTING - ci.yml handles scaling manually
+  # schedule:
+  #   # Every 2 minutes - fast response, low cost
+  #   - cron: '*/2 * * * *'
   workflow_dispatch:
-  # Trigger on workflow run events for faster scaling
-  workflow_run:
-    workflows: ["CI Tests"]
-    types: [requested, completed]
+  # workflow_run:
+  #   workflows: ["CI Tests"]
+  #   types: [requested, completed]
 
 permissions:
   actions: read
