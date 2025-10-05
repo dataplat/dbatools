@@ -1,4 +1,3 @@
-#Requires -Version 3.0
 <#
 .SYNOPSIS
     GitHub Actions runner configuration script for Azure VMSS
