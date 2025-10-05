@@ -102,9 +102,7 @@ resource "azurerm_virtual_machine_scale_set_extension" "vmss" {
 
   # Embed init.ps1 script inline to avoid external dependencies
   protected_settings = jsonencode({
-    commandToExecute = "powershell -ExecutionPolicy Unrestricted -File init.ps1"
-    fileUris         = []
-    script           = base64encode(file("${path.module}/init.ps1"))
+    commandToExecute = "powershell -ExecutionPolicy Unrestricted -EncodedCommand ${textencodebase64(file("${path.module}/init.ps1"), "UTF-16LE")}"
   })
 }
 
