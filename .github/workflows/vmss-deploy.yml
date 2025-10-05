@@ -35,11 +35,11 @@ jobs:
             echo "Resource group dbatools-ci-runners already exists"
           fi
 
-          if ! az keyvault show --name dbatoolsci-runners-keyvault --resource-group dbatools-ci-runners &>/dev/null; then
-            echo "Creating Key Vault dbatoolsci-runners-keyvault..."
-            az keyvault create --name dbatoolsci-runners-keyvault --resource-group dbatools-ci-runners --location eastus
+          if ! az keyvault show --name dbatoolsci-runners --resource-group dbatools-ci-runners &>/dev/null; then
+            echo "Creating Key Vault dbatoolsci-runners..."
+            az keyvault create --name dbatoolsci-runners --resource-group dbatools-ci-runners --location eastus
           else
-            echo "Key Vault dbatoolsci-runners-keyvault already exists"
+            echo "Key Vault dbatoolsci-runners already exists"
           fi
 
       - name: Extract Azure credentials for Terraform
