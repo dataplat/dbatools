@@ -55,11 +55,6 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
-      - name: Unlock Terraform state if locked
-        working-directory: ./gh-runners
-        continue-on-error: true
-        run: terraform force-unlock -force 92cd93af-50cd-cede-d0fb-1d4a5fce69b2
-
       - name: Terraform Init
         working-directory: ./gh-runners
         run: terraform init
@@ -72,6 +67,7 @@ jobs:
         working-directory: ./gh-runners
         run: |
           terraform plan \
+            -lock=false \
             -var-file="variables.tfvars" \
             -var="github_token=${{ secrets.VMSS_GH_PAT }}" \
             -out=tfplan
@@ -79,7 +75,7 @@ jobs:
       - name: Terraform Apply
         if: github.event_name == 'push'
         working-directory: ./gh-runners
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -lock=false -auto-approve tfplan
 
       - name: Deployment Summary
         if: github.event_name == 'push'
