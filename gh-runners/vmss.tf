@@ -42,6 +42,7 @@ resource "azurerm_subnet" "subnet" {
 # Windows Virtual Machine Scale Set with custom image
 resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
   name                = var.vmss_name
+  computer_name_prefix = "dbt"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   sku                 = var.vm_sku
