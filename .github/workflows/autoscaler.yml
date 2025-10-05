@@ -40,16 +40,17 @@ jobs:
         run: |
           QUEUED=${{ steps.queue.outputs.queued_jobs }}
 
-          # Each workflow has 10 jobs, scale to 6 runners for parallel execution
-          # If 1+ workflows: scale to 6 runners
+          # Each workflow has 10 jobs, scale to 5 runners for parallel execution
+          # Limited by Azure quota: 20 cores / 4 cores per VM = 5 max VMs
+          # If 1+ workflows: scale to 5 runners
           # If 0 workflows: scale to 0
 
           if [ $QUEUED -eq 0 ]; then
             TARGET=0
             echo "No active workflows - scaling to 0"
           elif [ $QUEUED -ge 1 ]; then
-            TARGET=6
-            echo "Active workflows detected - scaling to 6"
+            TARGET=5
+            echo "Active workflows detected - scaling to 5"
           fi
 
           echo "target_capacity=$TARGET" >> $GITHUB_OUTPUT
