@@ -70,9 +70,12 @@ function Test-DbaLsnChain {
             break;
         }
 
+        #If same multiple Full DB backup exist with Same FirstLSN, just select one
+        $FullDBAnchor = ($FullDBAnchor | Select-Object -First 1)
+
         #Via LSN chain:
-        [BigInt]$CheckPointLSN = ($FullDBAnchor | Select-Object -First 1).CheckPointLSN.ToString()
-        [BigInt]$FullDBLastLSN = ($FullDBAnchor | Select-Object -First 1).LastLSN.ToString()
+        [BigInt]$CheckPointLSN = $FullDBAnchor.CheckPointLSN.ToString()
+        [BigInt]$FullDBLastLSN = $FullDBAnchor.LastLSN.ToString()
         $BackupWrongLSN = $FilteredRestoreFiles | Where-Object { $_.DatabaseBackupLSN -ne $CheckPointLSN }
         #Should be 0 in there, if not, lets check that they're from during the full backup
         if ($BackupWrongLSN.count -gt 0 ) {
