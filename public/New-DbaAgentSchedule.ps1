@@ -215,8 +215,8 @@ function New-DbaAgentSchedule {
         if ($FrequencyText) {
             if ($FrequencyText -match 'every(\s+(?<interval>\d+))?\s+(?<unit>minute|hour|day|sunday|monday|tuesday|wednesday|thursday|friday|saturday)s?(\s+starting)?(\s+at\s+(?<start>\d\d:\d\d:\d\d))?') {
                 $textInterval = $Matches['interval']
-                $textUnit     = $Matches['unit']
-                $textStart    = $Matches['start']
+                $textUnit = $Matches['unit']
+                $textStart = $Matches['start']
 
                 if (-not $textInterval) {
                     $textInterval = 1
