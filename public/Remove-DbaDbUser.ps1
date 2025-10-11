@@ -119,7 +119,7 @@ function Remove-DbaDbUser {
                 $dropSchemas = @()
                 Write-Message -Level Verbose -Message "Removing User $user from Database $db on target $server"
 
-                if ($Pscmdlet.ShouldProcess($user, "Removing user from Database $db")) {
+                if ($Pscmdlet.ShouldProcess($user, "Removing user from Database $db on target $server")) {
                     # Drop Schemas owned by the user before dropping the user
                     $schemaUrns = $user.EnumOwnedObjects() | Where-Object Type -EQ Schema
                     if ($schemaUrns) {
