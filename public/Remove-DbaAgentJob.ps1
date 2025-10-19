@@ -96,7 +96,7 @@ function Remove-DbaAgentJob {
 
             foreach ($j in $Job) {
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Stop-Function -Message "Job $j doesn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+                    Stop-Function -Message "Job $j doesn't exist on $instance." -Continue -Target $instance -Category InvalidData
                 }
                 $InputObject += ($Server.JobServer.Jobs | Where-Object Name -eq $j)
             }
