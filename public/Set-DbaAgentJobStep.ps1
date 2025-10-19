@@ -343,12 +343,12 @@ function Set-DbaAgentJobStep {
                         }
                     }
 
-                    if ($null -ne $RetryAttempts) {
+                    if (Test-Bound -ParameterName 'RetryAttempts') {
                         Write-Message -Message "Setting job step retry attempts to $RetryAttempts" -Level Verbose
                         $jobStep.RetryAttempts = $RetryAttempts
                     }
 
-                    if ($null -ne $RetryInterval) {
+                    if (Test-Bound -ParameterName 'RetryInterval') {
                         Write-Message -Message "Setting job step retry interval to $RetryInterval" -Level Verbose
                         $jobStep.RetryInterval = $RetryInterval
                     }
@@ -358,9 +358,13 @@ function Set-DbaAgentJobStep {
                         $jobStep.OutputFileName = $OutputFileName
                     }
 
-                    if ($ProxyName) {
-                        # Check if the proxy exists
-                        if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
+                    if (Test-Bound -ParameterName 'ProxyName') {
+                        if ([string]::IsNullOrEmpty($ProxyName)) {
+                            # Remove proxy from job step
+                            Write-Message -Message "Removing proxy from job step" -Level Verbose
+                            $jobStep.ProxyName = ''
+                        } elseif ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
+                            # Set or update proxy name
                             Write-Message -Message "Setting job step proxy name to $ProxyName" -Level Verbose
                             $jobStep.ProxyName = $ProxyName
                         } else {
