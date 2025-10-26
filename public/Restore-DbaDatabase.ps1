@@ -237,6 +237,11 @@ function Restore-DbaDatabase {
     .PARAMETER StopAfterDate
         By default the restore will stop at the first occurence of StopMark found in the chain, passing a datetime where will cause it to stop the first StopMark atfer that datetime.
 
+    .PARAMETER Checksum
+        Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
+        Use this to ensure backup files contain checksums and validate them during restore, following backup best practices.
+        Without this parameter, SQL Server verifies checksums if present but doesn't fail if checksums are missing. With this parameter, the operation fails if checksums are not present in the backup.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -444,7 +449,8 @@ function Restore-DbaDatabase {
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate = (Get-Date '01/01/1971'),
-        [int]$StatementTimeout = 0
+        [int]$StatementTimeout = 0,
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Checksum
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
@@ -836,6 +842,7 @@ function Restore-DbaDatabase {
                     StopAfterDate    = $StopAfterDate
                     StopBefore       = $StopBefore
                     ExecuteAs        = $ExecuteAs
+                    Checksum         = $Checksum
                     EnableException  = $true
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms

@@ -149,6 +149,11 @@ function Test-DbaLastBackup {
         Use this when testing databases that have specific file location requirements or when simulating exact production restore scenarios.
         Ensures the destination server has the same directory structure as the source or the restore will fail.
 
+    .PARAMETER Checksum
+        Enables backup checksum verification during restore operations. When used with -VerifyOnly, forces the RESTORE VERIFYONLY command to use WITH CHECKSUM.
+        Use this to ensure backup files contain checksums and validate them during testing, following backup best practices.
+        Without this parameter, SQL Server verifies checksums if present but doesn't fail if checksums are missing. With this parameter, the operation fails if checksums are not present in the backup.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -225,6 +230,11 @@ function Test-DbaLastBackup {
         PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -MaxDop 4
 
         The use of the MaxDop parameter will limit the number of processors used during the DBCC command
+
+    .EXAMPLE
+       PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly -Checksum
+
+       Verifies the backup files using RESTORE VERIFYONLY WITH CHECKSUM. This will fail if the backups do not contain checksums, ensuring that backups follow best practices.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationSqlCredential and AzureCredential")]
@@ -256,6 +266,7 @@ function Test-DbaLastBackup {
         [switch]$IgnoreDiffBackup,
         [int]$MaxDop,
         [switch]$ReuseSourceFolderStructure,
+        [switch]$Checksum,
         [switch]$EnableException
     )
     process {
@@ -519,6 +530,9 @@ function Test-DbaLastBackup {
                         }
                         if (Test-Bound "FileStreamDirectory") {
                             $restoreSplat.Add('DestinationFileStreamDirectory', $FileStreamDirectory)
+                        }
+                        if (Test-Bound "Checksum") {
+                            $restoreSplat.Add('Checksum', $Checksum)
                         }
 
                         if ($verifyonly) {
