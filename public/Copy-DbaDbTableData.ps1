@@ -10,6 +10,10 @@ function Copy-DbaDbTableData {
         Supports copying between different servers, databases, and schemas while preserving data integrity options like identity values, constraints, and triggers.
         Can automatically create destination tables based on source table structure, making it ideal for data migration, ETL processes, and table replication tasks.
 
+        Note: System-versioned temporal tables require special handling. The -AutoCreateTable parameter does not support temporal table creation.
+        When copying to an existing temporal table, use the -Query parameter to exclude GENERATED ALWAYS columns (e.g., ValidFrom, ValidTo).
+        Temporal version history cannot be preserved as these values are system-managed.
+
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
