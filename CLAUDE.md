@@ -339,6 +339,75 @@ AfterAll {
 }
 ```
 
+### Test Management Guidelines
+
+**CRITICAL RULE: DO NOT ADD ADDITIONAL UNIT TESTS UNLESS EXPLICITLY REQUESTED**
+
+The dbatools test suite must remain manageable in size. Follow these strict guidelines:
+
+**When to Update Tests:**
+- **ALWAYS update parameter validation tests** when parameters are added or removed from a command
+- **ONLY add regression tests** when fixing a specific bug that needs to be prevented from recurring
+- **NEVER add new unit tests** unless the user explicitly asks for them
+
+**Parameter Validation Updates:**
+
+When you add or remove parameters from a command, you MUST update the parameter validation test:
+
+```powershell
+Context "Parameter validation" {
+    It "Should have the expected parameters" {
+        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        $expectedParameters = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "NewParameter",  # ADD new parameters here
+            "EnableException"
+            # REMOVE deleted parameters from this list
+        )
+        Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+    }
+}
+```
+
+**Regression Tests:**
+
+Add regression tests ONLY when:
+- Fixing a specific, reproducible bug
+- The bug is significant enough to warrant long-term protection
+- The test prevents a real-world issue from recurring
+
+Example of when to add a regression test:
+
+```powershell
+# GOOD - Regression test for a specific bug fix
+Context "Regression tests" {
+    It "Should not remove proxy when updating unrelated job step properties (issue #1234)" {
+        # Test for specific bug that was fixed
+        $splatUpdate = @{
+            SqlInstance = $instance
+            Job         = $jobName
+            StepName    = $stepName
+            Database    = "newdb"
+        }
+        $result = Set-DbaAgentJobStep @splatUpdate
+        $result.ProxyName | Should -Be $originalProxyName
+    }
+}
+```
+
+**What NOT to do:**
+
+```powershell
+# WRONG - Adding general coverage tests without being asked
+It "Should return correct number of databases" { }
+It "Should handle empty result sets" { }
+It "Should work with pipeline input" { }
+```
+
+These types of tests bloat the test suite. Only add them if explicitly requested by the user.
+
 ## VERIFICATION CHECKLIST
 
 **Comment and Parameter Preservation:**
@@ -362,6 +431,12 @@ AfterAll {
 - [ ] Where-Object conversions applied appropriately
 - [ ] Temporary resource cleanup implemented properly
 - [ ] Splat usage follows 3+ parameter rule strictly
+
+**Test Management:**
+- [ ] Parameter validation test updated if parameters were added/removed
+- [ ] No additional unit tests added unless explicitly requested
+- [ ] Regression tests added only for significant bug fixes
+- [ ] Test suite size kept manageable
 
 ## SUMMARY
 
