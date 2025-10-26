@@ -107,6 +107,9 @@ function Remove-DbaAgentJobSchedule {
             Stop-Function -Message "You must specify at least one schedule using -Schedule, -ScheduleUid, or -ScheduleId"
             return
         }
+
+        # Initialize collection for jobs retrieved by name
+        $jobCollection = @()
     }
 
     process {
@@ -133,10 +136,9 @@ function Remove-DbaAgentJobSchedule {
                 } else {
                     # Get the job
                     try {
-                        $InputObject += $server.JobServer.Jobs[$j]
-
-                        # Refresh the object
-                        $InputObject.Refresh()
+                        $jobObject = $server.JobServer.Jobs[$j]
+                        $jobObject.Refresh()
+                        $jobCollection += $jobObject
                     } catch {
                         Stop-Function -Message "Something went wrong retrieving the job" -Target $j -ErrorRecord $_ -Continue
                     }
@@ -144,7 +146,12 @@ function Remove-DbaAgentJobSchedule {
             }
         }
 
-        foreach ($currentJob in $InputObject) {
+        # Process pipeline input
+        if ($InputObject) {
+            $jobCollection += $InputObject
+        }
+
+        foreach ($currentJob in $jobCollection) {
             $server = $currentJob.Parent.Parent
 
             # Build a list of schedules to remove based on the provided parameters
