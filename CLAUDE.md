@@ -279,6 +279,26 @@ AfterAll {
 
 ## DBATOOLS-SPECIFIC CONVENTIONS
 
+### Pull Request Naming
+
+**PR titles should follow this format:**
+
+```
+<CommandName or PrimaryFile> - <Description>
+```
+
+**Examples:**
+- `Get-DbaDatabase - Add support for filtering by recovery model`
+- `Set-DbaAgentJobStep - Fix proxy removal and prevent unwanted parameter resets`
+- `Invoke-DbaQuery - Improve error handling for connection timeouts`
+- `dbatools.psm1 - Update module initialization logic`
+
+**Guidelines:**
+- Start with the primary command or file affected (PascalCase for commands)
+- Use a hyphen and space as separator: ` - `
+- Keep the description concise and descriptive (not vague)
+- Focus on what the change does, not implementation details
+
 ### Parameter Validation Pattern
 
 ```powershell
