@@ -675,5 +675,6 @@ function Install-DbaMaintenanceSolution {
         }
 
         Write-ProgressHelper -ExcludePercent -Message "Installation complete"
+        Write-ProgressHelper -Completed
     }
 }
