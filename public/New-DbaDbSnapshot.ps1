@@ -239,6 +239,10 @@ function New-DbaDbSnapshot {
                 Write-Message -Level Warning -Message "A database named $SnapName already exists, skipping"
                 continue
             }
+            # Refresh database and FileGroups collection to ensure SMO has populated data
+            # This is especially important for AG secondary replicas where collections may not be auto-populated
+            $db.Refresh()
+            $db.FileGroups.Refresh()
             $all_FSD = $db.FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup'
             $all_MMO = $db.FileGroups | Where-Object FileGroupType -eq 'MemoryOptimizedDataFileGroup'
             $has_FSD = $all_FSD.Count -gt 0
