@@ -7,7 +7,8 @@ function Write-ProgressHelper {
         [string]$Message,
         [int]$TotalSteps,
         [Alias("NoProgress")]
-        [switch]$ExcludePercent
+        [switch]$ExcludePercent,
+        [switch]$Completed
     )
 
     $caller = (Get-PSCallStack)[1].Command
@@ -47,7 +48,9 @@ function Write-ProgressHelper {
         }
     }
 
-    if ($ExcludePercent) {
+    if ($Completed) {
+        Write-Progress -Activity $Activity -Completed
+    } elseif ($ExcludePercent) {
         Write-Progress -Activity $Activity -Status $Message
     } else {
         if (-not $TotalSteps -and $caller -ne '<ScriptBlock>') {
