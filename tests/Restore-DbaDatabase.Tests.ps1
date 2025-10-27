@@ -221,6 +221,24 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
 
+    Context "ReplaceDbNameInFile regression test for #9656" {
+        BeforeAll {
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
+        }
+
+        It "Should replace database name in file basename only, not in directory path" {
+            $scriptOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName "NewDatabaseName" -ReplaceDbNameInFile -WithReplace -OutputScriptOnly
+            $scriptOutput | Should -BeLike "*NewDatabaseName*"
+            $scriptOutput | Should -Not -BeLike "*singlerestore\NewDatabaseName\*"
+        }
+
+        It "Should generate valid MOVE statements with replaced database name" {
+            $scriptOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName "ReplacedDbName" -ReplaceDbNameInFile -WithReplace -OutputScriptOnly
+            $scriptOutput | Should -Match "MOVE.*ReplacedDbName"
+        }
+    }
+
+
     Context "Test restoring as other login #6992" {
         BeforeAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
