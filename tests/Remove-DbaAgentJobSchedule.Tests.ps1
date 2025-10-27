@@ -52,7 +52,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should detach a schedule by name" {
-            $result = Remove-DbaAgentJobSchedule -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1
+            $result = Remove-DbaAgentJobSchedule -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1 -Confirm:$false
             $result.IsDetached | Should -Be $true
             $result.Schedule | Should -Be $scheduleName1
             $result.Job | Should -Be $jobName
@@ -71,7 +71,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $schedule = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule $scheduleName2
             $scheduleId = $schedule.ID
 
-            $result = Remove-DbaAgentJobSchedule -SqlInstance $script:instance2 -Job $jobName -ScheduleId $scheduleId
+            $result = Remove-DbaAgentJobSchedule -SqlInstance $script:instance2 -Job $jobName -ScheduleId $scheduleId -Confirm:$false
             $result.IsDetached | Should -Be $true
             $result.ScheduleId | Should -Be $scheduleId
 
@@ -89,7 +89,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1
 
             $job = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName
-            $result = $job | Remove-DbaAgentJobSchedule -Schedule $scheduleName1
+            $result = $job | Remove-DbaAgentJobSchedule -Schedule $scheduleName1 -Confirm:$false
             $result.IsDetached | Should -Be $true
             $result.Job | Should -Be $jobName
         }

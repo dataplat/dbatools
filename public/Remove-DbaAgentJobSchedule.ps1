@@ -150,7 +150,10 @@ function Remove-DbaAgentJobSchedule {
         if ($InputObject) {
             $jobCollection += $InputObject
         }
+    }
 
+    end {
+        # Process all collected jobs
         foreach ($currentJob in $jobCollection) {
             $server = $currentJob.Parent.Parent
 
@@ -233,9 +236,7 @@ function Remove-DbaAgentJobSchedule {
                 }
             }
         }
-    }
 
-    end {
         Write-Message -Message "Finished detaching schedule(s) from job(s)" -Level Verbose
     }
 }
