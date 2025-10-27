@@ -32,6 +32,7 @@ Describe $CommandName -Tag UnitTests {
                 "StopBefore",
                 "StopMark",
                 "StopAfterDate",
+                "Checksum",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

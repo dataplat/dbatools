@@ -37,7 +37,8 @@ Describe $CommandName -Tag UnitTests {
                 "MaxTransferSize",
                 "BufferCount",
                 "IgnoreDiffBackup",
-                "ReuseSourceFolderStructure"
+                "ReuseSourceFolderStructure",
+                "Checksum"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
