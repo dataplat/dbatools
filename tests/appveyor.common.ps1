@@ -76,11 +76,23 @@ function Get-TestsForBuildScenario {
     $TestsToRun = "*.Tests.*"
 
     if ($IsInPullRequest) {
+        Write-Host -ForegroundColor DarkGreen "We're in a PR"
+        $appveyor_variables = Get-Childitem env: | Where-Object Name -like 'APPVEYOR_*'
+        foreach($appv in $appveyor_variables)
+        {
+            Write-Host -ForegroundColor DarkGreen "APPV_VAR: $($appv.Name) - $($appv.Value)"
+        }
         try {
             # Get the list of changed files in this PR compared to the base branch
             $targetBranch = if ($env:APPVEYOR_REPO_BRANCH) { "origin/$env:APPVEYOR_REPO_BRANCH" } else { "origin/development" }
             $ChangedFiles = git diff --name-only "$targetBranch...HEAD" 2>$null
-
+            
+            Write-Host -ForegroundColor DarkGreen "Changed files are: "
+            foreach($cmd in $ChangedFiles)
+            {
+                Write-Host -ForegroundColor DarkGreen "- $cmd"
+            }
+            
             if ($ChangedFiles) {
                 # Track what types of files changed
                 $changedCommands = @()
@@ -103,7 +115,7 @@ function Get-TestsForBuildScenario {
                         $changedTests += $testName
                     }
                 }
-
+                
                 # Build list of tests to run based on changed commands
                 $testsForChangedFiles = @()
 
