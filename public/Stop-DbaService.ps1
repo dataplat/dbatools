@@ -4,7 +4,7 @@ function Stop-DbaService {
         Stops SQL Server-related Windows services with proper dependency handling.
 
     .DESCRIPTION
-        Stops SQL Server services including Database Engine, SQL Agent, Reporting Services, Analysis Services, Integration Services, and other components across one or more computers. Automatically handles service dependencies to prevent dependency conflicts during shutdown operations.
+        Stops SQL Server services including Database Engine, SQL Agent, Reporting Services, Analysis Services, Integration Services, PolyBase, Launchpad, and other components across one or more computers. Automatically handles service dependencies to prevent dependency conflicts during shutdown operations.
 
         Particularly useful for planned maintenance windows, troubleshooting service issues, or preparing servers for patching and reboots. The Force parameter allows stopping dependent services automatically, which is essential when stopping Database Engine services that have SQL Agent dependencies.
 
@@ -29,7 +29,7 @@ function Stop-DbaService {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Type
-        Filters which SQL Server service types to stop. Valid options: Agent, Browser, Engine, FullText, SSAS, SSIS, SSRS.
+        Filters which SQL Server service types to stop. Valid options: Agent, Browser, Engine, FullText, SSAS, SSIS, SSRS, PolyBase, Launchpad.
         Use this when you need to stop specific service types across instances, such as stopping all SQL Agent services for patching while keeping Database Engine services running.
 
     .PARAMETER Timeout
@@ -103,7 +103,7 @@ function Stop-DbaService {
         [string[]]$InstanceName,
         [Parameter(ParameterSetName = "Server")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad")]
         [string[]]$Type,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
         [Alias("ServiceCollection")]
@@ -133,16 +133,22 @@ function Stop-DbaService {
     end {
         $processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
         foreach ($service in $processArray) {
-            if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
-                #Construct parameters to call Get-DbaService
-                $serviceParams = @{
-                    ComputerName = $service.ComputerName
-                    InstanceName = $service.InstanceName
-                    Type         = 'Agent'
+            if ($Force -and $service.ServiceType -eq 'Engine') {
+                # Add dependent services (Agent, PolyBase) if not already in the array
+                $dependentTypes = @('Agent', 'PolyBase')
+                foreach ($depType in $dependentTypes) {
+                    if (!($processArray | Where-Object { $_.ServiceType -eq $depType -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
+                        #Construct parameters to call Get-DbaService
+                        $serviceParams = @{
+                            ComputerName = $service.ComputerName
+                            InstanceName = $service.InstanceName
+                            Type         = $depType
+                        }
+                        if ($Credential) { $serviceParams.Credential = $Credential }
+                        if ($EnableException) { $serviceParams.EnableException = $EnableException }
+                        $processArray += @(Get-DbaService @serviceParams)
+                    }
                 }
-                if ($Credential) { $serviceParams.Credential = $Credential }
-                if ($EnableException) { $serviceParams.EnableException = $EnableException }
-                $processArray += @(Get-DbaService @serviceParams)
             }
         }
         if ($PSCmdlet.ShouldProcess("$ProcessArray", "Stopping Service")) {
