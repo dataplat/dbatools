@@ -2,7 +2,7 @@ Add-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep
 
 # Invoke appveyor.common.ps1 to know which tests to run
 . "$($env:APPVEYOR_BUILD_FOLDER)\tests\appveyor.common.ps1"
-$AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $env:APPVEYOR_BUILD_FOLDER #-Silent #FIXME, remove before merging
+$AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $env:APPVEYOR_BUILD_FOLDER -Silent
 
 if ($AllScenarioTests.Count -eq 0) {
     #Exit early without provisioning if no tests to run

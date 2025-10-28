@@ -143,13 +143,16 @@ Builds are split among "scenario"(s) because not every test requires everything 
 Ideally:
 
 1. Whenever possible, write UnitTests.
-1. You should write IntegrationTests ideally running in **EITHER** the 2008R2 or the 2016 "scenario".
-1. Default and 2016_2017 are the most resource constrained and are left to run the Copy-* commands which are the only ones **needing** two active instances.
-1. If you want to write tests that, e.g, target **BOTH** 2008R2 and 2016, try to avoid writing tests that need both instances to be active at the same time.
+2. You should write IntegrationTests ideally running in **EITHER** the 2008R2 or the 2016 "scenario".
+3. Default and 2016_2017 are the most resource constrained and are left to run the Copy-* commands which are the only ones **needing** two active instances.
+4. If you want to write tests that, e.g, target **BOTH** 2008R2 and 2016, try to avoid writing tests that need both instances to be active at the same time.
 
 AppVeyor is set up to recognize what "scenario" is required by your test, simply inspecting for the presence of combinations of `$script:instance1`, `$script:instance2` and `$script:instance3`. If you need to fall into case (4), write two test files, e.g. _Get-DbaFoo.first.Tests.ps1_ (targeting `$script:instance1` only) and _Get-DbaFoo.second.Tests.ps1_ (targeting `$script:instance2` only).
 
-If you don't want to wait for the entire test suite to run (i.e. you need to run only `Get-DbaFoo` on AppVeyor), you can use a **_magic command_** within the commit message, namely `(do Get-DbaFoo)` . This will run only test files within the test folder matching this mask `tests\*Get-DbaFoo*.Tests.ps1`.
+Most PRs will target `public/*.ps1` files to add functionality or resolve bugs.
+Our test runner will try and figure out what tests needs to be run based on the files modified in the PR, plus all the dependencies.
+
+If the automatic detection doesn't work, and you don't want to wait for the entire test suite to run (i.e. you need to run only `Get-DbaFoo` on AppVeyor), you can use a **_magic command_** within the commit message, namely `(do Get-DbaFoo)` . This will run only test files within the test folder matching this mask `tests\*Get-DbaFoo*.Tests.ps1`.
 
 <!-- TODO: how to run your own AppVeyor before pushing a PR -->
 
@@ -157,7 +160,7 @@ If you don't want to wait for the entire test suite to run (i.e. you need to run
 
 We utilize Codecov as many other PowerShell community projects are doing. You can see those coverage reports directly on Codecov site for our project.
 
-[Codecov - dataplat/dbatools](https://app.codecov.io/gh/dataplat/dbatools)
+[Codecov - dataplat/dbatools](https://app.codecov.io/gh/dataplat/dbatools/tree/development)
 
 This system allows us to see the percentage of the coverage for our tests. A rough goal is getting as close to 80% coverage, some commands we have that are just not achievable due to various limitations. As part of our test framework that runs on Appveyor we upload a coverage file to Codecov so it stays current.
 
