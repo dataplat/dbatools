@@ -41,14 +41,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "When detaching schedules from jobs" {
         BeforeAll {
             # Create a test job
-            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Description "Test job for schedule detachment"
+            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Description "Test job for schedule detachment" -Confirm:$false
 
             # Create test schedules
-            $null = New-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule $scheduleName1 -FrequencyType Daily -FrequencyInterval 1 -Force
-            $null = New-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule $scheduleName2 -FrequencyType Daily -FrequencyInterval 1 -Force
+            $null = New-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule $scheduleName1 -FrequencyType Daily -FrequencyInterval 1 -Force -Confirm:$false
+            $null = New-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule $scheduleName2 -FrequencyType Daily -FrequencyInterval 1 -Force -Confirm:$false
 
             # Attach schedules to the job
-            $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1, $scheduleName2
+            $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1, $scheduleName2 -Confirm:$false
         }
 
         It "Should detach a schedule by name" {
@@ -86,7 +86,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "Should work with pipeline input" {
             # Re-attach a schedule for testing
-            $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1
+            $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1 -Confirm:$false
 
             $job = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName
             $result = $job | Remove-DbaAgentJobSchedule -Schedule $scheduleName1 -Confirm:$false
@@ -96,7 +96,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "Should support -WhatIf" {
             # Re-attach a schedule for testing
-            $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1
+            $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1 -Confirm:$false
 
             Remove-DbaAgentJobSchedule -SqlInstance $script:instance2 -Job $jobName -Schedule $scheduleName1 -WhatIf
 
