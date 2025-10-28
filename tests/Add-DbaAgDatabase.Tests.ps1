@@ -22,6 +22,7 @@ Describe $CommandName -Tag UnitTests {
                 "SharedPath",
                 "UseLastBackup",
                 "AdvancedBackupParams",
+                "NoWait",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
