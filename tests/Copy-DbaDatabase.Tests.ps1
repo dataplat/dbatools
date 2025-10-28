@@ -511,6 +511,90 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "SetSourceOffline regression test for issue #9546" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatStopProcess = @{
+                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                Program     = "dbatools PowerShell module - dbatools.io"
+            }
+            Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
+
+            $random = Get-Random
+            $offlineTestDb = "dbatoolsci_offline_test$random"
+
+            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server2.Query("CREATE DATABASE $offlineTestDb; ALTER DATABASE $offlineTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+
+            $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            $server3.Query("CREATE DATABASE $offlineTestDb; ALTER DATABASE $offlineTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveDbs = @{
+                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                Database    = $offlineTestDb
+            }
+            Remove-DbaDatabase @splatRemoveDbs -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should not set source database offline when copy operation fails" {
+            $splatCopyOffline = @{
+                Source           = $TestConfig.instance2
+                Destination      = $TestConfig.instance3
+                Database         = $offlineTestDb
+                BackupRestore    = $true
+                UseLastBackup    = $true
+                SetSourceOffline = $true
+                WarningAction    = "SilentlyContinue"
+            }
+            $results = Copy-DbaDatabase @splatCopyOffline
+
+            $results.Status | Should -Be "Skipped"
+            $results.Notes | Should -Be "Already exists on destination"
+
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
+            $sourceDb.Status | Should -Not -BeLike "*Offline*"
+        }
+
+        It "Should set source database offline when copy operation succeeds" {
+            $splatRemoveDestDb = @{
+                SqlInstance = $TestConfig.instance3
+                Database    = $offlineTestDb
+            }
+            Remove-DbaDatabase @splatRemoveDestDb
+
+            $splatBackup = @{
+                SqlInstance     = $TestConfig.instance2
+                Database        = $offlineTestDb
+                BackupDirectory = $NetworkPath
+            }
+            $null = Backup-DbaDatabase @splatBackup
+
+            $splatCopySuccess = @{
+                Source           = $TestConfig.instance2
+                Destination      = $TestConfig.instance3
+                Database         = $offlineTestDb
+                BackupRestore    = $true
+                UseLastBackup    = $true
+                SetSourceOffline = $true
+            }
+            $results = Copy-DbaDatabase @splatCopySuccess
+
+            $results.Status | Should -Be "Successful"
+
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
+            $sourceDb.Status | Should -BeLike "*Offline*"
+        }
+    }
+
     if ($env:azurepasswd) {
         Context "Copying via Azure storage" {
             BeforeAll {
