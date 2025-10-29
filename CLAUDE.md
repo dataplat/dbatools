@@ -300,6 +300,31 @@ AfterAll {
 
 ## DBATOOLS-SPECIFIC CONVENTIONS
 
+### Command Naming and Creation
+
+**CRITICAL RULE**: When creating new commands, follow PowerShell best practices:
+
+1. **Use singular nouns** - Command names must use singular nouns, not plural
+   - Correct: `Get-DbaDatabase`, `Get-DbaLogin`, `Get-DbaAgent`
+   - Incorrect: `Get-DbaDatabases`, `Get-DbaLogins`, `Get-DbaAgents`
+
+2. **Use approved verbs** - Always use approved PowerShell verbs from the standard set (Get, Set, New, Remove, Invoke, etc.)
+
+3. **Consistent naming pattern** - Follow the `<Verb>-Dba<Noun>` pattern consistently
+
+```powershell
+# CORRECT - Singular nouns
+function Get-DbaDatabase { }
+function Set-DbaLogin { }
+function New-DbaAgent { }
+function Remove-DbaJob { }
+
+# WRONG - Plural nouns
+function Get-DbaDatabases { }
+function Set-DbaLogins { }
+function New-DbaAgents { }
+```
+
 ### Command Registration
 
 **CRITICAL RULE**: When adding a new command, you MUST register it in TWO places:
@@ -490,6 +515,9 @@ These types of tests bloat the test suite. Only add them if explicitly requested
 - [ ] Splat usage follows 3+ parameter rule strictly
 
 **Command Registration (if adding new commands):**
+- [ ] Command name uses singular nouns (not plural)
+- [ ] Command uses approved PowerShell verb
+- [ ] Command follows `<Verb>-Dba<Noun>` naming pattern
 - [ ] Command added to `FunctionsToExport` in dbatools.psd1
 - [ ] Command added to `Export-ModuleMember` in dbatools.psm1
 
