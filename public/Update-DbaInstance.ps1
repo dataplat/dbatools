@@ -434,7 +434,12 @@ function Update-DbaInstance {
                 $components = $components | Where-Object { $_.InstanceName -eq $InstanceName }
             }
             try {
-                $restartNeeded = Test-PendingReboot -ComputerName $resolvedName -Credential $Credential
+                $splatPendingReboot = @{
+                    ComputerName    = $resolvedName
+                    Credential      = $Credential
+                    NoPendingRename = $NoPendingRenameCheck
+                }
+                $restartNeeded = Test-PendingReboot @splatPendingReboot
             } catch {
                 Stop-Function -Message "Failed to get reboot status from $resolvedName" -Continue -ErrorRecord $_
             }
