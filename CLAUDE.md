@@ -39,6 +39,27 @@ param(
 - Use `[switch]` for boolean flags, not `[bool]` parameters
 - Keep non-boolean attributes with values: `[Parameter(ValueFromPipelineByPropertyName = "Name")]`
 
+### POWERSHELL v3 COMPATIBILITY
+
+**CRITICAL RULE**: dbatools must support PowerShell v3. NEVER use `::new()` or other PowerShell v5+ syntax constructs.
+
+**Do NOT use:**
+- `[ClassName]::new()` - Use `New-Object` instead
+- Advanced type accelerators only available in v5+
+- Other v5+ language features
+
+```powershell
+# CORRECT - PowerShell v3 compatible
+$object = New-Object -TypeName System.Collections.Hashtable
+$collection = New-Object System.Collections.ArrayList
+
+# WRONG - PowerShell v5+ only
+$object = [System.Collections.Hashtable]::new()
+$collection = [System.Collections.ArrayList]::new()
+```
+
+When in doubt about version compatibility, use the `New-Object` cmdlet approach.
+
 ### SPLAT USAGE REQUIREMENT
 
 **USE SPLATS ONLY FOR 3+ PARAMETERS**
@@ -279,6 +300,37 @@ AfterAll {
 
 ## DBATOOLS-SPECIFIC CONVENTIONS
 
+### Command Registration
+
+**CRITICAL RULE**: When adding a new command, you MUST register it in TWO places:
+
+1. **Add to dbatools.psd1** - In the `FunctionsToExport` array
+2. **Add to dbatools.psm1** - In the explicit command export section
+
+Both registrations are required for the command to be properly exported and discoverable.
+
+```powershell
+# Example: Adding a new command "Get-DbaNewFeature"
+
+# 1. In dbatools.psd1, add to FunctionsToExport:
+FunctionsToExport = @(
+    'Get-DbaDatabase'
+    'Get-DbaNewFeature'  # ADD HERE
+    'Set-DbaDatabase'
+    # ... other commands
+)
+
+# 2. In dbatools.psm1, add to explicit exports section:
+Export-ModuleMember -Function @(
+    'Get-DbaDatabase'
+    'Get-DbaNewFeature'  # ADD HERE
+    'Set-DbaDatabase'
+    # ... other commands
+)
+```
+
+Failure to register in both locations will result in the command not being available when users import the module.
+
 ### Pull Request Naming
 
 **PR titles should follow this format:**
@@ -417,6 +469,11 @@ These types of tests bloat the test suite. Only add them if explicitly requested
 - [ ] No `= $true` used in parameter attributes (use modern syntax)
 - [ ] Splats used only for 3+ parameters
 
+**Version Compatibility:**
+- [ ] No `::new()` syntax used (PowerShell v3+ compatible)
+- [ ] No v5+ language features used
+- [ ] `New-Object` used for object instantiation
+
 **Style Requirements:**
 - [ ] Double quotes used for all strings
 - [ ] **MANDATORY**: Hashtable assignments perfectly aligned
@@ -432,6 +489,10 @@ These types of tests bloat the test suite. Only add them if explicitly requested
 - [ ] Temporary resource cleanup implemented properly
 - [ ] Splat usage follows 3+ parameter rule strictly
 
+**Command Registration (if adding new commands):**
+- [ ] Command added to `FunctionsToExport` in dbatools.psd1
+- [ ] Command added to `Export-ModuleMember` in dbatools.psm1
+
 **Test Management:**
 - [ ] Parameter validation test updated if parameters were added/removed
 - [ ] No additional unit tests added unless explicitly requested
@@ -444,8 +505,10 @@ The golden rules for dbatools code:
 
 1. **NEVER use backticks** - Use splats for 3+ parameters, direct syntax for 1-2
 2. **NEVER use `= $true` in parameter attributes** - Use modern syntax: `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
-3. **ALWAYS align hashtables** - Equals signs must line up vertically
-4. **ALWAYS preserve comments** - Every comment stays exactly as written
-5. **ALWAYS use double quotes** - SQL Server module standard
-6. **ALWAYS use unique variable names** - Prevent scope collisions
-7. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
+3. **NEVER use `::new()` syntax** - Use `New-Object` for PowerShell v3 compatibility
+4. **ALWAYS align hashtables** - Equals signs must line up vertically
+5. **ALWAYS preserve comments** - Every comment stays exactly as written
+6. **ALWAYS use double quotes** - SQL Server module standard
+7. **ALWAYS use unique variable names** - Prevent scope collisions
+8. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
+9. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
