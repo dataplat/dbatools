@@ -93,6 +93,7 @@ function Remove-DbaReplArticle {
     )
 
     begin {
+        Add-ReplicationLibrary
         $articles = @( )
     }
 
