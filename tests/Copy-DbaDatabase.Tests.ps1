@@ -588,7 +588,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Copy-DbaDatabase @splatCopySuccess
 
-            $results.Status | Should -Be "Successful"
+            $results[0].Status | Should -Be "Successful"
 
             $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
             $sourceDb.Status | Should -BeLike "*Offline*"
