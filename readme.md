@@ -295,7 +295,7 @@ For more troubleshooting help, visit our [troubleshooting guide](https://dbatool
 - ⭐ Star this repository
 - 🐛 [Report issues](https://github.com/dataplat/dbatools/issues)
 - 💡 [Request features](https://github.com/dataplat/dbatools/issues)
-- 🤝 [Contribute code](contributing.md)
+- 🤝 [Contribute code](CONTRIBUTING.md)
 
 **Community Channels:**
 - [#dbatools on SQL Community Slack](https://sqlcommunity.slack.com/messages/C1M2WEASG/)
