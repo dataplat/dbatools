@@ -38,7 +38,7 @@ function Get-DbaDbState {
 
     .NOTES
         Tags: Database
-        Author: Simone Bizzotto (@niphold)
+        Author: Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
