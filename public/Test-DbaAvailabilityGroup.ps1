@@ -48,6 +48,10 @@ function Test-DbaAvailabilityGroup {
         Validates that the most recent database backup chain can be used for AG database addition.
         Enables validation using existing backups instead of creating new ones, but requires the last backup to be a transaction log backup. Use this to test AG readiness with your current backup strategy.
 
+    .PARAMETER HealthCheck
+        Performs comprehensive health monitoring of the Availability Group similar to SSMS AG Dashboard.
+        Returns detailed replica and database synchronization status including queue sizes, LSN information, and performance metrics. Use this to monitor AG health, identify synchronization issues, or troubleshoot failover readiness.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -73,21 +77,27 @@ function Test-DbaAvailabilityGroup {
         PS C:\> Test-DbaAvailabilityGroup -SqlInstance SQL2016 -AvailabilityGroup TestAG1 -AddDatabase AdventureWorks -SeedingMode Automatic
 
         Test if database AdventureWorks can be added to the Availability Group TestAG1 with automatic seeding.
+
+    .EXAMPLE
+        PS C:\> Test-DbaAvailabilityGroup -SqlInstance SQL2016 -AvailabilityGroup TestAG1 -HealthCheck
+
+        Performs comprehensive health monitoring of TestAG1, returning detailed synchronization status for all replicas and databases similar to SSMS AG Dashboard.
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]$AvailabilityGroup,
         [DbaInstanceParameter[]]$Secondary,
         [PSCredential]$SecondarySqlCredential,
         [string[]]$AddDatabase,
-        [ValidateSet('Automatic', 'Manual')]
+        [ValidateSet("Automatic", "Manual")]
         [string]$SeedingMode,
         [string]$SharedPath,
         [switch]$UseLastBackup,
+        [switch]$HealthCheck,
         [switch]$EnableException
     )
     process {
@@ -110,22 +120,75 @@ function Test-DbaAvailabilityGroup {
             return
         }
 
-        if ($ag.LocalReplicaRole -ne 'Primary') {
+        if (-not $HealthCheck -and $ag.LocalReplicaRole -ne 'Primary') {
             Stop-Function -Message "LocalReplicaRole of replica $server is not Primary, but $($ag.LocalReplicaRole). Please connect to the current primary replica $($ag.PrimaryReplica)."
             return
         }
 
         # Test for health of Availability Group
 
-        # Later: Get replica and database states like in SSMS dashboard
-        # Now: Just test for ConnectionState -eq 'Connected'
+        if ($HealthCheck) {
+            # Comprehensive health monitoring similar to SSMS AG Dashboard
+            # Returns detailed database replica state information for all replicas
 
-        # Note on further development:
-        # As long as there are no databases in the Availability Group, test for RollupSynchronizationState is not useful
+            foreach ($replica in $ag.AvailabilityReplicas) {
+                $replicaId = $replica.UniqueId
+                $replicaStates = $ag.DatabaseReplicaStates | Where-Object AvailabilityReplicaId -eq $replicaId
 
-        # The primary replica always has the best information about all the replicas.
-        # We can maybe also connect to the secondary replicas and test their view of the situation, but then only test the local replica.
+                foreach ($db in $ag.AvailabilityDatabases) {
+                    $databaseReplicaState = $replicaStates | Where-Object AvailabilityDateabaseId -eq $db.UniqueId
+                    if ($null -eq $databaseReplicaState) {
+                        continue
+                    }
 
+                    $splatOutput = @{
+                        ComputerName                 = $ag.ComputerName
+                        InstanceName                 = $ag.InstanceName
+                        SqlInstance                  = $ag.SqlInstance
+                        AvailabilityGroup            = $ag.Name
+                        PrimaryReplica               = $ag.PrimaryReplica
+                        ReplicaServerName            = $databaseReplicaState.AvailabilityReplicaServerName
+                        ReplicaRole                  = $databaseReplicaState.ReplicaRole
+                        ReplicaAvailabilityMode      = $replica.AvailabilityMode
+                        ReplicaFailoverMode          = $replica.FailoverMode
+                        ReplicaConnectionState       = $replica.ConnectionState
+                        ReplicaJoinState             = $replica.JoinState
+                        ReplicaSynchronizationState  = $replica.RollupSynchronizationState
+                        DatabaseName                 = $databaseReplicaState.AvailabilityDatabaseName
+                        SynchronizationState         = $databaseReplicaState.SynchronizationState
+                        IsFailoverReady              = $databaseReplicaState.IsFailoverReady
+                        IsJoined                     = $databaseReplicaState.IsJoined
+                        IsSuspended                  = $databaseReplicaState.IsSuspended
+                        SuspendReason                = $databaseReplicaState.SuspendReason
+                        EstimatedRecoveryTime        = $databaseReplicaState.EstimatedRecoveryTime
+                        EstimatedDataLoss            = $databaseReplicaState.EstimatedDataLoss
+                        SynchronizationPerformance   = $databaseReplicaState.SynchronizationPerformance
+                        LogSendQueueSize             = $databaseReplicaState.LogSendQueueSize
+                        LogSendRate                  = $databaseReplicaState.LogSendRate
+                        RedoQueueSize                = $databaseReplicaState.RedoQueueSize
+                        RedoRate                     = $databaseReplicaState.RedoRate
+                        FileStreamSendRate           = $databaseReplicaState.FileStreamSendRate
+                        EndOfLogLSN                  = $databaseReplicaState.EndOfLogLSN
+                        RecoveryLSN                  = $databaseReplicaState.RecoveryLSN
+                        TruncationLSN                = $databaseReplicaState.TruncationLSN
+                        LastCommitLSN                = $databaseReplicaState.LastCommitLSN
+                        LastCommitTime               = $databaseReplicaState.LastCommitTime
+                        LastHardenedLSN              = $databaseReplicaState.LastHardenedLSN
+                        LastHardenedTime             = $databaseReplicaState.LastHardenedTime
+                        LastReceivedLSN              = $databaseReplicaState.LastReceivedLSN
+                        LastReceivedTime             = $databaseReplicaState.LastReceivedTime
+                        LastRedoneLSN                = $databaseReplicaState.LastRedoneLSN
+                        LastRedoneTime               = $databaseReplicaState.LastRedoneTime
+                        LastSentLSN                  = $databaseReplicaState.LastSentLSN
+                        LastSentTime                 = $databaseReplicaState.LastSentTime
+                    }
+                    [PSCustomObject]$splatOutput
+                }
+            }
+            return
+        }
+
+        # Basic connectivity test for non-HealthCheck scenarios
         $failure = $false
         foreach ($replica in $ag.AvailabilityReplicas) {
             if ($replica.ConnectionState -ne 'Connected') {
@@ -137,7 +200,6 @@ function Test-DbaAvailabilityGroup {
             Stop-Function -Message "ConnectionState of one or more replicas is not Connected."
             return
         }
-
 
         # For now, just output the base information.
 

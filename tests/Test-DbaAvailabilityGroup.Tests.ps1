@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "SeedingMode",
                 "SharedPath",
                 "UseLastBackup",
+                "HealthCheck",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
