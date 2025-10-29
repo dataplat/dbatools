@@ -349,7 +349,7 @@ function Invoke-DbaDbPiiScan {
                                 Write-Message -Level Verbose -Message "Scanning the top $SampleCount values for [$($columnobject.Name)] from [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                                 # Set the text data types
-                                $textDataTypes = 'char', 'varchar', 'text', 'nchar', 'nvarchar', 'ntext', 'xml'
+                                $textDataTypes = "char", "varchar", "nchar", "nvarchar"
 
                                 # Setup the query
                                 if ($columnobject.DataType.Name -in $textDataTypes) {
