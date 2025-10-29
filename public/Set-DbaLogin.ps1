@@ -24,6 +24,10 @@ function Set-DbaLogin {
         Sets a new password for the login using either a PSCredential object or SecureString. Required when using -PasswordMustChange.
         Create secure passwords with Get-Credential or ConvertTo-SecureString to avoid plain text exposure in scripts.
 
+    .PARAMETER PasswordHash
+        Sets the login password using a hashed password value (0x...). This is used for transferring logins between instances without knowing the actual password.
+        The hash must be in the format returned by Get-LoginPasswordHash or extracted from sys.sql_logins. Cannot be used with -SecurePassword or -PasswordMustChange.
+
     .PARAMETER DefaultDatabase
         Changes the default database that the login connects to after authentication. Must be an existing database name.
         Use this when users need to land in a specific database instead of master, such as application-specific databases.
@@ -175,6 +179,19 @@ function Set-DbaLogin {
         PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -Unlock -Force
 
         Unlocks the login1 on the sql1 instance using the technique described at https://www.mssqltips.com/sqlservertip/2758/how-to-unlock-a-sql-login-without-resetting-the-password/
+
+    .EXAMPLE
+        PS C:\> $hash = "0x02001234567890ABCDEF..."
+        PS C:\> Set-DbaLogin -SqlInstance sql2 -Login login1 -PasswordHash $hash
+
+        Sets the password for login1 on sql2 using a hashed password value from another instance
+
+    .EXAMPLE
+        PS C:\> $sourceLogin = Get-DbaLogin -SqlInstance sql1 -Login app_user
+        PS C:\> $hash = Get-LoginPasswordHash -Login $sourceLogin
+        PS C:\> Set-DbaLogin -SqlInstance sql2 -Login app_user -PasswordHash $hash
+
+        Gets the password hash from sql1 and applies it to sql2, syncing the password between instances
     #>
 
     [CmdletBinding(SupportsShouldProcess)]
@@ -185,6 +202,7 @@ function Set-DbaLogin {
         [string[]]$Login,
         [Alias("Password")]
         [object]$SecurePassword, #object so that it can accept credential or securestring
+        [string]$PasswordHash,
         [Alias("DefaultDB")]
         [string]$DefaultDatabase,
         [switch]$Unlock,
@@ -223,6 +241,18 @@ function Set-DbaLogin {
 
         if ((Test-Bound -ParameterName 'GrantLogin') -and (Test-Bound -ParameterName 'DenyLogin')) {
             Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login -Continue
+        }
+
+        if ((Test-Bound -ParameterName 'SecurePassword') -and (Test-Bound -ParameterName 'PasswordHash')) {
+            Stop-Function -Message 'You cannot use both -SecurePassword and -PasswordHash together' -Target $Login -Continue
+        }
+
+        if ((Test-Bound -ParameterName 'PasswordHash') -and (Test-Bound -ParameterName 'PasswordMustChange')) {
+            Stop-Function -Message 'You cannot use -PasswordHash with -PasswordMustChange' -Target $Login -Continue
+        }
+
+        if ((Test-Bound -ParameterName 'PasswordHash') -and $PasswordHash -notmatch '^0x[0-9A-Fa-f]+$') {
+            Stop-Function -Message 'PasswordHash must be in hexadecimal format starting with 0x' -Target $Login -Continue
         }
 
         if (Test-bound -ParameterName 'SecurePassword') {
@@ -449,6 +479,27 @@ function Set-DbaLogin {
                         $notes += "Couldn't change password"
                         $passwordChanged = $false
                         Stop-Function -Message "Something went wrong changing the password for $l" -Target $l -ErrorRecord $_ -Continue
+                    }
+                }
+
+                # Change the password using a hash value
+                if (Test-Bound -ParameterName 'PasswordHash') {
+                    # Verify this is a SQL login
+                    if ($l.LoginType -ne "SqlLogin") {
+                        $notes += "Cannot set password hash on non-SQL login"
+                        Stop-Function -Message "Login $l is not a SQL Server login. Password hash can only be set on SQL Server authentication logins." -Target $l -Continue
+                    }
+
+                    try {
+                        $loginName = $l.Name.Replace("'", "''")
+                        $sql = "ALTER LOGIN [$loginName] WITH PASSWORD = $PasswordHash HASHED"
+                        $null = $server.Query($sql)
+                        $passwordChanged = $true
+                        $l.Refresh()
+                    } catch {
+                        $notes += "Couldn't set password hash"
+                        $passwordChanged = $false
+                        Stop-Function -Message "Something went wrong setting the password hash for $l" -Target $l -ErrorRecord $_ -Continue
                     }
                 }
 
