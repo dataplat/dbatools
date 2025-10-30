@@ -112,7 +112,7 @@ function Enable-DbaAgHadr {
                     try {
                         Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $instanceName
                     } catch {
-                        Stop-Function -Continue -Message "Failure on $($instance.FullName) | This may be because AlwaysOn Availability Groups feature requires the x86(non-WOW) or x64 Enterprise Edition of SQL Server 2012 (or later version) running on Windows Server 2008 (or later version) with WSFC hotfix KB 2494036 installed."
+                        Stop-Function -Continue -Message "Failed to enable HADR on $($instance.FullName): $($_.Exception.Message) | AlwaysOn Availability Groups requires Enterprise Edition of SQL Server 2012 or later running on Windows Server 2012 or later with Windows Server Failover Clustering (WSFC) configured." -ErrorRecord $_
                     }
                 }
             }

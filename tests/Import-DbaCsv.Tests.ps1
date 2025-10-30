@@ -201,5 +201,32 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE WithGuidsAndBits" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
         }
+
+        It "warns when multi-character delimiter is specified and uses only first character (issue #6488)" {
+            $filePath = "$($TestConfig.Temp)\delimiter-test-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "DelimiterTest$(Get-Random)"
+
+            "col1|col2|col3" | Out-File -FilePath $filePath -Encoding UTF8
+            "val1|val2|val3" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            $splatImport = @{
+                Path            = $filePath
+                SqlInstance     = $server
+                Database        = "tempdb"
+                Table           = $tableName
+                Delimiter       = "||"
+                AutoCreateTable = $true
+                WarningVariable = "warnVar"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = Import-DbaCsv @splatImport
+
+            $warnVar | Should -BeLike "*Multi-character delimiter*only the first character*will be used*"
+            $result.RowsCopied | Should -Be 1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
     }
 }
