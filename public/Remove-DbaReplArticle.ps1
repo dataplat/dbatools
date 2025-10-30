@@ -88,7 +88,7 @@ function Remove-DbaReplArticle {
         [String]$Name,
         #[Switch]$DropObjectOnSubscriber,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Replication.Article[]]$InputObject,
+        [psobject[]]$InputObject,
         [Switch]$EnableException
     )
 
