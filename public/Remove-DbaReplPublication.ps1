@@ -69,6 +69,7 @@ function Remove-DbaReplPublication {
         [Switch]$EnableException
     )
     begin {
+        Add-ReplicationLibrary
         $publications = @( )
     }
     process {
