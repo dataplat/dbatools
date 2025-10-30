@@ -312,4 +312,28 @@ Describe $CommandName -Tag IntegrationTests {
             $fileGroupResults.FGN.Keys | Should -Be @("Dbatoolsci_filegroupname")
         }
     }
+
+    Context "Regression tests" {
+        It "Should not throw an error when using ReplaceBefore with LogicalName and FileName (issue #9069)" {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $testDbName = "dbatoolsci_replaceBefore_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDbName
+
+            $splatReplaceBefore = @{
+                SqlInstance   = $TestConfig.instance2
+                Database      = $testDbName
+                DatabaseName  = "$($testDbName)_renamed"
+                LogicalName   = "<DBN><LGN>"
+                FileName      = "<DBN><FNN>"
+                ReplaceBefore = $true
+                Preview       = $true
+            }
+
+            { $result = Rename-DbaDatabase @splatReplaceBefore } | Should -Not -Throw
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
 }
