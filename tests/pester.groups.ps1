@@ -22,6 +22,7 @@ $TestsRunGroups = @{
     )
     # do not run on appveyor
     "appveyor_disabled" = @(
+        'Backup-DbaDbCertificate'
     )
     # do not run everywhere
     "disabled"          = @()
