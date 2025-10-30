@@ -432,8 +432,14 @@ function Rename-DbaDatabase {
                         $Orig_Placeholder = $Orig_LGName
                         if ($ReplaceBefore) {
                             # at Logical Name level, we need to worry about database name and filegroup name
-                            $Orig_Placeholder = $Orig_Placeholder.Replace((Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name), '').Replace(
-                                (Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name), '')
+                            $dbKey = Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name
+                            $fgKey = Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name
+                            if ($dbKey) {
+                                $Orig_Placeholder = $Orig_Placeholder.Replace($dbKey, '')
+                            }
+                            if ($fgKey) {
+                                $Orig_Placeholder = $Orig_Placeholder.Replace($fgKey, '')
+                            }
                         }
                         $NewLGName = $LogicalName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $fg.Name).Replace(
                             '<FT>', $FileType).Replace('<LGN>', $Orig_Placeholder)
@@ -476,8 +482,14 @@ function Rename-DbaDatabase {
                         $Orig_Placeholder = $Orig_LGName
                         if ($ReplaceBefore) {
                             # at Logical Name level, we need to worry about database name and filegroup name, but for logfiles filegroup is not there
-                            $Orig_Placeholder = $Orig_Placeholder.Replace((Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name), '').Replace(
-                                (Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name), '')
+                            $dbKey = Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name
+                            $fgKey = Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name
+                            if ($dbKey) {
+                                $Orig_Placeholder = $Orig_Placeholder.Replace($dbKey, '')
+                            }
+                            if ($fgKey) {
+                                $Orig_Placeholder = $Orig_Placeholder.Replace($fgKey, '')
+                            }
                         }
                         $NewLGName = $LogicalName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
                             '<FT>', 'LOG').Replace('<LGN>', $Orig_Placeholder)
@@ -572,9 +584,18 @@ function Rename-DbaDatabase {
                         $Orig_Placeholder = $Orig_FNNameLeaf
                         if ($ReplaceBefore) {
                             # at Filename level, we need to worry about database name, filegroup name and logical file name
-                            $Orig_Placeholder = $Orig_Placeholder.Replace((Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name), '').Replace(
-                                (Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name), '').Replace(
-                                (Get-DbaKeyByValue -HashTable $Entities_Before['LGN'] -Value $logical.Name), '')
+                            $dbKey = Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name
+                            $fgKey = Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name
+                            $lgKey = Get-DbaKeyByValue -HashTable $Entities_Before['LGN'] -Value $logical.Name
+                            if ($dbKey) {
+                                $Orig_Placeholder = $Orig_Placeholder.Replace($dbKey, '')
+                            }
+                            if ($fgKey) {
+                                $Orig_Placeholder = $Orig_Placeholder.Replace($fgKey, '')
+                            }
+                            if ($lgKey) {
+                                $Orig_Placeholder = $Orig_Placeholder.Replace($lgKey, '')
+                            }
                         }
                         $NewFNName = $FileName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $fg.Name).Replace(
                             '<FT>', $FileType).Replace('<LGN>', $logical.Name).Replace('<FNN>', $Orig_Placeholder)
@@ -623,9 +644,18 @@ function Rename-DbaDatabase {
                             $Orig_Placeholder = $Orig_FNNameLeaf
                             if ($ReplaceBefore) {
                                 # at Filename level, we need to worry about database name, filegroup name and logical file name
-                                $Orig_Placeholder = $Orig_Placeholder.Replace((Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name), '').Replace(
-                                    (Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name), '').Replace(
-                                    (Get-DbaKeyByValue -HashTable $Entities_Before['LGN'] -Value $logical.Name), '')
+                                $dbKey = Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name
+                                $fgKey = Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name
+                                $lgKey = Get-DbaKeyByValue -HashTable $Entities_Before['LGN'] -Value $logical.Name
+                                if ($dbKey) {
+                                    $Orig_Placeholder = $Orig_Placeholder.Replace($dbKey, '')
+                                }
+                                if ($fgKey) {
+                                    $Orig_Placeholder = $Orig_Placeholder.Replace($fgKey, '')
+                                }
+                                if ($lgKey) {
+                                    $Orig_Placeholder = $Orig_Placeholder.Replace($lgKey, '')
+                                }
                             }
                             $NewFNName = $FileName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
                                 '<FT>', 'LOG').Replace('<LGN>', $logical.Name).Replace('<FNN>', $Orig_Placeholder)
