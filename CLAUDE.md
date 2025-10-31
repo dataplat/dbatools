@@ -300,6 +300,31 @@ AfterAll {
 
 ## DBATOOLS-SPECIFIC CONVENTIONS
 
+### Command Naming and Creation
+
+**CRITICAL RULE**: When creating new commands, follow PowerShell best practices:
+
+1. **Use singular nouns** - Command names must use singular nouns, not plural
+   - Correct: `Get-DbaDatabase`, `Get-DbaLogin`, `Get-DbaAgent`
+   - Incorrect: `Get-DbaDatabases`, `Get-DbaLogins`, `Get-DbaAgents`
+
+2. **Use approved verbs** - Always use approved PowerShell verbs from the standard set (Get, Set, New, Remove, Invoke, etc.)
+
+3. **Consistent naming pattern** - Follow the `<Verb>-Dba<Noun>` pattern consistently
+
+```powershell
+# CORRECT - Singular nouns
+function Get-DbaDatabase { }
+function Set-DbaLogin { }
+function New-DbaAgent { }
+function Remove-DbaJob { }
+
+# WRONG - Plural nouns
+function Get-DbaDatabases { }
+function Set-DbaLogins { }
+function New-DbaAgents { }
+```
+
 ### Microsoft SMO Property Name Typos
 
 **CRITICAL KNOWLEDGE**: Some Microsoft SMO (SQL Server Management Objects) properties contain typos in their official names. These are NOT errors - they are the actual property names you must use.
@@ -414,14 +439,13 @@ AfterAll {
 
 ### Test Management Guidelines
 
-**CRITICAL RULE: DO NOT ADD ADDITIONAL UNIT TESTS UNLESS EXPLICITLY REQUESTED**
-
-The dbatools test suite must remain manageable in size. Follow these strict guidelines:
+The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality. Follow these guidelines:
 
 **When to Update Tests:**
 - **ALWAYS update parameter validation tests** when parameters are added or removed from a command
-- **ONLY add regression tests** when fixing a specific bug that needs to be prevented from recurring
-- **NEVER add new unit tests** unless the user explicitly asks for them
+- **ADD tests for new functionality** - When adding new parameters or features, include tests that verify the new functionality works correctly
+- **ADD regression tests** when fixing a specific bug that needs to be prevented from recurring
+- **AVOID bloat** - Don't add generic coverage tests for basic operations unless they test a specific fix or new feature
 
 **Parameter Validation Updates:**
 
@@ -444,12 +468,43 @@ Context "Parameter validation" {
 }
 ```
 
+**Tests for New Features:**
+
+When adding new parameters or functionality, include tests that verify the new feature works:
+
+```powershell
+# GOOD - Test for a new parameter that filters results
+Context "Filter by recovery model" {
+    It "Should return only databases with Full recovery model" {
+        $splatFilter = @{
+            SqlInstance   = $instance
+            RecoveryModel = "Full"
+        }
+        $result = Get-DbaDatabase @splatFilter
+        $result.RecoveryModel | Should -All -Be "Full"
+    }
+}
+
+# GOOD - Test for a new switch parameter
+Context "Force parameter" {
+    It "Should skip confirmation when -Force is used" {
+        $splatForce = @{
+            SqlInstance = $instance
+            Database    = $testDb
+            Force       = $true
+            Confirm     = $false
+        }
+        { Remove-DbaDatabase @splatForce } | Should -Not -Throw
+    }
+}
+```
+
 **Regression Tests:**
 
-Add regression tests ONLY when:
-- Fixing a specific, reproducible bug
+Add regression tests when fixing bugs:
+- Fixing a specific, reproducible bug that should be prevented from recurring
 - The bug is significant enough to warrant long-term protection
-- The test prevents a real-world issue from recurring
+- The test demonstrates the bug is fixed and prevents regression
 
 Example of when to add a regression test:
 
@@ -473,13 +528,17 @@ Context "Regression tests" {
 **What NOT to do:**
 
 ```powershell
-# WRONG - Adding general coverage tests without being asked
+# WRONG - Adding general coverage tests for existing functionality without a fix
 It "Should return correct number of databases" { }
 It "Should handle empty result sets" { }
 It "Should work with pipeline input" { }
+
+# WRONG - Generic edge case tests unrelated to changes
+It "Should handle null parameters gracefully" { }
+It "Should work with special characters in names" { }
 ```
 
-These types of tests bloat the test suite. Only add them if explicitly requested by the user.
+Don't add tests for existing functionality unless you're fixing a bug or adding a new feature that needs verification.
 
 ## VERIFICATION CHECKLIST
 
@@ -512,14 +571,18 @@ These types of tests bloat the test suite. Only add them if explicitly requested
 - [ ] Microsoft SMO property typos preserved (e.g., AvailabilityDateabaseId)
 
 **Command Registration (if adding new commands):**
+- [ ] Command name uses singular nouns (not plural)
+- [ ] Command uses approved PowerShell verb
+- [ ] Command follows `<Verb>-Dba<Noun>` naming pattern
 - [ ] Command added to `FunctionsToExport` in dbatools.psd1
 - [ ] Command added to `Export-ModuleMember` in dbatools.psm1
 
 **Test Management:**
 - [ ] Parameter validation test updated if parameters were added/removed
-- [ ] No additional unit tests added unless explicitly requested
-- [ ] Regression tests added only for significant bug fixes
-- [ ] Test suite size kept manageable
+- [ ] Tests added for new functionality and parameters (not just bloat)
+- [ ] Regression tests added for significant bug fixes
+- [ ] Generic coverage tests avoided unless testing a specific fix or new feature
+- [ ] Test suite remains manageable and focused
 
 ## SUMMARY
 
@@ -535,3 +598,4 @@ The golden rules for dbatools code:
 8. **ALWAYS use unique variable names** - Prevent scope collisions
 9. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
 10. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
+11. **ALWAYS use singular nouns** - Command names use singular, not plural
