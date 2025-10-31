@@ -440,9 +440,13 @@ AfterAll {
 ### Test Management Guidelines
 
 The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality. Follow these guidelines:
+The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality. Follow these guidelines:
 
 **When to Update Tests:**
 - **ALWAYS update parameter validation tests** when parameters are added or removed from a command
+- **ADD tests for new functionality** - When adding new parameters or features, include tests that verify the new functionality works correctly
+- **ADD regression tests** when fixing a specific bug that needs to be prevented from recurring
+- **AVOID bloat** - Don't add generic coverage tests for basic operations unless they test a specific fix or new feature
 - **ADD tests for new functionality** - When adding new parameters or features, include tests that verify the new functionality works correctly
 - **ADD regression tests** when fixing a specific bug that needs to be prevented from recurring
 - **AVOID bloat** - Don't add generic coverage tests for basic operations unless they test a specific fix or new feature
@@ -499,11 +503,45 @@ Context "Force parameter" {
 }
 ```
 
+**Tests for New Features:**
+
+When adding new parameters or functionality, include tests that verify the new feature works:
+
+```powershell
+# GOOD - Test for a new parameter that filters results
+Context "Filter by recovery model" {
+    It "Should return only databases with Full recovery model" {
+        $splatFilter = @{
+            SqlInstance   = $instance
+            RecoveryModel = "Full"
+        }
+        $result = Get-DbaDatabase @splatFilter
+        $result.RecoveryModel | Should -All -Be "Full"
+    }
+}
+
+# GOOD - Test for a new switch parameter
+Context "Force parameter" {
+    It "Should skip confirmation when -Force is used" {
+        $splatForce = @{
+            SqlInstance = $instance
+            Database    = $testDb
+            Force       = $true
+            Confirm     = $false
+        }
+        { Remove-DbaDatabase @splatForce } | Should -Not -Throw
+    }
+}
+```
+
 **Regression Tests:**
 
 Add regression tests when fixing bugs:
 - Fixing a specific, reproducible bug that should be prevented from recurring
+Add regression tests when fixing bugs:
+- Fixing a specific, reproducible bug that should be prevented from recurring
 - The bug is significant enough to warrant long-term protection
+- The test demonstrates the bug is fixed and prevents regression
 - The test demonstrates the bug is fixed and prevents regression
 
 Example of when to add a regression test:
@@ -529,6 +567,7 @@ Context "Regression tests" {
 
 ```powershell
 # WRONG - Adding general coverage tests for existing functionality without a fix
+# WRONG - Adding general coverage tests for existing functionality without a fix
 It "Should return correct number of databases" { }
 It "Should handle empty result sets" { }
 It "Should work with pipeline input" { }
@@ -536,8 +575,13 @@ It "Should work with pipeline input" { }
 # WRONG - Generic edge case tests unrelated to changes
 It "Should handle null parameters gracefully" { }
 It "Should work with special characters in names" { }
+
+# WRONG - Generic edge case tests unrelated to changes
+It "Should handle null parameters gracefully" { }
+It "Should work with special characters in names" { }
 ```
 
+Don't add tests for existing functionality unless you're fixing a bug or adding a new feature that needs verification.
 Don't add tests for existing functionality unless you're fixing a bug or adding a new feature that needs verification.
 
 ## VERIFICATION CHECKLIST
@@ -574,11 +618,18 @@ Don't add tests for existing functionality unless you're fixing a bug or adding 
 - [ ] Command name uses singular nouns (not plural)
 - [ ] Command uses approved PowerShell verb
 - [ ] Command follows `<Verb>-Dba<Noun>` naming pattern
+- [ ] Command name uses singular nouns (not plural)
+- [ ] Command uses approved PowerShell verb
+- [ ] Command follows `<Verb>-Dba<Noun>` naming pattern
 - [ ] Command added to `FunctionsToExport` in dbatools.psd1
 - [ ] Command added to `Export-ModuleMember` in dbatools.psm1
 
 **Test Management:**
 - [ ] Parameter validation test updated if parameters were added/removed
+- [ ] Tests added for new functionality and parameters (not just bloat)
+- [ ] Regression tests added for significant bug fixes
+- [ ] Generic coverage tests avoided unless testing a specific fix or new feature
+- [ ] Test suite remains manageable and focused
 - [ ] Tests added for new functionality and parameters (not just bloat)
 - [ ] Regression tests added for significant bug fixes
 - [ ] Generic coverage tests avoided unless testing a specific fix or new feature
