@@ -178,7 +178,16 @@ function New-DbaAgentAlert {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the alert $name")) {
                         try {
                             # Supply either a non-zero message ID, non-zero severity, non-null performance condition, or non-null WMI namespace and query.
-                            $newalert = New-Object Microsoft.SqlServer.Management.Smo.Agent.Alert($server.JobServer, $name)
+                            try {
+                                $newalert = New-Object Microsoft.SqlServer.Management.Smo.Agent.Alert($server.JobServer, $name)
+                            } catch {
+                                if ($_.Exception.Message -match "newParent") {
+                                    Stop-Function -Message "Cannot create agent alert through a contained availability group listener. SQL Server Agent objects are instance-level and must be managed on the instance directly. Please connect to the primary replica instead of the listener. Use Get-DbaAvailabilityGroup to find the current primary replica." -ErrorRecord $_ -Target $instance -Continue
+                                    return
+                                } else {
+                                    throw
+                                }
+                            }
                             $list = "CategoryName", "DatabaseName", "DelayBetweenResponses", "EventDescriptionKeyword", "EventSource", "JobID", "MessageID", "NotificationMessage", "PerformanceCondition", "WmiEventNamespace", "WmiEventQuery", "IncludeEventDescription", "IsEnabled", "Severity"
 
                             foreach ($item in $list) {
