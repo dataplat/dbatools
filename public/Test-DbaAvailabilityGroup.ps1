@@ -141,48 +141,47 @@ function Test-DbaAvailabilityGroup {
                         continue
                     }
 
-                    $splatOutput = @{
-                        ComputerName                 = $ag.ComputerName
-                        InstanceName                 = $ag.InstanceName
-                        SqlInstance                  = $ag.SqlInstance
-                        AvailabilityGroup            = $ag.Name
-                        PrimaryReplica               = $ag.PrimaryReplica
-                        ReplicaServerName            = $databaseReplicaState.AvailabilityReplicaServerName
-                        ReplicaRole                  = $databaseReplicaState.ReplicaRole
-                        ReplicaAvailabilityMode      = $replica.AvailabilityMode
-                        ReplicaFailoverMode          = $replica.FailoverMode
-                        ReplicaConnectionState       = $replica.ConnectionState
-                        ReplicaJoinState             = $replica.JoinState
-                        ReplicaSynchronizationState  = $replica.RollupSynchronizationState
-                        DatabaseName                 = $databaseReplicaState.AvailabilityDatabaseName
-                        SynchronizationState         = $databaseReplicaState.SynchronizationState
-                        IsFailoverReady              = $databaseReplicaState.IsFailoverReady
-                        IsJoined                     = $databaseReplicaState.IsJoined
-                        IsSuspended                  = $databaseReplicaState.IsSuspended
-                        SuspendReason                = $databaseReplicaState.SuspendReason
-                        EstimatedRecoveryTime        = $databaseReplicaState.EstimatedRecoveryTime
-                        EstimatedDataLoss            = $databaseReplicaState.EstimatedDataLoss
-                        SynchronizationPerformance   = $databaseReplicaState.SynchronizationPerformance
-                        LogSendQueueSize             = $databaseReplicaState.LogSendQueueSize
-                        LogSendRate                  = $databaseReplicaState.LogSendRate
-                        RedoQueueSize                = $databaseReplicaState.RedoQueueSize
-                        RedoRate                     = $databaseReplicaState.RedoRate
-                        FileStreamSendRate           = $databaseReplicaState.FileStreamSendRate
-                        EndOfLogLSN                  = $databaseReplicaState.EndOfLogLSN
-                        RecoveryLSN                  = $databaseReplicaState.RecoveryLSN
-                        TruncationLSN                = $databaseReplicaState.TruncationLSN
-                        LastCommitLSN                = $databaseReplicaState.LastCommitLSN
-                        LastCommitTime               = $databaseReplicaState.LastCommitTime
-                        LastHardenedLSN              = $databaseReplicaState.LastHardenedLSN
-                        LastHardenedTime             = $databaseReplicaState.LastHardenedTime
-                        LastReceivedLSN              = $databaseReplicaState.LastReceivedLSN
-                        LastReceivedTime             = $databaseReplicaState.LastReceivedTime
-                        LastRedoneLSN                = $databaseReplicaState.LastRedoneLSN
-                        LastRedoneTime               = $databaseReplicaState.LastRedoneTime
-                        LastSentLSN                  = $databaseReplicaState.LastSentLSN
-                        LastSentTime                 = $databaseReplicaState.LastSentTime
+                    [PSCustomObject]@{
+                        ComputerName                = $ag.ComputerName
+                        InstanceName                = $ag.InstanceName
+                        SqlInstance                 = $ag.SqlInstance
+                        AvailabilityGroup           = $ag.Name
+                        PrimaryReplica              = $ag.PrimaryReplica
+                        ReplicaServerName           = $databaseReplicaState.AvailabilityReplicaServerName
+                        ReplicaRole                 = $databaseReplicaState.ReplicaRole
+                        ReplicaAvailabilityMode     = $replica.AvailabilityMode
+                        ReplicaFailoverMode         = $replica.FailoverMode
+                        ReplicaConnectionState      = $replica.ConnectionState
+                        ReplicaJoinState            = $replica.JoinState
+                        ReplicaSynchronizationState = $replica.RollupSynchronizationState
+                        DatabaseName                = $databaseReplicaState.AvailabilityDatabaseName
+                        SynchronizationState        = $databaseReplicaState.SynchronizationState
+                        IsFailoverReady             = $databaseReplicaState.IsFailoverReady
+                        IsJoined                    = $databaseReplicaState.IsJoined
+                        IsSuspended                 = $databaseReplicaState.IsSuspended
+                        SuspendReason               = $databaseReplicaState.SuspendReason
+                        EstimatedRecoveryTime       = $databaseReplicaState.EstimatedRecoveryTime
+                        EstimatedDataLoss           = $databaseReplicaState.EstimatedDataLoss
+                        SynchronizationPerformance  = $databaseReplicaState.SynchronizationPerformance
+                        LogSendQueueSize            = $databaseReplicaState.LogSendQueueSize
+                        LogSendRate                 = $databaseReplicaState.LogSendRate
+                        RedoQueueSize               = $databaseReplicaState.RedoQueueSize
+                        RedoRate                    = $databaseReplicaState.RedoRate
+                        FileStreamSendRate          = $databaseReplicaState.FileStreamSendRate
+                        EndOfLogLSN                 = $databaseReplicaState.EndOfLogLSN
+                        RecoveryLSN                 = $databaseReplicaState.RecoveryLSN
+                        TruncationLSN               = $databaseReplicaState.TruncationLSN
+                        LastCommitLSN               = $databaseReplicaState.LastCommitLSN
+                        LastCommitTime              = $databaseReplicaState.LastCommitTime
+                        LastHardenedLSN             = $databaseReplicaState.LastHardenedLSN
+                        LastHardenedTime            = $databaseReplicaState.LastHardenedTime
+                        LastReceivedLSN             = $databaseReplicaState.LastReceivedLSN
+                        LastReceivedTime            = $databaseReplicaState.LastReceivedTime
+                        LastRedoneLSN               = $databaseReplicaState.LastRedoneLSN
+                        LastRedoneTime              = $databaseReplicaState.LastRedoneTime
+                        LastSentLSN                 = $databaseReplicaState.LastSentLSN
+                        LastSentTime                = $databaseReplicaState.LastSentTime
                     }
-                    [PSCustomObject]$splatOutput
                 }
             }
             return
