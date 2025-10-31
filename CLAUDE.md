@@ -300,6 +300,27 @@ AfterAll {
 
 ## DBATOOLS-SPECIFIC CONVENTIONS
 
+### Microsoft SMO Property Name Typos
+
+**CRITICAL KNOWLEDGE**: Some Microsoft SMO (SQL Server Management Objects) properties contain typos in their official names. These are NOT errors - they are the actual property names you must use.
+
+**Known typos that MUST be preserved:**
+
+1. **`AvailabilityDateabaseId`** (with typo: "Dateabase" instead of "Database")
+   - Used in: Availability Group DatabaseReplicaStates
+   - Correct usage: `Where-Object AvailabilityDateabaseId -eq $db.UniqueId`
+   - DO NOT "fix" this to `AvailabilityDatabaseId` - it will break the code
+
+```powershell
+# CORRECT - Uses Microsoft's typo
+$databaseReplicaState = $replicaStates | Where-Object AvailabilityDateabaseId -eq $db.UniqueId
+
+# WRONG - "Fixed" spelling will not work
+$databaseReplicaState = $replicaStates | Where-Object AvailabilityDatabaseId -eq $db.UniqueId
+```
+
+**Important:** When reviewing or modifying code that uses SMO objects, verify the actual property names in Microsoft's documentation or SMO metadata before "correcting" apparent typos. The typo might be intentional (or at least unchangeable) in the SMO library.
+
 ### Command Registration
 
 **CRITICAL RULE**: When adding a new command, you MUST register it in TWO places:
@@ -488,6 +509,7 @@ These types of tests bloat the test suite. Only add them if explicitly requested
 - [ ] Where-Object conversions applied appropriately
 - [ ] Temporary resource cleanup implemented properly
 - [ ] Splat usage follows 3+ parameter rule strictly
+- [ ] Microsoft SMO property typos preserved (e.g., AvailabilityDateabaseId)
 
 **Command Registration (if adding new commands):**
 - [ ] Command added to `FunctionsToExport` in dbatools.psd1
@@ -506,9 +528,10 @@ The golden rules for dbatools code:
 1. **NEVER use backticks** - Use splats for 3+ parameters, direct syntax for 1-2
 2. **NEVER use `= $true` in parameter attributes** - Use modern syntax: `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
 3. **NEVER use `::new()` syntax** - Use `New-Object` for PowerShell v3 compatibility
-4. **ALWAYS align hashtables** - Equals signs must line up vertically
-5. **ALWAYS preserve comments** - Every comment stays exactly as written
-6. **ALWAYS use double quotes** - SQL Server module standard
-7. **ALWAYS use unique variable names** - Prevent scope collisions
-8. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
-9. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
+4. **NEVER "fix" Microsoft SMO typos** - Properties like `AvailabilityDateabaseId` are correct as-is
+5. **ALWAYS align hashtables** - Equals signs must line up vertically
+6. **ALWAYS preserve comments** - Every comment stays exactly as written
+7. **ALWAYS use double quotes** - SQL Server module standard
+8. **ALWAYS use unique variable names** - Prevent scope collisions
+9. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
+10. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1

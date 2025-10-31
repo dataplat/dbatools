@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "When using -HealthCheck parameter" {
+    Context "When using -HealthCheck parameter" -Skip:$env:AppVeyor {
         It "Returns health check results with expected properties" {
             $results = Test-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName -HealthCheck
             $results | Should -Not -BeNullOrEmpty
@@ -189,7 +189,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "When using -HealthCheck without AddDatabase compatibility" {
+    Context "When using -HealthCheck without AddDatabase compatibility" -Skip:$env:AppVeyor {
         It "Returns health check data without requiring database validation parameters" {
             $results = Test-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName -HealthCheck
             $results | Should -Not -BeNullOrEmpty

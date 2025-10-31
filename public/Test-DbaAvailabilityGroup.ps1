@@ -136,7 +136,7 @@ function Test-DbaAvailabilityGroup {
                 $replicaStates = $ag.DatabaseReplicaStates | Where-Object AvailabilityReplicaId -eq $replicaId
 
                 foreach ($db in $ag.AvailabilityDatabases) {
-                    $databaseReplicaState = $replicaStates | Where-Object AvailabilityDatabaseId -eq $db.UniqueId
+                    $databaseReplicaState = $replicaStates | Where-Object AvailabilityDateabaseId -eq $db.UniqueId
                     if ($null -eq $databaseReplicaState) {
                         continue
                     }
