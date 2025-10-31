@@ -221,4 +221,35 @@ Describe $CommandName -Tag IntegrationTests {
             $permissions | Should -BeLike '*GRANT CONNECT SQL TO `[port`]*'
         }
     }
+
+    Context "Linux SQL Server protection for BUILTIN\Administrators" {
+        BeforeAll {
+            $linuxInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            $isLinux = $linuxInstance.HostPlatform -eq "Linux"
+        }
+
+        It "Should skip BUILTIN\Administrators on Linux source with -Force" -Skip:(-not $isLinux) {
+            $splatCopy = @{
+                Source      = $TestConfig.instance3
+                Destination = $TestConfig.instance1
+                Login       = "BUILTIN\Administrators"
+                Force       = $true
+            }
+            $results = Copy-DbaLogin @splatCopy
+            $results.Status | Should -Be "Skipped"
+            $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
+        }
+
+        It "Should skip BUILTIN\Administrators on Linux destination with -Force" -Skip:(-not $isLinux) {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance3
+                Login       = "BUILTIN\Administrators"
+                Force       = $true
+            }
+            $results = Copy-DbaLogin @splatCopy
+            $results.Status | Should -Be "Skipped"
+            $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
+        }
+    }
 }

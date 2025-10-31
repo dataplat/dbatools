@@ -227,6 +227,16 @@ function Copy-DbaLogin {
                 continue
             }
 
+            if ($newUserName -like "BUILTIN\Administrators" -and $sourceServer.HostPlatform -eq "Linux") {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators on Linux SQL Server")) {
+                    Write-Message -Level Warning -Message "BUILTIN\Administrators cannot be dropped on SQL Server on Linux as it breaks system stored procedures. Skipping."
+                    $copyLoginStatus.Status = "Skipped"
+                    $copyLoginStatus.Notes = "BUILTIN\Administrators is required on Linux SQL Server"
+                    $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
+                continue
+            }
+
             if ($Login.LoginType -like 'Window*' -and $destServer.DatabaseEngineEdition -eq 'SqlManagedInstance' ) {
                 if ($Pscmdlet.ShouldProcess($destinstance, "$Login is a Windows login and not supported on a SQL Managed Instance, skipping on $destInstance")) {
                     Write-Message -Level Verbose -Message "$Login is a Windows login and not supported on a SQL Managed Instance, skipping on $destInstance"
@@ -297,6 +307,16 @@ function Copy-DbaLogin {
                         Write-Message -Level Verbose -Message "$newUserName is the destination service account. Skipping drop."
                         $copyLoginStatus.Status = "Skipped"
                         $copyLoginStatus.Notes = "Destination service account"
+                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    continue
+                }
+
+                if ($newUserName -like "BUILTIN\Administrators" -and $destServer.HostPlatform -eq "Linux") {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators on Linux SQL Server")) {
+                        Write-Message -Level Warning -Message "BUILTIN\Administrators cannot be dropped on SQL Server on Linux as it breaks system stored procedures. Skipping."
+                        $copyLoginStatus.Status = "Skipped"
+                        $copyLoginStatus.Notes = "BUILTIN\Administrators is required on Linux SQL Server"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     continue
