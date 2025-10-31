@@ -184,6 +184,16 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
 
     Write-ImportTime -Text "Loading internal commands via dotsource"
 
+    # Load replication libraries before dot-sourcing functions with replication type constraints
+    # This is required for Remove-DbaReplArticle and Remove-DbaReplPublication which have
+    # [Microsoft.SqlServer.Replication.*] type constraints in their parameters
+    try {
+        Add-ReplicationLibrary -ErrorAction SilentlyContinue
+    } catch {
+        # Silently ignore if replication libraries can't be loaded
+        # The individual commands will handle this when they're executed
+    }
+
     # All exported functions
     foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot/public/" -Recurse -Filter *.ps1)) {
         . $file.FullName
@@ -393,6 +403,11 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaBackup',
         'Get-DbaPermission',
         'Get-DbaLastBackup',
+        'Compare-DbaAgReplicaAgentJob',
+        'Compare-DbaAgReplicaCredential',
+        'Compare-DbaAgReplicaLogin',
+        'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAvailabilityGroup',
         'Connect-DbaInstance',
         'Get-DbaDbBackupHistory',
         'Get-DbaAgBackupHistory',
