@@ -178,8 +178,16 @@ function New-DbaCmConnection {
                 if (Test-Bound "DisableCredentialAutoRegister") { $connection.DisableCredentialAutoRegister = $DisableCredentialAutoRegister }
                 if (Test-Bound "EnableCredentialFailover") { $connection.DisableCredentialAutoRegister = $EnableCredentialFailover }
                 if (Test-Bound "WindowsCredentialsAreBad") { $connection.WindowsCredentialsAreBad = $WindowsCredentialsAreBad }
-                if (Test-Bound "CimWinRMOptions") { $connection.CimWinRMOptions = $CimWinRMOptions }
-                if (Test-Bound "CimDCOMOptions") { $connection.CimDCOMOptions = $CimDCOMOptions }
+                if (Test-Bound "CimWinRMOptions") {
+                    $connection.CimWinRMOptions = $CimWinRMOptions
+                } else {
+                    $connection.CimWinRMOptions = New-DbaCimSessionOptionWithTimeout -Protocol Default
+                }
+                if (Test-Bound "CimDCOMOptions") {
+                    $connection.CimDCOMOptions = $CimDCOMOptions
+                } else {
+                    $connection.CimDCOMOptions = New-DbaCimSessionOptionWithTimeout -Protocol Dcom
+                }
 
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
