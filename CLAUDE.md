@@ -13,9 +13,9 @@ This style guide provides coding standards for dbatools PowerShell development t
 **MODERN RULE**: Do NOT use `Mandatory = $true` or similar boolean attribute assignments. Boolean attributes do not require explicit value assignment in modern PowerShell.
 
 ```powershell
-# CORRECT - Modern attribute syntax (no = $true)
+# CORRECT - Modern attribute syntax (no = $true), Position preserved
 param(
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, Position = 0)]
     [string]$SqlInstance,
 
     [Parameter(ValueFromPipeline)]
@@ -26,11 +26,17 @@ param(
 
 # WRONG - Outdated PSv2 syntax (no longer needed)
 param(
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $true, Position = 0)]
     [string]$SqlInstance,
 
     [Parameter(ValueFromPipeline = $true)]
     [object[]]$InputObject
+)
+
+# ALSO WRONG - Removing Position when it existed in original
+param(
+    [Parameter(Mandatory)]  # Missing Position = 0 (breaking change!)
+    [string]$SqlInstance
 )
 ```
 
@@ -38,6 +44,10 @@ param(
 - Use `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
 - Use `[switch]` for boolean flags, not `[bool]` parameters
 - Keep non-boolean attributes with values: `[Parameter(ValueFromPipelineByPropertyName = "Name")]`
+- **CRITICAL**: Always preserve `Position` attributes when modernizing - removing them is a breaking change
+  - `[Parameter(Mandatory, Position = 0)]` NOT `[Parameter(Mandatory)]` if Position was present
+  - Positional parameters allow users to call commands without parameter names
+  - Example: `Test-DbaAvailabilityGroup $instance` instead of `Test-DbaAvailabilityGroup -SqlInstance $instance`
 
 ### POWERSHELL v3 COMPATIBILITY
 
@@ -591,6 +601,7 @@ Don't add tests for existing functionality unless you're fixing a bug or adding 
 - [ ] Parameter names match original exactly without modification
 - [ ] No backticks used for line continuation
 - [ ] No `= $true` used in parameter attributes (use modern syntax)
+- [ ] Position attributes preserved when modernizing parameters (critical for backward compatibility)
 - [ ] Splats used only for 3+ parameters
 
 **Version Compatibility:**
@@ -641,12 +652,13 @@ The golden rules for dbatools code:
 
 1. **NEVER use backticks** - Use splats for 3+ parameters, direct syntax for 1-2
 2. **NEVER use `= $true` in parameter attributes** - Use modern syntax: `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
-3. **NEVER use `::new()` syntax** - Use `New-Object` for PowerShell v3 compatibility
-4. **NEVER "fix" Microsoft SMO typos** - Properties like `AvailabilityDateabaseId` are correct as-is
-5. **ALWAYS align hashtables** - Equals signs must line up vertically
-6. **ALWAYS preserve comments** - Every comment stays exactly as written
-7. **ALWAYS use double quotes** - SQL Server module standard
-8. **ALWAYS use unique variable names** - Prevent scope collisions
-9. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
-10. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
-11. **ALWAYS use singular nouns** - Command names use singular, not plural
+3. **NEVER remove Position attributes** - Preserve `Position = 0` when modernizing parameters to avoid breaking changes
+4. **NEVER use `::new()` syntax** - Use `New-Object` for PowerShell v3 compatibility
+5. **NEVER "fix" Microsoft SMO typos** - Properties like `AvailabilityDateabaseId` are correct as-is
+6. **ALWAYS align hashtables** - Equals signs must line up vertically
+7. **ALWAYS preserve comments** - Every comment stays exactly as written
+8. **ALWAYS use double quotes** - SQL Server module standard
+9. **ALWAYS use unique variable names** - Prevent scope collisions
+10. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
+11. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
+12. **ALWAYS use singular nouns** - Command names use singular, not plural
