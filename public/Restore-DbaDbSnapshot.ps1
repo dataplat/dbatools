@@ -166,14 +166,38 @@ function Restore-DbaDbSnapshot {
 
                 # Need a proper restore now
                 if ($Pscmdlet.ShouldProcess($server, "Restore db $db from $snap")) {
-                    try {
-                        if ($Force) {
-                            $null = Stop-DbaProcess -SqlInstance $server -Database $db.Name, $snap.Name -WarningAction SilentlyContinue
-                        }
+                    $maxRetries = 3
+                    $retryCount = 0
+                    $restoreSuccess = $false
 
-                        $null = $server.Query("USE master; RESTORE DATABASE [$($db.Name)] FROM DATABASE_SNAPSHOT='$($snap.Name)'")
-                    } catch {
-                        Stop-Function -Message "Failiure attempting to restore $db on $server" -ErrorRecord $_ -Continue
+                    while (-not $restoreSuccess -and $retryCount -lt $maxRetries) {
+                        try {
+                            if ($Force) {
+                                $null = Stop-DbaProcess -SqlInstance $server -Database $db.Name, $snap.Name -WarningAction SilentlyContinue
+                            }
+
+                            $null = $server.Query("USE master; RESTORE DATABASE [$($db.Name)] FROM DATABASE_SNAPSHOT='$($snap.Name)'")
+                            $restoreSuccess = $true
+                        } catch {
+                            # Check if this is a deadlock error (error 1205)
+                            if ($_.Exception.InnerException.Number -eq 1205) {
+                                $retryCount++
+                                if ($retryCount -lt $maxRetries) {
+                                    $waitSeconds = [Math]::Pow(2, $retryCount)
+                                    Write-Message -Level Verbose -Message "Deadlock detected during restore of $db on $server. Retrying in $waitSeconds seconds (attempt $retryCount of $maxRetries)"
+                                    Start-Sleep -Seconds $waitSeconds
+                                } else {
+                                    Stop-Function -Message "Failiure attempting to restore $db on $server after $maxRetries attempts due to deadlock" -ErrorRecord $_ -Continue
+                                }
+                            } else {
+                                Stop-Function -Message "Failiure attempting to restore $db on $server" -ErrorRecord $_ -Continue
+                                break
+                            }
+                        }
+                    }
+
+                    if (-not $restoreSuccess) {
+                        continue
                     }
                 }
 
