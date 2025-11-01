@@ -99,16 +99,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Pattern parameter filtering" {
-        It "Should return databases matching pattern with % wildcard" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "${dbPrefix}_%"
+        It "Should return databases matching pattern with regex" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_"
             $results.Name | Should -Contain $dbname1
             $results.Name | Should -Contain $dbname2
             $results.Name | Should -Contain $dbname3
             $results.Name | Should -Not -Contain $dbname4
         }
 
-        It "Should return databases matching pattern with _test_ substring" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "${dbPrefix}_test%"
+        It "Should return databases matching pattern with _test segment" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_test"
             $results.Name | Should -Contain $dbname1
             $results.Name | Should -Contain $dbname2
             $results.Name | Should -Not -Contain $dbname3
@@ -116,7 +116,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return databases matching multiple patterns" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "${dbPrefix}_test%", "${dbPrefix}_prod%"
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_test", "^${dbPrefix}_prod"
             $results.Name | Should -Contain $dbname1
             $results.Name | Should -Contain $dbname2
             $results.Name | Should -Contain $dbname3
@@ -124,7 +124,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return no results for non-matching pattern" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "nonexistent_%"
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^nonexistent_"
             $results | Should -BeNullOrEmpty
         }
     }

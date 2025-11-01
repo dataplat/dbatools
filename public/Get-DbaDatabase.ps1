@@ -28,9 +28,9 @@ function Get-DbaDatabase {
         Use this to filter out specific databases like test or staging environments from your inventory.
 
     .PARAMETER Pattern
-        Specifies a pattern for filtering databases using SQL LIKE wildcards (% and _).
-        Use this when you need to match databases by pattern, such as "dbatools_%" or "%_prod".
-        This parameter supports standard SQL LIKE syntax where % matches zero or more characters and _ matches a single character.
+        Specifies a pattern for filtering databases using regular expressions.
+        Use this when you need to match databases by pattern, such as "^dbatools_" or ".*_prod$".
+        This parameter supports standard .NET regular expression syntax.
 
     .PARAMETER ExcludeUser
         Returns only system databases (master, model, msdb, tempdb).
@@ -170,9 +170,9 @@ function Get-DbaDatabase {
         Returns databases 'OneDb' and 'OtherDB' from SQL Server instances SQL2 and SQL3 if databases by those names exist on those instances.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance SQL2,SQL3 -Pattern "dbatools_%"
+        PS C:\> Get-DbaDatabase -SqlInstance SQL2,SQL3 -Pattern "^dbatools_"
 
-        Returns all databases that match the pattern "dbatools_%" (e.g., dbatools_example1, dbatools_example2) from SQL Server instances SQL2 and SQL3.
+        Returns all databases that match the regex pattern "^dbatools_" (e.g., dbatools_example1, dbatools_example2) from SQL Server instances SQL2 and SQL3.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
@@ -318,14 +318,12 @@ function Get-DbaDatabase {
 
             $backed_info = Invoke-QueryRawDatabases
 
-            # Helper function to test if a name matches any of the provided patterns
-            # Converts SQL LIKE wildcards (% and _) to PowerShell wildcards (* and ?)
+            # Helper function to test if a name matches any of the provided regex patterns
             $matchesPattern = {
                 param($name, $patterns)
                 if (!$patterns) { return $true }
                 foreach ($pattern in $patterns) {
-                    $psPattern = $pattern -replace '%', '*' -replace '_', '?'
-                    if ($name -like $psPattern) { return $true }
+                    if ($name -match $pattern) { return $true }
                 }
                 return $false
             }
