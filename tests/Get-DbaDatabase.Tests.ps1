@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "Database",
                 "ExcludeDatabase",
+                "Pattern",
                 "ExcludeUser",
                 "ExcludeSystem",
                 "Owner",
@@ -79,6 +80,52 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should report 1 database with no full backup" {
             $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 -NoFullBackup
             ($results).Count | Should -Be 1
+        }
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $random = Get-Random
+        $dbPrefix = "dbatoolsci_pattern"
+        $dbname1 = "${dbPrefix}_test1_$random"
+        $dbname2 = "${dbPrefix}_test2_$random"
+        $dbname3 = "${dbPrefix}_prod1_$random"
+        $dbname4 = "other_database_$random"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname1, $dbname2, $dbname3, $dbname4
+    }
+    AfterAll {
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1, $dbname2, $dbname3, $dbname4 | Remove-DbaDatabase
+    }
+
+    Context "Pattern parameter filtering" {
+        It "Should return databases matching pattern with regex" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_"
+            $results.Name | Should -Contain $dbname1
+            $results.Name | Should -Contain $dbname2
+            $results.Name | Should -Contain $dbname3
+            $results.Name | Should -Not -Contain $dbname4
+        }
+
+        It "Should return databases matching pattern with _test segment" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_test"
+            $results.Name | Should -Contain $dbname1
+            $results.Name | Should -Contain $dbname2
+            $results.Name | Should -Not -Contain $dbname3
+            $results.Name | Should -Not -Contain $dbname4
+        }
+
+        It "Should return databases matching multiple patterns" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_test", "^${dbPrefix}_prod"
+            $results.Name | Should -Contain $dbname1
+            $results.Name | Should -Contain $dbname2
+            $results.Name | Should -Contain $dbname3
+            $results.Name | Should -Not -Contain $dbname4
+        }
+
+        It "Should return no results for non-matching pattern" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^nonexistent_"
+            $results | Should -BeNullOrEmpty
         }
     }
 }

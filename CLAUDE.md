@@ -376,6 +376,21 @@ Failure to register in both locations will result in the command not being avail
 - Keep the description concise and descriptive (not vague)
 - Focus on what the change does, not implementation details
 
+### Pattern Parameter Convention
+
+**CRITICAL RULE**: When adding a -Pattern parameter to any dbatools command, it MUST use regular expressions (regex), not SQL LIKE wildcards or PowerShell wildcards.
+
+```powershell
+# CORRECT - Regex pattern matching
+if ($name -match $pattern) { return $true }
+
+# WRONG - SQL LIKE wildcards
+$psPattern = $pattern -replace '%', '*' -replace '_', '?'
+if ($name -like $psPattern) { return $true }
+```
+
+This ensures consistency across all dbatools commands that support pattern matching.
+
 ### Parameter Validation Pattern
 
 ```powershell

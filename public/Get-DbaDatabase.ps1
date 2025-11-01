@@ -20,12 +20,17 @@ function Get-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies one or more databases to include in the results. Supports wildcards and exact name matching.
+        Specifies one or more databases to include in the results using exact name matching.
         Use this when you need to retrieve specific databases instead of all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies one or more databases to exclude from the results. Supports wildcards and exact name matching.
+        Specifies one or more databases to exclude from the results using exact name matching.
         Use this to filter out specific databases like test or staging environments from your inventory.
+
+    .PARAMETER Pattern
+        Specifies a pattern for filtering databases using regular expressions.
+        Use this when you need to match databases by pattern, such as "^dbatools_" or ".*_prod$".
+        This parameter supports standard .NET regular expression syntax.
 
     .PARAMETER ExcludeUser
         Returns only system databases (master, model, msdb, tempdb).
@@ -164,6 +169,11 @@ function Get-DbaDatabase {
 
         Returns databases 'OneDb' and 'OtherDB' from SQL Server instances SQL2 and SQL3 if databases by those names exist on those instances.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance SQL2,SQL3 -Pattern "^dbatools_"
+
+        Returns all databases that match the regex pattern "^dbatools_" (e.g., dbatools_example1, dbatools_example2) from SQL Server instances SQL2 and SQL3.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
@@ -173,6 +183,7 @@ function Get-DbaDatabase {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
+        [string[]]$Pattern,
         [Alias("SystemDbOnly", "NoUserDb", "ExcludeAllUserDb")]
         [switch]$ExcludeUser,
         [Alias("UserDbOnly", "NoSystemDb", "ExcludeAllSystemDb")]
@@ -306,9 +317,21 @@ function Get-DbaDatabase {
             }
 
             $backed_info = Invoke-QueryRawDatabases
+
+            # Helper function to test if a name matches any of the provided regex patterns
+            $matchesPattern = {
+                param($name, $patterns)
+                if (!$patterns) { return $true }
+                foreach ($pattern in $patterns) {
+                    if ($name -match $pattern) { return $true }
+                }
+                return $false
+            }
+
             $backed_info = $backed_info | Where-Object {
                 ($_.name -in $Database -or !$Database) -and
                 ($_.name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                (& $matchesPattern $_.name $Pattern) -and
                 ($_.Owner -in $Owner -or !$Owner) -and
                 ($_.state -ne 6 -or !$OnlyAccessible)
             }
@@ -331,6 +354,7 @@ function Get-DbaDatabase {
                     Where-Object {
                         ($_.Name -in $Database -or !$Database) -and
                         ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                        (& $matchesPattern $_.Name $Pattern) -and
                         ($_.Owner -in $Owner -or !$Owner) -and
                         ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
                         $_.EncryptionEnabled -in $Encrypt
@@ -340,6 +364,7 @@ function Get-DbaDatabase {
                     Where-Object {
                         ($_.Name -in $Database -or !$Database) -and
                         ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                        (& $matchesPattern $_.Name $Pattern) -and
                         ($_.Owner -in $Owner -or !$Owner) -and
                         $_.ReadOnly -in $Readonly -and
                         $_.IsAccessible -in $AccessibleFilter -and
