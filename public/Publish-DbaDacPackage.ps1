@@ -169,6 +169,16 @@ function Publish-DbaDacPackage {
 
             return $instance.ToString().Replace('\', '-').Replace('(', '').Replace(')', '')
         }
+
+        if ($DacFxPath) {
+            try {
+                Add-Type -Path $DacFxPath
+                Write-Message -Level Verbose -Message "Dac Fx loaded from [$DacFxPath]."
+            } catch {
+                Stop-Function -Message "Dac Fx could not be loaded from [$DacFxPath]." -ErrorRecord $_
+                return
+            }
+        }
     }
 
     process {
