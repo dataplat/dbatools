@@ -94,9 +94,6 @@ function Get-DbaAgDatabaseReplicaState {
         }
 
         foreach ($ag in $InputObject) {
-            # Refresh list of databases to fix potential stale data
-            $ag.AvailabilityDatabases.Refresh()
-
             # Comprehensive health monitoring similar to SSMS AG Dashboard
             # Returns detailed database replica state information for all replicas
             foreach ($replica in $ag.AvailabilityReplicas) {
