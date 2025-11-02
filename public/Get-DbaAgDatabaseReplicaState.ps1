@@ -114,8 +114,8 @@ function Get-DbaAgDatabaseReplicaState {
 
                     [PSCustomObject]@{
                         ComputerName                = $ag.ComputerName
-                        InstanceName                = $ag.ServiceName
-                        SqlInstance                 = $ag.DomainInstanceName
+                        InstanceName                = $ag.InstanceName
+                        SqlInstance                 = $ag.SqlInstance
                         AvailabilityGroup           = $ag.Name
                         PrimaryReplica              = $ag.PrimaryReplica
                         ReplicaServerName           = $databaseReplicaState.AvailabilityReplicaServerName
