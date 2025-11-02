@@ -123,16 +123,13 @@ function Get-DbaSchemaChangeHistory {
                              WHEN '47' THEN 'Drop'
                              WHEN '164' THEN 'Alter'
                         END DDLOperation
-                      , s.name + '.' + o.name Object
-                      , o.type_desc ObjectType
-                FROM    sys.objects o
-                        INNER JOIN sys.schemas s ON
-                            s.schema_id = o.schema_id
-                        CROSS APPLY (
-                    SELECT  *
-                    FROM    ::fn_trace_gettable('$($TraceFile.path)',default)
-                    WHERE   ObjectID = o.object_id
-                ) tt
+                      , tt.ObjectName Object
+                      , ISNULL(tsv.subclass_name, 'Unknown') ObjectType
+                FROM    ::fn_trace_gettable('$($TraceFile.path)',default) tt
+                        LEFT JOIN sys.trace_subclass_values tsv ON
+                            tsv.trace_event_id = tt.EventClass
+                            AND tsv.subclass_value = tt.ObjectType
+                            AND tsv.trace_column_id = 28
                 WHERE   tt.ObjectType NOT IN ( 21587 )
                         AND tt.DatabaseID = DB_ID()
                         AND tt.EventSubClass = 0"
@@ -141,7 +138,7 @@ function Get-DbaSchemaChangeHistory {
                     $sql = $sql + " and tt.StartTime>'$Since' "
                 }
                 if ($null -ne $object) {
-                    $sql = $sql + " and o.name in ('$($object -join ''',''')') "
+                    $sql = $sql + " and tt.ObjectName in ('$($object -join ''',''')') "
                 }
 
                 $sql = $sql + " order by tt.StartTime asc"
