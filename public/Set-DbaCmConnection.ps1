@@ -236,8 +236,16 @@ function Set-DbaCmConnection {
                 if (Test-Bound "DisableCredentialAutoRegister") { $connection.DisableCredentialAutoRegister = $DisableCredentialAutoRegister }
                 if (Test-Bound "EnableCredentialFailover") { $connection.DisableCredentialAutoRegister = $EnableCredentialFailover }
                 if (Test-Bound "WindowsCredentialsAreBad") { $connection.WindowsCredentialsAreBad = $WindowsCredentialsAreBad }
-                if (Test-Bound "CimWinRMOptions") { $connection.CimWinRMOptions = $CimWinRMOptions }
-                if (Test-Bound "CimDCOMOptions") { $connection.CimDCOMOptions = $CimDCOMOptions }
+                if (Test-Bound "CimWinRMOptions") {
+                    $connection.CimWinRMOptions = $CimWinRMOptions
+                } elseif ($null -eq $connection.CimWinRMOptions) {
+                    $connection.CimWinRMOptions = New-DbaCimSessionOptionWithTimeout -Protocol Default
+                }
+                if (Test-Bound "CimDCOMOptions") {
+                    $connection.CimDCOMOptions = $CimDCOMOptions
+                } elseif ($null -eq $connection.CimDCOMOptions) {
+                    $connection.CimDCOMOptions = New-DbaCimSessionOptionWithTimeout -Protocol Dcom
+                }
                 if (Test-Bound "OverrideConnectionPolicy") { $connection.OverrideConnectionPolicy = $OverrideConnectionPolicy }
 
                 if (-not $disable_cache) {
