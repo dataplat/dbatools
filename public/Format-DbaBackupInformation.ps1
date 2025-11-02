@@ -187,13 +187,25 @@ function Format-DbaBackupInformation {
                     }
                 } else {
                     Write-Message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
-                    $Pname = [System.Io.FileInfo]$_.PhysicalName
-                    $RestoreDir = $Pname.DirectoryName
+
+                    # Instead of using [System.IO.FileInfo] which has cross-platform issues,
+                    # manually parse the path using both separators to handle Windows paths on Linux and vice versa
+                    $originalPath = $_.PhysicalName
+
+                    # Get just the filename by splitting on both separators
+                    $fileName = $originalPath -split '[/\\]' | Select-Object -Last 1
+                    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($fileName)
+                    $extension = [System.IO.Path]::GetExtension($fileName)
+
                     # Handle MacOS returning full path for BaseName
-                    $baseName = $Pname.BaseName.Split($PathSep)[-1]
+                    $baseName = $baseName.Split($PathSep)[-1]
+
                     if ($ReplaceDbNameInFile -eq $true) {
                         $baseName = $baseName -Replace $History.OriginalDatabase, $History.Database
                     }
+
+                    # Determine restore directory based on file type
+                    $RestoreDir = $null
                     if ($_.Type -eq 'D' -or $_.FileType -eq 'D') {
                         if ('' -ne $DataFileDirectory) {
                             $RestoreDir = $DataFileDirectory
@@ -212,7 +224,12 @@ function Format-DbaBackupInformation {
                         }
                     }
 
-                    $_.PhysicalName = $RestoreDir + $PathSep + $DatabaseFilePrefix + $baseName + $DatabaseFileSuffix + $Pname.extension
+                    # Fallback to extracting directory from original path if no destination specified
+                    if ($null -eq $RestoreDir) {
+                        $RestoreDir = $originalPath -replace '[/\\][^/\\]+$', ''
+                    }
+
+                    $_.PhysicalName = $RestoreDir + $PathSep + $DatabaseFilePrefix + $baseName + $DatabaseFileSuffix + $extension
                     Write-Message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                 }
             }
