@@ -108,7 +108,9 @@ function Get-DbaAgDatabaseReplicaState {
                         if ($db.Name -notin $Database) { continue }
                     }
 
-                    $databaseReplicaState = $replicaStates | Where-Object AvailabilityDatabaseId -eq $db.UniqueId
+                    # AvailabilityDateabaseId is a typo in SMO but we have to use it as-is
+                    # See https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.databasereplicastate.availabilitydateabaseid
+                    $databaseReplicaState = $replicaStates | Where-Object AvailabilityDateabaseId -eq $db.UniqueId
                     if ($null -eq $databaseReplicaState) {
                         continue
                     }
