@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Invoke-DbaAzSqlDbTip",
+    $CommandName = "Invoke-DbaDbAzSqlTip",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:($env:azuredbpasswd -ne "fails
                 ReturnAllTips   = $true
                 EnableException = $true
             }
-            $results = Invoke-DbaAzSqlDbTip @splatInvokeTips
+            $results = Invoke-DbaDbAzSqlTip @splatInvokeTips
         }
 
         It "Should get some results" {
