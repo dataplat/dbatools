@@ -13,6 +13,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
+                "Parallel",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

@@ -26,6 +26,7 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "AllUserDatabases",
                 "Force",
+                "Parallel",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
