@@ -371,6 +371,7 @@ function New-DbaDbTable {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [String[]]$Database,
+        [Alias("Table")]
         [String]$Name,
         [String]$Schema = "dbo",
         [hashtable[]]$ColumnMap,

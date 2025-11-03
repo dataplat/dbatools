@@ -99,6 +99,7 @@ function Get-DbaDbTable {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
+        [Alias("Name")]
         [string[]]$Table,
         [string[]]$Schema,
         [parameter(ValueFromPipeline)]
