@@ -47,6 +47,7 @@ function Get-DbaNetworkCertificate {
         [switch]$EnableException
     )
     process {
-        Get-DbaNetworkConfiguration -SqlInstance $SqlInstance -Credential $Credential -OutputType Certificate | Where-Object Thumbprint
+        $PSBoundParameters["OutputType"] = "Certificate"
+        Get-DbaNetworkConfiguration @PSBoundParameters | Where-Object Thumbprint
     }
 }
