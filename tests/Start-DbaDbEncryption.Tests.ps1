@@ -131,7 +131,9 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Start-DbaDbEncryption @splatParallelEncryption -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             $results.Count | Should -Be 3
-            $results.EncryptionEnabled | Should -All -Be $true
+            foreach ($result in $results) {
+                $result.EncryptionEnabled | Should -Be $true
+            }
             $results.DatabaseName | Should -Contain $parallelTestDatabases[0].Name
         }
     }

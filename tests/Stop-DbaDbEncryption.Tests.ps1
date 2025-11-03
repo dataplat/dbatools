@@ -113,7 +113,9 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.instance2 -Parallel -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             $results.Count | Should -BeGreaterOrEqual 3
-            $results.EncryptionEnabled | Should -All -Be $false
+            foreach ($result in $results) {
+                $result.EncryptionEnabled | Should -Be $false
+            }
         }
     }
 }
