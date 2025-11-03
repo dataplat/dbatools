@@ -467,13 +467,17 @@ function Copy-DbaDbTableData {
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
 
-                        # Map only columns that exist in both source and destination (excluding computed columns)
-                        for ($i = 0; $i -lt $reader.FieldCount; $i++) {
-                            $sourceColumn = $reader.GetName($i)
-                            if ($destColumns -contains $sourceColumn) {
-                                $null = $bulkCopy.ColumnMappings.Add($sourceColumn, $sourceColumn)
-                            } else {
-                                Write-Message -Level Verbose -Message "Skipping column '$sourceColumn' (not in destination or is computed)"
+                        # Only apply explicit column mapping for straight table copies (not custom queries)
+                        # Custom queries may have different column names/aliases, so let SqlBulkCopy use ordinal mapping
+                        if (Test-Bound -ParameterName Query -Not) {
+                            # Map only columns that exist in both source and destination (excluding computed columns)
+                            for ($i = 0; $i -lt $reader.FieldCount; $i++) {
+                                $sourceColumn = $reader.GetName($i)
+                                if ($destColumns -contains $sourceColumn) {
+                                    $null = $bulkCopy.ColumnMappings.Add($sourceColumn, $sourceColumn)
+                                } else {
+                                    Write-Message -Level Verbose -Message "Skipping column '$sourceColumn' (not in destination or is computed)"
+                                }
                             }
                         }
 
