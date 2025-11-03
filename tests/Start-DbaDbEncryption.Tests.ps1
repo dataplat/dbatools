@@ -90,4 +90,49 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Select-Object -First 1 -ExpandProperty DatabaseName | Should -Match "random"
         }
     }
+
+    Context "Parallel processing" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $parallelBackupPath = "$($TestConfig.Temp)\$CommandName-Parallel-$(Get-Random)"
+            $null = New-Item -Path $parallelBackupPath -ItemType Directory
+
+            $parallelTestDatabases = @()
+            1..3 | ForEach-Object {
+                $parallelTestDatabases += New-DbaDatabase -SqlInstance $TestConfig.instance2
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($parallelTestDatabases) {
+                $parallelTestDatabases | Remove-DbaDatabase
+            }
+
+            Remove-Item -Path $parallelBackupPath -Recurse
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "should enable encryption with -Parallel switch" {
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $splatParallelEncryption = @{
+                SqlInstance             = $TestConfig.instance2
+                Database                = $parallelTestDatabases.Name
+                MasterKeySecurePassword = $passwd
+                BackupSecurePassword    = $passwd
+                BackupPath              = $parallelBackupPath
+                Parallel                = $true
+            }
+            $results = Start-DbaDbEncryption @splatParallelEncryption -WarningVariable warn
+            $warn | Should -BeNullOrEmpty
+            $results.Count | Should -Be 3
+            $results.EncryptionEnabled | Should -All -Be $true
+            $results.DatabaseName | Should -Contain $parallelTestDatabases[0].Name
+        }
+    }
 }
