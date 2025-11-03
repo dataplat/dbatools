@@ -438,6 +438,8 @@ function Copy-DbaDbTableData {
                         $bulkCopy.BulkCopyTimeout = $BulkCopyTimeout
 
                         # Get list of non-computed columns from destination table to avoid insert failures
+                        # Refresh the columns collection to ensure it's populated
+                        $desttable.Columns.Refresh()
                         $destColumns = $desttable.Columns | Where-Object Computed -eq $false | Select-Object -ExpandProperty Name
                         Write-Message -Level Verbose -Message "Destination table has $($destColumns.Count) non-computed columns"
 
