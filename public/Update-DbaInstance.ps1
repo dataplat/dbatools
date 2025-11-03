@@ -71,6 +71,19 @@ function Update-DbaInstance {
         Defaults to CredSSP when using -Credential to avoid double-hop authentication issues with network patch repositories.
         Use CredSSP when your patch files are stored on network shares that require credential delegation to remote servers.
 
+    .PARAMETER UseSSL
+        Enables SSL encryption for PowerShell remoting connections to target servers.
+        Use this when remote servers are configured to only accept encrypted WinRM connections (typically on port 5986).
+        Defaults to the value configured in PSRemoting.PsSession.UseSSL configuration setting (false if not configured).
+        Explicitly specifying this parameter overrides the configuration default.
+
+    .PARAMETER Port
+        Specifies the WinRM port to use for PowerShell remoting connections.
+        Common values: 5985 (standard HTTP), 5986 (HTTPS/SSL).
+        Use this when remote servers have WinRM configured on non-standard ports or when using SSL.
+        Defaults to the value configured in PSRemoting.PsSession.Port configuration setting (standard ports if not configured).
+        Explicitly specifying this parameter overrides the configuration default.
+
     .PARAMETER InstanceName
         Limits patching to a specific named SQL Server instance on the target computer.
         Use this when you have multiple SQL instances and need to patch only one, such as updating a development instance while leaving production untouched.
@@ -182,6 +195,13 @@ function Update-DbaInstance {
         Downloads an appropriate CU KB to \\network\share and installs it onto SQL1.
         Does not prompt for confirmation.
 
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName "db01.internal.local" -Credential $cred -UseSSL -Port 5986 -Path "\\fs01.internal.local\SQL2022_Patch\CU13"
+
+        Updates SQL Server on db01.internal.local using SSL-encrypted WinRM connection on port 5986.
+        Requires the remote server to be configured for HTTPS WinRM (typically port 5986).
+        Credentials are provided to access both the remote server and the network share containing patch files.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
@@ -207,6 +227,8 @@ function Update-DbaInstance {
         [int]$Throttle = 50,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = @('Credssp', 'Default')[$null -eq $Credential],
+        [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName "PSRemoting.PsSession.UseSSL" -Fallback $false),
+        [nullable[int]]$Port = (Get-DbatoolsConfigValue -FullName "PSRemoting.PsSession.Port" -Fallback $null),
         [string]$ExtractPath,
         [string[]]$ArgumentList,
         [switch]$Download,
@@ -453,7 +475,18 @@ function Update-DbaInstance {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
                 Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
                 try {
-                    $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                    $splatRemoteTest = @{
+                        ComputerName   = $resolvedName
+                        Credential     = $Credential
+                        Authentication = $Authentication
+                        ScriptBlock    = { $true }
+                        Raw            = $true
+                        UseSSL         = $UseSSL
+                    }
+                    if (($null -ne $Port) -and ($Port -gt 0)) {
+                        $splatRemoteTest.Port = $Port
+                    }
+                    $connectSuccess = Invoke-Command2 @splatRemoteTest
                 } catch {
                     $connectSuccess = $false
                 }
@@ -464,7 +497,18 @@ function Update-DbaInstance {
                     Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
                     try {
                         Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $true
-                        $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                        $splatRemoteTestCredSSP = @{
+                            ComputerName   = $resolvedName
+                            Credential     = $Credential
+                            Authentication = $Authentication
+                            ScriptBlock    = { $true }
+                            Raw            = $true
+                            UseSSL         = $UseSSL
+                        }
+                        if (($null -ne $Port) -and ($Port -gt 0)) {
+                            $splatRemoteTestCredSSP.Port = $Port
+                        }
+                        $connectSuccess = Invoke-Command2 @splatRemoteTestCredSSP
                     } catch {
                         $connectSuccess = $false
                         # tell the user why we could not configure CredSSP
