@@ -524,8 +524,12 @@ function Start-DbaDbEncryption {
                     }
                 }
 
-                # Create runspace pool
+                # Create runspace pool with dbatools module imported
                 $initialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+                $dbatools = Get-Module -Name dbatools
+                if ($dbatools) {
+                    $initialSessionState.ImportPSModule($dbatools.Path)
+                }
                 $runspacePool = [runspacefactory]::CreateRunspacePool(1, 10, $initialSessionState, $Host)
                 $runspacePool.Open()
 
