@@ -282,8 +282,8 @@ function Copy-DbaLinkedServer {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
         try {
-            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-            return
+            Write-Message -Level Verbose -Message "We will try to open a dedicated admin connection."
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
@@ -318,5 +318,10 @@ function Copy-DbaLinkedServer {
             # Magic happens here
             Copy-DbaLinkedServers $LinkedServer -Force:$force
         }
+    }
+    end {
+        # Disconnect is important because it is a DAC
+        # Disconnect in case of WhatIf, as we opened the connection
+        $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
     }
 }
