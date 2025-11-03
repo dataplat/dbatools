@@ -139,4 +139,18 @@ Describe $CommandName -Tag IntegrationTests {
             $file -match $ruleName | Should -Be $true
         }
     }
+
+    Context "ScriptingOptionsObject parameter works correctly" {
+        It "should respect IncludeIfNotExists scripting option when specified" {
+            $scriptOpts = New-DbaScriptingOption
+            $scriptOpts.IncludeIfNotExists = $true
+            $splatExport = @{
+                SqlInstance           = $TestConfig.instance2
+                ScriptingOptionsObject = $scriptOpts
+                PassThru              = $true
+            }
+            $script = Export-DbaSysDbUserObject @splatExport | Out-String
+            $script -match "IF NOT EXISTS" | Should -Be $true
+        }
+    }
 }
