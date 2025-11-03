@@ -437,6 +437,10 @@ function Copy-DbaDbTableData {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.BulkCopyTimeout = $BulkCopyTimeout
 
+                        # Get list of non-computed columns from destination table to avoid insert failures
+                        $destColumns = $desttable.Columns | Where-Object Computed -eq $false | Select-Object -ExpandProperty Name
+                        Write-Message -Level Verbose -Message "Destination table has $($destColumns.Count) non-computed columns"
+
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
                         # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
                         # See https://github.com/dataplat/dbatools/issues/6927 for more details
@@ -462,6 +466,17 @@ function Copy-DbaDbTableData {
 
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
+
+                        # Map only columns that exist in both source and destination (excluding computed columns)
+                        for ($i = 0; $i -lt $reader.FieldCount; $i++) {
+                            $sourceColumn = $reader.GetName($i)
+                            if ($destColumns -contains $sourceColumn) {
+                                $null = $bulkCopy.ColumnMappings.Add($sourceColumn, $sourceColumn)
+                            } else {
+                                Write-Message -Level Verbose -Message "Skipping column '$sourceColumn' (not in destination or is computed)"
+                            }
+                        }
+
                         $bulkCopy.WriteToServer($reader)
                         $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
 
