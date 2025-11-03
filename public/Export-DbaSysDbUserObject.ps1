@@ -133,7 +133,7 @@ function Export-DbaSysDbUserObject {
                         if ((Test-Path -Path $scriptPath) -and $NoClobber) {
                             Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $scriptPath -Continue
                         }
-                        if (!(Test-Bound -ParameterName ScriptingOption)) {
+                        if (!(Test-Bound -ParameterName ScriptingOptionsObject)) {
                             $ScriptingOptionsObject = New-DbaScriptingOption
                             $ScriptingOptionsObject.IncludeDatabaseContext = $true
                             $ScriptingOptionsObject.ScriptBatchTerminator = $true
