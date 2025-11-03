@@ -496,7 +496,7 @@ function Start-DbaDbEncryption {
 
                         # Create encryption key if needed
                         if (-not $db.HasDatabaseEncryptionKey) {
-                            $null = $db | New-DbaDbEncryptionKey -EncryptorName $EncryptorName -EnableException
+                            $null = $db | New-DbaDbEncryptionKey -EncryptorName $EncryptorName -EnableException:$true
                         }
 
                         # Enable encryption
