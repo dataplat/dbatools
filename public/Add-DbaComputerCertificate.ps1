@@ -6,6 +6,8 @@ function Add-DbaComputerCertificate {
     .DESCRIPTION
         Imports X.509 certificates (including password-protected .pfx files with private keys) into the specified Windows certificate store on one or more computers. This function is essential for SQL Server TLS/SSL encryption setup, Availability Group certificate requirements, and Service Broker security configurations.
 
+        When importing PFX files, the function imports the entire certificate chain, including intermediate certificates. This ensures proper certificate validation and prevents issues when using certificates with Set-DbaNetworkCertificate or other certificate-dependent operations.
+
         The function handles both certificate files from disk and certificate objects from the pipeline, supports remote installation via PowerShell remoting, and allows you to control import behavior through various flags like exportable/non-exportable private keys. By default, certificates are installed to the LocalMachine\My (Personal) store with exportable and persistent private keys, which is the standard location for SQL Server service certificates.
 
     .PARAMETER ComputerName
@@ -98,6 +100,13 @@ function Add-DbaComputerCertificate {
 
         Adds the local C:\temp\sql01.pfx to sql01's LocalMachine\My (Personal) certificate store and marks the private key as non-exportable. Skips confirmation prompt.
 
+    .EXAMPLE
+        PS C:\> $password = Read-Host "Enter the SSL Certificate Password" -AsSecureString
+        PS C:\> Add-DbaComputerCertificate -ComputerName sql01 -Path C:\cert\fullchain.pfx -SecurePassword $password
+        PS C:\> Get-DbaComputerCertificate -ComputerName sql01 | Where-Object Subject -match "letsencrypt" | Set-DbaNetworkCertificate -SqlInstance sql01
+
+        Imports a Let's Encrypt certificate with the full chain (including intermediate certificates) from a PFX file, then configures SQL Server to use it. The full chain import ensures that Set-DbaNetworkCertificate can properly set permissions on the certificate.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -140,8 +149,11 @@ function Add-DbaComputerCertificate {
             try {
                 # local has to be exportable to export to remote
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
-                $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $null = $Certificate.Import($bytes, $SecurePassword, "Exportable, PersistKeySet")
+                # Use X509Certificate2Collection to import the full certificate chain
+                $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+                $null = $certCollection.Import($bytes, $SecurePassword, "Exportable, PersistKeySet")
+                # Convert collection to array for processing
+                $Certificate = @($certCollection)
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
@@ -158,16 +170,26 @@ function Add-DbaComputerCertificate {
                 $flags
             )
 
-            $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-            $cert.Import($CertificateData, $SecurePassword, $flags)
-            Write-Verbose -Message "Importing cert to $Folder\$Store using flags: $flags"
+            # Use X509Certificate2Collection to import the full certificate chain
+            $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+            $certCollection.Import($CertificateData, $SecurePassword, $flags)
+
+            Write-Verbose -Message "Importing certificate chain to $Folder\$Store using flags: $flags"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
-            $tempStore.Open('ReadWrite')
-            $tempStore.Add($cert)
+            $tempStore.Open("ReadWrite")
+
+            # Import all certificates in the chain
+            $importedCerts = @()
+            foreach ($cert in $certCollection) {
+                $tempStore.Add($cert)
+                $importedCerts += $cert.Thumbprint
+                Write-Verbose -Message "Imported certificate: $($cert.Subject) (Thumbprint: $($cert.Thumbprint))"
+            }
+
             $tempStore.Close()
 
-            Write-Verbose -Message "Searching Cert:\$Store\$Folder"
-            Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+            Write-Verbose -Message "Searching Cert:\$Store\$Folder for imported certificates"
+            Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -in $importedCerts }
         }
         #endregion Remoting Script
     }
