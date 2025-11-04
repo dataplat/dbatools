@@ -39,7 +39,14 @@ function Get-XpDirTreeRestoreFile {
     Write-Message -Level InternalComment -Message "Starting"
 
     $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    $pathSep = Get-DbaPathSep -Server $server
+
+    # Determine the correct path separator based on whether this is a URL or file system path
+    if ($Path -match '^https?://') {
+        $pathSep = "/"
+    } else {
+        $pathSep = Get-DbaPathSep -Server $server
+    }
+
     if (($path -like '*.bak') -or ($path -like '*.trn')) {
         # For a future person who knows what's up, please replace this comment with the reason this is empty
     } elseif ($Path[-1] -ne $pathSep) {

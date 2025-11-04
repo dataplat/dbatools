@@ -118,5 +118,45 @@ Describe $CommandName -Tag UnitTests {
                 ($results | Where-Object Fullname -eq "C:\temp\full2.bak" | Measure-Object).count | Should -BeExactly 1
             }
         }
+        Context "URL path handling" {
+            BeforeAll {
+                $array = (@{ subdirectory = "full.bak"; depth = 1; file = 1 },
+                    @{ subdirectory = "full2.bak"; depth = 1; file = 1 })
+                Mock Connect-DbaInstance -MockWith {
+                    $obj = [PSCustomObject]@{
+                        Name                 = "BASEName"
+                        NetName              = "BASENetName"
+                        ComputerName         = "BASEComputerName"
+                        InstanceName         = "BASEInstanceName"
+                        DomainInstanceName   = "BASEDomainInstanceName"
+                        InstallDataDirectory = "BASEInstallDataDirectory"
+                        ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', ']'
+                        ServiceName          = "BASEServiceName"
+                        VersionMajor         = 9
+                        ConnectionContext    = New-Object PSObject
+                    }
+                    Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value "put=an=equal=in=it"
+                    Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                        param($query)
+                        if ($query -eq "EXEC master.sys.xp_dirtree 'https://storage.blob.core.windows.net/backups/',1,1;") {
+                            return $array
+                        }
+                    }
+                    $obj.PSObject.TypeNames.Clear()
+                    $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                    return $obj
+                }
+                $results = Get-XpDirTreeRestoreFile -path "https://storage.blob.core.windows.net/backups" -SqlInstance bad\bad -EnableException
+            }
+            It "Should return an array of 2 files" {
+                $results.count | Should -BeExactly 2
+            }
+            It "Should return a file with forward slashes in URL" {
+                $results[0].Fullname | Should -BeLike "https://storage.blob.core.windows.net/backups/*bak"
+            }
+            It "Should not contain backslashes in URL path" {
+                $results[0].Fullname | Should -Not -BeLike "*\*"
+            }
+        }
     }
 }
