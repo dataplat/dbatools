@@ -155,17 +155,24 @@ function Add-DbaComputerCertificate {
                 # Read file bytes and import locally to get certificate collection
                 $fileBytes = [System.IO.File]::ReadAllBytes($Path)
 
-                # Convert SecureString to plain text password for import/export operations
-                # Using plain text for both Import() and Export() in all PowerShell versions
-                # This is standard practice for .NET certificate operations and more reliable than mixing approaches
-                $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($SecurePassword)
-                try {
+                # Use X509Certificate2Collection to import the full certificate chain
+                $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+
+                # Handle password conversion for password-protected certificates (PFX files)
+                $plainPassword = $null
+                $ptr = [IntPtr]::Zero
+
+                if ($SecurePassword) {
+                    # Convert SecureString to plain text password for import/export operations
+                    # Using plain text for both Import() and Export() in all PowerShell versions
+                    # This is standard practice for .NET certificate operations
+                    $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($SecurePassword)
                     $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
+                }
 
-                    # Use X509Certificate2Collection to import the full certificate chain
-                    $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
-
-                    # Import using plain text password (works reliably in all PowerShell versions v3+)
+                try {
+                    # Import using plain text password (or null for non-password-protected certificates)
+                    # Works reliably in all PowerShell versions v3+
                     $null = $certCollection.Import($fileBytes, $plainPassword, "Exportable, PersistKeySet")
 
                     # Export the entire collection as a single PFX to preserve the chain
@@ -177,7 +184,9 @@ function Add-DbaComputerCertificate {
                     $Certificate = @($certCollection)
                 } finally {
                     # Always clean up the plain text password from memory
-                    [System.Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($ptr)
+                    if ($ptr -ne [IntPtr]::Zero) {
+                        [System.Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($ptr)
+                    }
                 }
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
@@ -228,10 +237,15 @@ function Add-DbaComputerCertificate {
 
         # Convert SecureString to plain text for passing to remote scriptblock
         # (PowerShell remoting encrypts the connection, so this is safe)
-        $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($SecurePassword)
-        try {
-            $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
+        $plainPassword = $null
+        $ptr = [IntPtr]::Zero
 
+        if ($SecurePassword) {
+            $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($SecurePassword)
+            $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
+        }
+
+        try {
             # If we have a collection from a file, import it as a single unit to preserve the chain
             if ($isCollection -and $collectionData) {
                 foreach ($computer in $ComputerName) {
@@ -274,7 +288,9 @@ function Add-DbaComputerCertificate {
             }
         } finally {
             # Always clean up the plain text password from memory
-            [System.Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($ptr)
+            if ($ptr -ne [IntPtr]::Zero) {
+                [System.Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($ptr)
+            }
         }
     }
 }
