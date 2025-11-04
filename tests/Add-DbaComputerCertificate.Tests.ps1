@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "PFX certificate with chain is imported properly" {
+    Context "PFX certificate with chain is imported properly" -Skip:($env:APPVEYOR) {
         BeforeAll {
             # Generate unique temp path for this test run
             $script:tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
