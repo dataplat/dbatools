@@ -21,6 +21,14 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Regression tests" {
+        It "Should accept Session objects as InputObject (issue #9840)" {
+            $command = Get-Command $CommandName
+            $inputObjectParam = $command.Parameters["InputObject"]
+            $inputObjectParam.ParameterType.Name | Should -Be "Object[]"
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

@@ -97,7 +97,7 @@ function Get-DbaXESessionTargetFile {
 
                 try {
                     Write-Message -Level Verbose -Message "Getting $targetFile"
-                    Get-ChildItem -Path $targetFile -ErrorAction Stop | Sort-Object LastWriteTime
+                    Get-ChildItem -Path $targetFile -File -ErrorAction Stop | Sort-Object LastWriteTime
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $targetFile
                 }
@@ -107,11 +107,11 @@ function Get-DbaXESessionTargetFile {
                     if ($computer.IsLocal) {
                         $file = $object.TargetFile
                         Write-Message -Level Verbose -Message "Getting $file"
-                        Get-ChildItem "$file*" -ErrorAction Stop
+                        Get-ChildItem "$file*" -File -ErrorAction Stop
                     } else {
                         $file = $object.RemoteTargetFile
                         Write-Message -Level Verbose -Message "Getting $file"
-                        Get-ChildItem "$file*" -ErrorAction Stop
+                        Get-ChildItem "$file*" -File -ErrorAction Stop
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
