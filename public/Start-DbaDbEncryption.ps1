@@ -81,6 +81,12 @@ function Start-DbaDbEncryption {
         Creates a new certificate with the specified EncryptorName if it doesn't exist in the master database.
         Requires EncryptorName to be specified. Use this when you need to establish new TDE infrastructure with specific naming conventions.
 
+    .PARAMETER Parallel
+        Enables parallel processing of databases using runspace pools with 1-10 concurrent threads.
+        Use this when enabling encryption on multiple databases to improve performance.
+        Shared resources (master keys and certificates) are created sequentially before parallel processing begins.
+        Without this switch, databases are processed sequentially.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -120,6 +126,22 @@ function Start-DbaDbEncryption {
 
         Then encrypts all user databases on sql01, creating master keys and certificates as needed, and backing all of them up to C:\temp, securing them with the password set in $certbackuppass
 
+    .EXAMPLE
+        PS C:\> $masterkeypass = (Get-Credential justneedpassword).Password
+        PS C:\> $certbackuppass = (Get-Credential justneedpassword).Password
+        PS C:\> $splatEncryption = @{
+        >>      SqlInstance             = "sql01", "sql02"
+        >>      AllUserDatabases        = $true
+        >>      MasterKeySecurePassword = $masterkeypass
+        >>      BackupSecurePassword    = $certbackuppass
+        >>      BackupPath              = "\\backup\tde"
+        >>      Parallel                = $true
+        >>  }
+        PS C:\> Start-DbaDbEncryption @splatEncryption
+
+        Encrypts all user databases on sql01 and sql02 using parallel processing for improved performance.
+        Master keys and certificates are created sequentially per instance, then database encryption operations run in parallel.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
@@ -144,6 +166,7 @@ function Start-DbaDbEncryption {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$AllUserDatabases,
         [switch]$Force,
+        [switch]$Parallel,
         [switch]$EnableException
     )
     process {
@@ -173,7 +196,10 @@ function Start-DbaDbEncryption {
         }
 
         $PSDefaultParameterValues["Connect-DbaInstance:Verbose"] = $false
-        foreach ($db in $InputObject) {
+
+        if (-not $Parallel) {
+            # Sequential processing (original behavior)
+            foreach ($db in $InputObject) {
             try {
                 # Just in case they use inputobject + exclude
                 if ($db.Name -in $ExcludeDatabase) { continue }
@@ -339,6 +365,234 @@ function Start-DbaDbEncryption {
                 $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
+            }
+        } else {
+            # Parallel processing - group databases by instance and pre-create shared resources
+            $instanceGroups = $InputObject | Group-Object -Property { $_.Parent.Name }
+
+            foreach ($instanceGroup in $instanceGroups) {
+                $server = $instanceGroup.Group[0].Parent
+                $servername = $server.Name
+                $databases = $instanceGroup.Group | Where-Object { $_.Name -notin $ExcludeDatabase -and -not $_.EncryptionEnabled }
+
+                if ($databases.Count -eq 0) {
+                    Write-Message -Level Verbose -Message "No databases to encrypt on $servername"
+                    continue
+                }
+
+                Write-Message -Level Verbose -Message "Pre-creating shared resources for $servername"
+
+                try {
+                    # Step 1: Ensure master key exists
+                    $masterkey = Get-DbaDbMasterKey -SqlInstance $server -Database master
+                    if (-not $masterkey) {
+                        Write-Message -Level Verbose -Message "Creating master key on $servername"
+                        $splatMasterKey = @{
+                            SqlInstance     = $server
+                            SecurePassword  = $MasterKeySecurePassword
+                            EnableException = $true
+                        }
+                        $masterkey = New-DbaServiceMasterKey @splatMasterKey
+                    }
+
+                    # Back up master key if needed
+                    $dbmasterkeytest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$servername-master"
+                    if (-not $dbmasterkeytest) {
+                        $splatBackupMasterKey = @{
+                            SqlInstance     = $server
+                            Database        = "master"
+                            Path            = $BackupPath
+                            EnableException = $true
+                            SecurePassword  = $BackupSecurePassword
+                        }
+                        Write-Message -Level Verbose -Message "Backing up master key on $servername"
+                        $null = Backup-DbaDbMasterKey @splatBackupMasterKey
+                    }
+
+                    # Step 2: Ensure certificate or asymmetric key exists
+                    if ($EncryptorType -eq "Certificate") {
+                        if ($EncryptorName) {
+                            $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -eq $EncryptorName
+                            if (-not $mastercert -and $Force) {
+                                $mastercert = New-DbaDbCertificate -SqlInstance $server -Database master -Name $EncryptorName
+                            }
+                        } else {
+                            $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -NotMatch "##"
+                        }
+
+                        if (-not $mastercert) {
+                            Write-Message -Level Verbose -Message "Creating certificate on $servername"
+                            $splatCertificate = @{
+                                SqlInstance                  = $server
+                                Database                     = "master"
+                                StartDate                    = $CertificateStartDate
+                                ExpirationDate               = $CertificateExpirationDate
+                                ActiveForServiceBrokerDialog = $CertificateActiveForServiceBrokerDialog
+                                EnableException              = $true
+                            }
+                            if ($CertificateSubject) {
+                                $splatCertificate.Subject = $CertificateSubject
+                            }
+                            $mastercert = New-DbaDbCertificate @splatCertificate
+                        }
+
+                        # Back up certificate if needed
+                        $mastercerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$($mastercert.Name).cer"
+                        if (-not $mastercerttest) {
+                            $splatBackupCertificate = @{
+                                SqlInstance        = $server
+                                Database           = "master"
+                                Certificate        = $mastercert.Name
+                                Path               = $BackupPath
+                                EnableException    = $true
+                                EncryptionPassword = $BackupSecurePassword
+                            }
+                            Write-Message -Level Verbose -Message "Backing up certificate on $servername"
+                            $null = Backup-DbaDbCertificate @splatBackupCertificate
+                        }
+
+                        $encryptorNameToUse = $mastercert.Name
+                    } else {
+                        $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master
+                        if (-not $masterasym) {
+                            Write-Message -Level Verbose -Message "Creating asymmetric key on $servername"
+                            $splatAsymmetricKey = @{
+                                SqlInstance     = $server
+                                Database        = "master"
+                                EnableException = $true
+                            }
+                            $masterasym = New-DbaDbAsymmetricKey @splatAsymmetricKey
+                        }
+                        $encryptorNameToUse = $masterasym.Name
+                    }
+                } catch {
+                    Stop-Function -Message "Failed to create shared resources on $servername" -ErrorRecord $_ -Continue
+                }
+
+                # Step 3: Parallelize database encryption operations
+                $encryptionScript = {
+                    param (
+                        $ServerName,
+                        $DatabaseName,
+                        $EncryptorName,
+                        $EnableException,
+                        $SqlCredential
+                    )
+
+                    try {
+                        # Create new connection for this thread
+                        $splatConnection = @{
+                            SqlInstance     = $ServerName
+                            SqlCredential   = $SqlCredential
+                            EnableException = $true
+                        }
+                        $server = Connect-DbaInstance @splatConnection
+                        $db = $server.Databases[$DatabaseName]
+
+                        if (-not $db) {
+                            throw "Database $DatabaseName not found on $ServerName"
+                        }
+
+                        # Create encryption key if needed
+                        if (-not $db.HasDatabaseEncryptionKey) {
+                            $null = $db | New-DbaDbEncryptionKey -EncryptorName $EncryptorName -EnableException:$true
+                        }
+
+                        # Enable encryption
+                        $result = $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName
+
+                        [PSCustomObject]@{
+                            ComputerName      = $server.ComputerName
+                            InstanceName      = $server.ServiceName
+                            SqlInstance       = $server.DomainInstanceName
+                            DatabaseName      = $DatabaseName
+                            EncryptionEnabled = $result.EncryptionEnabled
+                            Status            = "Success"
+                            Error             = $null
+                        }
+                    } catch {
+                        [PSCustomObject]@{
+                            ComputerName      = $null
+                            InstanceName      = $null
+                            SqlInstance       = $ServerName
+                            DatabaseName      = $DatabaseName
+                            EncryptionEnabled = $false
+                            Status            = "Failed"
+                            Error             = $_.Exception.Message
+                        }
+                    }
+                }
+
+                # Create runspace pool with dbatools module imported
+                $initialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+                $dbatools = Get-Module -Name dbatools
+                if ($dbatools) {
+                    $initialSessionState.ImportPSModule($dbatools.Path)
+                }
+                $runspacePool = [runspacefactory]::CreateRunspacePool(1, 10, $initialSessionState, $Host)
+                $runspacePool.Open()
+
+                $threads = @()
+
+                foreach ($db in $databases) {
+                    $splatRunspace = @{
+                        ServerName      = $servername
+                        DatabaseName    = $db.Name
+                        EncryptorName   = $encryptorNameToUse
+                        EnableException = $EnableException
+                        SqlCredential   = $SqlCredential
+                    }
+
+                    Write-Message -Level Verbose -Message "Queuing database $($db.Name) on $servername for encryption"
+
+                    $thread = [powershell]::Create()
+                    $thread.RunspacePool = $runspacePool
+                    $null = $thread.AddScript($encryptionScript)
+                    $null = $thread.AddParameters($splatRunspace)
+
+                    $handle = $thread.BeginInvoke()
+                    $threads += [PSCustomObject]@{
+                        Handle      = $handle
+                        Thread      = $thread
+                        Database    = $db.Name
+                        Instance    = $servername
+                        IsRetrieved = $false
+                        Started     = Get-Date
+                    }
+                }
+
+                # Retrieve results
+                while ($threads | Where-Object { $_.IsRetrieved -eq $false }) {
+                    $totalThreads = ($threads | Measure-Object).Count
+                    $totalRetrievedThreads = ($threads | Where-Object { $_.IsRetrieved -eq $true } | Measure-Object).Count
+                    Write-Progress -Id 1 -Activity "Enabling encryption on $servername" -Status "Progress" -CurrentOperation "Processing: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
+
+                    foreach ($thread in ($threads | Where-Object { $_.IsRetrieved -eq $false })) {
+                        if ($thread.Handle.IsCompleted) {
+                            $result = $thread.Thread.EndInvoke($thread.Handle)
+                            $thread.IsRetrieved = $true
+
+                            if ($thread.Thread.HadErrors) {
+                                Stop-Function -Message "Problem enabling encryption for $($thread.Database) on $($thread.Instance)" -ErrorRecord $thread.Thread.Streams.Error -Continue
+                            }
+
+                            if ($result) {
+                                if ($result.Status -eq "Failed") {
+                                    Stop-Function -Message "Failed to enable encryption for $($result.DatabaseName) on $($result.SqlInstance): $($result.Error)" -Continue
+                                } else {
+                                    $result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, EncryptionEnabled
+                                }
+                            }
+
+                            $thread.Thread.Dispose()
+                        }
+                    }
+                    Start-Sleep -Milliseconds 500
+                }
+
+                $runspacePool.Close()
+                $runspacePool.Dispose()
             }
         }
     }

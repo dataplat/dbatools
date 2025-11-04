@@ -40,6 +40,8 @@ Describe -skip $CommandName -Tag UnitTests {
                 "Continue",
                 "Throttle",
                 "Authentication",
+                "UseSSL",
+                "Port",
                 "EnableException",
                 "ExtractPath",
                 "ArgumentList",

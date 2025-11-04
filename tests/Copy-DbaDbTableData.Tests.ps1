@@ -169,4 +169,32 @@ Describe $CommandName -Tag IntegrationTests {
             $tablewarning | Should -Match "cannot open database"
         }
     }
+
+    Context "When destination table has computed columns" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_computed_source (Dt DATETIME)")
+            $null = $sourceDb.Query("INSERT dbo.dbatoolsci_computed_source (Dt) VALUES (GETDATE()), (DATEADD(MONTH, -1, GETDATE()))")
+            $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_computed_dest (Dt DATETIME, DtDay AS (DATEPART(DAY, Dt)), DtMonth AS (DATEPART(MONTH, Dt)), DtYear AS (DATEPART(YEAR, Dt)))")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_computed_source")
+            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_computed_dest")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should copy data successfully when destination has computed columns" {
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Destination $TestConfig.instance2 -Database tempdb -Table dbatoolsci_computed_source -DestinationTable dbatoolsci_computed_dest
+            $result.RowsCopied | Should -Be 2
+            $destCount = $destinationDb.Query("SELECT * FROM dbo.dbatoolsci_computed_dest")
+            $destCount.Count | Should -Be 2
+        }
+    }
 }
