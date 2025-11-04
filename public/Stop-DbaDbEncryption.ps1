@@ -107,9 +107,8 @@ function Stop-DbaDbEncryption {
                 try {
                     # Create new connection for this thread
                     $splatConnection = @{
-                        SqlInstance     = $ServerName
-                        SqlCredential   = $SqlCredential
-                        EnableException = $true
+                        SqlInstance   = $ServerName
+                        SqlCredential = $SqlCredential
                     }
                     $server = Connect-DbaInstance @splatConnection
                     $db = $server.Databases[$DatabaseName]
