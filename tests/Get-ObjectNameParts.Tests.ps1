@@ -5,6 +5,8 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
+. "$PSScriptRoot\..\private\functions\Get-ObjectNameParts.ps1"
+
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -25,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Test one part names" {
         It "Should return correct parts" {
             $objectName = "table1", "[table2]", "[tab..le3]", "[table]]x4]", "[table5]]]"
-            $table = "table1", "table2", "tab..le3", "table]]x4", "table5]]"
+            $table = "table1", "table2", "tab..le3", "table]x4", "table5]"
             for ($i = 0; $i -lt $objectName.Count; $i++) {
                 $result = Get-ObjectNameParts -ObjectName $objectName[$i]
                 $result.Parsed | Should -Be $true
@@ -37,8 +39,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Test two part names" {
         It "Should return correct parts" {
-            $objectName = "schema1.table1", "[sche..ma2].[table2]", "schema3.[tab..le3]", "[schema4].[table]]x4]", "schema5.[table5]]]"
-            $table = "table1", "table2", "tab..le3", "table]]x4", "table5]]"
+            $objectName = "schema1.table1", "[sche..ma2].[table2]", "[sche ma3].[tab..le3]", "[schema4].[table]]x4]", "schema5.[table5]]]"
+            $table = "table1", "table2", "tab..le3", "table]x4", "table5]"
             $schema = "schema1", "sche..ma2", "sche ma3", "schema4", "schema5"
             for ($i = 0; $i -lt $objectName.Count; $i++) {
                 $result = Get-ObjectNameParts -ObjectName $objectName[$i]
