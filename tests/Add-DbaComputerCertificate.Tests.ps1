@@ -61,15 +61,15 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
     Context "PFX certificate with chain is imported properly" {
         BeforeAll {
             # Generate unique temp path for this test run
-            $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
-            $null = New-Item -Path $tempPath -ItemType Directory -Force
-            $pfxPath = "$tempPath\testcert.pfx"
+            $script:tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $script:tempPath -ItemType Directory -Force
+            $script:pfxPath = "$script:tempPath\testcert.pfx"
 
             # Create a secure password for the PFX
             $pfxPassword = ConvertTo-SecureString -String "Test123!@#" -AsPlainText -Force
 
             # Generate a unique subject name to avoid conflicts
-            $certSubject = "CN=DbaToolsTest-$(Get-Random)"
+            $script:certSubject = "CN=DbaToolsTest-$(Get-Random)"
 
             # Create a self-signed certificate using makecert.exe or New-SelfSignedCertificate
             # For PowerShell v3 compatibility, we use New-SelfSignedCertificate if available (Windows 8+)
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             if (Get-Command New-SelfSignedCertificate -ErrorAction SilentlyContinue) {
                 # Windows 8+ / Server 2012+ approach
                 $splatNewCert = @{
-                    Subject           = $certSubject
+                    Subject           = $script:certSubject
                     CertStoreLocation = "Cert:\CurrentUser\My"
                     KeyExportPolicy   = "Exportable"
                     KeySpec           = "Signature"
@@ -89,12 +89,12 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
                 $selfSignedCert = New-SelfSignedCertificate @splatNewCert
 
                 # Export to PFX
-                $null = Export-PfxCertificate -Cert $selfSignedCert -FilePath $pfxPath -Password $pfxPassword
+                $null = Export-PfxCertificate -Cert $selfSignedCert -FilePath $script:pfxPath -Password $pfxPassword
 
                 # Remove from CurrentUser\My store
                 Remove-Item -Path "Cert:\CurrentUser\My\$($selfSignedCert.Thumbprint)" -ErrorAction SilentlyContinue
 
-                $testThumbprint = $selfSignedCert.Thumbprint
+                $script:testThumbprint = $selfSignedCert.Thumbprint
             } else {
                 # For older systems without New-SelfSignedCertificate, skip this test
                 Set-ItResult -Skipped -Because "New-SelfSignedCertificate cmdlet not available on this system"
@@ -103,41 +103,41 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
 
             # Import the PFX using Add-DbaComputerCertificate
             $splatImport = @{
-                Path           = $pfxPath
+                Path           = $script:pfxPath
                 SecurePassword = $pfxPassword
                 Confirm        = $false
             }
-            $importResults = Add-DbaComputerCertificate @splatImport
+            $script:importResults = Add-DbaComputerCertificate @splatImport
         }
 
         AfterAll {
             # Clean up test certificate
-            if ($testThumbprint) {
-                Remove-DbaComputerCertificate -Thumbprint $testThumbprint -ErrorAction SilentlyContinue
+            if ($script:testThumbprint) {
+                Remove-DbaComputerCertificate -Thumbprint $script:testThumbprint -ErrorAction SilentlyContinue
             }
 
             # Clean up temp files
-            if ($tempPath) {
-                Remove-Item -Path $tempPath -Recurse -Force -ErrorAction SilentlyContinue
+            if ($script:tempPath) {
+                Remove-Item -Path $script:tempPath -Recurse -Force -ErrorAction SilentlyContinue
             }
         }
 
         It "Should successfully import the PFX certificate" {
-            $importResults | Should -Not -BeNullOrEmpty
+            $script:importResults | Should -Not -BeNullOrEmpty
         }
 
         It "Should have the correct thumbprint" {
-            $importResults.Thumbprint | Should -Contain $testThumbprint
+            $script:importResults.Thumbprint | Should -Contain $script:testThumbprint
         }
 
         It "Should be in LocalMachine\My Cert Store" {
-            $importResults.PSParentPath | Should -Be "Microsoft.PowerShell.Security\Certificate::LocalMachine\My"
+            $script:importResults.PSParentPath | Should -Be "Microsoft.PowerShell.Security\Certificate::LocalMachine\My"
         }
 
         It "Should be able to retrieve the certificate from the store" {
-            $retrievedCert = Get-DbaComputerCertificate -Thumbprint $testThumbprint
+            $retrievedCert = Get-DbaComputerCertificate -Thumbprint $script:testThumbprint
             $retrievedCert | Should -Not -BeNullOrEmpty
-            $retrievedCert.Subject | Should -Be $certSubject
+            $retrievedCert.Subject | Should -Be $script:certSubject
         }
     }
 }
