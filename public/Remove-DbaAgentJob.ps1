@@ -87,6 +87,14 @@ function Remove-DbaAgentJob {
         [switch]$EnableException
     )
     process {
+        # Check if Job parameter is bound with null, empty, or whitespace-only values
+        if (Test-Bound 'Job') {
+            if ($null -eq $Job -or $Job.Count -eq 0 -or ($Job | Where-Object { [string]::IsNullOrWhiteSpace($_) })) {
+                Stop-Function -Message "The -Job parameter was explicitly provided but contains null, empty, or whitespace-only values. This may indicate an uninitialized variable. No jobs will be removed." -EnableException $EnableException
+                return
+            }
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential

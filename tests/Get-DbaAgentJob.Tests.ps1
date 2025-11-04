@@ -133,4 +133,31 @@ Describe $CommandName -Tag IntegrationTests {
             $resultMultipleDatabases.Name -contains $jobName2 | Should -BeTrue
         }
     }
+    Context "Command validates null/empty Job parameter" {
+        It "Should return no jobs when -Job is null" {
+            $nullVariable = $null
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $nullVariable -WarningVariable warning -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $warning | Should -Match "null, empty, or whitespace-only values"
+        }
+
+        It "Should return no jobs when -Job is empty string" {
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "" -WarningVariable warning -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $warning | Should -Match "null, empty, or whitespace-only values"
+        }
+
+        It "Should return no jobs when -Job is whitespace" {
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "   " -WarningVariable warning -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $warning | Should -Match "null, empty, or whitespace-only values"
+        }
+
+        It "Should ignore -ExcludeJob when it contains null values" {
+            $nullVariable = $null
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob $nullVariable -WarningVariable warning -WarningAction SilentlyContinue
+            $results | Should -Not -BeNullOrEmpty
+            $warning | Should -Match "null, empty, or whitespace-only values"
+        }
+    }
 }
