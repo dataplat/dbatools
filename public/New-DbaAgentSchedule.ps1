@@ -529,7 +529,16 @@ function New-DbaAgentSchedule {
                     Write-Message -Message "Adding the schedule $jobschedule on instance $instance" -Level Verbose
 
                     # Create the schedule
-                    $jobschedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($Server.JobServer, $Schedule)
+                    try {
+                        $jobschedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($Server.JobServer, $Schedule)
+                    } catch {
+                        if ($_.Exception.Message -match "newParent") {
+                            Stop-Function -Message "Cannot create agent schedule through a contained availability group listener. SQL Server Agent objects are instance-level and must be managed on the instance directly. Please connect to the primary replica instead of the listener. Use Get-DbaAvailabilityGroup to find the current primary replica." -ErrorRecord $_ -Target $instance -Continue
+                            return
+                        } else {
+                            throw
+                        }
+                    }
 
                     #region job schedule options
                     if ($Disabled) {

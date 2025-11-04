@@ -252,7 +252,11 @@ function New-DbaAgentJobStep {
                         # Set the job where the job steps belongs to
                         $jobStep.Parent = $currentJob
                     } catch {
-                        Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
+                        if ($_.Exception.Message -match "newParent") {
+                            Stop-Function -Message "Cannot create agent job step through a contained availability group listener. SQL Server Agent objects are instance-level and must be managed on the instance directly. Please connect to the primary replica instead of the listener. Use Get-DbaAvailabilityGroup to find the current primary replica." -ErrorRecord $_ -Target $instance -Continue
+                        } else {
+                            Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
+                        }
                     }
 
                     #region job step options

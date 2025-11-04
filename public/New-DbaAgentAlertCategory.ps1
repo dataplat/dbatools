@@ -91,7 +91,16 @@ function New-DbaAgentAlertCategory {
                 } else {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the alert category $cat")) {
                         try {
-                            $alertCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.AlertCategory($server.JobServer, $cat)
+                            try {
+                                $alertCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.AlertCategory($server.JobServer, $cat)
+                            } catch {
+                                if ($_.Exception.Message -match "newParent") {
+                                    Stop-Function -Message "Cannot create agent alert category through a contained availability group listener. SQL Server Agent objects are instance-level and must be managed on the instance directly. Please connect to the primary replica instead of the listener. Use Get-DbaAvailabilityGroup to find the current primary replica." -ErrorRecord $_ -Target $cat -Continue
+                                    return
+                                } else {
+                                    throw
+                                }
+                            }
 
                             $alertCategory.Create()
 

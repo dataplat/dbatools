@@ -321,7 +321,16 @@ function New-DbaAgentOperator {
                 try {
                     $JobServer = $server.JobServer
                     $operators = $JobServer.Operators
-                    $operators = New-Object Microsoft.SqlServer.Management.Smo.Agent.Operator( $JobServer, $Operator)
+                    try {
+                        $operators = New-Object Microsoft.SqlServer.Management.Smo.Agent.Operator( $JobServer, $Operator)
+                    } catch {
+                        if ($_.Exception.Message -match "newParent") {
+                            Stop-Function -Message "Cannot create agent operator through a contained availability group listener. SQL Server Agent objects are instance-level and must be managed on the instance directly. Please connect to the primary replica instead of the listener. Use Get-DbaAvailabilityGroup to find the current primary replica." -ErrorRecord $_ -Target $server
+                            return
+                        } else {
+                            throw
+                        }
+                    }
 
                     if ($EmailAddress) {
                         $operators.EmailAddress = $EmailAddress
