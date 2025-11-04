@@ -98,49 +98,60 @@ function Stop-DbaDbEncryption {
             # Parallel processing using runspaces
             $disableScript = {
                 param (
-                    $Database,
+                    $ServerName,
+                    $DatabaseName,
+                    $SqlCredential,
                     $EnableException
                 )
+                $server = $null
                 try {
-                    if ($Database.EncryptionEnabled) {
-                        # Create a new connection to avoid threading issues
-                        $connString = $Database.Parent.ConnectionContext.ConnectionString
-                        $server = New-Object Microsoft.SqlServer.Management.Smo.Server $connString
-                        $db = $server.Databases[$Database.Name]
+                    # Create new connection for this thread
+                    $splatConnection = @{
+                        SqlInstance   = $ServerName
+                        SqlCredential = $SqlCredential
+                    }
+                    $server = Connect-DbaInstance @splatConnection
+                    $db = $server.Databases[$DatabaseName]
 
-                        if ($db.EncryptionEnabled) {
-                            # Disable encryption
-                            $db.EncryptionEnabled = $false
-                            $db.Alter()
+                    if (-not $db) {
+                        throw "Database $DatabaseName not found on $ServerName"
+                    }
 
-                            # Wait for decryption to complete
-                            do {
-                                Start-Sleep -Seconds 1
-                                $db.Refresh()
-                            } while ($db.EncryptionEnabled)
+                    if ($db.EncryptionEnabled) {
+                        # Disable encryption
+                        $db.EncryptionEnabled = $false
+                        $db.Alter()
 
-                            # Drop the Database Encryption Key
-                            if ($db.HasDatabaseEncryptionKey) {
-                                $db.DatabaseEncryptionKey.Drop()
-                            }
-
+                        # Wait for decryption to complete
+                        $timeout = 120
+                        $elapsed = 0
+                        do {
+                            Start-Sleep -Seconds 1
+                            $elapsed++
                             $db.Refresh()
-                            [PSCustomObject]@{
-                                ComputerName      = $db.Parent.ComputerName
-                                InstanceName      = $db.Parent.ServiceName
-                                SqlInstance       = $db.Parent.DomainInstanceName
-                                DatabaseName      = $db.Name
-                                EncryptionEnabled = $db.EncryptionEnabled
-                                Status            = "Success"
-                                Error             = $null
-                            }
+                        } while ($db.EncryptionEnabled -and $elapsed -lt $timeout)
+
+                        # Drop the Database Encryption Key
+                        if ($db.HasDatabaseEncryptionKey) {
+                            $db.DatabaseEncryptionKey.Drop()
+                        }
+
+                        $db.Refresh()
+                        [PSCustomObject]@{
+                            ComputerName      = $server.ComputerName
+                            InstanceName      = $server.ServiceName
+                            SqlInstance       = $server.DomainInstanceName
+                            DatabaseName      = $DatabaseName
+                            EncryptionEnabled = $db.EncryptionEnabled
+                            Status            = "Success"
+                            Error             = $null
                         }
                     } else {
                         [PSCustomObject]@{
-                            ComputerName      = $Database.Parent.ComputerName
-                            InstanceName      = $Database.Parent.ServiceName
-                            SqlInstance       = $Database.Parent.DomainInstanceName
-                            DatabaseName      = $Database.Name
+                            ComputerName      = $server.ComputerName
+                            InstanceName      = $server.ServiceName
+                            SqlInstance       = $server.DomainInstanceName
+                            DatabaseName      = $DatabaseName
                             EncryptionEnabled = $false
                             Status            = "NotEncrypted"
                             Error             = $null
@@ -148,13 +159,17 @@ function Stop-DbaDbEncryption {
                     }
                 } catch {
                     [PSCustomObject]@{
-                        ComputerName      = $Database.Parent.ComputerName
-                        InstanceName      = $Database.Parent.ServiceName
-                        SqlInstance       = $Database.Parent.DomainInstanceName
-                        DatabaseName      = $Database.Name
-                        EncryptionEnabled = $Database.EncryptionEnabled
+                        ComputerName      = $null
+                        InstanceName      = $null
+                        SqlInstance       = $ServerName
+                        DatabaseName      = $DatabaseName
+                        EncryptionEnabled = $null
                         Status            = "Failed"
                         Error             = $_.Exception.Message
+                    }
+                } finally {
+                    if ($server) {
+                        Disconnect-DbaInstance -SqlInstance $server
                     }
                 }
             }
@@ -172,7 +187,9 @@ function Stop-DbaDbEncryption {
 
             foreach ($db in $InputObject) {
                 $splatRunspace = @{
-                    Database        = $db
+                    ServerName      = $db.Parent.Name
+                    DatabaseName    = $db.Name
+                    SqlCredential   = $SqlCredential
                     EnableException = $EnableException
                 }
 
@@ -204,10 +221,6 @@ function Stop-DbaDbEncryption {
                     if ($thread.Handle.IsCompleted) {
                         $result = $thread.Thread.EndInvoke($thread.Handle)
                         $thread.IsRetrieved = $true
-
-                        if ($thread.Thread.HadErrors) {
-                            Stop-Function -Message "Problem disabling encryption for $($thread.Database) on $($thread.Instance)" -ErrorRecord $thread.Thread.Streams.Error -Continue
-                        }
 
                         if ($result) {
                             if ($result.Status -eq "Failed") {
