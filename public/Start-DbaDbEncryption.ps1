@@ -496,11 +496,11 @@ function Start-DbaDbEncryption {
 
                         # Create encryption key if needed
                         if (-not $db.HasDatabaseEncryptionKey) {
-                            $null = $db | New-DbaDbEncryptionKey -EncryptorName $EncryptorName -EnableException:$true
+                            $null = $db | New-DbaDbEncryptionKey -EncryptorName $EncryptorName -EnableException:$true -Confirm:$false
                         }
 
                         # Enable encryption
-                        $result = $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName
+                        $result = $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName -Confirm:$false
 
                         [PSCustomObject]@{
                             ComputerName      = $server.ComputerName
