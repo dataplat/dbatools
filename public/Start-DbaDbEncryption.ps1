@@ -480,6 +480,7 @@ function Start-DbaDbEncryption {
                         $SqlCredential
                     )
 
+                    $server = $null
                     try {
                         # Create new connection for this thread
                         $splatConnection = @{
@@ -520,6 +521,10 @@ function Start-DbaDbEncryption {
                             EncryptionEnabled = $false
                             Status            = "Failed"
                             Error             = $_.Exception.Message
+                        }
+                    } finally {
+                        if ($server) {
+                            Disconnect-DbaInstance -SqlInstance $server
                         }
                     }
                 }
@@ -572,10 +577,6 @@ function Start-DbaDbEncryption {
                         if ($thread.Handle.IsCompleted) {
                             $result = $thread.Thread.EndInvoke($thread.Handle)
                             $thread.IsRetrieved = $true
-
-                            if ($thread.Thread.HadErrors) {
-                                Stop-Function -Message "Problem enabling encryption for $($thread.Database) on $($thread.Instance)" -ErrorRecord $thread.Thread.Streams.Error -Continue
-                            }
 
                             if ($result) {
                                 if ($result.Status -eq "Failed") {
