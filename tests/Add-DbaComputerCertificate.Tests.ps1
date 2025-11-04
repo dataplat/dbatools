@@ -26,8 +26,8 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
-    # Skip IntegrationTests on pwsh because we need code changes (X509Certificate is immutable on this platform. Use the equivalent constructor instead.)
+Describe $CommandName -Tag IntegrationTests {
+    # PowerShell Core (6+) support added via version-specific handling in Add-DbaComputerCertificate
 
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
