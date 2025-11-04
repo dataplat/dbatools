@@ -412,7 +412,58 @@ function Copy-DbaDbTableData {
 
 
                 if (Test-Bound -ParameterName Query -Not) {
-                    $Query = "SELECT * FROM $fqtnfrom"
+                    # Build ORDER BY clause to ensure consistent row order
+                    # This prevents data misalignment when copying tables without explicit ordering
+                    $orderByClause = ""
+
+                    # Refresh indexes to ensure we have current metadata
+                    $sqlObject.Indexes.Refresh()
+
+                    # Option 1: Use clustered index columns for ordering (most common and performant)
+                    $clusteredIndex = $sqlObject.Indexes | Where-Object IsClustered -eq $true | Select-Object -First 1
+                    if ($clusteredIndex) {
+                        $orderColumns = $clusteredIndex.IndexedColumns | Sort-Object IndexKeyPosition | ForEach-Object {
+                            $colName = $_.Name
+                            $descending = if ($_.Descending) { " DESC" } else { "" }
+                            "[$colName]$descending"
+                        }
+                        if ($orderColumns) {
+                            $orderByClause = " ORDER BY " + ($orderColumns -join ", ")
+                            Write-Message -Level Verbose -Message "Using clustered index for ordering: $orderByClause"
+                        }
+                    }
+
+                    # Option 2: If no clustered index, try primary key
+                    if (-not $orderByClause) {
+                        $primaryKey = $sqlObject.Indexes | Where-Object IndexKeyType -eq "DriPrimaryKey" | Select-Object -First 1
+                        if ($primaryKey) {
+                            $orderColumns = $primaryKey.IndexedColumns | Sort-Object IndexKeyPosition | ForEach-Object {
+                                $colName = $_.Name
+                                $descending = if ($_.Descending) { " DESC" } else { "" }
+                                "[$colName]$descending"
+                            }
+                            if ($orderColumns) {
+                                $orderByClause = " ORDER BY " + ($orderColumns -join ", ")
+                                Write-Message -Level Verbose -Message "Using primary key for ordering: $orderByClause"
+                            }
+                        }
+                    }
+
+                    # Option 3: If using KeepIdentity and an identity column exists, order by it
+                    if (-not $orderByClause -and $KeepIdentity) {
+                        $identityColumn = $sqlObject.Columns | Where-Object Identity -eq $true | Select-Object -First 1
+                        if ($identityColumn) {
+                            $orderByClause = " ORDER BY [$($identityColumn.Name)]"
+                            Write-Message -Level Verbose -Message "Using identity column for ordering: $orderByClause"
+                        }
+                    }
+
+                    # If no ordering found, log a warning for tables without proper keys
+                    if (-not $orderByClause) {
+                        Write-Message -Level Verbose -Message "No clustered index, primary key, or identity column found for ordering. Row order is not guaranteed."
+                    }
+
+                    $Query = "SELECT * FROM $fqtnfrom$orderByClause"
                     $sourceLabel = $fqtnfrom
                 } else {
                     $sourceLabel = "Query"
