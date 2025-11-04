@@ -63,7 +63,7 @@ function Get-DbaXESessionTargetFile {
         [string[]]$Session,
         [string[]]$Target,
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
-        [Microsoft.SqlServer.Management.XEvent.Target[]]$InputObject,
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -71,23 +71,53 @@ function Get-DbaXESessionTargetFile {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaXESessionTarget -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -Target $Target | Where-Object File -ne $null
+            $splatTarget = @{
+                SqlInstance   = $instance
+                SqlCredential = $SqlCredential
+                Session       = $Session
+                Target        = $Target
+            }
+            $InputObject += Get-DbaXESessionTarget @splatTarget | Where-Object File -ne $null
         }
 
         foreach ($object in $InputObject) {
-            $computer = [dbainstance]$object.ComputerName
-            try {
-                if ($computer.IsLocal) {
-                    $file = $object.TargetFile
-                    Write-Message -Level Verbose -Message "Getting $file"
-                    Get-ChildItem "$file*" -ErrorAction Stop
-                } else {
-                    $file = $object.RemoteTargetFile
-                    Write-Message -Level Verbose -Message "Getting $file"
-                    Get-ChildItem -Recurse "$file*" -ErrorAction Stop
+            if ($object -is [Microsoft.SqlServer.Management.XEvent.Session]) {
+                if ($object.TargetFile.Length -eq 0) {
+                    Stop-Function -Message "The session [$object] does not have an associated Target File." -Continue
                 }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_
+
+                $instance = [DbaInstance]$object.ComputerName
+                if ($instance.IsLocalHost) {
+                    $targetFile = $object.TargetFile
+                } else {
+                    $targetFile = $object.RemoteTargetFile
+                }
+
+                $targetFile = $targetFile.Replace(".xel", "*.xel").Replace(".xem", "*.xem")
+
+                try {
+                    Write-Message -Level Verbose -Message "Getting $targetFile"
+                    Get-ChildItem -Path $targetFile -ErrorAction Stop | Sort-Object LastWriteTime
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $targetFile
+                }
+            } elseif ($object -is [Microsoft.SqlServer.Management.XEvent.Target]) {
+                $computer = [dbainstance]$object.ComputerName
+                try {
+                    if ($computer.IsLocal) {
+                        $file = $object.TargetFile
+                        Write-Message -Level Verbose -Message "Getting $file"
+                        Get-ChildItem "$file*" -ErrorAction Stop
+                    } else {
+                        $file = $object.RemoteTargetFile
+                        Write-Message -Level Verbose -Message "Getting $file"
+                        Get-ChildItem "$file*" -ErrorAction Stop
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_
+                }
+            } else {
+                Stop-Function -Message "The Path [$object] has an unsupported type of [$($object.GetType().FullName)]."
             }
         }
     }
