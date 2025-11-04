@@ -140,6 +140,11 @@ function Add-DbaComputerCertificate {
         }
 
         Write-Message -Level Verbose -Message "Flags: $flags"
+
+        # Track import mode and file bytes
+        $importMode = $null
+        $fileBytes = $null
+
         if ($Path) {
             if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
@@ -147,13 +152,13 @@ function Add-DbaComputerCertificate {
             }
 
             try {
-                # local has to be exportable to export to remote
-                $bytes = [System.IO.File]::ReadAllBytes($Path)
-                # Use X509Certificate2Collection to import the full certificate chain
+                # Read file bytes and keep them for direct import
+                $fileBytes = [System.IO.File]::ReadAllBytes($Path)
+                # Validate we can import it (but don't use the collection)
                 $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
-                $null = $certCollection.Import($bytes, $SecurePassword, "Exportable, PersistKeySet")
-                # Convert collection to array for processing
-                $Certificate = @($certCollection)
+                $null = $certCollection.Import($fileBytes, $SecurePassword, "Exportable, PersistKeySet")
+                # Mark that we're importing from file
+                $importMode = "File"
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
@@ -196,28 +201,46 @@ function Add-DbaComputerCertificate {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if (-not $Certificate) {
-            Stop-Function -Message "You must specify either Certificate or Path" -Category InvalidArgument
-            return
-        }
-
-        foreach ($cert in $Certificate) {
-            try {
-                $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
-            } catch {
-                Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
-            }
-
+        if ($importMode -eq "File") {
+            # Import the entire file (with chain) directly using original bytes
             foreach ($computer in $ComputerName) {
                 if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert")) {
                     if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
                         Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
                     }
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $fileBytes, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                    }
+                }
+            }
+        } else {
+            # Handle Certificate objects from pipeline
+            if (-not $Certificate) {
+                Stop-Function -Message "You must specify either Certificate or Path" -Category InvalidArgument
+                return
+            }
+
+            foreach ($cert in $Certificate) {
+                try {
+                    $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
+                } catch {
+                    Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
+                }
+
+                foreach ($computer in $ComputerName) {
+                    if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert")) {
+                        if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                            Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
+                        }
+                        try {
+                            Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
+                                Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                        }
                     }
                 }
             }
