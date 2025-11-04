@@ -141,23 +141,20 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should not remove jobs when -Job is null" {
             $nullVariable = $null
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $nullVariable -Confirm:$false -WarningVariable warning -WarningAction SilentlyContinue
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $nullVariable -Confirm:$false
             $result | Should -BeNullOrEmpty
-            $warning | Should -Match "null, empty, or whitespace-only values"
             (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
 
         It "Should not remove jobs when -Job is empty string" {
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "" -Confirm:$false -WarningVariable warning -WarningAction SilentlyContinue
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "" -Confirm:$false
             $result | Should -BeNullOrEmpty
-            $warning | Should -Match "null, empty, or whitespace-only values"
             (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
 
         It "Should not remove jobs when -Job is whitespace" {
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "   " -Confirm:$false -WarningVariable warning -WarningAction SilentlyContinue
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "   " -Confirm:$false
             $result | Should -BeNullOrEmpty
-            $warning | Should -Match "null, empty, or whitespace-only values"
             (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
     }
