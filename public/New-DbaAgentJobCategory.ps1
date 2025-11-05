@@ -99,7 +99,16 @@ function New-DbaAgentJobCategory {
                 } else {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $cat")) {
                         try {
-                            $jobCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
+                            try {
+                                $jobCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
+                            } catch {
+                                if ($_.Exception.Message -match "newParent") {
+                                    Stop-Function -Message "Cannot create agent job category through a contained availability group listener. SQL Server Agent objects are instance-level and must be managed on the instance directly. Please connect to the primary replica instead of the listener. Use Get-DbaAvailabilityGroup to find the current primary replica." -ErrorRecord $_ -Target $cat -Continue
+                                    return
+                                } else {
+                                    throw
+                                }
+                            }
                             $jobCategory.CategoryType = $CategoryType
 
                             $jobCategory.Create()

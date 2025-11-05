@@ -197,4 +197,45 @@ Describe $CommandName -Tag IntegrationTests {
             $destCount.Count | Should -Be 2
         }
     }
+
+    Context "Regression tests" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_ordering_test (id INT IDENTITY(1,1) PRIMARY KEY, data_hash VARBINARY(32))")
+            $null = $sourceDb.Query("INSERT INTO dbo.dbatoolsci_ordering_test (data_hash) VALUES (0x0102030405), (0x0607080910), (0x1112131415)")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_ordering_test")
+            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_ordering_test_dest")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should maintain correct row order when copying tables with varbinary fields (issue #9610)" {
+            $splatCopy = @{
+                SqlInstance      = $TestConfig.instance1
+                Destination      = $TestConfig.instance2
+                Database         = "tempdb"
+                Table            = "dbatoolsci_ordering_test"
+                DestinationTable = "dbatoolsci_ordering_test_dest"
+                AutoCreateTable  = $true
+            }
+            $result = Copy-DbaDbTableData @splatCopy
+            $result.RowsCopied | Should -Be 3
+
+            $sourceData = $sourceDb.Query("SELECT id, data_hash FROM dbo.dbatoolsci_ordering_test ORDER BY id")
+            $destData = $destinationDb.Query("SELECT id, data_hash FROM dbo.dbatoolsci_ordering_test_dest ORDER BY id")
+
+            for ($i = 0; $i -lt $sourceData.Count; $i++) {
+                $sourceData[$i].id | Should -Be $destData[$i].id
+                $sourceData[$i].data_hash | Should -Be $destData[$i].data_hash
+            }
+        }
+    }
 }
