@@ -19,6 +19,7 @@ Describe $CommandName -Tag UnitTests {
                 "FilePath",
                 "ExcludePassword",
                 "Append",
+                "Passthru",
                 "InputObject",
                 "EnableException"
             )
