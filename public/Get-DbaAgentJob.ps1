@@ -168,7 +168,19 @@ function Get-DbaAgentJob {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
             if ($Database) {
-                $jobs = $jobs | Where-Object { $_.JobSteps | Where-Object DatabaseName -in $Database }
+                $dbLookup = @{}
+                foreach ($db in $Database) {
+                    $dbLookup[$db] = $true
+                }
+
+                $jobs = $jobs | Where-Object {
+                    foreach ($step in $_.JobSteps) {
+                        if ($dbLookup.ContainsKey($step.DatabaseName)) {
+                            return $true
+                        }
+                    }
+                    return $false
+                }
             }
             if ($Category) {
                 $jobs = $jobs | Where-Object Category -in $Category
