@@ -1,14 +1,15 @@
-﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
+# See http://www.appveyor.com/docs/appveyor-yml for many more options
 image: Previous Visual Studio 2015
 configuration: "Debug"
 
 # skip PR builds when there's already a push build
 skip_branch_with_pr: true
 
-# skip builds on master branch (archival branch)
+# skip builds on master branch (archival branch) and claude/issue-*
 branches:
   except:
     - master
+    - /claude\/issue-.*/
 
 # skip tag commits entirely
 skip_tags: true
@@ -99,4 +100,3 @@ after_test:
 #on_finish:
 
 #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
