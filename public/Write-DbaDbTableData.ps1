@@ -309,6 +309,9 @@ function Write-DbaDbTableData {
             .PARAMETER DatabaseName
                 Automatically inherits from parent.
 
+            .PARAMETER SchemaName
+                Automatically inherits from parent.
+
             .PARAMETER EnableException
                 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
                 This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -325,6 +328,7 @@ function Write-DbaDbTableData {
                 $Fqtn = $fqtn,
                 $Server = $server,
                 $DatabaseName = $databaseName,
+                $SchemaName = $schemaName,
                 [switch]$EnableException
             )
 
@@ -380,6 +384,15 @@ function Write-DbaDbTableData {
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating table $Fqtn")) {
                 try {
+                    # Check if schema exists and create it if needed
+                    $db = $Server.Databases[$DatabaseName]
+                    $schemaExists = $db | Get-DbaDbSchema -Schema $SchemaName -IncludeSystemSchemas
+                    if (-not $schemaExists) {
+                        Write-Message -Level Verbose -Message "Schema $SchemaName does not exist in $DatabaseName and will be created."
+                        $schemaObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Schema $db, $SchemaName
+                        $null = Invoke-Create -Object $schemaObject
+                    }
+
                     $null = $Server.Databases[$DatabaseName].Query($sql)
                 } catch {
                     Stop-Function -Message "The following query failed: $sql" -ErrorRecord $_

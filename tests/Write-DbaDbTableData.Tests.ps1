@@ -66,4 +66,18 @@ Describe $CommandName -Tag IntegrationTests {
 
         ($server.Databases[$dbName].Tables | Where-Object { $PSItem.Schema -eq "dbo" -and $PSItem.Name -eq "childitem" }).Count | Should -Be 1
     }
+
+    It "auto-creates schema when using AutoCreateTable" {
+        $results = Get-ChildItem | ConvertTo-DbaDataTable
+        $schemaName = "TestSchema$random"
+        $tableName = "TestTable$random"
+
+        $results | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $dbName -Table "$dbName.$schemaName.$tableName" -AutoCreateTable
+
+        $createdSchema = $server.Databases[$dbName] | Get-DbaDbSchema -Schema $schemaName
+        $createdSchema | Should -Not -BeNullOrEmpty
+        $createdSchema.Name | Should -Be $schemaName
+
+        ($server.Databases[$dbName].Tables | Where-Object { $PSItem.Schema -eq $schemaName -and $PSItem.Name -eq $tableName }).Count | Should -Be 1
+    }
 }
