@@ -140,6 +140,22 @@ function Get-DbaAgentJob {
                 $jobExecutionResults = $server.Query($query)
             }
 
+            # Check if Job parameter is bound with null, empty, or whitespace-only values
+            if (Test-Bound 'Job') {
+                if ($null -eq $Job -or $Job.Count -eq 0 -or ($Job | Where-Object { [string]::IsNullOrWhiteSpace($_) })) {
+                    Write-Message -Level Verbose -Message "The -Job parameter was explicitly provided but contains null, empty, or whitespace-only values. This may indicate an uninitialized variable. Skipping instance."
+                    continue
+                }
+            }
+
+            # Check if ExcludeJob parameter is bound with null, empty, or whitespace-only values
+            if (Test-Bound 'ExcludeJob') {
+                if ($null -eq $ExcludeJob -or $ExcludeJob.Count -eq 0 -or ($ExcludeJob | Where-Object { [string]::IsNullOrWhiteSpace($_) })) {
+                    Write-Message -Level Verbose -Message "The -ExcludeJob parameter was explicitly provided but contains null, empty, or whitespace-only values. This may indicate an uninitialized variable. Parameter will be ignored."
+                    $ExcludeJob = $null
+                }
+            }
+
             $jobs = $server.JobServer.Jobs | Where-Object JobType -in $Type
 
             if ($Job) {
