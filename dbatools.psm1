@@ -546,6 +546,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaAgDatabase',
         'Get-DbaAgDatabaseReplicaState',
         'Get-DbaModule',
+        'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
         'New-DbaCredential',
         'Get-DbaFile',
