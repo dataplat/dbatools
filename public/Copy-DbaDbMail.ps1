@@ -140,7 +140,7 @@ function Copy-DbaDbMail {
 
             Write-Message -Message "Migrating accounts." -Level Verbose
             foreach ($account in $sourceAccounts) {
-                $accountName = $account.name
+                $accountName = [string]$account.name
                 $newAccountName = $accountName -replace [Regex]::Escape($source), $destinstance
                 Write-Message -Message "Updating account name from '$accountName' to '$newAccountName'." -Level Verbose
                 $copyMailAccountStatus = [PSCustomObject]@{
@@ -209,7 +209,7 @@ function Copy-DbaDbMail {
             Write-Message -Message "Migrating mail profiles." -Level Verbose
             foreach ($profile in $sourceProfiles) {
 
-                $profileName = $profile.name
+                $profileName = [string]$profile.name
                 $newProfileName = $profileName -replace [Regex]::Escape($source), $destinstance
                 Write-Message -Message "Updating profile name from '$profileName' to '$newProfileName'." -Level Verbose
                 $copyMailProfileStatus = [PSCustomObject]@{
@@ -286,7 +286,7 @@ function Copy-DbaDbMail {
 
             Write-Message -Message "Migrating mail servers." -Level Verbose
             foreach ($mailServer in $sourceMailServers) {
-                $mailServerName = $mailServer.name
+                $mailServerName = [string]$mailServer.name
                 $copyMailServerStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
