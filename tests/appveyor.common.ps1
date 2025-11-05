@@ -149,7 +149,7 @@ function Get-TestsForBuildScenario {
                     foreach ($t in $AllTests) {
                         $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
                     }
-                    $AllTests = (($testsThatDependOn + $AllTests) | Select-Object -Unique)
+                    $AllTests = ($testsThatDependOn + $AllTests) | Group-Object -Property FullName | ForEach-Object { $_.Group | Select-Object -First 1 }
 
                     # Re-filter disabled tests that may have been picked up by dependency tracking
                     $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
@@ -189,7 +189,7 @@ function Get-TestsForBuildScenario {
             $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
 
         }
-        $AllTests = (($testsThatDependOn + $AllTests) | Select-Object -Unique)
+        $AllTests = ($testsThatDependOn + $AllTests) | Group-Object -Property FullName | ForEach-Object { $_.Group | Select-Object -First 1 }
         # re-filter disabled tests that may have been picked up by dependency tracking
         $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
         $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
