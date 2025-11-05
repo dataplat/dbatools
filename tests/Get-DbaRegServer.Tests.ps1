@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "Name",
                 "ServerName",
+                "ExcludeServerName",
                 "Group",
                 "ExcludeGroup",
                 "Id",
