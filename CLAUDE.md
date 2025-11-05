@@ -2,6 +2,30 @@
 
 This style guide provides coding standards for dbatools PowerShell development to ensure consistency, readability, and maintainability across the project.
 
+## CRITICAL CI/CD REQUIREMENTS
+
+### AppVeyor CI - [skip ci] Usage
+
+**MANDATORY RULE**: All commits from Claude MUST include `[skip ci]` in the commit message to prevent unnecessary CI builds during development.
+
+**Why this is required:**
+- Branch pushes from `claude[bot]` trigger AppVeyor builds by default
+- PRs created by humans will trigger CI builds when opened
+- Using `[skip ci]` prevents duplicate builds during development
+- Only the final PR build is needed for validation
+
+**Implementation:**
+```bash
+# CORRECT - Include [skip ci] in all Claude commits
+git commit -m "Add new parameter [skip ci]"
+git commit -m "Update tests [skip ci]"
+git commit -m "Fix formatting issues [skip ci]"
+
+# The human who opens the PR will trigger the actual CI build
+```
+
+**Note:** The `[skip ci]` directive is automatically detected by AppVeyor (line 29 in appveyor.yml) and will skip the build for that commit.
+
 ## CRITICAL COMMAND SYNTAX RULES
 
 ### NO BACKTICKS - ALWAYS USE SPLATS
