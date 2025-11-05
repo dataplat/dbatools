@@ -60,8 +60,18 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command actually works" {
         It "should disable encryption on a database with piping" {
-            # Give it time to finish encrypting or it'll error
-            Start-Sleep 10
+            # Wait for encryption to complete before trying to disable
+            $timeout = 120
+            $elapsed = 0
+            $encrypted = $false
+            do {
+                Start-Sleep -Seconds 2
+                $elapsed += 2
+                $db.Refresh()
+                $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($db.Name)')"
+                $encrypted = ($dbState.encryption_state -eq 3)
+            } while (-not $encrypted -and $elapsed -lt $timeout)
+
             $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.instance2 -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             foreach ($result in $results) {
@@ -108,8 +118,24 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should disable encryption with -Parallel switch" {
-            # Give it time to finish encrypting or it'll error
-            Start-Sleep 10
+            # Wait for encryption to complete on all databases before trying to disable
+            $timeout = 120
+            $elapsed = 0
+            $allEncrypted = $false
+            do {
+                Start-Sleep -Seconds 2
+                $elapsed += 2
+                $encryptedCount = 0
+                foreach ($parallelDb in $parallelDatabases) {
+                    $parallelDb.Refresh()
+                    $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($parallelDb.Name)')"
+                    if ($dbState.encryption_state -eq 3) {
+                        $encryptedCount++
+                    }
+                }
+                $allEncrypted = ($encryptedCount -eq $parallelDatabases.Count)
+            } while (-not $allEncrypted -and $elapsed -lt $timeout)
+
             $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.instance2 -Parallel -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             $results.Count | Should -BeGreaterOrEqual 3

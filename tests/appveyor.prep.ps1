@@ -49,11 +49,7 @@ if ($installedModule.Version.ToString() -notmatch [regex]::Escape($expectedVersi
     Write-Host -Object "appveyor.prep: Version validation successful" -ForegroundColor Green
 }
 
-##Get Pester (to run tests) - choco isn't working onall scenarios, weird
-Write-Host -Object "appveyor.prep: Install Pester4" -ForegroundColor DarkGreen
-if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.4.2')) {
-    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.2 | Out-Null
-}
+##Get Pester (to run tests)
 Write-Host -Object "appveyor.prep: Install Pester5" -ForegroundColor DarkGreen
 if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\5.6.1')) {
     Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 5.6.1 | Out-Null

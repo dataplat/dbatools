@@ -140,6 +140,11 @@ function Add-DbaComputerCertificate {
         }
 
         Write-Message -Level Verbose -Message "Flags: $flags"
+
+        # Track if we're dealing with a certificate collection from a file
+        $isCollection = $false
+        $collectionData = $null
+
         if ($Path) {
             if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
@@ -147,13 +152,42 @@ function Add-DbaComputerCertificate {
             }
 
             try {
-                # local has to be exportable to export to remote
-                $bytes = [System.IO.File]::ReadAllBytes($Path)
+                # Read file bytes and import locally to get certificate collection
+                $fileBytes = [System.IO.File]::ReadAllBytes($Path)
+
                 # Use X509Certificate2Collection to import the full certificate chain
                 $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
-                $null = $certCollection.Import($bytes, $SecurePassword, "Exportable, PersistKeySet")
-                # Convert collection to array for processing
-                $Certificate = @($certCollection)
+
+                # Handle password conversion for password-protected certificates (PFX files)
+                $plainPassword = $null
+                $ptr = [IntPtr]::Zero
+
+                if ($SecurePassword) {
+                    # Convert SecureString to plain text password for import/export operations
+                    # Using plain text for both Import() and Export() in all PowerShell versions
+                    # This is standard practice for .NET certificate operations
+                    $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($SecurePassword)
+                    $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
+                }
+
+                try {
+                    # Import using plain text password (or null for non-password-protected certificates)
+                    # Works reliably in all PowerShell versions v3+
+                    $null = $certCollection.Import($fileBytes, $plainPassword, "Exportable, PersistKeySet")
+
+                    # Export the entire collection as a single PFX to preserve the chain
+                    # This re-exports with the password, creating a fresh encrypted byte array that can be passed to remote
+                    $collectionData = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $plainPassword)
+                    $isCollection = $true
+
+                    # Still set $Certificate so the process block knows we have something to process
+                    $Certificate = @($certCollection)
+                } finally {
+                    # Always clean up the plain text password from memory
+                    if ($ptr -ne [IntPtr]::Zero) {
+                        [System.Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($ptr)
+                    }
+                }
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
@@ -164,7 +198,7 @@ function Add-DbaComputerCertificate {
         $scriptBlock = {
             param (
                 $CertificateData,
-                [SecureString]$SecurePassword,
+                [string]$PlainPassword,
                 $Store,
                 $Folder,
                 $flags
@@ -172,7 +206,7 @@ function Add-DbaComputerCertificate {
 
             # Use X509Certificate2Collection to import the full certificate chain
             $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
-            $certCollection.Import($CertificateData, $SecurePassword, $flags)
+            $certCollection.Import($CertificateData, $PlainPassword, $flags)
 
             Write-Verbose -Message "Importing certificate chain to $Folder\$Store using flags: $flags"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
@@ -201,25 +235,61 @@ function Add-DbaComputerCertificate {
             return
         }
 
-        foreach ($cert in $Certificate) {
-            try {
-                $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
-            } catch {
-                Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
-            }
+        # Convert SecureString to plain text for passing to remote scriptblock
+        # (PowerShell remoting encrypts the connection, so this is safe)
+        $plainPassword = $null
+        $ptr = [IntPtr]::Zero
 
-            foreach ($computer in $ComputerName) {
-                if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert")) {
-                    if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
-                        Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
-                    }
-                    try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
-                            Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
-                    } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+        if ($SecurePassword) {
+            $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($SecurePassword)
+            $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
+        }
+
+        try {
+            # If we have a collection from a file, import it as a single unit to preserve the chain
+            if ($isCollection -and $collectionData) {
+                foreach ($computer in $ComputerName) {
+                    if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert collection")) {
+                        if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                            Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
+                        }
+                        try {
+                            Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $collectionData, $plainPassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
+                                Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                        }
                     }
                 }
+            } else {
+                # Handle individual certificates from pipeline
+                foreach ($cert in $Certificate) {
+                    try {
+                        # Export requires plain text password
+                        $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $plainPassword)
+                    } catch {
+                        Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
+                    }
+
+                    foreach ($computer in $ComputerName) {
+                        if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert")) {
+                            if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                                Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
+                            }
+                            try {
+                                Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $plainPassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
+                                    Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+                            } catch {
+                                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            # Always clean up the plain text password from memory
+            if ($ptr -ne [IntPtr]::Zero) {
+                [System.Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($ptr)
             }
         }
     }

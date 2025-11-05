@@ -121,7 +121,26 @@ function Remove-DbaDbUser {
 
                 if ($Pscmdlet.ShouldProcess($user, "Removing user from Database $db on target $server")) {
                     # Drop Schemas owned by the user before dropping the user
-                    $schemaUrns = $user.EnumOwnedObjects() | Where-Object Type -EQ Schema
+                    # Azure SQL Database doesn't support EnumOwnedObjects(), so we need to use T-SQL query instead
+                    if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                        $splatQuery = @{
+                            SqlInstance     = $server
+                            Database        = $db.Name
+                            Query           = "SELECT s.name FROM sys.schemas s WHERE s.principal_id = USER_ID('$($user.Name)')"
+                            EnableException = $true
+                        }
+                        $ownedSchemaNames = Invoke-DbaQuery @splatQuery | Select-Object -ExpandProperty name
+                        $schemaUrns = @()
+                        foreach ($schemaName in $ownedSchemaNames) {
+                            $schema = $db.Schemas[$schemaName]
+                            if ($schema) {
+                                $schemaUrns += $schema.Urn
+                            }
+                        }
+                    } else {
+                        $schemaUrns = $user.EnumOwnedObjects() | Where-Object Type -EQ Schema
+                    }
+
                     if ($schemaUrns) {
                         Write-Message -Level Verbose -Message "User $user owns $($schemaUrns.Count) schema(s)."
 
