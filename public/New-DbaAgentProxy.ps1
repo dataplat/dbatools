@@ -172,12 +172,20 @@ function New-DbaAgentProxy {
 
                 if ($Pscmdlet.ShouldProcess($instance, "Adding $proxyname with the $ProxyCredential credential")) {
                     # the new-object is stubborn and $true/$false has to be forced in
-                    switch (Test-Bound -ParameterName Disabled) {
-                        $false {
-                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $true, $Description
+                    try {
+                        switch (Test-Bound -ParameterName Disabled) {
+                            $false {
+                                $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $true, $Description
+                            }
+                            $true {
+                                $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $false, $Description
+                            }
                         }
-                        $true {
-                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $false, $Description
+                    } catch {
+                        if ($_.Exception.Message -match "newParent") {
+                            Stop-Function -Message "Cannot create agent proxy through a contained availability group listener. SQL Server Agent objects are instance-level and must be managed on the instance directly. Please connect to the primary replica instead of the listener. Use Get-DbaAvailabilityGroup to find the current primary replica." -ErrorRecord $_ -Target $instance -Continue
+                        } else {
+                            throw
                         }
                     }
 
