@@ -6,25 +6,28 @@ This style guide provides coding standards for dbatools PowerShell development t
 
 ### AppVeyor CI - [skip ci] Usage
 
-**MANDATORY RULE**: All commits from Claude MUST include `[skip ci]` in the commit message to prevent unnecessary CI builds during development.
+**MANDATORY RULE**: The FIRST commit when creating a new branch MUST include `[skip ci]` in the commit message to prevent unnecessary CI builds during initial development.
 
 **Why this is required:**
-- Branch pushes from `claude[bot]` trigger AppVeyor builds by default
-- PRs created by humans will trigger CI builds when opened
-- Using `[skip ci]` prevents duplicate builds during development
-- Only the final PR build is needed for validation
+- The author filter in appveyor.yml (line 18) skips commits from `claude[bot]`
+- However, this ONLY applies to direct commits, not PR events
+- Using `[skip ci]` on the first commit ensures no build is triggered during initial branch creation
+- Subsequent commits should NOT include `[skip ci]` so that PR creation triggers the CI build
+- Only the PR build is needed for validation
 
 **Implementation:**
 ```bash
-# CORRECT - Include [skip ci] in all Claude commits
-git commit -m "Add new parameter [skip ci]"
-git commit -m "Update tests [skip ci]"
-git commit -m "Fix formatting issues [skip ci]"
+# CORRECT - Include [skip ci] ONLY on the first commit when creating a branch
+git commit -m "Initial implementation of new feature [skip ci]"
 
-# The human who opens the PR will trigger the actual CI build
+# CORRECT - Subsequent commits do NOT include [skip ci]
+git commit -m "Update tests"
+git commit -m "Fix formatting issues"
+
+# When a human creates a PR, AppVeyor will trigger the build
 ```
 
-**Note:** The `[skip ci]` directive is automatically detected by AppVeyor (line 29 in appveyor.yml) and will skip the build for that commit.
+**Note:** The `[skip ci]` directive is automatically detected by AppVeyor (line 28 in appveyor.yml) and will skip the build for that commit.
 
 ## CRITICAL COMMAND SYNTAX RULES
 
