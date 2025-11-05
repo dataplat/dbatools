@@ -26,6 +26,12 @@ Describe $CommandName -Tag UnitTests {
                 "AutoScheduleJobs",
                 "StartTime",
                 "Force",
+                "ChangeBackupType",
+                "Compress",
+                "CopyOnly",
+                "Verify",
+                "CheckSum",
+                "ModificationLevel",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -65,6 +71,95 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database tempdb -WarningAction SilentlyContinue
             $sproc = Get-DbaModule -SqlInstance $TestConfig.instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
             $sproc | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Additional backup parameters" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $testDbName = "dbatoolsci_maintenancesolution_$(Get-Random)"
+
+            $splatInstall = @{
+                SqlInstance      = $TestConfig.instance3
+                Database         = $testDbName
+                InstallJobs      = $true
+                ReplaceExisting  = $true
+                CleanupTime      = 168
+                ChangeBackupType = $true
+                Compress         = $true
+                Verify           = $true
+                CheckSum         = $true
+            }
+            $null = Install-DbaMaintenanceSolution @splatInstall
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $testDbName -Confirm:$false
+            $jobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 | Where-Object Description -match "hallengren"
+            if ($jobs) {
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $jobs.Name -Confirm:$false
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should add ChangeBackupType parameter to DIFF backup job" {
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.instance3
+                Job         = "DatabaseBackup - USER_DATABASES - DIFF"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Match "@ChangeBackupType = 'Y'"
+        }
+
+        It "Should add ChangeBackupType parameter to LOG backup job" {
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.instance3
+                Job         = "DatabaseBackup - USER_DATABASES - LOG"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Match "@ChangeBackupType = 'Y'"
+        }
+
+        It "Should NOT add ChangeBackupType parameter to FULL backup job" {
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.instance3
+                Job         = "DatabaseBackup - USER_DATABASES - FULL"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Not -Match "@ChangeBackupType = 'Y'"
+        }
+
+        It "Should add Compress parameter to all backup jobs" {
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.instance3
+                Job         = "DatabaseBackup - USER_DATABASES - FULL"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Match "@Compress = 'Y'"
+        }
+
+        It "Should have Verify parameter set to Y in backup jobs" {
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.instance3
+                Job         = "DatabaseBackup - USER_DATABASES - FULL"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Match "@Verify = 'Y'"
+        }
+
+        It "Should have CheckSum parameter set to Y in backup jobs" {
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.instance3
+                Job         = "DatabaseBackup - USER_DATABASES - FULL"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Match "@CheckSum = 'Y'"
         }
     }
 }

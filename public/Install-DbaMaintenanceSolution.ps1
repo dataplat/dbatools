@@ -76,6 +76,36 @@ function Install-DbaMaintenanceSolution {
         Creates Queue and QueueDatabase tables required for parallel execution of maintenance operations across multiple databases.
         Enable this when you have many databases and want to run maintenance tasks concurrently to reduce overall completion time.
 
+    .PARAMETER ChangeBackupType
+        Enables automatic backup type conversion when a full backup is missing. When enabled, differential backups automatically become full backups,
+        and log backups become full or differential backups as appropriate. Only applies when InstallJobs is specified.
+        This ensures backup chains remain valid even if scheduled full backups fail or are missed.
+
+    .PARAMETER Compress
+        Controls backup compression for all backup operations. When not specified, uses the SQL Server instance's default compression setting.
+        Set to enable compression (recommended for reducing backup size and network transfer time) or disable for compatibility with older restore targets.
+        Only applies when InstallJobs is specified.
+
+    .PARAMETER CopyOnly
+        Creates copy-only backups that do not affect the normal backup sequence. Copy-only backups do not break the differential backup chain
+        and are ideal for ad-hoc backups, backup verification, or sending backups to external systems without impacting regular backup schedules.
+        Only applies when InstallJobs is specified.
+
+    .PARAMETER Verify
+        Verifies backup integrity immediately after creation by performing a RESTORE VERIFYONLY operation.
+        Defaults to enabled (Y) if not specified. Verification adds time to backup operations but ensures backups are restorable.
+        Only applies when InstallJobs is specified.
+
+    .PARAMETER CheckSum
+        Enables checksum validation during backup operations to detect data corruption.
+        Defaults to enabled (Y) if not specified. Checksums provide additional data integrity verification with minimal performance impact.
+        Only applies when InstallJobs is specified.
+
+    .PARAMETER ModificationLevel
+        Specifies minimum modification percentage required before ChangeBackupType converts a differential or log backup to full backup.
+        Valid range: 0-100. Use this with ChangeBackupType to control when backup type changes occur based on data modification levels.
+        Only applies when InstallJobs is specified.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -206,6 +236,25 @@ function Install-DbaMaintenanceSolution {
 
         See https://blog.netnerds.net/2023/05/install-dbamaintenancesolution-now-supports-auto-scheduling/ for more information.
 
+    .EXAMPLE
+        PS C:\> $params = @{
+        >> SqlInstance = "localhost"
+        >> Database = "DBAMaintenance"
+        >> InstallJobs = $true
+        >> BackupLocation = "D:\SQLBackups"
+        >> CleanupTime = 168
+        >> ChangeBackupType = $true
+        >> Compress = $true
+        >> Verify = $true
+        >> CheckSum = $true
+        >> }
+
+        PS C:\> Install-DbaMaintenanceSolution @params
+
+        Installs Ola Hallengren's Solution with backup jobs that include automatic backup type conversion, compression, verification, and checksum validation.
+        The ChangeBackupType parameter ensures differential and log backups automatically become full backups if a full backup is missing.
+        Backups are compressed, verified after creation, and validated with checksums for maximum data integrity.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
@@ -228,6 +277,13 @@ function Install-DbaMaintenanceSolution {
         [string]$LocalFile,
         [switch]$Force,
         [switch]$InstallParallel,
+        [switch]$ChangeBackupType,
+        [switch]$Compress,
+        [switch]$CopyOnly,
+        [switch]$Verify,
+        [switch]$CheckSum,
+        [ValidateRange(0, 100)]
+        [int]$ModificationLevel,
         [switch]$EnableException
 
     )
@@ -658,6 +714,80 @@ function Install-DbaMaintenanceSolution {
                 }
 
                 $null = New-DbaAgentSchedule @cleanparams
+            }
+
+            # Modify backup job steps to include additional parameters
+            if ($InstallJobs -and ($ChangeBackupType -or $Compress -or $CopyOnly -or $Verify -or $CheckSum -or $ModificationLevel)) {
+                Write-ProgressHelper -ExcludePercent -Message "Applying additional backup parameters to job steps"
+
+                $null = $server.Refresh()
+                $null = $server.JobServer.Jobs.Refresh()
+
+                $backupJobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
+
+                foreach ($job in $backupJobs) {
+                    if ($job.Name -notmatch "DatabaseBackup") {
+                        continue
+                    }
+
+                    $jobSteps = Get-DbaAgentJobStep -SqlInstance $server -Job $job.Name
+
+                    foreach ($step in $jobSteps) {
+                        $originalCommand = $step.Command
+                        $modifiedCommand = $originalCommand
+
+                        # Add ChangeBackupType parameter for DIFF and LOG backups only
+                        if ($ChangeBackupType -and ($job.Name -match "DIFF|LOG")) {
+                            if ($modifiedCommand -notmatch "@ChangeBackupType") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@ChangeBackupType = 'Y'"
+                            }
+                        }
+
+                        # Add ModificationLevel parameter for jobs with ChangeBackupType
+                        if ($ModificationLevel -gt 0 -and ($job.Name -match "DIFF|LOG")) {
+                            if ($modifiedCommand -notmatch "@ModificationLevel") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@ModificationLevel = $ModificationLevel"
+                            }
+                        }
+
+                        # Add Compress parameter for all backup jobs
+                        if ($Compress) {
+                            if ($modifiedCommand -notmatch "@Compress") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@Compress = 'Y'"
+                            }
+                        }
+
+                        # Add CopyOnly parameter for all backup jobs
+                        if ($CopyOnly) {
+                            if ($modifiedCommand -notmatch "@CopyOnly") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@CopyOnly = 'Y'"
+                            }
+                        }
+
+                        # Modify Verify parameter if specified (it's already in the job by default as 'Y')
+                        if ($Verify -eq $false) {
+                            $modifiedCommand = $modifiedCommand -replace "@Verify = 'Y'", "@Verify = 'N'"
+                        }
+
+                        # Modify CheckSum parameter if specified (it's already in the job by default as 'Y')
+                        if ($CheckSum -eq $false) {
+                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'Y'", "@CheckSum = 'N'"
+                        }
+
+                        # Update job step if command was modified
+                        if ($modifiedCommand -ne $originalCommand) {
+                            if ($Pscmdlet.ShouldProcess($instance, "Updating job step '$($step.Name)' in job '$($job.Name)'")) {
+                                $splatJobStep = @{
+                                    SqlInstance = $server
+                                    Job         = $job.Name
+                                    StepName    = $step.Name
+                                    Command     = $modifiedCommand
+                                }
+                                $null = Set-DbaAgentJobStep @splatJobStep
+                            }
+                        }
+                    }
+                }
             }
 
             if ($query) {
