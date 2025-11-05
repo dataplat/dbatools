@@ -30,8 +30,30 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $session = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session "system_health"
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Command functionality" {
+        It "Should accept Session objects and return FileInfo objects" {
+            $result = $session | Get-DbaXESessionTargetFile
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].GetType().Name | Should -Be "FileInfo"
+        }
+
+        It "Should work with Get-DbaXESessionTarget pipeline (issue #9840)" {
+            $result = $session | Get-DbaXESessionTarget | Get-DbaXESessionTargetFile
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].GetType().Name | Should -Be "FileInfo"
+        }
+
+        It "Should return files with .xel extension" {
+            $result = $session | Get-DbaXESessionTargetFile
+            $result.Extension | Should -Contain ".xel"
+        }
+    }
+}
