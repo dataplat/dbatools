@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
         $schemaName = "TestSchema$random"
         $tableName = "TestTable$random"
 
-        $results | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $dbName -Table "$dbName.$schemaName.$tableName" -AutoCreateTable
+        $results | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $dbName -Table "$schemaName.$tableName" -AutoCreateTable
 
         $createdSchema = $server.Databases[$dbName] | Get-DbaDbSchema -Schema $schemaName
         $createdSchema | Should -Not -BeNullOrEmpty
