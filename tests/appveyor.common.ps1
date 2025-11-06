@@ -175,8 +175,19 @@ function Get-TestsForBuildScenario {
     $TestsToRunRegex = [regex] '(?smi)\(do (?<do>[^)]+)\)'
     $TestsToRunMatch = $TestsToRunRegex.Match($TestsToRunMessage).Groups['do'].Value
     if ($TestsToRunMatch.Length -gt 0) {
-        $TestsToRun = "*$TestsToRunMatch*"
-        $AllTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -like $TestsToRun }
+        # Support comma-separated multiple commands/patterns
+        $patterns = $TestsToRunMatch -split ',' | ForEach-Object { $_.Trim() }
+        $AllTests = $AllTests | Where-Object {
+            $testName = ($_.Name -replace '\.Tests\.ps1$', '')
+            $matched = $false
+            foreach ($pattern in $patterns) {
+                if ($testName -like "*$pattern*") {
+                    $matched = $true
+                    break
+                }
+            }
+            $matched
+        }
         if (-not($Silent)) {
             Write-Host -ForegroundColor DarkGreen "Commit message: Reduced to $($AllTests.Count) out of $($AllDbatoolsTests.Count) tests"
         }

@@ -406,25 +406,60 @@ Export-ModuleMember -Function @(
 
 Failure to register in both locations will result in the command not being available when users import the module.
 
-### Pull Request Naming
+### Commit Messages and Pull Request Naming
 
-**PR titles should follow this format:**
+**CRITICAL: Always include the `(do ...)` pattern in commit messages** to limit CI test runs to only relevant tests.
+
+**Commit message format:**
+
+```
+<CommandName or PrimaryFile> - <Description>
+
+(do CommandName)
+```
+
+**Examples:**
+```
+Get-DbaDatabase - Add support for filtering by recovery model
+
+(do Get-DbaDatabase)
+```
+
+```
+Set-DbaAgentJobStep - Fix proxy removal and prevent unwanted parameter resets
+
+(do Set-DbaAgentJobStep)
+```
+
+```
+Sync-DbaLoginPassword - Fix handling of Windows logins
+
+(do Sync-DbaLoginPassword, Get-DbaLogin)
+```
+
+```
+Login commands - Update authentication handling
+
+(do *Login*)
+```
+
+**PR Title Format:**
+
+PR titles should be the same as the first line of the commit message (without the `(do ...)` part):
 
 ```
 <CommandName or PrimaryFile> - <Description>
 ```
-
-**Examples:**
-- `Get-DbaDatabase - Add support for filtering by recovery model`
-- `Set-DbaAgentJobStep - Fix proxy removal and prevent unwanted parameter resets`
-- `Invoke-DbaQuery - Improve error handling for connection timeouts`
-- `dbatools.psm1 - Update module initialization logic`
 
 **Guidelines:**
 - Start with the primary command or file affected (PascalCase for commands)
 - Use a hyphen and space as separator: ` - `
 - Keep the description concise and descriptive (not vague)
 - Focus on what the change does, not implementation details
+- **ALWAYS include `(do CommandName)` in commit message body to limit test runs**
+- Use wildcards for multiple related commands: `(do *Login*)` or `(do *Backup*, *Restore*)`
+- Separate multiple specific commands with commas: `(do Get-DbaDatabase, Set-DbaDatabase)`
+- Spaces after commas are automatically trimmed
 
 ### Pattern Parameter Convention
 

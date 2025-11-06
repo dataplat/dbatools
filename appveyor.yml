@@ -5,7 +5,7 @@ configuration: "Debug"
 # skip PR builds when there's already a push build
 skip_branch_with_pr: true
 
-# skip builds on master branch (archival branch) and claude/issue-*
+# skip builds on master branch (archival branch)
 branches:
   except:
     - master
@@ -14,8 +14,6 @@ branches:
 skip_tags: true
 
 skip_commits:
-  # Skip branch pushes from claude[bot] - PRs will still build
-  author: claude[bot]
   files:
     - '**/*.md'
     - '.github/FUNDING.yml'
