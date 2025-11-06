@@ -439,7 +439,6 @@ The dbatools test suite must remain manageable in size while ensuring adequate c
 - **ALWAYS update parameter validation tests** when parameters are added or removed from a command
 - **ADD tests for new functionality** - When adding new parameters or features, include tests that verify the new functionality works correctly
 - **ADD regression tests** when fixing a specific bug that needs to be prevented from recurring
-- **AVOID bloat** - Don't add generic coverage tests for basic operations unless they test a specific fix or new feature
 
 **Parameter Validation Updates:**
 
