@@ -20,7 +20,7 @@ function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName, $DatabaseName
     $ServerName = $ServerName.ToString().Replace('\', '$')
 
     if (Test-Bound DatabaseName) {
-        $DatabaseName = $DatabaseName.Split([IO.Path]::GetInvalidFileNameChars()) -join '$'
+        $DatabaseName = Remove-InvalidFileNameChars -Name $DatabaseName
         $prefix = "$ServerName-$DatabaseName"
     } else {
         $prefix = "$ServerName"

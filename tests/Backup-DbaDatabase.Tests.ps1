@@ -84,18 +84,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return a database name, specifically master" {
-            $results.DatabaseName | Should -Contain "master"
+            $results.DatabaseName | Should -Contain "master" -Because "master database should always be backed up when no specific database is specified"
         }
 
         It "Should return successful restore for all databases" {
-            $results | ForEach-Object { $PSItem.BackupComplete | Should -BeTrue }
+            $results | ForEach-Object { $PSItem.BackupComplete | Should -BeTrue -Because "all databases should complete backup successfully" }
         }
     }
 
     Context "Should not backup if database and exclude match" {
         It "Should not return object" {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Exclude master -WarningAction SilentlyContinue
-            $results | Should -BeNullOrEmpty
+            $results | Should -BeNullOrEmpty -Because "when a database is both included and excluded, no backup should be performed"
         }
     }
 
@@ -105,11 +105,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not return object" {
-            $results | Should -BeNullOrEmpty
+            $results | Should -BeNullOrEmpty -Because "when no matching databases are found, nothing should be backed up"
         }
 
         It "Should return a warning" {
-            $WarnVar | Should -BeLike "*No databases match the request for backups*"
+            $WarnVar | Should -BeLike "*No databases match the request for backups*" -Because "users should be warned when no databases match their backup request"
         }
     }
 
@@ -142,11 +142,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should report it has backed up to the path with the correct name" {
-            $results.FullName | Should -BeLike "$DestBackupDir*PesterTest.bak"
+            $results.FullName | Should -BeLike "$DestBackupDir*PesterTest.bak" -Because "backup should use the specified filename"
         }
 
         It "Should have backed up to the path with the correct name" {
-            Test-Path "$DestBackupDir\PesterTest.bak" | Should -BeTrue
+            Test-Path "$DestBackupDir\PesterTest.bak" | Should -BeTrue -Because "the backup file should exist at the specified path"
         }
     }
 
@@ -473,6 +473,25 @@ go
             $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\db2\master\$instanceName\Full\master-Full.bak"
             $results[1].BackupPath | Should -BeLike "$DestBackupDir\db2\msdb\$instanceName\Full\msdb-Full.bak"
+        }
+    }
+
+    Context "Backup filenames should handle invalid filename characters" {
+        It "Should create valid backup filenames even with invalid characters in paths" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master
+            $invalidChars = [IO.Path]::GetInvalidFileNameChars()
+
+            foreach ($char in $invalidChars) {
+                $results.BackupFile | Should -Not -Match [regex]::Escape([string]$char) -Because "backup filename should not contain invalid character '$char'"
+            }
+        }
+
+        It "Should handle database names with special characters" {
+            $invalidChars = [IO.Path]::GetInvalidFileNameChars()
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master
+
+            $results.BackupComplete | Should -BeTrue -Because "backup should complete successfully even when sanitizing filenames"
+            Test-Path $results.FullName[0] | Should -BeTrue -Because "backup file should exist with sanitized filename"
         }
     }
 
