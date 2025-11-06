@@ -114,6 +114,7 @@
         'Copy-DbaPolicyManagement',
         'Copy-DbaRegServer',
         'Copy-DbaResourceGovernor',
+        'Copy-DbaServerRole',
         'Copy-DbaSpConfigure',
         'Copy-DbaStartupProcedure',
         'Copy-DbaSystemDbUserObject',
