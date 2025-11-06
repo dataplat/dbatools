@@ -435,10 +435,11 @@ AfterAll {
 
 The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality. Follow these guidelines:
 
-**When to Update Tests:**
+**When to Add or Update Tests:**
 - **ALWAYS update parameter validation tests** when parameters are added or removed from a command
-- **ADD tests for new functionality** - When adding new parameters or features, include tests that verify the new functionality works correctly
-- **ADD regression tests** when fixing a specific bug that needs to be prevented from recurring
+- **ALWAYS add reasonable tests for your changes** - When adding new parameters, features, or fixing bugs, include tests that verify the changes work correctly
+- **BE REASONABLE** - Add 1-3 focused tests for your changes, not 100 tests
+- **For new commands, ALWAYS create tests** - Refer to `bin/prompts/style.md` and `bin/prompts/pester.md` for test structure and style requirements
 
 **Parameter Validation Updates:**
 
@@ -461,9 +462,9 @@ Context "Parameter validation" {
 }
 ```
 
-**Tests for New Features:**
+**Tests for New Features and Changes:**
 
-When adding new parameters or functionality, include tests that verify the new feature works:
+When adding new parameters or functionality, include reasonable tests that verify the new feature works. Be focused and practical - test your changes, not everything:
 
 ```powershell
 # GOOD - Test for a new parameter that filters results
@@ -490,18 +491,7 @@ Context "Force parameter" {
         { Remove-DbaDatabase @splatForce } | Should -Not -Throw
     }
 }
-```
 
-**Regression Tests:**
-
-Add regression tests when fixing bugs:
-- Fixing a specific, reproducible bug that should be prevented from recurring
-- The bug is significant enough to warrant long-term protection
-- The test demonstrates the bug is fixed and prevents regression
-
-Example of when to add a regression test:
-
-```powershell
 # GOOD - Regression test for a specific bug fix
 Context "Regression tests" {
     It "Should not remove proxy when updating unrelated job step properties (issue #1234)" {
@@ -518,20 +508,32 @@ Context "Regression tests" {
 }
 ```
 
-**What NOT to do:**
+**Creating Tests for New Commands:**
 
-```powershell
-# WRONG - Adding general coverage tests for existing functionality without a fix
-It "Should return correct number of databases" { }
-It "Should handle empty result sets" { }
-It "Should work with pipeline input" { }
+When creating a new command, you MUST create corresponding tests. Reference these files for detailed guidance:
+- **bin/prompts/style.md** - Test style requirements and formatting
+- **bin/prompts/pester.md** - Pester v5 structure and migration guidelines
 
-# WRONG - Generic edge case tests unrelated to changes
-It "Should handle null parameters gracefully" { }
-It "Should work with special characters in names" { }
-```
+A new command should typically have:
+1. Parameter validation test (required)
+2. 1-3 integration tests covering core functionality (required)
+3. Unit tests if applicable (optional but recommended)
 
-Don't add tests for existing functionality unless you're fixing a bug or adding a new feature that needs verification.
+**What Makes a Good Test:**
+
+Good tests are:
+- **Focused** - Test one specific behavior or feature
+- **Practical** - Test real-world usage scenarios
+- **Reasonable** - 1-3 tests per feature, not exhaustive edge cases
+- **Relevant** - Test your changes, not unrelated functionality
+
+**Balance is Key:**
+
+Don't add excessive tests, but don't skip tests either. When making changes:
+- Fixing a bug? Add a regression test
+- Adding a parameter? Add a test that uses it
+- Creating a new command? Add parameter validation and 1-3 integration tests
+- Refactoring without behavior changes? Existing tests may be sufficient
 
 ## VERIFICATION CHECKLIST
 
@@ -571,10 +573,11 @@ Don't add tests for existing functionality unless you're fixing a bug or adding 
 
 **Test Management:**
 - [ ] Parameter validation test updated if parameters were added/removed
-- [ ] Tests added for new functionality and parameters (not just bloat)
-- [ ] Regression tests added for significant bug fixes
-- [ ] Generic coverage tests avoided unless testing a specific fix or new feature
-- [ ] Test suite remains manageable and focused
+- [ ] Reasonable tests (1-3) added for new functionality and parameters
+- [ ] Regression tests added for bug fixes
+- [ ] New commands include parameter validation and 1-3 integration tests
+- [ ] Tests reference bin/prompts/style.md and bin/prompts/pester.md for structure
+- [ ] Tests are focused, practical, and relevant to the changes made
 
 ## SUMMARY
 
