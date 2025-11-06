@@ -36,10 +36,11 @@ LONG DESCRIPTION
 	with any technical issues using our module (we love our module, we'll remove
 	any malfunctioning blemishes that we can!).
 
-	In order to find us, you can visit us on Slack by following this link:
+	In order to find us, you can visit us on the SQL Community Slack:
 	https://dbatools.io/slack/
-	This has the advantage of the easiest interaction and often the fastest
-	resolution times for smaller issues.
+	Join the #dbatools channel for general help or #dbatools-dev for
+	development discussions. This has the advantage of the easiest interaction
+	and often the fastest resolution times for smaller issues.
 
 	Alternatively, you can file an issue on github:
 	https://github.com/dataplat/dbatools/issues
@@ -114,10 +115,10 @@ LONG DESCRIPTION
 	# PowerShell Version #
 	#--------------------#
 
-	We try to support versions 3-5.1 of PowerShell. Sometimes however we mess up
-	and something doesn't work on all versions. Thus the actual PowerShell
-	version is often of interest. You can find this information by running the
-	following line:
+	We support PowerShell versions 3+ on Windows and PowerShell Core 7.4+ on
+	Linux and macOS. Sometimes however we mess up and something doesn't work on
+	all versions. Thus the actual PowerShell version is often of interest. You
+	can find this information by running the following line:
 
 	  $PSVersionTable
 

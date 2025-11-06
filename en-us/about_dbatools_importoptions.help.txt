@@ -20,9 +20,6 @@ LONG DESCRIPTION
 	
 	- Configuring settings
 	- Serial import
-	- Dotsource on import
-	- Dll Copy on import
-	- Build dbatools library on import
 	
 	
 	#-------------------------------------------------------------------------#
@@ -43,10 +40,10 @@ LONG DESCRIPTION
 	called from a powershell process that has dbatools already installed, it
 	will be ignored and have no effect.
     
-    Alternatively, you can provide a Hashtable of arguments when importing dbatools, 
+    Alternatively, you can provide a Hashtable of arguments when importing dbatools,
     for instance
-        
-        Import-Module dbatools -ArgumentList @{MultiFileImport=$true}
+
+        Import-Module dbatools -ArgumentList @{SerialImport=$true}
 	
 	Per User:
 	The individual settings are DWORD properties found in the following key:
@@ -74,56 +71,17 @@ LONG DESCRIPTION
 	#-------------------------------------------------------------------------#
 	#                              Serial import                              #
 	#-------------------------------------------------------------------------#
-	
-	  $dbatools_serialimport = $true | SerialImport: 1
-	
+
+	  $dbatools_dotsourcemodule = $true | SerialImport: 1
+
 	In order to optimize import speed, dbatools loads its components in
 	parallel. This places a heavy load on CPU however. Since import speed isn't
 	that important on unattended scripts, it is recommended to enable serial
 	import for them, avoiding CPU spikes.
-	
-	
-	#-------------------------------------------------------------------------#
-	#                           Dotsource on import                           #
-	#-------------------------------------------------------------------------#
-	
-	  $dbatools_dotsourcemodule = $true | SerialImport: 1
-	
-	When loading the module, we read the files to memory and import straight,
-	rather than importing the individual script files using dotsourcing. This is
-	faster at no extra resource cost, especially on older PowerShell versions.
-	The downside however is that the individual files are not checked for valid
-	signatures. Company policy may require enabling this for security
-	compliance. It also is often enabled by developers, as it makes debugging
-	easier.
-	
-	
-	#-------------------------------------------------------------------------#
-	#                           Dll Copy on import                            #
-	#-------------------------------------------------------------------------#
-	
-	  $dbatools_copydllmode = $true | CopyDllMode: 1
-	
-	The module includes a large number of dll files. These files will be locked
-	as long as a PowerShell console using the module is open. This makes it
-	impossible to update the module into the same folder (as older versions of
-	PowerShell will do). In order to support a proper update, we support copy-
-	ing the dll files and importing them from a separate folder. With that,
-	users can then use our Update-Dbatools command to update the module while it
-	is imported.
-	Enabling this setting significantly increases import time and can be a
-	security issue, only enable it for updating the module.
-	
-	
-	#-------------------------------------------------------------------------#
-	#                    Build dbatools library on import                     #
-	#-------------------------------------------------------------------------#
-	
-	  $dbatools_alwaysbuildlibrary = $true | AlwaysBuildLibrary: 1
-	
-	This is a pure developer feature. Setting this will compile the dbatools
-	library on every import. This feature requires an installed Visual Studio.
-	This allows fast iterative tests on the library, but has no production use.
+
+	Note: The variable name is $dbatools_dotsourcemodule (legacy naming) but
+	the registry key is SerialImport. Both enable the same serial import
+	behavior.
 	
 	
 KEYWORDS
