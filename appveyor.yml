@@ -47,12 +47,6 @@ environment:
   environment: development
   version: 2.1.$(appveyor_build_number)
   appveyor_rdp_password: 2odCuiKmYiem
-  azurepasswd1:
-    secure: ZnF3fWSDfHraMCWlHaekvWrXf3sDqY5M28HMK4236PBbNSoqP29wEhsWMQioSSYGomzgIp9vuiwR8Fc9ViNLoqq0bVcErxEojBFTaPMEzOg2ZwO9OnOTiuUEc5JkoLBv6rEBBWef/DvkFfhr1r0K0xQu6OAPYHVTCRajTZbBRNfCTUM2X2o41t+cSa7681rtnJQnB/8cAfVVnPtJ+97s8w==
-  azurelegacypasswd1:
-    secure: ud4yZN6kPf+VWhgpgJhbEMCoUJKHTiH9uvv71ybTlu+45+V12M+B07YjysoXGC1qnGBwVy4DDGJfh2VkPWxamK0IpsEimsRS/CCEZlb6unYC4dqEm980QwP4/zwcTSK1
-  azuredbpasswd1:
-    secure: JwVx9sps/1g/3eIBRvh21UGRpRAQnXk+7+zZyVmdWL0=
 
   matrix:
     - scenario: 2008R2
