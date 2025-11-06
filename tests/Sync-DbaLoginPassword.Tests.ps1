@@ -218,7 +218,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $mixedLogins | Sync-DbaLoginPassword @splatSync
 
             # Should only process SQL logins, not Windows logins
-            $results.Count | Should -Be 1
+            $results.SourceServer.Count | Should -Be 1
             $results.Login | Should -Be $loginName1
         }
     }
