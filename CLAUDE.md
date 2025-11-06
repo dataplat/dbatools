@@ -457,9 +457,10 @@ PR titles should be the same as the first line of the commit message (without th
 - Keep the description concise and descriptive (not vague)
 - Focus on what the change does, not implementation details
 - **ALWAYS include `(do CommandName)` in commit message body to limit test runs**
-- Use wildcards for multiple related commands: `(do *Login*)` or `(do *Backup*, *Restore*)`
-- Separate multiple specific commands with commas: `(do Get-DbaDatabase, Set-DbaDatabase)`
+- For single command changes: Use the command name directly like `(do Sync-DbaLoginPassword)` - wildcard matching is automatic
+- For multiple related commands: Use wildcards like `(do *Login*)` or comma-separated `(do *Backup*, *Restore*)`
 - Spaces after commas are automatically trimmed
+- **RARELY NEEDED**: `=` prefix for exact match `(do =dbatools)` - ONLY use this for infrastructure/CI/test framework changes where you want to run just `dbatools.Tests.ps1` without any related tests. Do NOT use `=` for normal command work.
 
 ### Pattern Parameter Convention
 
