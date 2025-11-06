@@ -764,14 +764,18 @@ function Install-DbaMaintenanceSolution {
                             }
                         }
 
-                        # Modify Verify parameter if specified (it's already in the job by default as 'Y')
-                        if ($Verify -eq $false) {
-                            $modifiedCommand = $modifiedCommand -replace "@Verify = 'Y'", "@Verify = 'N'"
+                        # Add Verify parameter for all backup jobs
+                        if ($Verify) {
+                            if ($modifiedCommand -notmatch "@Verify") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@Verify = 'Y'"
+                            }
                         }
 
-                        # Modify CheckSum parameter if specified (it's already in the job by default as 'Y')
-                        if ($CheckSum -eq $false) {
-                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'Y'", "@CheckSum = 'N'"
+                        # Add CheckSum parameter for all backup jobs
+                        if ($CheckSum) {
+                            if ($modifiedCommand -notmatch "@CheckSum") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@CheckSum = 'Y'"
+                            }
                         }
 
                         # Update job step if command was modified
