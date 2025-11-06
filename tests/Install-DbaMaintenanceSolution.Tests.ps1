@@ -45,8 +45,23 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $server.Databases['tempdb'].Query("CREATE TABLE CommandLog (id int)")
+            # Clean up any existing maintenance solution objects in tempdb from previous runs on BOTH instances
+            $cleanupQuery = "
+                IF OBJECT_ID('dbo.CommandExecute', 'P') IS NOT NULL DROP PROCEDURE dbo.CommandExecute;
+                IF OBJECT_ID('dbo.DatabaseBackup', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseBackup;
+                IF OBJECT_ID('dbo.DatabaseIntegrityCheck', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseIntegrityCheck;
+                IF OBJECT_ID('dbo.IndexOptimize', 'P') IS NOT NULL DROP PROCEDURE dbo.IndexOptimize;
+                IF OBJECT_ID('dbo.CommandLog', 'U') IS NOT NULL DROP TABLE dbo.CommandLog;
+                IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
+                IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
+            "
+            # Clean both instance2 and instance3 to handle leftovers from failed test runs
+            $splatCleanup = @{
+                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                Database    = "tempdb"
+                Query       = $cleanupQuery
+            }
+            Invoke-DbaQuery @splatCleanup
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -56,15 +71,35 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $server.Databases['tempdb'].Query("DROP TABLE CommandLog")
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -Database tempdb -Query "drop procedure CommandExecute; drop procedure DatabaseBackup; drop procedure DatabaseIntegrityCheck; drop procedure IndexOptimize;"
+            # Clean up maintenance solution procedures and tables on BOTH instances
+            $cleanupQuery = "
+                IF OBJECT_ID('dbo.CommandExecute', 'P') IS NOT NULL DROP PROCEDURE dbo.CommandExecute;
+                IF OBJECT_ID('dbo.DatabaseBackup', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseBackup;
+                IF OBJECT_ID('dbo.DatabaseIntegrityCheck', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseIntegrityCheck;
+                IF OBJECT_ID('dbo.IndexOptimize', 'P') IS NOT NULL DROP PROCEDURE dbo.IndexOptimize;
+                IF OBJECT_ID('dbo.CommandLog', 'U') IS NOT NULL DROP TABLE dbo.CommandLog;
+                IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
+                IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
+            "
+            # Clean both instance2 and instance3
+            $splatCleanup = @{
+                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                Database    = "tempdb"
+                Query       = $cleanupQuery
+            }
+            Invoke-DbaQuery @splatCleanup
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "does not overwrite existing" {
-            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2 -Database tempdb -WarningAction SilentlyContinue
-            $WarnVar | Should -Match "already exists"
+            # First installation should succeed
+            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2 -Database tempdb
+            $results | Should -Not -BeNullOrEmpty
+
+            # Second installation should warn about already existing
+            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2 -Database tempdb -WarningVariable warnVar -WarningAction SilentlyContinue
+            $warnVar | Should -Match "already exists"
         }
 
         It "Continues the installation on other servers" {
@@ -78,7 +113,20 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            # Clean up any leftover test databases from previous runs
+            $oldTestDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance3 | Where-Object Name -like "dbatoolsci_maintenancesolution_*"
+            if ($oldTestDbs) {
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $oldTestDbs.Name -Confirm:$false
+            }
+
+            # Clean up any leftover Hallengren jobs
+            $oldJobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 | Where-Object Description -match "hallengren"
+            if ($oldJobs) {
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $oldJobs.Name -Confirm:$false
+            }
+
             $testDbName = "dbatoolsci_maintenancesolution_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $testDbName
 
             $splatInstall = @{
                 SqlInstance      = $TestConfig.instance3

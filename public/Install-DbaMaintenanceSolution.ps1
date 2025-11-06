@@ -739,42 +739,42 @@ function Install-DbaMaintenanceSolution {
                         # Add ChangeBackupType parameter for DIFF and LOG backups only
                         if ($ChangeBackupType -and ($job.Name -match "DIFF|LOG")) {
                             if ($modifiedCommand -notmatch "@ChangeBackupType") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@ChangeBackupType = 'Y'"
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@ChangeBackupType = 'Y'"
                             }
                         }
 
                         # Add ModificationLevel parameter for jobs with ChangeBackupType
                         if ($ModificationLevel -gt 0 -and ($job.Name -match "DIFF|LOG")) {
                             if ($modifiedCommand -notmatch "@ModificationLevel") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@ModificationLevel = $ModificationLevel"
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@ModificationLevel = $ModificationLevel"
                             }
                         }
 
                         # Add Compress parameter for all backup jobs
                         if ($Compress) {
                             if ($modifiedCommand -notmatch "@Compress") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@Compress = 'Y'"
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'Y'"
                             }
                         }
 
                         # Add CopyOnly parameter for all backup jobs
                         if ($CopyOnly) {
                             if ($modifiedCommand -notmatch "@CopyOnly") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@CopyOnly = 'Y'"
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CopyOnly = 'Y'"
                             }
                         }
 
                         # Add Verify parameter for all backup jobs
                         if ($Verify) {
                             if ($modifiedCommand -notmatch "@Verify") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@Verify = 'Y'"
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Verify = 'Y'"
                             }
                         }
 
                         # Add CheckSum parameter for all backup jobs
                         if ($CheckSum) {
                             if ($modifiedCommand -notmatch "@CheckSum") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1," + [System.Environment]::NewLine + "@CheckSum = 'Y'"
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CheckSum = 'Y'"
                             }
                         }
 
