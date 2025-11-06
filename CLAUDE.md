@@ -312,6 +312,10 @@ AfterAll {
 
 3. **Consistent naming pattern** - Follow the `<Verb>-Dba<Noun>` pattern consistently
 
+4. **Follow existing command patterns** - When creating new commands, examine similar existing commands in the `public` folder to understand the standard structure, parameter patterns, and implementation approach
+
+5. **Include Claude as author** - In the `.NOTES` section of the comment-based help, list "Claude" as the author when you create a new command
+
 ```powershell
 # CORRECT - Singular nouns
 function Get-DbaDatabase { }
@@ -323,6 +327,52 @@ function Remove-DbaJob { }
 function Get-DbaDatabases { }
 function Set-DbaLogins { }
 function New-DbaAgents { }
+```
+
+**Example of proper authorship in comment-based help:**
+
+```powershell
+function Get-DbaNewFeature {
+    <#
+    .SYNOPSIS
+        Short description of what this command does.
+
+    .DESCRIPTION
+        Detailed description of the command's functionality.
+
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: Feature, NewCategory
+        Author: the dbatools team + Claude
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaNewFeature
+
+    .EXAMPLE
+        PS C:\> Get-DbaNewFeature -SqlInstance sql2016
+
+        Description of what this example does.
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch]$EnableException
+    )
+    # Function implementation
+}
 ```
 
 ### Command Registration
@@ -356,25 +406,61 @@ Export-ModuleMember -Function @(
 
 Failure to register in both locations will result in the command not being available when users import the module.
 
-### Pull Request Naming
+### Commit Messages and Pull Request Naming
 
-**PR titles should follow this format:**
+**CRITICAL: Always include the `(do ...)` pattern in commit messages** to limit CI test runs to only relevant tests.
+
+**Commit message format:**
+
+```
+<CommandName or PrimaryFile> - <Description>
+
+(do CommandName)
+```
+
+**Examples:**
+```
+Get-DbaDatabase - Add support for filtering by recovery model
+
+(do Get-DbaDatabase)
+```
+
+```
+Set-DbaAgentJobStep - Fix proxy removal and prevent unwanted parameter resets
+
+(do Set-DbaAgentJobStep)
+```
+
+```
+Sync-DbaLoginPassword - Fix handling of Windows logins
+
+(do Sync-DbaLoginPassword, Get-DbaLogin)
+```
+
+```
+Login commands - Update authentication handling
+
+(do *Login*)
+```
+
+**PR Title Format:**
+
+PR titles should be the same as the first line of the commit message (without the `(do ...)` part):
 
 ```
 <CommandName or PrimaryFile> - <Description>
 ```
-
-**Examples:**
-- `Get-DbaDatabase - Add support for filtering by recovery model`
-- `Set-DbaAgentJobStep - Fix proxy removal and prevent unwanted parameter resets`
-- `Invoke-DbaQuery - Improve error handling for connection timeouts`
-- `dbatools.psm1 - Update module initialization logic`
 
 **Guidelines:**
 - Start with the primary command or file affected (PascalCase for commands)
 - Use a hyphen and space as separator: ` - `
 - Keep the description concise and descriptive (not vague)
 - Focus on what the change does, not implementation details
+- **ALWAYS include `(do CommandName)` in commit message body to limit test runs**
+- For single command changes: Use the command name directly like `(do Sync-DbaLoginPassword)` - wildcard matching is automatic
+- For multiple related commands: Use wildcards like `(do *Login*)` or comma-separated `(do *Backup*, *Restore*)`
+- Spaces after commas are automatically trimmed
+- **RARELY NEEDED**: `=` prefix for exact match `(do =dbatools)` - ONLY use this for infrastructure/CI/test framework changes where you want to run just `dbatools.Tests.ps1` without any related tests. Do NOT use `=` for normal command work.
 
 ### Pattern Parameter Convention
 
@@ -435,10 +521,11 @@ AfterAll {
 
 The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality. Follow these guidelines:
 
-**When to Update Tests:**
+**When to Add or Update Tests:**
 - **ALWAYS update parameter validation tests** when parameters are added or removed from a command
-- **ADD tests for new functionality** - When adding new parameters or features, include tests that verify the new functionality works correctly
-- **ADD regression tests** when fixing a specific bug that needs to be prevented from recurring
+- **ALWAYS add reasonable tests for your changes** - When adding new parameters, features, or fixing bugs, include tests that verify the changes work correctly
+- **BE REASONABLE** - Add 1-3 focused tests for your changes, not 100 tests
+- **For new commands, ALWAYS create tests** - Refer to `bin/prompts/style.md` and `bin/prompts/pester.md` for test structure and style requirements
 
 **Parameter Validation Updates:**
 
@@ -461,9 +548,9 @@ Context "Parameter validation" {
 }
 ```
 
-**Tests for New Features:**
+**Tests for New Features and Changes:**
 
-When adding new parameters or functionality, include tests that verify the new feature works:
+When adding new parameters or functionality, include reasonable tests that verify the new feature works. Be focused and practical - test your changes, not everything:
 
 ```powershell
 # GOOD - Test for a new parameter that filters results
@@ -490,18 +577,7 @@ Context "Force parameter" {
         { Remove-DbaDatabase @splatForce } | Should -Not -Throw
     }
 }
-```
 
-**Regression Tests:**
-
-Add regression tests when fixing bugs:
-- Fixing a specific, reproducible bug that should be prevented from recurring
-- The bug is significant enough to warrant long-term protection
-- The test demonstrates the bug is fixed and prevents regression
-
-Example of when to add a regression test:
-
-```powershell
 # GOOD - Regression test for a specific bug fix
 Context "Regression tests" {
     It "Should not remove proxy when updating unrelated job step properties (issue #1234)" {
@@ -518,20 +594,32 @@ Context "Regression tests" {
 }
 ```
 
-**What NOT to do:**
+**Creating Tests for New Commands:**
 
-```powershell
-# WRONG - Adding general coverage tests for existing functionality without a fix
-It "Should return correct number of databases" { }
-It "Should handle empty result sets" { }
-It "Should work with pipeline input" { }
+When creating a new command, you MUST create corresponding tests. Reference these files for detailed guidance:
+- **bin/prompts/style.md** - Test style requirements and formatting
+- **bin/prompts/pester.md** - Pester v5 structure and migration guidelines
 
-# WRONG - Generic edge case tests unrelated to changes
-It "Should handle null parameters gracefully" { }
-It "Should work with special characters in names" { }
-```
+A new command should typically have:
+1. Parameter validation test (required)
+2. 1-3 integration tests covering core functionality (required)
+3. Unit tests if applicable (optional but recommended)
 
-Don't add tests for existing functionality unless you're fixing a bug or adding a new feature that needs verification.
+**What Makes a Good Test:**
+
+Good tests are:
+- **Focused** - Test one specific behavior or feature
+- **Practical** - Test real-world usage scenarios
+- **Reasonable** - 1-3 tests per feature, not exhaustive edge cases
+- **Relevant** - Test your changes, not unrelated functionality
+
+**Balance is Key:**
+
+Don't add excessive tests, but don't skip tests either. When making changes:
+- Fixing a bug? Add a regression test
+- Adding a parameter? Add a test that uses it
+- Creating a new command? Add parameter validation and 1-3 integration tests
+- Refactoring without behavior changes? Existing tests may be sufficient
 
 ## VERIFICATION CHECKLIST
 
@@ -566,15 +654,18 @@ Don't add tests for existing functionality unless you're fixing a bug or adding 
 - [ ] Command name uses singular nouns (not plural)
 - [ ] Command uses approved PowerShell verb
 - [ ] Command follows `<Verb>-Dba<Noun>` naming pattern
+- [ ] Examined similar existing commands for patterns and structure
+- [ ] Author listed as "the dbatools team + Claude" in .NOTES section
 - [ ] Command added to `FunctionsToExport` in dbatools.psd1
 - [ ] Command added to `Export-ModuleMember` in dbatools.psm1
 
 **Test Management:**
 - [ ] Parameter validation test updated if parameters were added/removed
-- [ ] Tests added for new functionality and parameters (not just bloat)
-- [ ] Regression tests added for significant bug fixes
-- [ ] Generic coverage tests avoided unless testing a specific fix or new feature
-- [ ] Test suite remains manageable and focused
+- [ ] Reasonable tests (1-3) added for new functionality and parameters
+- [ ] Regression tests added for bug fixes
+- [ ] New commands include parameter validation and 1-3 integration tests
+- [ ] Tests reference bin/prompts/style.md and bin/prompts/pester.md for structure
+- [ ] Tests are focused, practical, and relevant to the changes made
 
 ## SUMMARY
 

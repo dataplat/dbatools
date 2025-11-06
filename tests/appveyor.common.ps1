@@ -175,19 +175,42 @@ function Get-TestsForBuildScenario {
     $TestsToRunRegex = [regex] '(?smi)\(do (?<do>[^)]+)\)'
     $TestsToRunMatch = $TestsToRunRegex.Match($TestsToRunMessage).Groups['do'].Value
     if ($TestsToRunMatch.Length -gt 0) {
-        $TestsToRun = "*$TestsToRunMatch*"
-        $AllTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -like $TestsToRun }
+        # Support comma-separated multiple commands/patterns
+        $patterns = $TestsToRunMatch -split ',' | ForEach-Object { $_.Trim() }
+        $AllTests = $AllTests | Where-Object {
+            $testName = ($_.Name -replace '\.Tests\.ps1$', '')
+            $matched = $false
+            foreach ($pattern in $patterns) {
+                # Support exact match with = prefix: (do =dbatools)
+                if ($pattern -match '^=(.+)$') {
+                    $exactPattern = $Matches[1]
+                    if ($testName -eq $exactPattern) {
+                        $matched = $true
+                        break
+                    }
+                } elseif ($testName -like "*$pattern*") {
+                    $matched = $true
+                    break
+                }
+            }
+            $matched
+        }
         if (-not($Silent)) {
             Write-Host -ForegroundColor DarkGreen "Commit message: Reduced to $($AllTests.Count) out of $($AllDbatoolsTests.Count) tests"
         }
-        if ($AllTests.Count -eq 0) {
-            throw "something went wrong, nothing to test"
-        }
         $testsThatDependOn = @()
-        foreach ($t in $AllTests) {
-            # get tests for other functions that rely upon rely upon the selected ones
-            $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
+        if ($AllTests.Count -gt 0) {
+            foreach ($t in $AllTests) {
+                # get tests for other functions that rely upon rely upon the selected ones
+                $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
 
+            }
+        } else {
+            # No direct matches - fall back to dbatools.Tests.ps1 only
+            if (-not($Silent)) {
+                Write-Host -ForegroundColor DarkGreen "Commit message: No direct test matches, falling back to dbatools.Tests.ps1"
+            }
+            $testsThatDependOn += Get-Item "$ModuleBase\tests\dbatools.Tests.ps1"
         }
         $AllTests = ($testsThatDependOn + $AllTests) | Group-Object -Property FullName | ForEach-Object { $_.Group | Select-Object -First 1 }
         # re-filter disabled tests that may have been picked up by dependency tracking
@@ -195,6 +218,9 @@ function Get-TestsForBuildScenario {
         $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
         if (-not($Silent)) {
             Write-Host -ForegroundColor DarkGreen "Commit message: Extended to $($AllTests.Count) for all the dependencies"
+        }
+        if ($AllTests.Count -eq 0) {
+            throw "something went wrong, nothing to test"
         }
     }
 

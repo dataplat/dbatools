@@ -32,6 +32,11 @@ function Sync-DbaLoginPassword {
         Accepts PowerShell credentials created with Get-Credential. Supports Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated.
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER InputObject
+        Specifies login objects from the pipeline to sync passwords for. Accepts login objects from Get-DbaLogin.
+        When using InputObject, only SQL Server authentication logins will be processed - Windows authentication logins are automatically filtered out.
+        This parameter enables pipeline scenarios where you can filter logins first and then sync their passwords.
+
     .PARAMETER Login
         Specifies which specific logins to sync passwords for. Use this when you only want to sync passwords for certain accounts rather than all SQL logins.
         Accepts multiple login names as an array. Only SQL Server authentication logins will be processed - Windows logins are automatically skipped.
@@ -104,6 +109,8 @@ function Sync-DbaLoginPassword {
         [Parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
+        [Parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
         [string[]]$Login,
         [string[]]$ExcludeLogin,
         [switch]$EnableException
@@ -114,9 +121,9 @@ function Sync-DbaLoginPassword {
 
         try {
             $splatSource = @{
-                SqlInstance     = $Source
-                SqlCredential   = $SourceSqlCredential
-                MinimumVersion  = 8
+                SqlInstance    = $Source
+                SqlCredential  = $SourceSqlCredential
+                MinimumVersion = 8
             }
             $sourceServer = Connect-DbaInstance @splatSource
         } catch {
@@ -124,24 +131,31 @@ function Sync-DbaLoginPassword {
             return
         }
 
-        $splatLogin = @{
-            SqlInstance   = $sourceServer
-            Login         = $Login
-            ExcludeLogin  = $ExcludeLogin
+        # Determine which logins to process
+        if ($InputObject) {
+            # Use logins from pipeline
+            $sourceLogins = $InputObject | Where-Object LoginType -eq "SqlLogin"
+        } else {
+            # Get logins from source server
+            $splatLogin = @{
+                SqlInstance  = $sourceServer
+                Login        = $Login
+                ExcludeLogin = $ExcludeLogin
+            }
+            $sourceLogins = Get-DbaLogin @splatLogin | Where-Object LoginType -eq "SqlLogin"
         }
-        $sourceLogins = Get-DbaLogin @splatLogin | Where-Object LoginType -eq "SqlLogin"
 
         if (-not $sourceLogins) {
-            Stop-Function -Message "No SQL Server authentication logins found on source instance $Source"
+            Write-Message -Level Verbose -Message "No SQL Server authentication logins found on source instance $Source"
             return
         }
 
         foreach ($dest in $Destination) {
             try {
                 $splatDestination = @{
-                    SqlInstance     = $dest
-                    SqlCredential   = $DestinationSqlCredential
-                    MinimumVersion  = 9
+                    SqlInstance    = $dest
+                    SqlCredential  = $DestinationSqlCredential
+                    MinimumVersion = 9
                 }
                 $destServer = Connect-DbaInstance @splatDestination
             } catch {
@@ -176,9 +190,9 @@ function Sync-DbaLoginPassword {
 
                         # Apply the password hash to destination
                         $splatSetLogin = @{
-                            SqlInstance   = $destServer
-                            Login         = $loginName
-                            PasswordHash  = $passwordHash
+                            SqlInstance     = $destServer
+                            Login           = $loginName
+                            PasswordHash    = $passwordHash
                             EnableException = $true
                         }
                         $result = Set-DbaLogin @splatSetLogin
