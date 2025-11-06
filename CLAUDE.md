@@ -312,6 +312,10 @@ AfterAll {
 
 3. **Consistent naming pattern** - Follow the `<Verb>-Dba<Noun>` pattern consistently
 
+4. **Follow existing command patterns** - When creating new commands, examine similar existing commands in the `public` folder to understand the standard structure, parameter patterns, and implementation approach
+
+5. **Include Claude as author** - In the `.NOTES` section of the comment-based help, list "Claude" as the author when you create a new command
+
 ```powershell
 # CORRECT - Singular nouns
 function Get-DbaDatabase { }
@@ -323,6 +327,52 @@ function Remove-DbaJob { }
 function Get-DbaDatabases { }
 function Set-DbaLogins { }
 function New-DbaAgents { }
+```
+
+**Example of proper authorship in comment-based help:**
+
+```powershell
+function Get-DbaNewFeature {
+    <#
+    .SYNOPSIS
+        Short description of what this command does.
+
+    .DESCRIPTION
+        Detailed description of the command's functionality.
+
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: Feature, NewCategory
+        Author: the dbatools team + Claude
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaNewFeature
+
+    .EXAMPLE
+        PS C:\> Get-DbaNewFeature -SqlInstance sql2016
+
+        Description of what this example does.
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch]$EnableException
+    )
+    # Function implementation
+}
 ```
 
 ### Command Registration
@@ -568,6 +618,8 @@ Don't add excessive tests, but don't skip tests either. When making changes:
 - [ ] Command name uses singular nouns (not plural)
 - [ ] Command uses approved PowerShell verb
 - [ ] Command follows `<Verb>-Dba<Noun>` naming pattern
+- [ ] Examined similar existing commands for patterns and structure
+- [ ] Author listed as "the dbatools team + Claude" in .NOTES section
 - [ ] Command added to `FunctionsToExport` in dbatools.psd1
 - [ ] Command added to `Export-ModuleMember` in dbatools.psm1
 
