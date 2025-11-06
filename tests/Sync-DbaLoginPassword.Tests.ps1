@@ -8,9 +8,9 @@ param(
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
-            $commonParameters = "Verbose", "Debug", "ErrorAction", "WarningAction", "InformationAction", "ErrorVariable", "WarningVariable", "InformationVariable", "OutVariable", "OutBuffer", "PipelineVariable", "WhatIf", "Confirm"
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin $commonParameters }
-            $expectedParameters = @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -73,6 +73,14 @@ Describe $CommandName -Tag IntegrationTests {
             Force          = $true
         }
         $null = New-DbaLogin @splatLogin2Primary
+
+        $splatLogin2Secondary = @{
+            SqlInstance    = $secondaryInstance
+            Login          = $loginName2
+            SecurePassword = $password2
+            Force          = $true
+        }
+        $null = New-DbaLogin @splatLogin2Secondary
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         $PSDefaultParameterValues.Remove("*-Dba*:WarningAction")
@@ -187,12 +195,21 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should filter out Windows logins when using pipeline input" {
-            # Get both SQL and Windows logins
-            $splatGetLogins = @{
+            # Get the first Windows login that exists on the instance
+            $splatGetWinLogin = @{
                 SqlInstance = $primaryInstance
-                Login       = $loginName1, "NT AUTHORITY\SYSTEM"
+                Type        = "Windows"
             }
-            $mixedLogins = Get-DbaLogin @splatGetLogins
+            $windowsLogin = Get-DbaLogin @splatGetWinLogin | Select-Object -First 1
+
+            # Skip test if no Windows logins found on instance
+            if (-not $windowsLogin) {
+                Set-ItResult -Skipped -Because "No Windows logins found on test instance"
+            }
+
+            # Get both SQL and Windows logins
+            $sqlLogin = Get-DbaLogin -SqlInstance $primaryInstance -Login $loginName1
+            $mixedLogins = @($sqlLogin, $windowsLogin)
 
             $splatSync = @{
                 Source      = $primaryInstance
