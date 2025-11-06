@@ -142,16 +142,24 @@ function Get-DbaAgentJob {
 
             # Check if Job parameter is bound with null, empty, or whitespace-only values
             if (Test-Bound 'Job') {
-                if ($null -eq $Job -or $Job.Count -eq 0 -or ($Job | Where-Object { [string]::IsNullOrWhiteSpace($_) })) {
-                    Write-Message -Level Verbose -Message "The -Job parameter was explicitly provided but contains null, empty, or whitespace-only values. This may indicate an uninitialized variable. Skipping instance."
+                # Filter out any null/empty/whitespace values
+                $Job = $Job | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+                # If all values were null/empty/whitespace, skip processing
+                if ($null -eq $Job -or $Job.Count -eq 0) {
+                    Write-Message -Level Verbose -Message "The -Job parameter was explicitly provided but contains only null, empty, or whitespace values. No jobs will be returned."
                     continue
                 }
             }
 
             # Check if ExcludeJob parameter is bound with null, empty, or whitespace-only values
             if (Test-Bound 'ExcludeJob') {
-                if ($null -eq $ExcludeJob -or $ExcludeJob.Count -eq 0 -or ($ExcludeJob | Where-Object { [string]::IsNullOrWhiteSpace($_) })) {
-                    Write-Message -Level Verbose -Message "The -ExcludeJob parameter was explicitly provided but contains null, empty, or whitespace-only values. This may indicate an uninitialized variable. Parameter will be ignored."
+                # Filter out any null/empty/whitespace values
+                $ExcludeJob = $ExcludeJob | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+                # If all values were null/empty/whitespace, ignore the parameter
+                if ($null -eq $ExcludeJob -or $ExcludeJob.Count -eq 0) {
+                    Write-Message -Level Verbose -Message "The -ExcludeJob parameter was explicitly provided but contains only null, empty, or whitespace values. Parameter will be ignored."
                     $ExcludeJob = $null
                 }
             }
