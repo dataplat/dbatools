@@ -141,6 +141,10 @@ function Get-DbaDbTable {
             $server = $db.Parent
             Write-Message -Level Verbose -Message "Processing $db"
 
+            # Let the SMO read all properties referenced in this command for all tables in the database in one query.
+            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
+            $db.Tables.ClearAndInitialize('', [string[]]('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex', 'IsFileTable', 'IsMemoryOptimized', 'IsPartitioned', 'FullTextIndex', 'ChangeTrackingEnabled'))
+
             if ($fqTns) {
                 $tables = @()
                 foreach ($fqTn in $fqTns) {
