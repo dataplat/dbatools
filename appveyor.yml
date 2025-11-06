@@ -9,7 +9,6 @@ skip_branch_with_pr: true
 branches:
   except:
     - master
-    - /claude\/issue-.*/
 
 # skip tag commits entirely
 skip_tags: true
