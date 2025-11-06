@@ -86,8 +86,8 @@ LONG DESCRIPTION
 	#-------------------------------------------------------------------------#
 	#                           Dotsource on import                           #
 	#-------------------------------------------------------------------------#
-	
-	  $dbatools_dotsourcemodule = $true | SerialImport: 1
+
+	  $dbatools_dotsourcemodule = $true | DotsourceModule: 1
 	
 	When loading the module, we read the files to memory and import straight,
 	rather than importing the individual script files using dotsourcing. This is
