@@ -123,4 +123,39 @@ Describe $CommandName -Tag IntegrationTests {
             ($server.Query("select 1 from sysjobhistory where job_id = '$jobId'", "msdb")) | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Command validates null/empty Job parameter" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            if (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) {
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation -Confirm:$false
+            }
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should not remove jobs when -Job is null" {
+            $nullVariable = $null
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $nullVariable -Confirm:$false
+            $result | Should -BeNullOrEmpty
+            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should not remove jobs when -Job is empty string" {
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "" -Confirm:$false
+            $result | Should -BeNullOrEmpty
+            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should not remove jobs when -Job is whitespace" {
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "   " -Confirm:$false
+            $result | Should -BeNullOrEmpty
+            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
+        }
+    }
 } # $TestConfig.instance2 for appveyor

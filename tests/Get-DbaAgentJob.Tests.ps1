@@ -133,4 +133,27 @@ Describe $CommandName -Tag IntegrationTests {
             $resultMultipleDatabases.Name -contains $jobName2 | Should -BeTrue
         }
     }
+    Context "Command validates null/empty Job parameter" {
+        It "Should return no jobs when -Job is null" {
+            $nullVariable = $null
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $nullVariable
+            $results | Should -BeNullOrEmpty
+        }
+
+        It "Should return no jobs when -Job is empty string" {
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job ""
+            $results | Should -BeNullOrEmpty
+        }
+
+        It "Should return no jobs when -Job is whitespace" {
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "   "
+            $results | Should -BeNullOrEmpty
+        }
+
+        It "Should ignore -ExcludeJob when it contains null values" {
+            $nullVariable = $null
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob $nullVariable
+            $results | Should -Not -BeNullOrEmpty
+        }
+    }
 }

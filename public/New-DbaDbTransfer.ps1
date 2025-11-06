@@ -170,6 +170,10 @@ function New-DbaDbTransfer {
         if ($ScriptingOption) { $transfer.Options = $ScriptingOption }
 
         # Add destination connection parameters
+        # Infer SSL/TLS settings from source connection
+        $sourceTrustCert = $sourceDb.Parent.ConnectionContext.TrustServerCertificate
+        $sourceEncrypt = $sourceDb.Parent.ConnectionContext.EncryptConnection
+
         if ($DestinationSqlInstance.IsConnectionString) {
             $connString = $DestinationSqlInstance.InputObject
         } elseif ($DestinationSqlInstance.Type -eq 'RegisteredServer' -and $DestinationSqlInstance.InputObject.ConnectionString) {
@@ -180,25 +184,59 @@ function New-DbaDbTransfer {
             $transfer.DestinationServer = $DestinationSqlInstance.InputObject
             $transfer.DestinationLoginSecure = $true
         }
+
+        # Build connection string for destination with SSL settings from source
+        $destServer = $null
+        $destDatabase = $DestinationDatabase
+        $destIntegratedSecurity = $true
+        $destUserName = $null
+        $destPassword = $null
+
         if ($connString) {
             $connStringBuilder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $connString
-            if ($srv = $connStringBuilder['Data Source']) { $transfer.DestinationServer = $srv }
-            else { $transfer.DestinationServer = 'localhost' }
-            if ($uName = $connStringBuilder['User ID']) { $transfer.DestinationLogin = $uName }
-            if ($pwd = $connStringBuilder['Password']) { $transfer.DestinationPassword = $pwd }
-            if (($db = $connStringBuilder['Initial Catalog']) -and (Test-Bound -Not -Parameter DestinationDatabase)) {
-                $transfer.DestinationDatabase = $db
-            } else {
-                $transfer.DestinationDatabase = $DestinationDatabase
+            $destServer = if ($srv = $connStringBuilder["Data Source"]) { $srv } else { "localhost" }
+            if (($db = $connStringBuilder["Initial Catalog"]) -and (Test-Bound -Not -Parameter DestinationDatabase)) {
+                $destDatabase = $db
             }
-            $transfer.DestinationLoginSecure = $connStringBuilder['Integrated Security']
+            $destIntegratedSecurity = $connStringBuilder["Integrated Security"]
+            $destUserName = $connStringBuilder["User ID"]
+            $destPassword = $connStringBuilder["Password"]
         } else {
-            $transfer.DestinationDatabase = $DestinationDatabase
+            $destServer = $DestinationSqlInstance.InputObject
         }
+
+        # Override with DestinationSqlCredential if provided
         if ($DestinationSqlCredential) {
-            $transfer.DestinationLoginSecure = $false
-            $transfer.DestinationLogin = $DestinationSqlCredential.UserName
-            $transfer.DestinationPassword = $DestinationSqlCredential.GetNetworkCredential().Password
+            $destIntegratedSecurity = $false
+            $destUserName = $DestinationSqlCredential.UserName
+            $destPassword = $DestinationSqlCredential.GetNetworkCredential().Password
+        }
+
+        # Build connection string with SSL settings from source
+        $destConnStringBuilder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+        $destConnStringBuilder["Data Source"] = $destServer
+        $destConnStringBuilder["Initial Catalog"] = $destDatabase
+        $destConnStringBuilder["Integrated Security"] = $destIntegratedSecurity
+        $destConnStringBuilder["TrustServerCertificate"] = $sourceTrustCert
+        $destConnStringBuilder["Encrypt"] = $sourceEncrypt
+
+        if (-not $destIntegratedSecurity) {
+            $destConnStringBuilder["User ID"] = $destUserName
+            $destConnStringBuilder["Password"] = $destPassword
+        }
+
+        # Create ServerConnection with SSL settings
+        $destSqlConnection = New-Object Microsoft.Data.SqlClient.SqlConnection $destConnStringBuilder.ConnectionString
+        $destServerConnection = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $destSqlConnection
+        $transfer.DestinationServerConnection = $destServerConnection
+
+        # Also set individual properties for backward compatibility
+        $transfer.DestinationServer = $destServer
+        $transfer.DestinationDatabase = $destDatabase
+        $transfer.DestinationLoginSecure = $destIntegratedSecurity
+        if (-not $destIntegratedSecurity) {
+            $transfer.DestinationLogin = $destUserName
+            $transfer.DestinationPassword = $destPassword
         }
         if (Test-Bound -Parameter SchemaOnly) { $transfer.CopyData = -not $SchemaOnly }
         if (Test-Bound -Parameter DataOnly) { $transfer.CopySchema = -not $DataOnly }

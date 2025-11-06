@@ -140,6 +140,30 @@ function Get-DbaAgentJob {
                 $jobExecutionResults = $server.Query($query)
             }
 
+            # Check if Job parameter is bound with null, empty, or whitespace-only values
+            if (Test-Bound 'Job') {
+                # Filter out any null/empty/whitespace values
+                $Job = $Job | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+                # If all values were null/empty/whitespace, skip processing
+                if ($null -eq $Job -or $Job.Count -eq 0) {
+                    Write-Message -Level Verbose -Message "The -Job parameter was explicitly provided but contains only null, empty, or whitespace values. No jobs will be returned."
+                    continue
+                }
+            }
+
+            # Check if ExcludeJob parameter is bound with null, empty, or whitespace-only values
+            if (Test-Bound 'ExcludeJob') {
+                # Filter out any null/empty/whitespace values
+                $ExcludeJob = $ExcludeJob | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+                # If all values were null/empty/whitespace, ignore the parameter
+                if ($null -eq $ExcludeJob -or $ExcludeJob.Count -eq 0) {
+                    Write-Message -Level Verbose -Message "The -ExcludeJob parameter was explicitly provided but contains only null, empty, or whitespace values. Parameter will be ignored."
+                    $ExcludeJob = $null
+                }
+            }
+
             $jobs = $server.JobServer.Jobs | Where-Object JobType -in $Type
 
             if ($Job) {
@@ -152,7 +176,19 @@ function Get-DbaAgentJob {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
             if ($Database) {
-                $jobs = $jobs | Where-Object { $_.JobSteps | Where-Object DatabaseName -in $Database }
+                $dbLookup = @{}
+                foreach ($db in $Database) {
+                    $dbLookup[$db] = $true
+                }
+
+                $jobs = $jobs | Where-Object {
+                    foreach ($step in $_.JobSteps) {
+                        if ($dbLookup.ContainsKey($step.DatabaseName)) {
+                            return $true
+                        }
+                    }
+                    return $false
+                }
             }
             if ($Category) {
                 $jobs = $jobs | Where-Object Category -in $Category

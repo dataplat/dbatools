@@ -411,7 +411,14 @@ function Invoke-DbaDiagnosticQuery {
 
                             Write-Message -Level Verbose -Message "Collecting diagnostic query data from $($currentDb) for $($scriptpart.QueryName) on $instance"
                             try {
-                                $result = $server.Query($scriptpart.Text, $currentDb)
+                                # Azure SQL Database connections are already scoped to a specific database
+                                # Using the 2-parameter Query() overload can fail with limited permissions
+                                # For Azure SQL DB, use the 1-parameter overload even for DBSpecific queries
+                                if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                                    $result = $server.Query($scriptpart.Text)
+                                } else {
+                                    $result = $server.Query($scriptpart.Text, $currentDb)
+                                }
                                 if (-not $result) {
                                     [PSCustomObject]@{
                                         ComputerName     = $server.ComputerName

@@ -658,6 +658,7 @@
         'Stop-DbaXESession',
         'Suspend-DbaAgDbDataMovement',
         'Sync-DbaAvailabilityGroup',
+        'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
         'Test-DbaAgentJobOwner',
         'Test-DbaAvailabilityGroup',
