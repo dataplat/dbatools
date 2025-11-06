@@ -146,7 +146,7 @@ function Sync-DbaLoginPassword {
         }
 
         if (-not $sourceLogins) {
-            Stop-Function -Message "No SQL Server authentication logins found on source instance $Source"
+            Write-Message -Level Verbose -Message "No SQL Server authentication logins found on source instance $Source"
             return
         }
 
