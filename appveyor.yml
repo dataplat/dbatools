@@ -2,6 +2,15 @@
 
 init:
   - ps: |
+      # Skip PR builds entirely - only run branch/push builds
+      if ($env:APPVEYOR_PULL_REQUEST_NUMBER) {
+        Write-Host "══════════════════════════════════════=" -ForegroundColor Yellow
+        Write-Host "SKIPPING: PR build detected" -ForegroundColor Yellow
+        Write-Host "Branch builds will handle all testing" -ForegroundColor Yellow
+        Write-Host "══════════════════════════════════════=" -ForegroundColor Yellow
+        Exit-AppVeyorBuild
+      }
+
       if ($env:APPVEYOR_REPO_BRANCH -ieq "development") {
         Write-Host "══════════════════════════════════════=" -ForegroundColor Green
         Write-Host "Running FULL test suite for development branch" -ForegroundColor Green
@@ -17,9 +26,6 @@ init:
 
 image: Previous Visual Studio 2015
 configuration: "Debug"
-
-# skip PR builds when there's already a push build
-skip_branch_with_pr: true
 
 # skip builds on master branch (archival branch)
 branches:
