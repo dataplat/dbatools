@@ -183,14 +183,13 @@ function Copy-DbaServerRole {
                         $destServer.Roles.Refresh()
 
                         $splatPermissions = @{
-                            SqlInstance     = $destServer
-                            Type            = "SERVER"
+                            SqlInstance        = $sourceServer
                             IncludeServerLevel = $true
                         }
                         $sourcePermissions = Get-DbaPermission @splatPermissions | Where-Object Grantee -eq $roleName
                         foreach ($perm in $sourcePermissions) {
                             try {
-                                $permSql = $perm.Script() | Out-String
+                                $permSql = $perm.GrantStatement
                                 if ($permSql) {
                                     Write-Message -Level Debug -Message "Granting permission: $permSql"
                                     $destServer.Query($permSql)
