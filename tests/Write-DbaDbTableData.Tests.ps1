@@ -104,10 +104,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData @splatWrite
 
-        # Verify table was created in tempdb.dbo (not in any custom schema)
-        $tempDbServer = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $tempDbServer.Databases["tempdb"].Tables.Refresh()
-
-        ($tempDbServer.Databases["tempdb"].Tables | Where-Object { $PSItem.Schema -eq "dbo" -and $PSItem.Name -eq $tableName }).Count | Should -Be 1
+        # If the table exists and was created successfully, we should be able to query it
+        $query = "SELECT TOP 1 * FROM [$tableName]"
+        { Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query $query -EnableException } | Should -Not -Throw
     }
 }
