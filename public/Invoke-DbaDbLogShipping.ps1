@@ -68,10 +68,23 @@ function Invoke-DbaDbLogShipping {
     .PARAMETER SharedPath
         Specifies the network share path where transaction log backup files will be stored. Must be in UNC format (\\server\\share).
         The function automatically creates a subdirectory for each database under this path. Both source and destination instances need access to this location.
+        Mutually exclusive with AzureBaseUrl parameter.
 
     .PARAMETER LocalPath
         Sets the local backup path on the source server when different from the shared path.
         Use this when the source server accesses the backup location via a local path but other servers need to access it via the network share.
+        Not applicable when using Azure blob storage (AzureBaseUrl).
+
+    .PARAMETER AzureBaseUrl
+        Specifies the Azure blob storage container URL where transaction log backups will be stored.
+        Format: https://storageaccount.blob.core.windows.net/container/
+        When specified, traditional file-based copy jobs are skipped as backups go directly to Azure blob storage.
+        Mutually exclusive with SharedPath parameter. Requires SQL Server 2012 or later.
+
+    .PARAMETER AzureCredential
+        Specifies the SQL Server credential name for Azure storage access key authentication (page blobs).
+        When omitted, the function uses Shared Access Signature (SAS) authentication with a credential named to match the AzureBaseUrl.
+        The credential must exist on both source and destination SQL Server instances before setting up log shipping.
 
     .PARAMETER BackupJob
         Specifies the prefix for the SQL Agent backup job name that performs transaction log backups.
@@ -360,7 +373,7 @@ function Invoke-DbaDbLogShipping {
 
     .NOTES
         Tags: LogShipping
-        Author: Sander Stad (@sqlstad), sqlstad.nl
+        Author: Sander Stad (@sqlstad), sqlstad.nl + Claude (Azure blob storage support)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -410,6 +423,47 @@ function Invoke-DbaDbLogShipping {
         Sets up log shipping with all defaults except that a backup file is generated.
         The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
 
+    .EXAMPLE
+        PS C:\> $params = @{
+        >> SourceSqlInstance = 'sql1'
+        >> DestinationSqlInstance = 'sql2'
+        >> Database = 'db1'
+        >> AzureBaseUrl = 'https://mystorageaccount.blob.core.windows.net/logshipping'
+        >> AzureCredential = 'AzureStorageCredential'
+        >> BackupScheduleFrequencyType = 'daily'
+        >> BackupScheduleFrequencyInterval = 1
+        >> RestoreScheduleFrequencyType = 'daily'
+        >> RestoreScheduleFrequencyInterval = 1
+        >> GenerateFullBackup = $true
+        >> Force = $true
+        >> }
+        >>
+        PS C:\> Invoke-DbaDbLogShipping @params
+
+        Sets up log shipping for database "db1" to Azure blob storage using storage account key authentication.
+        The AzureStorageCredential must already exist on both sql1 and sql2 instances.
+        Backups go directly to Azure - no copy job is created since files are already in the cloud.
+
+    .EXAMPLE
+        PS C:\> $params = @{
+        >> SourceSqlInstance = 'sql1'
+        >> DestinationSqlInstance = 'sql2'
+        >> Database = 'db1'
+        >> AzureBaseUrl = 'https://mystorageaccount.blob.core.windows.net/logshipping'
+        >> BackupScheduleFrequencyType = 'daily'
+        >> BackupScheduleFrequencyInterval = 1
+        >> RestoreScheduleFrequencyType = 'daily'
+        >> RestoreScheduleFrequencyInterval = 1
+        >> GenerateFullBackup = $true
+        >> Force = $true
+        >> }
+        >>
+        PS C:\> Invoke-DbaDbLogShipping @params
+
+        Sets up log shipping for database "db1" to Azure blob storage using SAS token authentication.
+        A SQL Server credential named "https://mystorageaccount.blob.core.windows.net/logshipping" must exist on both instances.
+        This is the recommended modern approach for Azure blob storage authentication.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
 
@@ -432,11 +486,15 @@ function Invoke-DbaDbLogShipping {
         $DestinationCredential,
         [Parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Database,
-        [parameter(Mandatory)]
+        [parameter(Mandatory, ParameterSetName = "FileShare")]
         [Alias("BackupNetworkPath")]
         [string]$SharedPath,
         [Alias("BackupLocalPath")]
         [string]$LocalPath,
+        [parameter(Mandatory, ParameterSetName = "AzureBlob")]
+        [string]$AzureBaseUrl,
+        [parameter(ParameterSetName = "AzureBlob")]
+        [string]$AzureCredential,
         [string]$BackupJob,
         [int]$BackupRetention,
         [string]$BackupSchedule,
@@ -549,6 +607,7 @@ function Invoke-DbaDbLogShipping {
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
         $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
         $RegexUnc = '^\\(?:\\[^<>:`"/\\|?*]+)+$'
+        $RegexAzureUrl = '^https?://[a-z0-9]+\.blob\.core\.windows\.net/[a-z0-9\-]+/?'
 
 
         # Check the connection timeout
@@ -557,14 +616,40 @@ function Invoke-DbaDbLogShipping {
             Write-Message -Message "Connection timeout of $SourceServer is set to 0" -Level Verbose
         }
 
-        # Check the backup network path
-        Write-Message -Message "Testing backup network path $SharedPath" -Level Verbose
-        if ((Test-DbaPath -Path $SharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
-            Stop-Function -Message "Backup network path $SharedPath is not valid or can't be reached." -Target $SourceSqlInstance
-            return
-        } elseif ($SharedPath -notmatch $RegexUnc) {
-            Stop-Function -Message "Backup network path $SharedPath has to be in the form of \\server\share." -Target $SourceSqlInstance
-            return
+        # Check if using Azure blob storage or traditional file share
+        $UseAzure = $PSBoundParameters.ContainsKey("AzureBaseUrl")
+
+        if ($UseAzure) {
+            # Validate Azure URL format
+            Write-Message -Message "Using Azure blob storage: $AzureBaseUrl" -Level Verbose
+
+            # Trim trailing slashes
+            $AzureBaseUrl = $AzureBaseUrl.TrimEnd("/")
+
+            if ($AzureBaseUrl -notmatch $RegexAzureUrl) {
+                Stop-Function -Message "Azure blob storage URL $AzureBaseUrl must be in the format https://storageaccount.blob.core.windows.net/container" -Target $SourceSqlInstance
+                return
+            }
+
+            # Check SQL Server version (Azure backup requires SQL Server 2012+)
+            if ($SourceServer.Version.Major -lt 11) {
+                Stop-Function -Message "Azure blob storage backup requires SQL Server 2012 or later. Source instance is version $($SourceServer.Version.Major)" -Target $SourceSqlInstance
+                return
+            }
+
+            # For Azure, we'll use the URL as both the backup directory and share
+            $SharedPath = $AzureBaseUrl
+            $LocalPath = $AzureBaseUrl
+        } else {
+            # Check the backup network path
+            Write-Message -Message "Testing backup network path $SharedPath" -Level Verbose
+            if ((Test-DbaPath -Path $SharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
+                Stop-Function -Message "Backup network path $SharedPath is not valid or can't be reached." -Target $SourceSqlInstance
+                return
+            } elseif ($SharedPath -notmatch $RegexUnc) {
+                Stop-Function -Message "Backup network path $SharedPath has to be in the form of \\server\share." -Target $SourceSqlInstance
+                return
+            }
         }
 
         # Check the backup compression
@@ -911,14 +996,19 @@ function Invoke-DbaDbLogShipping {
 
             # Check the copy destination
             if (-not $CopyDestinationFolder) {
-                # Make a default copy destination by retrieving the backup folder and adding a directory
-                $CopyDestinationFolder = "$($DestinationServer.Settings.BackupDirectory)\Logshipping"
-
-                # Check to see if the path already exists
-                Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
-                if (Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) {
-                    Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
+                if ($UseAzure) {
+                    # For Azure, use the same URL as source (no actual copy needed)
+                    $CopyDestinationFolder = $AzureBaseUrl
+                    Write-Message -Message "Using Azure blob storage URL for copy destination (no local copy): $CopyDestinationFolder" -Level Verbose
                 } else {
+                    # Make a default copy destination by retrieving the backup folder and adding a directory
+                    $CopyDestinationFolder = "$($DestinationServer.Settings.BackupDirectory)\Logshipping"
+
+                    # Check to see if the path already exists
+                    Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
+                    if (Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) {
+                        Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
+                    } else {
                     # Check if force is being used
                     if (-not $Force) {
                         # Set up the confirm part
@@ -981,21 +1071,25 @@ function Invoke-DbaDbLogShipping {
                             Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $destInstance -ErrorRecord $_
                             return
                         }
-                    } # else not force
-                } # if test path copy destination
+                        } # else not force
+                    } # if test path copy destination
+                } # else not Azure
             } # if not copy destination
 
-            Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
-            if ((Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                $setupResult = "Failed"
-                $comment = "Copy destination folder $CopyDestinationFolder is not valid or can't be reached"
-                Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $destInstance
-                return
-            } elseif ($CopyDestinationFolder.StartsWith("\\") -and $CopyDestinationFolder -notmatch $RegexUnc) {
-                $setupResult = "Failed"
-                $comment = "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share"
-                Stop-Function -Message "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share." -Target $destInstance
-                return
+            # Validate copy destination (skip for Azure since it's a URL)
+            if (-not $UseAzure) {
+                Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
+                if ((Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                    $setupResult = "Failed"
+                    $comment = "Copy destination folder $CopyDestinationFolder is not valid or can't be reached"
+                    Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $destInstance
+                    return
+                } elseif ($CopyDestinationFolder.StartsWith("\\") -and $CopyDestinationFolder -notmatch $RegexUnc) {
+                    $setupResult = "Failed"
+                    $comment = "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share"
+                    Stop-Function -Message "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share." -Target $destInstance
+                    return
+                }
             }
 
             if (-not ($SecondaryDatabasePrefix -or $SecondaryDatabaseSuffix) -and ($SourceServer.Name -eq $DestinationServer.Name) -and ($SourceServer.InstanceName -eq $DestinationServer.InstanceName)) {
@@ -1082,16 +1176,23 @@ function Invoke-DbaDbLogShipping {
                 Write-Message -Message "Backup local path set to $DatabaseLocalPath." -Level Verbose
 
                 # Setting the backup network path for the database
-                if ($SharedPath.EndsWith("\")) {
-                    $DatabaseSharedPath = "$SharedPath$($db.Name)"
+                if ($UseAzure) {
+                    # For Azure, append database name to URL path
+                    $DatabaseSharedPath = "$SharedPath/$($db.Name)"
+                    $DatabaseLocalPath = $DatabaseSharedPath
+                    Write-Message -Message "Azure backup URL set to $DatabaseSharedPath." -Level Verbose
                 } else {
-                    $DatabaseSharedPath = "$SharedPath\$($db.Name)"
+                    if ($SharedPath.EndsWith("\")) {
+                        $DatabaseSharedPath = "$SharedPath$($db.Name)"
+                    } else {
+                        $DatabaseSharedPath = "$SharedPath\$($db.Name)"
+                    }
+                    Write-Message -Message "Backup network path set to $DatabaseSharedPath." -Level Verbose
                 }
-                Write-Message -Message "Backup network path set to $DatabaseSharedPath." -Level Verbose
 
 
-                # Checking if the database network path exists
-                if ($setupResult -ne 'Failed') {
+                # Checking if the database network path exists (skip for Azure)
+                if ($setupResult -ne 'Failed' -and -not $UseAzure) {
                     Write-Message -Message "Testing database backup network path $DatabaseSharedPath" -Level Verbose
                     if ((Test-DbaPath -Path $DatabaseSharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
                         # To to create the backup directory for the database
@@ -1287,12 +1388,18 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Set the copy destination folder to include the database name
-                if ($CopyDestinationFolder.EndsWith("\")) {
-                    $DatabaseCopyDestinationFolder = "$CopyDestinationFolder$($db.Name)"
+                if ($UseAzure) {
+                    # For Azure, append database name to URL path
+                    $DatabaseCopyDestinationFolder = "$CopyDestinationFolder/$($db.Name)"
+                    Write-Message -Message "Copy destination URL set to $DatabaseCopyDestinationFolder (Azure - no local copy)." -Level Verbose
                 } else {
-                    $DatabaseCopyDestinationFolder = "$CopyDestinationFolder\$($db.Name)"
+                    if ($CopyDestinationFolder.EndsWith("\")) {
+                        $DatabaseCopyDestinationFolder = "$CopyDestinationFolder$($db.Name)"
+                    } else {
+                        $DatabaseCopyDestinationFolder = "$CopyDestinationFolder\$($db.Name)"
+                    }
+                    Write-Message -Message "Copy destination folder set to $DatabaseCopyDestinationFolder." -Level Verbose
                 }
-                Write-Message -Message "Copy destination folder set to $DatabaseCopyDestinationFolder." -Level Verbose
 
                 # Check if the copy job name is set
                 if ($CopyJob) {
@@ -1310,8 +1417,8 @@ function Invoke-DbaDbLogShipping {
                     Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose
                 }
 
-                # Check if the copy destination folder exists
-                if ($setupResult -ne 'Failed') {
+                # Check if the copy destination folder exists (skip for Azure)
+                if ($setupResult -ne 'Failed' -and -not $UseAzure) {
                     Write-Message -Message "Testing database copy destination path $DatabaseCopyDestinationFolder" -Level Verbose
                     if ((Test-DbaPath -Path $DatabaseCopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
                         if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
@@ -1356,12 +1463,35 @@ function Invoke-DbaDbLogShipping {
                             try {
                                 $Timestamp = Get-Date -format "yyyyMMddHHmmss"
 
-                                $LastBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance `
-                                    -SqlCredential $SourceSqlCredential `
-                                    -BackupDirectory $DatabaseSharedPath `
-                                    -BackupFileName "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak" `
-                                    -Database $($db.Name) `
-                                    -Type Full
+                                if ($UseAzure) {
+                                    # Backup to Azure blob storage
+                                    $splatBackup = @{
+                                        SqlInstance    = $SourceSqlInstance
+                                        SqlCredential  = $SourceSqlCredential
+                                        Database       = $($db.Name)
+                                        AzureBaseUrl   = $DatabaseSharedPath
+                                        BackupFileName = "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
+                                        Type           = "Full"
+                                    }
+
+                                    if ($AzureCredential) {
+                                        $splatBackup.AzureCredential = $AzureCredential
+                                    }
+
+                                    $LastBackup = Backup-DbaDatabase @splatBackup
+                                } else {
+                                    # Backup to file share
+                                    $splatBackup = @{
+                                        SqlInstance     = $SourceSqlInstance
+                                        SqlCredential   = $SourceSqlCredential
+                                        BackupDirectory = $DatabaseSharedPath
+                                        BackupFileName  = "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
+                                        Database        = $($db.Name)
+                                        Type            = "Full"
+                                    }
+
+                                    $LastBackup = Backup-DbaDatabase @splatBackup
+                                }
 
                                 Write-Message -Message "Backup completed." -Level Verbose
 

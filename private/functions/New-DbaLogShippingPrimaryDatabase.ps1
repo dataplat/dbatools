@@ -129,14 +129,33 @@ function New-DbaLogShippingPrimaryDatabase {
         return
     }
 
-    # Check if the backup UNC path is correct and reachable
-    if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
-        Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
-        return
-    } else {
-        if (-not ((Test-DbaPath -Path $BackupShare -SqlInstance $server) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
-            Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
+    # Check if using Azure blob storage or traditional UNC path
+    $IsAzureUrl = $BackupShare -match '^https?://'
+
+    if ($IsAzureUrl) {
+        # Azure blob storage URL - validate format
+        Write-Message -Message "Using Azure blob storage for log shipping backups: $BackupShare" -Level Verbose
+
+        if ($BackupShare -notmatch '^https?://[a-z0-9]+\.blob\.core\.windows\.net/[a-z0-9\-]+') {
+            Stop-Function -Message "The Azure backup URL $BackupShare should be in the format https://storageaccount.blob.core.windows.net/container" -Target $SqlInstance
             return
+        }
+
+        # Check SQL Server version (Azure backup requires SQL Server 2012+)
+        if ($server.Version.Major -lt 11) {
+            Stop-Function -Message "Azure blob storage backup requires SQL Server 2012 or later. Instance is version $($server.Version.Major)" -Target $SqlInstance
+            return
+        }
+    } else {
+        # Traditional UNC path - validate format and accessibility
+        if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
+            Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
+            return
+        } else {
+            if (-not ((Test-DbaPath -Path $BackupShare -SqlInstance $server) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
+                Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
+                return
+            }
         }
     }
 

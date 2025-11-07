@@ -127,14 +127,47 @@ function New-DbaLogShippingSecondaryPrimary {
         return
     }
 
-    # Check if the backup UNC path is correct and reachable
-    if ([bool]([uri]$BackupDestinationDirectory).IsUnc -and $BackupDestinationDirectory -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
-        Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
-        return
-    } else {
-        if (-not ((Test-DbaPath -Path $BackupDestinationDirectory -SqlInstance $ServerSecondary) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
-            Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
+    # Check if using Azure blob storage or traditional file path
+    $IsAzureSource = $BackupSourceDirectory -match '^https?://'
+    $IsAzureDestination = $BackupDestinationDirectory -match '^https?://'
+
+    if ($IsAzureSource -or $IsAzureDestination) {
+        # Azure blob storage scenario
+        Write-Message -Message "Azure blob storage detected for log shipping restore source" -Level Verbose
+
+        # For Azure, source and destination should typically be the same (no local copy needed)
+        if ($IsAzureSource -and -not $IsAzureDestination) {
+            Write-Message -Message "Azure source with local destination - copy job will download from Azure" -Level Verbose
+        } elseif ($IsAzureSource -and $IsAzureDestination) {
+            Write-Message -Message "Azure source and destination - copy job will be minimal/disabled" -Level Verbose
+        }
+
+        # Validate Azure URL format if provided
+        if ($IsAzureSource -and $BackupSourceDirectory -notmatch '^https?://[a-z0-9]+\.blob\.core\.windows\.net/') {
+            Stop-Function -Message "The Azure backup source URL should be in the format https://storageaccount.blob.core.windows.net/container" -Target $SqlInstance
             return
+        }
+
+        if ($IsAzureDestination -and $BackupDestinationDirectory -notmatch '^https?://[a-z0-9]+\.blob\.core\.windows\.net/') {
+            Stop-Function -Message "The Azure backup destination URL should be in the format https://storageaccount.blob.core.windows.net/container" -Target $SqlInstance
+            return
+        }
+
+        # Check SQL Server version for Azure support
+        if ($ServerSecondary.Version.Major -lt 11) {
+            Stop-Function -Message "Azure blob storage restore requires SQL Server 2012 or later. Instance is version $($ServerSecondary.Version.Major)" -Target $SqlInstance
+            return
+        }
+    } else {
+        # Traditional file path scenario - validate UNC path
+        if ([bool]([uri]$BackupDestinationDirectory).IsUnc -and $BackupDestinationDirectory -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
+            Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
+            return
+        } else {
+            if (-not ((Test-DbaPath -Path $BackupDestinationDirectory -SqlInstance $ServerSecondary) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
+                Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
+                return
+            }
         }
     }
 
