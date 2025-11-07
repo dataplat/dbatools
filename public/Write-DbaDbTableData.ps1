@@ -351,7 +351,11 @@ function Write-DbaDbTableData {
                 $sqlColumnName = $column.ColumnName
 
                 try {
-                    $columnValue = $DataTable.Rows[0].$sqlColumnName
+                    if ($DataTable.Rows -and $DataTable.Rows.Count -gt 0) {
+                        $columnValue = $DataTable.Rows[0].$sqlColumnName
+                    } else {
+                        $columnValue = $null
+                    }
                 } catch {
                     $columnValue = $DataTable.$sqlColumnName
                 }
@@ -378,7 +382,7 @@ function Write-DbaDbTableData {
                 $sqlDataTypes += "[$sqlColumnName] $sqlDataType"
             }
 
-            $sql = "BEGIN CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL,')) END"
+            $sql = "CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL, ') NULL)"
 
             Write-Message -Level Debug -Message $sql
 
@@ -538,13 +542,17 @@ function Write-DbaDbTableData {
         #endregion Test if table exists
 
         $bulkCopyOptions = 0
-        $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
+        $options = @{
+            "TableLock" = (!$NoTableLock)
+            "CheckConstraints" = $CheckConstraints.IsPresent
+            "FireTriggers" = $FireTriggers.IsPresent
+            "KeepIdentity" = $KeepIdentity.IsPresent
+            "KeepNulls" = $KeepNulls.IsPresent
+            "Default" = $true
+        }
 
-        foreach ($option in $options) {
-            $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
-            if ($option -eq "TableLock" -and (!$NoTableLock)) {
-                $optionValue = $true
-            }
+        foreach ($option in $options.Keys) {
+            $optionValue = $options[$option]
             if ($optionValue -eq $true) {
                 $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }

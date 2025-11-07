@@ -383,6 +383,10 @@ function ConvertTo-DbaDataTable {
                         }
 
                         try {
+                            # Convert complex objects to strings if the column type is string
+                            if ($datatable.Columns[$property.Name].DataType -eq [System.String] -and $value -isnot [string] -and $null -ne $value) {
+                                $value = $value.ToString()
+                            }
                             $datarow.Item($property.Name) = $value
                         } catch {
                             if ($property.Name -notin $columns) {
