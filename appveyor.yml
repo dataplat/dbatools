@@ -1,4 +1,20 @@
 # See http://www.appveyor.com/docs/appveyor-yml for many more options
+
+init:
+  - ps: |
+      if ($env:APPVEYOR_REPO_BRANCH -ieq "development") {
+        Write-Host "══════════════════════════════════════=" -ForegroundColor Green
+        Write-Host "Running FULL test suite for development branch" -ForegroundColor Green
+        Write-Host "══════════════════════════════════════=" -ForegroundColor Green
+        $env:TEST_SCOPE = "full"
+      }
+      else {
+        Write-Host "══════════════════════════════════════=" -ForegroundColor Cyan
+        Write-Host "Running LIMITED test suite for branch: $env:APPVEYOR_REPO_BRANCH" -ForegroundColor Cyan
+        Write-Host "══════════════════════════════════════=" -ForegroundColor Cyan
+        $env:TEST_SCOPE = "limited"
+      }
+
 image: Previous Visual Studio 2015
 configuration: "Debug"
 

@@ -399,17 +399,103 @@ if (-not $Finalize) {
     Import-Module pester -RequiredVersion 5.6.1
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
 
-    # invoking a single invoke-pester consumes too much memory, let's go file by file
+    # ═══════════════════════════════════════
+    # BRANCH-AWARE TEST SCOPE
+    # ═══════════════════════════════════════
+    $testScope = $env:TEST_SCOPE
+    Write-Host "══════════════════════════════════════=" -ForegroundColor Yellow
+    Write-Host "Test Scope: $testScope" -ForegroundColor Yellow
+    Write-Host "Branch: $env:APPVEYOR_REPO_BRANCH" -ForegroundColor Yellow
+    Write-Host "Scenario: $env:SCENARIO" -ForegroundColor Yellow
+    Write-Host "══════════════════════════════════════=" -ForegroundColor Yellow
+
+    # Get base test configuration using existing logic
+    $TestConfig = Get-TestConfig
     $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
+
+    # If limited scope, filter to impacted tests only
+    if ($testScope -eq "limited") {
+        Write-Host "Analyzing changed files for impacted tests..." -ForegroundColor Cyan
+
+        try {
+            # Get changed files
+            $changedFiles = git diff --name-only HEAD~1
+            Write-Host "Changed files detected: $($changedFiles.Count)" -ForegroundColor Cyan
+
+            if ($changedFiles) {
+                $impactedTests = @()
+
+                foreach ($file in $changedFiles) {
+                    Write-Host "  Processing: $file" -ForegroundColor DarkGray
+
+                    # Match function files: public/Get-DbaDatabase.ps1 -> Get-DbaDatabase.Tests.ps1
+                    if ($file -match "^public[/\\]([^/\\]+)\.ps1$") {
+                        $functionName = $matches[1]
+                        $testFile = $AllTestsWithinScenario | Where-Object { $_.Name -eq "$functionName.Tests.ps1" }
+                        if ($testFile) {
+                            $impactedTests += $testFile
+                            Write-Host "    → Found test: $($testFile.Name)" -ForegroundColor Green
+                        }
+                    }
+                    # Match private functions: private/functions/Get-Something.ps1
+                    elseif ($file -match "^private[/\\]functions[/\\]([^/\\]+)\.ps1$") {
+                        $functionName = $matches[1]
+                        $testFile = $AllTestsWithinScenario | Where-Object { $_.Name -eq "$functionName.Tests.ps1" }
+                        if ($testFile) {
+                            $impactedTests += $testFile
+                            Write-Host "    → Found test: $($testFile.Name)" -ForegroundColor Green
+                        }
+                    }
+                    # Direct test file changes: tests/Get-DbaDatabase.Tests.ps1
+                    elseif ($file -match "^tests[/\\](.+\.Tests\.ps1)$") {
+                        $testFileName = $matches[1]
+                        $testFile = $AllTestsWithinScenario | Where-Object { $_.Name -eq $testFileName }
+                        if ($testFile) {
+                            $impactedTests += $testFile
+                            Write-Host "    → Direct test: $($testFile.Name)" -ForegroundColor Green
+                        }
+                    }
+                }
+
+                # Deduplicate
+                $impactedTests = $impactedTests | Select-Object -Unique
+
+                if ($impactedTests.Count -gt 0) {
+                    Write-Host "══════════════════════════════════════=" -ForegroundColor Green
+                    Write-Host "Found $($impactedTests.Count) impacted test(s):" -ForegroundColor Green
+                    $impactedTests | ForEach-Object { Write-Host "  • $($_.Name)" -ForegroundColor Green }
+                    Write-Host "══════════════════════════════════════=" -ForegroundColor Green
+
+                    # Override test list with impacted tests only
+                    $AllTestsWithinScenario = $impactedTests
+                } else {
+                    Write-Host "⚠ No impacted tests found, running smoke test: dbatools.Tests.ps1" -ForegroundColor Yellow
+                    $AllTestsWithinScenario = Get-ChildItem -File -Path "$ModuleBase\tests\dbatools.Tests.ps1"
+                }
+            } else {
+                Write-Host "⚠ No changed files detected, running smoke test: dbatools.Tests.ps1" -ForegroundColor Yellow
+                $AllTestsWithinScenario = Get-ChildItem -File -Path "$ModuleBase\tests\dbatools.Tests.ps1"
+            }
+        } catch {
+            Write-Warning "Failed to detect impacted tests: $($_.Exception.Message)"
+            Write-Host "Falling back to smoke test: dbatools.Tests.ps1" -ForegroundColor Yellow
+            $AllTestsWithinScenario = Get-ChildItem -File -Path "$ModuleBase\tests\dbatools.Tests.ps1"
+        }
+    } else {
+        Write-Host "Running FULL test suite (all tests)" -ForegroundColor Green
+    }
+
+    # ═══════════════════════════════════════
+    # CONTINUE WITH EXISTING PESTER EXECUTION
+    # ═══════════════════════════════════════
 
     # Create a summary file for all test runs
     $allTestsSummary = @{
-        Scenario = $env:SCENARIO
-        Part     = $env:PART
-        TestRuns = @()
+        Scenario  = $env:SCENARIO
+        Part      = $env:PART
+        TestScope = $testScope
+        TestRuns  = @()
     }
-
-    $TestConfig = Get-TestConfig
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
         $Counter += 1
