@@ -98,11 +98,40 @@ function Remove-DbaAvailabilityGroup {
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
+
         foreach ($ag in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Removing availability group $ag")) {
-                # avoid enumeration issues
+            $clusterType = 'WSFC'
+            try {
+                $result = $ag.Parent.Query("SELECT cluster_type_desc FROM sys.availability_groups WHERE name = N'$($ag.Name)'")
+                if ($result -and $result.cluster_type_desc) { $clusterType = $result.cluster_type_desc }
+            } catch { $clusterType = 'WSFC' }
+
+            $majorVersion = [int]($ag.Parent.Query("SELECT CAST(SERVERPROPERTY('ProductMajorVersion') AS int) AS v").v)
+
+            if ($clusterType -eq 'WSFC') {
                 try {
-                    $ag.Parent.Query("DROP AVAILABILITY GROUP $ag")
+                    $isClustered = $ag.Parent.Query("SELECT CONVERT(bit, SERVERPROPERTY('IsClustered')) AS IsClustered").IsClustered
+                    if (-not $isClustered -and -not $Force) {
+                        Write-Warning "Skipping $($ag.Name): WSFC-type AG but instance not clustered. Use -Force to remove anyway."
+                        continue
+                    }
+                } catch {
+                    if (-not $Force) {
+                        Write-Warning "Skipping $($ag.Name): unable to determine cluster state. Use -Force to ignore."
+                        continue
+                    }
+                }
+            }
+
+            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Removing availability group $($ag.Name)")) {
+                try {
+                    # For SQL 2017+ non-clustered AGs, append WITH (CLUSTER_TYPE = NONE)
+                    if ($majorVersion -ge 14 -and ($clusterType -eq 'NONE' -or -not $isClustered)) {
+                        $ag.Parent.Query("DROP AVAILABILITY GROUP [$($ag.Name)] WITH (CLUSTER_TYPE = NONE)")
+                    } else {
+                        $ag.Parent.Query("DROP AVAILABILITY GROUP [$($ag.Name)]")
+                    }
+
                     [PSCustomObject]@{
                         ComputerName      = $ag.ComputerName
                         InstanceName      = $ag.InstanceName
