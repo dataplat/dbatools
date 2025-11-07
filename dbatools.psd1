@@ -661,6 +661,7 @@
         'Sync-DbaAvailabilityGroup',
         'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
+        'Sync-DbaLoginSid',
         'Test-DbaAgentJobOwner',
         'Test-DbaAvailabilityGroup',
         'Test-DbaBackupInformation',
