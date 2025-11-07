@@ -144,7 +144,8 @@ function Get-DbaDbTable {
             # Let the SMO read all properties referenced in this command for all tables in the database in one query.
             # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
             # Build property list based on SQL Server version
-            $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex', 'FullTextIndex', 'ChangeTrackingEnabled')
+            # Note: FullTextIndex and ChangeTrackingEnabled are complex objects and cannot be initialized via ClearAndInitialize
+            $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex')
 
             # IsFileTable introduced in SQL Server 2012 (VersionMajor 11)
             if ($server.VersionMajor -ge 11) {
