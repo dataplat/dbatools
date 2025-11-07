@@ -170,6 +170,31 @@ Function Invoke-DbaAdvancedUpdate {
                 Stop-Function -Message $msg
                 return $output
             }
+
+            # Copy ML Services CAB files if they exist
+            if ($currentAction.PSObject.Properties.Name -contains "MLServicesCabFiles" -and $currentAction.MLServicesCabFiles) {
+                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Copying ML Services CAB files to $spExtractPath"
+                Write-Message -Level Verbose -Message "Copying $($currentAction.MLServicesCabFiles.Count) ML Services CAB file(s) to extraction directory"
+                $copyCabScript = {
+                    param($CabFiles, $DestPath)
+                    foreach ($cab in $CabFiles) {
+                        try {
+                            $destFile = Join-Path $DestPath $cab.Name
+                            Copy-Item -Path $cab.FullName -Destination $destFile -Force -ErrorAction Stop
+                        } catch {
+                            Write-Warning "Failed to copy $($cab.Name): $_"
+                        }
+                    }
+                }
+                try {
+                    $null = Invoke-CommandWithFallBack @execParams -ScriptBlock $copyCabScript -ArgumentList @($currentAction.MLServicesCabFiles, $spExtractPath)
+                } catch {
+                    $msg = "Warning: Failed to copy ML Services CAB files. The update may fail if internet access is not available."
+                    Write-Message -Level Warning -Message $msg
+                    $output.Notes += $msg
+                }
+            }
+
             # Install the patch
             if ($currentAction.InstanceName) {
                 $instanceClause = "/instancename=$($currentAction.InstanceName)"
