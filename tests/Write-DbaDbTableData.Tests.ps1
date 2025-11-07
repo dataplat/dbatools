@@ -91,6 +91,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Verify table was created in the correct schema
         ($server.Databases[$dbName].Tables | Where-Object { $PSItem.Schema -eq $schemaName -and $PSItem.Name -eq $tableName }).Count | Should -Be 1
+
+        # Verify data is accessible and was written successfully
+        $query = "SELECT COUNT(*) as RowTotal FROM [$schemaName].[$tableName]"
+        $result = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbName -Query $query
+        $result.RowTotal | Should -Be 5
     }
 
     It "skips schema creation for temp tables" {
