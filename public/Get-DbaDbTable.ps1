@@ -143,7 +143,25 @@ function Get-DbaDbTable {
 
             # Let the SMO read all properties referenced in this command for all tables in the database in one query.
             # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-            $db.Tables.ClearAndInitialize('', [string[]]('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex', 'IsFileTable', 'IsMemoryOptimized', 'IsPartitioned', 'FullTextIndex', 'ChangeTrackingEnabled'))
+            # Build property list based on SQL Server version
+            $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex', 'FullTextIndex', 'ChangeTrackingEnabled')
+
+            # IsFileTable introduced in SQL Server 2012 (VersionMajor 11)
+            if ($server.VersionMajor -ge 11) {
+                $null = $properties.Add('IsFileTable')
+            }
+
+            # IsMemoryOptimized introduced in SQL Server 2014 (VersionMajor 12)
+            if ($server.VersionMajor -ge 12) {
+                $null = $properties.Add('IsMemoryOptimized')
+            }
+
+            # IsPartitioned available in SQL Server 2005+ (VersionMajor 9+)
+            if ($server.VersionMajor -ge 9) {
+                $null = $properties.Add('IsPartitioned')
+            }
+
+            $db.Tables.ClearAndInitialize('', [string[]]$properties)
 
             if ($fqTns) {
                 $tables = @()
@@ -177,7 +195,23 @@ function Get-DbaDbTable {
                 $sqlTable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 $sqlTable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
 
-                $defaultProps = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+                # Build default properties list based on SQL Server version
+                $defaultProps = [System.Collections.ArrayList]@("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex")
+
+                # Add version-specific properties
+                if ($server.VersionMajor -ge 11) {
+                    $null = $defaultProps.Add("IsFileTable")
+                }
+                if ($server.VersionMajor -ge 12) {
+                    $null = $defaultProps.Add("IsMemoryOptimized")
+                }
+                if ($server.VersionMajor -ge 9) {
+                    $null = $defaultProps.Add("IsPartitioned")
+                }
+
+                # Add properties available in all supported versions
+                $null = $defaultProps.Add("FullTextIndex")
+                $null = $defaultProps.Add("ChangeTrackingEnabled")
 
                 Select-DefaultView -InputObject $sqlTable -Property $defaultProps
             }
