@@ -61,9 +61,53 @@ Describe $CommandName -Tag IntegrationTests {
 
     # calling random function to throw data into a table
     It "defaults to dbo if no schema is specified" {
-        $results = Get-ChildItem | ConvertTo-DbaDataTable
-        $results | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $dbName -Table "childitem" -AutoCreateTable
+        Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $dbName -Table "childitem" -AutoCreateTable
+
+        # Refresh tables to ensure we see the newly created objects
+        $server.Databases[$dbName].Tables.Refresh()
 
         ($server.Databases[$dbName].Tables | Where-Object { $PSItem.Schema -eq "dbo" -and $PSItem.Name -eq "childitem" }).Count | Should -Be 1
+    }
+
+    It "automatically creates schema when using AutoCreateTable" {
+        $schemaName = "testschema$random"
+        $tableName = "testtable$random"
+
+        $splatWrite = @{
+            SqlInstance     = $TestConfig.instance1
+            Database        = $dbName
+            Schema          = $schemaName
+            Table           = $tableName
+            AutoCreateTable = $true
+        }
+        Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData @splatWrite
+
+        # Refresh schemas and tables to ensure we see the newly created objects
+        $server.Databases[$dbName].Schemas.Refresh()
+        $server.Databases[$dbName].Tables.Refresh()
+
+        # Verify schema was created
+        $server.Databases[$dbName].Schemas.Name | Should -Contain $schemaName
+
+        # Verify table was created in the correct schema
+        ($server.Databases[$dbName].Tables | Where-Object { $PSItem.Schema -eq $schemaName -and $PSItem.Name -eq $tableName }).Count | Should -Be 1
+    }
+
+    It "skips schema creation for temp tables" {
+        $tableName = "##globaltemptest$random"
+
+        $splatWrite = @{
+            SqlInstance     = $TestConfig.instance1
+            Database        = "tempdb"
+            Table           = $tableName
+            AutoCreateTable = $true
+        }
+        Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData @splatWrite
+
+        # Verify table was created in tempdb.dbo (not in any custom schema)
+        $tempDbServer = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $tempDbServer.Databases["tempdb"].Tables.Refresh()
+
+        ($tempDbServer.Databases["tempdb"].Tables | Where-Object { $PSItem.Schema -eq "dbo" -and $PSItem.Name -eq $tableName }).Count | Should -Be 1
     }
 }
