@@ -630,6 +630,10 @@ function Get-DbaDbBackupHistory {
                     $whereArray += "is_copy_only='0'"
                 }
 
+                if ($true -ne $IncludeMirror) {
+                    $whereArray += "mediafamily.mirror='0'"
+                }
+
                 if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
                     $tempWhere = $whereArray -join " AND "
                     $whereArray += "type = 'Full' AND mediaset.media_set_id = (SELECT TOP 1 mediaset.media_set_id $from $tempWhere ORDER BY backupset.$internalLsnSort DESC)"

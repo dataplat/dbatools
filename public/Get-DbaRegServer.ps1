@@ -32,6 +32,10 @@ function Get-DbaRegServer {
         Specifies a pattern for filtering registered servers using regular expressions.
         Use this when you need to match servers by pattern, such as "^prod" or ".*-db$".
         This parameter supports standard .NET regular expression syntax and matches against both Name and ServerName properties.
+    
+    .PARAMETER ExcludeServerName
+        Excludes registered servers with specific server instance names (the actual SQL Server connection strings).
+        Use this when you want to retrieve most servers but skip certain instances like those under maintenance or decommissioned.
 
     .PARAMETER Group
         Filters results to registered servers within specific Central Management Server groups.
@@ -108,6 +112,11 @@ function Get-DbaRegServer {
 
         Returns all registered servers that match the regex pattern "^prod" (e.g., prod-server1, production-db) from the CMS on sqlserver2014a.
 
+    .EXAMPLE
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -Group Production -ExcludeServerName "serverAlfa", "ServerBeta"
+
+        Gets a list of servers in the Production group from the CMS on sqlserver2014a, excluding serverAlfa and ServerBeta. Useful when you need to skip specific servers during maintenance windows.
+
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
@@ -118,6 +127,8 @@ function Get-DbaRegServer {
         [string[]]$Name,
         [string[]]$ServerName,
         [string[]]$Pattern,
+        [Alias("ExcludeServer")]
+        [string[]]$ExcludeServerName,
         [string[]]$Group,
         [string[]]$ExcludeGroup,
         [int[]]$Id,
@@ -243,6 +254,11 @@ function Get-DbaRegServer {
         if ($Pattern) {
             Write-Message -Level Verbose -Message "Filtering by pattern for $Pattern"
             $servers = $servers | Where-Object { & $matchesPattern $_.Name $_.ServerName $Pattern }
+        }
+        
+        if ($ExcludeServerName) {
+            Write-Message -Level Verbose -Message "Excluding servers: $ExcludeServerName"
+            $servers = $servers | Where-Object ServerName -notin $ExcludeServerName
         }
 
         if ($Id) {

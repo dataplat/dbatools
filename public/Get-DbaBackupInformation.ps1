@@ -275,9 +275,11 @@ function Get-DbaBackupInformation {
                         }
                     } else {
                         if ($true -eq $MaintenanceSolution) {
-                            $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse
-                            $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
-                            $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
+                            # Use forward slashes for URLs, backslashes for file system paths
+                            $separator = if ($f -match '^https?://') { "/" } else { "\" }
+                            $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)FULL" -SqlInstance $server -NoRecurse
+                            $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)DIFF" -SqlInstance $server -NoRecurse
+                            $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)LOG" -SqlInstance $server -NoRecurse
                         } else {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f
@@ -288,12 +290,12 @@ function Get-DbaBackupInformation {
 
             if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
-                $Files = $Files | Where-Object { $_.FullName -notlike '*\LOG\*' }
+                $Files = $Files | Where-Object { $_.FullName -notlike '*\LOG\*' -and $_.FullName -notlike '*/LOG/*' }
             }
 
             if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreDiffBackup) {
                 Write-Message -Level Verbose -Message "Skipping Differential Backups as requested"
-                $Files = $Files | Where-Object { $_.FullName -notlike '*\DIFF\*' }
+                $Files = $Files | Where-Object { $_.FullName -notlike '*\DIFF\*' -and $_.FullName -notlike '*/DIFF/*' }
             }
 
             if ($Files.Count -gt 0) {

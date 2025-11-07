@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "Name",
                 "ServerName",
                 "Pattern",
+                "ExcludeServerName",
                 "Group",
                 "ExcludeGroup",
                 "Id",
