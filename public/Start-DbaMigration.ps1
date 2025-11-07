@@ -29,6 +29,7 @@ function Start-DbaMigration {
         All Server Roles. Use -Exclude ServerRoles to skip.
         All Data Collector collection sets. Does not configure the server. Use -Exclude DataCollector to skip.
         All startup procedures. Use -Exclude StartupProcedures to skip.
+        All custom Extended Stored Procedures. Use -Exclude ExtendedStoredProcedures to skip.
 
         This script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.
 
@@ -228,7 +229,7 @@ function Start-DbaMigration {
         [switch]$IncludeSupportDbs,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
-        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'ServerRoles', 'DataCollector', 'StartupProcedures', 'AgentServerProperties', 'MasterCertificates')]
+        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'ServerRoles', 'DataCollector', 'StartupProcedures', 'ExtendedStoredProcedures', 'AgentServerProperties', 'MasterCertificates')]
         [string[]]$Exclude,
         [switch]$DisableJobsOnDestination,
         [switch]$DisableJobsOnSource,
@@ -508,6 +509,12 @@ function Start-DbaMigration {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating startup procedures"
             Write-Message -Level Verbose -Message "Migrating startup procedures"
             Copy-DbaStartupProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
+        }
+
+        if ($Exclude -notcontains 'ExtendedStoredProcedures') {
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Extended Stored Procedures"
+            Write-Message -Level Verbose -Message "Migrating Extended Stored Procedures"
+            Copy-DbaExtendedStoredProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
         }
     }
     end {
