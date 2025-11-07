@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "Name",
                 "ServerName",
+                "Pattern",
                 "ExcludeServerName",
                 "Group",
                 "ExcludeGroup",
@@ -120,6 +121,18 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group $group -ExcludeGroup "$group\$group2"
             $results.Count | Should -Be 1
             $results.Group | Should -Be $group
+        }
+
+        It "Should filter by pattern using regex" {
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Pattern "^dbatoolsci-server[12]"
+            $results.Count | Should -BeGreaterThan 0
+            $results.Name | Should -Match "^dbatoolsci-server[12]"
+        }
+
+        It "Should filter by pattern matching ServerName property" {
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Pattern "server1$"
+            $results.Count | Should -BeGreaterThan 0
+            $results | Where-Object ServerName -match "server1$" | Should -Not -BeNullOrEmpty
         }
 
         # Property Comparisons will come later when we have the commands
