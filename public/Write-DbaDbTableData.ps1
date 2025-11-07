@@ -348,6 +348,7 @@ function Write-DbaDbTableData {
             # Create schema if it doesn't exist (skip for temp tables)
             if (-not $TableName.StartsWith('#')) {
                 try {
+                    $Server.Databases[$DatabaseName].Schemas.Refresh()
                     $schemaExists = $Server.Databases[$DatabaseName].Schemas[$SchemaName]
                     if (-not $schemaExists) {
                         Write-Message -Level Verbose -Message "Schema [$SchemaName] does not exist in database [$DatabaseName]. Creating schema."
@@ -356,9 +357,10 @@ function Write-DbaDbTableData {
                         if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating schema [$SchemaName] in database [$DatabaseName]")) {
                             try {
                                 $null = $Server.Databases[$DatabaseName].Query($schemaSql)
+                                $Server.Databases[$DatabaseName].Schemas.Refresh()
                                 Write-Message -Level Verbose -Message "Successfully created schema [$SchemaName]"
                             } catch {
-                                Stop-Function -Message "Failed to create schema [$SchemaName] in database [$DatabaseName]" -ErrorRecord $_ -EnableException:$EnableException
+                                Stop-Function -Message "Failed to create schema [$SchemaName] in database [$DatabaseName]. The schema may have been created by another process, or you may lack CREATE SCHEMA permissions." -ErrorRecord $_ -EnableException:$EnableException
                                 return
                             }
                         } else {
