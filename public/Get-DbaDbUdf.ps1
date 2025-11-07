@@ -120,6 +120,10 @@ function Get-DbaDbUdf {
 
             foreach ($db in $databases) {
 
+                # Let the SMO read all properties referenced in this command for all user defined functions in the database in one query.
+                # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
+                $db.UserDefinedFunctions.ClearAndInitialize('', [string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType', 'IsSystemObject'))
+
                 $userDefinedFunctions = $db.UserDefinedFunctions
 
                 if (!$userDefinedFunctions) {
