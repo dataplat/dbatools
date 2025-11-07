@@ -43,8 +43,9 @@ function Write-DbaDbTableData {
         Set higher for less frequent updates on large imports, or lower for more granular progress tracking on smaller datasets.
 
     .PARAMETER AutoCreateTable
-        Automatically creates the destination table when it doesn't exist, using data types inferred from the source data.
-        Convenient for quick imports but creates generic data types like NVARCHAR(MAX). For production use, manually create tables with appropriate data types and constraints.
+        Automatically creates the destination table and schema when they don't exist, using data types inferred from the source data.
+        The schema is created with dbo as owner. Convenient for quick imports but creates generic data types like NVARCHAR(MAX). For production use, manually create tables with appropriate data types and constraints.
+        Note: Schema creation is skipped for temp tables (tables starting with #).
 
     .PARAMETER NoTableLock
         Disables the default TABLOCK hint during bulk insert operations, allowing concurrent access to the destination table.
@@ -165,6 +166,12 @@ function Write-DbaDbTableData {
         PS C:\> $data | Write-DbaDbTableData -SqlInstance $server -Table 'tempdb.dbo.test' -ColumnMap @{ value1 = 'col1' ; value2 = 'col2' }
 
         The dataset column 'value1' is inserted into SQL column 'col1' and dataset column value2 is inserted into the SQL Column 'col2'. All other columns are ignored and therefore null or default values.
+
+    .EXAMPLE
+        PS C:\> $DataTable = Import-Csv C:\temp\sales_data.csv
+        PS C:\> Write-DbaDbTableData -SqlInstance sql2016 -InputObject $DataTable -Database mydb -Schema reporting -Table sales -AutoCreateTable
+
+        Imports sales_data.csv into mydb.reporting.sales. If the reporting schema doesn't exist, it will be automatically created with dbo as owner. The sales table will then be created with columns inferred from the CSV structure.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -309,6 +316,12 @@ function Write-DbaDbTableData {
             .PARAMETER DatabaseName
                 Automatically inherits from parent.
 
+            .PARAMETER SchemaName
+                Automatically inherits from parent.
+
+            .PARAMETER TableName
+                Automatically inherits from parent.
+
             .PARAMETER EnableException
                 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
                 This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -325,10 +338,41 @@ function Write-DbaDbTableData {
                 $Fqtn = $fqtn,
                 $Server = $server,
                 $DatabaseName = $databaseName,
+                $SchemaName = $schemaName,
+                $TableName = $tableName,
                 [switch]$EnableException
             )
 
             Write-Message -Level Verbose -Message "Creating table for $fqtn"
+
+            # Create schema if it doesn't exist (skip for temp tables)
+            if (-not $TableName.StartsWith('#')) {
+                try {
+                    $Server.Databases[$DatabaseName].Schemas.Refresh()
+                    $schemaExists = $Server.Databases[$DatabaseName].Schemas[$SchemaName]
+                    if (-not $schemaExists) {
+                        Write-Message -Level Verbose -Message "Schema [$SchemaName] does not exist in database [$DatabaseName]. Creating schema."
+                        $schemaSql = "CREATE SCHEMA [$SchemaName] AUTHORIZATION dbo"
+
+                        if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating schema [$SchemaName] in database [$DatabaseName]")) {
+                            try {
+                                $null = $Server.Databases[$DatabaseName].Query($schemaSql)
+                                $Server.Databases[$DatabaseName].Schemas.Refresh()
+                                Write-Message -Level Verbose -Message "Successfully created schema [$SchemaName]"
+                            } catch {
+                                Stop-Function -Message "Failed to create schema [$SchemaName] in database [$DatabaseName]. The schema may have been created by another process, or you may lack CREATE SCHEMA permissions." -ErrorRecord $_ -EnableException:$EnableException
+                                return
+                            }
+                        } else {
+                            # If ShouldProcess returns false (WhatIf scenario), we still need to return to avoid table creation attempts
+                            return
+                        }
+                    }
+                } catch {
+                    Stop-Function -Message "Failed to check for schema existence: [$SchemaName] in database [$DatabaseName]" -ErrorRecord $_ -EnableException:$EnableException
+                    return
+                }
+            }
 
             # Get SQL datatypes by best guess on first data row
             $sqlDataTypes = @();
@@ -339,7 +383,7 @@ function Write-DbaDbTableData {
             }
 
             if ($null -eq $columns) {
-                Stop-Function -Message "Unable to get column definition from input data, so AutoCreateTable is not possible"
+                Stop-Function -Message "Unable to get column definition from input data, so AutoCreateTable is not possible" -EnableException:$EnableException
                 return
             }
 
@@ -374,7 +418,7 @@ function Write-DbaDbTableData {
                 $sqlDataTypes += "[$sqlColumnName] $sqlDataType"
             }
 
-            $sql = "BEGIN CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL,')) END"
+            $sql = "CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL,') NULL)"
 
             Write-Message -Level Debug -Message $sql
 
@@ -382,7 +426,7 @@ function Write-DbaDbTableData {
                 try {
                     $null = $Server.Databases[$DatabaseName].Query($sql)
                 } catch {
-                    Stop-Function -Message "The following query failed: $sql" -ErrorRecord $_
+                    Stop-Function -Message "The following query failed: $sql" -ErrorRecord $_ -EnableException:$EnableException
                     return
                 }
             }
@@ -525,17 +569,22 @@ function Write-DbaDbTableData {
         #endregion Test if table exists
 
         $bulkCopyOptions = 0
-        $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
+        $options = "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls"
 
         foreach ($option in $options) {
             $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
-            if ($option -eq "TableLock" -and (!$NoTableLock)) {
-                $optionValue = $true
-            }
             if ($optionValue -eq $true) {
                 $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
         }
+
+        # Handle TableLock separately since it is enabled by default unless -NoTableLock is specified
+        if (-not $NoTableLock) {
+            $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::TableLock).value__
+        }
+
+        # Always include Default option
+        $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::Default).value__
 
         if ($Truncate -eq $true) {
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Truncating $fqtn")) {
@@ -664,17 +713,17 @@ function Write-DbaDbTableData {
         if ($inputType -in $validTypes) {
             if (-not $tableExists) {
                 try {
-                    New-Table -DataTable $InputObject -EnableException
+                    New-Table -DataTable $InputObject -EnableException:$EnableException
                     $tableExists = $true
                 } catch {
-                    Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
+                    Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance -EnableException:$EnableException
                     return
                 }
             }
 
             try { Invoke-BulkCopy -DataTable $InputObject }
             catch {
-                Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance
+                Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance -EnableException:$EnableException
             }
             return
         }
@@ -685,17 +734,17 @@ function Write-DbaDbTableData {
             if ($object.GetType() -in $validTypes) {
                 if (-not $tableExists) {
                     try {
-                        New-Table -DataTable $object -EnableException
+                        New-Table -DataTable $object -EnableException:$EnableException
                         $tableExists = $true
                     } catch {
-                        Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
+                        Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance -EnableException:$EnableException
                         return
                     }
                 }
 
                 try { Invoke-BulkCopy -DataTable $object }
                 catch {
-                    Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance -Continue
+                    Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance -EnableException:$EnableException -Continue
                 }
                 continue
             }
@@ -713,21 +762,31 @@ function Write-DbaDbTableData {
         if (Test-FunctionInterrupt) { return }
         #region ConvertTo-DbaDataTable wrapper
         $dataTable = $steppablePipeline.End()
-        if ($dataTable[0].Rows.Count -gt 0) {
 
+        # Handle both single DataTable and array of DataTables
+        $tableToUse = $null
+        if ($dataTable) {
+            if ($dataTable -is [array] -and $dataTable.Count -gt 0) {
+                $tableToUse = $dataTable[0]
+            } elseif ($dataTable -is [System.Data.DataTable]) {
+                $tableToUse = $dataTable
+            }
+        }
+
+        if ($tableToUse -and $tableToUse.Rows.Count -gt 0) {
             if (-not $tableExists) {
                 try {
-                    New-Table -DataTable $dataTable[0] -EnableException
+                    New-Table -DataTable $tableToUse -EnableException:$EnableException
                     $tableExists = $true
                 } catch {
-                    Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
+                    Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance -EnableException:$EnableException
                     return
                 }
             }
 
-            try { Invoke-BulkCopy -DataTable $dataTable[0] }
+            try { Invoke-BulkCopy -DataTable $tableToUse }
             catch {
-                Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance
+                Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance -EnableException:$EnableException
             }
         }
         #endregion ConvertTo-DbaDataTable wrapper
