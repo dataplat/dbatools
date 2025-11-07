@@ -155,9 +155,6 @@ function Add-DbaComputerCertificate {
                 # Read file bytes and import locally to get certificate collection
                 $fileBytes = [System.IO.File]::ReadAllBytes($Path)
 
-                # Use X509Certificate2Collection to import the full certificate chain
-                $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
-
                 # Handle password conversion for password-protected certificates (PFX files)
                 $plainPassword = $null
                 $ptr = [IntPtr]::Zero
@@ -171,9 +168,10 @@ function Add-DbaComputerCertificate {
                 }
 
                 try {
-                    # Import using plain text password (or null for non-password-protected certificates)
-                    # Works reliably in all PowerShell versions v3+
-                    $null = $certCollection.Import($fileBytes, $plainPassword, "Exportable, PersistKeySet")
+                    # Use X509Certificate2Collection constructor for cross-platform compatibility
+                    # On Linux/.NET Core, X509Certificate2 objects are immutable after creation
+                    # so we must use the constructor directly instead of .Import()
+                    $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection($fileBytes, $plainPassword, "Exportable, PersistKeySet")
 
                     # Export the entire collection as a single PFX to preserve the chain
                     # This re-exports with the password, creating a fresh encrypted byte array that can be passed to remote
@@ -204,9 +202,10 @@ function Add-DbaComputerCertificate {
                 $flags
             )
 
-            # Use X509Certificate2Collection to import the full certificate chain
-            $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
-            $certCollection.Import($CertificateData, $PlainPassword, $flags)
+            # Use X509Certificate2Collection constructor for cross-platform compatibility
+            # On Linux/.NET Core, X509Certificate2 objects are immutable after creation
+            # so we must use the constructor directly instead of .Import()
+            $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection($CertificateData, $PlainPassword, $flags)
 
             Write-Verbose -Message "Importing certificate chain to $Folder\$Store using flags: $flags"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)

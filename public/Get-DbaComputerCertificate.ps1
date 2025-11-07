@@ -95,9 +95,11 @@ function Get-DbaComputerCertificate {
             )
 
             if ($Path) {
+                # Use X509Certificate2 constructor for cross-platform compatibility
+                # On Linux/.NET Core, X509Certificate2 objects are immutable after creation
+                # so we must use the constructor directly instead of .Import()
                 $bytes = [System.IO.File]::ReadAllBytes($path)
-                $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $Certificate.Import($bytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+                $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($bytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                 return $Certificate
             }
 
