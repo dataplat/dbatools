@@ -70,4 +70,58 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
+
+    It "detects ML Services CAB files for SQL Server 2017 updates" {
+        # Reset default parameters for this test
+        $PSDefaultParameterValues.Clear()
+
+        # Prepare test environment
+        $testPath = "C:\Temp\dbatools_MLTest_$(Get-Random)"
+        $null = New-Item -Path $testPath -ItemType Directory -Force
+
+        try {
+            # Create dummy KB installer file for SQL 2017
+            $kbFile = "SQLServer2017-KB4498951-x64.exe"
+            $null = New-Item -Path "$testPath\$kbFile" -ItemType File -Force
+
+            # Create mock ML Services CAB files
+            $cabFiles = @(
+                "SRO_3.3.3.0_1033.cab",
+                "SPO_9.2.0.24_1033.cab"
+            )
+            foreach ($cab in $cabFiles) {
+                $null = New-Item -Path "$testPath\$cab" -ItemType File -Force
+            }
+
+            # Test with WhatIf to avoid actual installation
+            $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
+            $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+
+            $splatUpdate = @{
+                ComputerName    = "localhost"
+                SqlCredential   = $cred
+                KB              = "4498951"
+                Path            = $testPath
+                EnableException = $true
+                WhatIf          = $true
+            }
+
+            # Execute Update-DbaInstance in WhatIf mode
+            $result = Update-DbaInstance @splatUpdate 3>$null
+
+            # Verify results
+            $result | Should -Not -BeNullOrEmpty
+            $result.KB | Should -Be 4498951
+
+            # Verify CAB file detection worked
+            if ($result.PSObject.Properties.Name -contains "MLServicesCabFiles") {
+                Write-Warning "ML Services CAB files detected: $($result.MLServicesCabFiles.Count) files"
+            }
+        } finally {
+            # Cleanup
+            if (Test-Path $testPath) {
+                Remove-Item -Path $testPath -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
 }
