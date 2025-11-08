@@ -90,7 +90,7 @@ function Get-DbaSchemaChangeHistory {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $TraceFileQuery = "select path from sys.traces where is_default = 1"
+            $TraceFileQuery = "SELECT path FROM sys.traces WHERE is_default = 1"
 
             $TraceFile = $server.Query($TraceFileQuery) | Select-Object Path
 
@@ -125,7 +125,7 @@ function Get-DbaSchemaChangeHistory {
                         END DDLOperation
                       , tt.ObjectName Object
                       , ISNULL(tsv.subclass_name, 'Unknown') ObjectType
-                FROM    ::fn_trace_gettable('$($TraceFile.path)',default) tt
+                FROM    ::fn_trace_gettable('$($TraceFile.path)',DEFAULT) tt
                         LEFT JOIN sys.trace_subclass_values tsv ON
                             tsv.trace_event_id = tt.EventClass
                             AND tsv.subclass_value = tt.ObjectType
@@ -135,13 +135,13 @@ function Get-DbaSchemaChangeHistory {
                         AND tt.EventSubClass = 0"
 
                 if ($null -ne $since) {
-                    $sql = $sql + " and tt.StartTime>'$Since' "
+                    $sql = $sql + " AND tt.StartTime>'$Since' "
                 }
                 if ($null -ne $object) {
-                    $sql = $sql + " and tt.ObjectName in ('$($object -join ''',''')') "
+                    $sql = $sql + " AND tt.ObjectName IN ('$($object -join ''',''')') "
                 }
 
-                $sql = $sql + " order by tt.StartTime asc"
+                $sql = $sql + " ORDER BY tt.StartTime ASC"
                 Write-Message -Level Verbose -Message "Querying Database $db on $instance"
                 Write-Message -Level Debug -Message "SQL: $sql"
 

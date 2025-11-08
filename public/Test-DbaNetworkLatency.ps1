@@ -72,7 +72,7 @@ function Test-DbaNetworkLatency {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
+        [string]$Query = "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES",
         [int]$Count = 3,
         [switch]$EnableException
     )

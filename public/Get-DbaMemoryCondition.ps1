@@ -93,7 +93,7 @@ function Get-DbaMemoryCondition {
             x.value('(//Record/@type)[1]', 'varchar(30)') AS [Type],
             x.value('(//Record/ResourceMonitor/Indicators)[1]', 'bigint') AS [Indicators],
             x.value('(//Record/@time)[1]', 'bigint') AS [RecordTime],
-            Convert(bigint, x.value('(//Record/@time)[1]', 'bigint')/1000) AS [RecordTime_S]
+            CONVERT(BIGINT, x.value('(//Record/@time)[1]', 'bigint')/1000) AS [RecordTime_S]
         FROM
         (
             SELECT CAST (record as xml) FROM sys.dm_os_ring_buffers
@@ -104,7 +104,7 @@ function Get-DbaMemoryCondition {
     (
         SELECT
             ms_ticks,
-            convert(bigint, ms_ticks/1000) as s_ticks
+            CONVERT(BIGINT, ms_ticks/1000) AS s_ticks
         FROM sys.dm_os_sys_info
     ) sys
     ORDER BY a.[RecordTime] ASC"

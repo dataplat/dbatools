@@ -185,14 +185,14 @@ function Export-DbaExecutionPlan {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $select = "SELECT DB_NAME(deqp.dbid) as DatabaseName, OBJECT_NAME(deqp.objectid) as ObjectName,
+            $select = "SELECT DB_NAME(deqp.dbid) AS DatabaseName, OBJECT_NAME(deqp.objectid) AS ObjectName,
                     detqp.query_plan AS SingleStatementPlan,
                     deqp.query_plan AS BatchQueryPlan,
                     ROW_NUMBER() OVER ( ORDER BY Statement_Start_offset ) AS QueryPosition,
-                    sql_handle as SqlHandle,
-                    plan_handle as PlanHandle,
-                    creation_time as CreationTime,
-                    last_execution_time as LastExecutionTime"
+                    sql_handle AS SqlHandle,
+                    plan_handle AS PlanHandle,
+                    creation_time AS CreationTime,
+                    last_execution_time AS LastExecutionTime"
 
             $from = " FROM sys.dm_exec_query_stats deqs
                         CROSS APPLY sys.dm_exec_text_query_plan(deqs.plan_handle,
@@ -228,11 +228,11 @@ function Export-DbaExecutionPlan {
             }
 
             if (Test-Bound 'ExcludeEmptyQueryPlan') {
-                $whereArray += " detqp.query_plan is not null"
+                $whereArray += " detqp.query_plan IS NOT NULL"
             }
 
             if ($where.Length -gt 0) {
-                $whereArray = $whereArray -join " and "
+                $whereArray = $whereArray -join " AND "
                 $where = "$where $whereArray"
             }
 

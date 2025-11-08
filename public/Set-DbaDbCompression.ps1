@@ -282,9 +282,9 @@ function Set-DbaDbCompression {
                                         if ($CompressionType -eq "None") {
                                             $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH"
                                             if ($CanDoOnlineOperation) {
-                                                $query += "(DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
+                                                $query += " (DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
                                             } else {
-                                                $query += "(DATA_COMPRESSION = $CompressionType)"
+                                                $query += " (DATA_COMPRESSION = $CompressionType)"
                                             }
                                             $Server.Query($query, $db.Name)
                                         } else {
@@ -327,10 +327,11 @@ function Set-DbaDbCompression {
                                     ## Once this UserVoice item is fixed the workaround can be removed
                                     ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
                                     if ($CompressionType -eq "None") {
+                                        $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH"
                                         if ($CanDoOnlineOperation) {
-                                            $query += "(DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
+                                            $query += " (DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
                                         } else {
-                                            $query += "(DATA_COMPRESSION = $CompressionType)"
+                                            $query += " (DATA_COMPRESSION = $CompressionType)"
                                         }
                                         $Server.Query($query, $db.Name)
                                     } else {

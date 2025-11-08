@@ -101,10 +101,10 @@ function Read-DbaTransactionLog {
         Write-Message -Level Verbose -Message "Please be aware that ignoring the recommended limits may impact on the performance of the SQL Server database and the calling system"
     } else {
         #Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
-        $SqlSizeCheck = "select
-                                sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
-                                from sys.sysfiles sf
-                                where CONVERT(INT,sf.status & 0x40) / 64=1"
+        $SqlSizeCheck = "SELECT
+                                SUM(FileProperty(sf.name,'spaceused')*8/1024) AS 'SizeMb'
+                                FROM sys.sysfiles sf
+                                WHERE CONVERT(INT,sf.status & 0x40) / 64=1"
         $TransLogSize = $server.Query($SqlSizeCheck, $Database)
         if ($TransLogSize.SizeMb -ge 500) {
             Stop-Function -Message "$Database has more than 0.5 Gb of live log data, returning this may have an impact on the database and the calling system. If you wish to proceed please rerun with the -IgnoreLimit switch"
@@ -112,7 +112,7 @@ function Read-DbaTransactionLog {
         }
     }
 
-    $sql = "select $RowLimitSql * from fn_dblog(NULL,NULL)"
+    $sql = "SELECT $RowLimitSql * FROM fn_dblog(NULL,NULL)"
     Write-Message -Level Debug -Message $sql
     Write-Message -Level Verbose -Message "Starting Log retrieval"
     $server.Query($sql, $Database)

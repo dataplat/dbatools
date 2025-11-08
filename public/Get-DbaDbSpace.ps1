@@ -91,35 +91,35 @@ function Get-DbaDbSpace {
         $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
                                    ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                                    SERVERPROPERTY('ServerName') AS SqlInstance,
-                    DB_NAME() as DBName
+                    DB_NAME() AS DBName
                     ,f.name AS [FileName]
                     ,fg.name AS [Filegroup]
                     ,f.physical_name AS [PhysicalName]
                     ,f.type_desc AS [FileType]
-                    ,CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) as [UsedSpaceMB]
-                    ,CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) AS [FreeSpaceMB]
+                    ,CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS INT)/128.0 AS FLOAT) AS [UsedSpaceMB]
+                    ,CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS INT)/128.0 AS FLOAT) AS [FreeSpaceMB]
                     ,CAST((f.size/128.0) AS FLOAT) AS [FileSizeMB]
-                    ,CAST((FILEPROPERTY(f.name, 'SpaceUsed')/(f.size/1.0)) * 100 as FLOAT) as [PercentUsed]
+                    ,CAST((FILEPROPERTY(f.name, 'SpaceUsed')/(f.size/1.0)) * 100 AS FLOAT) AS [PercentUsed]
                     ,CAST((f.growth/128.0) AS FLOAT) AS [GrowthMB]
                     ,CASE is_percent_growth WHEN 1 THEN 'pct' WHEN 0 THEN 'MB' ELSE 'Unknown' END AS [GrowthType]
                     ,CASE f.max_size WHEN -1 THEN 2147483648. ELSE CAST((f.max_size/128.0) AS FLOAT) END AS [MaxSizeMB]
-                    ,CAST((f.size/128.0) AS FLOAT) - CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) AS [SpaceBeforeAutoGrow]
+                    ,CAST((f.size/128.0) AS FLOAT) - CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS INT)/128.0 AS FLOAT) AS [SpaceBeforeAutoGrow]
                     ,CASE f.max_size    WHEN (-1)
-                                        THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
-                                        ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
+                                        THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS INT))/128.0 AS FLOAT)
+                                        ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS INT))/128.0 AS FLOAT)
                                         END AS [SpaceBeforeMax]
                     ,CASE f.growth    WHEN 0 THEN 0.00
                                     ELSE    CASE f.is_percent_growth    WHEN 0
                                                     THEN    CASE f.max_size
                                                             WHEN (-1)
-                                                            THEN CAST(((((2147483648.)-f.Size)/f.Growth)*f.Growth)/128.0 AS FLOAT)
-                                                            ELSE CAST((((f.max_size-f.Size)/f.Growth)*f.Growth)/128.0 AS FLOAT)
+                                                            THEN CAST(((((2147483648.)-f.size)/f.growth)*f.growth)/128.0 AS FLOAT)
+                                                            ELSE CAST((((f.max_size-f.size)/f.growth)*f.growth)/128.0 AS FLOAT)
                                                             END
                                                     WHEN 1
                                                     THEN    CASE f.max_size
                                                             WHEN (-1)
-                                                            THEN CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],(2147483648.))/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS FLOAT)
-                                                            ELSE CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS FLOAT)
+                                                            THEN CAST(CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],(2147483648.))/CONVERT([FLOAT],f.size))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))/128.0 AS FLOAT)
+                                                            ELSE CAST(CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],f.max_size)/CONVERT([FLOAT],f.size))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))/128.0 AS FLOAT)
                                                             END
                                                     ELSE (0)
                                                     END
@@ -129,8 +129,8 @@ function Get-DbaDbSpace {
                                                 WHEN 0 THEN (f.max_size - f.size)/128
                                                 ELSE    CASE f.is_percent_growth
                                                         WHEN 0
-                                                        THEN CAST((f.max_size - f.size - (    CONVERT(FLOAT,FLOOR((f.max_size-f.Size)/f.Growth)*f.Growth)))/128.0 AS FLOAT)
-                                                        ELSE CAST((f.max_size - f.size - (    CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))))/128.0 AS FLOAT)
+                                                        THEN CAST((f.max_size - f.size - (    CONVERT(FLOAT,FLOOR((f.max_size-f.size)/f.growth)*f.growth)))/128.0 AS FLOAT)
+                                                        ELSE CAST((f.max_size - f.size - (    CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],f.max_size)/CONVERT([FLOAT],f.size))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))))/128.0 AS FLOAT)
                                                         END
                                                 END
                                     END AS [UnusableSpaceMB]

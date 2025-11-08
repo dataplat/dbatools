@@ -368,7 +368,7 @@ function Reset-DbaAdmin {
             if ($windowslogin -ne $true) {
                 if ($pscmdlet.ShouldProcess($instance, "Enabling mixed mode authentication for $Login and ensuring account is unlocked")) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling mixed mode authentication for $Login and ensuring account is unlocked"
-                    $sql = "EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
+                    $sql = "EXEC sys.xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
                     if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                         Write-Message -Level Warning -Message "Couldn't set to Mixed Mode."
                     }
@@ -392,7 +392,7 @@ function Reset-DbaAdmin {
             if ($Login -ne "sa") {
                 if ($pscmdlet.ShouldProcess($instance, "Ensuring $Login exists within sysadmin role")) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring $Login exists within sysadmin role"
-                    $sql = "EXEC sp_addsrvrolemember '$Login', 'sysadmin'"
+                    $sql = "EXEC sys.sp_addsrvrolemember '$Login', 'sysadmin'"
                     if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                         Write-Message -Level Warning -Message "Couldn't add to sysadmin role."
                     }

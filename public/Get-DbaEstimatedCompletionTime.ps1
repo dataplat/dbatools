@@ -101,13 +101,13 @@ function Get-DbaEstimatedCompletionTime {
                 start_time as StartTime,
                 percent_complete as PercentComplete,
 
-                  RIGHT('00000' + CAST(((DATEDIFF(s,start_time,GetDate()))/3600) as varchar),
+                  RIGHT('00000' + CAST(((DATEDIFF(s,start_time,GETDATE()))/3600) as varchar),
                                 CASE
-                                    WHEN LEN(((DATEDIFF(s,start_time,GetDate()))/3600)) < 2 THEN 2
-                                    ELSE LEN(((DATEDIFF(s,start_time,GetDate()))/3600))
+                                    WHEN LEN(((DATEDIFF(s,start_time,GETDATE()))/3600)) < 2 THEN 2
+                                    ELSE LEN(((DATEDIFF(s,start_time,GETDATE()))/3600))
                                  END)  + ':'
-                + RIGHT('00' + CAST((DATEDIFF(s,start_time,GetDate())%3600)/60 as varchar), 2) + ':'
-                + RIGHT('00' + CAST((DATEDIFF(s,start_time,GetDate())%60) as varchar), 2) as RunningTime,
+                + RIGHT('00' + CAST((DATEDIFF(s,start_time,GETDATE())%3600)/60 as varchar), 2) + ':'
+                + RIGHT('00' + CAST((DATEDIFF(s,start_time,GETDATE())%60) as varchar), 2) as RunningTime,
 
                   RIGHT('00000' + CAST((estimated_completion_time/3600000) as varchar),
                         CASE
@@ -116,7 +116,7 @@ function Get-DbaEstimatedCompletionTime {
                          END)  + ':'
                 + RIGHT('00' + CAST((estimated_completion_time %3600000)/60000 as varchar), 2) + ':'
                 + RIGHT('00' + CAST((estimated_completion_time %60000)/1000 as varchar), 2) as EstimatedTimeToGo,
-                dateadd(second,estimated_completion_time/1000, getdate()) as EstimatedCompletionTime,
+                DATEADD(second,estimated_completion_time/1000, GETDATE()) as EstimatedCompletionTime,
                 s.Text
              FROM sys.dm_exec_requests r
             CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s

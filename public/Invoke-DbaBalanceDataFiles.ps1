@@ -185,7 +185,7 @@ function Invoke-DbaBalanceDataFiles {
 
                     # Get the free space for each drive
                     try {
-                        $result = $Server.Query("xp_fixeddrives")
+                        $result = $Server.Query("sys.xp_fixeddrives")
                     } catch {
                         Stop-Function -Message "Error occurred while finding free space on drives" -ErrorRecord $_ -Target $instance -Continue
                     }

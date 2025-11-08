@@ -176,7 +176,7 @@ function Copy-DbaStartupProcedure {
                         $sql = $header + $body
                         Write-Message -Level Verbose -Message $sql
                         $null = Invoke-DbaQuery -SqlInstance $destServer -Query $sql -Database master -EnableException
-                        $startupSql = "EXEC SP_PROCOPTION '$currentProcName', 'STARTUP', 'ON'"
+                        $startupSql = "EXEC sp_procoption '$currentProcName', 'STARTUP', 'ON'"
                         Write-Message -Level Verbose -Message $startupSql
                         $null = Invoke-DbaQuery -SqlInstance $destServer -Query $startupSql -Database master -EnableException
 

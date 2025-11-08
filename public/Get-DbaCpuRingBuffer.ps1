@@ -90,21 +90,21 @@ function Get-DbaCpuRingBuffer {
             }
 
             if ($server.VersionMajor -gt 9) {
-                $currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT (float, ( cpu_ticks / ms_ticks )) as TimeStamp FROM sys.dm_os_sys_info"))[0]
+                $currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT(FLOAT, ( cpu_ticks / ms_ticks )) AS TimeStamp FROM sys.dm_os_sys_info"))[0]
             } else {
-                $currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT(FLOAT, cpu_ticks_in_ms) as TimeStamp FROM sys.dm_os_sys_info"))[0]
+                $currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT(FLOAT, cpu_ticks_in_ms) AS TimeStamp FROM sys.dm_os_sys_info"))[0]
             }
             Write-Message -Level Verbose -Message "Using current timestampe of $currentTimestamp"
 
-            $sql = "With RingBufferSchedulerMonitor as
+            $sql = "WITH RingBufferSchedulerMonitor AS
                 (
                     SELECT
                         timestamp,
-                        CONVERT(xml, record) AS record
+                        CONVERT(XML, record) AS record
                     FROM sys.dm_os_ring_buffers
                     WHERE (ring_buffer_type = N'RING_BUFFER_SCHEDULER_MONITOR')
                     AND (record LIKE '%%')
-                ), RingBufferSchedulerMonitorValues as
+                ), RingBufferSchedulerMonitorValues AS
                 (
                     SELECT
                         record.value('(./Record/@id)[1]', 'int') AS record_id,
@@ -114,15 +114,15 @@ function Get-DbaCpuRingBuffer {
                         DATEADD(ss, (-1 * ($currentTimestamp - [timestamp]))/1000, GETDATE()) AS EventTime
                     FROM RingBufferSchedulerMonitor
                 )
-                Select
-                    SERVERPROPERTY('ServerName') as ServerName,
+                SELECT
+                    SERVERPROPERTY('ServerName') AS ServerName,
                     record_id,
                     EventTime,
                     SQLProcessUtilization,
                     SystemIdle,
                     100 - SystemIdle - SQLProcessUtilization AS OtherProcessUtilization
-                From RingBufferSchedulerMonitorValues
-                WHERE EventTime> DATEADD(MINUTE, -$CollectionMinutes, GETDATE()) ;"
+                FROM RingBufferSchedulerMonitorValues
+                WHERE EventTime > DATEADD(MINUTE, -$CollectionMinutes, GETDATE()) ;"
 
             Write-Message -Level Verbose -Message "Executing Sql Staement: $sql"
             foreach ($row in $server.Query($sql)) {

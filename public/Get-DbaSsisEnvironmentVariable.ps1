@@ -212,15 +212,15 @@ function Get-DbaSsisEnvironmentVariable {
                                     SELECT
                                         value   = CASE base_data_type
                                                     WHEN 'nvarchar' THEN CONVERT(NVARCHAR(MAX), DECRYPTBYKEY(sensitive_value))
-                                                    WHEN 'bit' THEN CONVERT(NVARCHAR(MAX), CONVERT(bit, DECRYPTBYKEY(sensitive_value)))
-                                                    WHEN 'datetime' THEN CONVERT(NVARCHAR(MAX), CONVERT(datetime2(0), DECRYPTBYKEY(sensitive_value)))
+                                                    WHEN 'bit' THEN CONVERT(NVARCHAR(MAX), CONVERT(BIT, DECRYPTBYKEY(sensitive_value)))
+                                                    WHEN 'datetime' THEN CONVERT(NVARCHAR(MAX), CONVERT(DATETIME2(0), DECRYPTBYKEY(sensitive_value)))
                                                     WHEN 'single' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
                                                     WHEN 'float' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
                                                     WHEN 'decimal' THEN CONVERT(NVARCHAR(MAX), CONVERT(DECIMAL(38, 18), DECRYPTBYKEY(sensitive_value)))
-                                                    WHEN 'tinyint' THEN CONVERT(NVARCHAR(MAX), CONVERT(tinyint, DECRYPTBYKEY(sensitive_value)))
-                                                    WHEN 'smallint' THEN CONVERT(NVARCHAR(MAX), CONVERT(smallint, DECRYPTBYKEY(sensitive_value)))
+                                                    WHEN 'tinyint' THEN CONVERT(NVARCHAR(MAX), CONVERT(TINYINT, DECRYPTBYKEY(sensitive_value)))
+                                                    WHEN 'smallint' THEN CONVERT(NVARCHAR(MAX), CONVERT(SMALLINT, DECRYPTBYKEY(sensitive_value)))
                                                     WHEN 'int' THEN CONVERT(NVARCHAR(MAX), CONVERT(INT, DECRYPTBYKEY(sensitive_value)))
-                                                    WHEN 'bigint' THEN CONVERT(NVARCHAR(MAX), CONVERT(bigint, DECRYPTBYKEY(sensitive_value)))
+                                                    WHEN 'bigint' THEN CONVERT(NVARCHAR(MAX), CONVERT(BIGINT, DECRYPTBYKEY(sensitive_value)))
                                                 END
                                 ) decrypted
                             WHERE environment_id = $($e.EnvironmentId);

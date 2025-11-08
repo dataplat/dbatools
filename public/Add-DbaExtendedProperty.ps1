@@ -128,7 +128,7 @@ function Add-DbaExtendedProperty {
 
                 if (-not $computername -or -not $instancename -or -not $sqlname) {
                     $server = Get-ConnectionParent $object
-                    $servername = $server.Query("SELECT @@servername as servername").servername
+                    $servername = $server.Query("SELECT @@SERVERNAME AS servername").servername
 
                     if (-not $computername) {
                         $computername = ([DbaInstanceParameter]$servername).ComputerName

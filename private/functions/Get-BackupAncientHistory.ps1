@@ -67,7 +67,7 @@ function Get-BackupAncientHistory {
              a.Duration,
              a.[Path],
              a.Type,
-            NULL as TotalSize,
+            NULL AS TotalSize,
              a.MediaSetId,
              a.BackupSetID,
              a.Software,
@@ -76,21 +76,21 @@ function Get-BackupAncientHistory {
               a.database_backup_lsn,
               a.checkpoint_lsn,
               a.last_lsn,
-             a.first_lsn as 'FirstLSN',
-              a.database_backup_lsn as 'DatabaseBackupLsn',
-              a.checkpoint_lsn as 'CheckpointLsn',
-              a.last_lsn as 'Lastlsn',
+             a.first_lsn AS 'FirstLSN',
+              a.database_backup_lsn AS 'DatabaseBackupLsn',
+              a.checkpoint_lsn AS 'CheckpointLsn',
+              a.last_lsn AS 'Lastlsn',
               a.software_major_version,
              a.DeviceType,
-                NULL as is_copy_only,
-            NULL as last_recovery_fork_guid
+                NULL AS is_copy_only,
+            NULL AS last_recovery_fork_guid
             FROM (
             SELECT
               backupset.database_name AS [Database],
               (SELECT database_id FROM sys.databases WHERE name = backupset.database_name) AS DatabaseId,
               backupset.user_name AS Username,
               backupset.backup_start_date AS Start,
-              backupset.server_name as [Server],
+              backupset.server_name AS [Server],
               backupset.backup_finish_date AS [End],
               DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
               mediafamily.physical_device_name AS Path,
@@ -105,8 +105,8 @@ function Get-BackupAncientHistory {
              ELSE NULL
               END AS Type,
               backupset.media_set_id AS MediaSetId,
-              mediafamily.media_family_id as mediafamilyid,
-              backupset.backup_set_id as BackupSetID,
+              mediafamily.media_family_id AS mediafamilyid,
+              backupset.backup_set_id AS BackupSetID,
               CASE mediafamily.device_type
              WHEN 2 THEN 'Disk'
              WHEN 102 THEN 'Permanent Disk Device'
@@ -131,7 +131,7 @@ function Get-BackupAncientHistory {
               ON backupset.media_set_id = mediaset.media_set_id
             WHERE backupset.database_name = '$db'
                     ) AS a
-            where  a.backupsetid in (Select max(backup_set_id) from msdb..backupset where database_name='$db')"
+            WHERE  a.backupsetid IN (SELECT MAX(backup_set_id) FROM msdb..backupset WHERE database_name='$db')"
             Write-Message -Level Debug -Message $sql
             $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
             Write-Message -Level SomewhatVerbose -Message "Processing as grouped output."
@@ -140,8 +140,8 @@ function Get-BackupAncientHistory {
             $groupResults = @()
             foreach ($group in $GroupedResults) {
 
-                $fileSql = "select file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
-                            from msdb.dbo.backupfile where backup_set_id='$($Group.group[0].BackupSetID)'"
+                $fileSql = "SELECT file_type AS FileType, logical_name AS LogicalName, physical_name AS PhysicalName
+                            FROM msdb.dbo.backupfile WHERE backup_set_id='$($Group.group[0].BackupSetID)'"
 
                 Write-Message -Level Debug -Message "FileSQL: $fileSql"
 

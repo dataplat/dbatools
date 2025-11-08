@@ -183,14 +183,14 @@ function Export-DbaDbRole {
         $commandName = $MyInvocation.MyCommand.Name
 
         $roleSQL = "SELECT
-                        N'/*RoleName*/' as RoleName,
+                        N'/*RoleName*/' AS RoleName,
                         CASE dp.state
                             WHEN 'D' THEN 'DENY'
                             WHEN 'G' THEN 'GRANT'
                             WHEN 'R' THEN 'REVOKE'
                             WHEN 'W' THEN 'GRANT'
-                        END as GrantState,
-                        dp.permission_name as Permission,
+                        END AS GrantState,
+                        dp.permission_name AS Permission,
                         CASE dp.class
                             WHEN 0 THEN ''
                             WHEN 1 THEN --table or column subset on the table
@@ -218,23 +218,23 @@ function Export-DbaDbRole {
                             WHEN 24 THEN 'SYMMETRIC KEY::[' + (SELECT name FROM sys.symmetric_keys WHERE symmetric_key_id = dp.major_id) + ']'
                             WHEN 25 THEN 'CERTIFICATE::[' + (SELECT name FROM sys.certificates WHERE certificate_id = dp.major_id) + ']'
                             WHEN 26 THEN 'ASYMMETRIC KEY::[' + (SELECT name FROM sys.asymmetric_keys WHERE asymmetric_key_id = dp.major_id) + ']'
-                        END COLLATE DATABASE_DEFAULT  as Type,
-                        CASE dp.state WHEN 'W' THEN ' WITH GRANT OPTION' ELSE '' END as GrantType
+                        END COLLATE DATABASE_DEFAULT AS Type,
+                        CASE dp.state WHEN 'W' THEN ' WITH GRANT OPTION' ELSE '' END AS GrantType
                     FROM sys.database_permissions dp
                     WHERE USER_NAME(dp.grantee_principal_id) = N'/*RoleName*/'
                     GROUP BY dp.state, dp.major_id, dp.permission_name, dp.class
                     UNION ALL
                     SELECT
-                        N'/*RoleName*/' as RoleName,
-                        'ALTER' as GrantState,
-                        'AUTHORIZATION' as permission_name,
-                        'SCHEMA::['+s.[name]+']' as Type,
-                        '' as GrantType
-                    from sys.schemas s
-                    join sys.sysusers u on s.principal_id = u.[uid]
-                    where u.[name] = N'/*RoleName*/'"
+                        N'/*RoleName*/' AS RoleName,
+                        'ALTER' AS GrantState,
+                        'AUTHORIZATION' AS permission_name,
+                        'SCHEMA::['+s.[name]+']' AS Type,
+                        '' AS GrantType
+                    FROM sys.schemas s
+                    JOIN sys.sysusers u ON s.principal_id = u.[uid]
+                    WHERE u.[name] = N'/*RoleName*/'"
 
-        $userSQL = "SELECT roles.name as RoleName, users.name as Member
+        $userSQL = "SELECT roles.name AS RoleName, users.name AS Member
                     FROM sys.database_principals users
                     INNER JOIN sys.database_role_members link
                         ON link.member_principal_id = users.principal_id

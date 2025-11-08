@@ -68,7 +68,7 @@ function Get-DbaTrace {
 
         if ($Id) {
             $idstring = $Id -join ","
-            $sql = "$sql WHERE id in ($idstring)"
+            $sql = "$sql WHERE id IN ($idstring)"
         }
     }
     process {

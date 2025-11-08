@@ -157,22 +157,22 @@ function Export-DbaServerRole {
                         WHEN 'G' THEN 'GRANT'
                         WHEN 'R' THEN 'REVOKE'
                         WHEN 'W' THEN 'GRANT'
-                    END as GrantState,
-                    sperm.permission_name as Permission,
-                    Case
+                    END AS GrantState,
+                    sperm.permission_name AS Permission,
+                    CASE
                         WHEN sperm.class = 100 THEN ''
-                        WHEN sperm.class = 101 AND sp2.type = 'S' THEN 'ON LOGIN::' + QuoteName(sp2.name)
-                        WHEN sperm.class = 101 AND sp2.type = 'R' THEN 'ON SERVER ROLE::' + QuoteName(sp2.name)
-                        WHEN sperm.class = 101 AND sp2.type = 'U' THEN 'ON LOGIN::' + QuoteName(sp2.name)
-                        WHEN sperm.class = 105 THEN 'ON ENDPOINT::' + QuoteName(ep.name)
+                        WHEN sperm.class = 101 AND sp2.type = 'S' THEN 'ON LOGIN::' + QUOTENAME(sp2.name)
+                        WHEN sperm.class = 101 AND sp2.type = 'R' THEN 'ON SERVER ROLE::' + QUOTENAME(sp2.name)
+                        WHEN sperm.class = 101 AND sp2.type = 'U' THEN 'ON LOGIN::' + QUOTENAME(sp2.name)
+                        WHEN sperm.class = 105 THEN 'ON ENDPOINT::' + QUOTENAME(ep.name)
                         WHEN sperm.class = 108 THEN 'ON AVAILABILITY GROUP::' + QUOTENAME(ag.name)
                         ELSE ''
-                    END as OnClause,
-                    QuoteName(sp.name) as RoleName,
-                    Case
+                    END AS OnClause,
+                    QUOTENAME(sp.name) AS RoleName,
+                    CASE
                         WHEN sperm.state = 'W' THEN 'WITH GRANT OPTION AS ' + QUOTENAME(gsp.Name)
                         ELSE ''
-                    END as GrantOption
+                    END AS GrantOption
                 FROM sys.server_permissions sperm
                 INNER JOIN sys.server_principals sp
                     ON sp.principal_id = sperm.grantee_principal_id
@@ -186,17 +186,17 @@ function Export-DbaServerRole {
                     AND sperm.class = 101
                 LEFT JOIN
                 (
-                    Select
+                    SELECT
                         ar.replica_metadata_id,
                         ag.name
-                    from sys.availability_groups ag
+                    FROM sys.availability_groups ag
                     INNER JOIN sys.availability_replicas ar
                         ON ag.group_id = ar.group_id
                 ) ag
                     ON ag.replica_metadata_id = sperm.major_id
                     AND sperm.class = 108
-                where sp.type='R'
-                and sp.name=N'/*RoleName*/'"
+                WHERE sp.type='R'
+                AND sp.name=N'/*RoleName*/'"
 
         if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
             $ScriptingOptionsObject = New-DbaScriptingOption

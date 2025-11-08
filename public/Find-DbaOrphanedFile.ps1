@@ -264,9 +264,9 @@ function Find-DbaOrphanedFile {
 
             # use sysaltfiles in lower versions
             if ($smoserver.VersionMajor -eq 8) {
-                $sql = "select filename from sysaltfiles"
+                $sql = "SELECT filename FROM sys.sysaltfiles"
             } else {
-                $sql = "select physical_name as filename from sys.master_files"
+                $sql = "SELECT physical_name AS filename FROM sys.master_files"
             }
 
             $dbfiletable = $smoserver.ConnectionContext.ExecuteWithResults($sql)

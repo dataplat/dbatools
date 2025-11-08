@@ -93,7 +93,7 @@ function Find-DbaView {
     )
 
     begin {
-        $sql = "SELECT OBJECT_SCHEMA_NAME(vw.object_id) as ViewSchema, vw.name, m.definition as TextBody FROM sys.sql_modules m, sys.views vw WHERE m.object_id = vw.object_id"
+        $sql = "SELECT OBJECT_SCHEMA_NAME(vw.object_id) AS ViewSchema, vw.name, m.definition AS TextBody FROM sys.sql_modules m, sys.views vw WHERE m.object_id = vw.object_id"
         if (!$IncludeSystemObjects) { $sql = "$sql AND vw.is_ms_shipped = 0" }
         $everyservervwcount = 0
 

@@ -294,7 +294,7 @@ function Read-DbaTraceFile {
                 }
 
                 $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance, *
-                FROM [fn_trace_gettable]('$file', DEFAULT)
+                FROM sys.fn_trace_gettable('$file', DEFAULT)
                 $Where"
 
                 Write-Message -Message "SQL: $sql" -Level Debug

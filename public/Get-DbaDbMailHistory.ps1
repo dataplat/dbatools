@@ -82,57 +82,57 @@ function Get-DbaDbMailHistory {
             $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
                     ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                     SERVERPROPERTY('ServerName') AS SqlInstance,
-                    mailitem_id as MailItemId,
-                    a.profile_id as ProfileId,
-                    p.name as Profile,
-                    recipients as Recipients,
-                    copy_recipients as CopyRecipients,
-                    blind_copy_recipients as BlindCopyRecipients,
-                    subject as Subject,
-                    body as Body,
-                    body_format as BodyFormat,
-                    importance as Importance,
-                    sensitivity as Sensitivity,
-                    file_attachments as FileAttachments,
-                    attachment_encoding as AttachmentEncoding,
-                    query as Query,
-                    execute_query_database as ExecuteQueryDatabase,
-                    attach_query_result_as_file as AttachQueryResultAsFile,
-                    query_result_header as QueryResultHeader,
-                    query_result_width as QueryResultWidth,
-                    query_result_separator as QueryResultSeparator,
-                    exclude_query_output as ExcludeQueryOutput,
-                    append_query_error as AppendQueryError,
-                    send_request_date as SendRequestDate,
-                    send_request_user as SendRequestUser,
-                    sent_account_id as SentAccountId,
+                    mailitem_id AS MailItemId,
+                    a.profile_id AS ProfileId,
+                    p.name AS Profile,
+                    recipients AS Recipients,
+                    copy_recipients AS CopyRecipients,
+                    blind_copy_recipients AS BlindCopyRecipients,
+                    subject AS Subject,
+                    body AS Body,
+                    body_format AS BodyFormat,
+                    importance AS Importance,
+                    sensitivity AS Sensitivity,
+                    file_attachments AS FileAttachments,
+                    attachment_encoding AS AttachmentEncoding,
+                    query AS Query,
+                    execute_query_database AS ExecuteQueryDatabase,
+                    attach_query_result_as_file AS AttachQueryResultAsFile,
+                    query_result_header AS QueryResultHeader,
+                    query_result_width AS QueryResultWidth,
+                    query_result_separator AS QueryResultSeparator,
+                    exclude_query_output AS ExcludeQueryOutput,
+                    append_query_error AS AppendQueryError,
+                    send_request_date AS SendRequestDate,
+                    send_request_user AS SendRequestUser,
+                    sent_account_id AS SentAccountId,
                     CASE sent_status
                     WHEN 'unsent' THEN 'Unsent'
                     WHEN 'sent' THEN 'Sent'
                     WHEN 'failed' THEN 'Failed'
                     WHEN 'retrying' THEN 'Retrying'
                     END AS SentStatus,
-                    sent_date as SentDate,
-                    last_mod_date as LastModDate,
-                    a.last_mod_user as LastModUser
-                    from msdb.dbo.sysmail_allitems a
-                    join msdb.dbo.sysmail_profile p
-                    on a.profile_id = p.profile_id"
+                    sent_date AS SentDate,
+                    last_mod_date AS LastModDate,
+                    a.last_mod_user AS LastModUser
+                    FROM msdb.dbo.sysmail_allitems a
+                    JOIN msdb.dbo.sysmail_profile p
+                    ON a.profile_id = p.profile_id"
 
             if ($Since -or $Status) {
                 $wherearray = @()
 
                 if ($Since) {
-                    $wherearray += "send_request_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
+                    $wherearray += "send_request_date >= CONVERT(DATETIME,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($Status) {
                     $Status = $Status -join "', '"
-                    $wherearray += "sent_status in ('$Status')"
+                    $wherearray += "sent_status IN ('$Status')"
                 }
 
-                $wherearray = $wherearray -join ' and '
-                $where = "where $wherearray"
+                $wherearray = $wherearray -join ' AND '
+                $where = "WHERE $wherearray"
                 $sql = "$sql $where"
             }
 

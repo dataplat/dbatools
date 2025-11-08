@@ -120,7 +120,7 @@ function Revoke-DbaAgPermission {
 
                 foreach ($ag in $AvailabilityGroup) {
                     try {
-                        $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
+                        $server.Query("ALTER AVAILABILITY GROUP $ag REVOKE CREATE ANY DATABASE")
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
                         return

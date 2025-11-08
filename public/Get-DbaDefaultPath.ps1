@@ -64,7 +64,7 @@ function Get-DbaDefaultPath {
 
             $dataPath = $server.DefaultFile
             if ($dataPath.Length -eq 0) {
-                $dataPath = $server.Query("SELECT SERVERPROPERTY('InstanceDefaultdataPath') as Data").Data
+                $dataPath = $server.Query("SELECT SERVERPROPERTY('InstanceDefaultDataPath') AS Data").Data
             }
 
             if ($dataPath -eq [System.DBNull]::Value -or $dataPath.Length -eq 0) {
@@ -78,7 +78,7 @@ function Get-DbaDefaultPath {
             $logPath = $server.DefaultLog
 
             if ($logPath.Length -eq 0) {
-                $logPath = $server.Query("SELECT SERVERPROPERTY('InstanceDefaultLogPath') as Log").Log
+                $logPath = $server.Query("SELECT SERVERPROPERTY('InstanceDefaultLogPath') AS Log").Log
             }
 
             if ($logPath -eq [System.DBNull]::Value -or $logPath.Length -eq 0) {

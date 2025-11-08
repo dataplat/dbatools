@@ -80,7 +80,7 @@ function Get-DbaDbMailLog {
             $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
             SERVERPROPERTY('ServerName') AS SqlInstance,
-            log_id as LogId,
+            log_id AS LogId,
             CASE event_type
             WHEN 'error' THEN 'Error'
             WHEN 'warning' THEN 'Warning'
@@ -88,31 +88,31 @@ function Get-DbaDbMailLog {
             WHEN 'success' THEN 'Success'
             WHEN 'internal' THEN 'Internal'
             ELSE event_type
-            END as EventType,
-            log_date as LogDate,
-            REPLACE(description, CHAR(10)+')', '') as Description,
-            process_id as ProcessId,
-            mailitem_id as MailItemId,
-            account_id as AccountId,
-            last_mod_date as LastModDate,
-            last_mod_user as LastModUser,
-            last_mod_user as [Login]
+            END AS EventType,
+            log_date AS LogDate,
+            REPLACE(description, CHAR(10)+')', '') AS Description,
+            process_id AS ProcessId,
+            mailitem_id AS MailItemId,
+            account_id AS AccountId,
+            last_mod_date AS LastModDate,
+            last_mod_user AS LastModUser,
+            last_mod_user AS [Login]
             FROM msdb.dbo.sysmail_event_log"
 
             if ($Since -or $Type) {
                 $wherearray = @()
 
                 if ($Since) {
-                    $wherearray += "log_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
+                    $wherearray += "log_date >= CONVERT(DATETIME,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($Type) {
                     $combinedtype = $Type -join "', '"
-                    $wherearray += "event_type in ('$combinedtype')"
+                    $wherearray += "event_type IN ('$combinedtype')"
                 }
 
-                $wherearray = $wherearray -join ' and '
-                $where = "where $wherearray"
+                $wherearray = $wherearray -join ' AND '
+                $where = "WHERE $wherearray"
                 $sql = "$sql $where"
             }
 

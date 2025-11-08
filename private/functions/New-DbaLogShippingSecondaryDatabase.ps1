@@ -200,7 +200,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
     # Set up the query
     $Query = "DECLARE @SP_Add_RetCode INT;
-    EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_secondary_database
+    EXEC @SP_Add_RetCode = master.dbo.sp_add_log_shipping_secondary_database
         @secondary_database = '$SecondaryDatabase'
         ,@primary_server = '$PrimaryServer'
         ,@primary_database = '$PrimaryDatabase'
@@ -243,7 +243,7 @@ function New-DbaLogShippingSecondaryDatabase {
             BEGIN
                 DECLARE @msg VARCHAR(1000);
                 SELECT @msg = 'Unexpected result executing sp_add_log_shipping_secondary_database ('
-                    + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
+                    + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
                 THROW 51000, @msg, 1;
             END
             "
@@ -253,8 +253,8 @@ function New-DbaLogShippingSecondaryDatabase {
         BEGIN
             DECLARE @msg VARCHAR(1000);
             SELECT @msg = 'Unexpected result executing sp_add_log_shipping_secondary_database ('
-                + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
-            RAISERROR (@msg, 16, 1) WITH NOWAIT;
+                + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
+            RAISERROR(@msg, 16, 1) WITH NOWAIT;
             RETURN;
         END
         "

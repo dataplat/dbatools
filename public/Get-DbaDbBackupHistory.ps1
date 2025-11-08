@@ -318,18 +318,18 @@ function Get-DbaDbBackupHistory {
                         $forkCheckSql = "
                                 SELECT
                                     database_name,
-                                    MIN(database_backup_lsn) as 'FirstLsn',
-                                    MAX(database_backup_lsn) as 'FinalLsn',
-                                    MIN(backup_start_date) as 'MinDate',
-                                    MAX(backup_finish_date) as 'MaxDate',
+                                    MIN(database_backup_lsn) AS 'FirstLsn',
+                                    MAX(database_backup_lsn) AS 'FinalLsn',
+                                    MIN(backup_start_date) AS 'MinDate',
+                                    MAX(backup_finish_date) AS 'MaxDate',
                                     last_recovery_fork_guid 'RecFork',
-                                    count(1) as 'backupcount'
+                                    COUNT(1) AS 'backupcount'
                                 FROM msdb.dbo.backupset
                                 WHERE database_name='$($db.name)'
                                 $sinceSqlFilter
                                 $recoveryForkSqlFilter
-                                GROUP by database_name, last_recovery_fork_guid
-                                ORDER by MaxDate Asc
+                                GROUP BY database_name, last_recovery_fork_guid
+                                ORDER BY MaxDate ASC
                                 "
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
@@ -405,17 +405,17 @@ function Get-DbaDbBackupHistory {
                         $forkCheckSql = "
                             SELECT
                                 database_name,
-                                MIN(database_backup_lsn) as 'FirstLsn',
-                                MAX(database_backup_lsn) as 'FinalLsn',
-                                MIN(backup_start_date) as 'MinDate',
-                                MAX(backup_finish_date) as 'MaxDate',
+                                MIN(database_backup_lsn) AS 'FirstLsn',
+                                MAX(database_backup_lsn) AS 'FinalLsn',
+                                MIN(backup_start_date) AS 'MinDate',
+                                MAX(backup_finish_date) AS 'MaxDate',
                                 last_recovery_fork_guid 'RecFork',
-                                count(1) as 'backupcount'
+                                COUNT(1) AS 'backupcount'
                             FROM msdb.dbo.backupset
                             WHERE database_name='$($db.name)'
                             $sinceSqlFilter
                             $recoveryForkSqlFilter
-                            GROUP by database_name, last_recovery_fork_guid
+                            GROUP BY database_name, last_recovery_fork_guid
                         "
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
@@ -458,7 +458,7 @@ function Get-DbaDbBackupHistory {
                     $sql += "SELECT
                         a.BackupSetRank,
                         a.Server,
-                        '' as AvailabilityGroupName,
+                        '' AS AvailabilityGroupName,
                         a.[Database],
                         a.DatabaseId,
                         a.Username,
@@ -477,10 +477,10 @@ function Get-DbaDbBackupHistory {
                         a.database_backup_lsn,
                         a.checkpoint_lsn,
                         a.last_lsn,
-                        a.first_lsn as 'FirstLSN',
-                        a.database_backup_lsn as 'DatabaseBackupLsn',
-                        a.checkpoint_lsn as 'CheckpointLsn',
-                        a.last_lsn as 'LastLsn',
+                        a.first_lsn AS 'FirstLSN',
+                        a.database_backup_lsn AS 'DatabaseBackupLsn',
+                        a.checkpoint_lsn AS 'CheckpointLsn',
+                        a.last_lsn AS 'LastLsn',
                         a.software_major_version,
                         a.DeviceType,
                         a.is_copy_only,
@@ -491,12 +491,12 @@ function Get-DbaDbBackupHistory {
                         a.KeyAlgorithm
                     FROM (
                         SELECT
-                        RANK() OVER (ORDER BY backupset.$internalLsnSort desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
+                        RANK() OVER (ORDER BY backupset.$internalLsnSort DESC, backupset.backup_finish_date DESC) AS 'BackupSetRank',
                         backupset.database_name AS [Database],
                         (SELECT database_id FROM sys.databases WHERE name = backupset.database_name) AS DatabaseId,
                         backupset.user_name AS Username,
                         backupset.backup_start_date AS Start,
-                        backupset.server_name as [Server],
+                        backupset.server_name AS [Server],
                         backupset.backup_finish_date AS [End],
                         DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
                         mediafamily.physical_device_name AS Path,
@@ -512,8 +512,8 @@ function Get-DbaDbBackupHistory {
                         ELSE NULL
                         END AS Type,
                         backupset.media_set_id AS MediaSetId,
-                        mediafamily.media_family_id as mediafamilyid,
-                        backupset.backup_set_id as BackupSetID,
+                        mediafamily.media_family_id AS mediafamilyid,
+                        backupset.backup_set_id AS BackupSetID,
                         CASE mediafamily.device_type
                         WHEN 2 THEN 'Disk'
                         WHEN 102 THEN 'Permanent Disk Device'
@@ -562,11 +562,11 @@ function Get-DbaDbBackupHistory {
                 } else {
                     $select = "
                     SELECT
-                        '' as AvailabilityGroupName,
+                        '' AS AvailabilityGroupName,
                         backupset.database_name AS [Database],
                         (SELECT database_id FROM sys.databases WHERE name = backupset.database_name) AS DatabaseId,
                         backupset.user_name AS Username,
-                        backupset.server_name as [server],
+                        backupset.server_name AS [server],
                         backupset.backup_start_date AS [Start],
                         backupset.backup_finish_date AS [End],
                         DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
@@ -583,8 +583,8 @@ function Get-DbaDbBackupHistory {
                             ELSE NULL
                         END AS Type,
                         backupset.media_set_id AS MediaSetId,
-                        mediafamily.media_family_id as MediaFamilyId,
-                        backupset.backup_set_id as BackupSetId,
+                        mediafamily.media_family_id AS MediaFamilyId,
+                        backupset.backup_set_id AS BackupSetId,
                         CASE mediafamily.device_type
                             WHEN 2 THEN 'Disk'
                             WHEN 102 THEN 'Permanent Disk Device'
@@ -601,10 +601,10 @@ function Get-DbaDbBackupHistory {
                         backupset.database_backup_lsn,
                         backupset.checkpoint_lsn,
                         backupset.last_lsn,
-                        backupset.first_lsn as 'FirstLSN',
-                        backupset.database_backup_lsn as 'DatabaseBackupLsn',
-                        backupset.checkpoint_lsn as 'CheckpointLsn',
-                        backupset.last_lsn as 'LastLsn',
+                        backupset.first_lsn AS 'FirstLSN',
+                        backupset.database_backup_lsn AS 'DatabaseBackupLsn',
+                        backupset.checkpoint_lsn AS 'CheckpointLsn',
+                        backupset.last_lsn AS 'LastLsn',
                         backupset.software_major_version,
                         mediaset.software_name AS Software,
                         backupset.is_copy_only,
@@ -640,7 +640,7 @@ function Get-DbaDbBackupHistory {
                 }
 
                 if ($IgnoreDiffBackup) {
-                    $whereArray += "backupset.type not in ('I','G','Q')"
+                    $whereArray += "backupset.type NOT IN ('I','G','Q')"
                 }
 
                 if ($null -ne $Since) {
@@ -681,13 +681,13 @@ function Get-DbaDbBackupHistory {
                 $backupSetIds = $groupedResults.Name
                 $backupSetIdsList = "Insert into #BackupSetIds( backup_set_id ) Values (" + ($backupSetIds -join ");Insert into #BackupSetIds( backup_set_id ) Values (") + ")"
                 if ($groupedResults.Count -gt 0) {
-                    $TempTable = "Create table #BackupSetIds ( backup_set_id int ); $backupSetIdsList;"
-                    $fileAllSql = "$TempTable SELECT bf.backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
+                    $TempTable = "CREATE TABLE #BackupSetIds ( backup_set_id INT ); $backupSetIdsList;"
+                    $fileAllSql = "$TempTable SELECT bf.backup_set_id, file_type AS FileType, logical_name AS LogicalName, physical_name AS PhysicalName
                     FROM msdb..backupfile bf
-                    join #BackupSetIds bs
-                        on bs.backup_set_id = bf.backup_set_id
+                    JOIN #BackupSetIds bs
+                        ON bs.backup_set_id = bf.backup_set_id
                     WHERE [state] <> 8;
-                    Drop Table #BackupSetIds;" # <> 8 Used to eliminate data files that no longer exist
+                    DROP TABLE #BackupSetIds;" # <> 8 Used to eliminate data files that no longer exist
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
                 } else {

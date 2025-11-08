@@ -131,18 +131,18 @@ function Get-DbaModule {
         }
 
 
-        $sql = "SELECT  DB_NAME() AS DatabaseName,
+        $sql = "SELECT DB_NAME() AS DatabaseName,
         so.name AS ModuleName,
-        so.object_id ,
-        SCHEMA_NAME(so.schema_id) AS SchemaName ,
-        so.parent_object_id ,
-        so.type ,
-        so.type_desc ,
-        so.create_date ,
-        so.modify_date ,
-        so.is_ms_shipped ,
+        so.object_id,
+        SCHEMA_NAME(so.schema_id) AS SchemaName,
+        so.parent_object_id,
+        so.type,
+        so.type_desc,
+        so.create_date,
+        so.modify_date,
+        so.is_ms_shipped,
         sm.definition,
-         OBJECTPROPERTY(so.object_id, 'ExecIsStartUp') as startup
+        OBJECTPROPERTY(so.object_id, 'ExecIsStartUp') AS startup
         FROM sys.sql_modules sm
         LEFT JOIN sys.objects so ON sm.object_id = so.object_id
         WHERE so.modify_date >= '$($ModifiedSince)'"
@@ -151,7 +151,7 @@ function Get-DbaModule {
         }
         if ($Type) {
             $sqltypes = $types -join "','"
-            $sql += " AND type_desc in ('$sqltypes')"
+            $sql += " AND type_desc IN ('$sqltypes')"
         }
         $sql += "`n ORDER BY so.modify_date"
     }

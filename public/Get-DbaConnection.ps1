@@ -52,13 +52,13 @@ function Get-DbaConnection {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                             SERVERPROPERTY('ServerName') AS SqlInstance,
-                            session_id as SessionId, most_recent_session_id as MostRecentSessionId, connect_time as ConnectTime,
-                            net_transport as Transport, protocol_type as ProtocolType, protocol_version as ProtocolVersion,
-                            endpoint_id as EndpointId, encrypt_option as EncryptOption, auth_scheme as AuthScheme, node_affinity as NodeAffinity,
-                            num_reads as Reads, num_writes as Writes, last_read as LastRead, last_write as LastWrite,
-                            net_packet_size as PacketSize, client_net_address as ClientNetworkAddress, client_tcp_port as ClientTcpPort,
-                            local_net_address as ServerNetworkAddress, local_tcp_port as ServerTcpPort, connection_id as ConnectionId,
-                            parent_connection_id as ParentConnectionId, most_recent_sql_handle as MostRecentSqlHandle
+                            session_id AS SessionId, most_recent_session_id AS MostRecentSessionId, connect_time AS ConnectTime,
+                            net_transport AS Transport, protocol_type AS ProtocolType, protocol_version AS ProtocolVersion,
+                            endpoint_id AS EndpointId, encrypt_option AS EncryptOption, auth_scheme AS AuthScheme, node_affinity AS NodeAffinity,
+                            num_reads AS Reads, num_writes AS Writes, last_read AS LastRead, last_write AS LastWrite,
+                            net_packet_size AS PacketSize, client_net_address AS ClientNetworkAddress, client_tcp_port AS ClientTcpPort,
+                            local_net_address AS ServerNetworkAddress, local_tcp_port AS ServerTcpPort, connection_id AS ConnectionId,
+                            parent_connection_id AS ParentConnectionId, most_recent_sql_handle AS MostRecentSqlHandle
                             FROM sys.dm_exec_connections"
     }
 

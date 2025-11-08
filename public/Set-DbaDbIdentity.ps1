@@ -68,7 +68,7 @@ function Set-DbaDbIdentity {
         Connects to AdventureWorks2014 on instances Sql1 and Sql2/sqlexpress using sqladmin credential and runs the command DBCC CHECKIDENT('Production.ScrapReason') to return the current identity value.
 
     .EXAMPLE
-        PS C:\> $query = "Select Schema_Name(t.schema_id) +'.' + t.name as TableName from sys.columns c INNER JOIN sys.tables t on t.object_id = c.object_id WHERE is_identity = 1"
+        PS C:\> $query = "SELECT SCHEMA_NAME(t.schema_id) +'.' + t.name AS TableName FROM sys.columns c INNER JOIN sys.tables t ON t.object_id = c.object_id WHERE is_identity = 1"
         PS C:\> $IdentityTables = Invoke-DbaQuery -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Query $query
         PS C:\> foreach ($tbl in $IdentityTables) {
         PS C:\>    Set-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table $tbl.TableName

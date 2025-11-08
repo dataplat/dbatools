@@ -169,7 +169,7 @@ function Install-DbaWhoIsActive {
             }
             if ($PSCmdlet.ShouldProcess($instance, "Installing sp_WhoisActive")) {
                 try {
-                    $ProcedureExists_Query = "select COUNT(*) [proc_count] from sys.procedures where is_ms_shipped = 0 and name like '%sp_WhoisActive%'"
+                    $ProcedureExists_Query = "SELECT COUNT(*) [proc_count] FROM sys.procedures WHERE is_ms_shipped = 0 AND name LIKE '%sp_WhoisActive%'"
 
                     if ($server.Databases[$Database]) {
                         $ProcedureExists = ($server.Query($ProcedureExists_Query, $Database)).proc_count

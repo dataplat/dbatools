@@ -230,7 +230,7 @@ function Copy-DbaLinkedServer {
                         $destServer.Query($sql)
 
                         if ($copyLinkedServer.ProductName -eq 'SQL Server' -and $copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
-                            $sql2 = "EXEC sp_setnetname '$($copyLinkedServer.Name)', '$($copyLinkedServer.DataSource)'; "
+                            $sql2 = "EXEC sys.sp_setnetname '$($copyLinkedServer.Name)', '$($copyLinkedServer.DataSource)'; "
                             $destServer.Query($sql2)
                         }
 

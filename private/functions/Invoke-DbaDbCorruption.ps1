@@ -137,7 +137,7 @@ function Invoke-DbaDbCorruption {
         return
     }
 
-    $RowCount = $db.Query("select top 1 * from $($tb.name)")
+    $RowCount = $db.Query("SELECT TOP 1 * FROM $($tb.name)")
     if ($RowCount.count -eq 0) {
         Stop-Function -EnableException:$EnableException -Message "The table $tb has no rows" -Target $table
         return

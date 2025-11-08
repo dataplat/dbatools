@@ -353,10 +353,10 @@ function Export-DbaLogin {
                                     $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
                                 }
                                 9 {
-                                    $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password_hash) AS hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
                                 }
                                 default {
-                                    $sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
+                                    $sql = "SELECT CAST(CONVERT(VARCHAR(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(MAX)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
                                 }
                             }
 

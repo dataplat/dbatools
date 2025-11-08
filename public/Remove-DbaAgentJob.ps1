@@ -126,7 +126,7 @@ function Remove-DbaAgentJob {
                         $dropSchedule = 0
                     }
                     Write-Message -Level SomewhatVerbose -Message "Removing job"
-                    $dropJobQuery = ("EXEC dbo.sp_delete_job @job_name = '{0}', @delete_history = {1}, @delete_unused_schedule = {2}" -f $currentJob.Name.Replace("'", "''"), $dropHistory, $dropSchedule)
+                    $dropJobQuery = ("EXEC msdb.dbo.sp_delete_job @job_name = '{0}', @delete_history = {1}, @delete_unused_schedule = {2}" -f $currentJob.Name.Replace("'", "''"), $dropHistory, $dropSchedule)
                     $server.Databases['msdb'].ExecuteNonQuery($dropJobQuery)
                     $server.JobServer.Jobs.Refresh()
                     Remove-TeppCacheItem -SqlInstance $server -Type job -Name $currentJob.Name

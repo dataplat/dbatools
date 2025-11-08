@@ -332,12 +332,12 @@ function Restore-DbaDatabase {
         >> }
         >>
         PS C:\> $files | Restore-DbaDatabase @params
-        PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
+        PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "SELECT TOP 1 * FROM Restored.dbo.steps ORDER BY dt DESC"
         PS C:\> $params.RestoreTime = (get-date "15:09:30 22/05/2017")
         PS C:\> $params.NoRecovery = $false
         PS C:\> $params.Add("Continue",$true)
         PS C:\> $files | Restore-DbaDatabase @params
-        PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
+        PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "SELECT TOP 1 * FROM Restored.dbo.steps ORDER BY dt DESC"
         PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace
 
         In this example we step through the backup files held in c:\dbatools\db1 folder.

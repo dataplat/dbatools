@@ -112,7 +112,7 @@ function Get-DbaIoLatency {
                         (([num_of_bytes_read] + [num_of_bytes_written]) /
                         ([num_of_reads] + [num_of_writes]))
                     END
-        FROM sys.dm_io_virtual_file_stats (NULL,NULL) AS [vfs]
+        FROM sys.dm_io_virtual_file_stats (NULL, NULL) AS [vfs]
         INNER JOIN sys.master_files AS [mf]
             ON [vfs].[database_id] = [mf].[database_id]
             AND [vfs].[file_id] = [mf].[file_id];"
