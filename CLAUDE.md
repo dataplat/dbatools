@@ -60,6 +60,118 @@ $collection = [System.Collections.ArrayList]::new()
 
 When in doubt about version compatibility, use the `New-Object` cmdlet approach.
 
+### SQL SERVER VERSION SUPPORT
+
+**GUIDING PRINCIPLE**: Support SQL Server 2000 when feasible and not overly complex. Balance maintenance burden with real-world user needs.
+
+**Version Number Mapping:**
+- SQL Server 2000 = Version 8 (`$server.VersionMajor -eq 8`)
+- SQL Server 2005 = Version 9 (`$server.VersionMajor -eq 9`)
+- SQL Server 2008/2008 R2 = Version 10
+- SQL Server 2012 = Version 11
+- SQL Server 2014 = Version 12
+- SQL Server 2016 = Version 13
+- SQL Server 2017 = Version 14
+- SQL Server 2019 = Version 15
+- SQL Server 2022 = Version 16
+
+**Philosophy:**
+- **Support SQL Server 2000 when it is not complex or does not add significantly to the codebase**
+- **Skip SQL Server 2000 gracefully when the feature requires SQL 2005+ functionality**
+- Never be dismissive or judgmental about users running old SQL Server versions
+- Respect that users may be dealing with legacy systems beyond their control
+- Balance maintenance and support - practical, not ideological
+
+**Three Patterns for Version Handling:**
+
+1. **MinimumVersion Parameter** (most common for SQL 2005+ features):
+```powershell
+# Requires SQL Server 2005 or higher
+$server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+
+# Results in clear error message:
+# "SQL Server version 9 required - server not supported."
+```
+
+2. **Direct Version Checking with throw** (for features unavailable in older versions):
+```powershell
+# When feature is only available in SQL 2005+
+if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
+    throw "Server AlertCategories are only supported in SQL Server 2005 and above. Quitting."
+}
+```
+
+3. **Conditional Logic for Backward Compatibility** (when SQL 2000 support is feasible):
+```powershell
+# Different queries or logic for SQL Server 2000
+if ($server.VersionMajor -eq 8) {
+    # SQL Server 2000 uses different system tables
+    $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbName
+} else {
+    # SQL Server 2005+ uses catalog views
+    $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbName
+}
+
+# SQL Server 2000 may need different default paths
+if ($null -eq $PSBoundParameters.Path -and $server.VersionMajor -eq 8) {
+    $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
+}
+```
+
+**Common Reasons to Require SQL Server 2005+:**
+
+SQL Server 2005 introduced many foundational changes that make backward compatibility difficult:
+- Catalog views (`sys.*`) replaced system tables (`sysobjects`, `syscomments`, etc.)
+- `SCHEMA_NAME()` and schema-based security
+- New object types and features (e.g., Service Broker, CLR integration)
+- DMVs (Dynamic Management Views)
+- Deprecated features like Extended Stored Procedures (deprecated in 2005, favor CLR)
+
+**When to Use Each Pattern:**
+
+- **Use MinimumVersion 9** when the feature fundamentally requires SQL 2005+ (catalog views, schemas, DMVs)
+- **Use explicit version checking** when you need a clearer error message or version-specific logic paths
+- **Use conditional logic** when SQL 2000 support is straightforward (different system tables, minor syntax differences)
+
+**Documentation Standards:**
+
+When a command requires a specific SQL Server version, document it in the help:
+
+```powershell
+.PARAMETER SqlInstance
+    The target SQL Server instance or instances. Must be SQL Server 2005 or higher.
+
+.PARAMETER Source
+    Source SQL Server instance. You must have sysadmin access and server version must be SQL Server 2000 or higher.
+```
+
+**Examples from the Codebase:**
+
+Commands that support SQL Server 2000:
+- `Copy-DbaAgentAlert`, `Copy-DbaAgentJob`, `Copy-DbaAgentOperator`, `Copy-DbaAgentProxy`, `Copy-DbaAgentServer`
+- `Copy-DbaBackupDevice`, `Copy-DbaCustomError`, `Copy-DbaLogin`
+- `Backup-DbaDatabase` (with version-specific handling)
+- `Copy-DbaDatabase` (with restrictions: cannot migrate SQL 2000 to SQL 2012+)
+
+Commands that require SQL Server 2005+:
+- `Copy-DbaAgentJobCategory` (uses AlertCategories only available in SQL 2005+)
+- `Copy-DbaAgentProxy` (uses MinimumVersion 9)
+- Most commands using catalog views, DMVs, or SQL 2005+ features
+
+**Tone and Communication:**
+
+❌ **WRONG** - Never say:
+- "It's 25 years old, go to hell"
+- "Nobody should be running SQL Server 2000"
+- "Upgrade already!"
+- Dismissive or judgmental language
+
+✅ **CORRECT** - Instead say:
+- "This feature requires SQL Server 2005+ due to its dependency on catalog views"
+- "SQL Server 2000 is not supported for this command because it would add significant complexity"
+- "The command handles SQL Server 2000 gracefully by rejecting the connection with a clear version error"
+- Respectful, factual, technical explanations
+
 ### SPLAT USAGE REQUIREMENT
 
 **USE SPLATS ONLY FOR 3+ PARAMETERS**
@@ -634,6 +746,8 @@ Don't add excessive tests, but don't skip tests either. When making changes:
 - [ ] No `::new()` syntax used (PowerShell v3+ compatible)
 - [ ] No v5+ language features used
 - [ ] `New-Object` used for object instantiation
+- [ ] SQL Server version support follows project philosophy (support 2000 when feasible)
+- [ ] Version requirements documented in parameter help if applicable
 
 **Style Requirements:**
 - [ ] Double quotes used for all strings
@@ -674,9 +788,10 @@ The golden rules for dbatools code:
 1. **NEVER use backticks** - Use splats for 3+ parameters, direct syntax for 1-2
 2. **NEVER use `= $true` in parameter attributes** - Use modern syntax: `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
 3. **NEVER use `::new()` syntax** - Use `New-Object` for PowerShell v3 compatibility
-4. **ALWAYS align hashtables** - Equals signs must line up vertically
-5. **ALWAYS preserve comments** - Every comment stays exactly as written
-6. **ALWAYS use double quotes** - SQL Server module standard
-7. **ALWAYS use unique variable names** - Prevent scope collisions
-8. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
-9. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
+4. **NEVER be dismissive about SQL Server versions** - Support SQL 2000 when feasible, skip gracefully when not
+5. **ALWAYS align hashtables** - Equals signs must line up vertically
+6. **ALWAYS preserve comments** - Every comment stays exactly as written
+7. **ALWAYS use double quotes** - SQL Server module standard
+8. **ALWAYS use unique variable names** - Prevent scope collisions
+9. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
+10. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
