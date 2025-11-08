@@ -1563,28 +1563,34 @@ function Invoke-DbaDbLogShipping {
                                 Write-Message -Message "Start database restore" -Level Verbose
                                 if ($NoRecovery -or (-not $Standby)) {
                                     if ($Force) {
-                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
-                                            -SqlCredential $DestinationSqlCredential `
-                                            -Path $BackupPath `
-                                            -DestinationFilePrefix $SecondaryDatabasePrefix `
-                                            -DestinationFileSuffix $SecondaryDatabaseSuffix `
-                                            -DestinationDataDirectory $DatabaseRestoreDataFolder `
-                                            -DestinationLogDirectory $DatabaseRestoreLogFolder `
-                                            -DatabaseName $SecondaryDatabase `
-                                            -DirectoryRecurse `
-                                            -NoRecovery `
-                                            -WithReplace
+                                        $splatRestore = @{
+                                            SqlInstance               = $destInstance
+                                            SqlCredential             = $DestinationSqlCredential
+                                            Path                      = $BackupPath
+                                            DestinationFilePrefix     = $SecondaryDatabasePrefix
+                                            DestinationFileSuffix     = $SecondaryDatabaseSuffix
+                                            DestinationDataDirectory  = $DatabaseRestoreDataFolder
+                                            DestinationLogDirectory   = $DatabaseRestoreLogFolder
+                                            DatabaseName              = $SecondaryDatabase
+                                            DirectoryRecurse          = $true
+                                            NoRecovery                = $true
+                                            WithReplace               = $true
+                                        }
+                                        $null = Restore-DbaDatabase @splatRestore
                                     } else {
-                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
-                                            -SqlCredential $DestinationSqlCredential `
-                                            -Path $BackupPath `
-                                            -DestinationFilePrefix $SecondaryDatabasePrefix `
-                                            -DestinationFileSuffix $SecondaryDatabaseSuffix `
-                                            -DestinationDataDirectory $DatabaseRestoreDataFolder `
-                                            -DestinationLogDirectory $DatabaseRestoreLogFolder `
-                                            -DatabaseName $SecondaryDatabase `
-                                            -DirectoryRecurse `
-                                            -NoRecovery
+                                        $splatRestore = @{
+                                            SqlInstance               = $destInstance
+                                            SqlCredential             = $DestinationSqlCredential
+                                            Path                      = $BackupPath
+                                            DestinationFilePrefix     = $SecondaryDatabasePrefix
+                                            DestinationFileSuffix     = $SecondaryDatabaseSuffix
+                                            DestinationDataDirectory  = $DatabaseRestoreDataFolder
+                                            DestinationLogDirectory   = $DatabaseRestoreLogFolder
+                                            DatabaseName              = $SecondaryDatabase
+                                            DirectoryRecurse          = $true
+                                            NoRecovery                = $true
+                                        }
+                                        $null = Restore-DbaDatabase @splatRestore
                                     }
                                 }
 
@@ -1595,26 +1601,32 @@ function Invoke-DbaDbLogShipping {
 
                                     # Check if credentials need to be used
                                     if ($DestinationSqlCredential) {
-                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
-                                            -SqlCredential $DestinationSqlCredential `
-                                            -Path $BackupPath `
-                                            -DestinationFilePrefix $SecondaryDatabasePrefix `
-                                            -DestinationFileSuffix $SecondaryDatabaseSuffix `
-                                            -DestinationDataDirectory $DatabaseRestoreDataFolder `
-                                            -DestinationLogDirectory $DatabaseRestoreLogFolder `
-                                            -DatabaseName $SecondaryDatabase `
-                                            -DirectoryRecurse `
-                                            -StandbyDirectory $StandbyDirectory
+                                        $splatRestoreStandby = @{
+                                            SqlInstance               = $destInstance
+                                            SqlCredential             = $DestinationSqlCredential
+                                            Path                      = $BackupPath
+                                            DestinationFilePrefix     = $SecondaryDatabasePrefix
+                                            DestinationFileSuffix     = $SecondaryDatabaseSuffix
+                                            DestinationDataDirectory  = $DatabaseRestoreDataFolder
+                                            DestinationLogDirectory   = $DatabaseRestoreLogFolder
+                                            DatabaseName              = $SecondaryDatabase
+                                            DirectoryRecurse          = $true
+                                            StandbyDirectory          = $StandbyDirectory
+                                        }
+                                        $null = Restore-DbaDatabase @splatRestoreStandby
                                     } else {
-                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
-                                            -Path $BackupPath `
-                                            -DestinationFilePrefix $SecondaryDatabasePrefix `
-                                            -DestinationFileSuffix $SecondaryDatabaseSuffix `
-                                            -DestinationDataDirectory $DatabaseRestoreDataFolder `
-                                            -DestinationLogDirectory $DatabaseRestoreLogFolder `
-                                            -DatabaseName $SecondaryDatabase `
-                                            -DirectoryRecurse `
-                                            -StandbyDirectory $StandbyDirectory
+                                        $splatRestoreStandby = @{
+                                            SqlInstance               = $destInstance
+                                            Path                      = $BackupPath
+                                            DestinationFilePrefix     = $SecondaryDatabasePrefix
+                                            DestinationFileSuffix     = $SecondaryDatabaseSuffix
+                                            DestinationDataDirectory  = $DatabaseRestoreDataFolder
+                                            DestinationLogDirectory   = $DatabaseRestoreLogFolder
+                                            DatabaseName              = $SecondaryDatabase
+                                            DirectoryRecurse          = $true
+                                            StandbyDirectory          = $StandbyDirectory
+                                        }
+                                        $null = Restore-DbaDatabase @splatRestoreStandby
                                     }
                                 }
                             } catch {
@@ -1636,21 +1648,24 @@ function Invoke-DbaDbLogShipping {
 
                             Write-Message -Message "Configuring logshipping for primary database" -Level Verbose
 
-                            New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
-                                -SqlCredential $SourceSqlCredential `
-                                -Database $($db.Name) `
-                                -BackupDirectory $DatabaseLocalPath `
-                                -BackupJob $DatabaseBackupJob `
-                                -BackupRetention $BackupRetention `
-                                -BackupShare $DatabaseSharedPath `
-                                -BackupThreshold $BackupThreshold `
-                                -CompressBackup:$BackupCompression `
-                                -HistoryRetention $HistoryRetention `
-                                -MonitorServer $PrimaryMonitorServer `
-                                -MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
-                                -MonitorCredential $PrimaryMonitorCredential `
-                                -ThresholdAlertEnabled:$PrimaryThresholdAlertEnabled `
-                                -Force:$Force
+                            $splatPrimary = @{
+                                SqlInstance                 = $SourceSqlInstance
+                                SqlCredential               = $SourceSqlCredential
+                                Database                    = $($db.Name)
+                                BackupDirectory             = $DatabaseLocalPath
+                                BackupJob                   = $DatabaseBackupJob
+                                BackupRetention             = $BackupRetention
+                                BackupShare                 = $DatabaseSharedPath
+                                BackupThreshold             = $BackupThreshold
+                                CompressBackup              = $BackupCompression
+                                HistoryRetention            = $HistoryRetention
+                                MonitorServer               = $PrimaryMonitorServer
+                                MonitorServerSecurityMode   = $PrimaryMonitorServerSecurityMode
+                                MonitorCredential           = $PrimaryMonitorCredential
+                                ThresholdAlertEnabled       = $PrimaryThresholdAlertEnabled
+                                Force                       = $Force
+                            }
+                            New-DbaLogShippingPrimaryDatabase @splatPrimary
 
                             # Check if the backup job needs to be enabled or disabled
                             if ($BackupScheduleDisabled) {
@@ -1664,30 +1679,36 @@ function Invoke-DbaDbLogShipping {
                             Write-Message -Message "Create backup job schedule $DatabaseBackupSchedule" -Level Verbose
 
                             #Variable $BackupJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
-                            $null = New-DbaAgentSchedule -SqlInstance $SourceSqlInstance `
-                                -SqlCredential $SourceSqlCredential `
-                                -Job $DatabaseBackupJob `
-                                -Schedule $DatabaseBackupSchedule `
-                                -FrequencyType $BackupScheduleFrequencyType `
-                                -FrequencyInterval $BackupScheduleFrequencyInterval `
-                                -FrequencySubdayType $BackupScheduleFrequencySubdayType `
-                                -FrequencySubdayInterval $BackupScheduleFrequencySubdayInterval `
-                                -FrequencyRelativeInterval $BackupScheduleFrequencyRelativeInterval `
-                                -FrequencyRecurrenceFactor $BackupScheduleFrequencyRecurrenceFactor `
-                                -StartDate $BackupScheduleStartDate `
-                                -EndDate $BackupScheduleEndDate `
-                                -StartTime $BackupScheduleStartTime `
-                                -EndTime $BackupScheduleEndTime `
-                                -Force:$Force
+                            $splatBackupSchedule = @{
+                                SqlInstance                  = $SourceSqlInstance
+                                SqlCredential                = $SourceSqlCredential
+                                Job                          = $DatabaseBackupJob
+                                Schedule                     = $DatabaseBackupSchedule
+                                FrequencyType                = $BackupScheduleFrequencyType
+                                FrequencyInterval            = $BackupScheduleFrequencyInterval
+                                FrequencySubdayType          = $BackupScheduleFrequencySubdayType
+                                FrequencySubdayInterval      = $BackupScheduleFrequencySubdayInterval
+                                FrequencyRelativeInterval    = $BackupScheduleFrequencyRelativeInterval
+                                FrequencyRecurrenceFactor    = $BackupScheduleFrequencyRecurrenceFactor
+                                StartDate                    = $BackupScheduleStartDate
+                                EndDate                      = $BackupScheduleEndDate
+                                StartTime                    = $BackupScheduleStartTime
+                                EndTime                      = $BackupScheduleEndTime
+                                Force                        = $Force
+                            }
+                            $null = New-DbaAgentSchedule @splatBackupSchedule
 
                             Write-Message -Message "Configuring logshipping from primary to secondary database." -Level Verbose
 
-                            New-DbaLogShippingPrimarySecondary -SqlInstance $SourceSqlInstance `
-                                -SqlCredential $SourceSqlCredential `
-                                -PrimaryDatabase $($db.Name) `
-                                -SecondaryDatabase $SecondaryDatabase `
-                                -SecondaryServer $destInstance `
-                                -SecondarySqlCredential $DestinationSqlCredential
+                            $splatPrimarySecondary = @{
+                                SqlInstance             = $SourceSqlInstance
+                                SqlCredential           = $SourceSqlCredential
+                                PrimaryDatabase         = $($db.Name)
+                                SecondaryDatabase       = $SecondaryDatabase
+                                SecondaryServer         = $destInstance
+                                SecondarySqlCredential  = $DestinationSqlCredential
+                            }
+                            New-DbaLogShippingPrimarySecondary @splatPrimarySecondary
                         } catch {
                             $setupResult = "Failed"
                             $comment = "Something went wrong setting up log shipping for primary instance"
@@ -1705,73 +1726,85 @@ function Invoke-DbaDbLogShipping {
 
                             Write-Message -Message "Configuring logshipping from secondary database $SecondaryDatabase to primary database $db." -Level Verbose
 
-                            New-DbaLogShippingSecondaryPrimary -SqlInstance $destInstance `
-                                -SqlCredential $DestinationSqlCredential `
-                                -BackupSourceDirectory $DatabaseSharedPath `
-                                -BackupDestinationDirectory $DatabaseCopyDestinationFolder `
-                                -CopyJob $DatabaseCopyJob `
-                                -FileRetentionPeriod $BackupRetention `
-                                -MonitorServer $SecondaryMonitorServer `
-                                -MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
-                                -MonitorCredential $SecondaryMonitorCredential `
-                                -PrimaryServer $SourceSqlInstance `
-                                -PrimaryDatabase $($db.Name) `
-                                -RestoreJob $DatabaseRestoreJob `
-                                -Force:$Force
+                            $splatSecondaryPrimary = @{
+                                SqlInstance                 = $destInstance
+                                SqlCredential               = $DestinationSqlCredential
+                                BackupSourceDirectory       = $DatabaseSharedPath
+                                BackupDestinationDirectory  = $DatabaseCopyDestinationFolder
+                                CopyJob                     = $DatabaseCopyJob
+                                FileRetentionPeriod         = $BackupRetention
+                                MonitorServer               = $SecondaryMonitorServer
+                                MonitorServerSecurityMode   = $SecondaryMonitorServerSecurityMode
+                                MonitorCredential           = $SecondaryMonitorCredential
+                                PrimaryServer               = $SourceSqlInstance
+                                PrimaryDatabase             = $($db.Name)
+                                RestoreJob                  = $DatabaseRestoreJob
+                                Force                       = $Force
+                            }
+                            New-DbaLogShippingSecondaryPrimary @splatSecondaryPrimary
 
                             Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Verbose
                             #Variable $CopyJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
-                            $null = New-DbaAgentSchedule -SqlInstance $destInstance `
-                                -SqlCredential $DestinationSqlCredential `
-                                -Job $DatabaseCopyJob `
-                                -Schedule $DatabaseCopySchedule `
-                                -FrequencyType $CopyScheduleFrequencyType `
-                                -FrequencyInterval $CopyScheduleFrequencyInterval `
-                                -FrequencySubdayType $CopyScheduleFrequencySubdayType `
-                                -FrequencySubdayInterval $CopyScheduleFrequencySubdayInterval `
-                                -FrequencyRelativeInterval $CopyScheduleFrequencyRelativeInterval `
-                                -FrequencyRecurrenceFactor $CopyScheduleFrequencyRecurrenceFactor `
-                                -StartDate $CopyScheduleStartDate `
-                                -EndDate $CopyScheduleEndDate `
-                                -StartTime $CopyScheduleStartTime `
-                                -EndTime $CopyScheduleEndTime `
-                                -Force:$Force
+                            $splatCopySchedule = @{
+                                SqlInstance                  = $destInstance
+                                SqlCredential                = $DestinationSqlCredential
+                                Job                          = $DatabaseCopyJob
+                                Schedule                     = $DatabaseCopySchedule
+                                FrequencyType                = $CopyScheduleFrequencyType
+                                FrequencyInterval            = $CopyScheduleFrequencyInterval
+                                FrequencySubdayType          = $CopyScheduleFrequencySubdayType
+                                FrequencySubdayInterval      = $CopyScheduleFrequencySubdayInterval
+                                FrequencyRelativeInterval    = $CopyScheduleFrequencyRelativeInterval
+                                FrequencyRecurrenceFactor    = $CopyScheduleFrequencyRecurrenceFactor
+                                StartDate                    = $CopyScheduleStartDate
+                                EndDate                      = $CopyScheduleEndDate
+                                StartTime                    = $CopyScheduleStartTime
+                                EndTime                      = $CopyScheduleEndTime
+                                Force                        = $Force
+                            }
+                            $null = New-DbaAgentSchedule @splatCopySchedule
 
                             Write-Message -Message "Create restore job schedule $DatabaseRestoreSchedule" -Level Verbose
 
                             #Variable $RestoreJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
-                            $null = New-DbaAgentSchedule -SqlInstance $destInstance `
-                                -SqlCredential $DestinationSqlCredential `
-                                -Job $DatabaseRestoreJob `
-                                -Schedule $DatabaseRestoreSchedule `
-                                -FrequencyType $RestoreScheduleFrequencyType `
-                                -FrequencyInterval $RestoreScheduleFrequencyInterval `
-                                -FrequencySubdayType $RestoreScheduleFrequencySubdayType `
-                                -FrequencySubdayInterval $RestoreScheduleFrequencySubdayInterval `
-                                -FrequencyRelativeInterval $RestoreScheduleFrequencyRelativeInterval `
-                                -FrequencyRecurrenceFactor $RestoreScheduleFrequencyRecurrenceFactor `
-                                -StartDate $RestoreScheduleStartDate `
-                                -EndDate $RestoreScheduleEndDate `
-                                -StartTime $RestoreScheduleStartTime `
-                                -EndTime $RestoreScheduleEndTime `
-                                -Force:$Force
+                            $splatRestoreSchedule = @{
+                                SqlInstance                  = $destInstance
+                                SqlCredential                = $DestinationSqlCredential
+                                Job                          = $DatabaseRestoreJob
+                                Schedule                     = $DatabaseRestoreSchedule
+                                FrequencyType                = $RestoreScheduleFrequencyType
+                                FrequencyInterval            = $RestoreScheduleFrequencyInterval
+                                FrequencySubdayType          = $RestoreScheduleFrequencySubdayType
+                                FrequencySubdayInterval      = $RestoreScheduleFrequencySubdayInterval
+                                FrequencyRelativeInterval    = $RestoreScheduleFrequencyRelativeInterval
+                                FrequencyRecurrenceFactor    = $RestoreScheduleFrequencyRecurrenceFactor
+                                StartDate                    = $RestoreScheduleStartDate
+                                EndDate                      = $RestoreScheduleEndDate
+                                StartTime                    = $RestoreScheduleStartTime
+                                EndTime                      = $RestoreScheduleEndTime
+                                Force                        = $Force
+                            }
+                            $null = New-DbaAgentSchedule @splatRestoreSchedule
 
                             Write-Message -Message "Configuring logshipping for secondary database." -Level Verbose
 
-                            New-DbaLogShippingSecondaryDatabase -SqlInstance $destInstance `
-                                -SqlCredential $DestinationSqlCredential `
-                                -SecondaryDatabase $SecondaryDatabase `
-                                -PrimaryServer $SourceSqlInstance `
-                                -PrimaryDatabase $($db.Name) `
-                                -RestoreDelay $RestoreDelay `
-                                -RestoreMode $DatabaseStatus `
-                                -DisconnectUsers:$DisconnectUsers `
-                                -RestoreThreshold $RestoreThreshold `
-                                -ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
-                                -HistoryRetention $HistoryRetention `
-                                -MonitorServer $SecondaryMonitorServer `
-                                -MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
-                                -MonitorCredential $SecondaryMonitorCredential
+                            $splatSecondaryDatabase = @{
+                                SqlInstance                 = $destInstance
+                                SqlCredential               = $DestinationSqlCredential
+                                SecondaryDatabase           = $SecondaryDatabase
+                                PrimaryServer               = $SourceSqlInstance
+                                PrimaryDatabase             = $($db.Name)
+                                RestoreDelay                = $RestoreDelay
+                                RestoreMode                 = $DatabaseStatus
+                                DisconnectUsers             = $DisconnectUsers
+                                RestoreThreshold            = $RestoreThreshold
+                                ThresholdAlertEnabled       = $SecondaryThresholdAlertEnabled
+                                HistoryRetention            = $HistoryRetention
+                                MonitorServer               = $SecondaryMonitorServer
+                                MonitorServerSecurityMode   = $SecondaryMonitorServerSecurityMode
+                                MonitorCredential           = $SecondaryMonitorCredential
+                            }
+                            New-DbaLogShippingSecondaryDatabase @splatSecondaryDatabase
 
                             # Check if the copy job needs to be enabled or disabled
                             if ($CopyScheduleDisabled) {

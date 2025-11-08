@@ -146,6 +146,18 @@ function New-DbaLogShippingPrimaryDatabase {
             Stop-Function -Message "Azure blob storage backup requires SQL Server 2012 or later. Instance is version $($server.Version.Major)" -Target $SqlInstance
             return
         }
+
+        # Validate Azure credential exists on SQL Server instance
+        # When using SAS token authentication, credential name must match the Azure URL
+        $credentialName = $BackupShare
+        $credential = $server.Credentials | Where-Object Name -eq $credentialName
+
+        if (-not $credential) {
+            Stop-Function -Message "Azure blob storage requires a SQL Server credential named '$credentialName' to exist on instance $SqlInstance. Create the credential using New-DbaCredential with either a Shared Access Signature (SAS) token or storage account key before setting up log shipping." -Target $SqlInstance
+            return
+        }
+
+        Write-Message -Message "Found Azure credential: $credentialName" -Level Verbose
     } else {
         # Traditional UNC path - validate format and accessibility
         if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {

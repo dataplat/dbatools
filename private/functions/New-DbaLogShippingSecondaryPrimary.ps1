@@ -158,6 +158,32 @@ function New-DbaLogShippingSecondaryPrimary {
             Stop-Function -Message "Azure blob storage restore requires SQL Server 2012 or later. Instance is version $($ServerSecondary.Version.Major)" -Target $SqlInstance
             return
         }
+
+        # Validate Azure credentials exist on SQL Server instance
+        # When using SAS token authentication, credential name must match the Azure URL
+        if ($IsAzureSource) {
+            $sourceCredentialName = $BackupSourceDirectory
+            $sourceCredential = $ServerSecondary.Credentials | Where-Object Name -eq $sourceCredentialName
+
+            if (-not $sourceCredential) {
+                Stop-Function -Message "Azure blob storage requires a SQL Server credential named '$sourceCredentialName' to exist on instance $SqlInstance. Create the credential using New-DbaCredential with either a Shared Access Signature (SAS) token or storage account key before setting up log shipping." -Target $SqlInstance
+                return
+            }
+
+            Write-Message -Message "Found Azure source credential: $sourceCredentialName" -Level Verbose
+        }
+
+        if ($IsAzureDestination) {
+            $destCredentialName = $BackupDestinationDirectory
+            $destCredential = $ServerSecondary.Credentials | Where-Object Name -eq $destCredentialName
+
+            if (-not $destCredential) {
+                Stop-Function -Message "Azure blob storage requires a SQL Server credential named '$destCredentialName' to exist on instance $SqlInstance. Create the credential using New-DbaCredential with either a Shared Access Signature (SAS) token or storage account key before setting up log shipping." -Target $SqlInstance
+                return
+            }
+
+            Write-Message -Message "Found Azure destination credential: $destCredentialName" -Level Verbose
+        }
     } else {
         # Traditional file path scenario - validate UNC path
         if ([bool]([uri]$BackupDestinationDirectory).IsUnc -and $BackupDestinationDirectory -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
