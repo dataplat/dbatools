@@ -168,10 +168,21 @@ function Add-DbaComputerCertificate {
                 }
 
                 try {
-                    # Use X509Certificate2Collection constructor for cross-platform compatibility
-                    # On Linux/.NET Core, X509Certificate2 objects are immutable after creation
-                    # so we must use the constructor directly instead of .Import()
-                    $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection($fileBytes, $plainPassword, "Exportable, PersistKeySet")
+                    # Platform-specific certificate loading:
+                    # - Windows/.NET Framework: Use .Import() method (works fine)
+                    # - Linux/.NET Core: Use constructor + Add() (Import() fails with immutability error)
+                    # Note: X509Certificate2Collection constructor does NOT accept (byte[], string, flags)
+                    # That constructor signature belongs to X509Certificate2 (singular), not the collection
+                    $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+
+                    if ($PSEdition -eq "Desktop" -or $IsWindows) {
+                        # Windows: Use Import() method which works on collections
+                        $certCollection.Import($fileBytes, $plainPassword, "Exportable, PersistKeySet")
+                    } else {
+                        # Linux/.NET Core: Create individual cert with constructor, then add to collection
+                        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($fileBytes, $plainPassword, "Exportable, PersistKeySet")
+                        $certCollection.Add($cert)
+                    }
 
                     # Export the entire collection as a single PFX to preserve the chain
                     # This re-exports with the password, creating a fresh encrypted byte array that can be passed to remote
@@ -202,10 +213,21 @@ function Add-DbaComputerCertificate {
                 $flags
             )
 
-            # Use X509Certificate2Collection constructor for cross-platform compatibility
-            # On Linux/.NET Core, X509Certificate2 objects are immutable after creation
-            # so we must use the constructor directly instead of .Import()
-            $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection($CertificateData, $PlainPassword, $flags)
+            # Platform-specific certificate loading:
+            # - Windows/.NET Framework: Use .Import() method (works fine)
+            # - Linux/.NET Core: Use constructor + Add() (Import() fails with immutability error)
+            # Note: X509Certificate2Collection constructor does NOT accept (byte[], string, flags)
+            # That constructor signature belongs to X509Certificate2 (singular), not the collection
+            $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+
+            if ($PSEdition -eq "Desktop" -or $IsWindows) {
+                # Windows: Use Import() method which works on collections
+                $certCollection.Import($CertificateData, $PlainPassword, $flags)
+            } else {
+                # Linux/.NET Core: Create individual cert with constructor, then add to collection
+                $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertificateData, $PlainPassword, $flags)
+                $certCollection.Add($cert)
+            }
 
             Write-Verbose -Message "Importing certificate chain to $Folder\$Store using flags: $flags"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
