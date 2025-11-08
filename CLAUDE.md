@@ -158,19 +158,7 @@ Commands that require SQL Server 2005+:
 - `Copy-DbaAgentProxy` (uses MinimumVersion 9)
 - Most commands using catalog views, DMVs, or SQL 2005+ features
 
-**Tone and Communication:**
-
-❌ **WRONG** - Never say:
-- "It's 25 years old, go to hell"
-- "Nobody should be running SQL Server 2000"
-- "Upgrade already!"
-- Dismissive or judgmental language
-
-✅ **CORRECT** - Instead say:
-- "This feature requires SQL Server 2005+ due to its dependency on catalog views"
-- "SQL Server 2000 is not supported for this command because it would add significant complexity"
-- "The command handles SQL Server 2000 gracefully by rejecting the connection with a clear version error"
-- Respectful, factual, technical explanations
+**Important**: Never be dismissive or judgmental about users running old SQL Server versions. Provide respectful, factual, technical explanations.
 
 ### SMO vs T-SQL USAGE
 
