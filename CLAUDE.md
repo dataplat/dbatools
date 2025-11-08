@@ -60,6 +60,348 @@ $collection = [System.Collections.ArrayList]::new()
 
 When in doubt about version compatibility, use the `New-Object` cmdlet approach.
 
+### SQL SERVER VERSION SUPPORT
+
+**GUIDING PRINCIPLE**: Support SQL Server 2000 when feasible and not overly complex. Balance maintenance burden with real-world user needs.
+
+**Version Number Mapping:**
+- SQL Server 2000 = Version 8 (`$server.VersionMajor -eq 8`)
+- SQL Server 2005 = Version 9 (`$server.VersionMajor -eq 9`)
+- SQL Server 2008/2008 R2 = Version 10
+- SQL Server 2012 = Version 11
+- SQL Server 2014 = Version 12
+- SQL Server 2016 = Version 13
+- SQL Server 2017 = Version 14
+- SQL Server 2019 = Version 15
+- SQL Server 2022 = Version 16
+
+**Philosophy:**
+- **Support SQL Server 2000 when it is not complex or does not add significantly to the codebase**
+- **Skip SQL Server 2000 gracefully when the feature requires SQL 2005+ functionality**
+- Never be dismissive or judgmental about users running old SQL Server versions
+- Respect that users may be dealing with legacy systems beyond their control
+- Balance maintenance and support - practical, not ideological
+
+**Three Patterns for Version Handling:**
+
+1. **MinimumVersion Parameter** (most common for SQL 2005+ features):
+```powershell
+# Requires SQL Server 2005 or higher
+$server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+
+# Results in clear error message:
+# "SQL Server version 9 required - server not supported."
+```
+
+2. **Direct Version Checking with throw** (for features unavailable in older versions):
+```powershell
+# When feature is only available in SQL 2005+
+if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
+    throw "Server AlertCategories are only supported in SQL Server 2005 and above. Quitting."
+}
+```
+
+3. **Conditional Logic for Backward Compatibility** (when SQL 2000 support is feasible):
+```powershell
+# Different queries or logic for SQL Server 2000
+if ($server.VersionMajor -eq 8) {
+    # SQL Server 2000 uses different system tables
+    $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbName
+} else {
+    # SQL Server 2005+ uses catalog views
+    $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbName
+}
+
+# SQL Server 2000 may need different default paths
+if ($null -eq $PSBoundParameters.Path -and $server.VersionMajor -eq 8) {
+    $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
+}
+```
+
+**Common Reasons to Require SQL Server 2005+:**
+
+SQL Server 2005 introduced many foundational changes that make backward compatibility difficult:
+- Catalog views (`sys.*`) replaced system tables (`sysobjects`, `syscomments`, etc.)
+- `SCHEMA_NAME()` and schema-based security
+- New object types and features (e.g., Service Broker, CLR integration)
+- DMVs (Dynamic Management Views)
+- Deprecated features like Extended Stored Procedures (deprecated in 2005, favor CLR)
+
+**When to Use Each Pattern:**
+
+- **Use MinimumVersion 9** when the feature fundamentally requires SQL 2005+ (catalog views, schemas, DMVs)
+- **Use explicit version checking** when you need a clearer error message or version-specific logic paths
+- **Use conditional logic** when SQL 2000 support is straightforward (different system tables, minor syntax differences)
+
+**Documentation Standards:**
+
+When a command requires a specific SQL Server version, document it in the help:
+
+```powershell
+.PARAMETER SqlInstance
+    The target SQL Server instance or instances. Must be SQL Server 2005 or higher.
+
+.PARAMETER Source
+    Source SQL Server instance. You must have sysadmin access and server version must be SQL Server 2000 or higher.
+```
+
+**Examples from the Codebase:**
+
+Commands that support SQL Server 2000:
+- `Copy-DbaAgentAlert`, `Copy-DbaAgentJob`, `Copy-DbaAgentOperator`, `Copy-DbaAgentProxy`, `Copy-DbaAgentServer`
+- `Copy-DbaBackupDevice`, `Copy-DbaCustomError`, `Copy-DbaLogin`
+- `Backup-DbaDatabase` (with version-specific handling)
+- `Copy-DbaDatabase` (with restrictions: cannot migrate SQL 2000 to SQL 2012+)
+
+Commands that require SQL Server 2005+:
+- `Copy-DbaAgentJobCategory` (uses AlertCategories only available in SQL 2005+)
+- `Copy-DbaAgentProxy` (uses MinimumVersion 9)
+- Most commands using catalog views, DMVs, or SQL 2005+ features
+
+**Important**: Never be dismissive or judgmental about users running old SQL Server versions. Provide respectful, factual, technical explanations.
+
+### SMO vs T-SQL USAGE
+
+**GUIDING PRINCIPLE**: Default to using SMO (SQL Server Management Objects) first. Only use T-SQL when SMO doesn't provide the functionality or when T-SQL offers better performance or user experience.
+
+**Why SMO First:**
+- **Abstraction**: SMO provides object-oriented interface that handles version differences automatically
+- **Type Safety**: Strong typing reduces errors compared to dynamic T-SQL strings
+- **Built-in Methods**: Common operations (Create, Drop, Alter, Script) are provided out-of-the-box
+- **Consistency**: SMO ensures consistent behavior across SQL Server versions
+- **Less Code**: Often requires fewer lines than equivalent T-SQL
+
+**When to Use SMO:**
+
+1. **Object Manipulation** - Creating, dropping, altering database objects:
+```powershell
+# PREFERRED - SMO for object manipulation
+$newdb = New-Object Microsoft.SqlServer.Management.Smo.Database($server, $dbName)
+$newdb.Collation = $Collation
+$newdb.RecoveryModel = $RecoveryModel
+$newdb.Create()
+
+# Dropping objects
+$destServer.Roles[$roleName].Drop()
+$destServer.Roles.Refresh()
+```
+
+2. **Object Scripting** - Generating T-SQL from existing objects:
+```powershell
+# PREFERRED - SMO scripting with execution via Query
+$sql = $currentRole.Script() | Out-String
+Write-Message -Level Debug -Message $sql
+$destServer.Query($sql)
+
+# Another example
+$destServer.Query($currentEndpoint.Script()) | Out-Null
+```
+
+3. **Object Enumeration** - Accessing collections and properties:
+```powershell
+# PREFERRED - SMO for object access
+$databases = $server.Databases
+$database = $server.Databases[$dbName]
+$isSystemDb = $database.IsSystemObject
+$members = $currentRole.EnumMemberNames()
+```
+
+4. **Object Properties** - Reading and setting object attributes:
+```powershell
+# PREFERRED - SMO for property access
+$recoveryModel = $db.RecoveryModel
+$owner = $db.Owner
+$lastBackup = $db.LastBackupDate
+$size = $db.Size
+```
+
+**When T-SQL is Appropriate:**
+
+1. **System Views and DMVs** - When SMO doesn't expose the data efficiently:
+```powershell
+# T-SQL for system catalog queries
+$sql = @"
+SELECT
+    p.name AS ProcedureName,
+    SCHEMA_NAME(p.schema_id) AS SchemaName,
+    p.object_id,
+    m.definition AS DllPath
+FROM sys.procedures p
+INNER JOIN sys.all_objects o ON p.object_id = o.object_id
+LEFT JOIN sys.sql_modules m ON p.object_id = m.object_id
+WHERE p.type = 'X'
+    AND p.is_ms_shipped = 0
+ORDER BY p.name
+"@
+$sourceXPs = $sourceServer.Query($sql)
+```
+
+2. **Performance-Critical Queries** - When retrieving large result sets:
+```powershell
+# T-SQL for efficient data retrieval
+$querylastused = "SELECT dbname, max(last_read) last_read FROM sys.dm_db_index_usage_stats GROUP BY dbname"
+$dblastused = $server.Query($querylastused)
+```
+
+3. **Version-Specific Logic** - Different queries for different SQL Server versions:
+```powershell
+# T-SQL when version-specific system tables/views are needed
+if ($server.VersionMajor -eq 8) {
+    # SQL Server 2000 uses system tables
+    $backed_info = $server.Query("SELECT name, SUSER_SNAME(sid) AS [Owner] FROM master.dbo.sysdatabases")
+} else {
+    # SQL Server 2005+ uses catalog views
+    $backed_info = $server.Query("SELECT name, SUSER_SNAME(owner_sid) AS [Owner] FROM sys.databases")
+}
+```
+
+4. **System Stored Procedures** - When the operation requires a specific system proc:
+```powershell
+# T-SQL for system procedures that have no SMO equivalent
+$dropSql = "EXEC sp_dropextendedproc @functname = N'$xpFullName'"
+$null = $destServer.Query($dropSql)
+
+$createSql = "EXEC sp_addextendedproc @functname = N'$xpFullName', @dllname = N'$destDllPath'"
+$null = $destServer.Query($createSql)
+```
+
+5. **User-Friendly Features** - When T-SQL makes the command more intuitive:
+```powershell
+# Sometimes T-SQL provides better UX than SMO
+# Example: Parameterized queries for filtering
+$splatQuery = @{
+    SqlInstance = $instance
+    Query       = "SELECT * FROM users WHERE Givenname = @name"
+    SqlParameter = @{ Name = "Maria" }
+}
+$result = Invoke-DbaQuery @splatQuery
+```
+
+**Hybrid Pattern (Most Common):**
+
+Most dbatools commands use both SMO and T-SQL strategically:
+
+```powershell
+# Get SMO server object
+$sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+
+# Use SMO for object enumeration
+$sourceRoles = $sourceServer.Roles | Where-Object IsFixedRole -eq $false
+
+# Use T-SQL for complex permission queries
+$splatPermissions = @{
+    SqlInstance        = $sourceServer
+    IncludeServerLevel = $true
+}
+$sourcePermissions = Get-DbaPermission @splatPermissions | Where-Object Grantee -eq $roleName
+
+# Use SMO for object manipulation
+foreach ($currentRole in $sourceRoles) {
+    # Script the object using SMO
+    $sql = $currentRole.Script() | Out-String
+
+    # Execute via T-SQL
+    $destServer.Query($sql)
+
+    # Use SMO methods for membership
+    $members = $currentRole.EnumMemberNames()
+    foreach ($member in $members) {
+        $destServer.Roles[$roleName].AddMember($member)
+    }
+}
+```
+
+**Decision Tree:**
+
+1. **Does SMO expose the functionality cleanly?**
+   - YES → Use SMO
+   - NO → Continue to #2
+
+2. **Is this a data retrieval operation from system views/DMVs?**
+   - YES → Use T-SQL via `$server.Query()`
+   - NO → Continue to #3
+
+3. **Does the operation require a system stored procedure?**
+   - YES → Use T-SQL via `$server.Query()`
+   - NO → Continue to #4
+
+4. **Would T-SQL significantly improve user experience?**
+   - YES → Use T-SQL (document why in comments)
+   - NO → Use SMO
+
+**Common Patterns:**
+
+```powershell
+# Pattern 1: SMO object with T-SQL execution of Script()
+$sql = $smoObject.Script() | Out-String
+$destServer.Query($sql)
+
+# Pattern 2: T-SQL for discovery, SMO for manipulation
+$objects = $server.Query("SELECT name FROM sys.objects WHERE type = 'U'")
+foreach ($obj in $objects) {
+    $table = $server.Databases[$dbName].Tables[$obj.name]
+    $table.Drop()  # SMO method
+}
+
+# Pattern 3: SMO with T-SQL fallback
+try {
+    $database = $server.Databases[$dbName]  # SMO
+} catch {
+    # Fallback to T-SQL if SMO fails
+    $result = $server.Query("SELECT name FROM sys.databases WHERE name = '$dbName'")
+}
+```
+
+**Copy-DbaExtendedStoredProcedure Analysis:**
+
+The newly created `Copy-DbaExtendedStoredProcedure` command demonstrates proper SMO vs T-SQL usage:
+
+- ✅ **Correct**: Uses T-SQL for querying `sys.procedures` (lines 122-134) - SMO doesn't expose Extended SP metadata efficiently
+- ✅ **Correct**: Uses T-SQL system procedures `sp_dropextendedproc` and `sp_addextendedproc` (lines 235, 307) - No SMO equivalent
+- ✅ **Correct**: Uses SMO properties `$sourceServer.RootDirectory` (line 181) - Cleaner than querying registry
+- ✅ **Correct**: Uses T-SQL `sp_helpextendedproc` (line 254) - System procedure for metadata
+
+This is a good example of the hybrid pattern where T-SQL is used appropriately because:
+1. Extended Stored Procedures are a legacy feature with limited SMO support
+2. System stored procedures are the documented way to manage them
+3. System catalog views provide the metadata SMO doesn't expose
+
+**Anti-Patterns to Avoid:**
+
+```powershell
+# WRONG - Using T-SQL when SMO provides the functionality
+$result = $server.Query("ALTER DATABASE [$dbName] SET RECOVERY FULL")
+
+# CORRECT - Use SMO
+$db = $server.Databases[$dbName]
+$db.RecoveryModel = "Full"
+$db.Alter()
+
+# WRONG - Using T-SQL for object enumeration
+$databases = $server.Query("SELECT name FROM sys.databases")
+
+# CORRECT - Use SMO
+$databases = $server.Databases
+
+# WRONG - Concatenating T-SQL strings without parameters (SQL injection risk)
+$result = $server.Query("SELECT * FROM users WHERE name = '$userName'")
+
+# CORRECT - Use parameterized queries
+$splatQuery = @{
+    Query        = "SELECT * FROM users WHERE name = @userName"
+    SqlParameter = @{ userName = $userName }
+}
+$result = Invoke-DbaQuery @splatQuery -SqlInstance $server
+```
+
+**Summary:**
+
+- **Default to SMO** for object-oriented operations (Create, Drop, Alter, Script, property access)
+- **Use T-SQL** for system views, DMVs, complex queries, system stored procedures, and version-specific logic
+- **Combine both** in a hybrid approach when it provides the best balance of functionality and usability
+- **Always prefer parameterized queries** when using T-SQL with dynamic values
+- **Document your choice** when T-SQL is used instead of SMO for non-obvious reasons
+
 ### SPLAT USAGE REQUIREMENT
 
 **USE SPLATS ONLY FOR 3+ PARAMETERS**
@@ -634,6 +976,8 @@ Don't add excessive tests, but don't skip tests either. When making changes:
 - [ ] No `::new()` syntax used (PowerShell v3+ compatible)
 - [ ] No v5+ language features used
 - [ ] `New-Object` used for object instantiation
+- [ ] SQL Server version support follows project philosophy (support 2000 when feasible)
+- [ ] Version requirements documented in parameter help if applicable
 
 **Style Requirements:**
 - [ ] Double quotes used for all strings
@@ -644,6 +988,8 @@ Don't add excessive tests, but don't skip tests either. When making changes:
 - [ ] No trailing spaces anywhere
 
 **dbatools Patterns:**
+- [ ] SMO used first for object manipulation, scripting, and property access
+- [ ] T-SQL only used when appropriate (system views, DMVs, stored procedures, performance, version-specific)
 - [ ] EnableException handling correctly implemented
 - [ ] Parameter validation follows dbatools pattern
 - [ ] Where-Object conversions applied appropriately
@@ -674,9 +1020,11 @@ The golden rules for dbatools code:
 1. **NEVER use backticks** - Use splats for 3+ parameters, direct syntax for 1-2
 2. **NEVER use `= $true` in parameter attributes** - Use modern syntax: `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
 3. **NEVER use `::new()` syntax** - Use `New-Object` for PowerShell v3 compatibility
-4. **ALWAYS align hashtables** - Equals signs must line up vertically
-5. **ALWAYS preserve comments** - Every comment stays exactly as written
-6. **ALWAYS use double quotes** - SQL Server module standard
-7. **ALWAYS use unique variable names** - Prevent scope collisions
-8. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
-9. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
+4. **NEVER be dismissive about SQL Server versions** - Support SQL 2000 when feasible, skip gracefully when not
+5. **ALWAYS prefer SMO first** - Use T-SQL only when SMO doesn't provide functionality or for better performance/UX
+6. **ALWAYS align hashtables** - Equals signs must line up vertically
+7. **ALWAYS preserve comments** - Every comment stays exactly as written
+8. **ALWAYS use double quotes** - SQL Server module standard
+9. **ALWAYS use unique variable names** - Prevent scope collisions
+10. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
+11. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1

@@ -106,6 +106,7 @@
         'Copy-DbaDbTableData',
         'Copy-DbaDbViewData',
         'Copy-DbaEndpoint',
+        'Copy-DbaExtendedStoredProcedure',
         'Copy-DbaInstanceAudit',
         'Copy-DbaInstanceAuditSpecification',
         'Copy-DbaInstanceTrigger',

@@ -342,6 +342,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Copy-DbaCustomError',
         'Copy-DbaInstanceAuditSpecification',
         'Copy-DbaEndpoint',
+        'Copy-DbaExtendedStoredProcedure',
         'Copy-DbaInstanceAudit',
         'Copy-DbaServerRole',
         'Copy-DbaResourceGovernor',
