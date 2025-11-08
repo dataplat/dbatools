@@ -257,19 +257,36 @@ exec sp_addrolemember 'userrole','bob';
     }
 
     It "adds and gets a computer certificate" {
-        $certPath = "/shared/certificates/localhost.crt"
-        $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
+        # Create a self-signed certificate using openssl for cross-platform compatibility
+        $certSubject = "DbaToolsTest-$(Get-Random)"
+        $tempCertPath = "/tmp/dbatools-cert-test-$(Get-Random).pem"
+        $tempKeyPath = "/tmp/dbatools-cert-key-$(Get-Random).pem"
+        $tempPfxPath = "/tmp/dbatools-cert-test-$(Get-Random).pfx"
+        $pfxPassword = "Test123!@#"
 
-        # Add certificate
-        $addResult = Add-DbaComputerCertificate -Path $certPath -Confirm:$false
-        $addResult.Thumbprint | Should -Be $certThumbprint
+        # Generate private key and self-signed certificate using openssl
+        $null = & openssl req -x509 -newkey rsa:2048 -keyout $tempKeyPath -out $tempCertPath -days 1 -nodes -subj "/CN=$certSubject" 2>&1
+
+        # Convert to PFX format (PKCS12) which includes private key
+        $null = & openssl pkcs12 -export -out $tempPfxPath -inkey $tempKeyPath -in $tempCertPath -password "pass:$pfxPassword" 2>&1
+
+        # Import using Add-DbaComputerCertificate
+        $splatImport = @{
+            Path           = $tempPfxPath
+            SecurePassword = (ConvertTo-SecureString -String $pfxPassword -AsPlainText -Force)
+            Confirm        = $false
+        }
+        $addResult = Add-DbaComputerCertificate @splatImport
+        $testThumbprint = $addResult.Thumbprint
 
         # Get certificate
-        $getResult = Get-DbaComputerCertificate -Thumbprint $certThumbprint
-        $getResult.Thumbprint | Should -Be $certThumbprint
+        $getResult = Get-DbaComputerCertificate -Thumbprint $testThumbprint
+        $getResult.Thumbprint | Should -Be $testThumbprint
+        $getResult.Subject | Should -Match $certSubject
 
         # Cleanup
-        Remove-DbaComputerCertificate -Thumbprint $certThumbprint -ErrorAction SilentlyContinue -Confirm:$false
+        Remove-DbaComputerCertificate -Thumbprint $testThumbprint -ErrorAction SilentlyContinue -Confirm:$false
+        Remove-Item -Path $tempCertPath, $tempKeyPath, $tempPfxPath -ErrorAction SilentlyContinue
     }
 
     It "connects to Azure" {

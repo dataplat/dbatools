@@ -30,45 +30,35 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "adds and gets a computer certificate" {
-        # Create a self-signed certificate for testing
-        $certSubject = "CN=DbaToolsTest-$(Get-Random)"
-        $splatNewCert = @{
-            Subject           = $certSubject
-            CertStoreLocation = "Cert:\CurrentUser\My"
-            KeyExportPolicy   = "Exportable"
-            KeySpec           = "Signature"
-            KeyLength         = 2048
-            KeyAlgorithm      = "RSA"
-            HashAlgorithm     = "SHA256"
-            NotAfter          = (Get-Date).AddDays(1)
-        }
-        $testCert = New-SelfSignedCertificate @splatNewCert
-        $testThumbprint = $testCert.Thumbprint
+        # Create a self-signed certificate using openssl for cross-platform compatibility
+        $certSubject = "DbaToolsTest-$(Get-Random)"
+        $tempCertPath = "/tmp/dbatools-cert-test-$(Get-Random).pem"
+        $tempKeyPath = "/tmp/dbatools-cert-key-$(Get-Random).pem"
+        $tempPfxPath = "/tmp/dbatools-cert-test-$(Get-Random).pfx"
+        $pfxPassword = "Test123!@#"
 
-        # Export to PFX
-        $tempPath = "/tmp/dbatools-cert-test-$(Get-Random).pfx"
-        $pfxPassword = ConvertTo-SecureString -String "Test123!@#" -AsPlainText -Force
-        $null = Export-PfxCertificate -Cert $testCert -FilePath $tempPath -Password $pfxPassword
+        # Generate private key and self-signed certificate using openssl
+        $null = & openssl req -x509 -newkey rsa:2048 -keyout $tempKeyPath -out $tempCertPath -days 1 -nodes -subj "/CN=$certSubject" 2>&1
 
-        # Remove from CurrentUser store
-        Remove-Item -Path "Cert:\CurrentUser\My\$testThumbprint" -ErrorAction SilentlyContinue
+        # Convert to PFX format (PKCS12) which includes private key
+        $null = & openssl pkcs12 -export -out $tempPfxPath -inkey $tempKeyPath -in $tempCertPath -password "pass:$pfxPassword" 2>&1
 
         # Import using Add-DbaComputerCertificate
         $splatImport = @{
-            Path           = $tempPath
-            SecurePassword = $pfxPassword
+            Path           = $tempPfxPath
+            SecurePassword = (ConvertTo-SecureString -String $pfxPassword -AsPlainText -Force)
             Confirm        = $false
         }
         $addResult = Add-DbaComputerCertificate @splatImport
-        $addResult.Thumbprint | Should -Contain $testThumbprint
+        $testThumbprint = $addResult.Thumbprint
 
         # Get certificate
         $getResult = Get-DbaComputerCertificate -Thumbprint $testThumbprint
         $getResult.Thumbprint | Should -Be $testThumbprint
-        $getResult.Subject | Should -Be $certSubject
+        $getResult.Subject | Should -Match $certSubject
 
         # Cleanup
         Remove-DbaComputerCertificate -Thumbprint $testThumbprint -ErrorAction SilentlyContinue -Confirm:$false
-        Remove-Item -Path $tempPath -ErrorAction SilentlyContinue
+        Remove-Item -Path $tempCertPath, $tempKeyPath, $tempPfxPath -ErrorAction SilentlyContinue
     }
 }
