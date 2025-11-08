@@ -70,4 +70,47 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
+
+    It "adds and gets a computer certificate" {
+        # Create a self-signed certificate for testing
+        $certSubject = "CN=DbaToolsTest-$(Get-Random)"
+        $splatNewCert = @{
+            Subject           = $certSubject
+            CertStoreLocation = "Cert:\CurrentUser\My"
+            KeyExportPolicy   = "Exportable"
+            KeySpec           = "Signature"
+            KeyLength         = 2048
+            KeyAlgorithm      = "RSA"
+            HashAlgorithm     = "SHA256"
+            NotAfter          = (Get-Date).AddDays(1)
+        }
+        $testCert = New-SelfSignedCertificate @splatNewCert
+        $testThumbprint = $testCert.Thumbprint
+
+        # Export to PFX
+        $tempPath = Join-Path -Path $env:TEMP -ChildPath "dbatools-cert-test-$(Get-Random).pfx"
+        $pfxPassword = ConvertTo-SecureString -String "Test123!@#" -AsPlainText -Force
+        $null = Export-PfxCertificate -Cert $testCert -FilePath $tempPath -Password $pfxPassword
+
+        # Remove from CurrentUser store
+        Remove-Item -Path "Cert:\CurrentUser\My\$testThumbprint" -ErrorAction SilentlyContinue
+
+        # Import using Add-DbaComputerCertificate
+        $splatImport = @{
+            Path           = $tempPath
+            SecurePassword = $pfxPassword
+            Confirm        = $false
+        }
+        $addResult = Add-DbaComputerCertificate @splatImport
+        $addResult.Thumbprint | Should -Contain $testThumbprint
+
+        # Get certificate
+        $getResult = Get-DbaComputerCertificate -Thumbprint $testThumbprint
+        $getResult.Thumbprint | Should -Be $testThumbprint
+        $getResult.Subject | Should -Be $certSubject
+
+        # Cleanup
+        Remove-DbaComputerCertificate -Thumbprint $testThumbprint -ErrorAction SilentlyContinue -Confirm:$false
+        Remove-Item -Path $tempPath -ErrorAction SilentlyContinue
+    }
 }

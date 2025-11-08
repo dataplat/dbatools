@@ -256,6 +256,22 @@ exec sp_addrolemember 'userrole','bob';
         $results.Status | Should -Be "Successful"
     }
 
+    It "adds and gets a computer certificate" {
+        $certPath = "/shared/certificates/localhost.crt"
+        $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
+
+        # Add certificate
+        $addResult = Add-DbaComputerCertificate -Path $certPath -Confirm:$false
+        $addResult.Thumbprint | Should -Be $certThumbprint
+
+        # Get certificate
+        $getResult = Get-DbaComputerCertificate -Thumbprint $certThumbprint
+        $getResult.Thumbprint | Should -Be $certThumbprint
+
+        # Cleanup
+        Remove-DbaComputerCertificate -Thumbprint $certThumbprint -ErrorAction SilentlyContinue -Confirm:$false
+    }
+
     It "connects to Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
