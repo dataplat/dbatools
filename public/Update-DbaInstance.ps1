@@ -565,11 +565,12 @@ function Update-DbaInstance {
                     if ($installer) {
                         $detail.Installer = $installer.FullName
 
-                        # Check for SQL 2017 ML Services CAB files
-                        if ($detail.MajorVersion -eq "2017") {
+                        # Check for SQL 2016-2019 ML Services CAB files
+                        # SQL 2022+ changed architecture - runtimes installed separately
+                        if ($detail.MajorVersion -in "2016", "2017", "2019") {
                             $hasMLServices = Test-DbaMLServicesInstalled -Component $selectedComponents
                             if ($hasMLServices) {
-                                Write-Message -Level Verbose -Message "SQL Server 2017 with ML Services detected, searching for CAB files"
+                                Write-Message -Level Verbose -Message "SQL Server $($detail.MajorVersion) with ML Services detected, searching for CAB files"
                                 $installerDir = Split-Path $installer.FullName
                                 $splatCabSearch = @{
                                     Path           = $installerDir
@@ -584,7 +585,7 @@ function Update-DbaInstance {
                                         Write-Message -Level Verbose -Message "Found $($cabFiles.Count) ML Services CAB file(s) for KB$($detail.KB)"
                                     } else {
                                         $detail.Notes += "ML Services detected but no CAB files found. If you do not have internet access, the update may fail. Place R/Python CAB files (SRO_*.cab, SRS_*.cab, SPO_*.cab, SPS_*.cab) in the same directory as the KB installer."
-                                        Write-Message -Level Warning -Message "ML Services CAB files not found for SQL$($detail.MajorVersion) KB$($detail.KB). The installer may download them automatically if internet access is available, or the update may fail."
+                                        Write-Message -Level Warning -Message "ML Services CAB files not found for SQL Server $($detail.MajorVersion) KB$($detail.KB). The installer may download them automatically if internet access is available, or the update may fail."
                                     }
                                 } catch {
                                     Write-Message -Level Warning -Message "Failed to search for ML Services CAB files: $_"

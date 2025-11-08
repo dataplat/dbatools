@@ -68,7 +68,9 @@ function Test-DbaMLServicesInstalled {
     # For now, just check the component instance names to see if it's a version that could have ML
     # SQL 2016 (13.x) introduced R Services
     # SQL 2017 (14.x) introduced Python and renamed to ML Services
-    $hasMLCapableVersion = $Component | Where-Object { $_.Version.NameLevel -in "2016", "2017" }
+    # SQL 2019 (15.x) added Java support and improved ML Services
+    # SQL 2022 (16.x) and later changed architecture - runtimes installed separately, CAB files may not be needed
+    $hasMLCapableVersion = $Component | Where-Object { $_.Version.NameLevel -in "2016", "2017", "2019" }
 
     if ($hasMLCapableVersion) {
         return $true

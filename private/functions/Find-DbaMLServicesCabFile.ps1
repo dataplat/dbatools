@@ -1,11 +1,12 @@
 function Find-DbaMLServicesCabFile {
     <#
     .SYNOPSIS
-        Internal function. Finds SQL Server 2017 Machine Learning Services CAB files for cumulative updates.
+        Internal function. Finds SQL Server Machine Learning Services CAB files for cumulative updates.
 
     .DESCRIPTION
-        Searches for R and Python CAB files required for SQL Server 2017 Machine Learning Services updates.
+        Searches for R and Python CAB files required for SQL Server 2016-2019 Machine Learning Services updates.
         These CAB files must be placed in the same directory as the cumulative update installer.
+        Note: SQL Server 2022+ changed architecture - runtimes are installed separately and may not require CAB files.
 
     .PARAMETER Path
         The path where the KB installer is located. CAB files should be in the same directory.
