@@ -78,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have copied Mail Configuration from source to destination" {
-            $result = $results | Where-Object Type -eq "Mail Configuration"
+            $result = $results | Where-Object { $_.Type -eq "Mail Configuration" -and $_.Name -eq "Server Configuration" }
             $result.SourceServer | Should -Be $TestConfig.instance2
             $result.DestinationServer | Should -Be $TestConfig.instance3
             $result.Status | Should -Be "Successful"

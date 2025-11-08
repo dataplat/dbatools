@@ -458,18 +458,19 @@ function Copy-DbaDbMail {
                         $enableDBMailStatus.Notes = (Get-ErrorMessage -Record $_)
                         Write-Message -Level Warning -Message "Cannot enable Database Mail XPs on $destinstance | $PSItem"
                     }
+                    $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             } elseif ($sourceDbMailEnabled -eq 0) {
                 $enableDBMailStatus.Status = "Skipped"
                 $enableDBMailStatus.Notes = "Database Mail XPs not enabled on source"
                 Write-Message -Level Warning -Message "Database Mail XPs is not enabled on source instance $sourceServer. It will not be enabled on destination."
+                $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             } elseif ($destDbMailEnabled -eq 1) {
                 $enableDBMailStatus.Status = "Skipped"
                 $enableDBMailStatus.Notes = "Database Mail XPs already enabled on destination"
                 Write-Message -Message "Database Mail XPs is already enabled on destination $destServer." -Level Verbose
+                $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
-
-            $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
         }
     }
 }
