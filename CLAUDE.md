@@ -172,6 +172,248 @@ Commands that require SQL Server 2005+:
 - "The command handles SQL Server 2000 gracefully by rejecting the connection with a clear version error"
 - Respectful, factual, technical explanations
 
+### SMO vs T-SQL USAGE
+
+**GUIDING PRINCIPLE**: Default to using SMO (SQL Server Management Objects) first. Only use T-SQL when SMO doesn't provide the functionality or when T-SQL offers better performance or user experience.
+
+**Why SMO First:**
+- **Abstraction**: SMO provides object-oriented interface that handles version differences automatically
+- **Type Safety**: Strong typing reduces errors compared to dynamic T-SQL strings
+- **Built-in Methods**: Common operations (Create, Drop, Alter, Script) are provided out-of-the-box
+- **Consistency**: SMO ensures consistent behavior across SQL Server versions
+- **Less Code**: Often requires fewer lines than equivalent T-SQL
+
+**When to Use SMO:**
+
+1. **Object Manipulation** - Creating, dropping, altering database objects:
+```powershell
+# PREFERRED - SMO for object manipulation
+$newdb = New-Object Microsoft.SqlServer.Management.Smo.Database($server, $dbName)
+$newdb.Collation = $Collation
+$newdb.RecoveryModel = $RecoveryModel
+$newdb.Create()
+
+# Dropping objects
+$destServer.Roles[$roleName].Drop()
+$destServer.Roles.Refresh()
+```
+
+2. **Object Scripting** - Generating T-SQL from existing objects:
+```powershell
+# PREFERRED - SMO scripting with execution via Query
+$sql = $currentRole.Script() | Out-String
+Write-Message -Level Debug -Message $sql
+$destServer.Query($sql)
+
+# Another example
+$destServer.Query($currentEndpoint.Script()) | Out-Null
+```
+
+3. **Object Enumeration** - Accessing collections and properties:
+```powershell
+# PREFERRED - SMO for object access
+$databases = $server.Databases
+$database = $server.Databases[$dbName]
+$isSystemDb = $database.IsSystemObject
+$members = $currentRole.EnumMemberNames()
+```
+
+4. **Object Properties** - Reading and setting object attributes:
+```powershell
+# PREFERRED - SMO for property access
+$recoveryModel = $db.RecoveryModel
+$owner = $db.Owner
+$lastBackup = $db.LastBackupDate
+$size = $db.Size
+```
+
+**When T-SQL is Appropriate:**
+
+1. **System Views and DMVs** - When SMO doesn't expose the data efficiently:
+```powershell
+# T-SQL for system catalog queries
+$sql = @"
+SELECT
+    p.name AS ProcedureName,
+    SCHEMA_NAME(p.schema_id) AS SchemaName,
+    p.object_id,
+    m.definition AS DllPath
+FROM sys.procedures p
+INNER JOIN sys.all_objects o ON p.object_id = o.object_id
+LEFT JOIN sys.sql_modules m ON p.object_id = m.object_id
+WHERE p.type = 'X'
+    AND p.is_ms_shipped = 0
+ORDER BY p.name
+"@
+$sourceXPs = $sourceServer.Query($sql)
+```
+
+2. **Performance-Critical Queries** - When retrieving large result sets:
+```powershell
+# T-SQL for efficient data retrieval
+$querylastused = "SELECT dbname, max(last_read) last_read FROM sys.dm_db_index_usage_stats GROUP BY dbname"
+$dblastused = $server.Query($querylastused)
+```
+
+3. **Version-Specific Logic** - Different queries for different SQL Server versions:
+```powershell
+# T-SQL when version-specific system tables/views are needed
+if ($server.VersionMajor -eq 8) {
+    # SQL Server 2000 uses system tables
+    $backed_info = $server.Query("SELECT name, SUSER_SNAME(sid) AS [Owner] FROM master.dbo.sysdatabases")
+} else {
+    # SQL Server 2005+ uses catalog views
+    $backed_info = $server.Query("SELECT name, SUSER_SNAME(owner_sid) AS [Owner] FROM sys.databases")
+}
+```
+
+4. **System Stored Procedures** - When the operation requires a specific system proc:
+```powershell
+# T-SQL for system procedures that have no SMO equivalent
+$dropSql = "EXEC sp_dropextendedproc @functname = N'$xpFullName'"
+$null = $destServer.Query($dropSql)
+
+$createSql = "EXEC sp_addextendedproc @functname = N'$xpFullName', @dllname = N'$destDllPath'"
+$null = $destServer.Query($createSql)
+```
+
+5. **User-Friendly Features** - When T-SQL makes the command more intuitive:
+```powershell
+# Sometimes T-SQL provides better UX than SMO
+# Example: Parameterized queries for filtering
+$splatQuery = @{
+    SqlInstance = $instance
+    Query       = "SELECT * FROM users WHERE Givenname = @name"
+    SqlParameter = @{ Name = "Maria" }
+}
+$result = Invoke-DbaQuery @splatQuery
+```
+
+**Hybrid Pattern (Most Common):**
+
+Most dbatools commands use both SMO and T-SQL strategically:
+
+```powershell
+# Get SMO server object
+$sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+
+# Use SMO for object enumeration
+$sourceRoles = $sourceServer.Roles | Where-Object IsFixedRole -eq $false
+
+# Use T-SQL for complex permission queries
+$splatPermissions = @{
+    SqlInstance        = $sourceServer
+    IncludeServerLevel = $true
+}
+$sourcePermissions = Get-DbaPermission @splatPermissions | Where-Object Grantee -eq $roleName
+
+# Use SMO for object manipulation
+foreach ($currentRole in $sourceRoles) {
+    # Script the object using SMO
+    $sql = $currentRole.Script() | Out-String
+
+    # Execute via T-SQL
+    $destServer.Query($sql)
+
+    # Use SMO methods for membership
+    $members = $currentRole.EnumMemberNames()
+    foreach ($member in $members) {
+        $destServer.Roles[$roleName].AddMember($member)
+    }
+}
+```
+
+**Decision Tree:**
+
+1. **Does SMO expose the functionality cleanly?**
+   - YES → Use SMO
+   - NO → Continue to #2
+
+2. **Is this a data retrieval operation from system views/DMVs?**
+   - YES → Use T-SQL via `$server.Query()`
+   - NO → Continue to #3
+
+3. **Does the operation require a system stored procedure?**
+   - YES → Use T-SQL via `$server.Query()`
+   - NO → Continue to #4
+
+4. **Would T-SQL significantly improve user experience?**
+   - YES → Use T-SQL (document why in comments)
+   - NO → Use SMO
+
+**Common Patterns:**
+
+```powershell
+# Pattern 1: SMO object with T-SQL execution of Script()
+$sql = $smoObject.Script() | Out-String
+$destServer.Query($sql)
+
+# Pattern 2: T-SQL for discovery, SMO for manipulation
+$objects = $server.Query("SELECT name FROM sys.objects WHERE type = 'U'")
+foreach ($obj in $objects) {
+    $table = $server.Databases[$dbName].Tables[$obj.name]
+    $table.Drop()  # SMO method
+}
+
+# Pattern 3: SMO with T-SQL fallback
+try {
+    $database = $server.Databases[$dbName]  # SMO
+} catch {
+    # Fallback to T-SQL if SMO fails
+    $result = $server.Query("SELECT name FROM sys.databases WHERE name = '$dbName'")
+}
+```
+
+**Copy-DbaExtendedStoredProcedure Analysis:**
+
+The newly created `Copy-DbaExtendedStoredProcedure` command demonstrates proper SMO vs T-SQL usage:
+
+- ✅ **Correct**: Uses T-SQL for querying `sys.procedures` (lines 122-134) - SMO doesn't expose Extended SP metadata efficiently
+- ✅ **Correct**: Uses T-SQL system procedures `sp_dropextendedproc` and `sp_addextendedproc` (lines 235, 307) - No SMO equivalent
+- ✅ **Correct**: Uses SMO properties `$sourceServer.RootDirectory` (line 181) - Cleaner than querying registry
+- ✅ **Correct**: Uses T-SQL `sp_helpextendedproc` (line 254) - System procedure for metadata
+
+This is a good example of the hybrid pattern where T-SQL is used appropriately because:
+1. Extended Stored Procedures are a legacy feature with limited SMO support
+2. System stored procedures are the documented way to manage them
+3. System catalog views provide the metadata SMO doesn't expose
+
+**Anti-Patterns to Avoid:**
+
+```powershell
+# WRONG - Using T-SQL when SMO provides the functionality
+$result = $server.Query("ALTER DATABASE [$dbName] SET RECOVERY FULL")
+
+# CORRECT - Use SMO
+$db = $server.Databases[$dbName]
+$db.RecoveryModel = "Full"
+$db.Alter()
+
+# WRONG - Using T-SQL for object enumeration
+$databases = $server.Query("SELECT name FROM sys.databases")
+
+# CORRECT - Use SMO
+$databases = $server.Databases
+
+# WRONG - Concatenating T-SQL strings without parameters (SQL injection risk)
+$result = $server.Query("SELECT * FROM users WHERE name = '$userName'")
+
+# CORRECT - Use parameterized queries
+$splatQuery = @{
+    Query        = "SELECT * FROM users WHERE name = @userName"
+    SqlParameter = @{ userName = $userName }
+}
+$result = Invoke-DbaQuery @splatQuery -SqlInstance $server
+```
+
+**Summary:**
+
+- **Default to SMO** for object-oriented operations (Create, Drop, Alter, Script, property access)
+- **Use T-SQL** for system views, DMVs, complex queries, system stored procedures, and version-specific logic
+- **Combine both** in a hybrid approach when it provides the best balance of functionality and usability
+- **Always prefer parameterized queries** when using T-SQL with dynamic values
+- **Document your choice** when T-SQL is used instead of SMO for non-obvious reasons
+
 ### SPLAT USAGE REQUIREMENT
 
 **USE SPLATS ONLY FOR 3+ PARAMETERS**
@@ -758,6 +1000,8 @@ Don't add excessive tests, but don't skip tests either. When making changes:
 - [ ] No trailing spaces anywhere
 
 **dbatools Patterns:**
+- [ ] SMO used first for object manipulation, scripting, and property access
+- [ ] T-SQL only used when appropriate (system views, DMVs, stored procedures, performance, version-specific)
 - [ ] EnableException handling correctly implemented
 - [ ] Parameter validation follows dbatools pattern
 - [ ] Where-Object conversions applied appropriately
@@ -789,9 +1033,10 @@ The golden rules for dbatools code:
 2. **NEVER use `= $true` in parameter attributes** - Use modern syntax: `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
 3. **NEVER use `::new()` syntax** - Use `New-Object` for PowerShell v3 compatibility
 4. **NEVER be dismissive about SQL Server versions** - Support SQL 2000 when feasible, skip gracefully when not
-5. **ALWAYS align hashtables** - Equals signs must line up vertically
-6. **ALWAYS preserve comments** - Every comment stays exactly as written
-7. **ALWAYS use double quotes** - SQL Server module standard
-8. **ALWAYS use unique variable names** - Prevent scope collisions
-9. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
-10. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
+5. **ALWAYS prefer SMO first** - Use T-SQL only when SMO doesn't provide functionality or for better performance/UX
+6. **ALWAYS align hashtables** - Equals signs must line up vertically
+7. **ALWAYS preserve comments** - Every comment stays exactly as written
+8. **ALWAYS use double quotes** - SQL Server module standard
+9. **ALWAYS use unique variable names** - Prevent scope collisions
+10. **ALWAYS use descriptive splatnames** - `$splatConnection`, not `$splat`
+11. **ALWAYS register new commands** - Add to both dbatools.psd1 and dbatools.psm1
