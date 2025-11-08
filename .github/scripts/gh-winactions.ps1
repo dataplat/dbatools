@@ -99,7 +99,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
             $splatUpdate = @{
                 ComputerName    = "localhost"
-                SqlCredential   = $cred
+                Credential      = $cred
                 KB              = "4498951"
                 Path            = $testPath
                 EnableException = $true
