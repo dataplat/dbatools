@@ -98,7 +98,6 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
-
 }
 
 Describe $CommandName -Tag IntegrationTests -Skip {
