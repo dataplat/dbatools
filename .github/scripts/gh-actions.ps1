@@ -285,7 +285,9 @@ exec sp_addrolemember 'userrole','bob';
         if (Get-DbaCredential -SqlInstance localhost -SqlCredential $cred -Name "[$azureUrl]") {
             $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
         }
-        $sql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+        # Strip leading ? from SAS token if present
+        $sasToken = $env:azurepasswd.TrimStart("?")
+        $sql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$sasToken'"
         $primaryServer.Query($sql)
 
         $secondaryServer = Connect-DbaInstance -SqlInstance localhost:14333 -SqlCredential $cred
