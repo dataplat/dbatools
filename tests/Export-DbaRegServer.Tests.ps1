@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
     It "should create a specific xml file when using Path" {
         $results2 = $newGroup2 | Export-DbaRegServer -Path $newDirectory
         $results2 -is [System.IO.FileInfo] | Should -Be $true
-        $results2.FullName | Should -Match "C:\\temp"
+        $results2.FullName | Should -Match ([regex]::escape($newDirectory))
         Get-Content -Path $results2 -Raw | Should -Match $group2
     }
 
