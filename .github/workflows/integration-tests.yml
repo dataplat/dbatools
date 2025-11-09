@@ -99,6 +99,8 @@ jobs:
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
           CLIENT_GUID: ${{secrets.CLIENT_GUID}}
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
+          azurepasswd: ${{secrets.AZUREPASSWD}}
+          azurelegacypasswd: ${{secrets.AZURELEGACYPASSWD}}
         run: |
           Import-Module ./dbatools.psd1 -Force
           Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
