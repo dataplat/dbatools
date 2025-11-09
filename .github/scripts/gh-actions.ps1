@@ -273,30 +273,36 @@ exec sp_addrolemember 'userrole','bob';
     }
 
     It -Skip:(-not $env:azurepasswd) "sets up log shipping to Azure blob storage using SAS token" {
+        # Restore credentials after Azure tests cleared PSDefaultParameterValues
+        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $dbName = "dbatoolsci_logship_azure"
 
         # Create SAS token credential on both instances
-        $primaryServer = Connect-DbaInstance -SqlInstance localhost
+        $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
         if (Get-DbaCredential -SqlInstance localhost -Name "[$azureUrl]") {
             $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
         }
         $sql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
         $primaryServer.Query($sql)
 
-        $secondaryServer = Connect-DbaInstance -SqlInstance localhost:14333
-        if (Get-DbaCredential -SqlInstance localhost:14333 -Name "[$azureUrl]") {
+        $secondaryServer = Connect-DbaInstance -SqlInstance localhost:14333 -SqlCredential $cred
+        if (Get-DbaCredential -SqlInstance localhost:14333 -SqlCredential $cred -Name "[$azureUrl]") {
             $secondaryServer.Query("DROP CREDENTIAL [$azureUrl]")
         }
         $secondaryServer.Query($sql)
 
         # Create test database
-        $null = New-DbaDatabase -SqlInstance localhost -Name $dbName
+        $null = New-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Name $dbName
 
         # Set up log shipping
         $splatLogShipping = @{
             SourceSqlInstance      = "localhost"
+            SourceSqlCredential    = $cred
             DestinationSqlInstance = "localhost:14333"
+            DestinationSqlCredential = $cred
             Database               = $dbName
             AzureBaseUrl           = $azureUrl
             GenerateFullBackup     = $true
@@ -306,12 +312,12 @@ exec sp_addrolemember 'userrole','bob';
         $results.Status | Should -Be "Success"
 
         # Verify backup job created
-        $jobs = Get-DbaAgentJob -SqlInstance localhost
+        $jobs = Get-DbaAgentJob -SqlInstance localhost -SqlCredential $cred
         $backupJob = $jobs | Where-Object Name -like "*LSBackup*$dbName*"
         $backupJob | Should -Not -BeNullOrEmpty
 
         # Verify restore job created
-        $jobs = Get-DbaAgentJob -SqlInstance localhost:14333
+        $jobs = Get-DbaAgentJob -SqlInstance localhost:14333 -SqlCredential $cred
         $restoreJob = $jobs | Where-Object Name -like "*LSRestore*$dbName*"
         $restoreJob | Should -Not -BeNullOrEmpty
 
@@ -320,61 +326,67 @@ exec sp_addrolemember 'userrole','bob';
         $copyJob | Should -BeNullOrEmpty
 
         # Cleanup
-        $null = Remove-DbaDbLogShipping -SqlInstance localhost -Database $dbName -WarningAction SilentlyContinue
-        $null = Remove-DbaDbLogShipping -SqlInstance localhost:14333 -Database $dbName -WarningAction SilentlyContinue
-        $null = Remove-DbaDatabase -SqlInstance localhost -Database $dbName
-        $null = Remove-DbaDatabase -SqlInstance localhost:14333 -Database $dbName
+        $null = Remove-DbaDbLogShipping -SqlInstance localhost -SqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
+        $null = Remove-DbaDbLogShipping -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName
         $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
         $secondaryServer.Query("DROP CREDENTIAL [$azureUrl]")
     }
 
     It -Skip:(-not $env:azurelegacypasswd) "sets up log shipping to Azure blob storage using storage account key" {
+        # Restore credentials after Azure tests cleared PSDefaultParameterValues
+        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $credName = "dbatools_ci_logship"
         $dbName = "dbatoolsci_logship_azkey"
 
         # Create storage account key credential on both instances
-        $primaryServer = Connect-DbaInstance -SqlInstance localhost
-        if (Get-DbaCredential -SqlInstance localhost -Name $credName) {
+        $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
+        if (Get-DbaCredential -SqlInstance localhost -SqlCredential $cred -Name $credName) {
             $primaryServer.Query("DROP CREDENTIAL [$credName]")
         }
         $sql = "CREATE CREDENTIAL [$credName] WITH IDENTITY = N'dbatools', SECRET = N'$env:azurelegacypasswd'"
         $primaryServer.Query($sql)
 
-        $secondaryServer = Connect-DbaInstance -SqlInstance localhost:14333
-        if (Get-DbaCredential -SqlInstance localhost:14333 -Name $credName) {
+        $secondaryServer = Connect-DbaInstance -SqlInstance localhost:14333 -SqlCredential $cred
+        if (Get-DbaCredential -SqlInstance localhost:14333 -SqlCredential $cred -Name $credName) {
             $secondaryServer.Query("DROP CREDENTIAL [$credName]")
         }
         $secondaryServer.Query($sql)
 
         # Create test database
-        $null = New-DbaDatabase -SqlInstance localhost -Name $dbName
+        $null = New-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Name $dbName
 
         # Set up log shipping with explicit credential
         $splatLogShipping = @{
-            SourceSqlInstance      = "localhost"
-            DestinationSqlInstance = "localhost:14333"
-            Database               = $dbName
-            AzureBaseUrl           = $azureUrl
-            AzureCredential        = $credName
-            GenerateFullBackup     = $true
-            Force                  = $true
+            SourceSqlInstance        = "localhost"
+            SourceSqlCredential      = $cred
+            DestinationSqlInstance   = "localhost:14333"
+            DestinationSqlCredential = $cred
+            Database                 = $dbName
+            AzureBaseUrl             = $azureUrl
+            AzureCredential          = $credName
+            GenerateFullBackup       = $true
+            Force                    = $true
         }
         $results = Invoke-DbaDbLogShipping @splatLogShipping
         $results.Status | Should -Be "Success"
 
         # Verify jobs created
-        $jobs = Get-DbaAgentJob -SqlInstance localhost
+        $jobs = Get-DbaAgentJob -SqlInstance localhost -SqlCredential $cred
         ($jobs | Where-Object Name -like "*LSBackup*$dbName*") | Should -Not -BeNullOrEmpty
 
-        $jobs = Get-DbaAgentJob -SqlInstance localhost:14333
+        $jobs = Get-DbaAgentJob -SqlInstance localhost:14333 -SqlCredential $cred
         ($jobs | Where-Object Name -like "*LSRestore*$dbName*") | Should -Not -BeNullOrEmpty
 
         # Cleanup
-        $null = Remove-DbaDbLogShipping -SqlInstance localhost -Database $dbName -WarningAction SilentlyContinue
-        $null = Remove-DbaDbLogShipping -SqlInstance localhost:14333 -Database $dbName -WarningAction SilentlyContinue
-        $null = Remove-DbaDatabase -SqlInstance localhost -Database $dbName
-        $null = Remove-DbaDatabase -SqlInstance localhost:14333 -Database $dbName
+        $null = Remove-DbaDbLogShipping -SqlInstance localhost -SqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
+        $null = Remove-DbaDbLogShipping -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName
         $primaryServer.Query("DROP CREDENTIAL [$credName]")
         $secondaryServer.Query("DROP CREDENTIAL [$credName]")
     }
