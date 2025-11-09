@@ -244,13 +244,23 @@ function Copy-DbaAgentJob {
 
                 if ($destJobs.name -contains $serverJob.name) {
                     if ($UseLastModified) {
-                        # Query date_modified from both source and destination
-                        $sqlDateQuery = "SELECT date_modified FROM msdb.dbo.sysjobs WHERE name = @jobName"
-
+                        # Query date_modified from both source and destination using parameterized queries
                         try {
-                            $escapedJobName = $jobName.Replace("'", "''")
-                            $sourceDate = ($sourceserver.Query($sqlDateQuery.Replace("@jobName", "'$escapedJobName'"))).date_modified
-                            $destDate = ($destServer.Query($sqlDateQuery.Replace("@jobName", "'$escapedJobName'"))).date_modified
+                            $splatSourceDate = @{
+                                SqlInstance  = $sourceserver
+                                Database     = "msdb"
+                                Query        = "SELECT date_modified FROM dbo.sysjobs WHERE name = @jobName"
+                                SqlParameter = @{ jobName = $jobName }
+                            }
+                            $sourceDate = (Invoke-DbaQuery @splatSourceDate).date_modified
+
+                            $splatDestDate = @{
+                                SqlInstance  = $destServer
+                                Database     = "msdb"
+                                Query        = "SELECT date_modified FROM dbo.sysjobs WHERE name = @jobName"
+                                SqlParameter = @{ jobName = $jobName }
+                            }
+                            $destDate = (Invoke-DbaQuery @splatDestDate).date_modified
 
                             if ($null -eq $sourceDate -or $null -eq $destDate) {
                                 Write-Message -Level Warning -Message "Could not retrieve date_modified for job $jobName. Skipping date comparison."
