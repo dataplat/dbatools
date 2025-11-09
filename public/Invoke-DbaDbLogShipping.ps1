@@ -1493,12 +1493,10 @@ function Invoke-DbaDbLogShipping {
                                         Type           = "Full"
                                     }
 
-                                    # Explicitly specify Azure credential - use base URL for credential name
+                                    # Only specify credential for storage account key authentication
+                                    # For SAS tokens, SQL Server finds credential automatically by URL
                                     if ($AzureCredential) {
                                         $splatBackup.AzureCredential = $AzureCredential
-                                    } else {
-                                        # For SAS tokens, credential is named after the base URL
-                                        $splatBackup.AzureCredential = $SharedPath
                                     }
 
                                     $LastBackup = Backup-DbaDatabase @splatBackup
