@@ -345,6 +345,19 @@ exec sp_addrolemember 'userrole','bob';
 
         # Verify NO copy job created (Azure optimization)
         $copyJob = $jobs | Where-Object Name -like "*LSCopy*$dbName*"
+
+        # Debug: Show all jobs if copy job exists
+        if ($copyJob) {
+            Write-Host "=== COPY JOB STILL EXISTS ==="
+            Write-Host "All jobs on secondary:"
+            $jobs | Where-Object Name -like "*$dbName*" | ForEach-Object {
+                Write-Host "  - $($_.Name) (Enabled: $($_.IsEnabled))"
+            }
+            Write-Host "Copy job details:"
+            $copyJob | Format-List Name, IsEnabled, OwnerLoginName, DateCreated | Out-String | Write-Host
+            Write-Host "============================"
+        }
+
         $copyJob | Should -BeNullOrEmpty
 
         # Cleanup
