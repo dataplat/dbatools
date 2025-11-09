@@ -296,7 +296,7 @@ exec sp_addrolemember 'userrole','bob';
         $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
-        $PSDefaultParameterValues["*:SharedPath"] = "/shared"
+        # Note: NOT restoring SharedPath because it conflicts with AzureBaseUrl
 
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $dbName = "dbatoolsci_logship_azure"
@@ -369,7 +369,7 @@ exec sp_addrolemember 'userrole','bob';
         $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
-        $PSDefaultParameterValues["*:SharedPath"] = "/shared"
+        # Note: NOT restoring SharedPath because it conflicts with AzureBaseUrl
 
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $credName = "dbatools_ci_logship"
