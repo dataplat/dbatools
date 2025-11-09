@@ -425,26 +425,29 @@ function Invoke-DbaDbLogShipping {
     .EXAMPLE
         PS C:\> # First, create the SAS credential on both instances
         PS C:\> $azureUrl = "https://mystorageaccount.blob.core.windows.net/logshipping"
-        PS C:\> $sasToken = "your_sas_token_without_leading_?"
-        PS C:\> $sql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$sasToken'"
-        PS C:\> Invoke-DbaQuery -SqlInstance sql1 -Query $sql
-        PS C:\> Invoke-DbaQuery -SqlInstance sql2 -Query $sql
+        PS C:\> $cred = Get-Credential -Message "Paste SAS token (without leading ?) in password field" -UserName "SHARED ACCESS SIGNATURE"
+        PS C:\> $splatCred = @{
+        >> SqlInstance    = "sql1", "sql2"
+        >> Name           = $azureUrl
+        >> Identity       = $cred.UserName
+        >> SecurePassword = $cred.Password
+        >> }
+        PS C:\> New-DbaCredential @splatCred
         PS C:\>
         PS C:\> # Then set up log shipping
-        PS C:\> $params = @{
-        >> SourceSqlInstance = 'sql1'
-        >> DestinationSqlInstance = 'sql2'
-        >> Database = 'db1'
-        >> AzureBaseUrl = $azureUrl
-        >> BackupScheduleFrequencyType = 'daily'
+        PS C:\> $splatLogShipping = @{
+        >> SourceSqlInstance        = "sql1"
+        >> DestinationSqlInstance   = "sql2"
+        >> Database                 = "db1"
+        >> AzureBaseUrl             = $azureUrl
+        >> BackupScheduleFrequencyType = "daily"
         >> BackupScheduleFrequencyInterval = 1
-        >> RestoreScheduleFrequencyType = 'daily'
+        >> RestoreScheduleFrequencyType = "daily"
         >> RestoreScheduleFrequencyInterval = 1
-        >> GenerateFullBackup = $true
-        >> Force = $true
+        >> GenerateFullBackup       = $true
+        >> Force                    = $true
         >> }
-        >>
-        PS C:\> Invoke-DbaDbLogShipping @params
+        PS C:\> Invoke-DbaDbLogShipping @splatLogShipping
 
         Sets up log shipping for database "db1" to Azure blob storage using SAS token authentication.
 
