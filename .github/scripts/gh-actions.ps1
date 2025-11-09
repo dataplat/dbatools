@@ -284,7 +284,19 @@ exec sp_addrolemember 'userrole','bob';
         # Restore default parameter values after Azure tests cleared them
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+        $PSDefaultParameterValues["*:Source"] = "localhost"
+        $PSDefaultParameterValues["*:Destination"] = "localhost:14333"
+        $PSDefaultParameterValues["*:Primary"] = "localhost"
+        $PSDefaultParameterValues["*:Mirror"] = "localhost:14333"
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
+        $PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:PrimarySqlCredential"] = $cred
+        $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:Confirm"] = $false
+        $PSDefaultParameterValues["*:SharedPath"] = "/shared"
 
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $dbName = "dbatoolsci_logship_azure"
@@ -345,7 +357,19 @@ exec sp_addrolemember 'userrole','bob';
         # Restore default parameter values after Azure tests cleared them
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+        $PSDefaultParameterValues["*:Source"] = "localhost"
+        $PSDefaultParameterValues["*:Destination"] = "localhost:14333"
+        $PSDefaultParameterValues["*:Primary"] = "localhost"
+        $PSDefaultParameterValues["*:Mirror"] = "localhost:14333"
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
+        $PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:PrimarySqlCredential"] = $cred
+        $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:Confirm"] = $false
+        $PSDefaultParameterValues["*:SharedPath"] = "/shared"
 
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $credName = "dbatools_ci_logship"
