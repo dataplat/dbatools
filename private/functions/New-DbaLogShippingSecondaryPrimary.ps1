@@ -160,9 +160,19 @@ function New-DbaLogShippingSecondaryPrimary {
         }
 
         # Validate Azure credentials exist on SQL Server instance
-        # When using SAS token authentication, credential name must match the Azure URL
+        # When using SAS token authentication, credential name must match the container URL
+        # Extract base container URL from database-specific path if needed
         if ($IsAzureSource) {
-            $sourceCredentialName = $BackupSourceDirectory
+            $base = $BackupSourceDirectory -split "/"
+            if ($base.Count -gt 4) {
+                # URL has subfolders (database-specific path), extract base container URL
+                $sourceCredentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                Write-Message -Message "Extracted base source credential name: $sourceCredentialName" -Level Verbose
+            } else {
+                # URL is just the container
+                $sourceCredentialName = $BackupSourceDirectory
+            }
+
             $sourceCredential = $ServerSecondary.Credentials | Where-Object Name -eq $sourceCredentialName
 
             if (-not $sourceCredential) {
@@ -174,7 +184,16 @@ function New-DbaLogShippingSecondaryPrimary {
         }
 
         if ($IsAzureDestination) {
-            $destCredentialName = $BackupDestinationDirectory
+            $base = $BackupDestinationDirectory -split "/"
+            if ($base.Count -gt 4) {
+                # URL has subfolders (database-specific path), extract base container URL
+                $destCredentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                Write-Message -Message "Extracted base destination credential name: $destCredentialName" -Level Verbose
+            } else {
+                # URL is just the container
+                $destCredentialName = $BackupDestinationDirectory
+            }
+
             $destCredential = $ServerSecondary.Credentials | Where-Object Name -eq $destCredentialName
 
             if (-not $destCredential) {

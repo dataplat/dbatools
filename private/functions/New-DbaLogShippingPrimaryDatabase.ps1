@@ -148,8 +148,18 @@ function New-DbaLogShippingPrimaryDatabase {
         }
 
         # Validate Azure credential exists on SQL Server instance
-        # When using SAS token authentication, credential name must match the Azure URL
-        $credentialName = $BackupShare
+        # When using SAS token authentication, credential name must match the container URL
+        # Extract base container URL from database-specific path if needed
+        $base = $BackupShare -split "/"
+        if ($base.Count -gt 4) {
+            # URL has subfolders (database-specific path), extract base container URL
+            $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+            Write-Message -Message "Extracted base credential name from database path: $credentialName" -Level Verbose
+        } else {
+            # URL is just the container
+            $credentialName = $BackupShare
+        }
+
         $credential = $server.Credentials | Where-Object Name -eq $credentialName
 
         if (-not $credential) {
