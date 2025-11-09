@@ -1777,6 +1777,13 @@ function Invoke-DbaDbLogShipping {
                             }
                             New-DbaLogShippingSecondaryPrimary @splatSecondaryPrimary
 
+                            # For Azure: Remove the copy job created by sp_add_log_shipping_secondary_primary
+                            # Azure backups go directly to blob storage, so no copy is needed
+                            if ($UseAzure) {
+                                Write-Message -Message "Removing unnecessary copy job for Azure: $DatabaseCopyJob" -Level Verbose
+                                $null = Remove-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Confirm:$false
+                            }
+
                             # Skip copy job schedule for Azure (backups are already in the cloud)
                             if (-not $UseAzure) {
                                 Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Verbose
