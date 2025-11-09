@@ -1483,19 +1483,22 @@ function Invoke-DbaDbLogShipping {
                                 $Timestamp = Get-Date -format "yyyyMMddHHmmss"
 
                                 if ($UseAzure) {
-                                    # Backup to Azure blob storage - use base URL, put database folder in filename
+                                    # Backup to Azure blob storage - use database-specific URL and explicitly specify credential
                                     $splatBackup = @{
                                         SqlInstance    = $SourceSqlInstance
                                         SqlCredential  = $SourceSqlCredential
                                         Database       = $($db.Name)
-                                        AzureBaseUrl   = $SharedPath
-                                        BackupFileName = "$($db.Name)/FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
+                                        AzureBaseUrl   = $DatabaseSharedPath
+                                        BackupFileName = "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
                                         Type           = "Full"
                                     }
 
-                                    # For Azure credentials, explicitly pass if provided, otherwise let Backup-DbaDatabase auto-detect
+                                    # Explicitly specify Azure credential - use base URL for credential name
                                     if ($AzureCredential) {
                                         $splatBackup.AzureCredential = $AzureCredential
+                                    } else {
+                                        # For SAS tokens, credential is named after the base URL
+                                        $splatBackup.AzureCredential = $SharedPath
                                     }
 
                                     $LastBackup = Backup-DbaDatabase @splatBackup
