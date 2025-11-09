@@ -277,7 +277,7 @@ exec sp_addrolemember 'userrole','bob';
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
-        $azureUrl = "https://dbatools.blob.core.windows.net/sql"
+        $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
         $dbName = "dbatoolsci_logship_azure"
 
         # Create SAS token credential on both instances
@@ -341,7 +341,7 @@ exec sp_addrolemember 'userrole','bob';
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
-        $azureUrl = "https://dbatools.blob.core.windows.net/sql"
+        $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
         $credName = "dbatools_ci_logship"
         $dbName = "dbatoolsci_logship_azkey"
 
