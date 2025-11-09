@@ -374,6 +374,18 @@ exec sp_addrolemember 'userrole','bob';
         $null = Remove-DbaDatabase -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName -Confirm:$false
         $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
         $secondaryServer.Query("DROP CREDENTIAL [$azureUrl]")
+
+        # Clean up Azure blob storage test files
+        try {
+            $blobs = az storage blob list --account-name dbatools --container-name dbatools --auth-mode key --prefix "$dbName" --query "[].name" --output tsv 2>$null
+            if ($blobs) {
+                $blobs -split "`n" | Where-Object { $_ } | ForEach-Object {
+                    $null = az storage blob delete --account-name dbatools --container-name dbatools --auth-mode key --name $_ --output none 2>$null
+                }
+            }
+        } catch {
+            # Ignore Azure cleanup errors - test may run in environments without Azure CLI
+        }
     }
 
     # Storage account key test removed - deprecated authentication method
