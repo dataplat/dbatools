@@ -1777,26 +1777,29 @@ function Invoke-DbaDbLogShipping {
                             }
                             New-DbaLogShippingSecondaryPrimary @splatSecondaryPrimary
 
-                            Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Verbose
-                            #Variable $CopyJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
-                            $splatCopySchedule = @{
-                                SqlInstance                  = $destInstance
-                                SqlCredential                = $DestinationSqlCredential
-                                Job                          = $DatabaseCopyJob
-                                Schedule                     = $DatabaseCopySchedule
-                                FrequencyType                = $CopyScheduleFrequencyType
-                                FrequencyInterval            = $CopyScheduleFrequencyInterval
-                                FrequencySubdayType          = $CopyScheduleFrequencySubdayType
-                                FrequencySubdayInterval      = $CopyScheduleFrequencySubdayInterval
-                                FrequencyRelativeInterval    = $CopyScheduleFrequencyRelativeInterval
-                                FrequencyRecurrenceFactor    = $CopyScheduleFrequencyRecurrenceFactor
-                                StartDate                    = $CopyScheduleStartDate
-                                EndDate                      = $CopyScheduleEndDate
-                                StartTime                    = $CopyScheduleStartTime
-                                EndTime                      = $CopyScheduleEndTime
-                                Force                        = $Force
+                            # Skip copy job schedule for Azure (backups are already in the cloud)
+                            if (-not $UseAzure) {
+                                Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Verbose
+                                #Variable $CopyJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
+                                $splatCopySchedule = @{
+                                    SqlInstance                  = $destInstance
+                                    SqlCredential                = $DestinationSqlCredential
+                                    Job                          = $DatabaseCopyJob
+                                    Schedule                     = $DatabaseCopySchedule
+                                    FrequencyType                = $CopyScheduleFrequencyType
+                                    FrequencyInterval            = $CopyScheduleFrequencyInterval
+                                    FrequencySubdayType          = $CopyScheduleFrequencySubdayType
+                                    FrequencySubdayInterval      = $CopyScheduleFrequencySubdayInterval
+                                    FrequencyRelativeInterval    = $CopyScheduleFrequencyRelativeInterval
+                                    FrequencyRecurrenceFactor    = $CopyScheduleFrequencyRecurrenceFactor
+                                    StartDate                    = $CopyScheduleStartDate
+                                    EndDate                      = $CopyScheduleEndDate
+                                    StartTime                    = $CopyScheduleStartTime
+                                    EndTime                      = $CopyScheduleEndTime
+                                    Force                        = $Force
+                                }
+                                $null = New-DbaAgentSchedule @splatCopySchedule
                             }
-                            $null = New-DbaAgentSchedule @splatCopySchedule
 
                             Write-Message -Message "Create restore job schedule $DatabaseRestoreSchedule" -Level Verbose
 
@@ -1841,11 +1844,14 @@ function Invoke-DbaDbLogShipping {
                             }
                             New-DbaLogShippingSecondaryDatabase @splatSecondaryDatabase
 
-                            # Check if the copy job needs to be enabled or disabled
-                            if ($CopyScheduleDisabled) {
-                                $null = Set-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Disabled
-                            } else {
-                                $null = Set-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Enabled
+                            # Skip copy job enable/disable for Azure (no copy job exists)
+                            if (-not $UseAzure) {
+                                # Check if the copy job needs to be enabled or disabled
+                                if ($CopyScheduleDisabled) {
+                                    $null = Set-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Disabled
+                                } else {
+                                    $null = Set-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Enabled
+                                }
                             }
 
                             # Check if the restore job needs to be enabled or disabled
