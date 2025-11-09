@@ -82,10 +82,8 @@ function Invoke-DbaDbLogShipping {
         Mutually exclusive with SharedPath parameter. Requires SQL Server 2012 or later.
 
     .PARAMETER AzureCredential
-        Specifies the SQL Server credential name for Azure storage access key authentication (legacy - creates page blobs).
-        When omitted, the function uses Shared Access Signature (SAS) authentication with a credential named to match the AzureBaseUrl (recommended - creates block blobs).
+        Specifies the SQL Server credential name for Azure storage access. When omitted, uses SAS token authentication with a credential named to match the AzureBaseUrl.
         The credential must exist on both source and destination SQL Server instances before setting up log shipping.
-        Note: SAS tokens are recommended for SQL Server 2016+ as they create block blobs (up to 12.8 TB striped) vs page blobs (1 TB limit, higher cost).
 
     .PARAMETER BackupJob
         Specifies the prefix for the SQL Agent backup job name that performs transaction log backups.
@@ -430,7 +428,6 @@ function Invoke-DbaDbLogShipping {
         >> DestinationSqlInstance = 'sql2'
         >> Database = 'db1'
         >> AzureBaseUrl = 'https://mystorageaccount.blob.core.windows.net/logshipping'
-        >> AzureCredential = 'AzureStorageCredential'
         >> BackupScheduleFrequencyType = 'daily'
         >> BackupScheduleFrequencyInterval = 1
         >> RestoreScheduleFrequencyType = 'daily'
@@ -441,30 +438,8 @@ function Invoke-DbaDbLogShipping {
         >>
         PS C:\> Invoke-DbaDbLogShipping @params
 
-        Sets up log shipping for database "db1" to Azure blob storage using storage account key authentication (legacy method - creates page blobs).
-        The AzureStorageCredential must already exist on both sql1 and sql2 instances with IDENTITY = storage account name, SECRET = access key.
-        Backups go directly to Azure - no copy job is created since files are already in the cloud.
-        Note: Consider using SAS tokens (Example 4) instead for block blob support and better performance.
-
-    .EXAMPLE
-        PS C:\> $params = @{
-        >> SourceSqlInstance = 'sql1'
-        >> DestinationSqlInstance = 'sql2'
-        >> Database = 'db1'
-        >> AzureBaseUrl = 'https://mystorageaccount.blob.core.windows.net/logshipping'
-        >> BackupScheduleFrequencyType = 'daily'
-        >> BackupScheduleFrequencyInterval = 1
-        >> RestoreScheduleFrequencyType = 'daily'
-        >> RestoreScheduleFrequencyInterval = 1
-        >> GenerateFullBackup = $true
-        >> Force = $true
-        >> }
-        >>
-        PS C:\> Invoke-DbaDbLogShipping @params
-
-        Sets up log shipping for database "db1" to Azure blob storage using SAS token authentication.
-        A SQL Server credential named "https://mystorageaccount.blob.core.windows.net/logshipping" must exist on both instances.
-        This is the recommended modern approach for Azure blob storage authentication.
+        Sets up log shipping for database "db1" to Azure blob storage.
+        A SQL Server credential named "https://mystorageaccount.blob.core.windows.net/logshipping" must exist on both instances with IDENTITY = 'SHARED ACCESS SIGNATURE'.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
