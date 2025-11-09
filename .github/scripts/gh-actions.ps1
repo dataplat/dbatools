@@ -361,8 +361,8 @@ exec sp_addrolemember 'userrole','bob';
         $copyJob | Should -BeNullOrEmpty
 
         # Cleanup
-        $null = Remove-DbaDbLogShipping -SqlInstance localhost -SqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
-        $null = Remove-DbaDbLogShipping -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
+        $null = Remove-DbaDbLogShipping -PrimarySqlInstance localhost -PrimarySqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
+        $null = Remove-DbaDbLogShipping -SecondarySqlInstance localhost:14333 -SecondarySqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
         $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $dbName
         $null = Remove-DbaDatabase -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName
         $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
