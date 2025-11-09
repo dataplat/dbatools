@@ -376,15 +376,34 @@ exec sp_addrolemember 'userrole','bob';
         $secondaryServer.Query("DROP CREDENTIAL [$azureUrl]")
 
         # Clean up Azure blob storage test files
-        try {
-            $blobs = az storage blob list --account-name dbatools --container-name dbatools --auth-mode key --prefix "$dbName" --query "[].name" --output tsv 2>$null
-            if ($blobs) {
-                $blobs -split "`n" | Where-Object { $_ } | ForEach-Object {
-                    $null = az storage blob delete --account-name dbatools --container-name dbatools --auth-mode key --name $_ --output none 2>$null
+        if ($env:azurepasswd) {
+            try {
+                $splatAzList = @(
+                    "storage", "blob", "list"
+                    "--account-name", "dbatools"
+                    "--container-name", "dbatools"
+                    "--prefix", $dbName
+                    "--sas-token", $sasToken
+                    "--query", "[].name"
+                    "--output", "tsv"
+                )
+                $blobs = & az @splatAzList 2>$null
+                if ($blobs) {
+                    $blobs -split "`n" | Where-Object { $_ } | ForEach-Object {
+                        $splatAzDelete = @(
+                            "storage", "blob", "delete"
+                            "--account-name", "dbatools"
+                            "--container-name", "dbatools"
+                            "--name", $_
+                            "--sas-token", $sasToken
+                            "--output", "none"
+                        )
+                        $null = & az @splatAzDelete 2>$null
+                    }
                 }
+            } catch {
+                # Ignore Azure cleanup errors - test may run in environments without Azure CLI
             }
-        } catch {
-            # Ignore Azure cleanup errors - test may run in environments without Azure CLI
         }
     }
 
