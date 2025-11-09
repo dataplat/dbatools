@@ -141,7 +141,6 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When Database Mail XPs status is reported" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -Name "Database Mail XPs" -Value 1
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance3 -Name "Database Mail XPs" -Value 0
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
