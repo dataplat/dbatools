@@ -336,62 +336,10 @@ exec sp_addrolemember 'userrole','bob';
         $secondaryServer.Query("DROP CREDENTIAL [$azureUrl]")
     }
 
-    It -Skip:(-not $env:azurelegacypasswd) "sets up log shipping to Azure blob storage using storage account key" {
-        # Restore credentials after Azure tests cleared PSDefaultParameterValues
-        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
-
-        $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
-        $credName = "dbatools_ci_logship"
-        $dbName = "dbatoolsci_logship_azkey"
-
-        # Create storage account key credential on both instances
-        $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
-        if (Get-DbaCredential -SqlInstance localhost -SqlCredential $cred -Name $credName) {
-            $primaryServer.Query("DROP CREDENTIAL [$credName]")
-        }
-        $sql = "CREATE CREDENTIAL [$credName] WITH IDENTITY = N'dbatools', SECRET = N'$env:azurelegacypasswd'"
-        $primaryServer.Query($sql)
-
-        $secondaryServer = Connect-DbaInstance -SqlInstance localhost:14333 -SqlCredential $cred
-        if (Get-DbaCredential -SqlInstance localhost:14333 -SqlCredential $cred -Name $credName) {
-            $secondaryServer.Query("DROP CREDENTIAL [$credName]")
-        }
-        $secondaryServer.Query($sql)
-
-        # Create test database
-        $null = New-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Name $dbName
-
-        # Set up log shipping with explicit credential
-        $splatLogShipping = @{
-            SourceSqlInstance        = "localhost"
-            SourceSqlCredential      = $cred
-            DestinationSqlInstance   = "localhost:14333"
-            DestinationSqlCredential = $cred
-            Database                 = $dbName
-            AzureBaseUrl             = $azureUrl
-            AzureCredential          = $credName
-            GenerateFullBackup       = $true
-            Force                    = $true
-        }
-        $results = Invoke-DbaDbLogShipping @splatLogShipping
-        $results.Status | Should -Be "Success"
-
-        # Verify jobs created
-        $jobs = Get-DbaAgentJob -SqlInstance localhost -SqlCredential $cred
-        ($jobs | Where-Object Name -like "*LSBackup*$dbName*") | Should -Not -BeNullOrEmpty
-
-        $jobs = Get-DbaAgentJob -SqlInstance localhost:14333 -SqlCredential $cred
-        ($jobs | Where-Object Name -like "*LSRestore*$dbName*") | Should -Not -BeNullOrEmpty
-
-        # Cleanup
-        $null = Remove-DbaDbLogShipping -SqlInstance localhost -SqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
-        $null = Remove-DbaDbLogShipping -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName -WarningAction SilentlyContinue
-        $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $dbName
-        $null = Remove-DbaDatabase -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName
-        $primaryServer.Query("DROP CREDENTIAL [$credName]")
-        $secondaryServer.Query("DROP CREDENTIAL [$credName]")
-    }
+    # Storage account key test removed - deprecated authentication method
+    # - Storage account keys create page blobs (limited to 1 TB, more expensive)
+    # - Microsoft recommends SAS tokens for SQL Server 2016+ (creates block blobs, up to 12.8 TB striped)
+    # - Use the SAS token test above for modern Azure blob storage log shipping
 
     It "tests Get-DbaLastGoodCheckDb against Azure" {
         $PSDefaultParameterValues.Clear()
