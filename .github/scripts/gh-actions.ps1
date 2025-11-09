@@ -301,16 +301,36 @@ exec sp_addrolemember 'userrole','bob';
 
         # Set up log shipping
         $splatLogShipping = @{
-            SourceSqlInstance      = "localhost"
-            SourceSqlCredential    = $cred
-            DestinationSqlInstance = "localhost:14333"
+            SourceSqlInstance        = "localhost"
+            SourceSqlCredential      = $cred
+            DestinationSqlInstance   = "localhost:14333"
             DestinationSqlCredential = $cred
-            Database               = $dbName
-            AzureBaseUrl           = $azureUrl
-            GenerateFullBackup     = $true
-            Force                  = $true
+            Database                 = $dbName
+            AzureBaseUrl             = $azureUrl
+            GenerateFullBackup       = $true
+            Force                    = $true
         }
+        $Error.Clear()
         $results = Invoke-DbaDbLogShipping @splatLogShipping
+
+        # If failed, output detailed error information for debugging
+        if ($results.Status -ne "Success") {
+            Write-Host "=== Log Shipping Failed ==="
+            Write-Host "Results object:"
+            $results | Format-List * | Out-String | Write-Host
+            Write-Host "`nError details:"
+            $Error | Select-Object -First 5 | ForEach-Object {
+                Write-Host "---"
+                Write-Host "Exception: $($_.Exception.Message)"
+                Write-Host "Category: $($_.CategoryInfo.Category)"
+                Write-Host "TargetObject: $($_.TargetObject)"
+                if ($_.Exception.InnerException) {
+                    Write-Host "InnerException: $($_.Exception.InnerException.Message)"
+                }
+            }
+            Write-Host "==========================="
+        }
+
         $results.Status | Should -Be "Success"
 
         # Verify backup job created
