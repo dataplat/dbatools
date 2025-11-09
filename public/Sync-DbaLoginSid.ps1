@@ -211,20 +211,86 @@ function Sync-DbaLoginSid {
 
                 if ($PSCmdlet.ShouldProcess($dest, "Syncing SID for login $loginName")) {
                     try {
-                        # Convert SID to hex string for ALTER LOGIN statement
+                        # Get the password hash from DESTINATION to preserve existing password
+                        $passwordHash = Get-LoginPasswordHash -Login $destLogin
+
+                        if (-not $passwordHash) {
+                            Stop-Function -Message "Failed to retrieve password hash for login $loginName from destination" -Target $loginName -Continue
+                            [PSCustomObject]@{
+                                SourceServer      = $sourceServer.Name
+                                DestinationServer = $destServer.Name
+                                Login             = $loginName
+                                Status            = "Failed"
+                                Notes             = "Could not retrieve password hash"
+                            }
+                            continue
+                        }
+
+                        # Convert SID to hex string for CREATE LOGIN statement
                         $sidHex = "0x" + [System.BitConverter]::ToString($sourceSid).Replace("-", "")
 
-                        # Build and execute ALTER LOGIN statement
-                        $sql = "ALTER LOGIN [$loginName] WITH SID = $sidHex"
-                        Write-Message -Level Debug -Message "Executing: $sql"
+                        # Get login properties from destination before dropping
+                        $defaultDb = $destLogin.DefaultDatabase
+                        $language = $destLogin.Language
+                        $isDisabled = $destLogin.IsDisabled
+                        $denyLogin = $destLogin.DenyWindowsLogin
+                        $checkPolicy = if ($destLogin.PasswordPolicyEnforced) { "ON" } else { "OFF" }
+                        $checkExpiration = if ($destLogin.PasswordExpirationEnabled) { "ON" } else { "OFF" }
 
-                        $splatQuery = @{
+                        # Save server roles before dropping
+                        $serverRoles = New-Object System.Collections.ArrayList
+                        foreach ($role in $destServer.Roles) {
+                            if ($role.EnumMemberNames() -contains $loginName) {
+                                $null = $serverRoles.Add($role.Name)
+                            }
+                        }
+
+                        # Build DROP and CREATE statements
+                        $dropSql = "DROP LOGIN [$loginName]"
+                        $createSql = "CREATE LOGIN [$loginName] WITH PASSWORD = $passwordHash HASHED, SID = $sidHex, DEFAULT_DATABASE = [$defaultDb], CHECK_POLICY = $checkPolicy, CHECK_EXPIRATION = $checkExpiration, DEFAULT_LANGUAGE = [$language]"
+
+                        Write-Message -Level Debug -Message "Executing: $dropSql"
+                        Write-Message -Level Debug -Message "Executing: $createSql"
+
+                        $splatDrop = @{
                             SqlInstance     = $destServer
                             Database        = "master"
-                            Query           = $sql
+                            Query           = $dropSql
                             EnableException = $true
                         }
-                        $null = Invoke-DbaQuery @splatQuery
+                        $null = Invoke-DbaQuery @splatDrop
+
+                        $splatCreate = @{
+                            SqlInstance     = $destServer
+                            Database        = "master"
+                            Query           = $createSql
+                            EnableException = $true
+                        }
+                        $null = Invoke-DbaQuery @splatCreate
+
+                        # Refresh the login object to get the newly created login
+                        $destServer.Logins.Refresh()
+                        $newLogin = $destServer.Logins[$loginName]
+
+                        # Restore server roles
+                        foreach ($roleName in $serverRoles) {
+                            $splatRole = @{
+                                SqlInstance     = $destServer
+                                Database        = "master"
+                                Query           = "ALTER SERVER ROLE [$roleName] ADD MEMBER [$loginName]"
+                                EnableException = $true
+                            }
+                            $null = Invoke-DbaQuery @splatRole
+                        }
+
+                        # Restore disabled/denied state
+                        if ($isDisabled) {
+                            $newLogin.Disable()
+                        }
+                        if ($denyLogin) {
+                            $newLogin.DenyWindowsLogin = $true
+                            $newLogin.Alter()
+                        }
 
                         [PSCustomObject]@{
                             SourceServer      = $sourceServer.Name
