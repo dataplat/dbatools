@@ -107,6 +107,7 @@ function New-DbaLogShippingSecondaryPrimary {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$RestoreJob,
+        [string]$AzureCredential,
         [switch]$EnableException,
         [switch]$Force
     )
@@ -160,17 +161,25 @@ function New-DbaLogShippingSecondaryPrimary {
         }
 
         # Validate Azure credentials exist on SQL Server instance
-        # When using SAS token authentication, credential name must match the container URL
-        # Extract base container URL from database-specific path if needed
+        # For storage account key authentication, use explicit credential name if provided
+        # For SAS token authentication, credential name must match the container URL
         if ($IsAzureSource) {
-            $base = $BackupSourceDirectory -split "/"
-            if ($base.Count -gt 4) {
-                # URL has subfolders (database-specific path), extract base container URL
-                $sourceCredentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
-                Write-Message -Message "Extracted base source credential name: $sourceCredentialName" -Level Verbose
+            if ($AzureCredential) {
+                # Explicit credential name provided (storage account key authentication)
+                $sourceCredentialName = $AzureCredential
+                Write-Message -Message "Using explicit Azure source credential name: $sourceCredentialName" -Level Verbose
             } else {
-                # URL is just the container
-                $sourceCredentialName = $BackupSourceDirectory
+                # No explicit credential - assume SAS token (credential name must match URL)
+                # Extract base container URL from database-specific path if needed
+                $base = $BackupSourceDirectory -split "/"
+                if ($base.Count -gt 4) {
+                    # URL has subfolders (database-specific path), extract base container URL
+                    $sourceCredentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                    Write-Message -Message "Extracted base source credential name: $sourceCredentialName" -Level Verbose
+                } else {
+                    # URL is just the container
+                    $sourceCredentialName = $BackupSourceDirectory
+                }
             }
 
             $sourceCredential = $ServerSecondary.Credentials | Where-Object Name -eq $sourceCredentialName
@@ -184,14 +193,22 @@ function New-DbaLogShippingSecondaryPrimary {
         }
 
         if ($IsAzureDestination) {
-            $base = $BackupDestinationDirectory -split "/"
-            if ($base.Count -gt 4) {
-                # URL has subfolders (database-specific path), extract base container URL
-                $destCredentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
-                Write-Message -Message "Extracted base destination credential name: $destCredentialName" -Level Verbose
+            if ($AzureCredential) {
+                # Explicit credential name provided (storage account key authentication)
+                $destCredentialName = $AzureCredential
+                Write-Message -Message "Using explicit Azure destination credential name: $destCredentialName" -Level Verbose
             } else {
-                # URL is just the container
-                $destCredentialName = $BackupDestinationDirectory
+                # No explicit credential - assume SAS token (credential name must match URL)
+                # Extract base container URL from database-specific path if needed
+                $base = $BackupDestinationDirectory -split "/"
+                if ($base.Count -gt 4) {
+                    # URL has subfolders (database-specific path), extract base container URL
+                    $destCredentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                    Write-Message -Message "Extracted base destination credential name: $destCredentialName" -Level Verbose
+                } else {
+                    # URL is just the container
+                    $destCredentialName = $BackupDestinationDirectory
+                }
             }
 
             $destCredential = $ServerSecondary.Credentials | Where-Object Name -eq $destCredentialName

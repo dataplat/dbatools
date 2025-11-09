@@ -1688,6 +1688,11 @@ function Invoke-DbaDbLogShipping {
                                 ThresholdAlertEnabled       = $PrimaryThresholdAlertEnabled
                                 Force                       = $Force
                             }
+
+                            # Add Azure credential if provided (for storage account key authentication)
+                            if ($AzureCredential) {
+                                $splatPrimary.AzureCredential = $AzureCredential
+                            }
                             New-DbaLogShippingPrimaryDatabase @splatPrimary
 
                             # Check if the backup job needs to be enabled or disabled
@@ -1764,6 +1769,11 @@ function Invoke-DbaDbLogShipping {
                                 PrimaryDatabase             = $($db.Name)
                                 RestoreJob                  = $DatabaseRestoreJob
                                 Force                       = $Force
+                            }
+
+                            # Add Azure credential if provided (for storage account key authentication)
+                            if ($AzureCredential) {
+                                $splatSecondaryPrimary.AzureCredential = $AzureCredential
                             }
                             New-DbaLogShippingSecondaryPrimary @splatSecondaryPrimary
 

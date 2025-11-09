@@ -117,6 +117,7 @@ function New-DbaLogShippingPrimaryDatabase {
         [object]$MonitorServerSecurityMode = 1,
         [System.Management.Automation.PSCredential]$MonitorCredential,
         [switch]$ThresholdAlertEnabled,
+        [string]$AzureCredential,
         [switch]$EnableException,
         [switch]$Force
     )
@@ -148,16 +149,24 @@ function New-DbaLogShippingPrimaryDatabase {
         }
 
         # Validate Azure credential exists on SQL Server instance
-        # When using SAS token authentication, credential name must match the container URL
-        # Extract base container URL from database-specific path if needed
-        $base = $BackupShare -split "/"
-        if ($base.Count -gt 4) {
-            # URL has subfolders (database-specific path), extract base container URL
-            $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
-            Write-Message -Message "Extracted base credential name from database path: $credentialName" -Level Verbose
+        # For storage account key authentication, use explicit credential name if provided
+        # For SAS token authentication, credential name must match the container URL
+        if ($AzureCredential) {
+            # Explicit credential name provided (storage account key authentication)
+            $credentialName = $AzureCredential
+            Write-Message -Message "Using explicit Azure credential name: $credentialName" -Level Verbose
         } else {
-            # URL is just the container
-            $credentialName = $BackupShare
+            # No explicit credential - assume SAS token (credential name must match URL)
+            # Extract base container URL from database-specific path if needed
+            $base = $BackupShare -split "/"
+            if ($base.Count -gt 4) {
+                # URL has subfolders (database-specific path), extract base container URL
+                $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                Write-Message -Message "Extracted base credential name from database path: $credentialName" -Level Verbose
+            } else {
+                # URL is just the container
+                $credentialName = $BackupShare
+            }
         }
 
         $credential = $server.Credentials | Where-Object Name -eq $credentialName
