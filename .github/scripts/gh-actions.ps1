@@ -282,7 +282,7 @@ exec sp_addrolemember 'userrole','bob';
 
         # Create SAS token credential on both instances
         $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
-        if (Get-DbaCredential -SqlInstance localhost -Name "[$azureUrl]") {
+        if (Get-DbaCredential -SqlInstance localhost -SqlCredential $cred -Name "[$azureUrl]") {
             $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
         }
         $sql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
