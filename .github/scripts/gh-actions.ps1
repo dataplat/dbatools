@@ -314,7 +314,7 @@ exec sp_addrolemember 'userrole','bob';
         $results = Invoke-DbaDbLogShipping @splatLogShipping
 
         # If failed, output detailed error information for debugging
-        if ($results.Status -ne "Success") {
+        if ($results.Result -ne "Success") {
             Write-Host "=== Log Shipping Failed ==="
             Write-Host "Results object:"
             $results | Format-List * | Out-String | Write-Host
@@ -331,7 +331,7 @@ exec sp_addrolemember 'userrole','bob';
             Write-Host "==========================="
         }
 
-        $results.Status | Should -Be "Success"
+        $results.Result | Should -Be "Success"
 
         # Verify backup job created
         $jobs = Get-DbaAgentJob -SqlInstance localhost -SqlCredential $cred
