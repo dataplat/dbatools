@@ -423,11 +423,19 @@ function Invoke-DbaDbLogShipping {
         The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
 
     .EXAMPLE
+        PS C:\> # First, create the SAS credential on both instances
+        PS C:\> $azureUrl = "https://mystorageaccount.blob.core.windows.net/logshipping"
+        PS C:\> $sasToken = "your_sas_token_without_leading_?"
+        PS C:\> $sql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$sasToken'"
+        PS C:\> Invoke-DbaQuery -SqlInstance sql1 -Query $sql
+        PS C:\> Invoke-DbaQuery -SqlInstance sql2 -Query $sql
+        PS C:\>
+        PS C:\> # Then set up log shipping
         PS C:\> $params = @{
         >> SourceSqlInstance = 'sql1'
         >> DestinationSqlInstance = 'sql2'
         >> Database = 'db1'
-        >> AzureBaseUrl = 'https://mystorageaccount.blob.core.windows.net/logshipping'
+        >> AzureBaseUrl = $azureUrl
         >> BackupScheduleFrequencyType = 'daily'
         >> BackupScheduleFrequencyInterval = 1
         >> RestoreScheduleFrequencyType = 'daily'
@@ -438,8 +446,7 @@ function Invoke-DbaDbLogShipping {
         >>
         PS C:\> Invoke-DbaDbLogShipping @params
 
-        Sets up log shipping for database "db1" to Azure blob storage.
-        A SQL Server credential named "https://mystorageaccount.blob.core.windows.net/logshipping" must exist on both instances with IDENTITY = 'SHARED ACCESS SIGNATURE'.
+        Sets up log shipping for database "db1" to Azure blob storage using SAS token authentication.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
