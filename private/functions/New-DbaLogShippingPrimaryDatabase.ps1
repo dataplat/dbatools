@@ -79,7 +79,7 @@ function New-DbaLogShippingPrimaryDatabase {
             It will also remove the any present schedules with the same name for the specific job.
 
         .NOTES
-            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Author: Sander Stad (@sqlstad, sqlstad.nl), Azure blob storage support added by Claude
             Website: https://dbatools.io
             Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
@@ -137,8 +137,8 @@ function New-DbaLogShippingPrimaryDatabase {
         # Azure blob storage URL - validate format
         Write-Message -Message "Using Azure blob storage for log shipping backups: $BackupShare" -Level Verbose
 
-        if ($BackupShare -notmatch '^https?://[a-z0-9]+\.blob\.core\.windows\.net/[a-z0-9\-]+') {
-            Stop-Function -Message "The Azure backup URL $BackupShare should be in the format https://storageaccount.blob.core.windows.net/container" -Target $SqlInstance
+        if ($BackupShare -notmatch '^https?://[a-z0-9]{3,24}\.blob\.core\.windows\.net/[a-z0-9]([a-z0-9\-]*[a-z0-9])?') {
+            Stop-Function -Message "The Azure backup URL $BackupShare should be in the format https://storageaccount.blob.core.windows.net/container (example: https://mystorageaccount.blob.core.windows.net/logshipping)" -Target $SqlInstance
             return
         }
 

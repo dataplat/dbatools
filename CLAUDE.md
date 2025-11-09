@@ -38,6 +38,8 @@ param(
 - Use `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
 - Use `[switch]` for boolean flags, not `[bool]` parameters
 - Keep non-boolean attributes with values: `[Parameter(ValueFromPipelineByPropertyName = "Name")]`
+- Avoid ParameterSets - their error messages are terrible and hard to use. Use Test-Bound instead and provide users with useful, concrete error messages.
+- No extra line breaks between parameter declarations - keep parameter blocks compact without blank lines separating individual parameters.
 
 ### POWERSHELL v3 COMPATIBILITY
 

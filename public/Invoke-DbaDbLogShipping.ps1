@@ -591,7 +591,7 @@ function Invoke-DbaDbLogShipping {
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
         $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
         $RegexUnc = '^\\(?:\\[^<>:`"/\\|?*]+)+$'
-        $RegexAzureUrl = '^https?://[a-z0-9]+\.blob\.core\.windows\.net/[a-z0-9\-]+/?'
+        $RegexAzureUrl = '^https?://[a-z0-9]{3,24}\.blob\.core\.windows\.net/[a-z0-9]([a-z0-9\-]*[a-z0-9])?/?'
 
         # Validate mutually exclusive parameters for backup destination
         if (-not (Test-Bound -ParameterName "SharedPath", "AzureBaseUrl" -Min 1 -Max 1)) {
@@ -616,7 +616,7 @@ function Invoke-DbaDbLogShipping {
             $AzureBaseUrl = $AzureBaseUrl.TrimEnd("/")
 
             if ($AzureBaseUrl -notmatch $RegexAzureUrl) {
-                Stop-Function -Message "Azure blob storage URL $AzureBaseUrl must be in the format https://storageaccount.blob.core.windows.net/container" -Target $SourceSqlInstance
+                Stop-Function -Message "Azure blob storage URL $AzureBaseUrl must be in the format https://storageaccount.blob.core.windows.net/container (example: https://mystorageaccount.blob.core.windows.net/logshipping)" -Target $SourceSqlInstance
                 return
             }
 
