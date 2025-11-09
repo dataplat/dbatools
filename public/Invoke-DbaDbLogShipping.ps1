@@ -1760,6 +1760,7 @@ function Invoke-DbaDbLogShipping {
                                 MonitorServerSecurityMode   = $SecondaryMonitorServerSecurityMode
                                 MonitorCredential           = $SecondaryMonitorCredential
                                 PrimaryServer               = $SourceSqlInstance
+                                PrimarySqlCredential        = $SourceSqlCredential
                                 PrimaryDatabase             = $($db.Name)
                                 RestoreJob                  = $DatabaseRestoreJob
                                 Force                       = $Force
@@ -1816,6 +1817,7 @@ function Invoke-DbaDbLogShipping {
                                 SqlCredential               = $DestinationSqlCredential
                                 SecondaryDatabase           = $SecondaryDatabase
                                 PrimaryServer               = $SourceSqlInstance
+                                PrimarySqlCredential        = $SourceSqlCredential
                                 PrimaryDatabase             = $($db.Name)
                                 RestoreDelay                = $RestoreDelay
                                 RestoreMode                 = $DatabaseStatus
