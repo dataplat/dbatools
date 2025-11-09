@@ -142,6 +142,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = Copy-DbaAgentJob @splatInitialCopy
 
+            # Ensure both jobs have the exact same date_modified by setting destination to match source
+            $escapedJobName = $testJobModified.Replace("'", "''")
+            $sourceDate = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database msdb -Query "SELECT date_modified FROM dbo.sysjobs WHERE name = '$escapedJobName'" | Select-Object -ExpandProperty date_modified
+            $updateQuery = "UPDATE msdb.dbo.sysjobs SET date_modified = '$($sourceDate.ToString("yyyy-MM-dd HH:mm:ss.fff"))' WHERE name = '$escapedJobName'"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -Query $updateQuery
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
