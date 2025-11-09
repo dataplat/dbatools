@@ -272,32 +272,7 @@ exec sp_addrolemember 'userrole','bob';
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
 
-    It "tests Get-DbaLastGoodCheckDb against Azure" {
-        $PSDefaultParameterValues.Clear()
-        $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
-        $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
-        $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
-        { Get-DbaLastGoodCheckDb -SqlInstance $server } | Should -Not -Throw
-    }
-
     It -Skip:(-not $env:azurepasswd) "sets up log shipping to Azure blob storage using SAS token" {
-        # Restore default parameter values after Azure tests cleared them
-        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
-        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
-        $PSDefaultParameterValues["*:Source"] = "localhost"
-        $PSDefaultParameterValues["*:Destination"] = "localhost:14333"
-        $PSDefaultParameterValues["*:Primary"] = "localhost"
-        $PSDefaultParameterValues["*:Mirror"] = "localhost:14333"
-        $PSDefaultParameterValues["*:SqlCredential"] = $cred
-        $PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
-        $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
-        $PSDefaultParameterValues["*:PrimarySqlCredential"] = $cred
-        $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
-        $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
-        $PSDefaultParameterValues["*:Confirm"] = $false
-        # Note: NOT restoring SharedPath because it conflicts with AzureBaseUrl
-
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $dbName = "dbatoolsci_logship_azure"
 
@@ -354,23 +329,6 @@ exec sp_addrolemember 'userrole','bob';
     }
 
     It -Skip:(-not $env:azurelegacypasswd) "sets up log shipping to Azure blob storage using storage account key" {
-        # Restore default parameter values after Azure tests cleared them
-        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
-        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
-        $PSDefaultParameterValues["*:Source"] = "localhost"
-        $PSDefaultParameterValues["*:Destination"] = "localhost:14333"
-        $PSDefaultParameterValues["*:Primary"] = "localhost"
-        $PSDefaultParameterValues["*:Mirror"] = "localhost:14333"
-        $PSDefaultParameterValues["*:SqlCredential"] = $cred
-        $PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
-        $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
-        $PSDefaultParameterValues["*:PrimarySqlCredential"] = $cred
-        $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
-        $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
-        $PSDefaultParameterValues["*:Confirm"] = $false
-        # Note: NOT restoring SharedPath because it conflicts with AzureBaseUrl
-
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $credName = "dbatools_ci_logship"
         $dbName = "dbatoolsci_logship_azkey"
@@ -419,6 +377,14 @@ exec sp_addrolemember 'userrole','bob';
         $null = Remove-DbaDatabase -SqlInstance localhost:14333 -Database $dbName
         $primaryServer.Query("DROP CREDENTIAL [$credName]")
         $secondaryServer.Query("DROP CREDENTIAL [$credName]")
+    }
+
+    It "tests Get-DbaLastGoodCheckDb against Azure" {
+        $PSDefaultParameterValues.Clear()
+        $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
+        $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
+        $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
+        { Get-DbaLastGoodCheckDb -SqlInstance $server } | Should -Not -Throw
     }
 }
 
