@@ -27,25 +27,26 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate
+        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command returns all the required results" {
         It "returns the correct values" {
-            $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Get-DbaPfDataCollector |
-            Get-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length" |
-            Remove-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
-        $results.DataCollectorSet | Should -Be "Long Running Queries"
-        $results.Name | Should -Be "\LogicalDisk(*)\Avg. Disk Queue Length"
-        $results.Status | Should -Be "Removed"
+            $results = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries" |
+                Get-DbaPfDataCollector |
+                Get-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length" |
+                Remove-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
+            $results.DataCollectorSet | Should -Be "Long Running Queries"
+            $results.Name | Should -Be "\LogicalDisk(*)\Avg. Disk Queue Length"
+            $results.Status | Should -Be "Removed"
+        }
     }
-}
 }
