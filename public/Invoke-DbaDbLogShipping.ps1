@@ -660,7 +660,7 @@ function Invoke-DbaDbLogShipping {
                 Write-Message -Message "Setting backup compression to 1." -Level Verbose
                 [bool]$BackupCompression = 1
             } else {
-                $backupServerSetting = (Get-DbaSpConfigure -SqlInstance $SourceSqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
+                $backupServerSetting = (Get-DbaSpConfigure -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential -ConfigName DefaultBackupCompression).ConfiguredValue
                 Write-Message -Message "Setting backup compression to default server setting $backupServerSetting." -Level Verbose
                 [bool]$BackupCompression = $backupServerSetting
             }
@@ -1107,14 +1107,16 @@ function Invoke-DbaDbLogShipping {
 
             # Check if standby is being used
             if ($Standby) {
-                # Check the stand-by directory
+                # Check the stand-by directory (skip for Azure SQL as it manages storage)
                 if ($StandbyDirectory) {
                     # Check if the path is reachable for the destination server
-                    if ((Test-DbaPath -Path $StandbyDirectory -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                        $setupResult = "Failed"
-                        $comment = "The directory $StandbyDirectory cannot be reached by the destination instance"
-                        Stop-Function -Message "The directory $StandbyDirectory cannot be reached by the destination instance. Please check the permission and credentials." -Target $destInstance
-                        return
+                    if (-not $DestinationServer.IsAzure) {
+                        if ((Test-DbaPath -Path $StandbyDirectory -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                            $setupResult = "Failed"
+                            $comment = "The directory $StandbyDirectory cannot be reached by the destination instance"
+                            Stop-Function -Message "The directory $StandbyDirectory cannot be reached by the destination instance. Please check the permission and credentials." -Target $destInstance
+                            return
+                        }
                     }
                 } elseif (-not $StandbyDirectory -and $Force) {
                     $StandbyDirectory = $destInstance.BackupDirectory
@@ -1298,40 +1300,44 @@ function Invoke-DbaDbLogShipping {
                         }
                         Write-Message -Message "Restore log folder is set to $DatabaseRestoreLogFolder" -Level Verbose
 
-                        # Check if the restore data folder exists
-                        Write-Message -Message "Testing database restore data path $DatabaseRestoreDataFolder" -Level Verbose
-                        if ((Test-DbaPath  -Path $DatabaseRestoreDataFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                            if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder $DatabaseRestoreDataFolder on $DestinationServerName")) {
-                                # Try creating the data folder
-                                try {
-                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
-                                        Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
-                                        $null = New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Force:$Force
+                        # Check if the restore data folder exists (skip for Azure SQL as it manages storage)
+                        if (-not $DestinationServer.IsAzure) {
+                            Write-Message -Message "Testing database restore data path $DatabaseRestoreDataFolder" -Level Verbose
+                            if ((Test-DbaPath  -Path $DatabaseRestoreDataFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                                if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder $DatabaseRestoreDataFolder on $DestinationServerName")) {
+                                    # Try creating the data folder
+                                    try {
+                                        Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                                            Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
+                                            $null = New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Force:$Force
+                                        }
+                                    } catch {
+                                        $setupResult = "Failed"
+                                        $comment = "Something went wrong creating the restore data directory"
+                                        Stop-Function -Message "Something went wrong creating the restore data directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                                     }
-                                } catch {
-                                    $setupResult = "Failed"
-                                    $comment = "Something went wrong creating the restore data directory"
-                                    Stop-Function -Message "Something went wrong creating the restore data directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                                 }
                             }
                         }
 
-                        # Check if the restore log folder exists
-                        Write-Message -Message "Testing database restore log path $DatabaseRestoreLogFolder" -Level Verbose
-                        if ((Test-DbaPath  -Path $DatabaseRestoreLogFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                            if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder $DatabaseRestoreLogFolder on $DestinationServerName")) {
-                                # Try creating the log folder
-                                try {
-                                    Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-
-                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                        # Check if the restore log folder exists (skip for Azure SQL as it manages storage)
+                        if (-not $DestinationServer.IsAzure) {
+                            Write-Message -Message "Testing database restore log path $DatabaseRestoreLogFolder" -Level Verbose
+                            if ((Test-DbaPath  -Path $DatabaseRestoreLogFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                                if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder $DatabaseRestoreLogFolder on $DestinationServerName")) {
+                                    # Try creating the log folder
+                                    try {
                                         Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-                                        $null = New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Force:$Force
+
+                                        Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                                            Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
+                                            $null = New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Force:$Force
+                                        }
+                                    } catch {
+                                        $setupResult = "Failed"
+                                        $comment = "Something went wrong creating the restore log directory"
+                                        Stop-Function -Message "Something went wrong creating the restore log directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                                     }
-                                } catch {
-                                    $setupResult = "Failed"
-                                    $comment = "Something went wrong creating the restore log directory"
-                                    Stop-Function -Message "Something went wrong creating the restore log directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                                 }
                             }
                         }
@@ -1340,20 +1346,26 @@ function Invoke-DbaDbLogShipping {
                     # Check if the full backup path can be reached
                     if ($setupResult -ne 'Failed') {
                         if ($FullBackupPath) {
-                            Write-Message -Message "Testing full backup path $FullBackupPath" -Level Verbose
-                            if ((Test-DbaPath -Path $FullBackupPath -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                                $setupResult = "Failed"
-                                $comment = "The path to the full backup could not be reached"
-                                Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
+                            # Skip path validation for Azure blob URLs
+                            if (-not $UseAzure) {
+                                Write-Message -Message "Testing full backup path $FullBackupPath" -Level Verbose
+                                if ((Test-DbaPath -Path $FullBackupPath -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                                    $setupResult = "Failed"
+                                    $comment = "The path to the full backup could not be reached"
+                                    Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
+                                }
                             }
 
                             $BackupPath = $FullBackupPath
                         } elseif ($UseBackupFolder.Length -ge 1) {
-                            Write-Message -Message "Testing backup folder $UseBackupFolder" -Level Verbose
-                            if ((Test-DbaPath -Path $UseBackupFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                                $setupResult = "Failed"
-                                $comment = "The path to the backup folder could not be reached"
-                                Stop-Function -Message ("The path to the backup folder could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
+                            # Skip path validation for Azure blob URLs
+                            if (-not $UseAzure) {
+                                Write-Message -Message "Testing backup folder $UseBackupFolder" -Level Verbose
+                                if ((Test-DbaPath -Path $UseBackupFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                                    $setupResult = "Failed"
+                                    $comment = "The path to the backup folder could not be reached"
+                                    Stop-Function -Message ("The path to the backup folder could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
+                                }
                             }
 
                             $BackupPath = $UseBackupFolder
@@ -1365,19 +1377,24 @@ function Invoke-DbaDbLogShipping {
 
                             # Check if there was a last backup
                             if ($null -ne $LastBackup) {
-                                # Test the path to the backup
-                                Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
-                                if ((Test-DbaPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
-                                    $setupResult = "Failed"
-                                    $comment = "The full backup could not be found"
-                                    Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials" -Target $destInstance -Continue
+                                # Skip path validation for Azure blob URLs
+                                if (-not $UseAzure) {
+                                    # Test the path to the backup
+                                    Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
+                                    if ((Test-DbaPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
+                                        $setupResult = "Failed"
+                                        $comment = "The full backup could not be found"
+                                        Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials" -Target $destInstance -Continue
+                                    }
+                                    # Check if the source for the last full backup is remote and the backup is on a shared location
+                                    elseif (($LastBackup.Computername -ne $SourceServerName) -and (($LastBackup[-1]).Path[-1].StartsWith('\\') -eq $false)) {
+                                        $setupResult = "Failed"
+                                        $comment = "The last full backup is not located on shared location"
+                                        Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -Target $destInstance -Continue
+                                    }
                                 }
-                                # Check if the source for the last full backup is remote and the backup is on a shared location
-                                elseif (($LastBackup.Computername -ne $SourceServerName) -and (($LastBackup[-1]).Path[-1].StartsWith('\\') -eq $false)) {
-                                    $setupResult = "Failed"
-                                    $comment = "The last full backup is not located on shared location"
-                                    Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -Target $destInstance -Continue
-                                } else {
+
+                                if ($setupResult -ne 'Failed') {
                                     #$FullBackupPath = $LastBackup.Path
                                     $BackupPath = $LastBackup.Path
                                     Write-Message -Message "Full backup found for $db. Path $BackupPath" -Level Verbose
@@ -1419,8 +1436,8 @@ function Invoke-DbaDbLogShipping {
                     Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose
                 }
 
-                # Check if the copy destination folder exists (skip for Azure)
-                if ($setupResult -ne 'Failed' -and -not $UseAzure) {
+                # Check if the copy destination folder exists (skip for Azure blob storage and Azure SQL)
+                if ($setupResult -ne 'Failed' -and -not $UseAzure -and -not $DestinationServer.IsAzure) {
                     Write-Message -Message "Testing database copy destination path $DatabaseCopyDestinationFolder" -Level Verbose
                     if ((Test-DbaPath -Path $DatabaseCopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
                         if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
