@@ -1421,12 +1421,18 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Check if the copy job name is set
+                # For Azure, still need to set a name because sp_add_log_shipping_secondary_primary requires it
+                # (the job will be deleted immediately after creation)
                 if ($CopyJob) {
                     $DatabaseCopyJob = "$($CopyJob)$($db.Name)"
                 } else {
                     $DatabaseCopyJob = "LSCopy_$($SourceServerName)_$($db.Name)"
                 }
-                Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
+                if ($UseAzure) {
+                    Write-Message -Message "Copy job name set to $DatabaseCopyJob (will be removed - not needed for Azure)" -Level Verbose
+                } else {
+                    Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
+                }
 
                 # Check if the copy job schedule name is set
                 if ($CopySchedule) {
