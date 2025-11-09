@@ -370,8 +370,8 @@ exec sp_addrolemember 'userrole','bob';
             WarningAction          = "SilentlyContinue"
         }
         $null = Remove-DbaDbLogShipping @splatRemoveLogShipping
-        $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $dbName
-        $null = Remove-DbaDatabase -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName -Confirm:$false
         $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
         $secondaryServer.Query("DROP CREDENTIAL [$azureUrl]")
     }
