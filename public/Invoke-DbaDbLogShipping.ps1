@@ -1495,6 +1495,9 @@ function Invoke-DbaDbLogShipping {
 
                                     if ($AzureCredential) {
                                         $splatBackup.AzureCredential = $AzureCredential
+                                    } else {
+                                        # When AzureCredential is not specified, use SAS token credential named after the base URL
+                                        $splatBackup.AzureCredential = "[$SharedPath]"
                                     }
 
                                     $LastBackup = Backup-DbaDatabase @splatBackup
