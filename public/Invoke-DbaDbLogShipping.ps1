@@ -426,9 +426,7 @@ function Invoke-DbaDbLogShipping {
         PS C:\> # First, create the SAS credential on both instances
         PS C:\> $azureUrl = "https://mystorageaccount.blob.core.windows.net/logshipping"
         PS C:\> $sasToken = "your_sas_token_without_leading_?"
-        PS C:\> $sql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$sasToken'"
-        PS C:\> Invoke-DbaQuery -SqlInstance sql1 -Query $sql
-        PS C:\> Invoke-DbaQuery -SqlInstance sql2 -Query $sql
+        PS C:\> New-DbaCredential -SqlInstance sql1, sql2 -Name $azureUrl -Identity "SHARED ACCESS SIGNATURE" -SecurePassword (ConvertTo-SecureString $sasToken -AsPlainText -Force)
         PS C:\>
         PS C:\> # Then set up log shipping
         PS C:\> $params = @{
