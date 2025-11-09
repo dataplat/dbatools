@@ -465,7 +465,7 @@ function Invoke-DbaDbLogShipping {
         This is the recommended modern approach for Azure blob storage authentication.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
 
     param(
         [parameter(Mandatory)]
@@ -486,14 +486,11 @@ function Invoke-DbaDbLogShipping {
         $DestinationCredential,
         [Parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Database,
-        [parameter(Mandatory, ParameterSetName = "FileShare")]
         [Alias("BackupNetworkPath")]
         [string]$SharedPath,
         [Alias("BackupLocalPath")]
         [string]$LocalPath,
-        [parameter(Mandatory, ParameterSetName = "AzureBlob")]
         [string]$AzureBaseUrl,
-        [parameter(ParameterSetName = "AzureBlob")]
         [string]$AzureCredential,
         [string]$BackupJob,
         [int]$BackupRetention,
@@ -609,6 +606,11 @@ function Invoke-DbaDbLogShipping {
         $RegexUnc = '^\\(?:\\[^<>:`"/\\|?*]+)+$'
         $RegexAzureUrl = '^https?://[a-z0-9]+\.blob\.core\.windows\.net/[a-z0-9\-]+/?'
 
+        # Validate mutually exclusive parameters for backup destination
+        if (-not (Test-Bound -ParameterName "SharedPath", "AzureBaseUrl" -Min 1 -Max 1)) {
+            Stop-Function -Message "You must specify either -SharedPath (for traditional file share log shipping) or -AzureBaseUrl (for Azure blob storage log shipping), but not both." -Target $SourceSqlInstance
+            return
+        }
 
         # Check the connection timeout
         if ($SourceServer.ConnectionContext.StatementTimeout -ne 0) {

@@ -99,26 +99,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
-    Context "Azure parameter validation" {
-        It "Should have FileShare and AzureBlob parameter sets" {
-            $command = Get-Command $CommandName
-            $parameterSets = $command.ParameterSets.Name
-            $parameterSets | Should -Contain "FileShare"
-            $parameterSets | Should -Contain "AzureBlob"
-        }
-
-        It "SharedPath should be in FileShare parameter set" {
-            $command = Get-Command $CommandName
-            $sharedPathParam = $command.Parameters["SharedPath"]
-            $sharedPathParam.ParameterSets.Keys | Should -Contain "FileShare"
-        }
-
-        It "AzureBaseUrl should be in AzureBlob parameter set" {
-            $command = Get-Command $CommandName
-            $azureParam = $command.Parameters["AzureBaseUrl"]
-            $azureParam.ParameterSets.Keys | Should -Contain "AzureBlob"
-        }
-    }
 }
 
 Describe $CommandName -Tag IntegrationTests -Skip {
