@@ -281,6 +281,11 @@ exec sp_addrolemember 'userrole','bob';
     }
 
     It -Skip:(-not $env:azurepasswd) "sets up log shipping to Azure blob storage using SAS token" {
+        # Restore default parameter values after Azure tests cleared them
+        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+        $PSDefaultParameterValues["*:SqlCredential"] = $cred
+
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $dbName = "dbatoolsci_logship_azure"
 
@@ -337,6 +342,11 @@ exec sp_addrolemember 'userrole','bob';
     }
 
     It -Skip:(-not $env:azurelegacypasswd) "sets up log shipping to Azure blob storage using storage account key" {
+        # Restore default parameter values after Azure tests cleared them
+        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+        $PSDefaultParameterValues["*:SqlCredential"] = $cred
+
         $azureUrl = "https://dbatools.blob.core.windows.net/sql"
         $credName = "dbatools_ci_logship"
         $dbName = "dbatoolsci_logship_azkey"
