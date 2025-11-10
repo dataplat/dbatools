@@ -143,7 +143,7 @@ function Add-DbaExtendedProperty {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($object.Name, "Adding an extended propernamed named $Name with a value of '$Value'")) {
+                if ($Pscmdlet.ShouldProcess($object.Name, "Adding an extended property named $Name with a value of '$Value'")) {
                     $prop = New-Object Microsoft.SqlServer.Management.Smo.ExtendedProperty ($object, $Name, $Value)
                     $prop.Create()
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $computername

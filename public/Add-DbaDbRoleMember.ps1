@@ -68,7 +68,7 @@ function Add-DbaDbRoleMember {
         PS C:\> $servers = Get-Content C:\servers.txt
         PS C:\> $servers | Add-DbaDbRoleMember -Role SqlAgentOperatorRole -Member user1 -Database msdb
 
-        Adds user1 to the SqlAgentOperatorROle in the msdb database in every server in C:\servers.txt
+        Adds user1 to the SqlAgentOperatorRole in the msdb database in every server in C:\servers.txt
 
     .EXAMPLE
         PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Role "db_datareader","db_datawriter" -Member user1 -Database DEMODB
