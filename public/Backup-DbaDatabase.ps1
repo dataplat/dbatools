@@ -502,6 +502,9 @@ function Backup-DbaDatabase {
                         if ( $base.Count -gt 4) {
                             Write-Message "AzureURL contains a folder"
                             $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                        } else {
+                            # URL is just the container, use it as-is for credential name
+                            $credentialName = $baseUrl
                         }
                         Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
                         if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {

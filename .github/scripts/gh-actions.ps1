@@ -272,6 +272,146 @@ exec sp_addrolemember 'userrole','bob';
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
 
+    It -Skip:(-not $env:azurepasswd) "sets up log shipping to Azure blob storage using SAS token" {
+        # Restore credentials after Azure tests cleared PSDefaultParameterValues
+        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+
+        $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
+        $dbName = "dbatoolsci_logship_azure"
+
+        # Create SAS token credential on both instances
+        $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
+        if (Get-DbaCredential -SqlInstance localhost -SqlCredential $cred -Name "[$azureUrl]") {
+            $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
+        }
+        # Strip leading ? from SAS token if present
+        $sasToken = $env:azurepasswd.TrimStart("?")
+        $sql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$sasToken'"
+        $primaryServer.Query($sql)
+
+        $secondaryServer = Connect-DbaInstance -SqlInstance localhost:14333 -SqlCredential $cred
+        if (Get-DbaCredential -SqlInstance localhost:14333 -SqlCredential $cred -Name "[$azureUrl]") {
+            $secondaryServer.Query("DROP CREDENTIAL [$azureUrl]")
+        }
+        $secondaryServer.Query($sql)
+
+        # Create test database
+        $null = New-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Name $dbName
+
+        # Set up log shipping
+        $splatLogShipping = @{
+            SourceSqlInstance        = "localhost"
+            SourceSqlCredential      = $cred
+            DestinationSqlInstance   = "localhost:14333"
+            DestinationSqlCredential = $cred
+            Database                 = $dbName
+            AzureBaseUrl             = $azureUrl
+            GenerateFullBackup       = $true
+            Force                    = $true
+        }
+        $Error.Clear()
+        $results = Invoke-DbaDbLogShipping @splatLogShipping
+
+        # If failed, output detailed error information for debugging
+        if ($results.Result -ne "Success") {
+            Write-Host "=== Log Shipping Failed ==="
+            Write-Host "Results object:"
+            $results | Format-List * | Out-String | Write-Host
+            Write-Host "`nError details:"
+            $Error | Select-Object -First 5 | ForEach-Object {
+                Write-Host "---"
+                Write-Host "Exception: $($_.Exception.Message)"
+                Write-Host "Category: $($_.CategoryInfo.Category)"
+                Write-Host "TargetObject: $($_.TargetObject)"
+                if ($_.Exception.InnerException) {
+                    Write-Host "InnerException: $($_.Exception.InnerException.Message)"
+                }
+            }
+            Write-Host "==========================="
+        }
+
+        $results.Result | Should -Be "Success"
+
+        # Verify backup job created
+        $jobs = Get-DbaAgentJob -SqlInstance localhost -SqlCredential $cred
+        $backupJob = $jobs | Where-Object Name -like "*LSBackup*$dbName*"
+        $backupJob | Should -Not -BeNullOrEmpty
+
+        # Verify restore job created
+        $jobs = Get-DbaAgentJob -SqlInstance localhost:14333 -SqlCredential $cred
+        $restoreJob = $jobs | Where-Object Name -like "*LSRestore*$dbName*"
+        $restoreJob | Should -Not -BeNullOrEmpty
+
+        # Verify NO copy job created (Azure optimization)
+        $copyJob = $jobs | Where-Object Name -like "*LSCopy*$dbName*"
+
+        # Debug: Show all jobs if copy job exists
+        if ($copyJob) {
+            Write-Host "=== COPY JOB STILL EXISTS ==="
+            Write-Host "All jobs on secondary:"
+            $jobs | Where-Object Name -like "*$dbName*" | ForEach-Object {
+                Write-Host "  - $($_.Name) (Enabled: $($_.IsEnabled))"
+            }
+            Write-Host "Copy job details:"
+            $copyJob | Format-List Name, IsEnabled, OwnerLoginName, DateCreated | Out-String | Write-Host
+            Write-Host "============================"
+        }
+
+        $copyJob | Should -BeNullOrEmpty
+
+        # Cleanup
+        $splatRemoveLogShipping = @{
+            PrimarySqlInstance     = "localhost"
+            PrimarySqlCredential   = $cred
+            SecondarySqlInstance   = "localhost:14333"
+            SecondarySqlCredential = $cred
+            Database               = $dbName
+            WarningAction          = "SilentlyContinue"
+        }
+        $null = Remove-DbaDbLogShipping @splatRemoveLogShipping
+        $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance localhost:14333 -SqlCredential $cred -Database $dbName -Confirm:$false
+        $primaryServer.Query("DROP CREDENTIAL [$azureUrl]")
+        $secondaryServer.Query("DROP CREDENTIAL [$azureUrl]")
+
+        # Clean up Azure blob storage test files
+        if ($env:azurepasswd) {
+            try {
+                $splatAzList = @(
+                    "storage", "blob", "list"
+                    "--account-name", "dbatools"
+                    "--container-name", "dbatools"
+                    "--prefix", $dbName
+                    "--sas-token", $sasToken
+                    "--query", "[].name"
+                    "--output", "tsv"
+                )
+                $blobs = & az @splatAzList 2>$null
+                if ($blobs) {
+                    $blobs -split "`n" | Where-Object { $_ } | ForEach-Object {
+                        $splatAzDelete = @(
+                            "storage", "blob", "delete"
+                            "--account-name", "dbatools"
+                            "--container-name", "dbatools"
+                            "--name", $_
+                            "--sas-token", $sasToken
+                            "--output", "none"
+                        )
+                        $null = & az @splatAzDelete 2>$null
+                    }
+                }
+            } catch {
+                # Ignore Azure cleanup errors - test may run in environments without Azure CLI
+            }
+        }
+    }
+
+    # Storage account key test removed - deprecated authentication method
+    # - Storage account keys create page blobs (limited to 1 TB, more expensive)
+    # - Microsoft recommends SAS tokens for SQL Server 2016+ (creates block blobs, up to 12.8 TB striped)
+    # - Use the SAS token test above for modern Azure blob storage log shipping
+
     It "tests Get-DbaLastGoodCheckDb against Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
