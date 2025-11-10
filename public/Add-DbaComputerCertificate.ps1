@@ -50,7 +50,7 @@ function Add-DbaComputerCertificate {
             Imported keys are marked as exportable.
 
             NonExportable
-            Expliictly mark keys as nonexportable.
+            Explicitly mark keys as nonexportable.
 
             PersistKeySet
             The key associated with a PFX file is persisted when importing a certificate.

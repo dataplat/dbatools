@@ -564,7 +564,7 @@ function Backup-DbaDatabase {
             $lastfull = $db.LastBackupDate.Year
 
             if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
-                $failreason = "$db does not have an existing full backup, cannot take log or differentialbackup"
+                $failreason = "$db does not have an existing full backup, cannot take log or differential backup"
                 $failures += $failreason
                 Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "$failreason" -Continue -Target $db

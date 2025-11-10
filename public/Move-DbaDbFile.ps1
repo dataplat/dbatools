@@ -155,7 +155,7 @@ function Move-DbaDbFile {
 
             $dbStatus = (Get-DbaDbState -SqlInstance $server -Database $Database).Status
             if ($dbStatus -ne 'ONLINE') {
-                Write-Message -Level Verbose -Message "Database $Database is not ONLINE. Getting file strucutre from sys.master_files."
+                Write-Message -Level Verbose -Message "Database $Database is not ONLINE. Getting file structure from sys.master_files."
                 if ($fileTypeFilter -eq -1) {
                     $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object Name -EQ $Database | Select-Object LogicalName, PhysicalName
                 } else {
@@ -239,7 +239,7 @@ function Move-DbaDbFile {
                     $ComputerName = $server.ComputerName
                 }
 
-                # Test if defined paths are accesible by the instance
+                # Test if defined paths are accessible by the instance
                 $testPathResults = @()
                 if ($FileDestination) {
                     if (-not (Test-DbaPath -SqlInstance $server -Path $FileDestination)) {
