@@ -281,12 +281,12 @@ function New-DbaLogin {
                     if ($loginType -eq 'SqlLogin' -and !($SecurePassword -or $HashedPassword)) {
                         $sourceServer = $loginItem.Parent
                         switch ($sourceServer.versionMajor) {
-                            0 { $sql = "SELECT CONVERT(VARBINARY(256),password) as hashedpass FROM master.dbo.syslogins WHERE loginname='$loginName'" }
-                            8 { $sql = "SELECT CONVERT(VARBINARY(256),password) as hashedpass FROM dbo.syslogins WHERE name='$loginName'" }
-                            9 { $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins where name='$loginName'" }
+                            0 { $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$loginName'" }
+                            8 { $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$loginName'" }
+                            9 { $sql = "SELECT CONVERT(VARBINARY(256),password_hash) AS hashedpass FROM sys.sql_logins WHERE name='$loginName'" }
                             default {
                                 $sql = "SELECT CAST(CONVERT(VARCHAR(256), CAST(LOGINPROPERTY(name,'PasswordHash')
-                                    AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass
+                                    AS VARBINARY(256)), 1) AS NVARCHAR(MAX)) AS hashedpass
                                     FROM sys.server_principals
                                     WHERE principal_id = $($loginItem.id)"
                             }

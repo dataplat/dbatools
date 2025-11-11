@@ -249,10 +249,10 @@ function New-DbaLogShippingPrimaryDatabase {
 
     # Set the log shipping primary
     $Query = "
-        DECLARE @LS_BackupJobId AS uniqueidentifier
-            ,@LS_PrimaryId AS uniqueidentifier
+        DECLARE @LS_BackupJobId AS UNIQUEIDENTIFIER
+            ,@LS_PrimaryId AS UNIQUEIDENTIFIER
             ,@SP_Add_RetCode AS INT;
-        EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_primary_database
+        EXEC @SP_Add_RetCode = master.dbo.sp_add_log_shipping_primary_database
             @database = N'$Database'
             ,@backup_directory = N'$BackupDirectory'
             ,@backup_share = N'$BackupShare'
@@ -300,7 +300,7 @@ function New-DbaLogShippingPrimaryDatabase {
         BEGIN
             DECLARE @msg VARCHAR(1000);
             SELECT @msg = 'Unexpected result executing sp_add_log_shipping_primary_database ('
-                + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
+                + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
             THROW 51000, @msg, 1;
         END
         "
@@ -310,8 +310,8 @@ function New-DbaLogShippingPrimaryDatabase {
         BEGIN
             DECLARE @msg VARCHAR(1000);
             SELECT @msg = 'Unexpected result executing sp_add_log_shipping_primary_database ('
-                + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
-            RAISERROR (@msg, 16, 1) WITH NOWAIT;
+                + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
+            RAISERROR(@msg, 16, 1) WITH NOWAIT;
             RETURN;
         END
         "

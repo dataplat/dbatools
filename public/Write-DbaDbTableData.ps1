@@ -802,7 +802,7 @@ function Write-DbaDbTableData {
         } elseif ($originalDatabaseName -ne $databaseName) {
             # if a temptable was created, it sets the open connection's database to tempdb indefinitely. We want to get back to the original database context at the start of this command.
             Write-Message -Level Verbose -Message "The current database has changed from the original database. switching back to the original database."
-            $context.ExecuteNonQuery("use [$originalDatabaseName]")
+            $context.ExecuteNonQuery("USE [$originalDatabaseName]")
         }
     }
 }

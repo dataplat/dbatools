@@ -137,7 +137,7 @@ function Export-DbaCredential {
                         foreach ($cred in $server.Credentials) {
                             $credObject = [PSCustomObject]@{
                                 Name            = $cred.Name
-                                Quotename       = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS quotename").quotename
+                                Quotename       = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS Quotename").Quotename
                                 Identity        = $cred.Identity.ToString()
                                 Password        = ''
                                 MappedClassType = $cred.MappedClassType

@@ -353,10 +353,10 @@ function Export-DbaLogin {
                                     $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
                                 }
                                 9 {
-                                    $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password_hash) AS hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
                                 }
                                 default {
-                                    $sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
+                                    $sql = "SELECT CAST(CONVERT(VARCHAR(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(MAX)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
                                 }
                             }
 
@@ -414,7 +414,7 @@ function Export-DbaLogin {
 
                     if ($roleMembers -contains $userName) {
                         if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                            $outsql += "EXEC sys.sp_addsrvrolemember @rolename=N'$roleName', @loginame=N'$userName'"
+                            $outsql += "EXEC sp_addsrvrolemember @rolename=N'$roleName', @loginame=N'$userName'"
                         } else {
                             $outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
                         }
@@ -523,7 +523,7 @@ function Export-DbaLogin {
                                 if ($role.EnumMembers() -contains $dbUserName) {
                                     $roleName = $role.Name
                                     if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                                        $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
+                                        $outsql += "EXEC sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
                                     } else {
                                         $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
                                     }

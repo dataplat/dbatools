@@ -76,7 +76,7 @@ function Test-DbaTempDbConfig {
             }
 
             # removed previous assumption that 2016+ will have it enabled
-            $tfCheck = $server.Databases['tempdb'].Query("DBCC TRACEON (3604);DBCC TRACESTATUS(-1)")
+            $tfCheck = $server.Databases['tempdb'].Query("DBCC TRACEON (3604); DBCC TRACESTATUS(-1)")
             $current = ($tfCheck.TraceFlag -join ',').Contains('1118')
 
             If ($server.VersionMajor -gt 12) {

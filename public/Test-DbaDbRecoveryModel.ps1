@@ -95,7 +95,7 @@ function Test-DbaDbRecoveryModel {
             "Simple" { $recoveryCode = 3 }
         }
 
-        $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
+        $sqlRecoveryModel = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
                 ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                 SERVERPROPERTY('ServerName') AS SqlInstance
                         , d.[name] AS [Database]

@@ -118,13 +118,13 @@ function Test-DbaLoginPassword {
                 SELECT SERVERPROPERTY('MachineName') AS [ComputerName],
                     ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                     SERVERPROPERTY('ServerName') AS [SqlInstance],
-                    SysLogins.name as SqlLogin,
+                    SysLogins.name AS SqlLogin,
                     WeakPassword = 'True',
-                    REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name) As [Password],
-                    SysLogins.is_disabled as Disabled,
-                    SysLogins.create_date as CreatedDate,
-                    SysLogins.modify_date as ModifiedDate,
-                    SysLogins.default_database_name as DefaultDatabase
+                    REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name) AS [Password],
+                    SysLogins.is_disabled AS Disabled,
+                    SysLogins.create_date AS CreatedDate,
+                    SysLogins.modify_date AS ModifiedDate,
+                    SysLogins.default_database_name AS DefaultDatabase
                 FROM sys.sql_logins SysLogins
                 INNER JOIN @WeakPwdList WeakPassword
                 ON PWDCOMPARE(REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name),password_hash) = 1

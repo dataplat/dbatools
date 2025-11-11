@@ -47,15 +47,15 @@ function Get-LoginPasswordHash {
         $sql = switch ($server.VersionMajor) {
             8 {
                 # SQL Server 2000
-                "SELECT CONVERT(VARBINARY(256), password) as hashedpass FROM master.dbo.sysxlogins WHERE name = '$($Login.Name)'"
+                "SELECT CONVERT(VARBINARY(256), password) AS hashedpass FROM master.dbo.sysxlogins WHERE name = '$($Login.Name)'"
             }
             9 {
                 # SQL Server 2005
-                "SELECT CONVERT(VARBINARY(256), password_hash) as hashedpass FROM sys.sql_logins WHERE name = '$($Login.Name)'"
+                "SELECT CONVERT(VARBINARY(256), password_hash) AS hashedpass FROM sys.sql_logins WHERE name = '$($Login.Name)'"
             }
             default {
                 # SQL Server 2008 and above
-                "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name, 'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) as hashedpass FROM sys.server_principals WHERE principal_id = $($Login.ID)"
+                "SELECT CAST(CONVERT(VARCHAR(256), CAST(LOGINPROPERTY(name, 'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(MAX)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($Login.ID)"
             }
         }
 

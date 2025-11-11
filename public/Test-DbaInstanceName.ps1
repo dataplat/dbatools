@@ -170,7 +170,7 @@ function Test-DbaInstanceName {
             }
 
             # check for even more replication
-            $sql = "SELECT srl.remote_name as RemoteLoginName FROM sys.remote_logins srl JOIN sys.sysservers sss ON srl.server_id = sss.srvid"
+            $sql = "SELECT srl.remote_name AS RemoteLoginName FROM sys.remote_logins srl JOIN sys.sysservers sss ON srl.server_id = sss.srvid"
             Write-Message -Level Debug -Message "SQL Statement: $sql"
             $results = $server.Query($sql)
 

@@ -272,17 +272,17 @@ function Get-DbaHelpIndex {
                         sp.steps ,
                         sp.rows ,
                         QUOTENAME(sch.name) + '.' + QUOTENAME(t.name) AS FullObjectName
-                FROM    [sys].[stats] AS [s]
+                FROM    sys.stats AS s
                         INNER JOIN sys.stats_columns sc ON s.stats_id = sc.stats_id
                                                         AND s.object_id = sc.object_id
                         INNER JOIN sys.columns c ON c.object_id = sc.object_id
                                                     AND c.column_id = sc.column_id
                         INNER JOIN sys.tables t ON c.object_id = t.object_id
                         INNER JOIN sys.schemas sch ON sch.schema_id = t.schema_id
-                        OUTER APPLY sys.dm_db_stats_properties([s].[object_id],
-                                                            [s].[stats_id]) AS [sp]
+                        OUTER APPLY sys.dm_db_stats_properties(s.object_id,
+                                                            s.stats_id) AS sp
                 WHERE   s.object_id = CASE WHEN @TableName IS NULL THEN s.object_id
-                                        else OBJECT_ID(@TableName)
+                                        ELSE OBJECT_ID(@TableName)
                                     END;
 
 
@@ -354,7 +354,7 @@ function Get-DbaHelpIndex {
                                         AND c.is_descending_key = 0
                                         AND c.is_included_column = 0
                                     THEN sc.name + ' (' + t.name + ')'
-                                    else sc.name
+                                    ELSE sc.name
                                 END AS ColumnName ,
                                 i.filter_definition ,
                                 ISNULL(dd.user_scans, 0) AS user_scans ,
@@ -377,7 +377,7 @@ function Get-DbaHelpIndex {
                                 ci.SizeKB ,
                                 cr.IndexRows ,
                                 QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName ,
-                                ISNULL(dd.avg_fragmentation_in_percent, 0) as avg_fragmentation_in_percent
+                                ISNULL(dd.avg_fragmentation_in_percent, 0) AS avg_fragmentation_in_percent
                     FROM     sys.indexes i
                                 JOIN sys.index_columns c ON i.object_id = c.object_id
                                                             AND i.index_id = c.index_id
@@ -387,7 +387,7 @@ function Get-DbaHelpIndex {
                                 INNER JOIN sys.schemas sch ON sch.schema_id = tbl.schema_id
                                 LEFT JOIN sys.types t ON sc.user_type_id = t.user_type_id
                                 LEFT JOIN @IndexUsageStats dd ON i.object_id = dd.object_id
-                                                                AND i.index_id = dd.index_id --and dd.database_id = db_id()
+                                                                AND i.index_id = dd.index_id --AND dd.database_id = DB_ID()
                                 JOIN sys.partitions p ON i.object_id = p.object_id
                                                         AND i.index_id = p.index_id
                                 JOIN cteIndexSizes ci ON i.object_id = ci.object_id
@@ -396,7 +396,7 @@ function Get-DbaHelpIndex {
                                                 AND i.index_id = cr.index_id
                     WHERE    i.object_id = CASE WHEN @TableName IS NULL
                                                 THEN i.object_id
-                                                else OBJECT_ID(@TableName)
+                                                ELSE OBJECT_ID(@TableName)
                                             END
                     ),
                 cteResults
@@ -409,7 +409,7 @@ function Get-DbaHelpIndex {
                                     WHEN ci.is_unique_constraint = 1
                                     THEN ' (UNIQUE CONSTRAINT)'
                                     WHEN ci.is_unique = 1 THEN ' (UNIQUE)'
-                                    else ''
+                                    ELSE ''
                                 END AS IndexType ,
                                 name AS IndexName ,
                                 STUFF((SELECT   N', ' + ColumnName
@@ -436,7 +436,7 @@ function Get-DbaHelpIndex {
                                 ISNULL(filter_definition, '') AS FilterDefinition ,
                                 ci.fill_factor ,
                                 CASE WHEN ci.data_compression_desc = 'NONE' THEN ''
-                                    else ci.data_compression_desc
+                                    ELSE ci.data_compression_desc
                                 END AS DataCompression ,
                                 MAX(ci.user_seeks) + MAX(ci.user_scans)
                                 + MAX(ci.user_lookups) AS IndexReads ,
@@ -450,9 +450,9 @@ function Get-DbaHelpIndex {
                                         AND LastSeek > LastLookup THEN LastSeek
                                     WHEN LastLookup > LastScan
                                         AND LastLookup > LastSeek THEN LastLookup
-                                    else ''
+                                    ELSE ''
                                 END AS MostRecentlyUsed ,
-                                AVG(ci.avg_fragmentation_in_percent) as avg_fragmentation_in_percent
+                                AVG(ci.avg_fragmentation_in_percent) AS avg_fragmentation_in_percent
                     FROM     cteIndex ci
                     GROUP BY ci.ObjectName ,
                                 ci.name ,
@@ -669,17 +669,17 @@ function Get-DbaHelpIndex {
                         NULL AS steps ,
                         NULL AS rows ,
                         QUOTENAME(sch.name) + '.' + QUOTENAME(t.name) AS FullObjectName
-                FROM    [sys].[stats] AS [s]
+                FROM    sys.stats AS s
                         INNER JOIN sys.stats_columns sc ON s.stats_id = sc.stats_id
                                                         AND s.object_id = sc.object_id
                         INNER JOIN sys.columns c ON c.object_id = sc.object_id
                                                     AND c.column_id = sc.column_id
                         INNER JOIN sys.tables t ON c.object_id = t.object_id
                         INNER JOIN sys.schemas sch ON sch.schema_id = t.schema_id
-                    --   OUTER APPLY sys.dm_db_stats_properties([s].[object_id],
-                    --                                        [s].[stats_id]) AS [sp]
+                    --   OUTER APPLY sys.dm_db_stats_properties(s.object_id,
+                    --                                        s.stats_id) AS sp
                 WHERE   s.object_id = CASE WHEN @TableName IS NULL THEN s.object_id
-                                        else OBJECT_ID(@TableName)
+                                        ELSE OBJECT_ID(@TableName)
                                     END;
 
 
@@ -751,7 +751,7 @@ function Get-DbaHelpIndex {
                                         AND c.is_descending_key = 0
                                         AND c.is_included_column = 0
                                     THEN sc.name + ' (' + t.name + ')'
-                                    else sc.name
+                                    ELSE sc.name
                                 END AS ColumnName ,
                                 '' AS filter_definition ,
                                 ISNULL(dd.user_scans, 0) AS user_scans ,
@@ -766,7 +766,7 @@ function Get-DbaHelpIndex {
                                                             '1901-01-01')) AS LastSeek ,
                                 i.fill_factor ,
                                 c.is_descending_key ,
-                                'NONE' as data_compression_desc ,
+                                'NONE' AS data_compression_desc ,
                                 i.type_desc ,
                                 i.is_unique ,
                                 i.is_unique_constraint ,
@@ -774,7 +774,7 @@ function Get-DbaHelpIndex {
                                 ci.SizeKB ,
                                 cr.IndexRows ,
                                 QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName ,
-                                ISNULL(dd.avg_fragmentation_in_percent, 0) as avg_fragmentation_in_percent
+                                ISNULL(dd.avg_fragmentation_in_percent, 0) AS avg_fragmentation_in_percent
                     FROM     sys.indexes i
                                 JOIN sys.index_columns c ON i.object_id = c.object_id
                                                             AND i.index_id = c.index_id
@@ -784,7 +784,7 @@ function Get-DbaHelpIndex {
                                 INNER JOIN sys.schemas sch ON sch.schema_id = tbl.schema_id
                                 LEFT JOIN sys.types t ON sc.user_type_id = t.user_type_id
                                 LEFT JOIN @IndexUsageStats dd ON i.object_id = dd.object_id
-                                                                AND i.index_id = dd.index_id --and dd.database_id = db_id()
+                                                                AND i.index_id = dd.index_id --AND dd.database_id = DB_ID()
                                 JOIN sys.partitions p ON i.object_id = p.object_id
                                                         AND i.index_id = p.index_id
                                 JOIN cteIndexSizes ci ON i.object_id = ci.object_id
@@ -793,7 +793,7 @@ function Get-DbaHelpIndex {
                                                 AND i.index_id = cr.index_id
                     WHERE    i.object_id = CASE WHEN @TableName IS NULL
                                                 THEN i.object_id
-                                                else OBJECT_ID(@TableName)
+                                                ELSE OBJECT_ID(@TableName)
                                             END
                     ),
                 cteResults
@@ -806,12 +806,12 @@ function Get-DbaHelpIndex {
                                     WHEN ci.is_unique_constraint = 1
                                     THEN ' (UNIQUE CONSTRAINT)'
                                     WHEN ci.is_unique = 1 THEN ' (UNIQUE)'
-                                    else ''
+                                    ELSE ''
                                 END AS IndexType ,
                                 name AS IndexName ,
                                 STUFF((SELECT   N', ' + ColumnName
                                     FROM     cteIndex ci2
-                                    WHERE    ci2.name = ci.name and ci2.object_id=ci.object_id
+                                    WHERE    ci2.name = ci.name AND ci2.object_id=ci.object_id
                                                 AND ci2.is_included_column = 0
                                     GROUP BY ci2.index_column_id ,
                                                 ci2.ColumnName
@@ -821,7 +821,7 @@ function Get-DbaHelpIndex {
                                     2, N'') AS KeyColumns ,
                                 ISNULL(STUFF((SELECT    N', ' + ColumnName
                                             FROM      cteIndex ci3
-                                            WHERE     ci3.name = ci.name and ci3.object_id=ci.object_id
+                                            WHERE     ci3.name = ci.name AND ci3.object_id=ci.object_id
                                                         AND ci3.is_included_column = 1
                                             GROUP BY  ci3.index_column_id ,
                                                         ci3.ColumnName
@@ -833,7 +833,7 @@ function Get-DbaHelpIndex {
                                 ISNULL(filter_definition, '') AS FilterDefinition ,
                                 ci.fill_factor ,
                                 CASE WHEN ci.data_compression_desc = 'NONE' THEN ''
-                                    else ci.data_compression_desc
+                                    ELSE ci.data_compression_desc
                                 END AS DataCompression ,
                                 MAX(ci.user_seeks) + MAX(ci.user_scans)
                                 + MAX(ci.user_lookups) AS IndexReads ,
@@ -847,9 +847,9 @@ function Get-DbaHelpIndex {
                                         AND LastSeek > LastLookup THEN LastSeek
                                     WHEN LastLookup > LastScan
                                         AND LastLookup > LastSeek THEN LastLookup
-                                    else ''
+                                    ELSE ''
                                 END AS MostRecentlyUsed ,
-                                AVG(ci.avg_fragmentation_in_percent) as avg_fragmentation_in_percent
+                                AVG(ci.avg_fragmentation_in_percent) AS avg_fragmentation_in_percent
                     FROM     cteIndex ci
                     GROUP BY ci.ObjectName ,
                                 ci.name ,
@@ -913,7 +913,7 @@ function Get-DbaHelpIndex {
                                 RowMods AS StatsRowMods ,
                                 csi.HistogramSteps ,
                                 csi.StatsLastUpdated ,
-                                '' as IndexFragInPercent,
+                                '' AS IndexFragInPercent,
                                 2 ,
                                 csi.object_id ,
                                 csi.stats_id
@@ -923,8 +923,8 @@ function Get-DbaHelpIndex {
                                 LEFT JOIN (SELECT si.object_id, si.stats_id
                                             FROM    cteResults c
                                             INNER JOIN cteStatsInfo si ON si.object_id = c.object_id
-                                                                    AND si.stats_id = c.Index_Id ) AS x on csi.object_id = x.object_id and csi.stats_id = x.stats_id
-                        WHERE x.object_id is null
+                                                                    AND si.stats_id = c.Index_Id ) AS x ON csi.object_id = x.object_id AND csi.stats_id = x.stats_id
+                        WHERE x.object_id IS NULL
                     )
             INSERT INTO @AllResults
             SELECT  row_number() OVER (ORDER BY FullObjectName) AS RowNum ,
@@ -954,17 +954,17 @@ function Get-DbaHelpIndex {
         OPTION  ( RECOMPILE );
 
         /* Only update the stats data on 2005 for a single table, otherwise the run time for this is a potential problem for large table/index volumes */
-        if @TableName IS NOT NULL
+        IF @TableName IS NOT NULL
         BEGIN
 
-            DECLARE @StatsInfo2005 TABLE (Name nvarchar(128), Updated DATETIME, Rows BIGINT, RowsSampled BIGINT, Steps INT, Density INT, AverageKeyLength INT, StringIndex NVARCHAR(20))
+            DECLARE @StatsInfo2005 TABLE (Name NVARCHAR(128), Updated DATETIME, Rows BIGINT, RowsSampled BIGINT, Steps INT, Density INT, AverageKeyLength INT, StringIndex NVARCHAR(20))
 
             DECLARE @SqlCall NVARCHAR(2000), @RowNum INT;
-            SELECT @RowNum = min(RowNum) FROM @AllResults;
+            SELECT @RowNum = MIN(RowNum) FROM @AllResults;
             WHILE @RowNum IS NOT NULL
             BEGIN
-                SELECT @SqlCall = 'dbcc show_statistics('+FullObjectName+', '+IndexName+') with stat_header' FROM @AllResults WHERE RowNum = @RowNum;
-                INSERT INTO @StatsInfo2005 exec (@SqlCall);
+                SELECT @SqlCall = 'DBCC SHOW_STATISTICS('+FullObjectName+', '+IndexName+') WITH STAT_HEADER' FROM @AllResults WHERE RowNum = @RowNum;
+                INSERT INTO @StatsInfo2005 EXEC (@SqlCall);
                 UPDATE @AllResults
                     SET StatsSampleRows = RowsSampled,
                     HistogramSteps = Steps,
@@ -972,7 +972,7 @@ function Get-DbaHelpIndex {
                     FROM @StatsInfo2005
                     WHERE RowNum = @RowNum;
                 DELETE FROM @StatsInfo2005
-                SELECT @RowNum = min(RowNum) FROM @AllResults WHERE RowNum > @RowNum;
+                SELECT @RowNum = MIN(RowNum) FROM @AllResults WHERE RowNum > @RowNum;
             END;
 
         END;

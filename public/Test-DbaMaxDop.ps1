@@ -95,7 +95,7 @@ function Test-DbaMaxDop {
 
             try {
                 #represents the Number of NUMA nodes
-                $sql = "SELECT COUNT(DISTINCT memory_node_id) AS NUMA_Nodes FROM sys.dm_os_memory_clerks WHERE memory_node_id!=64"
+                $sql = "SELECT COUNT(DISTINCT memory_node_id) AS NUMA_Nodes FROM sys.dm_os_memory_clerks WHERE memory_node_id != 64"
                 $NumaNodes = $server.ConnectionContext.ExecuteScalar($sql)
             } catch {
                 Stop-Function -Message "Failed to get Numa node count." -ErrorRecord $_ -Target $server -Continue

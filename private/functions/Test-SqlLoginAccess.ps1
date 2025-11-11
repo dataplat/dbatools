@@ -19,7 +19,7 @@ function Test-SqlLoginAccess {
 
     if (($SqlInstance.Logins.Name) -notcontains $Login) {
         try {
-            $rows = $SqlInstance.ConnectionContext.ExecuteScalar("EXEC xp_logininfo '$Login'")
+            $rows = $SqlInstance.ConnectionContext.ExecuteScalar("EXEC master.dbo.xp_logininfo '$Login'")
 
             if (($rows | Measure-Object).Count -eq 0) {
                 return $false

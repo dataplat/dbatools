@@ -825,7 +825,7 @@ function Get-DbaWaitStatistic {
                     ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
                     [signal_wait_time_ms] / 1000.0 AS [SignalS],
                     [waiting_tasks_count] AS [WaitCount],
-                    Case WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
+                    CASE WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
                     ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
                 FROM sys.dm_os_wait_stats
                 WHERE [waiting_tasks_count] > 0
@@ -840,7 +840,7 @@ function Get-DbaWaitStatistic {
                     CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgWaitSeconds],
                     CAST ((MAX ([W1].[ResourceS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgResSeconds],
                     CAST ((MAX ([W1].[SignalS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgSigSeconds],
-                    CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) as XML) AS [URL]
+                    CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) AS XML) AS [URL]
                 FROM [Waits] AS [W1]
                 INNER JOIN [Waits] AS [W2]
                     ON [W2].[RowNum] <= [W1].[RowNum]
@@ -854,11 +854,11 @@ function Get-DbaWaitStatistic {
                     ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
                     [signal_wait_time_ms] / 1000.0 AS [SignalS],
                     [waiting_tasks_count] AS [WaitCount],
-                    Case WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
+                    CASE WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
                     ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
                 FROM sys.dm_os_wait_stats
                 WHERE [waiting_tasks_count] > 0
-                AND Cast([wait_type] as VARCHAR(60)) NOT IN ($IgnorableList)
+                AND CAST([wait_type] AS VARCHAR(60)) NOT IN ($IgnorableList)
                 )
                 SELECT
                     MAX ([W1].[wait_type]) AS [WaitType],
@@ -870,7 +870,7 @@ function Get-DbaWaitStatistic {
                     CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgWaitSeconds],
                     CAST ((MAX ([W1].[ResourceS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgResSeconds],
                     CAST ((MAX ([W1].[SignalS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgSigSeconds],
-                    CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) as XML) AS [URL]
+                    CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) AS XML) AS [URL]
                 FROM [Waits] AS [W1]
                 INNER JOIN [Waits] AS [W2]
                     ON [W2].[RowNum] <= [W1].[RowNum]

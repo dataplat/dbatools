@@ -84,45 +84,45 @@ function Test-DbaIdentityUsage {
         AS
         (
           SELECT SCHEMA_NAME(o.schema_id) AS SchemaName,
-                 OBJECT_NAME(a.Object_id) as TableName,
-                 a.Name as ColumnName,
+                 OBJECT_NAME(a.object_id) AS TableName,
+                 a.name AS ColumnName,
                  seed_value AS SeedValue,
-                 CONVERT(bigint, increment_value) as IncrementValue,
+                 CONVERT(BIGINT, increment_value) AS IncrementValue,
 
-                 CONVERT(bigint, ISNULL(a.last_value, seed_value)) AS LastValue,
+                 CONVERT(BIGINT, ISNULL(a.last_value, seed_value)) AS LastValue,
 
                  (CASE
-                        WHEN CONVERT(bigint, increment_value) < 0 THEN
-                            (CONVERT(bigint, seed_value)
-                            - CONVERT(bigint, ISNULL(last_value, seed_value))
-                            + (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN ABS(CONVERT(bigint, increment_value)) ELSE 0 END))
+                        WHEN CONVERT(BIGINT, increment_value) < 0 THEN
+                            (CONVERT(BIGINT, seed_value)
+                            - CONVERT(BIGINT, ISNULL(last_value, seed_value))
+                            + (CASE WHEN CONVERT(BIGINT, seed_value) <> 0 THEN ABS(CONVERT(BIGINT, increment_value)) ELSE 0 END))
                         ELSE
-                            (CONVERT(bigint, ISNULL(last_value, seed_value))
-                            - CONVERT(bigint, seed_value)
-                            + (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN ABS(CONVERT(bigint, increment_value)) ELSE 0 END))
-                    END) / ABS(CONVERT(bigint, increment_value))  AS NumberOfUses,
+                            (CONVERT(BIGINT, ISNULL(last_value, seed_value))
+                            - CONVERT(BIGINT, seed_value)
+                            + (CASE WHEN CONVERT(BIGINT, seed_value) <> 0 THEN ABS(CONVERT(BIGINT, increment_value)) ELSE 0 END))
+                    END) / ABS(CONVERT(BIGINT, increment_value))  AS NumberOfUses,
 
                   CAST (
                         (CASE
-                            WHEN CONVERT(Numeric(20, 0), increment_value) < 0 THEN
-                                ABS(CONVERT(Numeric(20, 0),dt.MinValue)
-                                - CONVERT(Numeric(20, 0), seed_value)
-                                - (CASE WHEN CONVERT(Numeric(20, 0), seed_value) <> 0 THEN ABS(CONVERT(Numeric(20, 0), increment_value)) ELSE 0 END))
+                            WHEN CONVERT(NUMERIC(20, 0), increment_value) < 0 THEN
+                                ABS(CONVERT(NUMERIC(20, 0),dt.MinValue)
+                                - CONVERT(NUMERIC(20, 0), seed_value)
+                                - (CASE WHEN CONVERT(NUMERIC(20, 0), seed_value) <> 0 THEN ABS(CONVERT(NUMERIC(20, 0), increment_value)) ELSE 0 END))
                             ELSE
-                                CONVERT(Numeric(20, 0),dt.MaxValue)
-                                - CONVERT(Numeric(20, 0), seed_value)
-                                + (CASE WHEN CONVERT(Numeric(20, 0), seed_value) <> 0 THEN ABS(CONVERT(Numeric(20, 0), increment_value)) ELSE 0 END)
-                        END) / ABS(CONVERT(Numeric(20, 0), increment_value))
-                    AS Numeric(20, 0)) AS MaxNumberRows
+                                CONVERT(NUMERIC(20, 0),dt.MaxValue)
+                                - CONVERT(NUMERIC(20, 0), seed_value)
+                                + (CASE WHEN CONVERT(NUMERIC(20, 0), seed_value) <> 0 THEN ABS(CONVERT(NUMERIC(20, 0), increment_value)) ELSE 0 END)
+                        END) / ABS(CONVERT(NUMERIC(20, 0), increment_value))
+                    AS NUMERIC(20, 0)) AS MaxNumberRows
 
             FROM sys.identity_columns a
                 INNER JOIN sys.objects o
                    ON a.object_id = o.object_id
-                INNER JOIN sys.types As b
+                INNER JOIN sys.types AS b
                      ON a.system_type_id = b.system_type_id
                 INNER JOIN CT_DT dt
                      ON b.name = dt.DataType
-          WHERE a.seed_value is not null
+          WHERE a.seed_value IS NOT NULL
         ),
         CTE_2
         AS
@@ -131,7 +131,7 @@ function Test-DbaIdentityUsage {
                CONVERT(NUMERIC(18, 2), ((CONVERT(FLOAT, NumberOfUses) / ABS(CONVERT(NUMERIC(20, 0), NULLIF(MaxNumberRows,0))) * 100))) AS [PercentUsed]
           FROM CTE_1
         )
-        SELECT DB_NAME() as DatabaseName, SchemaName, TableName, ColumnName, SeedValue, IncrementValue, LastValue, MaxNumberRows, NumberOfUses, [PercentUsed]
+        SELECT DB_NAME() AS DatabaseName, SchemaName, TableName, ColumnName, SeedValue, IncrementValue, LastValue, MaxNumberRows, NumberOfUses, [PercentUsed]
           FROM CTE_2"
 
         if ($Threshold -gt 0) {

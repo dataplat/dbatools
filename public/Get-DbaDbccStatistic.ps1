@@ -101,13 +101,13 @@ function Get-DbaDbccStatistic {
         }
 
         $statList =
-        "Select Object, Target, name FROM
+        "SELECT Object, Target, name FROM
         (
-            Select Schema_Name(o.SCHEMA_ID) + '.' + o.name as Object, st.name as Target, o.name
+            SELECT SCHEMA_NAME(o.schema_id) + '.' + o.name AS Object, st.name AS Target, o.name
             FROM sys.stats st
             INNER JOIN sys.objects o
-                on o.object_id = st.object_id
-            WHERE o.type in ('U', 'V')
+                ON o.object_id = st.object_id
+            WHERE o.type IN ('U', 'V')
         ) a
         "
     }

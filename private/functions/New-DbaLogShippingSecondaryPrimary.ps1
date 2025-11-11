@@ -266,11 +266,11 @@ function New-DbaLogShippingSecondaryPrimary {
 
     # Set up the query
     $Query = "
-        DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier;
-        DECLARE @LS_Secondary__RestoreJobId AS uniqueidentifier;
-        DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier;
+        DECLARE @LS_Secondary__CopyJobId AS UNIQUEIDENTIFIER;
+        DECLARE @LS_Secondary__RestoreJobId AS UNIQUEIDENTIFIER;
+        DECLARE @LS_Secondary__SecondaryId AS UNIQUEIDENTIFIER;
         DECLARE @SP_Add_RetCode AS INT;
-        EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_secondary_primary
+        EXEC @SP_Add_RetCode = master.dbo.sp_add_log_shipping_secondary_primary
                 @primary_server = N'$PrimaryServer'
                 ,@primary_database = N'$PrimaryDatabase'
                 ,@backup_source_directory = N'$BackupSourceDirectory'
@@ -316,8 +316,8 @@ function New-DbaLogShippingSecondaryPrimary {
             BEGIN
                 DECLARE @msg VARCHAR(1000);
                 SELECT @msg = 'Unexpected result executing sp_add_log_shipping_secondary_primary ('
-                    + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
-                RAISERROR (@msg, 16, 1) WITH NOWAIT;
+                    + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
+                RAISERROR(@msg, 16, 1) WITH NOWAIT;
                 RETURN;
             END
         "

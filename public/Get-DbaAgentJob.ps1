@@ -130,8 +130,8 @@ function Get-DbaAgentJob {
             }
 
             if (Test-Bound 'IncludeExecution') {
-                $query = "SELECT [job].[job_id] as [JobId], [activity].[start_execution_date] AS [StartDate]
-                FROM [msdb].[dbo].[sysjobs_view] as [job]
+                $query = "SELECT [job].[job_id] AS [JobId], [activity].[start_execution_date] AS [StartDate]
+                FROM [msdb].[dbo].[sysjobs_view] AS [job]
                     INNER JOIN [msdb].[dbo].[sysjobactivity] AS [activity] ON [job].[job_id] = [activity].[job_id]
                 WHERE [activity].[run_requested_date] IS NOT NULL
                     AND [activity].[start_execution_date] IS NOT NULL

@@ -81,7 +81,7 @@ function Clear-DbaLatchStatistics {
 
             if ($Pscmdlet.ShouldProcess($instance, "Performing CLEAR of sys.dm_os_latch_stats")) {
                 try {
-                    $server.Query("DBCC SQLPERF (N'sys.dm_os_latch_stats' , CLEAR);")
+                    $server.Query("DBCC SQLPERF (N'sys.dm_os_latch_stats', CLEAR);")
                     $status = "Success"
                 } catch {
                     $status = $_.Exception

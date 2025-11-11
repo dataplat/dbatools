@@ -61,9 +61,9 @@ function Get-XpDirTreeRestoreFile {
     }
     if ($server.VersionMajor -ge 14) {
         # this is all kinds of cool, api could be expanded sooo much here
-        $sql = "SELECT file_or_directory_name AS subdirectory, ~CONVERT(BIT, is_directory) as [file], 1 as depth
+        $sql = "SELECT file_or_directory_name AS subdirectory, ~CONVERT(BIT, is_directory) AS [file], 1 AS depth
         FROM sys.dm_os_enumerate_filesystem('$Path', '*')
-        WHERE  [level] = 0"
+        WHERE [level] = 0"
     } elseif ($server.VersionMajor -lt 9) {
         $sql = "EXEC master..xp_dirtree '$Path',1,1;"
     } else {

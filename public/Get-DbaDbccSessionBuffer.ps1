@@ -187,7 +187,7 @@ function Get-DbaDbccSessionBuffer {
                     }
                 }
             } else {
-                $sessionQuery = 'Select session_id FROM sys.dm_exec_connections'
+                $sessionQuery = 'SELECT session_id FROM sys.dm_exec_connections'
                 $sessionList = $server.Query($sessionQuery )
                 foreach ($session in $sessionList) {
                     $query = $StringBuilder.ToString()

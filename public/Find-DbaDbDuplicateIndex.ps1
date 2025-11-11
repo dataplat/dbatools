@@ -439,8 +439,8 @@ function Find-DbaDbDuplicateIndex {
                         WHERE CI1.SchemaName = CI2.SchemaName
                             AND CI1.TableName = CI2.TableName
                             AND (
-                                        (CI1.KeyColumns like CI2.KeyColumns + '%' and SUBSTRING(CI1.KeyColumns,LEN(CI2.KeyColumns)+1,1) = ' ')
-                                    OR (CI2.KeyColumns like CI1.KeyColumns + '%' and SUBSTRING(CI2.KeyColumns,LEN(CI1.KeyColumns)+1,1) = ' ')
+                                        (CI1.KeyColumns LIKE CI2.KeyColumns + '%' AND SUBSTRING(CI1.KeyColumns,LEN(CI2.KeyColumns)+1,1) = ' ')
+                                    OR (CI2.KeyColumns LIKE CI1.KeyColumns + '%' AND SUBSTRING(CI2.KeyColumns,LEN(CI1.KeyColumns)+1,1) = ' ')
                                 )
                             AND CI1.IsFiltered = CI2.IsFiltered
                             AND CI1.IndexName <> CI2.IndexName

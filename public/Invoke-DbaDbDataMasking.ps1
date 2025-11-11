@@ -401,8 +401,8 @@ function Invoke-DbaDbDataMasking {
 
                             # Check if the query already contains the identifier column
                             if (-not ($query | Select-String -Pattern $identityColumn)) {
-                                # Split up the query from the first "from"
-                                $queryParts = $query -split "from", 2
+                                # Split up the query from the first "FROM"
+                                $queryParts = $query -split "FROM", 2
 
                                 # Put it all together again with the identifier
                                 $query = "$($queryParts[0].Trim()), $($identityColumn) FROM $($queryParts[1].Trim())"

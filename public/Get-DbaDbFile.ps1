@@ -91,67 +91,67 @@ function Get-DbaDbFile {
     )
     begin {
         #region Sql Query Generation
-        $sql = "select
-            fg.name as FileGroupName,
-            df.file_id as 'ID',
+        $sql = "SELECT
+            fg.name AS FileGroupName,
+            df.file_id AS 'ID',
             df.Type,
-            df.type_desc as TypeDescription,
-            df.name as LogicalName,
-            mf.physical_name as PhysicalName,
-            df.state_desc as State,
-            df.max_size as MaxSize,
-            case mf.is_percent_growth when 1 then df.growth else df.Growth*8 end as Growth,
-            COALESCE(fileproperty(df.name, 'spaceused'), 0) as UsedSpace,
-            df.size as Size,
-            COALESCE(vfs.size_on_disk_bytes, 0) as size_on_disk_bytes,
-            case df.state_desc when 'OFFLINE' then 'True' else 'False' End as IsOffline,
-            case mf.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
-            case mf.is_media_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
-            case mf.is_sparse when 1 then 'True' when 0 then 'False' End as IsSparse,
-            case mf.is_percent_growth when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
-            COALESCE(vfs.num_of_writes, 0) as NumberOfDiskWrites,
-            COALESCE(vfs.num_of_reads, 0) as NumberOfDiskReads,
-            COALESCE(vfs.num_of_bytes_read, 0) as BytesReadFromDisk,
-            COALESCE(vfs.num_of_bytes_written, 0) as BytesWrittenToDisk,
-            fg.data_space_id as FileGroupDataSpaceId,
-            fg.Type as FileGroupType,
-            fg.type_desc as FileGroupTypeDescription,
-            case fg.is_default When 1 then 'True' when 0 then 'False' end as FileGroupDefault,
-            fg.is_read_only as FileGroupReadOnly"
+            df.type_desc AS TypeDescription,
+            df.name AS LogicalName,
+            mf.physical_name AS PhysicalName,
+            df.state_desc AS State,
+            df.max_size AS MaxSize,
+            CASE mf.is_percent_growth WHEN 1 THEN df.growth ELSE df.Growth*8 END AS Growth,
+            COALESCE(FILEPROPERTY(df.name, 'spaceused'), 0) AS UsedSpace,
+            df.size AS Size,
+            COALESCE(vfs.size_on_disk_bytes, 0) AS size_on_disk_bytes,
+            CASE df.state_desc WHEN 'OFFLINE' THEN 'True' ELSE 'False' END AS IsOffline,
+            CASE mf.is_read_only WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsReadOnly,
+            CASE mf.is_media_read_only WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsReadOnlyMedia,
+            CASE mf.is_sparse WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsSparse,
+            CASE mf.is_percent_growth WHEN 1 THEN 'Percent' WHEN 0 THEN 'kb' END AS GrowthType,
+            COALESCE(vfs.num_of_writes, 0) AS NumberOfDiskWrites,
+            COALESCE(vfs.num_of_reads, 0) AS NumberOfDiskReads,
+            COALESCE(vfs.num_of_bytes_read, 0) AS BytesReadFromDisk,
+            COALESCE(vfs.num_of_bytes_written, 0) AS BytesWrittenToDisk,
+            fg.data_space_id AS FileGroupDataSpaceId,
+            fg.Type AS FileGroupType,
+            fg.type_desc AS FileGroupTypeDescription,
+            CASE fg.is_default WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS FileGroupDefault,
+            fg.is_read_only AS FileGroupReadOnly"
 
-        $sqlfrom = "from sys.database_files df
-            left outer join  sys.filegroups fg on df.data_space_id=fg.data_space_id
-            left join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
-            inner join sys.master_files mf on df.file_id = mf.file_id
-            and mf.database_id = db_id()"
+        $sqlfrom = "FROM sys.database_files df
+            LEFT OUTER JOIN  sys.filegroups fg ON df.data_space_id=fg.data_space_id
+            LEFT JOIN sys.dm_io_virtual_file_stats(DB_ID(),NULL) vfs ON df.file_id=vfs.file_id
+            INNER JOIN sys.master_files mf ON df.file_id = mf.file_id
+            AND mf.database_id = DB_ID()"
 
-        $sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
-        $sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
+        $sql2008 = ",vs.available_bytes AS 'VolumeFreeSpace'"
+        $sql2008from = "CROSS APPLY sys.dm_os_volume_stats(DB_ID(),df.file_id) vs"
 
-        $sql2000 = "select
-            fg.groupname as FileGroupName,
-            df.fileid as ID,
-            CONVERT(INT,df.status & 0x40) / 64 as Type,
-            case CONVERT(INT,df.status & 0x40) / 64 when 1 then 'LOG' else 'ROWS' end as TypeDescription,
-            df.name as LogicalName,
-            df.filename as PhysicalName,
-            'Existing' as State,
-            df.maxsize as MaxSize,
-            case CONVERT(INT,df.status & 0x100000) / 1048576 when 1 then df.growth when 0 then df.growth*8 End as Growth,
-            fileproperty(df.name, 'spaceused') as UsedSpace,
-            df.size as Size,
-            case CONVERT(INT,df.status & 0x20000000) / 536870912 when 1 then 'True' else 'False' End as IsOffline,
-            case CONVERT(INT,df.status & 0x1000) / 4096 when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
-            case CONVERT(INT,df.status & 0x10000000) / 268435456 when 1 then 'True' when 0 then 'False' End as IsSparse,
-            case CONVERT(INT,df.status & 0x100000) / 1048576 when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
-            case CONVERT(INT,df.status & 0x1000) / 4096 when 1 then 'True' when 0 then 'False' End as IsReadOnly,
-            fg.groupid as FileGroupDataSpaceId,
-            NULL as FileGroupType,
+        $sql2000 = "SELECT
+            fg.groupname AS FileGroupName,
+            df.fileid AS ID,
+            CONVERT(INT,df.status & 0x40) / 64 AS Type,
+            CASE CONVERT(INT,df.status & 0x40) / 64 WHEN 1 THEN 'LOG' ELSE 'ROWS' END AS TypeDescription,
+            df.name AS LogicalName,
+            df.filename AS PhysicalName,
+            'Existing' AS State,
+            df.maxsize AS MaxSize,
+            CASE CONVERT(INT,df.status & 0x100000) / 1048576 WHEN 1 THEN df.growth WHEN 0 THEN df.growth*8 END AS Growth,
+            FILEPROPERTY(df.name, 'spaceused') AS UsedSpace,
+            df.size AS Size,
+            CASE CONVERT(INT,df.status & 0x20000000) / 536870912 WHEN 1 THEN 'True' ELSE 'False' END AS IsOffline,
+            CASE CONVERT(INT,df.status & 0x1000) / 4096 WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsReadOnlyMedia,
+            CASE CONVERT(INT,df.status & 0x10000000) / 268435456 WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsSparse,
+            CASE CONVERT(INT,df.status & 0x100000) / 1048576 WHEN 1 THEN 'Percent' WHEN 0 THEN 'kb' END AS GrowthType,
+            CASE CONVERT(INT,df.status & 0x1000) / 4096 WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsReadOnly,
+            fg.groupid AS FileGroupDataSpaceId,
+            NULL AS FileGroupType,
             NULL AS FileGroupTypeDescription,
-            CAST(fg.status & 0x10 as BIT) as FileGroupDefault,
-            CAST(fg.status & 0x8 as BIT) as FileGroupReadOnly
-            from sysfiles df
-            left outer join  sysfilegroups fg on df.groupid=fg.groupid"
+            CAST(fg.status & 0x10 AS BIT) AS FileGroupDefault,
+            CAST(fg.status & 0x8 AS BIT) AS FileGroupReadOnly
+            FROM sysfiles df
+            LEFT OUTER JOIN  sysfilegroups fg ON df.groupid=fg.groupid"
         #endregion Sql Query Generation
     }
 

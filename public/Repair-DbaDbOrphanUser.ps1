@@ -153,7 +153,7 @@ function Repair-DbaDbOrphanUser {
                                     if ($server.versionMajor -gt 8) {
                                         $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
                                     } else {
-                                        $query = "exec sp_change_users_login 'update_one', '$User'"
+                                        $query = "EXEC sp_change_users_login 'update_one', '$User'"
                                     }
 
                                     if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
