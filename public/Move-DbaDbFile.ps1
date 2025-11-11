@@ -351,7 +351,7 @@ function Move-DbaDbFile {
                         }
                         if (-not $failed) {
 
-                            $query = "ALTER DATABASE [$Database] MODIFY FILE (name=[$LogicalName], filename='$destination'); "
+                            $query = "ALTER DATABASE [$Database] MODIFY FILE (NAME=[$LogicalName], FILENAME='$destination'); "
 
                             if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
                                 # Change database file path

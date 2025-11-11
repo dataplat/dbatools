@@ -110,7 +110,7 @@ function Get-DbaDbDetachedFileInfo {
                 default { $dbversion = "Unknown" }
             }
 
-            $collationsql = "SELECT name FROM fn_helpcollations() where collationproperty(name, N'COLLATIONID')  = $collationid"
+            $collationsql = "SELECT name FROM fn_helpcollations() WHERE COLLATIONPROPERTY(name, N'COLLATIONID')  = $collationid"
 
             try {
                 $dataset = $server.databases['master'].ExecuteWithResults($collationsql)

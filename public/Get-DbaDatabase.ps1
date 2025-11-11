@@ -229,16 +229,16 @@ function Get-DbaDatabase {
                 $querylastused = "WITH agg AS
                 (
                   SELECT
-                       max(last_user_seek) last_user_seek,
-                       max(last_user_scan) last_user_scan,
-                       max(last_user_lookup) last_user_lookup,
-                       max(last_user_update) last_user_update,
+                       MAX(last_user_seek) last_user_seek,
+                       MAX(last_user_scan) last_user_scan,
+                       MAX(last_user_lookup) last_user_lookup,
+                       MAX(last_user_update) last_user_update,
                        sd.name dbname
                    FROM
                        sys.dm_db_index_usage_stats, master..sysdatabases sd
                    WHERE
                      database_id = sd.dbid AND database_id > 4
-                      group by sd.name
+                      GROUP BY sd.name
                 )
                 SELECT
                    dbname,
@@ -307,7 +307,7 @@ function Get-DbaDatabase {
                         ")
                     } elseif ($server.VersionMajor -eq 9) {
                         # CDC did not exist in version 9, but did afterwards.
-                        $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner]")
+                        $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner] FROM sys.databases")
                     } else {
                         $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner], is_cdc_enabled FROM sys.databases")
                     }

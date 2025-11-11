@@ -166,7 +166,7 @@ function Set-DbaTempDbConfig {
                     Stop-Function -Message $invalidPathFound -Continue
                 }
             } else {
-                $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 1').PhysicalName
+                $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 1').PhysicalName
                 $DataPath = Split-Path $Filepath
             }
 
@@ -177,7 +177,7 @@ function Set-DbaTempDbConfig {
                     Stop-Function -Message "$LogPath is an invalid path." -Continue
                 }
             } else {
-                $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 2').PhysicalName
+                $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 2').PhysicalName
                 $LogPath = Split-Path $Filepath
             }
             Write-Message -Message "Using log path: $LogPath." -Level Verbose
@@ -189,8 +189,8 @@ function Set-DbaTempDbConfig {
             }
 
             # Check current tempdb. Throw an error if current tempdb is larger than config.
-            $CurrentFileCount = $server.Databases['tempdb'].Query('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').FileCount
-            $TooBigCount = $server.Databases['tempdb'].Query("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingle AND type = 0").Size
+            $CurrentFileCount = $server.Databases['tempdb'].Query('SELECT COUNT(1) AS FileCount FROM sys.database_files WHERE type=0').FileCount
+            $TooBigCount = $server.Databases['tempdb'].Query("SELECT TOP 1 (size/128) AS Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingle AND type = 0").Size
 
             if ($CurrentFileCount -gt $DataFileCount) {
                 Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)." -Continue

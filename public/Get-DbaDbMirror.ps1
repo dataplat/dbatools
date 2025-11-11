@@ -68,7 +68,7 @@ function Get-DbaDbMirror {
 
             # The witness is kinda hidden. Go get it manually.
             try {
-                $witnesses = $dbs[0].Parent.Query("select distinct database_name, principal_server_name, safety_level, safety_level_desc, partner_sync_state from master.sys.database_mirroring_witnesses")
+                $witnesses = $dbs[0].Parent.Query("SELECT DISTINCT database_name, principal_server_name, safety_level, safety_level_desc, partner_sync_state FROM master.sys.database_mirroring_witnesses")
             } catch { continue }
 
             foreach ($witness in $witnesses) {

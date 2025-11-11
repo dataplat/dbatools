@@ -86,7 +86,7 @@ function Get-DbaDbMemoryUsage {
             SELECT @total_buffer = cntr_value
             FROM sys.dm_os_performance_counters
             WHERE RTRIM([object_name]) LIKE '%Buffer Manager'
-            AND counter_name = 'Database Pages';
+                AND counter_name = 'Database Pages';
 
             ;WITH src AS (
                 SELECT database_id, page_type, db_buffer_pages = COUNT_BIG(*)
@@ -96,7 +96,7 @@ function Get-DbaDbMemoryUsage {
             SELECT [DatabaseName] = CASE [database_id] WHEN 32767 THEN 'ResourceDb' ELSE DB_NAME([database_id]) END,
                 page_type AS 'PageType',
                 db_buffer_pages AS 'PageCount',
-                (db_buffer_pages * 8)/1024 AS 'SizeMb',
+                (db_buffer_pages * 8) / 1024 AS 'SizeMb',
                 CAST(db_buffer_pages * 100.0 / @total_buffer AS FLOAT) AS 'PercentUsed'
             FROM src
             ORDER BY [DatabaseName];"

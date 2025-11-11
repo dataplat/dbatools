@@ -286,7 +286,7 @@ function Set-DbaAgentOperator {
                 if ($Name) {
                     if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) Name to $Name")) {
                         # instead of using .Rename(), we will execute a sql script to avoid enumeration problems when piping
-                        $sql = "EXEC msdb.dbo.sp_update_operator @name=N'$($op.Name)', @new_name=N'$Name'"
+                        $sql = "EXEC msdb.dbo.sp_update_operator @name = N'$($op.Name)', @new_name = N'$Name'"
                         try {
                             Invoke-DbaQuery -SqlInstance $server -Query "$sql" -EnableException
                         } catch {

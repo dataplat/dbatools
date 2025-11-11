@@ -170,8 +170,8 @@ function Invoke-DbaDbShrink {
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
         $sql = 'SELECT
-                  avg(avg_fragmentation_in_percent) as [avg_fragmentation_in_percent]
-                , max(avg_fragmentation_in_percent) as [max_fragmentation_in_percent]
+                  AVG(avg_fragmentation_in_percent) AS [avg_fragmentation_in_percent]
+                , MAX(avg_fragmentation_in_percent) AS [max_fragmentation_in_percent]
                 FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
                 WHERE indexstats.avg_fragmentation_in_percent > 0 AND indexstats.page_count > 100
                 GROUP BY indexstats.database_id'

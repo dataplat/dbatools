@@ -23,10 +23,10 @@ function Get-DecryptedObject {
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
     Write-Message -Level Verbose -Message "Querying service master key"
     try {
-        $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and thumbprint=0x0300000001"
+        $sql = "SELECT SUBSTRING(crypt_property,9,LEN(crypt_property)-8) AS smk FROM sys.key_encryptions WHERE key_id=102 AND thumbprint=0x0300000001"
         $smkBytes = $server.Query($sql).smk
         if (-not $smkBytes) {
-            $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and thumbprint=0x03"
+            $sql = "SELECT SUBSTRING(crypt_property,9,LEN(crypt_property)-8) AS smk FROM sys.key_encryptions WHERE key_id=102 AND thumbprint=0x03"
             $smkBytes = $server.Query($sql).smk
         }
     } catch {
@@ -77,17 +77,17 @@ function Get-DecryptedObject {
         "LinkedServer" {
             "SELECT sysservers.srvname,
                 syslnklgns.name,
-                substring(syslnklgns.pwdhash,5,$ivlen) iv,
-                substring(syslnklgns.pwdhash,$($ivlen + 5),
-                len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
+                SUBSTRING(syslnklgns.pwdhash,5,$ivlen) iv,
+                SUBSTRING(syslnklgns.pwdhash,$($ivlen + 5),
+                LEN(syslnklgns.pwdhash)-$($ivlen + 4)) pass
             FROM master.sys.syslnklgns
-                inner join master.sys.sysservers
-                on syslnklgns.srvid=sysservers.srvid
-            WHERE len(pwdhash) > 0"
+                INNER JOIN master.sys.sysservers
+                ON syslnklgns.srvid=sysservers.srvid
+            WHERE LEN(pwdhash) > 0"
         }
         "Credential" {
-            #"SELECT name,QUOTENAME(name) quotename,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
-            "SELECT cred.name,QUOTENAME(cred.name) quotename,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass,target_type as 'mappedClassType', cp.name as 'ProviderName' from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid left outer join sys.cryptographic_providers cp on cred.target_id = cp.provider_id where valclass=28 and valnum=2"
+            #"SELECT name,QUOTENAME(name) quotename,credential_identity,SUBSTRING(imageval,5,$ivlen) iv, SUBSTRING(imageval,$($ivlen + 5),LEN(imageval)-$($ivlen + 4)) pass FROM sys.credentials cred INNER JOIN sys.sysobjvalues obj ON cred.credential_id = obj.objid WHERE valclass=28 AND valnum=2"
+            "SELECT cred.name,QUOTENAME(cred.name) quotename,credential_identity,SUBSTRING(imageval,5,$ivlen) iv, SUBSTRING(imageval,$($ivlen + 5),LEN(imageval)-$($ivlen + 4)) pass,target_type AS 'mappedClassType', cp.name AS 'ProviderName' FROM sys.credentials cred INNER JOIN sys.sysobjvalues obj ON cred.credential_id = obj.objid LEFT OUTER JOIN sys.cryptographic_providers cp ON cred.target_id = cp.provider_id WHERE valclass=28 AND valnum=2"
         }
     }
 

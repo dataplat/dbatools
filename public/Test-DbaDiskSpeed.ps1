@@ -189,10 +189,10 @@ function Test-DbaDiskSpeed {
 
         if ($Database -or $ExcludeDatabase) {
             if ($Database) {
-                $where = " where db_name(a.database_id) in ('$($Database -join "','")') "
+                $where = " WHERE DB_NAME(a.database_id) IN ('$($Database -join "','")') "
             }
             if ($ExcludeDatabase) {
-                $where = " where db_name(a.database_id) not in ('$($ExcludeDatabase -join "','")') "
+                $where = " WHERE DB_NAME(a.database_id) NOT IN ('$($ExcludeDatabase -join "','")') "
             }
             $sql += $where
         }

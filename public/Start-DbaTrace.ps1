@@ -90,7 +90,7 @@ function Start-DbaTrace {
                 Stop-Function -Message "The default trace on $server cannot be started. Use Set-DbaSpConfigure to turn it on." -Continue
             }
 
-            $sql = "sp_trace_setstatus $traceid, 1"
+            $sql = "EXEC sp_trace_setstatus $traceid, 1"
             if ($Pscmdlet.ShouldProcess($traceid, "Starting the TraceID on $server")) {
                 try {
                     $server.Query($sql)

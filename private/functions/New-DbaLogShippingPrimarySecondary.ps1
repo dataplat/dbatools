@@ -106,7 +106,7 @@ function New-DbaLogShippingPrimarySecondary {
     }
 
     # Set the query for the log shipping primary and secondary
-    $Query = "EXEC master.sys.sp_add_log_shipping_primary_secondary
+    $Query = "EXEC master.dbo.sp_add_log_shipping_primary_secondary
         @primary_database = N'$PrimaryDatabase'
         ,@secondary_server = N'$SecondaryServer'
         ,@secondary_database = N'$SecondaryDatabase' "

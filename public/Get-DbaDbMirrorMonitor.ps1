@@ -113,7 +113,7 @@ function Get-DbaDbMirrorMonitor {
                 Stop-Function -Continue -Message "msdb.dbo.dbm_monitor_data not found. Please run Add-DbaDbMirrorMonitor then you can get monitor stats."
             }
             try {
-                $sql = "msdb.dbo.sp_dbmmonitorresults $db, $rows, $updatebool"
+                $sql = "EXEC msdb.dbo.sp_dbmmonitorresults @database_name = '$db', @mode = $rows, @update_table = $updatebool"
                 $results = $db.Parent.Query($sql)
 
                 foreach ($result in $results) {

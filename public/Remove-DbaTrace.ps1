@@ -90,8 +90,8 @@ function Remove-DbaTrace {
                 Stop-Function -Message "The default trace on $server cannot be stopped. Use Set-DbaSpConfigure to turn it off." -Continue
             }
 
-            $stopsql = "sp_trace_setstatus $traceid, 0"
-            $removesql = "sp_trace_setstatus $traceid, 2"
+            $stopsql = "EXEC sp_trace_setstatus $traceid, 0"
+            $removesql = "EXEC sp_trace_setstatus $traceid, 2"
 
             if ($Pscmdlet.ShouldProcess($traceid, "Removing the trace")) {
                 try {

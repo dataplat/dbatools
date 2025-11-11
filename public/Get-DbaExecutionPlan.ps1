@@ -124,14 +124,14 @@ function Get-DbaExecutionPlan {
                 if ($force -eq $true) {
                     $select = "SELECT * "
                 } else {
-                    $select = "SELECT DB_NAME(deqp.dbid) as DatabaseName, OBJECT_NAME(deqp.objectid) as ObjectName,
+                    $select = "SELECT DB_NAME(deqp.dbid) AS DatabaseName, OBJECT_NAME(deqp.objectid) AS ObjectName,
                     detqp.query_plan AS SingleStatementPlan,
                     deqp.query_plan AS BatchQueryPlan,
                     ROW_NUMBER() OVER ( ORDER BY Statement_Start_offset ) AS QueryPosition,
-                    sql_handle as SqlHandle,
-                    plan_handle as PlanHandle,
-                    creation_time as CreationTime,
-                    last_execution_time as LastExecutionTime"
+                    sql_handle AS SqlHandle,
+                    plan_handle AS PlanHandle,
+                    creation_time AS CreationTime,
+                    last_execution_time AS LastExecutionTime"
                 }
 
                 $from = " FROM sys.dm_exec_query_stats deqs
@@ -154,12 +154,12 @@ function Get-DbaExecutionPlan {
 
                 if ($null -ne $SinceCreation) {
                     Write-Message -Level Verbose -Message "Adding creation time"
-                    $whereArray += " creation_time >= CONVERT(datetime,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
+                    $whereArray += " creation_time >= CONVERT(DATETIME,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
                 }
 
                 if ($null -ne $SinceLastExecution) {
                     Write-Message -Level Verbose -Message "Adding last exectuion time"
-                    $whereArray += " last_execution_time >= CONVERT(datetime,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
+                    $whereArray += " last_execution_time >= CONVERT(DATETIME,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
                 }
 
                 if ($ExcludeDatabase) {
@@ -168,11 +168,11 @@ function Get-DbaExecutionPlan {
                 }
 
                 if ($ExcludeEmptyQueryPlan) {
-                    $whereArray += " detqp.query_plan is not null"
+                    $whereArray += " detqp.query_plan IS NOT NULL"
                 }
 
                 if ($where.length -gt 0) {
-                    $whereArray = $whereArray -join " and "
+                    $whereArray = $whereArray -join " AND "
                     $where = "$where $whereArray"
                 }
 

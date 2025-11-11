@@ -95,19 +95,19 @@ function Get-DbaFile {
                 $PathList
             )
 
-            $q1 += "DECLARE @myPath nvarchar(4000);
+            $q1 += "DECLARE @myPath NVARCHAR(4000);
                     DECLARE @depth SMALLINT = $Depth;
 
-                    IF OBJECT_id('tempdb..#DirectoryTree') IS NOT NULL
+                    IF OBJECT_ID('tempdb..#DirectoryTree') IS NOT NULL
                     DROP TABLE #DirectoryTree;
 
                     CREATE TABLE #DirectoryTree (
-                       id int IDENTITY(1,1)
-                       ,subdirectory nvarchar(512)
-                       ,depth int
-                       ,isfile bit
-                       , ParentDirectory int
-                       ,flag tinyint default(0));"
+                       id INT IDENTITY(1,1)
+                       ,subdirectory NVARCHAR(512)
+                       ,depth INT
+                       ,isfile BIT
+                       , ParentDirectory INT
+                       ,flag TINYINT DEFAULT(0));"
 
             $q2 = "SET @myPath = 'dirname'
                     -- top level directory
@@ -123,26 +123,26 @@ function Get-DbaFile {
                           SELECT MAX(id) FROM #DirectoryTree
                           WHERE depth = d.depth - 1 AND id < d.id   )
                     FROM #DirectoryTree d
-                    WHERE ParentDirectory is NULL;"
+                    WHERE ParentDirectory IS NULL;"
 
             $query_files_sql = "-- SEE all with full paths
                     WITH dirs AS (
                         SELECT
                            id,subdirectory,depth,isfile,ParentDirectory,flag
-                           , CAST (null AS NVARCHAR(MAX)) AS container
+                           , CAST (NULL AS NVARCHAR(MAX)) AS container
                            , CAST([subdirectory] AS NVARCHAR(MAX)) AS dpath
                            FROM #DirectoryTree
                            WHERE ParentDirectory IS NULL
                         UNION ALL
                         SELECT
                            d.id,d.subdirectory,d.depth,d.isfile,d.ParentDirectory,d.flag
-                           , dpath as container
+                           , dpath AS container
                            , dpath +'\'+d.[subdirectory]
                         FROM #DirectoryTree AS d
                         INNER JOIN dirs ON  d.ParentDirectory = dirs.id
                         WHERE dpath NOT LIKE '%RECYCLE.BIN%'
                     )
-                    SELECT subdirectory as filename, container as filepath, isfile, dpath as fullpath FROM dirs
+                    SELECT subdirectory AS filename, container AS filepath, isfile, dpath AS fullpath FROM dirs
                     WHERE container IS NOT NULL
                     -- Dir style ordering
                     ORDER BY container, isfile, subdirectory"

@@ -107,7 +107,7 @@ function Get-DbaLatchStatistic {
                    MAX ([W1].[WaitCount]) AS [WaitCount],
                    CAST (MAX ([W1].[Percentage]) AS DECIMAL(14, 2)) AS [Percentage],
                    CAST (CASE WHEN MAX([W1].[WaitCount]) > 0 THEN MAX([W1].[WaitS]) / MAX([W1].[WaitCount]) END AS DECIMAL (14, 4)) AS [AvgWaitSeconds],
-                   CAST ('https://www.sqlskills.com/help/latches/' + MAX ([W1].[latch_class]) as XML) AS [URL]
+                   CAST ('https://www.sqlskills.com/help/latches/' + MAX ([W1].[latch_class]) AS XML) AS [URL]
                FROM [Latches] AS [W1]
                INNER JOIN [Latches] AS [W2]
                    ON [W2].[RowNum] <= [W1].[RowNum]

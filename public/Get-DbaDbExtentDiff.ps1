@@ -121,9 +121,9 @@ function Get-DbaDbExtentDiff {
                 foreach ($db in $sourcedbs) {
                     $DBCCPageQueryDMV = "
                         SELECT
-                        SUM(total_page_count) / 8 as [ExtentsTotal],
-                        SUM(modified_extent_page_count) / 8 as [ExtentsChanged],
-                        100.0 * SUM(modified_extent_page_count)/SUM(total_page_count) as [ChangedPerc]
+                        SUM(total_page_count) / 8 AS [ExtentsTotal],
+                        SUM(modified_extent_page_count) / 8 AS [ExtentsChanged],
+                        100.0 * SUM(modified_extent_page_count)/SUM(total_page_count) AS [ChangedPerc]
                         FROM sys.dm_db_file_space_usage
                     "
                     $DBCCPageResults = $server.Query($DBCCPageQueryDMV, $db.Name)
@@ -139,7 +139,7 @@ function Get-DbaDbExtentDiff {
                 }
             } else {
                 $MasterFilesQuery = "
-                        SELECT [file_id], [size], database_id, db_name(database_id) as dbname FROM master.sys.master_files
+                        SELECT [file_id], [size], database_id, DB_NAME(database_id) AS dbname FROM master.sys.master_files
                         WHERE [type_desc] = N'ROWS'
                     "
                 $MasterFiles = $server.Query($MasterFilesQuery)

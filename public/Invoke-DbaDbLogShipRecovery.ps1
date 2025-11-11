@@ -130,7 +130,7 @@ function Invoke-DbaDbLogShipRecovery {
             # Try to get the agent service details
             try {
                 # Get the service details
-                $agentStatus = $server.Query("SELECT COUNT(*) as AgentCount FROM master.dbo.sysprocesses WITH (nolock) WHERE Program_Name LIKE 'SQLAgent%'")
+                $agentStatus = $server.Query("SELECT COUNT(*) AS AgentCount FROM master.dbo.sysprocesses WITH (NOLOCK) WHERE program_name LIKE 'SQLAgent%'")
 
                 if ($agentStatus.AgentCount -lt 1) {
                     Stop-Function -Message "The agent service is not in a running state. Please start the service." -Target $server.name

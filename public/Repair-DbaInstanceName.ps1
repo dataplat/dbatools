@@ -130,7 +130,7 @@ function Repair-DbaInstanceName {
                                     Stop-Function -Message "Failure" -Target $server -Continue
                                 } else {
                                     Write-Message -Level Output -Message "`nPerforming sp_dropdistributor @no_checks = 1."
-                                    $sql = "sp_dropdistributor @no_checks = 1"
+                                    $sql = "EXEC dbo.sp_dropdistributor @no_checks = 1"
                                     Write-Message -Level Debug -Message $sql
                                     try {
                                         $null = $server.Query($sql)
@@ -205,7 +205,7 @@ function Repair-DbaInstanceName {
             }
 
             if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $oldServerName, then sp_addserver to add $newServerName")) {
-                $sql = "sp_dropserver '$oldServerName'"
+                $sql = "EXEC dbo.sp_dropserver '$oldServerName'"
                 Write-Message -Level Debug -Message $sql
                 try {
                     $null = $server.Query($sql)
@@ -214,7 +214,7 @@ function Repair-DbaInstanceName {
                     return
                 }
 
-                $sql = "sp_addserver '$newServerName', local"
+                $sql = "EXEC dbo.sp_addserver '$newServerName', LOCAL"
                 Write-Message -Level Debug -Message $sql
 
                 try {

@@ -232,7 +232,7 @@ ORDER BY p.name
                                 if ($dropXP.DllPath) {
                                     $dropDllName = Split-Path $dropXP.DllPath -Leaf
                                 }
-                                $dropSql = "EXEC sp_dropextendedproc @functname = N'$xpFullName'"
+                                $dropSql = "EXEC dbo.sp_dropextendedproc @functname = N'$xpFullName'"
                                 $null = $destServer.Query($dropSql)
                             } catch {
                                 $copyXPStatus.Status = "Failed"
@@ -251,7 +251,7 @@ ORDER BY p.name
                         $sourceDllPath = $currentXP.DllPath
                         if (-not $sourceDllPath) {
                             # Try to get from sys.extended_procedures or sp_helpextendedproc
-                            $dllQuery = "EXEC sp_helpextendedproc @funcname = N'$xpFullName'"
+                            $dllQuery = "EXEC dbo.sp_helpextendedproc @funcname = N'$xpFullName'"
                             $dllInfo = $sourceServer.Query($dllQuery)
                             if ($dllInfo) {
                                 $sourceDllPath = $dllInfo[0].DLL
@@ -304,7 +304,7 @@ ORDER BY p.name
 
                         # Create the Extended Stored Procedure
                         $destDllPath = if ($dllCopied) { $destDllFullPath } else { $sourceDllPath }
-                        $createSql = "EXEC sp_addextendedproc @functname = N'$xpFullName', @dllname = N'$destDllPath'"
+                        $createSql = "EXEC dbo.sp_addextendedproc @functname = N'$xpFullName', @dllname = N'$destDllPath'"
 
                         Write-Message -Level Verbose -Message "Creating Extended Stored Procedure $xpFullName"
                         Write-Message -Level Debug -Message $createSql

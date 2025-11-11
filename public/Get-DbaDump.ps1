@@ -51,7 +51,7 @@ function Get-DbaDump {
         [switch]$EnableException
     )
     begin {
-        $sql = "SELECT filename,  creation_time,  size_in_bytes FROM sys.dm_server_memory_dumps"
+        $sql = "SELECT filename, creation_time, size_in_bytes FROM sys.dm_server_memory_dumps"
     }
 
     process {
