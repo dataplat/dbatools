@@ -63,6 +63,7 @@
         'Add-DbaAgListener',
         'Add-DbaAgReplica',
         'Add-DbaComputerCertificate',
+        'Add-DbaDbFile',
         'Add-DbaDbMirrorMonitor',
         'Add-DbaDbRoleMember',
         'Add-DbaPfDataCollectorCounter',
