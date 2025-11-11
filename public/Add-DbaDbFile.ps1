@@ -141,6 +141,13 @@ function Add-DbaDbFile {
 
             $fileGroupObject = $db.FileGroups[$FileGroup]
 
+            # Check SQL Server version for memory-optimized filegroups
+            if ($fileGroupObject.FileGroupType -eq "MemoryOptimizedDataFileGroup") {
+                if ($server.VersionMajor -lt 12) {
+                    Stop-Function -Message "Memory-optimized filegroups require SQL Server 2014 or higher. Server $($server.Name) is version $($server.VersionMajor) (SQL Server $($server.VersionString))." -Continue
+                }
+            }
+
             # Auto-generate filename if not provided
             if (Test-Bound -Not -ParameterName FileName) {
                 $existingFileCount = $fileGroupObject.Files.Count
