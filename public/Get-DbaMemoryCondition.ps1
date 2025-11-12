@@ -9,7 +9,6 @@ function Get-DbaMemoryCondition {
         The function returns detailed memory statistics including physical memory usage, page file utilization, virtual address space consumption, and SQL Server-specific memory allocation metrics. Each record includes the exact timestamp when memory conditions were recorded, making it valuable for correlating memory pressure with performance degradation during specific time periods.
 
         This command is based on a query provided by Microsoft support and queries the sys.dm_os_ring_buffers DMV to extract resource monitor notifications.
-        Reference KB article: https://support.microsoft.com/en-us/help/918483/how-to-reduce-paging-of-buffer-pool-memory-in-the-64-bit-version-of-sq
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -58,8 +57,8 @@ function Get-DbaMemoryCondition {
     begin {
         $sql = "
     SELECT
-        CONVERT (varchar(30), GETDATE(), 121) as Runtime,
-        DATEADD (MILLISECOND, -1 * Convert(BIGINT, (sys.ms_ticks - sys.s_ticks*1000) - (a.[RecordTime] - a.[RecordTime_S]*1000)), DATEADD (SECOND, -1 * (sys.s_ticks - a.[RecordTime_S]), GETDATE())) AS NotificationTime,
+        CONVERT(VARCHAR(30), GETDATE(), 121) AS Runtime,
+        DATEADD(MILLISECOND, -1 * CONVERT(BIGINT, (sys.ms_ticks - sys.s_ticks*1000) - (a.[RecordTime] - a.[RecordTime_S]*1000)), DATEADD(SECOND, -1 * (sys.s_ticks - a.[RecordTime_S]), GETDATE())) AS NotificationTime,
         [NotificationType],
         [MemoryUtilizationPercent],
         [TotalPhysicalMemoryKB],
@@ -79,25 +78,25 @@ function Get-DbaMemoryCondition {
     FROM
     (
         SELECT
-            x.value('(//Record/ResourceMonitor/Notification)[1]', 'varchar(30)') AS [NotificationType],
-            x.value('(//Record/MemoryRecord/MemoryUtilization)[1]', 'bigint') AS [MemoryUtilizationPercent],
-            x.value('(//Record/MemoryRecord/TotalPhysicalMemory)[1]', 'bigint') AS [TotalPhysicalMemoryKB],
-            x.value('(//Record/MemoryRecord/AvailablePhysicalMemory)[1]', 'bigint') AS [AvailablePhysicalMemoryKB],
-            x.value('(//Record/MemoryRecord/TotalPageFile)[1]', 'bigint') AS [TotalPageFileKB],
-            x.value('(//Record/MemoryRecord/AvailablePageFile)[1]', 'bigint') AS [AvailablePageFileKB],
-            x.value('(//Record/MemoryRecord/TotalVirtualAddressSpace)[1]', 'bigint') AS [TotalVirtualAddressSpaceKB],
-            x.value('(//Record/MemoryRecord/AvailableVirtualAddressSpace)[1]', 'bigint') AS [AvailableVirtualAddressSpaceKB],
-            x.value('(//Record/MemoryNode/@id)[1]', 'bigint') AS [NodeId],
-            x.value('(//Record/MemoryNode/ReservedMemory)[1]', 'bigint') AS [SQLReservedMemoryKB],
-            x.value('(//Record/MemoryNode/CommittedMemory)[1]', 'bigint') AS [SQLCommittedMemoryKB],
-            x.value('(//Record/@id)[1]', 'bigint') AS [RecordId],
-            x.value('(//Record/@type)[1]', 'varchar(30)') AS [Type],
-            x.value('(//Record/ResourceMonitor/Indicators)[1]', 'bigint') AS [Indicators],
-            x.value('(//Record/@time)[1]', 'bigint') AS [RecordTime],
-            Convert(bigint, x.value('(//Record/@time)[1]', 'bigint')/1000) AS [RecordTime_S]
+            x.value('(//Record/ResourceMonitor/Notification)[1]', 'VARCHAR(30)') AS [NotificationType],
+            x.value('(//Record/MemoryRecord/MemoryUtilization)[1]', 'BIGINT') AS [MemoryUtilizationPercent],
+            x.value('(//Record/MemoryRecord/TotalPhysicalMemory)[1]', 'BIGINT') AS [TotalPhysicalMemoryKB],
+            x.value('(//Record/MemoryRecord/AvailablePhysicalMemory)[1]', 'BIGINT') AS [AvailablePhysicalMemoryKB],
+            x.value('(//Record/MemoryRecord/TotalPageFile)[1]', 'BIGINT') AS [TotalPageFileKB],
+            x.value('(//Record/MemoryRecord/AvailablePageFile)[1]', 'BIGINT') AS [AvailablePageFileKB],
+            x.value('(//Record/MemoryRecord/TotalVirtualAddressSpace)[1]', 'BIGINT') AS [TotalVirtualAddressSpaceKB],
+            x.value('(//Record/MemoryRecord/AvailableVirtualAddressSpace)[1]', 'BIGINT') AS [AvailableVirtualAddressSpaceKB],
+            x.value('(//Record/MemoryNode/@id)[1]', 'BIGINT') AS [NodeId],
+            x.value('(//Record/MemoryNode/ReservedMemory)[1]', 'BIGINT') AS [SQLReservedMemoryKB],
+            x.value('(//Record/MemoryNode/CommittedMemory)[1]', 'BIGINT') AS [SQLCommittedMemoryKB],
+            x.value('(//Record/@id)[1]', 'BIGINT') AS [RecordId],
+            x.value('(//Record/@type)[1]', 'VARCHAR(30)') AS [Type],
+            x.value('(//Record/ResourceMonitor/Indicators)[1]', 'BIGINT') AS [Indicators],
+            x.value('(//Record/@time)[1]', 'BIGINT') AS [RecordTime],
+            CONVERT(BIGINT, x.value('(//Record/@time)[1]', 'BIGINT')/1000) AS [RecordTime_S]
         FROM
         (
-            SELECT CAST (record as xml) FROM sys.dm_os_ring_buffers
+            SELECT CAST(record AS XML) FROM sys.dm_os_ring_buffers
             WHERE ring_buffer_type = 'RING_BUFFER_RESOURCE_MONITOR'
         ) AS R(x)
     ) a
@@ -105,7 +104,7 @@ function Get-DbaMemoryCondition {
     (
         SELECT
             ms_ticks,
-            convert(bigint, ms_ticks/1000) as s_ticks
+            CONVERT(BIGINT, ms_ticks/1000) AS s_ticks
         FROM sys.dm_os_sys_info
     ) sys
     ORDER BY a.[RecordTime] ASC"

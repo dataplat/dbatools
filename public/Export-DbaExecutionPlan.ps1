@@ -185,14 +185,14 @@ function Export-DbaExecutionPlan {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $select = "SELECT DB_NAME(deqp.dbid) as DatabaseName, OBJECT_NAME(deqp.objectid) as ObjectName,
+            $select = "SELECT DB_NAME(deqp.dbid) AS DatabaseName, OBJECT_NAME(deqp.objectid) AS ObjectName,
                     detqp.query_plan AS SingleStatementPlan,
                     deqp.query_plan AS BatchQueryPlan,
                     ROW_NUMBER() OVER ( ORDER BY Statement_Start_offset ) AS QueryPosition,
-                    sql_handle as SqlHandle,
-                    plan_handle as PlanHandle,
-                    creation_time as CreationTime,
-                    last_execution_time as LastExecutionTime"
+                    sql_handle AS SqlHandle,
+                    plan_handle AS PlanHandle,
+                    creation_time AS CreationTime,
+                    last_execution_time AS LastExecutionTime"
 
             $from = " FROM sys.dm_exec_query_stats deqs
                         CROSS APPLY sys.dm_exec_text_query_plan(deqs.plan_handle,
@@ -209,30 +209,30 @@ function Export-DbaExecutionPlan {
 
             if ($Database -gt 0) {
                 $dbList = $Database -join "','"
-                $whereArray += " DB_NAME(deqp.dbid) in ('$dbList') "
+                $whereArray += " DB_NAME(deqp.dbid) IN ('$dbList') "
             }
 
             if (Test-Bound 'SinceCreation') {
                 Write-Message -Level Verbose -Message "Adding creation time"
-                $whereArray += " creation_time >= CONVERT(datetime,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
+                $whereArray += " creation_time >= CONVERT(DATETIME,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
             }
 
             if (Test-Bound 'SinceLastExecution') {
                 Write-Message -Level Verbose -Message "Adding last execution time"
-                $whereArray += " last_execution_time >= CONVERT(datetime,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
+                $whereArray += " last_execution_time >= CONVERT(DATETIME,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
             }
 
             if (Test-Bound 'ExcludeDatabase') {
                 $dbList = $ExcludeDatabase -join "','"
-                $whereArray += " DB_NAME(deqp.dbid) not in ('$dbList') "
+                $whereArray += " DB_NAME(deqp.dbid) NOT IN ('$dbList') "
             }
 
             if (Test-Bound 'ExcludeEmptyQueryPlan') {
-                $whereArray += " detqp.query_plan is not null"
+                $whereArray += " detqp.query_plan IS NOT NULL"
             }
 
             if ($where.Length -gt 0) {
-                $whereArray = $whereArray -join " and "
+                $whereArray = $whereArray -join " AND "
                 $where = "$where $whereArray"
             }
 

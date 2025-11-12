@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "Login",
                 "SecurePassword",
+                "PasswordHash",
                 "DefaultDatabase",
                 "Unlock",
                 "PasswordMustChange",

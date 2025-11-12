@@ -173,7 +173,7 @@ function Remove-DbaDbLogShipping {
 
             # Remove the primary database log shipping info
             if ($PSCmdlet.ShouldProcess("Removing the primary database from log shipping")) {
-                $query = "EXEC sp_delete_log_shipping_primary_database @database = N'$($logshippingInfo.PrimaryDatabase)'"
+                $query = "EXEC dbo.sp_delete_log_shipping_primary_database @database = N'$($logshippingInfo.PrimaryDatabase)'"
 
                 try {
                     Write-Message -Level verbose -Message "Removing the primary database from log shipping"
@@ -185,7 +185,7 @@ function Remove-DbaDbLogShipping {
 
             # Remove the secondary database log shipping
             if ($PSCmdlet.ShouldProcess("Removing the secondary database from log shipping")) {
-                $query = "EXEC sp_delete_log_shipping_secondary_database @secondary_database = N'$($logshippingInfo.SecondaryDatabase)'"
+                $query = "EXEC dbo.sp_delete_log_shipping_secondary_database @secondary_database = N'$($logshippingInfo.SecondaryDatabase)'"
 
                 try {
                     Write-Message -Level verbose -Message "Removing the secondary database from log shipping"

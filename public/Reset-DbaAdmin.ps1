@@ -356,7 +356,7 @@ function Reset-DbaAdmin {
 
                 } elseif ($Login -ne "sa") {
                     # Create new sql user
-                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
+                $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
                     BEGIN CREATE LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
                     if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                         Write-Message -Level Warning -Message "Couldn't create SQL login."

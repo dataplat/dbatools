@@ -110,13 +110,17 @@ function Get-ObjectNameParts {
         }
 
         if ($fixSchema) {
-            $dbName = $dbName.Replace($fixSchema, '')
+            if ($dbName) {
+                $dbName = $dbName.Replace($fixSchema, '')
+            }
             if ($schema -eq $fixSchema) {
                 $schema = $null
-            } else {
-                $schema = $dbName.Replace($fixSchema, '')
+            } elseif ($schema) {
+                $schema = $schema.Replace($fixSchema, '')
             }
-            $name = $name.Replace($fixSchema, '')
+            if ($name) {
+                $name = $name.Replace($fixSchema, '')
+            }
         }
 
         $fqtns = [PSCustomObject] @{

@@ -65,10 +65,11 @@ function Remove-DbaReplPublication {
         [String]$Database,
         [String]$Name,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Replication.Publication[]]$InputObject,
+        [psobject[]]$InputObject,
         [Switch]$EnableException
     )
     begin {
+        Add-ReplicationLibrary
         $publications = @( )
     }
     process {

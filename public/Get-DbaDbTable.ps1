@@ -99,6 +99,7 @@ function Get-DbaDbTable {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
+        [Alias("Name")]
         [string[]]$Table,
         [string[]]$Schema,
         [parameter(ValueFromPipeline)]
@@ -140,6 +141,34 @@ function Get-DbaDbTable {
             $server = $db.Parent
             Write-Message -Level Verbose -Message "Processing $db"
 
+            # Let the SMO read all properties referenced in this command for all tables in the database in one query.
+            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
+            # Build property list based on SQL Server version
+            # Note: FullTextIndex is a complex object (not a scalar property) and cannot be initialized via ClearAndInitialize
+            $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex')
+
+            # IsPartitioned available in SQL Server 2005+ (VersionMajor 9+)
+            if ($server.VersionMajor -ge 9) {
+                $null = $properties.Add('IsPartitioned')
+            }
+
+            # ChangeTrackingEnabled introduced in SQL Server 2008 (VersionMajor 10)
+            if ($server.VersionMajor -ge 10) {
+                $null = $properties.Add('ChangeTrackingEnabled')
+            }
+
+            # IsFileTable introduced in SQL Server 2012 (VersionMajor 11)
+            if ($server.VersionMajor -ge 11) {
+                $null = $properties.Add('IsFileTable')
+            }
+
+            # IsMemoryOptimized introduced in SQL Server 2014 (VersionMajor 12)
+            if ($server.VersionMajor -ge 12) {
+                $null = $properties.Add('IsMemoryOptimized')
+            }
+
+            $db.Tables.ClearAndInitialize('', [string[]]$properties)
+
             if ($fqTns) {
                 $tables = @()
                 foreach ($fqTn in $fqTns) {
@@ -172,7 +201,25 @@ function Get-DbaDbTable {
                 $sqlTable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 $sqlTable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
 
-                $defaultProps = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+                # Build default properties list based on SQL Server version
+                $defaultProps = [System.Collections.ArrayList]@("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex")
+
+                # Add version-specific properties in version order
+                if ($server.VersionMajor -ge 9) {
+                    $null = $defaultProps.Add("IsPartitioned")
+                }
+                if ($server.VersionMajor -ge 10) {
+                    $null = $defaultProps.Add("ChangeTrackingEnabled")
+                }
+                if ($server.VersionMajor -ge 11) {
+                    $null = $defaultProps.Add("IsFileTable")
+                }
+                if ($server.VersionMajor -ge 12) {
+                    $null = $defaultProps.Add("IsMemoryOptimized")
+                }
+
+                # FullTextIndex is a complex object but can be displayed in output (accessed on-demand)
+                $null = $defaultProps.Add("FullTextIndex")
 
                 Select-DefaultView -InputObject $sqlTable -Property $defaultProps
             }

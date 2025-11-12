@@ -210,7 +210,7 @@ process {
                         $target = "$($_.Service.ServiceName) on $($_.Service.ComputerName)"
                         Write-Message -Level Warning -Message "($target) $($_.Service.Message)" -Target $target
                         if ($_.Service.ServiceType -eq 'Engine' -and $_.ServiceExitCode -eq 3) {
-                            Write-Message -Level Warning -Message "($target) Run the command with '-Force' switch to force the restart of a dependent SQL Agent" -Target $target
+                            Write-Message -Level Warning -Message "($target) Run the command with '-Force' switch to force the restart of dependent services (SQL Agent, PolyBase)" -Target $target
                         }
                     }
                     $_.Service | Select-DefaultView -Property ComputerName, ServiceName, InstanceName, ServiceType, State, Status, Message

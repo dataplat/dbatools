@@ -133,7 +133,7 @@ function Test-DbaDiskAllocation {
                                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                             }
 
-                            $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
+                            $sql = "SELECT COUNT(*) AS Count FROM sys.master_files WHERE physical_name LIKE '$diskname%'"
                             $sqlcount = $server.Query($sql).Count
                             if ($sqlcount -gt 0) {
                                 $sqldisk = $true

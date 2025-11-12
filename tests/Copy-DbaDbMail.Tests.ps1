@@ -78,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have copied Mail Configuration from source to destination" {
-            $result = $results | Where-Object Type -eq "Mail Configuration"
+            $result = $results | Where-Object { $_.Type -eq "Mail Configuration" -and $_.Name -eq "Server Configuration" }
             $result.SourceServer | Should -Be $TestConfig.instance2
             $result.DestinationServer | Should -Be $TestConfig.instance3
             $result.Status | Should -Be "Successful"
@@ -135,6 +135,33 @@ Describe $CommandName -Tag IntegrationTests {
             $result.SourceServer | Should -Be $TestConfig.instance2
             $result.DestinationServer | Should -Be $TestConfig.instance3
             $result.Status | Should -Be "Skipped"
+        }
+    }
+
+    Context "When Database Mail XPs status is reported" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance3 -Name "Database Mail XPs" -Value 0
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Force
+        }
+
+        It "Should report Database Mail XPs status" {
+            $result = $results | Where-Object Name -eq "Database Mail XPs"
+            $result | Should -Not -BeNullOrEmpty
+            $result.Type | Should -Be "Mail Configuration"
+        }
+
+        It "Should have enabled Database Mail XPs on destination" {
+            $result = $results | Where-Object Name -eq "Database Mail XPs"
+            $result.Status | Should -Be "Successful"
+            $result.Notes | Should -Match "enabled"
+        }
+
+        It "Should verify Database Mail XPs is enabled on destination" {
+            $destConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.instance3 -Name "Database Mail XPs"
+            $destConfig.ConfiguredValue | Should -Be 1
         }
     }
 }

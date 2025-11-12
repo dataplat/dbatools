@@ -135,7 +135,7 @@ function Get-DbaUserPermission {
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%'"
 
-        $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
+        $dbSQL = "SELECT  'DB ROLE MEMBERS' AS Type ,
                                 Member ,
                                 ISNULL(Role, 'None') AS [Role/Securable/Class],
                                 ' ' AS [Schema/Owner] ,

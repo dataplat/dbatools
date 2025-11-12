@@ -72,6 +72,12 @@ function Add-DbaAgDatabase {
         Passes additional parameters to Backup-DbaDatabase as a hashtable when creating backups during manual seeding.
         Use this to control backup compression, file count, or other backup-specific settings like @{CompressBackup=$true; FileCount=4} for faster backup operations.
 
+    .PARAMETER NoWait
+        Skips waiting for the database seeding and synchronization to complete on secondary replicas (Step 5).
+        The underlying SQL command ALTER AVAILABILITY GROUP ... ADD DATABASE is immediate and does not wait for seeding to finish.
+        Use this when you want the command to return immediately after adding the database to the AG, allowing seeding to continue in the background.
+        This is particularly useful in deployments where seeding can take a long time and you want to start using the environment before synchronization completes.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -130,6 +136,11 @@ function Add-DbaAgDatabase {
         PS C:\> Add-DbaAgDatabase @splat -AdvancedBackupParams $adv_param
 
         Adds db1 to ag1 on sql2017a and sql2017b. Uses compression and three files while taking the backups.
+
+    .EXAMPLE
+        PS C:\> Add-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1 -NoWait
+
+        Adds db1 to ag1 on sql2017a and returns immediately without waiting for seeding to complete on secondary replicas. Seeding will continue in the background.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -165,6 +176,9 @@ function Add-DbaAgDatabase {
         [hashtable]$AdvancedBackupParams,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
+        [switch]$NoWait,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
@@ -174,7 +188,7 @@ function Add-DbaAgDatabase {
         # while ($replicaAgDb.State -ne 'Existing')  - should only take milliseconds, so we set a default timeout of one minute
         # while ($stillWaiting)                      - can take a long time with automatic seeding, but progress is displayed, so we set a default timeout of one day
         # We will use two timeout configuration values, as we don't want to add more timeout parameters to the command. We will store the timeouts in seconds.
-        # The timout for synchronization can be set to a lower value to end the command even when the synchronization is not finished yet.
+        # The timeout for synchronization can be set to a lower value to end the command even when the synchronization is not finished yet.
         # The synchronization will continue even the command or the powershell session stops.
         # Even when the SQL Server instance is restarted, the synchronization will continue after the restart.
         # Set-DbatoolsConfig -FullName commands.add-dbaagdatabase.timeout.existing -Value 60
@@ -475,7 +489,9 @@ function Add-DbaAgDatabase {
             Write-Message -Level Verbose -Message $progress['Status']
             Write-Progress @progress
 
-            if ($Pscmdlet.ShouldProcess($server, "Wait for the database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas.")) {
+            if ($NoWait) {
+                Write-Message -Level Verbose -Message "NoWait parameter specified. Skipping wait for database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas. Synchronization will continue in the background."
+            } elseif ($Pscmdlet.ShouldProcess($server, "Wait for the database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas.")) {
                 # We need to setup a progress bar for every replica to display them all at once.
                 $syncProgressId = @{ }
                 foreach ($replicaName in $replicaServerSMO.Keys) {

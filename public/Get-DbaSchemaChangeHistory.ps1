@@ -90,9 +90,14 @@ function Get-DbaSchemaChangeHistory {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $TraceFileQuery = "select path from sys.traces where is_default = 1"
+            $TraceFileQuery = "SELECT path FROM sys.traces WHERE is_default = 1"
 
             $TraceFile = $server.Query($TraceFileQuery) | Select-Object Path
+
+            if (!$TraceFile -or !$TraceFile.Path) {
+                Write-Message -Level Warning -Message "No default trace file found on $instance. Schema change tracking requires the default trace to be enabled."
+                continue
+            }
 
             $Databases = $server.Databases
 
@@ -118,28 +123,25 @@ function Get-DbaSchemaChangeHistory {
                              WHEN '47' THEN 'Drop'
                              WHEN '164' THEN 'Alter'
                         END DDLOperation
-                      , s.name + '.' + o.name Object
-                      , o.type_desc ObjectType
-                FROM    sys.objects o
-                        INNER JOIN sys.schemas s ON
-                            s.schema_id = o.schema_id
-                        CROSS APPLY (
-                    SELECT  *
-                    FROM    ::fn_trace_gettable('$($TraceFile.path)',default)
-                    WHERE   ObjectID = o.object_id
-                ) tt
+                      , tt.ObjectName Object
+                      , ISNULL(tsv.subclass_name, 'Unknown') ObjectType
+                FROM    ::fn_trace_gettable('$($TraceFile.path)',DEFAULT) tt
+                        LEFT JOIN sys.trace_subclass_values tsv ON
+                            tsv.trace_event_id = tt.EventClass
+                            AND tsv.subclass_value = tt.ObjectType
+                            AND tsv.trace_column_id = 28
                 WHERE   tt.ObjectType NOT IN ( 21587 )
                         AND tt.DatabaseID = DB_ID()
                         AND tt.EventSubClass = 0"
 
                 if ($null -ne $since) {
-                    $sql = $sql + " and tt.StartTime>'$Since' "
+                    $sql = $sql + " AND tt.StartTime>'$Since' "
                 }
                 if ($null -ne $object) {
-                    $sql = $sql + " and o.name in ('$($object -join ''',''')') "
+                    $sql = $sql + " AND tt.ObjectName IN ('$($object -join ''',''')') "
                 }
 
-                $sql = $sql + " order by tt.StartTime asc"
+                $sql = $sql + " ORDER BY tt.StartTime ASC"
                 Write-Message -Level Verbose -Message "Querying Database $db on $instance"
                 Write-Message -Level Debug -Message "SQL: $sql"
 

@@ -79,7 +79,7 @@ function New-DbaLogShippingPrimaryDatabase {
             It will also remove the any present schedules with the same name for the specific job.
 
         .NOTES
-            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Author: Sander Stad (@sqlstad, sqlstad.nl), Azure blob storage support added by Claude
             Website: https://dbatools.io
             Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
@@ -117,6 +117,7 @@ function New-DbaLogShippingPrimaryDatabase {
         [object]$MonitorServerSecurityMode = 1,
         [System.Management.Automation.PSCredential]$MonitorCredential,
         [switch]$ThresholdAlertEnabled,
+        [string]$AzureCredential,
         [switch]$EnableException,
         [switch]$Force
     )
@@ -129,14 +130,63 @@ function New-DbaLogShippingPrimaryDatabase {
         return
     }
 
-    # Check if the backup UNC path is correct and reachable
-    if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
-        Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
-        return
-    } else {
-        if (-not ((Test-DbaPath -Path $BackupShare -SqlInstance $server) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
-            Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
+    # Check if using Azure blob storage or traditional UNC path
+    $IsAzureUrl = $BackupShare -match '^https?://'
+
+    if ($IsAzureUrl) {
+        # Azure blob storage URL - validate format
+        Write-Message -Message "Using Azure blob storage for log shipping backups: $BackupShare" -Level Verbose
+
+        if ($BackupShare -notmatch '^https?://[a-z0-9]{3,24}\.blob\.core\.windows\.net/[a-z0-9]([a-z0-9\-]*[a-z0-9])?') {
+            Stop-Function -Message "The Azure backup URL $BackupShare should be in the format https://storageaccount.blob.core.windows.net/container (example: https://mystorageaccount.blob.core.windows.net/logshipping)" -Target $SqlInstance
             return
+        }
+
+        # Check SQL Server version (Azure backup requires SQL Server 2012+)
+        if ($server.Version.Major -lt 11) {
+            Stop-Function -Message "Azure blob storage backup requires SQL Server 2012 or later. Instance is version $($server.Version.Major)" -Target $SqlInstance
+            return
+        }
+
+        # Validate Azure credential exists on SQL Server instance
+        # For storage account key authentication, use explicit credential name if provided
+        # For SAS token authentication, credential name must match the container URL
+        if ($AzureCredential) {
+            # Explicit credential name provided (storage account key authentication)
+            $credentialName = $AzureCredential
+            Write-Message -Message "Using explicit Azure credential name: $credentialName" -Level Verbose
+        } else {
+            # No explicit credential - assume SAS token (credential name must match URL)
+            # Extract base container URL from database-specific path if needed
+            $base = $BackupShare -split "/"
+            if ($base.Count -gt 4) {
+                # URL has subfolders (database-specific path), extract base container URL
+                $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                Write-Message -Message "Extracted base credential name from database path: $credentialName" -Level Verbose
+            } else {
+                # URL is just the container
+                $credentialName = $BackupShare
+            }
+        }
+
+        $credential = $server.Credentials | Where-Object Name -eq $credentialName
+
+        if (-not $credential) {
+            Stop-Function -Message "Azure blob storage requires a SQL Server credential named '$credentialName' to exist on instance $SqlInstance. Create the credential using New-DbaCredential with either a Shared Access Signature (SAS) token or storage account key before setting up log shipping." -Target $SqlInstance
+            return
+        }
+
+        Write-Message -Message "Found Azure credential: $credentialName" -Level Verbose
+    } else {
+        # Traditional UNC path - validate format and accessibility
+        if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
+            Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
+            return
+        } else {
+            if (-not ((Test-DbaPath -Path $BackupShare -SqlInstance $server) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
+                Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
+                return
+            }
         }
     }
 
@@ -199,10 +249,10 @@ function New-DbaLogShippingPrimaryDatabase {
 
     # Set the log shipping primary
     $Query = "
-        DECLARE @LS_BackupJobId AS uniqueidentifier
-            ,@LS_PrimaryId AS uniqueidentifier
+        DECLARE @LS_BackupJobId AS UNIQUEIDENTIFIER
+            ,@LS_PrimaryId AS UNIQUEIDENTIFIER
             ,@SP_Add_RetCode AS INT;
-        EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_primary_database
+        EXEC @SP_Add_RetCode = master.dbo.sp_add_log_shipping_primary_database
             @database = N'$Database'
             ,@backup_directory = N'$BackupDirectory'
             ,@backup_share = N'$BackupShare'
@@ -250,7 +300,7 @@ function New-DbaLogShippingPrimaryDatabase {
         BEGIN
             DECLARE @msg VARCHAR(1000);
             SELECT @msg = 'Unexpected result executing sp_add_log_shipping_primary_database ('
-                + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
+                + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
             THROW 51000, @msg, 1;
         END
         "
@@ -260,8 +310,8 @@ function New-DbaLogShippingPrimaryDatabase {
         BEGIN
             DECLARE @msg VARCHAR(1000);
             SELECT @msg = 'Unexpected result executing sp_add_log_shipping_primary_database ('
-                + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
-            RAISERROR (@msg, 16, 1) WITH NOWAIT;
+                + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
+            RAISERROR(@msg, 16, 1) WITH NOWAIT;
             RETURN;
         END
         "

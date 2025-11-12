@@ -95,13 +95,13 @@ function Get-DbaWaitResource {
         }
         if ($resourceType -eq 'PAGE') {
             $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<FileID>[0-9]*):(?<PageID>[0-9]*)$'
-            $dataFileSql = "select name, physical_name from sys.master_files where database_id=$dbId and file_ID=$($matches.FileID);"
+            $dataFileSql = "SELECT name, physical_name FROM sys.master_files WHERE database_id=$dbId AND file_ID=$($matches.FileID);"
             $dataFile = $server.query($dataFileSql)
             if ($null -eq $dataFile) {
                 Write-Message -Level Warning -Message "Datafile with id $($matches.FileID) for $dbName not found"
                 return
             }
-            $objectIdSql = "dbcc traceon (3604); dbcc page ($dbId,$($matches.fileID),$($matches.PageID),2) with tableresults;"
+            $objectIdSql = "DBCC TRACEON (3604); DBCC PAGE ($dbId,$($matches.fileID),$($matches.PageID),2) WITH TABLERESULTS;"
             try {
                 $objectId = ($server.databases[$dbName].Query($objectIdSql) | Where-Object Field -eq 'Metadata: ObjectId').Value
             } catch {
@@ -112,7 +112,7 @@ function Get-DbaWaitResource {
                 Write-Message -Level Warning -Message "Object not found, could have been delete, or a transcription error when copying the Wait_resource to PowerShell"
                 return
             }
-            $objectSql = "select SCHEMA_NAME(schema_id) as SchemaName, name, type_desc from sys.all_objects where object_id=$objectId;"
+            $objectSql = "SELECT SCHEMA_NAME(schema_id) AS SchemaName, name, type_desc FROM sys.all_objects WHERE object_id=$objectId;"
             $object = $server.databases[$dbName].query($objectSql)
             if ($null -eq $object) {
                 Write-Message -Warning "Object could not be found. Could have been removed, or could be a transcription error copying the Wait_resource to sowerShell"
@@ -130,15 +130,15 @@ function Get-DbaWaitResource {
         }
         if ($resourceType -eq 'KEY') {
             $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<frodo>[0-9]*) (?<physloc>\(.*\))$'
-            $indexSql = "select
-                            sp.object_id as ObjectID,
-                            OBJECT_SCHEMA_NAME(sp.object_id) as SchemaName,
-                            sao.name as ObjectName,
-                            si.name as IndexName
-                        from
-                            sys.partitions sp inner join sys.indexes si on sp.index_id=si.index_id and sp.object_id=si.object_id
-                                inner join sys.all_objects sao on sp.object_id=sao.object_id
-                        where
+            $indexSql = "SELECT
+                            sp.object_id AS ObjectID,
+                            OBJECT_SCHEMA_NAME(sp.object_id) AS SchemaName,
+                            sao.name AS ObjectName,
+                            si.name AS IndexName
+                        FROM
+                            sys.partitions sp INNER JOIN sys.indexes si ON sp.index_id=si.index_id AND sp.object_id=si.object_id
+                                INNER JOIN sys.all_objects sao ON sp.object_id=sao.object_id
+                        WHERE
                             hobt_id = $($matches.frodo);
                 "
             $index = $server.databases[$dbName].Query($indexSql)
@@ -156,7 +156,7 @@ function Get-DbaWaitResource {
                 HobtID       = $matches.frodo
             }
             if ($row -eq $True) {
-                $dataSql = "select * from $($index.SchemaName).$($index.ObjectName) with (NOLOCK) where %%lockres%% ='$($matches.physloc)'"
+                $dataSql = "SELECT * FROM $($index.SchemaName).$($index.ObjectName) WITH (NOLOCK) WHERE %%lockres%% ='$($matches.physloc)'"
                 $data = $server.databases[$dbName].query($dataSql)
                 if ($null -eq $data) {
                     Write-Message -Level warning -Message "Could not retrieve the data. It may have been deleted or moved since the wait resource value was generated"

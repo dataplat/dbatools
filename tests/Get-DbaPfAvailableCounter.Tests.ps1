@@ -23,21 +23,29 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command returns all the required results" {
         It "returns the correct values" {
-            $results = Get-DbaPfAvailableCounter
+            $results = Get-DbaPfAvailableCounter -ComputerName $TestConfig.instance1
             $results.Count -gt 1000 | Should -Be $true
         }
 
         It "returns are pipable into Add-DbaPfDataCollectorCounter" {
-            $results = Get-DbaPfAvailableCounter -Pattern "*sql*" | Select-Object -First 3 | Add-DbaPfDataCollectorCounter -CollectorSet "Long Running Queries" -Collector "DataCollector01" -WarningAction SilentlyContinue
+            $results = Get-DbaPfAvailableCounter -ComputerName $TestConfig.instance1 -Pattern "*sql*" | Select-Object -First 3 | Add-DbaPfDataCollectorCounter -CollectorSet "Long Running Queries" -Collector "DataCollector01" -WarningAction SilentlyContinue
             foreach ($result in $results) {
                 $result.Name -match "sql" | Should -Be $true
             }

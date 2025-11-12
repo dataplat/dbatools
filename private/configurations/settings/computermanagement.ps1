@@ -5,6 +5,9 @@ This is designed for all things that control how anything that caches acts
 # Sets the default timeout on bad connections
 Set-DbatoolsConfig -FullName 'ComputerManagement.BadConnectionTimeout' -Value (New-TimeSpan -Minutes 15) -Initialize -Validation timespan -Handler { [Dataplat.Dbatools.Connection.ConnectionHost]::BadConnectionTimeout = $args[0] } -Description 'The timeout used on bad computer management connections. When a connection using a protocol fails, it will not be reattempted for this timespan.'
 
+# Sets the default CIM operation timeout
+Set-DbatoolsConfig -FullName 'ComputerManagement.CimOperationTimeout' -Value (New-TimeSpan -Seconds 60) -Initialize -Validation timespan -Description 'The timeout for individual CIM operations (CimRM and CimDCOM). When a CIM connection attempt does not complete within this timespan, it will be aborted. Lower values speed up failure detection but may cause issues with slow networks.'
+
 # Disable the management cache entire
 Set-DbatoolsConfig -FullName 'ComputerManagement.Cache.Disable.All' -Value $false -Initialize -Validation bool -Handler { [Dataplat.Dbatools.Connection.ConnectionHost]::DisableCache = $args[0] } -Description 'Globally disables all caching done by the Computer Management functions'
 

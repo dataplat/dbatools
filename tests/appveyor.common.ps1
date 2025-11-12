@@ -71,34 +71,157 @@ function Get-TestsForBuildScenario {
     # only in appveyor, disable uncooperative tests
     $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
 
-    # Inspect special words
+    # Check if we're in a Pull Request and auto-detect changed files
+    $IsInPullRequest = $env:APPVEYOR_PULL_REQUEST_NUMBER -ne $null
+    $TestsToRun = "*.Tests.*"
+
+    if ($IsInPullRequest) {
+        if (-not($Silent)) {
+            Write-Host -ForegroundColor DarkGreen "...We're in a PR"
+        }
+        try {
+            # Get the list of changed files in this PR compared to the base branch
+            $targetBranch = if ($env:APPVEYOR_REPO_BRANCH) { "origin/$env:APPVEYOR_REPO_BRANCH" } else { "origin/development" }
+            $ChangedFiles = git diff --name-only "$targetBranch...HEAD" 2>$null
+            
+            if (-not($Silent)) {
+                Write-Host -ForegroundColor DarkGreen "...Changed files are: "
+                foreach($cmd in $ChangedFiles)
+                {
+                    Write-Host -ForegroundColor DarkGreen "...  - $cmd"
+                }
+            }
+            
+            
+            if ($ChangedFiles) {
+                # Track what types of files changed
+                $changedCommands = @()
+                $changedTests = @()
+
+                foreach ($file in $ChangedFiles) {
+                    # Check for changes to public commands
+                    if ($file -like "public/*.ps1") {
+                        $commandName = Split-Path $file -Leaf | ForEach-Object { $_ -replace "\.ps1$", "" }
+                        $changedCommands += $commandName
+                    }
+                    # Check for changes to private functions
+                    elseif ($file -like "private/functions/*.ps1") {
+                        $functionName = Split-Path $file -Leaf | ForEach-Object { $_ -replace "\.ps1$", "" }
+                        $changedCommands += $functionName
+                    }
+                    # Check for direct changes to test files
+                    elseif ($file -like "tests/*.Tests.ps1") {
+                        $testName = Split-Path $file -Leaf
+                        $changedTests += $testName
+                    }
+                }
+                
+                # Build list of tests to run based on changed commands
+                $testsForChangedFiles = @()
+
+                if ($changedCommands.Count -gt 0) {
+                    # Find test files matching the changed commands
+                    foreach ($cmd in $changedCommands) {
+                        $matchingTests = $AllTests | Where-Object { ($_.Name -replace "\.Tests\.ps1$", "") -eq $cmd }
+                        $testsForChangedFiles += $matchingTests
+                    }
+                }
+
+                # Add directly changed test files
+                if ($changedTests.Count -gt 0) {
+                    foreach ($testFile in $changedTests) {
+                        $matchingTest = $AllTests | Where-Object { $_.Name -eq $testFile }
+                        if ($matchingTest) {
+                            $testsForChangedFiles += $matchingTest
+                        }
+                    }
+                }
+
+                if ($testsForChangedFiles.Count -gt 0) {
+                    $AllTests = $testsForChangedFiles | Select-Object -Unique
+
+                    if (-not($Silent)) {
+                        Write-Host -ForegroundColor DarkGreen "PR Detection: Reduced to $($AllTests.Count) tests based on changed files"
+                    }
+
+                    # Expand to include dependencies (same as commit message approach)
+                    $testsThatDependOn = @()
+                    foreach ($t in $AllTests) {
+                        $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
+                    }
+                    $AllTests = ($testsThatDependOn + $AllTests) | Group-Object -Property FullName | ForEach-Object { $_.Group | Select-Object -First 1 }
+
+                    # Re-filter disabled tests that may have been picked up by dependency tracking
+                    $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
+                    $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
+
+                    if (-not($Silent)) {
+                        Write-Host -ForegroundColor DarkGreen "PR Detection: Extended to $($AllTests.Count) tests including dependencies"
+                    }
+
+                    $TestsToRun = "*.Tests.*"
+                }
+            }
+        } catch {
+            # If auto-detection fails, fall through to commit message check
+            if (-not($Silent)) {
+                Write-Host -ForegroundColor Yellow "PR Detection: Auto-detection failed, falling back to commit message: $($_.Exception.Message)"
+            }
+        }
+    }
+
+    # Inspect special words (commit message override)
     $TestsToRunMessage = "$($env:APPVEYOR_REPO_COMMIT_MESSAGE) $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)"
     $TestsToRunRegex = [regex] '(?smi)\(do (?<do>[^)]+)\)'
     $TestsToRunMatch = $TestsToRunRegex.Match($TestsToRunMessage).Groups['do'].Value
     if ($TestsToRunMatch.Length -gt 0) {
-        $TestsToRun = "*$TestsToRunMatch*"
-        $AllTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -like $TestsToRun }
+        # Support comma-separated multiple commands/patterns
+        $patterns = $TestsToRunMatch -split ',' | ForEach-Object { $_.Trim() }
+        $AllTests = $AllTests | Where-Object {
+            $testName = ($_.Name -replace '\.Tests\.ps1$', '')
+            $matched = $false
+            foreach ($pattern in $patterns) {
+                # Support exact match with = prefix: (do =dbatools)
+                if ($pattern -match '^=(.+)$') {
+                    $exactPattern = $Matches[1]
+                    if ($testName -eq $exactPattern) {
+                        $matched = $true
+                        break
+                    }
+                } elseif ($testName -like "*$pattern*") {
+                    $matched = $true
+                    break
+                }
+            }
+            $matched
+        }
         if (-not($Silent)) {
             Write-Host -ForegroundColor DarkGreen "Commit message: Reduced to $($AllTests.Count) out of $($AllDbatoolsTests.Count) tests"
         }
-        if ($AllTests.Count -eq 0) {
-            throw "something went wrong, nothing to test"
-        }
         $testsThatDependOn = @()
-        foreach ($t in $AllTests) {
-            # get tests for other functions that rely upon rely upon the selected ones
-            $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
+        if ($AllTests.Count -gt 0) {
+            foreach ($t in $AllTests) {
+                # get tests for other functions that rely upon rely upon the selected ones
+                $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
 
+            }
+        } else {
+            # No direct matches - fall back to dbatools.Tests.ps1 only
+            if (-not($Silent)) {
+                Write-Host -ForegroundColor DarkGreen "Commit message: No direct test matches, falling back to dbatools.Tests.ps1"
+            }
+            $testsThatDependOn += Get-Item "$ModuleBase\tests\dbatools.Tests.ps1"
         }
-        $AllTests = (($testsThatDependOn + $AllTests) | Select-Object -Unique)
+        $AllTests = ($testsThatDependOn + $AllTests) | Group-Object -Property FullName | ForEach-Object { $_.Group | Select-Object -First 1 }
         # re-filter disabled tests that may have been picked up by dependency tracking
         $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
         $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
         if (-not($Silent)) {
             Write-Host -ForegroundColor DarkGreen "Commit message: Extended to $($AllTests.Count) for all the dependencies"
         }
-    } else {
-        $TestsToRun = "*.Tests.*"
+        if ($AllTests.Count -eq 0) {
+            throw "something went wrong, nothing to test"
+        }
     }
 
     # do we have a scenario ?

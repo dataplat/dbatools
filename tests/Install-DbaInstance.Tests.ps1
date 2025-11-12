@@ -29,6 +29,7 @@ Describe $CommandName -Tag UnitTests {
                 "BackupPath",
                 "UpdateSourcePath",
                 "AdminAccount",
+                "ASAdminAccount",
                 "Port",
                 "Throttle",
                 "ProductID",

@@ -189,7 +189,7 @@ function Add-DbaRegServer {
             if ($reggroup.Source -eq "Azure Data Studio") {
                 Stop-Function -Message "You cannot use dbatools to remove or add registered servers in Azure Data Studio" -Continue
             }
-            Write-Message -Level Verbose -Message "ID: $($reggroup.ID))"
+            Write-Message -Level Verbose -Message "ID: $($reggroup.ID)"
             if ($reggroup.ID) {
                 $target = $reggroup.ParentServer.SqlInstance
             } else {

@@ -23,6 +23,7 @@ function Import-DbaCsv {
     .PARAMETER Delimiter
         Sets the field separator character used in the CSV file. Defaults to comma if not specified.
         Common values include comma (,), tab (`t), pipe (|), semicolon (;), or space for different export formats from various systems.
+        Note: Due to LumenWorks library limitations, only single-character delimiters are supported. If a multi-character delimiter is provided, only the first character will be used.
 
     .PARAMETER SingleColumn
         Indicates the CSV contains only one column of data without delimiters. Use this for simple lists or single-value imports.
@@ -260,7 +261,8 @@ function Import-DbaCsv {
         [string]$Table,
         [string]$Schema,
         [switch]$Truncate,
-        [char]$Delimiter = ",",
+        [ValidateNotNullOrEmpty()]
+        [string]$Delimiter = ",",
         [switch]$SingleColumn,
         [int]$BatchSize = 50000,
         [int]$NotifyAfter = 50000,
@@ -302,6 +304,14 @@ function Import-DbaCsv {
             Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
         }
 
+        # Handle multi-character delimiters
+        if ($Delimiter.Length -gt 1) {
+            Write-Message -Level Warning -Message "Multi-character delimiter '$Delimiter' specified. Due to LumenWorks library limitations, only the first character '$($Delimiter[0])' will be used as the delimiter."
+            $delimiterChar = $Delimiter[0]
+        } else {
+            $delimiterChar = $Delimiter[0]
+        }
+
         function New-SqlTable {
             <#
                 .SYNOPSIS
@@ -321,7 +331,7 @@ function Import-DbaCsv {
                 [Parameter(Mandatory)]
                 [string]$Path,
                 [Parameter(Mandatory)]
-                [string]$Delimiter,
+                [char]$DelimiterChar,
                 [Parameter(Mandatory)]
                 [bool]$FirstRowHeader,
                 [Microsoft.Data.SqlClient.SqlConnection]$sqlconn,
@@ -337,7 +347,7 @@ function Import-DbaCsv {
                 $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
                     (New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::$Encoding)),
                     $FirstRowHeader,
-                    $Delimiter,
+                    $DelimiterChar,
                     $Quote,
                     $Escape,
                     $Comment,
@@ -534,7 +544,7 @@ function Import-DbaCsv {
                 }
 
                 # Ensure Schema exists
-                $sql = "select count(*) from sys.schemas where name = @schema"
+                $sql = "SELECT COUNT(*) FROM sys.schemas WHERE name = @schema"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
                 $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
                 # If Schema doesn't exist create it
@@ -555,12 +565,12 @@ function Import-DbaCsv {
                 }
 
                 # Ensure table or view exists
-                $sql = "select count(*) from sys.tables where name = @table and schema_id = schema_id(@schema)"
+                $sql = "SELECT COUNT(*) FROM sys.tables WHERE name = @table AND schema_id = schema_id(@schema)"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
                 $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
                 $null = $sqlcmd.Parameters.AddWithValue('table', $table)
 
-                $sql2 = "select count(*) from sys.views where name = @table and schema_id=schema_id(@schema)"
+                $sql2 = "SELECT COUNT(*) FROM sys.views WHERE name = @table AND schema_id=schema_id(@schema)"
                 $sqlcmd2 = New-Object Microsoft.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
                 $null = $sqlcmd2.Parameters.AddWithValue('schema', $schema)
                 $null = $sqlcmd2.Parameters.AddWithValue('table', $table)
@@ -580,7 +590,7 @@ function Import-DbaCsv {
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
                         try {
-                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction -IsCompressed $isCompressed
+                            New-SqlTable -Path $file -DelimiterChar $delimiterChar -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction -IsCompressed $isCompressed
                         } catch {
                             Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                         }
@@ -702,7 +712,7 @@ function Import-DbaCsv {
                         $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
                             $textReader,
                             $FirstRowHeader,
-                            $Delimiter,
+                            $delimiterChar,
                             $Quote,
                             $Escape,
                             $Comment,

@@ -10,6 +10,10 @@ function Copy-DbaDbTableData {
         Supports copying between different servers, databases, and schemas while preserving data integrity options like identity values, constraints, and triggers.
         Can automatically create destination tables based on source table structure, making it ideal for data migration, ETL processes, and table replication tasks.
 
+        Note: System-versioned temporal tables require special handling. The -AutoCreateTable parameter does not support temporal table creation.
+        When copying to an existing temporal table, use the -Query parameter to exclude GENERATED ALWAYS columns (e.g., ValidFrom, ValidTo).
+        Temporal version history cannot be preserved as these values are system-managed.
+
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
@@ -408,7 +412,58 @@ function Copy-DbaDbTableData {
 
 
                 if (Test-Bound -ParameterName Query -Not) {
-                    $Query = "SELECT * FROM $fqtnfrom"
+                    # Build ORDER BY clause to ensure consistent row order
+                    # This prevents data misalignment when copying tables without explicit ordering
+                    $orderByClause = ""
+
+                    # Refresh indexes to ensure we have current metadata
+                    $sqlObject.Indexes.Refresh()
+
+                    # Option 1: Use clustered index columns for ordering (most common and performant)
+                    $clusteredIndex = $sqlObject.Indexes | Where-Object IsClustered -eq $true | Select-Object -First 1
+                    if ($clusteredIndex) {
+                        $orderColumns = $clusteredIndex.IndexedColumns | Sort-Object IndexKeyPosition | ForEach-Object {
+                            $colName = $_.Name
+                            $descending = if ($_.Descending) { " DESC" } else { "" }
+                            "[$colName]$descending"
+                        }
+                        if ($orderColumns) {
+                            $orderByClause = " ORDER BY " + ($orderColumns -join ", ")
+                            Write-Message -Level Verbose -Message "Using clustered index for ordering: $orderByClause"
+                        }
+                    }
+
+                    # Option 2: If no clustered index, try primary key
+                    if (-not $orderByClause) {
+                        $primaryKey = $sqlObject.Indexes | Where-Object IndexKeyType -eq "DriPrimaryKey" | Select-Object -First 1
+                        if ($primaryKey) {
+                            $orderColumns = $primaryKey.IndexedColumns | Sort-Object IndexKeyPosition | ForEach-Object {
+                                $colName = $_.Name
+                                $descending = if ($_.Descending) { " DESC" } else { "" }
+                                "[$colName]$descending"
+                            }
+                            if ($orderColumns) {
+                                $orderByClause = " ORDER BY " + ($orderColumns -join ", ")
+                                Write-Message -Level Verbose -Message "Using primary key for ordering: $orderByClause"
+                            }
+                        }
+                    }
+
+                    # Option 3: If using KeepIdentity and an identity column exists, order by it
+                    if (-not $orderByClause -and $KeepIdentity) {
+                        $identityColumn = $sqlObject.Columns | Where-Object Identity -eq $true | Select-Object -First 1
+                        if ($identityColumn) {
+                            $orderByClause = " ORDER BY [$($identityColumn.Name)]"
+                            Write-Message -Level Verbose -Message "Using identity column for ordering: $orderByClause"
+                        }
+                    }
+
+                    # If no ordering found, log a warning for tables without proper keys
+                    if (-not $orderByClause) {
+                        Write-Message -Level Verbose -Message "No clustered index, primary key, or identity column found for ordering. Row order is not guaranteed."
+                    }
+
+                    $Query = "SELECT * FROM $fqtnfrom$orderByClause"
                     $sourceLabel = $fqtnfrom
                 } else {
                     $sourceLabel = "Query"
@@ -432,6 +487,12 @@ function Copy-DbaDbTableData {
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.BulkCopyTimeout = $BulkCopyTimeout
+
+                        # Get list of non-computed columns from destination table to avoid insert failures
+                        # Refresh the columns collection to ensure it's populated
+                        $desttable.Columns.Refresh()
+                        $destColumns = $desttable.Columns | Where-Object Computed -eq $false | Select-Object -ExpandProperty Name
+                        Write-Message -Level Verbose -Message "Destination table has $($destColumns.Count) non-computed columns"
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
                         # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
@@ -458,6 +519,21 @@ function Copy-DbaDbTableData {
 
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
+
+                        # Only apply explicit column mapping for straight table copies (not custom queries)
+                        # Custom queries may have different column names/aliases, so let SqlBulkCopy use ordinal mapping
+                        if (Test-Bound -ParameterName Query -Not) {
+                            # Map only columns that exist in both source and destination (excluding computed columns)
+                            for ($i = 0; $i -lt $reader.FieldCount; $i++) {
+                                $sourceColumn = $reader.GetName($i)
+                                if ($destColumns -contains $sourceColumn) {
+                                    $null = $bulkCopy.ColumnMappings.Add($sourceColumn, $sourceColumn)
+                                } else {
+                                    Write-Message -Level Verbose -Message "Skipping column '$sourceColumn' (not in destination or is computed)"
+                                }
+                            }
+                        }
+
                         $bulkCopy.WriteToServer($reader)
                         $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
 

@@ -131,7 +131,7 @@ function Get-DbaProcess {
                 e.is_admin_endpoint AS IsDac
             FROM sys.dm_exec_connections c
             JOIN sys.dm_exec_sessions s
-                on c.session_id = s.session_id
+                ON c.session_id = s.session_id
             JOIN sys.endpoints e
                 ON c.endpoint_id = e.endpoint_id
             OUTER APPLY sys.dm_exec_sql_text(c.most_recent_sql_handle) t"

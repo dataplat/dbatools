@@ -106,7 +106,7 @@ Function Get-DbaDbLogSpace {
             if ($server.versionMajor -ge 11) {
                 foreach ($db in $dbs) {
                     try {
-                        $logspace = $server.query('select * from sys.dm_db_log_space_usage', $db.name)
+                        $logspace = $server.query('SELECT * FROM sys.dm_db_log_space_usage', $db.name)
                     } catch {
                         Stop-Function -Message "Unable to collect log space data on $instance." -ErrorRecord $_ -Target $db -Continue
                     }
@@ -122,7 +122,7 @@ Function Get-DbaDbLogSpace {
                 }
             } else {
                 try {
-                    $logspace = $server.Query("dbcc sqlperf(logspace)") | Where-Object { $dbs.name -contains $_.'Database Name' }
+                    $logspace = $server.Query("DBCC SQLPERF(LOGSPACE)") | Where-Object { $dbs.name -contains $_.'Database Name' }
                 } catch {
                     Stop-Function -Message "Unable to collect log space data on $instance." -ErrorRecord $_ -Target $db -Continue
                 }

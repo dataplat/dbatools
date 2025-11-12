@@ -1134,8 +1134,18 @@ function Connect-DbaInstance {
                             # 2005 and 2008
                             [void]$initFieldsDb.AddRange($Fields200x_Db)
                             [void]$initFieldsLogin.AddRange($Fields200x_Login)
+                        } elseif ($server.VersionMajor -ge 16) {
+                            # 2022 and above - exclude ActiveConnections due to performance issue #9282
+                            $fields = New-Object System.Collections.Specialized.StringCollection
+                            foreach ($field in $Fields201x_Db) {
+                                if ($field -ne "ActiveConnections") {
+                                    [void]$fields.Add($field)
+                                }
+                            }
+                            [void]$initFieldsDb.AddRange($fields)
+                            [void]$initFieldsLogin.AddRange($Fields201x_Login)
                         } else {
-                            # 2012 and above
+                            # 2012 to 2019
                             [void]$initFieldsDb.AddRange($Fields201x_Db)
                             [void]$initFieldsLogin.AddRange($Fields201x_Login)
                         }

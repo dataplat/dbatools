@@ -64,8 +64,8 @@ function Get-DbaSuspectPage {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $sql = "Select
-            DB_NAME(database_id) as DBName,
+            $sql = "SELECT
+            DB_NAME(database_id) AS DBName,
             file_id,
             page_id,
             CASE event_type
@@ -75,10 +75,10 @@ function Get-DbaSuspectPage {
             WHEN 4 THEN 'Restored'
             WHEN 5 THEN 'Repaired (DBCC)'
             WHEN 7 THEN 'Deallocated (DBCC)'
-            END as EventType,
+            END AS EventType,
             error_count,
             last_update_date
-            from msdb.dbo.suspect_pages"
+            FROM msdb.dbo.suspect_pages"
 
             try {
                 $results = $server.Query($sql)

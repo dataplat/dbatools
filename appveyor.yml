@@ -1,4 +1,4 @@
-﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
+# See http://www.appveyor.com/docs/appveyor-yml for many more options
 image: Previous Visual Studio 2015
 configuration: "Debug"
 
@@ -45,52 +45,21 @@ environment:
   environment: development
   version: 2.1.$(appveyor_build_number)
   appveyor_rdp_password: 2odCuiKmYiem
-  azurepasswd1:
-    secure: ZnF3fWSDfHraMCWlHaekvWrXf3sDqY5M28HMK4236PBbNSoqP29wEhsWMQioSSYGomzgIp9vuiwR8Fc9ViNLoqq0bVcErxEojBFTaPMEzOg2ZwO9OnOTiuUEc5JkoLBv6rEBBWef/DvkFfhr1r0K0xQu6OAPYHVTCRajTZbBRNfCTUM2X2o41t+cSa7681rtnJQnB/8cAfVVnPtJ+97s8w==
-  azurelegacypasswd1:
-    secure: ud4yZN6kPf+VWhgpgJhbEMCoUJKHTiH9uvv71ybTlu+45+V12M+B07YjysoXGC1qnGBwVy4DDGJfh2VkPWxamK0IpsEimsRS/CCEZlb6unYC4dqEm980QwP4/zwcTSK1
-  azuredbpasswd1:
-    secure: JwVx9sps/1g/3eIBRvh21UGRpRAQnXk+7+zZyVmdWL0=
 
   matrix:
     - scenario: 2008R2
-      part: 1/2
-      main_instance: localhost\SQL2008R2SP2
-      setup_scripts: \tests\appveyor.SQL2008R2SP2.ps1
-    - scenario: 2008R2
-      part: 2/2
       main_instance: localhost\SQL2008R2SP2
       setup_scripts: \tests\appveyor.SQL2008R2SP2.ps1
     - scenario: 2016
-      part: 1/2
-      main_instance: localhost\SQL2016
-      setup_scripts: \tests\appveyor.SQL2016.ps1
-    - scenario: 2016
-      part: 2/2
       main_instance: localhost\SQL2016
       setup_scripts: \tests\appveyor.SQL2016.ps1
     - scenario: service_restarts
-      part: 1/2
-      main_instance: localhost\SQL2017,localhost\SQL2016
-      setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
-    - scenario: service_restarts
-      part: 2/2
       main_instance: localhost\SQL2017,localhost\SQL2016
       setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
     - scenario: 2016_2017
-      part: 1/2
-      main_instance: localhost\SQL2017,localhost\SQL2016
-      setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
-    - scenario: 2016_2017
-      part: 2/2
       main_instance: localhost\SQL2017,localhost\SQL2016
       setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
     - scenario: default
-      part: 1/2
-      main_instance: localhost\SQL2008R2SP2,localhost\SQL2016
-      setup_scripts: \tests\appveyor.SQL2008R2SP2.ps1,\tests\appveyor.SQL2016.ps1
-    - scenario: default
-      part: 2/2
       main_instance: localhost\SQL2008R2SP2,localhost\SQL2016
       setup_scripts: \tests\appveyor.SQL2008R2SP2.ps1,\tests\appveyor.SQL2016.ps1
 
@@ -120,4 +89,5 @@ after_test:
   - ps: .\Tests\appveyor.post.ps1
 
 #on_finish:
+
 #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

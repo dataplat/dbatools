@@ -125,6 +125,11 @@ function Invoke-DbaAdvancedRestore {
         Use this when the same mark name appears multiple times in your transaction log backups.
         Ensures the restore stops at the correct instance of the mark when identical mark names exist at different times.
 
+    .PARAMETER Checksum
+        Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
+        Use this to ensure backup files contain checksums and validate them during restore, following backup best practices.
+        Without this parameter, SQL Server verifies checksums if present but doesn't fail if checksums are missing. With this parameter, the operation fails if checksums are not present in the backup.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -180,6 +185,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate,
+        [switch]$Checksum,
         [switch]$EnableException
     )
     begin {
@@ -224,7 +230,7 @@ function Invoke-DbaAdvancedRestore {
                         try {
                             Write-Message -Level Verbose -Message "Killing processes on $database"
                             $null = Stop-DbaProcess -SqlInstance $server -Database $database -WarningAction Silentlycontinue
-                            $null = $server.Query("Alter database $database set offline with rollback immediate; alter database $database set restricted_user; Alter database $database set online with rollback immediate", 'master')
+                            $null = $server.Query("ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE; ALTER DATABASE $database SET RESTRICTED_USER; ALTER DATABASE $database SET ONLINE WITH ROLLBACK IMMEDIATE", 'master')
                             $server.ConnectionContext.Connect()
                         } catch {
                             Write-Message -Level Verbose -Message "No processes to kill in $database"
@@ -296,6 +302,9 @@ function Invoke-DbaAdvancedRestore {
                 }
                 if ($BlockSize) {
                     $restore.Blocksize = $BlockSize
+                }
+                if ($Checksum) {
+                    $restore.Checksum = $Checksum
                 }
                 if ($KeepReplication) {
                     $restore.KeepReplication = $KeepReplication

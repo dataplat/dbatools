@@ -266,7 +266,11 @@ function New-DbaAgentJob {
                 try {
                     $currentjob = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job($server.JobServer, $Job)
                 } catch {
-                    Stop-Function -Message "Something went wrong creating the job. `n" -Target $Job -Continue -ErrorRecord $_
+                    if ($_.Exception.Message -match "newParent") {
+                        Stop-Function -Message "Cannot create agent job through a contained availability group listener. SQL Server Agent objects are instance-level and must be managed on the instance directly. Please connect to the primary replica instead of the listener. Use Get-DbaAvailabilityGroup to find the current primary replica." -ErrorRecord $_ -Target $Job -Continue
+                    } else {
+                        Stop-Function -Message "Something went wrong creating the job." -Target $Job -Continue -ErrorRecord $_
+                    }
                 }
 
                 #region job options

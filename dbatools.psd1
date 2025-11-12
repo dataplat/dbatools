@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.7.6'
+    ModuleVersion      = '2.7.7'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -31,7 +31,7 @@
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
         ModuleName    = 'dbatools.library';
-        ModuleVersion = '2025.8.17'
+        ModuleVersion = '2025.11.12'
     }
 
     # Assemblies that must be loaded prior to importing this module
@@ -63,6 +63,7 @@
         'Add-DbaAgListener',
         'Add-DbaAgReplica',
         'Add-DbaComputerCertificate',
+        'Add-DbaDbFile',
         'Add-DbaDbMirrorMonitor',
         'Add-DbaDbRoleMember',
         'Add-DbaPfDataCollectorCounter',
@@ -79,6 +80,11 @@
         'Clear-DbaLatchStatistics',
         'Clear-DbaPlanCache',
         'Clear-DbaWaitStatistics',
+        'Compare-DbaAgReplicaAgentJob',
+        'Compare-DbaAgReplicaCredential',
+        'Compare-DbaAgReplicaLogin',
+        'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAvailabilityGroup',
         'Connect-DbaInstance',
         'ConvertTo-DbaDataTable',
         'ConvertTo-DbaTimeline',
@@ -101,6 +107,7 @@
         'Copy-DbaDbTableData',
         'Copy-DbaDbViewData',
         'Copy-DbaEndpoint',
+        'Copy-DbaExtendedStoredProcedure',
         'Copy-DbaInstanceAudit',
         'Copy-DbaInstanceAuditSpecification',
         'Copy-DbaInstanceTrigger',
@@ -109,6 +116,7 @@
         'Copy-DbaPolicyManagement',
         'Copy-DbaRegServer',
         'Copy-DbaResourceGovernor',
+        'Copy-DbaServerRole',
         'Copy-DbaSpConfigure',
         'Copy-DbaStartupProcedure',
         'Copy-DbaSystemDbUserObject',
@@ -170,6 +178,7 @@
         'Format-DbaBackupInformation',
         'Get-DbaAgBackupHistory',
         'Get-DbaAgDatabase',
+        'Get-DbaAgDatabaseReplicaState',
         'Get-DbaAgentAlert',
         'Get-DbaAgentAlertCategory',
         'Get-DbaAgentJob',
@@ -652,6 +661,7 @@
         'Stop-DbaXESession',
         'Suspend-DbaAgDbDataMovement',
         'Sync-DbaAvailabilityGroup',
+        'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
         'Test-DbaAgentJobOwner',
         'Test-DbaAvailabilityGroup',

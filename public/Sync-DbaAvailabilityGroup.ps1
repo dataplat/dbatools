@@ -287,15 +287,23 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "AgentCategory") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Categories"
                 Copy-DbaAgentJobCategory -Source $server -Destination $secondaries -Force:$force
-                $secondaries.JobServer.JobCategories.Refresh()
-                $secondaries.JobServer.OperatorCategories.Refresh()
-                $secondaries.JobServer.AlertCategories.Refresh()
+                foreach ($sec in $secondaries) {
+                    if ($sec.JobServer) {
+                        $sec.JobServer.JobCategories.Refresh()
+                        $sec.JobServer.OperatorCategories.Refresh()
+                        $sec.JobServer.AlertCategories.Refresh()
+                    }
+                }
             }
 
             if ($Exclude -notcontains "AgentOperator") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Operators"
                 Copy-DbaAgentOperator -Source $server -Destination $secondaries -Force:$force
-                $secondaries.JobServer.Operators.Refresh()
+                foreach ($sec in $secondaries) {
+                    if ($sec.JobServer) {
+                        $sec.JobServer.Operators.Refresh()
+                    }
+                }
             }
 
             if ($Exclude -notcontains "AgentAlert") {
@@ -306,15 +314,23 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "AgentProxy") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Proxy Accounts"
                 Copy-DbaAgentProxy -Source $server -Destination $secondaries -Force:$force
-                $secondaries.JobServer.ProxyAccounts.Refresh()
+                foreach ($sec in $secondaries) {
+                    if ($sec.JobServer) {
+                        $sec.JobServer.ProxyAccounts.Refresh()
+                    }
+                }
             }
 
             if ($Exclude -notcontains "AgentSchedule") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Schedules"
                 Copy-DbaAgentSchedule -Source $server -Destination $secondaries -Force:$force
-                $secondaries.JobServer.SharedSchedules.Refresh()
-                $secondaries.JobServer.Refresh()
-                $secondaries.Refresh()
+                foreach ($sec in $secondaries) {
+                    if ($sec.JobServer) {
+                        $sec.JobServer.SharedSchedules.Refresh()
+                        $sec.JobServer.Refresh()
+                    }
+                    $sec.Refresh()
+                }
             }
 
             if ($Exclude -notcontains "AgentJob") {

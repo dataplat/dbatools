@@ -72,7 +72,7 @@ function New-DbaLogShippingSecondaryPrimary {
             It will also remove the any present schedules with the same name for the specific job.
 
         .NOTES
-            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Author: Sander Stad (@sqlstad, sqlstad.nl), Azure blob storage support added by Claude
             Website: https://dbatools.io
             Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
@@ -107,6 +107,7 @@ function New-DbaLogShippingSecondaryPrimary {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$RestoreJob,
+        [string]$AzureCredential,
         [switch]$EnableException,
         [switch]$Force
     )
@@ -127,14 +128,108 @@ function New-DbaLogShippingSecondaryPrimary {
         return
     }
 
-    # Check if the backup UNC path is correct and reachable
-    if ([bool]([uri]$BackupDestinationDirectory).IsUnc -and $BackupDestinationDirectory -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
-        Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
-        return
-    } else {
-        if (-not ((Test-DbaPath -Path $BackupDestinationDirectory -SqlInstance $ServerSecondary) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
-            Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
+    # Check if using Azure blob storage or traditional file path
+    $IsAzureSource = $BackupSourceDirectory -match '^https?://'
+    $IsAzureDestination = $BackupDestinationDirectory -match '^https?://'
+
+    if ($IsAzureSource -or $IsAzureDestination) {
+        # Azure blob storage scenario
+        Write-Message -Message "Azure blob storage detected for log shipping restore source" -Level Verbose
+
+        # For Azure, source and destination should typically be the same (no local copy needed)
+        if ($IsAzureSource -and -not $IsAzureDestination) {
+            Write-Message -Message "Azure source with local destination - copy job will download from Azure" -Level Verbose
+        } elseif ($IsAzureSource -and $IsAzureDestination) {
+            Write-Message -Message "Azure source and destination - copy job will be minimal/disabled" -Level Verbose
+        }
+
+        # Validate Azure URL format if provided
+        if ($IsAzureSource -and $BackupSourceDirectory -notmatch '^https?://[a-z0-9]{3,24}\.blob\.core\.windows\.net/') {
+            Stop-Function -Message "The Azure backup source URL should be in the format https://storageaccount.blob.core.windows.net/container (example: https://mystorageaccount.blob.core.windows.net/logshipping)" -Target $SqlInstance
             return
+        }
+
+        if ($IsAzureDestination -and $BackupDestinationDirectory -notmatch '^https?://[a-z0-9]{3,24}\.blob\.core\.windows\.net/') {
+            Stop-Function -Message "The Azure backup destination URL should be in the format https://storageaccount.blob.core.windows.net/container (example: https://mystorageaccount.blob.core.windows.net/logshipping)" -Target $SqlInstance
+            return
+        }
+
+        # Check SQL Server version for Azure support
+        if ($ServerSecondary.Version.Major -lt 11) {
+            Stop-Function -Message "Azure blob storage restore requires SQL Server 2012 or later. Instance is version $($ServerSecondary.Version.Major)" -Target $SqlInstance
+            return
+        }
+
+        # Validate Azure credentials exist on SQL Server instance
+        # For storage account key authentication, use explicit credential name if provided
+        # For SAS token authentication, credential name must match the container URL
+        if ($IsAzureSource) {
+            if ($AzureCredential) {
+                # Explicit credential name provided (storage account key authentication)
+                $sourceCredentialName = $AzureCredential
+                Write-Message -Message "Using explicit Azure source credential name: $sourceCredentialName" -Level Verbose
+            } else {
+                # No explicit credential - assume SAS token (credential name must match URL)
+                # Extract base container URL from database-specific path if needed
+                $base = $BackupSourceDirectory -split "/"
+                if ($base.Count -gt 4) {
+                    # URL has subfolders (database-specific path), extract base container URL
+                    $sourceCredentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                    Write-Message -Message "Extracted base source credential name: $sourceCredentialName" -Level Verbose
+                } else {
+                    # URL is just the container
+                    $sourceCredentialName = $BackupSourceDirectory
+                }
+            }
+
+            $sourceCredential = $ServerSecondary.Credentials | Where-Object Name -eq $sourceCredentialName
+
+            if (-not $sourceCredential) {
+                Stop-Function -Message "Azure blob storage requires a SQL Server credential named '$sourceCredentialName' to exist on instance $SqlInstance. Create the credential using New-DbaCredential with either a Shared Access Signature (SAS) token or storage account key before setting up log shipping." -Target $SqlInstance
+                return
+            }
+
+            Write-Message -Message "Found Azure source credential: $sourceCredentialName" -Level Verbose
+        }
+
+        if ($IsAzureDestination) {
+            if ($AzureCredential) {
+                # Explicit credential name provided (storage account key authentication)
+                $destCredentialName = $AzureCredential
+                Write-Message -Message "Using explicit Azure destination credential name: $destCredentialName" -Level Verbose
+            } else {
+                # No explicit credential - assume SAS token (credential name must match URL)
+                # Extract base container URL from database-specific path if needed
+                $base = $BackupDestinationDirectory -split "/"
+                if ($base.Count -gt 4) {
+                    # URL has subfolders (database-specific path), extract base container URL
+                    $destCredentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                    Write-Message -Message "Extracted base destination credential name: $destCredentialName" -Level Verbose
+                } else {
+                    # URL is just the container
+                    $destCredentialName = $BackupDestinationDirectory
+                }
+            }
+
+            $destCredential = $ServerSecondary.Credentials | Where-Object Name -eq $destCredentialName
+
+            if (-not $destCredential) {
+                Stop-Function -Message "Azure blob storage requires a SQL Server credential named '$destCredentialName' to exist on instance $SqlInstance. Create the credential using New-DbaCredential with either a Shared Access Signature (SAS) token or storage account key before setting up log shipping." -Target $SqlInstance
+                return
+            }
+
+            Write-Message -Message "Found Azure destination credential: $destCredentialName" -Level Verbose
+        }
+    } else {
+        # Traditional file path scenario - validate UNC path
+        if ([bool]([uri]$BackupDestinationDirectory).IsUnc -and $BackupDestinationDirectory -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
+            Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
+            return
+        } else {
+            if (-not ((Test-DbaPath -Path $BackupDestinationDirectory -SqlInstance $ServerSecondary) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
+                Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
+                return
+            }
         }
     }
 
@@ -171,11 +266,11 @@ function New-DbaLogShippingSecondaryPrimary {
 
     # Set up the query
     $Query = "
-        DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier;
-        DECLARE @LS_Secondary__RestoreJobId AS uniqueidentifier;
-        DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier;
+        DECLARE @LS_Secondary__CopyJobId AS UNIQUEIDENTIFIER;
+        DECLARE @LS_Secondary__RestoreJobId AS UNIQUEIDENTIFIER;
+        DECLARE @LS_Secondary__SecondaryId AS UNIQUEIDENTIFIER;
         DECLARE @SP_Add_RetCode AS INT;
-        EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_secondary_primary
+        EXEC @SP_Add_RetCode = master.dbo.sp_add_log_shipping_secondary_primary
                 @primary_server = N'$PrimaryServer'
                 ,@primary_database = N'$PrimaryDatabase'
                 ,@backup_source_directory = N'$BackupSourceDirectory'
@@ -221,8 +316,8 @@ function New-DbaLogShippingSecondaryPrimary {
             BEGIN
                 DECLARE @msg VARCHAR(1000);
                 SELECT @msg = 'Unexpected result executing sp_add_log_shipping_secondary_primary ('
-                    + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
-                RAISERROR (@msg, 16, 1) WITH NOWAIT;
+                    + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
+                RAISERROR(@msg, 16, 1) WITH NOWAIT;
                 RETURN;
             END
         "

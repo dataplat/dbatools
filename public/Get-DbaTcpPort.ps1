@@ -127,7 +127,7 @@ function Get-DbaTcpPort {
                 }
 
                 # WmiComputer can be unreliable :( Use T-SQL
-                $sql = "SELECT local_net_address,local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID"
+                $sql = "SELECT local_net_address, local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID"
                 $port = $server.Query($sql)
 
                 [PSCustomObject]@{

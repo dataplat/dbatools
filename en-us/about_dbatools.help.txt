@@ -2,7 +2,7 @@
 	about_dbatools
 	
 SHORT DESCRIPTION
-	Gives on overview over the advanced dbatools topics
+	Gives an overview of the advanced dbatools topics
 	
 LONG DESCRIPTION
 	Welcome to the dbatools help central.

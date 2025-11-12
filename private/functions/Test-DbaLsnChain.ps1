@@ -27,6 +27,7 @@ function Test-DbaLsnChain {
 
     #>
     [CmdletBinding()]
+    [OutputType([Boolean])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$FilteredRestoreFiles,
@@ -69,9 +70,12 @@ function Test-DbaLsnChain {
             break;
         }
 
+        #If same multiple Full DB backup exist with Same FirstLSN, just select one
+        $FullDBAnchor = ($FullDBAnchor | Select-Object -First 1)
+
         #Via LSN chain:
-        [BigInt]$CheckPointLSN = ($FullDBAnchor | Select-Object -First 1).CheckPointLSN.ToString()
-        [BigInt]$FullDBLastLSN = ($FullDBAnchor | Select-Object -First 1).LastLSN.ToString()
+        [BigInt]$CheckPointLSN = $FullDBAnchor.CheckPointLSN.ToString()
+        [BigInt]$FullDBLastLSN = $FullDBAnchor.LastLSN.ToString()
         $BackupWrongLSN = $FilteredRestoreFiles | Where-Object { $_.DatabaseBackupLSN -ne $CheckPointLSN }
         #Should be 0 in there, if not, lets check that they're from during the full backup
         if ($BackupWrongLSN.count -gt 0 ) {
@@ -97,7 +101,7 @@ function Test-DbaLsnChain {
 
         #Check T-log LSNs form a chain.
         $TranLogBackups = $TestHistory | Where-Object {
-            $_.$TypeName -in ('Transaction Log', 'Log') -and (($_.DatabaseBackupLSN.ToString() -eq $FullDBAnchor.CheckPointLSN) -or (($_.DatabaseBackupLSN.ToString() -ne $FullDBAnchor.CheckPointLSN) -and ($TranLogBackups[$i].FirstLSN -gt $FullDBAnchor.CheckPointLSN)))
+            $_.$TypeName -in ('Transaction Log', 'Log') -and (($_.DatabaseBackupLSN.ToString() -eq $FullDBAnchor.CheckPointLSN) -or (($_.DatabaseBackupLSN.ToString() -ne $FullDBAnchor.CheckPointLSN) -and ($_.FirstLSN -gt $FullDBAnchor.CheckPointLSN)))
         } | Sort-Object -Property LastLSN, FirstLsn
 
     for ($i = 0; $i -lt ($TranLogBackups.count)) {

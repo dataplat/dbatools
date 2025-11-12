@@ -262,6 +262,7 @@ function Invoke-DbaAdvancedInstall {
         }
     }
     $installParams = $ArgumentList
+    $installParams += "/q"
     $installParams += "/CONFIGURATIONFILE=`"$remoteConfig`""
     Write-Message -Level Verbose -Message "Setup starting from $($InstallationPath)"
     $execParams = @{

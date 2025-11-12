@@ -4,7 +4,7 @@ function Start-DbaService {
         Starts SQL Server related services across multiple computers while respecting service dependencies.
 
     .DESCRIPTION
-        Starts SQL Server services (Engine, Agent, Browser, FullText, SSAS, SSIS, SSRS) on one or more computers following proper dependency order. This function handles the complexity of starting services in the correct sequence so you don't have to manually determine which services depend on others. Commonly used after maintenance windows, server reboots, or when troubleshooting stopped services across an environment.
+        Starts SQL Server services (Engine, Agent, Browser, FullText, SSAS, SSIS, SSRS, PolyBase, Launchpad) on one or more computers following proper dependency order. This function handles the complexity of starting services in the correct sequence so you don't have to manually determine which services depend on others. Commonly used after maintenance windows, server reboots, or when troubleshooting stopped services across an environment.
 
         Requires Local Admin rights on destination computer(s).
 
@@ -25,7 +25,7 @@ function Start-DbaService {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Type
-        Filters to specific SQL Server service types rather than starting all services. Valid types: Agent, Browser, Engine, FullText, SSAS, SSIS, SSRS.
+        Filters to specific SQL Server service types rather than starting all services. Valid types: Agent, Browser, Engine, FullText, SSAS, SSIS, SSRS, PolyBase, Launchpad.
         Use this when you need to start only specific service types, such as starting just SQL Agent after maintenance or only SSRS services on reporting servers.
 
     .PARAMETER Timeout
@@ -90,7 +90,7 @@ function Start-DbaService {
         [string[]]$InstanceName,
         [Parameter(ParameterSetName = "Server")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad")]
         [string[]]$Type,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
         [Alias("ServiceCollection")]

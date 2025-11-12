@@ -200,8 +200,8 @@ function Test-DbaDbCompression {
                 With TopN(SchemaName, TableName, IndexID, [Partition], RowCounts, TotalSpaceKB, UsedSpaceKB) as
                 (
                     SELECT TOP $ResultSize
-                        s.Name AS SchemaName,
-                        t.NAME as TableName,
+                        s.name AS SchemaName,
+                        t.name AS TableName,
                         $indexSQL,
                         $partitionSQL,
                         SUM(p.rows) AS RowCounts,
@@ -210,21 +210,21 @@ function Test-DbaDbCompression {
                     FROM
                         sys.tables t
                     INNER JOIN
-                        sys.indexes i ON t.OBJECT_ID = i.object_id
+                        sys.indexes i ON t.object_id = i.object_id
                     INNER JOIN
-                        sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
+                        sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
                     INNER JOIN
                         sys.allocation_units a ON p.partition_id = a.container_id
                     LEFT OUTER JOIN
                         sys.schemas s ON t.schema_id = s.schema_id
-                    WHERE objectproperty(t.object_id, 'IsUserTable') = 1
+                    WHERE OBJECTPROPERTY(t.object_id, 'IsUserTable') = 1
                         AND p.data_compression_desc = 'NONE'
                         $sqlSchemaWhere
                         $sqlTableWhere
                     GROUP BY
                         $groupBySQL
                     ORDER BY
-                        $sqlOrderBy Desc
+                        $sqlOrderBy DESC
                 )
                 DELETE tdc
                 FROM ##TestDbaCompression tdc
@@ -272,7 +272,7 @@ function Test-DbaDbCompression {
                     AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
                 INNER JOIN sys.columns c
                     ON t.object_id = c.object_id
-                WHERE encryption_type IS NOT NULL
+                WHERE c.encryption_type IS NOT NULL
             END"
             }
             if ($sqlVersion -ge 14) {
@@ -284,7 +284,7 @@ function Test-DbaDbCompression {
                 INNER JOIN sys.tables t
                     ON tdc.[Schema] = SCHEMA_NAME(t.schema_id) COLLATE DATABASE_DEFAULT
                     AND tdc.TableName = t.name COLLATE DATABASE_DEFAULT
-                WHERE (is_node = 1 OR is_edge = 1)
+                WHERE (t.is_node = 1 OR t.is_edge = 1)
             END"
             }
             $sql = "SET NOCOUNT ON;
@@ -351,12 +351,12 @@ INSERT INTO ##TestDbaCompression (
     ,[PercentScan]
     ,[PercentUpdate]
     )
-    SELECT s.NAME AS [Schema]
-    ,t.NAME AS [TableName]
-    ,t.OBJECT_ID AS [OBJECTID]
-    ,x.NAME AS [IndexName]
+    SELECT s.name AS [Schema]
+    ,t.name AS [TableName]
+    ,t.object_id AS [OBJECTID]
+    ,x.name AS [IndexName]
     ,p.partition_number AS [Partition]
-    ,x.Index_ID AS [IndexID]
+    ,x.index_id AS [IndexID]
     ,x.type_desc AS [IndexType]
     ,p.rows AS [RowCounts]
     ,NULL AS [PercentScan]
@@ -365,7 +365,7 @@ FROM sys.tables t
 INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
 INNER JOIN sys.indexes x ON x.object_id = t.object_id
 INNER JOIN sys.partitions p ON x.object_id = p.object_id
-    AND x.Index_ID = p.Index_ID
+    AND x.index_id = p.index_id
 WHERE OBJECTPROPERTY(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     $sqlSchemaWhere
@@ -379,8 +379,8 @@ BEGIN
     DELETE tdc
     FROM ##TestDbaCompression tdc
     INNER JOIN sys.columns c
-        on tdc.ObjectId = c.object_id
-    WHERE c. is_sparse = 1
+        ON tdc.ObjectId = c.object_id
+    WHERE c.is_sparse = 1
 END
 
 $sqlVersionRestrictions
@@ -451,14 +451,14 @@ DEALLOCATE cur;
 UPDATE ##TestDbaCompression
 SET
  [PercentScan] =
-     case when (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) = 0 THEN 0
+     CASE WHEN (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) = 0 THEN 0
      ELSE i.range_scan_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
      END
  ,[PercentUpdate] =
-    case when (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) = 0 THEN 0
+    CASE WHEN (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) = 0 THEN 0
     ELSE i.leaf_update_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
     END
-FROM sys.dm_db_index_operational_stats(db_id(), NULL, NULL, NULL) i
+FROM sys.dm_db_index_operational_stats(DB_ID(), NULL, NULL, NULL) i
 INNER JOIN ##TestDbaCompression tmp
     ON tmp.ObjectId = i.object_id
     AND tmp.IndexID = i.index_id;
@@ -502,7 +502,7 @@ SET [RowEstimatePercentOriginal] = tcte.pct_of_orig_row
     ,[PageEstimatePercentOriginal] = tcte.pct_of_orig_page
     ,SizeCurrent = tcte.SizeCurrent
     ,SizeRequested = tcte.SizeRequested
-    ,PercentCompression = 100 - (cast(tcte.[SizeRequested] AS NUMERIC(21, 2)) * 100 / (tcte.[SizeCurrent] - ABS(SIGN(tcte.[SizeCurrent])) + 1))
+    ,PercentCompression = 100 - (CAST(tcte.[SizeRequested] AS NUMERIC(21, 2)) * 100 / (tcte.[SizeCurrent] - ABS(SIGN(tcte.[SizeCurrent])) + 1))
 FROM tmp_cte tcte
     ,##TestDbaCompression tcomp
 WHERE tcte.objname = tcomp.TableName
@@ -559,7 +559,7 @@ WHERE tcte2.TableName = tcomp2.TableName
 
 SET NOCOUNT ON;
 
-SELECT DBName = DB_Name()
+SELECT DBName = DB_NAME()
     ,[Schema]
     ,[TableName]
     ,[IndexName]

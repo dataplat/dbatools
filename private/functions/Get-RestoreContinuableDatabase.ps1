@@ -23,7 +23,7 @@ function Get-RestoreContinuableDatabase {
         return
     }
     if ($server.VersionMajor -ge 9) {
-        $sql = "select distinct db_name(database_id) as 'Database', differential_base_lsn, redo_start_lsn, redo_start_fork_guid as 'FirstRecoveryForkID' from master.sys.master_files where redo_start_lsn is not NULL"
+        $sql = "SELECT DISTINCT DB_NAME(database_id) AS 'Database', differential_base_lsn, redo_start_lsn, redo_start_fork_guid AS 'FirstRecoveryForkID' FROM sys.master_files WHERE redo_start_lsn IS NOT NULL"
     } else {
         $sql = "
               CREATE TABLE #db_info

@@ -102,7 +102,7 @@ function Remove-DbaAvailabilityGroup {
             if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Removing availability group $ag")) {
                 # avoid enumeration issues
                 try {
-                    $ag.Parent.Query("DROP AVAILABILITY GROUP $ag")
+                    $null = $ag.Parent.Query("DROP AVAILABILITY GROUP $ag")
                     [PSCustomObject]@{
                         ComputerName      = $ag.ComputerName
                         InstanceName      = $ag.InstanceName

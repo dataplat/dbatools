@@ -180,14 +180,14 @@ function Get-DbaLogin {
 
         $loginTimeSql = "SELECT login_name, MAX(login_time) AS login_time FROM sys.dm_exec_sessions GROUP BY login_name"
         $loginProperty = "SELECT
-                            LOGINPROPERTY ('/*LoginName*/' , 'BadPasswordCount') as BadPasswordCount ,
-                            LOGINPROPERTY ('/*LoginName*/' , 'BadPasswordTime') as BadPasswordTime,
-                            LOGINPROPERTY ('/*LoginName*/' , 'DaysUntilExpiration') as DaysUntilExpiration,
-                            LOGINPROPERTY ('/*LoginName*/' , 'HistoryLength') as HistoryLength,
-                            LOGINPROPERTY ('/*LoginName*/' , 'IsMustChange') as IsMustChange,
-                            LOGINPROPERTY ('/*LoginName*/' , 'LockoutTime') as LockoutTime,
-                            CONVERT (varchar(514),  (LOGINPROPERTY('/*LoginName*/', 'PasswordHash')),1) as PasswordHash,
-                            LOGINPROPERTY ('/*LoginName*/' , 'PasswordLastSetTime') as PasswordLastSetTime"
+                            LOGINPROPERTY ('/*LoginName*/' , 'BadPasswordCount') AS BadPasswordCount ,
+                            LOGINPROPERTY ('/*LoginName*/' , 'BadPasswordTime') AS BadPasswordTime,
+                            LOGINPROPERTY ('/*LoginName*/' , 'DaysUntilExpiration') AS DaysUntilExpiration,
+                            LOGINPROPERTY ('/*LoginName*/' , 'HistoryLength') AS HistoryLength,
+                            LOGINPROPERTY ('/*LoginName*/' , 'IsMustChange') AS IsMustChange,
+                            LOGINPROPERTY ('/*LoginName*/' , 'LockoutTime') AS LockoutTime,
+                            CONVERT (VARCHAR(514),  (LOGINPROPERTY('/*LoginName*/', 'PasswordHash')),1) AS PasswordHash,
+                            LOGINPROPERTY ('/*LoginName*/' , 'PasswordLastSetTime') AS PasswordLastSetTime"
     }
     process {
         foreach ($instance in $SqlInstance) {

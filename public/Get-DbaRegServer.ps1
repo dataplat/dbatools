@@ -28,6 +28,15 @@ function Get-DbaRegServer {
         Filters results to registered servers with specific server instance names (the actual SQL Server connection strings).
         Use this when you need to find servers by their network names or instance names rather than display names.
 
+    .PARAMETER Pattern
+        Specifies a pattern for filtering registered servers using regular expressions.
+        Use this when you need to match servers by pattern, such as "^prod" or ".*-db$".
+        This parameter supports standard .NET regular expression syntax and matches against both Name and ServerName properties.
+    
+    .PARAMETER ExcludeServerName
+        Excludes registered servers with specific server instance names (the actual SQL Server connection strings).
+        Use this when you want to retrieve most servers but skip certain instances like those under maintenance or decommissioned.
+
     .PARAMETER Group
         Filters results to registered servers within specific Central Management Server groups.
         Supports hierarchical paths using backslash notation (e.g., "Production\Database Servers"). Use this to target servers organized by environment, department, or function.
@@ -98,6 +107,16 @@ function Get-DbaRegServer {
 
         Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
 
+    .EXAMPLE
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -Pattern "^prod"
+
+        Returns all registered servers that match the regex pattern "^prod" (e.g., prod-server1, production-db) from the CMS on sqlserver2014a.
+
+    .EXAMPLE
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -Group Production -ExcludeServerName "serverAlfa", "ServerBeta"
+
+        Gets a list of servers in the Production group from the CMS on sqlserver2014a, excluding serverAlfa and ServerBeta. Useful when you need to skip specific servers during maintenance windows.
+
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
@@ -107,6 +126,9 @@ function Get-DbaRegServer {
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
+        [string[]]$Pattern,
+        [Alias("ExcludeServer")]
+        [string[]]$ExcludeServerName,
         [string[]]$Group,
         [string[]]$ExcludeGroup,
         [int[]]$Id,
@@ -123,6 +145,18 @@ function Get-DbaRegServer {
         # thank you forever https://social.msdn.microsoft.com/Forums/sqlserver/en-US/57811d43-a2b9-4179-a97b-a9936ddb188e/how-to-retrieve-a-password-saved-by-sql-server?forum=sqltools
         function Unprotect-String([string] $base64String) {
             return [System.Text.Encoding]::Unicode.GetString([System.Security.Cryptography.ProtectedData]::Unprotect([System.Convert]::FromBase64String($base64String), $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser))
+        }
+
+        # Helper function to test if a name matches any of the provided regex patterns
+        $matchesPattern = {
+            param($name, $serverName, $patterns)
+            if (!$patterns) { return $true }
+            foreach ($pattern in $patterns) {
+                if ($name -match $pattern -or $serverName -match $pattern) {
+                    return $true
+                }
+            }
+            return $false
         }
     }
     process {
@@ -215,6 +249,16 @@ function Get-DbaRegServer {
         if ($ServerName) {
             Write-Message -Level Verbose -Message "Filtering by servername for $servername"
             $servers = $servers | Where-Object ServerName -in $ServerName
+        }
+
+        if ($Pattern) {
+            Write-Message -Level Verbose -Message "Filtering by pattern for $Pattern"
+            $servers = $servers | Where-Object { & $matchesPattern $_.Name $_.ServerName $Pattern }
+        }
+        
+        if ($ExcludeServerName) {
+            Write-Message -Level Verbose -Message "Excluding servers: $ExcludeServerName"
+            $servers = $servers | Where-Object ServerName -notin $ExcludeServerName
         }
 
         if ($Id) {

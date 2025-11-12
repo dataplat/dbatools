@@ -142,6 +142,11 @@ function Install-DbaInstance {
         Defaults to the current user or the account specified in the Credential parameter.
         Use domain\\username format for domain accounts or computername\\username for local accounts.
 
+    .PARAMETER ASAdminAccount
+        Specifies one or more Windows accounts to grant administrator privileges on Analysis Services.
+        Required when installing Analysis Services feature. At least one administrator account must be specified.
+        Use domain\\username format for domain accounts or computername\\username for local accounts.
+
     .PARAMETER Port
         Specifies the TCP port number for SQL Server after installation, overriding the default port 1433.
         The function configures the port post-installation since SQL Server setup doesn't directly support custom ports.
@@ -299,6 +304,14 @@ function Install-DbaInstance {
 
         Run the installation locally with default settings overriding the value of specific configuration items.
         Instance name will be defined as 'v2017'; TCP port will be changed to 1337 after installation.
+
+    .Example
+        PS C:\> $svcAcc = Get-Credential MyDomain\SvcSqlServer
+        PS C:\> Install-DbaInstance -Version 2022 -Feature Engine,AnalysisServices -AdminAccount "AD\MSSQLAdmins" -ASAdminAccount "AD\SSASAdmins" -EngineCredential $svcAcc -ASCredential $svcAcc
+
+        Install SQL Server 2022 with Database Engine and Analysis Services features.
+        Grants sysadmin rights to AD\MSSQLAdmins on the Database Engine and administrator rights to AD\SSASAdmins on Analysis Services.
+        Uses MyDomain\SvcSqlServer as the service account for both services.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -331,6 +344,7 @@ function Install-DbaInstance {
         [string]$BackupPath,
         [string]$UpdateSourcePath,
         [string[]]$AdminAccount,
+        [string[]]$ASAdminAccount,
         [int]$Port,
         [int]$Throttle = 50,
         [Alias('PID')]
@@ -797,6 +811,9 @@ function Install-DbaInstance {
             }
             if (Test-Bound -ParameterName AdminAccount) {
                 $configNode.SQLSYSADMINACCOUNTS = ($AdminAccount | ForEach-Object { '"{0}"' -f $_ }) -join ' '
+            }
+            if (Test-Bound -ParameterName ASAdminAccount) {
+                $configNode.ASSYSADMINACCOUNTS = ($ASAdminAccount | ForEach-Object { '"{0}"' -f $_ }) -join ' '
             }
             if (Test-Bound -ParameterName UpdateSourcePath) {
                 $configNode.UPDATESOURCE = $UpdateSourcePath

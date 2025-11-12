@@ -88,11 +88,12 @@ function Remove-DbaReplArticle {
         [String]$Name,
         #[Switch]$DropObjectOnSubscriber,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Replication.Article[]]$InputObject,
+        [psobject[]]$InputObject,
         [Switch]$EnableException
     )
 
     begin {
+        Add-ReplicationLibrary
         $articles = @( )
     }
 
@@ -133,7 +134,7 @@ function Remove-DbaReplArticle {
 
                     if (($pub.Subscriptions | Measure-Object).count -gt 0 ) {
                         Write-Message -Level Verbose -Message ("There is a subscription so remove article {0} from subscription on {1}" -f $art.Name, $pub.Subscriptions.SubscriberName)
-                        $query = "exec sp_dropsubscription @publication = '{0}', @article= '{1}',@subscriber = '{2}'" -f $art.PublicationName, $art.Name, $pub.Subscriptions.SubscriberName
+                        $query = "EXEC sp_dropsubscription @publication = '{0}', @article= '{1}',@subscriber = '{2}'" -f $art.PublicationName, $art.Name, $pub.Subscriptions.SubscriberName
                         Invoke-DbaQuery -SqlInstance $art.SqlInstance -SqlCredential $SqlCredential -Database $art.DatabaseName -query $query -EnableException:$EnableException
                     }
                     if (($art.IsExistingObject)) {

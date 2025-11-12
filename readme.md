@@ -225,6 +225,20 @@ $cred = Get-Credential ad\winadmin
 Get-DbaDiskSpace -ComputerName sql01 -Credential $cred
 ```
 
+#### Storing Credentials Securely
+PowerShell's `Export-CliXml` provides a fast and secure way to store credentials to disk. The credentials are encrypted using Windows Data Protection API (DPAPI) and can only be decrypted by the same user on the same machine.
+
+```powershell
+# Save credentials to disk (one-time setup)
+Get-Credential | Export-CliXml -Path "$HOME\sql-credentials.xml"
+
+# Reuse saved credentials in scripts
+$cred = Import-CliXml -Path "$HOME\sql-credentials.xml"
+Get-DbaDatabase -SqlInstance sql01 -SqlCredential $cred
+```
+
+For more advanced credential management approaches including the Secrets Management module, see [Rob Sewell's guide](https://blog.robsewell.com/blog/good-bye-import-clixml-use-the-secrets-management-module-for-your-labs-and-demos/).
+
 ### Custom Ports
 ```powershell
 # Using colon or comma for non-default ports
@@ -281,7 +295,7 @@ For more troubleshooting help, visit our [troubleshooting guide](https://dbatool
 - ⭐ Star this repository
 - 🐛 [Report issues](https://github.com/dataplat/dbatools/issues)
 - 💡 [Request features](https://github.com/dataplat/dbatools/issues)
-- 🤝 [Contribute code](contributing.md)
+- 🤝 [Contribute code](CONTRIBUTING.md)
 
 **Community Channels:**
 - [#dbatools on SQL Community Slack](https://sqlcommunity.slack.com/messages/C1M2WEASG/)

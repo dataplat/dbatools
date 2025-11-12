@@ -172,7 +172,7 @@ function Watch-DbaDbLogin {
                     , ISNULL(s.program_name,N'') AS [Program]
                     , ISNULL(r.database_id,N'') AS [DatabaseId]
                     , ISNULL(DB_NAME(r.database_id),N'') AS [Database]
-                    , CAST(~s.is_user_process AS bit) AS [IsSystem]
+                    , CAST(~s.is_user_process AS BIT) AS [IsSystem]
                     , CaptureTime = (SELECT GETDATE())
                 FROM sys.dm_exec_sessions AS s
                 LEFT OUTER JOIN sys.dm_exec_requests AS r
@@ -186,7 +186,7 @@ function Watch-DbaDbLogin {
                     , ISNULL(s.program_name,N'') AS [Program]
                     , ISNULL(r.database_id,s.database_id) AS [DatabaseId]
                     , ISNULL(DB_NAME(r.database_id),(DB_NAME(s.database_id))) AS [Database]
-                    , CAST(~s.is_user_process AS bit) AS [IsSystem]
+                    , CAST(~s.is_user_process AS BIT) AS [IsSystem]
                     , CaptureTime = (SELECT GETDATE())
                     ,s.database_id
                     FROM sys.dm_exec_sessions AS s

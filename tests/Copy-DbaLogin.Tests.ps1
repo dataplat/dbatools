@@ -215,10 +215,41 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Be $tempExportFile
             $permissions = Get-Content $tempExportFile -Raw
             $permissions | Should -BeLike '*CREATE LOGIN `[tester`]*'
-            $permissions | Should -Match "(ALTER SERVER ROLE \[sysadmin\] ADD MEMBER \[tester\]|EXEC sys.sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'tester')"
+            $permissions | Should -Match "(ALTER SERVER ROLE \[sysadmin\] ADD MEMBER \[tester\]|EXEC sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'tester')"
             $permissions | Should -BeLike '*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester`]*'
             $permissions | Should -BeLike '*CREATE LOGIN `[port`]*'
             $permissions | Should -BeLike '*GRANT CONNECT SQL TO `[port`]*'
+        }
+    }
+
+    Context "Linux SQL Server protection for BUILTIN\Administrators" {
+        BeforeAll {
+            $linuxInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            $isLinux = $linuxInstance.HostPlatform -eq "Linux"
+        }
+
+        It "Should skip BUILTIN\Administrators on Linux source with -Force" -Skip:(-not $isLinux) {
+            $splatCopy = @{
+                Source      = $TestConfig.instance3
+                Destination = $TestConfig.instance1
+                Login       = "BUILTIN\Administrators"
+                Force       = $true
+            }
+            $results = Copy-DbaLogin @splatCopy
+            $results.Status | Should -Be "Skipped"
+            $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
+        }
+
+        It "Should skip BUILTIN\Administrators on Linux destination with -Force" -Skip:(-not $isLinux) {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance3
+                Login       = "BUILTIN\Administrators"
+                Force       = $true
+            }
+            $results = Copy-DbaLogin @splatCopy
+            $results.Status | Should -Be "Skipped"
+            $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
         }
     }
 }
