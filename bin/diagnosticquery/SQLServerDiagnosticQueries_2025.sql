@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 17, 2025
+-- Last Modified: November 3, 2025
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -656,7 +656,7 @@ IF EXISTS (SELECT * WHERE CONVERT(VARCHAR(2), SERVERPROPERTY('ProductMajorVersio
 		EXEC sys.xp_readerrorlog 0, 1, N'CPU vectorization level';
 		DECLARE @CPUVectorizationLevel NVARCHAR(200) = (SELECT LogText FROM #CPUVectorizationLevel);
 
-		-- Get TF15097 Status
+		-- Get TF 15097 Status
 		DROP TABLE IF EXISTS #TraceFlagStatus;
 			CREATE TABLE #TraceFlagStatus
 			(TraceFlag smallint, TFStatus tinyint, TFGlobal tinyint, TFSession tinyint);
@@ -1001,7 +1001,7 @@ WHERE lu.counter_name LIKE N'Log File(s) Used Size (KB)%'
 AND ls.counter_name LIKE N'Log File(s) Size (KB)%'
 AND ds.counter_name LIKE N'Data File(s) Size (KB)%'
 AND ls.cntr_value > 0 
-ORDER BY db.[name] OPTION (RECOMPILE);
+ORDER BY db.[name] OPTION (USE HINT ('FORCE_LEGACY_CARDINALITY_ESTIMATION'), LOOP JOIN, RECOMPILE);
 ------
 
 -- sys.databases (Transact-SQL)
@@ -1499,7 +1499,7 @@ CROSS APPLY sys.dm_exec_query_plan(plan_handle) AS qp
 WHERE cp.cacheobjtype = N'Compiled Plan' 
 AND cp.objtype IN (N'Adhoc', N'Prepared') 
 AND cp.usecounts = 1
-ORDER BY cp.size_in_bytes DESC, DB_NAME(t.[dbid]) OPTION (RECOMPILE);
+ORDER BY cp.size_in_bytes DESC, DB_NAME(t.[dbid]) OPTION (USE HINT ('FORCE_LEGACY_CARDINALITY_ESTIMATION'), FORCE ORDER, LOOP JOIN);
 ------
 
 -- Gives you the text, type and size of single-use ad-hoc and prepared queries that waste space in the plan cache
@@ -2232,13 +2232,14 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- https://bit.ly/2q1Q6BM
 
 
--- Determine which scalar UDFs are in-lineable (Query 84) (Inlineable UDFs)
-SELECT OBJECT_NAME(m.object_id) AS [Function Name], m.is_inlineable, m.inline_type,
-       efs.total_worker_time
+-- Determine which scalar UDFs are in-lineable (Query 84) (Inlineable UDFs) 
+SELECT OBJECT_NAME(m.object_id) AS [Function Name], m.is_inlineable, 
+       m.inline_type, m.is_schema_bound, m.null_on_null_input,
+       efs.total_worker_time, efs.execution_count, efs.cached_time
 FROM sys.sql_modules AS m WITH (NOLOCK) 
 LEFT OUTER JOIN sys.dm_exec_function_stats AS efs WITH (NOLOCK)
 ON  m.object_id = efs.object_id
-WHERE efs.type_desc = N'SQL_SCALAR_FUNCTION'
+WHERE efs.[type_desc] = N'SQL_SCALAR_FUNCTION'
 ORDER BY efs.total_worker_time DESC
 OPTION (RECOMPILE);
 ------
