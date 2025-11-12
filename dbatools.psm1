@@ -824,6 +824,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaDbSynonym',
         'Install-DbaDarlingData',
         'New-DbaDbFileGroup',
+        'Add-DbaDbFile',
         'Remove-DbaDbFileGroup',
         'Set-DbaDbFileGroup',
         'Remove-DbaLinkedServer',
