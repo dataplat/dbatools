@@ -252,4 +252,54 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
         }
     }
+
+    Context "Regression test for issue #8572 - Windows group lockout protection" {
+        It "Should not throw when processing SQL logins with -Force" {
+            # Verify SQL logins are not affected by Windows group checks
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "tester"
+                Force       = $true
+            }
+            $results = Copy-DbaLogin @splatCopy
+            $results.Status | Should -Be "Successful"
+        }
+
+        It "Should handle Windows logins gracefully when not in a domain" {
+            # This test verifies the code path doesn't break non-domain scenarios
+            # In CI (non-domain), Windows logins typically fail earlier in the process
+            # but the lockout protection code should not introduce new errors
+            {
+                $splatCopy = @{
+                    Source      = $TestConfig.instance1
+                    Destination = $TestConfig.instance2
+                    Login       = "NT AUTHORITY\SYSTEM"
+                    Force       = $true
+                }
+                Copy-DbaLogin @splatCopy -WarningAction SilentlyContinue
+            } | Should -Not -Throw
+        }
+
+        It "Should verify the safety check logic exists for Windows groups" {
+            # This test verifies the safety check added in issue #8572
+            # The safety check should skip Windows groups that provide the current user's only access
+            # when those groups have high privileges (sysadmin, securityadmin, or ALTER ANY LOGIN)
+
+            # Note: Full automated testing requires:
+            # 1. A Windows domain environment with AD groups
+            # 2. A test user that accesses SQL only via an AD group (no direct login)
+            # 3. The ability to test the actual lockout scenario
+
+            # This test verifies that the protection code exists and is properly structured
+            # Manual testing should be performed in a domain environment to verify the protection works
+
+            $publicPath = Join-Path -Path $TestConfig.ModuleBase -ChildPath "public"
+            $functionPath = Join-Path -Path $publicPath -ChildPath "Copy-DbaLogin.ps1"
+            $functionContent = Get-Content $functionPath -Raw
+            $functionContent | Should -BeLike '*LoginType -eq "WindowsGroup"*'
+            $functionContent | Should -BeLike '*potential lockout risk*'
+            $functionContent | Should -BeLike '*xp_logininfo*'
+        }
+    }
 }
