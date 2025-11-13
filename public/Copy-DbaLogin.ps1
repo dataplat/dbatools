@@ -327,7 +327,11 @@ function Copy-DbaLogin {
                     # Only check if current login is not directly in the logins list (access via group only)
                     $currentLoginIsDirect = $currentLogin -in $destServer.Logins.Name
                     if (-not $currentLoginIsDirect) {
+                        Write-Message -Level Verbose -Message "Current login '$currentLogin' is not a direct login on $destinstance"
+
                         # Check if this is a high-privilege group
+                        # Note: $groupLogin is guaranteed to exist here because we're inside the block
+                        # that checks: if ($null -ne $destServer.Logins.Item($newUserName) -and $force)
                         $groupLogin = $destServer.Logins.Item($newUserName)
                         $isHighPrivilege = $false
 
@@ -354,6 +358,7 @@ function Copy-DbaLogin {
 
                         # If this is a high-privilege group, check if current user is a member
                         if ($isHighPrivilege) {
+                            Write-Message -Level Verbose -Message "Group '$newUserName' has high privileges - checking membership"
                             try {
                                 $memberCheckQuery = "EXEC xp_logininfo @acctname, @option = 'members'"
                                 $splatMemberCheck = @{
