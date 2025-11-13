@@ -549,6 +549,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaModule',
         'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
+        'Sync-DbaLoginSid',
         'New-DbaCredential',
         'Get-DbaFile',
         'Set-DbaDbCompression',
