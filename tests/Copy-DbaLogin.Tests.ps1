@@ -294,7 +294,8 @@ Describe $CommandName -Tag IntegrationTests {
             # This test verifies that the protection code exists and is properly structured
             # Manual testing should be performed in a domain environment to verify the protection works
 
-            $functionPath = Join-Path -Path $TestConfig.ModuleBase -ChildPath "public" | Join-Path -ChildPath "Copy-DbaLogin.ps1"
+            $publicPath = Join-Path -Path $TestConfig.ModuleBase -ChildPath "public"
+            $functionPath = Join-Path -Path $publicPath -ChildPath "Copy-DbaLogin.ps1"
             $functionContent = Get-Content $functionPath -Raw
             $functionContent | Should -BeLike '*LoginType -eq "WindowsGroup"*'
             $functionContent | Should -BeLike '*potential lockout risk*'
