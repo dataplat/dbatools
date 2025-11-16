@@ -1212,7 +1212,7 @@ function Test-DbaKerberos {
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Checking SQL Server network protocol configuration"
-                        $tcpEnabled = $server.Configuration.IsTcpEnabled.ConfigValue
+                        $tcpEnabled = (Get-DbaNetworkConfiguration -SqlInstance $target -OutputType ServerProtocols -EnableException).TcpIpEnabled
 
                         if ($tcpEnabled) {
                             $status = "Pass"
