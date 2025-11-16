@@ -129,6 +129,12 @@ function Test-DbaKerberos {
                     }
                     $spnResults = Test-DbaSpn @splatSpn
 
+                    # Test-DbaSpn checks all instances on ComputerName and has no parameter SqlInstance
+                    # So we filter until Test-DbaSpn has a parameter SqlInstance
+                    if ($instanceName) {
+                        $spnResults = $spnResults | Where-Object InstanceName -eq $instanceName
+                    }
+
                     $spnIssues = $spnResults | Where-Object IsSet -eq $false
                     if ($spnIssues) {
                         $details = "Missing SPNs: $($spnIssues.RequiredSPN -join ', ')"
