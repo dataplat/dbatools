@@ -170,8 +170,12 @@ function Copy-DbaAgentJob {
                     DateTime          = [DbaDateTime](Get-Date)
                 }
 
-                if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) {
+                if ((Test-Bound 'Job') -and $jobName -notin $Job) {
                     Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
+                    continue
+                }
+                if ((Test-Bound 'ExcludeJob') -and $jobName -in $ExcludeJob) {
+                    Write-Message -Level Verbose -Message "Job [$jobName] excluded. Skipping."
                     continue
                 }
                 Write-Message -Message "Working on job: $jobName" -Level Verbose
