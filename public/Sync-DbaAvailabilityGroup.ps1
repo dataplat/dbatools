@@ -335,7 +335,19 @@ function Sync-DbaAvailabilityGroup {
 
             if ($Exclude -notcontains "AgentJob") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
-                Copy-DbaAgentJob -Source $server -Destination $secondaries -Force:$force -Job $Job -ExcludeJob $ExcludeJob -DisableOnDestination:$DisableJobOnDestination
+                $splatCopyJob = @{
+                    Source                 = $server
+                    Destination            = $secondaries
+                    Force                  = $force
+                    DisableOnDestination   = $DisableJobOnDestination
+                }
+                if (Test-Bound 'Job') {
+                    $splatCopyJob['Job'] = $Job
+                }
+                if (Test-Bound 'ExcludeJob') {
+                    $splatCopyJob['ExcludeJob'] = $ExcludeJob
+                }
+                Copy-DbaAgentJob @splatCopyJob
             }
 
             if ($Exclude -notcontains "LoginPermissions") {

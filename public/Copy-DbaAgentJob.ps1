@@ -127,7 +127,17 @@ function Copy-DbaAgentJob {
     begin {
         if ($Source) {
             try {
-                $InputObject = Get-DbaAgentJob -SqlInstance $Source -SqlCredential $SourceSqlCredential -Job $Job -ExcludeJob $ExcludeJob
+                $splatGetJob = @{
+                    SqlInstance   = $Source
+                    SqlCredential = $SourceSqlCredential
+                }
+                if (Test-Bound 'Job') {
+                    $splatGetJob['Job'] = $Job
+                }
+                if (Test-Bound 'ExcludeJob') {
+                    $splatGetJob['ExcludeJob'] = $ExcludeJob
+                }
+                $InputObject = Get-DbaAgentJob @splatGetJob
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
                 return
