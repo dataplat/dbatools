@@ -72,7 +72,6 @@ function Export-DbaDacPackage {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-
         Minimum SQL Server Version: SQL Server 2008 R2 (10.50) - DAC Framework requirement
 
     .LINK
@@ -222,16 +221,32 @@ WHERE database_id > 4  -- Exclude system databases (master=1, tempdb=2, model=3,
   AND state = 0        -- Only ONLINE databases (OnlyAccessible equivalent)
 "@
 
-            # Add ExcludeDatabase filter if specified
+            $sqlParams = @{}
+
+            # Add ExcludeDatabase filter if specified (using parameterized queries to prevent SQL injection)
             if ($ExcludeDatabase) {
-                $excludedDatabaseList = $ExcludeDatabase | ForEach-Object { "'$_'" }
-                $query += "`n  AND name NOT IN ($($excludedDatabaseList -join ","))"
+                $placeholders = @()
+                for ($i = 0; $i -lt $ExcludeDatabase.Count; $i++) {
+                    $placeholders += "@exclude$i"
+                    $sqlParams["exclude$i"] = $ExcludeDatabase[$i]
+                }
+                $query += "`n  AND name NOT IN ($($placeholders -join ','))"
             }
 
             $query += "`nORDER BY name"
 
             Write-Message -Level Verbose -Message "Executing query: $query"
-            $dbNames = Invoke-DbaQuery -SqlInstance $server -Query $query -EnableException | Select-Object -ExpandProperty name
+
+            $splatQuery = @{
+                SqlInstance     = $server
+                Query           = $query
+                EnableException = $true
+            }
+            if ($sqlParams.Count -gt 0) {
+                $splatQuery.SqlParameter = $sqlParams
+            }
+
+            $dbNames = Invoke-DbaQuery @splatQuery | Select-Object -ExpandProperty name
 
             # Apply Database filter if specified
             if ($Database) {
