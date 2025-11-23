@@ -86,6 +86,8 @@ Describe $CommandName -Tag IntegrationTests {
         $tablename3 = "dbatoolssci2_$(Get-Random)"
         $tablename4 = "dbatoolssci2_$(Get-Random)"
         $tablename5 = "dbatoolssci2_$(Get-Random)"
+        $tablenameNode = "dbatoolssci_node_$(Get-Random)"
+        $tablenameEdge = "dbatoolssci_edge_$(Get-Random)"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -220,6 +222,32 @@ Describe $CommandName -Tag IntegrationTests {
             $tableWithSchema[0] | Should -Be "CREATE SCHEMA [$schemaName]"
             $tableWithSchema[2] | Should -Match "$schemaName"
             $tableWithSchema[2] | Should -Match "$tableName"
+        }
+    }
+    Context "Should create graph tables with IsNode and IsEdge switches" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        }
+        It "Creates a node table when -IsNode is specified" {
+            $map = @{
+                Name     = "NodeId"
+                Type     = "int"
+                Nullable = $false
+            }
+            $result = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablenameNode -ColumnMap $map -IsNode
+            $result.Name | Should -Be $tablenameNode
+            $result.IsNode | Should -BeTrue
+        }
+        It "Creates an edge table when -IsEdge is specified" {
+            $map = @{
+                Name     = "EdgeProperty"
+                Type     = "varchar"
+                MaxLength = 50
+                Nullable = $true
+            }
+            $result = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablenameEdge -ColumnMap $map -IsEdge
+            $result.Name | Should -Be $tablenameEdge
+            $result.IsEdge | Should -BeTrue
         }
     }
 }

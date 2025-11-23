@@ -454,7 +454,7 @@ function New-DbaDbTable {
                     $properties = $PSBoundParameters | Where-Object Key -notin 'SqlInstance', 'SqlCredential', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException', 'Passthru'
 
                     foreach ($prop in $properties.Key) {
-                        $object.$prop = $prop
+                        $object.$prop = $properties[$prop]
                     }
 
                     foreach ($column in $ColumnObject) {
