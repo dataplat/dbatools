@@ -219,21 +219,26 @@ function Set-DbaAgReplica {
                             $isLoadBalanced = $true
                         }
 
+                        # Always use SetLoadBalancedReadOnlyRoutingList as it's available in all SMO versions
+                        # For simple ordered lists, convert each server to its own group to maintain order
+                        $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
+
                         if ($isLoadBalanced) {
-                            # Use load-balanced routing with nested lists
-                            $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
+                            # Already nested - use as-is for load-balanced routing
                             foreach ($rolist in $ReadOnlyRoutingList) {
                                 $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
                             }
-                            $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                         } else {
-                            # Use simple ordered routing list
-                            $rorl = New-Object System.Collections.Generic.List[string]
+                            # Simple ordered list - wrap each server in its own list to maintain priority order
+                            # @('Server1', 'Server2') becomes @(@('Server1'), @('Server2'))
                             foreach ($server in $ReadOnlyRoutingList) {
-                                $null = $rorl.Add([string]$server)
+                                $serverList = New-Object System.Collections.Generic.List[string]
+                                $null = $serverList.Add([string]$server)
+                                $null = $rorl.Add($serverList)
                             }
-                            $null = $agreplica.SetReadOnlyRoutingList($rorl)
                         }
+
+                        $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                     }
 
                     if ($SessionTimeout) {
