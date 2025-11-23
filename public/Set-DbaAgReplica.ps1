@@ -209,11 +209,31 @@ function Set-DbaAgReplica {
                     }
 
                     if ($ReadOnlyRoutingList) {
-                        $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
-                        foreach ($rolist in $ReadOnlyRoutingList) {
-                            $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
+                        # Detect if this is a simple ordered list or a load-balanced (nested) list
+                        # Simple list: @('Server1', 'Server2') - routes in order
+                        # Load-balanced list: @(,('Server1', 'Server2')) or @(('Server1'),('Server2','Server3')) - load balances within groups
+                        $isLoadBalanced = $false
+
+                        # Check if the first element is an array/list (indicates load-balanced routing)
+                        if ($ReadOnlyRoutingList.Count -gt 0 -and $ReadOnlyRoutingList[0] -is [System.Array]) {
+                            $isLoadBalanced = $true
                         }
-                        $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
+
+                        if ($isLoadBalanced) {
+                            # Use load-balanced routing with nested lists
+                            $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
+                            foreach ($rolist in $ReadOnlyRoutingList) {
+                                $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
+                            }
+                            $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
+                        } else {
+                            # Use simple ordered routing list
+                            $rorl = New-Object System.Collections.Generic.List[string]
+                            foreach ($server in $ReadOnlyRoutingList) {
+                                $null = $rorl.Add([string]$server)
+                            }
+                            $null = $agreplica.SetReadOnlyRoutingList($rorl)
+                        }
                     }
 
                     if ($SessionTimeout) {
@@ -228,7 +248,7 @@ function Set-DbaAgReplica {
                     $agreplica
 
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to modify replica $($agreplica.Name) in availability group $($agreplica.Parent.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }
