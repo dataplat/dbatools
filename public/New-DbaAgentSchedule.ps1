@@ -603,6 +603,7 @@ function New-DbaAgentSchedule {
                 }
                 $null = $server.Refresh()
                 $null = $server.JobServer.Refresh()
+                $null = $server.JobServer.SharedSchedules.Refresh()
                 Add-TeppCacheItem -SqlInstance $server -Type schedule -Name $Schedule
             }
             if ($Job) {

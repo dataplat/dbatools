@@ -482,6 +482,9 @@ function Set-DbaAgentSchedule {
 
                                 $JobSchedule.Alter()
 
+                                # Refresh the cache to pick up the changes
+                                $server.JobServer.SharedSchedules.Refresh()
+
                                 # Return updated schedule
                                 Get-DbaAgentSchedule -SqlInstance $server -ScheduleUid $JobSchedule.ScheduleUid
                             } catch {
