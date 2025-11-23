@@ -125,6 +125,23 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Regression test for issue #9982" {
+        It "copies all jobs when -Job parameter is not specified" {
+            # Copy all jobs without specifying -Job parameter, using -Force to ensure they copy even if they exist
+            $results = Copy-DbaAgentJob -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Force
+
+            # Both jobs should be copied
+            $results.Name | Should -Contain "dbatoolsci_copyjob"
+            $results.Name | Should -Contain "dbatoolsci_copyjob_disabled"
+            $results.Status | Should -Not -Contain "Skipped"
+            $results.Status | Should -Not -Contain "Failed"
+
+            # Verify jobs exist on destination
+            $destJobsCopied = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
+            $destJobsCopied.Count | Should -BeGreaterOrEqual 2
+        }
+    }
+
     Context "UseLastModified parameter" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
