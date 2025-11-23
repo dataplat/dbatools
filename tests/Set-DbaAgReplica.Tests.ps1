@@ -104,5 +104,29 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName | Select-Object -First 1 | Set-DbaAgReplica @splatRoutingList
             $warn | Should -Match "does not exist. Only availability"
         }
+
+        It "Should handle simple array for ReadOnlyRoutingList without errors (issue #9987)" {
+            $splatSimpleArray = @{
+                SqlInstance         = $TestConfig.instance3
+                AvailabilityGroup   = $agName
+                Replica             = $replicaName
+                ReadOnlyRoutingList = @("replica1", "replica2")
+                WarningAction       = "SilentlyContinue"
+                ErrorAction         = "Stop"
+            }
+            { Set-DbaAgReplica @splatSimpleArray } | Should -Not -Throw
+        }
+
+        It "Should handle load-balanced array for ReadOnlyRoutingList without errors (issue #9987)" {
+            $splatLoadBalanced = @{
+                SqlInstance         = $TestConfig.instance3
+                AvailabilityGroup   = $agName
+                Replica             = $replicaName
+                ReadOnlyRoutingList = @(@("replica1", "replica2"))
+                WarningAction       = "SilentlyContinue"
+                ErrorAction         = "Stop"
+            }
+            { Set-DbaAgReplica @splatLoadBalanced } | Should -Not -Throw
+        }
     }
 } #$TestConfig.instance2 for appveyor

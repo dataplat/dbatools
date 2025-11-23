@@ -209,11 +209,28 @@ function Set-DbaAgReplica {
                     }
 
                     if ($ReadOnlyRoutingList) {
-                        $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
-                        foreach ($rolist in $ReadOnlyRoutingList) {
-                            $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
+                        # Detect if this is a simple array or load-balanced array (array of arrays)
+                        # Simple array: @('Replica1', 'Replica2')
+                        # Load-balanced array: @(@('Replica1', 'Replica2'), @('Replica3'))
+                        $isLoadBalanced = $false
+                        if ($ReadOnlyRoutingList.Count -gt 0 -and $ReadOnlyRoutingList[0] -is [array]) {
+                            $isLoadBalanced = $true
                         }
-                        $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
+
+                        if ($isLoadBalanced) {
+                            # Use SetLoadBalancedReadOnlyRoutingList for nested arrays
+                            $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
+                            foreach ($rolist in $ReadOnlyRoutingList) {
+                                $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
+                            }
+                            $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
+                        } else {
+                            # Use ReadonlyRoutingList property for simple arrays
+                            $agreplica.ReadonlyRoutingList.Clear()
+                            foreach ($replica in $ReadOnlyRoutingList) {
+                                $agreplica.ReadonlyRoutingList.Add($replica)
+                            }
+                        }
                     }
 
                     if ($SessionTimeout) {
