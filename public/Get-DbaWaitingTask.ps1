@@ -83,9 +83,9 @@ function Get-DbaWaitingTask {
                 END AS [NodeId],
                 [eqmg].[dop] AS [Dop],
                 [er].[database_id] AS [DbId],
-                [est].text AS [SqlText],
+                [est].[text] AS [SqlText],
                 [eqp].[query_plan] AS [QueryPlan],
-                CAST ('https://www.sqlskills.com/help/waits/' + [owt].[wait_type] as XML) AS [URL]
+                CAST ('https://www.sqlskills.com/help/waits/' + [owt].[wait_type] AS XML) AS [URL]
             FROM sys.dm_os_waiting_tasks [owt]
             INNER JOIN sys.dm_os_tasks [ot] ON
                 [owt].[waiting_task_address] = [ot].[task_address]

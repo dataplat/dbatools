@@ -68,10 +68,22 @@ function Invoke-DbaDbLogShipping {
     .PARAMETER SharedPath
         Specifies the network share path where transaction log backup files will be stored. Must be in UNC format (\\server\\share).
         The function automatically creates a subdirectory for each database under this path. Both source and destination instances need access to this location.
+        Mutually exclusive with AzureBaseUrl parameter.
 
     .PARAMETER LocalPath
         Sets the local backup path on the source server when different from the shared path.
         Use this when the source server accesses the backup location via a local path but other servers need to access it via the network share.
+        Not applicable when using Azure blob storage (AzureBaseUrl).
+
+    .PARAMETER AzureBaseUrl
+        Specifies the Azure blob storage container URL where transaction log backups will be stored.
+        Format: https://storageaccount.blob.core.windows.net/container/
+        When specified, traditional file-based copy jobs are skipped as backups go directly to Azure blob storage.
+        Mutually exclusive with SharedPath parameter. Requires SQL Server 2012 or later.
+
+    .PARAMETER AzureCredential
+        Specifies the SQL Server credential name for Azure storage access. When omitted, uses SAS token authentication with a credential named to match the AzureBaseUrl.
+        The credential must exist on both source and destination SQL Server instances before setting up log shipping.
 
     .PARAMETER BackupJob
         Specifies the prefix for the SQL Agent backup job name that performs transaction log backups.
@@ -360,7 +372,7 @@ function Invoke-DbaDbLogShipping {
 
     .NOTES
         Tags: LogShipping
-        Author: Sander Stad (@sqlstad), sqlstad.nl
+        Author: Sander Stad (@sqlstad), sqlstad.nl + Claude (Azure blob storage support)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -410,8 +422,37 @@ function Invoke-DbaDbLogShipping {
         Sets up log shipping with all defaults except that a backup file is generated.
         The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
 
+    .EXAMPLE
+        PS C:\> # First, create the SAS credential on both instances
+        PS C:\> $azureUrl = "https://mystorageaccount.blob.core.windows.net/logshipping"
+        PS C:\> $cred = Get-Credential -Message "Paste SAS token (without leading ?) in password field" -UserName "SHARED ACCESS SIGNATURE"
+        PS C:\> $splatCred = @{
+        >> SqlInstance    = "sql1", "sql2"
+        >> Name           = $azureUrl
+        >> Identity       = $cred.UserName
+        >> SecurePassword = $cred.Password
+        >> }
+        PS C:\> New-DbaCredential @splatCred
+        PS C:\>
+        PS C:\> # Then set up log shipping
+        PS C:\> $splatLogShipping = @{
+        >> SourceSqlInstance        = "sql1"
+        >> DestinationSqlInstance   = "sql2"
+        >> Database                 = "db1"
+        >> AzureBaseUrl             = $azureUrl
+        >> BackupScheduleFrequencyType = "daily"
+        >> BackupScheduleFrequencyInterval = 1
+        >> RestoreScheduleFrequencyType = "daily"
+        >> RestoreScheduleFrequencyInterval = 1
+        >> GenerateFullBackup       = $true
+        >> Force                    = $true
+        >> }
+        PS C:\> Invoke-DbaDbLogShipping @splatLogShipping
+
+        Sets up log shipping for database "db1" to Azure blob storage using SAS token authentication.
+
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
 
     param(
         [parameter(Mandatory)]
@@ -432,11 +473,12 @@ function Invoke-DbaDbLogShipping {
         $DestinationCredential,
         [Parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Database,
-        [parameter(Mandatory)]
         [Alias("BackupNetworkPath")]
         [string]$SharedPath,
         [Alias("BackupLocalPath")]
         [string]$LocalPath,
+        [string]$AzureBaseUrl,
+        [string]$AzureCredential,
         [string]$BackupJob,
         [int]$BackupRetention,
         [string]$BackupSchedule,
@@ -549,7 +591,13 @@ function Invoke-DbaDbLogShipping {
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
         $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
         $RegexUnc = '^\\(?:\\[^<>:`"/\\|?*]+)+$'
+        $RegexAzureUrl = '^https?://[a-z0-9]{3,24}\.blob\.core\.windows\.net/[a-z0-9]([a-z0-9\-]*[a-z0-9])?/?'
 
+        # Validate mutually exclusive parameters for backup destination
+        if (-not (Test-Bound -ParameterName "SharedPath", "AzureBaseUrl" -Min 1 -Max 1)) {
+            Stop-Function -Message "You must specify either -SharedPath (for traditional file share log shipping) or -AzureBaseUrl (for Azure blob storage log shipping), but not both." -Target $SourceSqlInstance
+            return
+        }
 
         # Check the connection timeout
         if ($SourceServer.ConnectionContext.StatementTimeout -ne 0) {
@@ -557,14 +605,40 @@ function Invoke-DbaDbLogShipping {
             Write-Message -Message "Connection timeout of $SourceServer is set to 0" -Level Verbose
         }
 
-        # Check the backup network path
-        Write-Message -Message "Testing backup network path $SharedPath" -Level Verbose
-        if ((Test-DbaPath -Path $SharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
-            Stop-Function -Message "Backup network path $SharedPath is not valid or can't be reached." -Target $SourceSqlInstance
-            return
-        } elseif ($SharedPath -notmatch $RegexUnc) {
-            Stop-Function -Message "Backup network path $SharedPath has to be in the form of \\server\share." -Target $SourceSqlInstance
-            return
+        # Check if using Azure blob storage or traditional file share
+        $UseAzure = $PSBoundParameters.ContainsKey("AzureBaseUrl")
+
+        if ($UseAzure) {
+            # Validate Azure URL format
+            Write-Message -Message "Using Azure blob storage: $AzureBaseUrl" -Level Verbose
+
+            # Trim trailing slashes
+            $AzureBaseUrl = $AzureBaseUrl.TrimEnd("/")
+
+            if ($AzureBaseUrl -notmatch $RegexAzureUrl) {
+                Stop-Function -Message "Azure blob storage URL $AzureBaseUrl must be in the format https://storageaccount.blob.core.windows.net/container (example: https://mystorageaccount.blob.core.windows.net/logshipping)" -Target $SourceSqlInstance
+                return
+            }
+
+            # Check SQL Server version (Azure backup requires SQL Server 2012+)
+            if ($SourceServer.Version.Major -lt 11) {
+                Stop-Function -Message "Azure blob storage backup requires SQL Server 2012 or later. Source instance is version $($SourceServer.Version.Major)" -Target $SourceSqlInstance
+                return
+            }
+
+            # For Azure, we'll use the URL as both the backup directory and share
+            $SharedPath = $AzureBaseUrl
+            $LocalPath = $AzureBaseUrl
+        } else {
+            # Check the backup network path
+            Write-Message -Message "Testing backup network path $SharedPath" -Level Verbose
+            if ((Test-DbaPath -Path $SharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential) -ne $true) {
+                Stop-Function -Message "Backup network path $SharedPath is not valid or can't be reached." -Target $SourceSqlInstance
+                return
+            } elseif ($SharedPath -notmatch $RegexUnc) {
+                Stop-Function -Message "Backup network path $SharedPath has to be in the form of \\server\share." -Target $SourceSqlInstance
+                return
+            }
         }
 
         # Check the backup compression
@@ -573,7 +647,7 @@ function Invoke-DbaDbLogShipping {
                 Write-Message -Message "Setting backup compression to 1." -Level Verbose
                 [bool]$BackupCompression = 1
             } else {
-                $backupServerSetting = (Get-DbaSpConfigure -SqlInstance $SourceSqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
+                $backupServerSetting = (Get-DbaSpConfigure -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -ConfigName DefaultBackupCompression).ConfiguredValue
                 Write-Message -Message "Setting backup compression to default server setting $backupServerSetting." -Level Verbose
                 [bool]$BackupCompression = $backupServerSetting
             }
@@ -911,14 +985,19 @@ function Invoke-DbaDbLogShipping {
 
             # Check the copy destination
             if (-not $CopyDestinationFolder) {
-                # Make a default copy destination by retrieving the backup folder and adding a directory
-                $CopyDestinationFolder = "$($DestinationServer.Settings.BackupDirectory)\Logshipping"
-
-                # Check to see if the path already exists
-                Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
-                if (Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) {
-                    Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
+                if ($UseAzure) {
+                    # For Azure, use the same URL as source (no actual copy needed)
+                    $CopyDestinationFolder = $AzureBaseUrl
+                    Write-Message -Message "Using Azure blob storage URL for copy destination (no local copy): $CopyDestinationFolder" -Level Verbose
                 } else {
+                    # Make a default copy destination by retrieving the backup folder and adding a directory
+                    $CopyDestinationFolder = "$($DestinationServer.Settings.BackupDirectory)\Logshipping"
+
+                    # Check to see if the path already exists
+                    Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
+                    if (Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) {
+                        Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
+                    } else {
                     # Check if force is being used
                     if (-not $Force) {
                         # Set up the confirm part
@@ -981,21 +1060,25 @@ function Invoke-DbaDbLogShipping {
                             Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $destInstance -ErrorRecord $_
                             return
                         }
-                    } # else not force
-                } # if test path copy destination
+                        } # else not force
+                    } # if test path copy destination
+                } # else not Azure
             } # if not copy destination
 
-            Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
-            if ((Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                $setupResult = "Failed"
-                $comment = "Copy destination folder $CopyDestinationFolder is not valid or can't be reached"
-                Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $destInstance
-                return
-            } elseif ($CopyDestinationFolder.StartsWith("\\") -and $CopyDestinationFolder -notmatch $RegexUnc) {
-                $setupResult = "Failed"
-                $comment = "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share"
-                Stop-Function -Message "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share." -Target $destInstance
-                return
+            # Validate copy destination (skip for Azure since it's a URL)
+            if (-not $UseAzure) {
+                Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
+                if ((Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
+                    $setupResult = "Failed"
+                    $comment = "Copy destination folder $CopyDestinationFolder is not valid or can't be reached"
+                    Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $destInstance
+                    return
+                } elseif ($CopyDestinationFolder.StartsWith("\\") -and $CopyDestinationFolder -notmatch $RegexUnc) {
+                    $setupResult = "Failed"
+                    $comment = "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share"
+                    Stop-Function -Message "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share." -Target $destInstance
+                    return
+                }
             }
 
             if (-not ($SecondaryDatabasePrefix -or $SecondaryDatabaseSuffix) -and ($SourceServer.Name -eq $DestinationServer.Name) -and ($SourceServer.InstanceName -eq $DestinationServer.InstanceName)) {
@@ -1011,14 +1094,16 @@ function Invoke-DbaDbLogShipping {
 
             # Check if standby is being used
             if ($Standby) {
-                # Check the stand-by directory
+                # Check the stand-by directory (skip for Azure SQL as it manages storage)
                 if ($StandbyDirectory) {
                     # Check if the path is reachable for the destination server
-                    if ((Test-DbaPath -Path $StandbyDirectory -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                        $setupResult = "Failed"
-                        $comment = "The directory $StandbyDirectory cannot be reached by the destination instance"
-                        Stop-Function -Message "The directory $StandbyDirectory cannot be reached by the destination instance. Please check the permission and credentials." -Target $destInstance
-                        return
+                    if (-not $DestinationServer.IsAzure) {
+                        if ((Test-DbaPath -Path $StandbyDirectory -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
+                            $setupResult = "Failed"
+                            $comment = "The directory $StandbyDirectory cannot be reached by the destination instance"
+                            Stop-Function -Message "The directory $StandbyDirectory cannot be reached by the destination instance. Please check the permission and credentials." -Target $destInstance
+                            return
+                        }
                     }
                 } elseif (-not $StandbyDirectory -and $Force) {
                     $StandbyDirectory = $destInstance.BackupDirectory
@@ -1082,18 +1167,25 @@ function Invoke-DbaDbLogShipping {
                 Write-Message -Message "Backup local path set to $DatabaseLocalPath." -Level Verbose
 
                 # Setting the backup network path for the database
-                if ($SharedPath.EndsWith("\")) {
-                    $DatabaseSharedPath = "$SharedPath$($db.Name)"
+                if ($UseAzure) {
+                    # For Azure, append database name to URL path
+                    $DatabaseSharedPath = "$SharedPath/$($db.Name)"
+                    $DatabaseLocalPath = $DatabaseSharedPath
+                    Write-Message -Message "Azure backup URL set to $DatabaseSharedPath." -Level Verbose
                 } else {
-                    $DatabaseSharedPath = "$SharedPath\$($db.Name)"
+                    if ($SharedPath.EndsWith("\")) {
+                        $DatabaseSharedPath = "$SharedPath$($db.Name)"
+                    } else {
+                        $DatabaseSharedPath = "$SharedPath\$($db.Name)"
+                    }
+                    Write-Message -Message "Backup network path set to $DatabaseSharedPath." -Level Verbose
                 }
-                Write-Message -Message "Backup network path set to $DatabaseSharedPath." -Level Verbose
 
 
-                # Checking if the database network path exists
-                if ($setupResult -ne 'Failed') {
+                # Checking if the database network path exists (skip for Azure)
+                if ($setupResult -ne 'Failed' -and -not $UseAzure) {
                     Write-Message -Message "Testing database backup network path $DatabaseSharedPath" -Level Verbose
-                    if ((Test-DbaPath -Path $DatabaseSharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
+                    if ((Test-DbaPath -Path $DatabaseSharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential) -ne $true) {
                         # To to create the backup directory for the database
                         try {
                             Write-Message -Message "Database backup network path $DatabaseSharedPath not found. Trying to create it.." -Level Verbose
@@ -1195,40 +1287,44 @@ function Invoke-DbaDbLogShipping {
                         }
                         Write-Message -Message "Restore log folder is set to $DatabaseRestoreLogFolder" -Level Verbose
 
-                        # Check if the restore data folder exists
-                        Write-Message -Message "Testing database restore data path $DatabaseRestoreDataFolder" -Level Verbose
-                        if ((Test-DbaPath  -Path $DatabaseRestoreDataFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                            if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder $DatabaseRestoreDataFolder on $DestinationServerName")) {
-                                # Try creating the data folder
-                                try {
-                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
-                                        Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
-                                        $null = New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Force:$Force
+                        # Check if the restore data folder exists (skip for Azure SQL as it manages storage)
+                        if (-not $DestinationServer.IsAzure) {
+                            Write-Message -Message "Testing database restore data path $DatabaseRestoreDataFolder" -Level Verbose
+                            if ((Test-DbaPath  -Path $DatabaseRestoreDataFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
+                                if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder $DatabaseRestoreDataFolder on $DestinationServerName")) {
+                                    # Try creating the data folder
+                                    try {
+                                        Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                                            Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
+                                            $null = New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Force:$Force
+                                        }
+                                    } catch {
+                                        $setupResult = "Failed"
+                                        $comment = "Something went wrong creating the restore data directory"
+                                        Stop-Function -Message "Something went wrong creating the restore data directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                                     }
-                                } catch {
-                                    $setupResult = "Failed"
-                                    $comment = "Something went wrong creating the restore data directory"
-                                    Stop-Function -Message "Something went wrong creating the restore data directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                                 }
                             }
                         }
 
-                        # Check if the restore log folder exists
-                        Write-Message -Message "Testing database restore log path $DatabaseRestoreLogFolder" -Level Verbose
-                        if ((Test-DbaPath  -Path $DatabaseRestoreLogFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                            if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder $DatabaseRestoreLogFolder on $DestinationServerName")) {
-                                # Try creating the log folder
-                                try {
-                                    Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-
-                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                        # Check if the restore log folder exists (skip for Azure SQL as it manages storage)
+                        if (-not $DestinationServer.IsAzure) {
+                            Write-Message -Message "Testing database restore log path $DatabaseRestoreLogFolder" -Level Verbose
+                            if ((Test-DbaPath  -Path $DatabaseRestoreLogFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
+                                if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder $DatabaseRestoreLogFolder on $DestinationServerName")) {
+                                    # Try creating the log folder
+                                    try {
                                         Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-                                        $null = New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Force:$Force
+
+                                        Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                                            Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
+                                            $null = New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Force:$Force
+                                        }
+                                    } catch {
+                                        $setupResult = "Failed"
+                                        $comment = "Something went wrong creating the restore log directory"
+                                        Stop-Function -Message "Something went wrong creating the restore log directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                                     }
-                                } catch {
-                                    $setupResult = "Failed"
-                                    $comment = "Something went wrong creating the restore log directory"
-                                    Stop-Function -Message "Something went wrong creating the restore log directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                                 }
                             }
                         }
@@ -1237,20 +1333,26 @@ function Invoke-DbaDbLogShipping {
                     # Check if the full backup path can be reached
                     if ($setupResult -ne 'Failed') {
                         if ($FullBackupPath) {
-                            Write-Message -Message "Testing full backup path $FullBackupPath" -Level Verbose
-                            if ((Test-DbaPath -Path $FullBackupPath -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                                $setupResult = "Failed"
-                                $comment = "The path to the full backup could not be reached"
-                                Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
+                            # Skip path validation for Azure blob URLs
+                            if (-not $UseAzure) {
+                                Write-Message -Message "Testing full backup path $FullBackupPath" -Level Verbose
+                                if ((Test-DbaPath -Path $FullBackupPath -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
+                                    $setupResult = "Failed"
+                                    $comment = "The path to the full backup could not be reached"
+                                    Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
+                                }
                             }
 
                             $BackupPath = $FullBackupPath
                         } elseif ($UseBackupFolder.Length -ge 1) {
-                            Write-Message -Message "Testing backup folder $UseBackupFolder" -Level Verbose
-                            if ((Test-DbaPath -Path $UseBackupFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
-                                $setupResult = "Failed"
-                                $comment = "The path to the backup folder could not be reached"
-                                Stop-Function -Message ("The path to the backup folder could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
+                            # Skip path validation for Azure blob URLs
+                            if (-not $UseAzure) {
+                                Write-Message -Message "Testing backup folder $UseBackupFolder" -Level Verbose
+                                if ((Test-DbaPath -Path $UseBackupFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
+                                    $setupResult = "Failed"
+                                    $comment = "The path to the backup folder could not be reached"
+                                    Stop-Function -Message ("The path to the backup folder could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
+                                }
                             }
 
                             $BackupPath = $UseBackupFolder
@@ -1262,19 +1364,24 @@ function Invoke-DbaDbLogShipping {
 
                             # Check if there was a last backup
                             if ($null -ne $LastBackup) {
-                                # Test the path to the backup
-                                Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
-                                if ((Test-DbaPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
-                                    $setupResult = "Failed"
-                                    $comment = "The full backup could not be found"
-                                    Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials" -Target $destInstance -Continue
+                                # Skip path validation for Azure blob URLs
+                                if (-not $UseAzure) {
+                                    # Test the path to the backup
+                                    Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
+                                    if ((Test-DbaPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential) -ne $true) {
+                                        $setupResult = "Failed"
+                                        $comment = "The full backup could not be found"
+                                        Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials" -Target $destInstance -Continue
+                                    }
+                                    # Check if the source for the last full backup is remote and the backup is on a shared location
+                                    elseif (($LastBackup.Computername -ne $SourceServerName) -and (($LastBackup[-1]).Path[-1].StartsWith('\\') -eq $false)) {
+                                        $setupResult = "Failed"
+                                        $comment = "The last full backup is not located on shared location"
+                                        Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -Target $destInstance -Continue
+                                    }
                                 }
-                                # Check if the source for the last full backup is remote and the backup is on a shared location
-                                elseif (($LastBackup.Computername -ne $SourceServerName) -and (($LastBackup[-1]).Path[-1].StartsWith('\\') -eq $false)) {
-                                    $setupResult = "Failed"
-                                    $comment = "The last full backup is not located on shared location"
-                                    Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -Target $destInstance -Continue
-                                } else {
+
+                                if ($setupResult -ne 'Failed') {
                                     #$FullBackupPath = $LastBackup.Path
                                     $BackupPath = $LastBackup.Path
                                     Write-Message -Message "Full backup found for $db. Path $BackupPath" -Level Verbose
@@ -1287,20 +1394,32 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Set the copy destination folder to include the database name
-                if ($CopyDestinationFolder.EndsWith("\")) {
-                    $DatabaseCopyDestinationFolder = "$CopyDestinationFolder$($db.Name)"
+                if ($UseAzure) {
+                    # For Azure, append database name to URL path
+                    $DatabaseCopyDestinationFolder = "$CopyDestinationFolder/$($db.Name)"
+                    Write-Message -Message "Copy destination URL set to $DatabaseCopyDestinationFolder (Azure - no local copy)." -Level Verbose
                 } else {
-                    $DatabaseCopyDestinationFolder = "$CopyDestinationFolder\$($db.Name)"
+                    if ($CopyDestinationFolder.EndsWith("\")) {
+                        $DatabaseCopyDestinationFolder = "$CopyDestinationFolder$($db.Name)"
+                    } else {
+                        $DatabaseCopyDestinationFolder = "$CopyDestinationFolder\$($db.Name)"
+                    }
+                    Write-Message -Message "Copy destination folder set to $DatabaseCopyDestinationFolder." -Level Verbose
                 }
-                Write-Message -Message "Copy destination folder set to $DatabaseCopyDestinationFolder." -Level Verbose
 
                 # Check if the copy job name is set
+                # For Azure, still need to set a name because sp_add_log_shipping_secondary_primary requires it
+                # (the job will be deleted immediately after creation)
                 if ($CopyJob) {
                     $DatabaseCopyJob = "$($CopyJob)$($db.Name)"
                 } else {
                     $DatabaseCopyJob = "LSCopy_$($SourceServerName)_$($db.Name)"
                 }
-                Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
+                if ($UseAzure) {
+                    Write-Message -Message "Copy job name set to $DatabaseCopyJob (will be removed - not needed for Azure)" -Level Verbose
+                } else {
+                    Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
+                }
 
                 # Check if the copy job schedule name is set
                 if ($CopySchedule) {
@@ -1310,10 +1429,10 @@ function Invoke-DbaDbLogShipping {
                     Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose
                 }
 
-                # Check if the copy destination folder exists
-                if ($setupResult -ne 'Failed') {
+                # Check if the copy destination folder exists (skip for Azure blob storage and Azure SQL)
+                if ($setupResult -ne 'Failed' -and -not $UseAzure -and -not $DestinationServer.IsAzure) {
                     Write-Message -Message "Testing database copy destination path $DatabaseCopyDestinationFolder" -Level Verbose
-                    if ((Test-DbaPath -Path $DatabaseCopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                    if ((Test-DbaPath -Path $DatabaseCopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
                         if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
                             try {
                                 Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
@@ -1356,12 +1475,39 @@ function Invoke-DbaDbLogShipping {
                             try {
                                 $Timestamp = Get-Date -format "yyyyMMddHHmmss"
 
-                                $LastBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance `
-                                    -SqlCredential $SourceSqlCredential `
-                                    -BackupDirectory $DatabaseSharedPath `
-                                    -BackupFileName "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak" `
-                                    -Database $($db.Name) `
-                                    -Type Full
+                                if ($UseAzure) {
+                                    # Backup to Azure blob storage - use container base URL only
+                                    # Azure blob names can contain slashes for virtual folders
+                                    $AzureBlobName = "$($db.Name)_FullBackup_PreLogShipping_$Timestamp.bak"
+                                    $splatBackup = @{
+                                        SqlInstance    = $SourceSqlInstance
+                                        SqlCredential  = $SourceSqlCredential
+                                        Database       = $($db.Name)
+                                        AzureBaseUrl   = $SharedPath
+                                        BackupFileName = $AzureBlobName
+                                        Type           = "Full"
+                                    }
+
+                                    # Only specify credential for storage account key authentication
+                                    # For SAS tokens, SQL Server finds credential automatically by URL
+                                    if ($AzureCredential) {
+                                        $splatBackup.AzureCredential = $AzureCredential
+                                    }
+
+                                    $LastBackup = Backup-DbaDatabase @splatBackup
+                                } else {
+                                    # Backup to file share
+                                    $splatBackup = @{
+                                        SqlInstance     = $SourceSqlInstance
+                                        SqlCredential   = $SourceSqlCredential
+                                        BackupDirectory = $DatabaseSharedPath
+                                        BackupFileName  = "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
+                                        Database        = $($db.Name)
+                                        Type            = "Full"
+                                    }
+
+                                    $LastBackup = Backup-DbaDatabase @splatBackup
+                                }
 
                                 Write-Message -Message "Backup completed." -Level Verbose
 
@@ -1433,28 +1579,34 @@ function Invoke-DbaDbLogShipping {
                                 Write-Message -Message "Start database restore" -Level Verbose
                                 if ($NoRecovery -or (-not $Standby)) {
                                     if ($Force) {
-                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
-                                            -SqlCredential $DestinationSqlCredential `
-                                            -Path $BackupPath `
-                                            -DestinationFilePrefix $SecondaryDatabasePrefix `
-                                            -DestinationFileSuffix $SecondaryDatabaseSuffix `
-                                            -DestinationDataDirectory $DatabaseRestoreDataFolder `
-                                            -DestinationLogDirectory $DatabaseRestoreLogFolder `
-                                            -DatabaseName $SecondaryDatabase `
-                                            -DirectoryRecurse `
-                                            -NoRecovery `
-                                            -WithReplace
+                                        $splatRestore = @{
+                                            SqlInstance               = $destInstance
+                                            SqlCredential             = $DestinationSqlCredential
+                                            Path                      = $BackupPath
+                                            DestinationFilePrefix     = $SecondaryDatabasePrefix
+                                            DestinationFileSuffix     = $SecondaryDatabaseSuffix
+                                            DestinationDataDirectory  = $DatabaseRestoreDataFolder
+                                            DestinationLogDirectory   = $DatabaseRestoreLogFolder
+                                            DatabaseName              = $SecondaryDatabase
+                                            DirectoryRecurse          = $true
+                                            NoRecovery                = $true
+                                            WithReplace               = $true
+                                        }
+                                        $null = Restore-DbaDatabase @splatRestore
                                     } else {
-                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
-                                            -SqlCredential $DestinationSqlCredential `
-                                            -Path $BackupPath `
-                                            -DestinationFilePrefix $SecondaryDatabasePrefix `
-                                            -DestinationFileSuffix $SecondaryDatabaseSuffix `
-                                            -DestinationDataDirectory $DatabaseRestoreDataFolder `
-                                            -DestinationLogDirectory $DatabaseRestoreLogFolder `
-                                            -DatabaseName $SecondaryDatabase `
-                                            -DirectoryRecurse `
-                                            -NoRecovery
+                                        $splatRestore = @{
+                                            SqlInstance               = $destInstance
+                                            SqlCredential             = $DestinationSqlCredential
+                                            Path                      = $BackupPath
+                                            DestinationFilePrefix     = $SecondaryDatabasePrefix
+                                            DestinationFileSuffix     = $SecondaryDatabaseSuffix
+                                            DestinationDataDirectory  = $DatabaseRestoreDataFolder
+                                            DestinationLogDirectory   = $DatabaseRestoreLogFolder
+                                            DatabaseName              = $SecondaryDatabase
+                                            DirectoryRecurse          = $true
+                                            NoRecovery                = $true
+                                        }
+                                        $null = Restore-DbaDatabase @splatRestore
                                     }
                                 }
 
@@ -1465,26 +1617,32 @@ function Invoke-DbaDbLogShipping {
 
                                     # Check if credentials need to be used
                                     if ($DestinationSqlCredential) {
-                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
-                                            -SqlCredential $DestinationSqlCredential `
-                                            -Path $BackupPath `
-                                            -DestinationFilePrefix $SecondaryDatabasePrefix `
-                                            -DestinationFileSuffix $SecondaryDatabaseSuffix `
-                                            -DestinationDataDirectory $DatabaseRestoreDataFolder `
-                                            -DestinationLogDirectory $DatabaseRestoreLogFolder `
-                                            -DatabaseName $SecondaryDatabase `
-                                            -DirectoryRecurse `
-                                            -StandbyDirectory $StandbyDirectory
+                                        $splatRestoreStandby = @{
+                                            SqlInstance               = $destInstance
+                                            SqlCredential             = $DestinationSqlCredential
+                                            Path                      = $BackupPath
+                                            DestinationFilePrefix     = $SecondaryDatabasePrefix
+                                            DestinationFileSuffix     = $SecondaryDatabaseSuffix
+                                            DestinationDataDirectory  = $DatabaseRestoreDataFolder
+                                            DestinationLogDirectory   = $DatabaseRestoreLogFolder
+                                            DatabaseName              = $SecondaryDatabase
+                                            DirectoryRecurse          = $true
+                                            StandbyDirectory          = $StandbyDirectory
+                                        }
+                                        $null = Restore-DbaDatabase @splatRestoreStandby
                                     } else {
-                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
-                                            -Path $BackupPath `
-                                            -DestinationFilePrefix $SecondaryDatabasePrefix `
-                                            -DestinationFileSuffix $SecondaryDatabaseSuffix `
-                                            -DestinationDataDirectory $DatabaseRestoreDataFolder `
-                                            -DestinationLogDirectory $DatabaseRestoreLogFolder `
-                                            -DatabaseName $SecondaryDatabase `
-                                            -DirectoryRecurse `
-                                            -StandbyDirectory $StandbyDirectory
+                                        $splatRestoreStandby = @{
+                                            SqlInstance               = $destInstance
+                                            Path                      = $BackupPath
+                                            DestinationFilePrefix     = $SecondaryDatabasePrefix
+                                            DestinationFileSuffix     = $SecondaryDatabaseSuffix
+                                            DestinationDataDirectory  = $DatabaseRestoreDataFolder
+                                            DestinationLogDirectory   = $DatabaseRestoreLogFolder
+                                            DatabaseName              = $SecondaryDatabase
+                                            DirectoryRecurse          = $true
+                                            StandbyDirectory          = $StandbyDirectory
+                                        }
+                                        $null = Restore-DbaDatabase @splatRestoreStandby
                                     }
                                 }
                             } catch {
@@ -1506,21 +1664,29 @@ function Invoke-DbaDbLogShipping {
 
                             Write-Message -Message "Configuring logshipping for primary database" -Level Verbose
 
-                            New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
-                                -SqlCredential $SourceSqlCredential `
-                                -Database $($db.Name) `
-                                -BackupDirectory $DatabaseLocalPath `
-                                -BackupJob $DatabaseBackupJob `
-                                -BackupRetention $BackupRetention `
-                                -BackupShare $DatabaseSharedPath `
-                                -BackupThreshold $BackupThreshold `
-                                -CompressBackup:$BackupCompression `
-                                -HistoryRetention $HistoryRetention `
-                                -MonitorServer $PrimaryMonitorServer `
-                                -MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
-                                -MonitorCredential $PrimaryMonitorCredential `
-                                -ThresholdAlertEnabled:$PrimaryThresholdAlertEnabled `
-                                -Force:$Force
+                            $splatPrimary = @{
+                                SqlInstance                 = $SourceSqlInstance
+                                SqlCredential               = $SourceSqlCredential
+                                Database                    = $($db.Name)
+                                BackupDirectory             = $DatabaseLocalPath
+                                BackupJob                   = $DatabaseBackupJob
+                                BackupRetention             = $BackupRetention
+                                BackupShare                 = $DatabaseSharedPath
+                                BackupThreshold             = $BackupThreshold
+                                CompressBackup              = $BackupCompression
+                                HistoryRetention            = $HistoryRetention
+                                MonitorServer               = $PrimaryMonitorServer
+                                MonitorServerSecurityMode   = $PrimaryMonitorServerSecurityMode
+                                MonitorCredential           = $PrimaryMonitorCredential
+                                ThresholdAlertEnabled       = $PrimaryThresholdAlertEnabled
+                                Force                       = $Force
+                            }
+
+                            # Add Azure credential if provided (for storage account key authentication)
+                            if ($AzureCredential) {
+                                $splatPrimary.AzureCredential = $AzureCredential
+                            }
+                            New-DbaLogShippingPrimaryDatabase @splatPrimary
 
                             # Check if the backup job needs to be enabled or disabled
                             if ($BackupScheduleDisabled) {
@@ -1534,30 +1700,36 @@ function Invoke-DbaDbLogShipping {
                             Write-Message -Message "Create backup job schedule $DatabaseBackupSchedule" -Level Verbose
 
                             #Variable $BackupJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
-                            $null = New-DbaAgentSchedule -SqlInstance $SourceSqlInstance `
-                                -SqlCredential $SourceSqlCredential `
-                                -Job $DatabaseBackupJob `
-                                -Schedule $DatabaseBackupSchedule `
-                                -FrequencyType $BackupScheduleFrequencyType `
-                                -FrequencyInterval $BackupScheduleFrequencyInterval `
-                                -FrequencySubdayType $BackupScheduleFrequencySubdayType `
-                                -FrequencySubdayInterval $BackupScheduleFrequencySubdayInterval `
-                                -FrequencyRelativeInterval $BackupScheduleFrequencyRelativeInterval `
-                                -FrequencyRecurrenceFactor $BackupScheduleFrequencyRecurrenceFactor `
-                                -StartDate $BackupScheduleStartDate `
-                                -EndDate $BackupScheduleEndDate `
-                                -StartTime $BackupScheduleStartTime `
-                                -EndTime $BackupScheduleEndTime `
-                                -Force:$Force
+                            $splatBackupSchedule = @{
+                                SqlInstance                  = $SourceSqlInstance
+                                SqlCredential                = $SourceSqlCredential
+                                Job                          = $DatabaseBackupJob
+                                Schedule                     = $DatabaseBackupSchedule
+                                FrequencyType                = $BackupScheduleFrequencyType
+                                FrequencyInterval            = $BackupScheduleFrequencyInterval
+                                FrequencySubdayType          = $BackupScheduleFrequencySubdayType
+                                FrequencySubdayInterval      = $BackupScheduleFrequencySubdayInterval
+                                FrequencyRelativeInterval    = $BackupScheduleFrequencyRelativeInterval
+                                FrequencyRecurrenceFactor    = $BackupScheduleFrequencyRecurrenceFactor
+                                StartDate                    = $BackupScheduleStartDate
+                                EndDate                      = $BackupScheduleEndDate
+                                StartTime                    = $BackupScheduleStartTime
+                                EndTime                      = $BackupScheduleEndTime
+                                Force                        = $Force
+                            }
+                            $null = New-DbaAgentSchedule @splatBackupSchedule
 
                             Write-Message -Message "Configuring logshipping from primary to secondary database." -Level Verbose
 
-                            New-DbaLogShippingPrimarySecondary -SqlInstance $SourceSqlInstance `
-                                -SqlCredential $SourceSqlCredential `
-                                -PrimaryDatabase $($db.Name) `
-                                -SecondaryDatabase $SecondaryDatabase `
-                                -SecondaryServer $destInstance `
-                                -SecondarySqlCredential $DestinationSqlCredential
+                            $splatPrimarySecondary = @{
+                                SqlInstance             = $SourceSqlInstance
+                                SqlCredential           = $SourceSqlCredential
+                                PrimaryDatabase         = $($db.Name)
+                                SecondaryDatabase       = $SecondaryDatabase
+                                SecondaryServer         = $destInstance
+                                SecondarySqlCredential  = $DestinationSqlCredential
+                            }
+                            New-DbaLogShippingPrimarySecondary @splatPrimarySecondary
                         } catch {
                             $setupResult = "Failed"
                             $comment = "Something went wrong setting up log shipping for primary instance"
@@ -1575,79 +1747,111 @@ function Invoke-DbaDbLogShipping {
 
                             Write-Message -Message "Configuring logshipping from secondary database $SecondaryDatabase to primary database $db." -Level Verbose
 
-                            New-DbaLogShippingSecondaryPrimary -SqlInstance $destInstance `
-                                -SqlCredential $DestinationSqlCredential `
-                                -BackupSourceDirectory $DatabaseSharedPath `
-                                -BackupDestinationDirectory $DatabaseCopyDestinationFolder `
-                                -CopyJob $DatabaseCopyJob `
-                                -FileRetentionPeriod $BackupRetention `
-                                -MonitorServer $SecondaryMonitorServer `
-                                -MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
-                                -MonitorCredential $SecondaryMonitorCredential `
-                                -PrimaryServer $SourceSqlInstance `
-                                -PrimaryDatabase $($db.Name) `
-                                -RestoreJob $DatabaseRestoreJob `
-                                -Force:$Force
+                            $splatSecondaryPrimary = @{
+                                SqlInstance                 = $destInstance
+                                SqlCredential               = $DestinationSqlCredential
+                                BackupSourceDirectory       = $DatabaseSharedPath
+                                BackupDestinationDirectory  = $DatabaseCopyDestinationFolder
+                                CopyJob                     = $DatabaseCopyJob
+                                FileRetentionPeriod         = $BackupRetention
+                                MonitorServer               = $SecondaryMonitorServer
+                                MonitorServerSecurityMode   = $SecondaryMonitorServerSecurityMode
+                                MonitorCredential           = $SecondaryMonitorCredential
+                                PrimaryServer               = $SourceSqlInstance
+                                PrimarySqlCredential        = $SourceSqlCredential
+                                PrimaryDatabase             = $($db.Name)
+                                RestoreJob                  = $DatabaseRestoreJob
+                                Force                       = $Force
+                            }
 
-                            Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Verbose
-                            #Variable $CopyJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
-                            $null = New-DbaAgentSchedule -SqlInstance $destInstance `
-                                -SqlCredential $DestinationSqlCredential `
-                                -Job $DatabaseCopyJob `
-                                -Schedule $DatabaseCopySchedule `
-                                -FrequencyType $CopyScheduleFrequencyType `
-                                -FrequencyInterval $CopyScheduleFrequencyInterval `
-                                -FrequencySubdayType $CopyScheduleFrequencySubdayType `
-                                -FrequencySubdayInterval $CopyScheduleFrequencySubdayInterval `
-                                -FrequencyRelativeInterval $CopyScheduleFrequencyRelativeInterval `
-                                -FrequencyRecurrenceFactor $CopyScheduleFrequencyRecurrenceFactor `
-                                -StartDate $CopyScheduleStartDate `
-                                -EndDate $CopyScheduleEndDate `
-                                -StartTime $CopyScheduleStartTime `
-                                -EndTime $CopyScheduleEndTime `
-                                -Force:$Force
+                            # Add Azure credential if provided (for storage account key authentication)
+                            if ($AzureCredential) {
+                                $splatSecondaryPrimary.AzureCredential = $AzureCredential
+                            }
+                            New-DbaLogShippingSecondaryPrimary @splatSecondaryPrimary
+
+                            # For Azure: Remove the copy job created by sp_add_log_shipping_secondary_primary
+                            # Azure backups go directly to blob storage, so no copy is needed
+                            if ($UseAzure) {
+                                Write-Message -Message "Removing unnecessary copy job for Azure: $DatabaseCopyJob" -Level Verbose
+                                $null = Remove-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Confirm:$false
+                            }
+
+                            # Skip copy job schedule for Azure (backups are already in the cloud)
+                            if (-not $UseAzure) {
+                                Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Verbose
+                                #Variable $CopyJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
+                                $splatCopySchedule = @{
+                                    SqlInstance                  = $destInstance
+                                    SqlCredential                = $DestinationSqlCredential
+                                    Job                          = $DatabaseCopyJob
+                                    Schedule                     = $DatabaseCopySchedule
+                                    FrequencyType                = $CopyScheduleFrequencyType
+                                    FrequencyInterval            = $CopyScheduleFrequencyInterval
+                                    FrequencySubdayType          = $CopyScheduleFrequencySubdayType
+                                    FrequencySubdayInterval      = $CopyScheduleFrequencySubdayInterval
+                                    FrequencyRelativeInterval    = $CopyScheduleFrequencyRelativeInterval
+                                    FrequencyRecurrenceFactor    = $CopyScheduleFrequencyRecurrenceFactor
+                                    StartDate                    = $CopyScheduleStartDate
+                                    EndDate                      = $CopyScheduleEndDate
+                                    StartTime                    = $CopyScheduleStartTime
+                                    EndTime                      = $CopyScheduleEndTime
+                                    Force                        = $Force
+                                }
+                                $null = New-DbaAgentSchedule @splatCopySchedule
+                            }
 
                             Write-Message -Message "Create restore job schedule $DatabaseRestoreSchedule" -Level Verbose
 
                             #Variable $RestoreJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
-                            $null = New-DbaAgentSchedule -SqlInstance $destInstance `
-                                -SqlCredential $DestinationSqlCredential `
-                                -Job $DatabaseRestoreJob `
-                                -Schedule $DatabaseRestoreSchedule `
-                                -FrequencyType $RestoreScheduleFrequencyType `
-                                -FrequencyInterval $RestoreScheduleFrequencyInterval `
-                                -FrequencySubdayType $RestoreScheduleFrequencySubdayType `
-                                -FrequencySubdayInterval $RestoreScheduleFrequencySubdayInterval `
-                                -FrequencyRelativeInterval $RestoreScheduleFrequencyRelativeInterval `
-                                -FrequencyRecurrenceFactor $RestoreScheduleFrequencyRecurrenceFactor `
-                                -StartDate $RestoreScheduleStartDate `
-                                -EndDate $RestoreScheduleEndDate `
-                                -StartTime $RestoreScheduleStartTime `
-                                -EndTime $RestoreScheduleEndTime `
-                                -Force:$Force
+                            $splatRestoreSchedule = @{
+                                SqlInstance                  = $destInstance
+                                SqlCredential                = $DestinationSqlCredential
+                                Job                          = $DatabaseRestoreJob
+                                Schedule                     = $DatabaseRestoreSchedule
+                                FrequencyType                = $RestoreScheduleFrequencyType
+                                FrequencyInterval            = $RestoreScheduleFrequencyInterval
+                                FrequencySubdayType          = $RestoreScheduleFrequencySubdayType
+                                FrequencySubdayInterval      = $RestoreScheduleFrequencySubdayInterval
+                                FrequencyRelativeInterval    = $RestoreScheduleFrequencyRelativeInterval
+                                FrequencyRecurrenceFactor    = $RestoreScheduleFrequencyRecurrenceFactor
+                                StartDate                    = $RestoreScheduleStartDate
+                                EndDate                      = $RestoreScheduleEndDate
+                                StartTime                    = $RestoreScheduleStartTime
+                                EndTime                      = $RestoreScheduleEndTime
+                                Force                        = $Force
+                            }
+                            $null = New-DbaAgentSchedule @splatRestoreSchedule
 
                             Write-Message -Message "Configuring logshipping for secondary database." -Level Verbose
 
-                            New-DbaLogShippingSecondaryDatabase -SqlInstance $destInstance `
-                                -SqlCredential $DestinationSqlCredential `
-                                -SecondaryDatabase $SecondaryDatabase `
-                                -PrimaryServer $SourceSqlInstance `
-                                -PrimaryDatabase $($db.Name) `
-                                -RestoreDelay $RestoreDelay `
-                                -RestoreMode $DatabaseStatus `
-                                -DisconnectUsers:$DisconnectUsers `
-                                -RestoreThreshold $RestoreThreshold `
-                                -ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
-                                -HistoryRetention $HistoryRetention `
-                                -MonitorServer $SecondaryMonitorServer `
-                                -MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
-                                -MonitorCredential $SecondaryMonitorCredential
+                            $splatSecondaryDatabase = @{
+                                SqlInstance                 = $destInstance
+                                SqlCredential               = $DestinationSqlCredential
+                                SecondaryDatabase           = $SecondaryDatabase
+                                PrimaryServer               = $SourceSqlInstance
+                                PrimarySqlCredential        = $SourceSqlCredential
+                                PrimaryDatabase             = $($db.Name)
+                                RestoreDelay                = $RestoreDelay
+                                RestoreMode                 = $DatabaseStatus
+                                DisconnectUsers             = $DisconnectUsers
+                                RestoreThreshold            = $RestoreThreshold
+                                ThresholdAlertEnabled       = $SecondaryThresholdAlertEnabled
+                                HistoryRetention            = $HistoryRetention
+                                MonitorServer               = $SecondaryMonitorServer
+                                MonitorServerSecurityMode   = $SecondaryMonitorServerSecurityMode
+                                MonitorCredential           = $SecondaryMonitorCredential
+                            }
+                            New-DbaLogShippingSecondaryDatabase @splatSecondaryDatabase
 
-                            # Check if the copy job needs to be enabled or disabled
-                            if ($CopyScheduleDisabled) {
-                                $null = Set-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Disabled
-                            } else {
-                                $null = Set-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Enabled
+                            # Skip copy job enable/disable for Azure (no copy job exists)
+                            if (-not $UseAzure) {
+                                # Check if the copy job needs to be enabled or disabled
+                                if ($CopyScheduleDisabled) {
+                                    $null = Set-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Disabled
+                                } else {
+                                    $null = Set-DbaAgentJob -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Enabled
+                                }
                             }
 
                             # Check if the restore job needs to be enabled or disabled

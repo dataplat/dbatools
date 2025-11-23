@@ -131,7 +131,7 @@ function Compare-DbaAgReplicaLogin {
                         }
 
                         if ($IncludeModifiedDate) {
-                            $query = "SELECT name, modify_date FROM sys.server_principals WHERE type IN ('S', 'U', 'G')"
+                            $query = "SELECT name, modify_date FROM sys.server_principals WHERE [type] IN ('S', 'U', 'G')"
                             $modifyDates = Invoke-DbaQuery -SqlInstance $replicaServer -Query $query -As PSObject
 
                             $loginDetails = New-Object System.Collections.ArrayList

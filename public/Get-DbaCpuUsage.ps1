@@ -123,13 +123,13 @@ function Get-DbaCpuUsage {
             $threads = Get-DbaCmObject -ComputerName $instance.ComputerName -ClassName Win32_PerfFormattedData_PerfProc_Thread -Credential $Credential | Where-Object { $_.Name -like 'sql*' -and $_.PercentProcessorTime -ge $Threshold }
 
             if ($server.VersionMajor -eq 8) {
-                $spidcollection = $server.Query("select spid, kpid from sysprocesses")
+                $spidcollection = $server.Query("SELECT spid, kpid FROM sysprocesses")
             } else {
-                $spidcollection = $server.Query("select t.os_thread_id as kpid, s.session_id as spid
-            from sys.dm_exec_sessions s
-            join sys.dm_exec_requests er on s.session_id = er.session_id
-            join sys.dm_os_workers w on er.task_address = w.task_address
-            join sys.dm_os_threads t on w.thread_address = t.thread_address")
+                $spidcollection = $server.Query("SELECT t.os_thread_id AS kpid, s.session_id AS spid
+            FROM sys.dm_exec_sessions s
+            JOIN sys.dm_exec_requests er ON s.session_id = er.session_id
+            JOIN sys.dm_os_workers w ON er.task_address = w.task_address
+            JOIN sys.dm_os_threads t ON w.thread_address = t.thread_address")
             }
 
             foreach ($thread in $threads) {

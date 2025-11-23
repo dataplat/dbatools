@@ -878,7 +878,7 @@ function Copy-DbaDatabase {
             }
 
             # SMO's filestreamlevel is sometimes null
-            $sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
+            $sql = "SELECT COALESCE(SERVERPROPERTY('FilestreamConfiguredLevel'),0) AS fs"
             $sourceFilestream = $sourceServer.ConnectionContext.ExecuteScalar($sql)
             $destFilestream = $destServer.ConnectionContext.ExecuteScalar($sql)
             if ($sourceFilestream -gt 0 -and $destFilestream -eq 0) {
@@ -955,17 +955,17 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Building file structure inventory for $dbCount databases."
 
             if ($sourceServer.VersionMajor -eq 8) {
-                $sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
+                $sql = "SELECT DB_NAME (dbid) AS dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END AS filetype FROM sysaltfiles"
             } else {
-                $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
+                $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
             }
 
             $dbFileTable = $sourceServer.Databases['master'].ExecuteWithResults($sql)
 
             if ($destServer.VersionMajor -eq 8) {
-                $sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
+                $sql = "SELECT DB_NAME (dbid) AS dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END AS filetype FROM sysaltfiles"
             } else {
-                $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
+                $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
             }
 
             $remoteDbFileTable = $destServer.Databases['master'].ExecuteWithResults($sql)

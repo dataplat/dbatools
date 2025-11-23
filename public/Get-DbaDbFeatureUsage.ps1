@@ -72,8 +72,8 @@ function Get-DbaDbFeatureUsage {
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-            SERVERPROPERTY('ServerName') AS SqlInstance, feature_id as Id,
-            feature_name as Feature,  DB_NAME() as [Database] FROM sys.dm_db_persisted_sku_features"
+            SERVERPROPERTY('ServerName') AS SqlInstance, feature_id AS Id,
+            feature_name AS Feature,  DB_NAME() AS [Database] FROM sys.dm_db_persisted_sku_features"
     }
 
     process {

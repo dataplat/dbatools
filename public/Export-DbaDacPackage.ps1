@@ -13,7 +13,7 @@ function Export-DbaDacPackage {
         For help with the extract action parameters and properties, refer to https://learn.microsoft.com/en-us/sql/tools/sqlpackage/sqlpackage-extract
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The target SQL Server instance or instances. Must be SQL Server 2008 R2 or higher (DAC Framework minimum version 10.50).
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -72,6 +72,7 @@ function Export-DbaDacPackage {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+        Minimum SQL Server Version: SQL Server 2008 R2 (10.50) - DAC Framework requirement
 
     .LINK
         https://dbatools.io/Export-DbaDacPackage
@@ -199,15 +200,67 @@ function Export-DbaDacPackage {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+
+            # Check SQL Server version - DAC Framework requires SQL Server 2008 R2+ (Version 10.50+)
+            if ($server.VersionMajor -lt 10 -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -lt 50)) {
+                Stop-Function -Message "Export-DbaDacPackage requires SQL Server 2008 R2 or higher (DAC Framework minimum version 10.50). Server $instance is version $($server.VersionString)." -Target $instance -Continue
+            }
+
+            # ============================================================
+            # THREAD-SAFE DATABASE ENUMERATION
+            # Use Invoke-DbaQuery instead of Get-DbaDatabase to avoid SMO thread-safety issues
+            # Get-DbaDatabase uses $server.Databases enumeration which is NOT thread-safe in parallel runspaces
+            # Note: Export-DbaDacPackage requires SQL Server 2008 R2+ (DAC Framework minimum version)
+            # ============================================================
+
+            # Build query to enumerate databases (equivalent to Get-DbaDatabase -OnlyAccessible -ExcludeSystem)
+            $query = @"
+SELECT name
+FROM sys.databases
+WHERE database_id > 4  -- Exclude system databases (master=1, tempdb=2, model=3, msdb=4)
+  AND state = 0        -- Only ONLINE databases (OnlyAccessible equivalent)
+"@
+
+            $sqlParams = @{}
+
+            # Add ExcludeDatabase filter if specified (using parameterized queries to prevent SQL injection)
+            if ($ExcludeDatabase) {
+                $placeholders = @()
+                for ($i = 0; $i -lt $ExcludeDatabase.Count; $i++) {
+                    $placeholders += "@exclude$i"
+                    $sqlParams["exclude$i"] = $ExcludeDatabase[$i]
+                }
+                $query += "`n  AND name NOT IN ($($placeholders -join ','))"
+            }
+
+            $query += "`nORDER BY name"
+
+            Write-Message -Level Verbose -Message "Executing query: $query"
+
+            $splatQuery = @{
+                SqlInstance     = $server
+                Query           = $query
+                EnableException = $true
+            }
+            if ($sqlParams.Count -gt 0) {
+                $splatQuery.SqlParameter = $sqlParams
+            }
+
+            $dbNames = Invoke-DbaQuery @splatQuery | Select-Object -ExpandProperty name
+
+            # Apply Database filter if specified
             if ($Database) {
-                $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -Database $Database -ExcludeDatabase $ExcludeDatabase
-            } else {
-                # all user databases by default
-                $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeSystem -ExcludeDatabase $ExcludeDatabase
+                $dbNames = $dbNames | Where-Object { $_ -in $Database }
             }
-            if (-not $dbs) {
-                Stop-Function -Message "Databases not found on $instance"-Target $instance -Continue
+
+            if (-not $dbNames) {
+                Stop-Function -Message "Databases not found on $instance" -Target $instance -Continue
             }
+
+            Write-Message -Level Verbose -Message "Found $($dbNames.Count) databases: $($dbNames -join ", ")"
+
+            # Convert database names to objects for compatibility with rest of function
+            $dbs = $dbNames | ForEach-Object { [PSCustomObject]@{ name = $_ } }
 
             foreach ($db in $dbs) {
                 $resultstime = [diagnostics.stopwatch]::StartNew()

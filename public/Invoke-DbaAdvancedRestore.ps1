@@ -230,7 +230,7 @@ function Invoke-DbaAdvancedRestore {
                         try {
                             Write-Message -Level Verbose -Message "Killing processes on $database"
                             $null = Stop-DbaProcess -SqlInstance $server -Database $database -WarningAction Silentlycontinue
-                            $null = $server.Query("Alter database $database set offline with rollback immediate; alter database $database set restricted_user; Alter database $database set online with rollback immediate", 'master')
+                            $null = $server.Query("ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE; ALTER DATABASE $database SET RESTRICTED_USER; ALTER DATABASE $database SET ONLINE WITH ROLLBACK IMMEDIATE", 'master')
                             $server.ConnectionContext.Connect()
                         } catch {
                             Write-Message -Level Verbose -Message "No processes to kill in $database"

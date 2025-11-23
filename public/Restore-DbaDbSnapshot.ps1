@@ -176,7 +176,7 @@ function Restore-DbaDbSnapshot {
                                 $null = Stop-DbaProcess -SqlInstance $server -Database $db.Name, $snap.Name -WarningAction SilentlyContinue
                             }
 
-                            $null = $server.Query("USE master; RESTORE DATABASE [$($db.Name)] FROM DATABASE_SNAPSHOT='$($snap.Name)'")
+                            $null = $server.Query("USE master; RESTORE DATABASE [$($db.Name)] FROM DATABASE_SNAPSHOT = '$($snap.Name)'")
                             $restoreSuccess = $true
                         } catch {
                             # Check if this is a deadlock error (error 1205)

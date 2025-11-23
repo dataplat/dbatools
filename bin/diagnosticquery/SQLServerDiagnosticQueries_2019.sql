@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 10, 2025
+-- Last Modified: November 13, 2025
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -113,8 +113,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4415.2		CU30								12/12/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate30
 -- 15.0.4420.2		CU31								2/13/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate31
 -- 15.0.4430.1      CU32                                2/27/2025       https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate32
+-- 15.0.4435.7		CU32 + GDR							7/8/2025		https://support.microsoft.com/en-us/topic/kb5058722-description-of-the-security-update-for-sql-server-2019-cu32-july-8-2025-09dc5da9-3a60-4462-a8ac-a8e782d088d5
 -- 15.0.4440.1		CU32 + GDR							8/12/2025	    https://support.microsoft.com/en-us/topic/kb5063757-description-of-the-security-update-for-sql-server-2019-cu32-august-12-2025-d4df46ef-6b1e-4a6c-aa8c-914d25f74345
--- 15.0.4445.1      CU32 + GDR							9/9/2025		https://support.microsoft.com/en-us/topic/kb5065222-description-of-the-security-update-for-sql-server-2019-cu32-september-9-2025-152ac456-cb04-4b88-8177-a77fe24ac80d		
+-- 15.0.4445.1      CU32 + GDR							9/9/2025		https://support.microsoft.com/en-us/topic/kb5065222-description-of-the-security-update-for-sql-server-2019-cu32-september-9-2025-152ac456-cb04-4b88-8177-a77fe24ac80d
+-- 15.0.4455.2		CU32 + GDR							11/11/2025		https://support.microsoft.com/en-us/topic/kb5068404-description-of-the-security-update-for-sql-server-2019-cu32-november-11-2025-c203bfbf-036e-46d2-bc10-6c01200dc48a
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -2196,12 +2198,13 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 
 
 -- Determine which scalar UDFs are in-lineable (Query 82) (Inlineable UDFs)
-SELECT OBJECT_NAME(m.object_id) AS [Function Name], is_inlineable, inline_type,
-       efs.total_worker_time
+SELECT OBJECT_NAME(m.object_id) AS [Function Name], m.is_inlineable, 
+       m.inline_type, m.is_schema_bound, m.null_on_null_input,
+       efs.total_worker_time, efs.execution_count, efs.cached_time
 FROM sys.sql_modules AS m WITH (NOLOCK) 
 LEFT OUTER JOIN sys.dm_exec_function_stats AS efs WITH (NOLOCK)
 ON  m.object_id = efs.object_id
-WHERE efs.type_desc = N'SQL_SCALAR_FUNCTION'
+WHERE efs.[type_desc] = N'SQL_SCALAR_FUNCTION'
 ORDER BY efs.total_worker_time DESC
 OPTION (RECOMPILE);
 ------

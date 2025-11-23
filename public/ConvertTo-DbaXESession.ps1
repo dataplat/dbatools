@@ -21,6 +21,13 @@ function ConvertTo-DbaXESession {
         Specifies the name for the new Extended Events session. If a session with this name already exists, the function automatically appends the trace ID or a random number to avoid conflicts.
         Choose a descriptive name that identifies the monitoring purpose, as this becomes the session name visible in SQL Server Management Studio and sys.server_event_sessions.
 
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
     .PARAMETER OutputScriptOnly
         Returns the T-SQL CREATE EVENT SESSION script without executing it on the server. Use this when you need to review the generated script before deployment or save it for later execution.
         Particularly useful in compliance environments where all scripts require approval before running against production databases.
@@ -63,6 +70,7 @@ function ConvertTo-DbaXESession {
         [object[]]$InputObject,
         [parameter(Mandatory)]
         [string]$Name,
+        [PSCredential]$SqlCredential,
         [switch]$OutputScriptOnly,
         [switch]$EnableException
     )
@@ -87,13 +95,22 @@ function ConvertTo-DbaXESession {
             $tempdb = $server.Databases['tempdb']
             $traceid = $trace.id
 
-            if ((Get-DbaXESession -SqlInstance $server -Session $PSBoundParameters.Name)) {
+            $splatXESession = @{
+                SqlInstance = $server
+                Session     = $PSBoundParameters.Name
+            }
+            if ($SqlCredential) {
+                $splatXESession["SqlCredential"] = $SqlCredential
+            }
+
+            if ((Get-DbaXESession @splatXESession)) {
                 $oldname = $name
                 $Name = "$name-$traceid"
                 Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name."
             }
 
-            if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
+            $splatXESession["Session"] = $Name
+            if ((Get-DbaXESession @splatXESession)) {
                 $oldname = $name
                 $Name = "$name-$(Get-Random)"
                 Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name."
@@ -120,7 +137,14 @@ function ConvertTo-DbaXESession {
                 } catch {
                     Stop-Function -Message "Issue creating extended event $name on $server." -Target $server -ErrorRecord $_
                 }
-                Get-DbaXESession -SqlInstance $server -Session $name
+                $splatGetSession = @{
+                    SqlInstance = $server
+                    Session     = $name
+                }
+                if ($SqlCredential) {
+                    $splatGetSession["SqlCredential"] = $SqlCredential
+                }
+                Get-DbaXESession @splatGetSession
             }
         }
     }

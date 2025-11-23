@@ -54,14 +54,14 @@ function Get-DbaFileStreamFolder {
             return
         }
 
-        $sql = "select d.name as 'dbname', mf.Physical_Name from sys.master_files mf inner join sys.databases d on mf.database_id = d.database_id
-        where mf.type=2"
+        $sql = "SELECT d.name AS 'dbname', mf.Physical_Name FROM sys.master_files mf INNER JOIN sys.databases d ON mf.database_id = d.database_id
+        WHERE mf.type=2"
         $databases = @()
         if ($null -ne $Database) {
             ForEach ($db in $Database) {
                 $databases += "'$db'"
             }
-            $sql = $sql + " and d.name in ( $($databases -join ',') )"
+            $sql = $sql + " AND d.name IN ( $($databases -join ',') )"
         }
 
         $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty  RowError, Rowstate, table, itemarray, haserrors

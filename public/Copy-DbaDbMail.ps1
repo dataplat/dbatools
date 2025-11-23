@@ -425,43 +425,51 @@ function Copy-DbaDbMail {
             Copy-DbaDbMailProfile
             $destServer.Mail.Profiles.Refresh()
             Copy-DbaDbMailServer
-            $copyMailConfigStatus
-            $copyMailAccountStatus
-            $copyMailProfileStatus
-            $copyMailServerStatus
-            $enableDBMailStatus
 
-            <# ToDo: Use Get/Set-DbaSpConfigure once the dynamic parameters are replaced. #>
+            # Check Database Mail configuration on source and destination
+            $sourceDbMailConfig = Get-DbaSpConfigure -SqlInstance $sourceServer -Name "Database Mail XPs"
+            $destDbMailConfig = Get-DbaSpConfigure -SqlInstance $destServer -Name "Database Mail XPs"
 
-            if (($sourceDbMailEnabled -eq 1) -and ($destDbMailEnabled -eq 0)) {
-                if ($pscmdlet.ShouldProcess($destinstance, "Enabling Database Mail")) {
-                    $sourceDbMailEnabled = ($sourceServer.Configuration.DatabaseMailEnabled).ConfigValue
-                    Write-Message -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled." -Level Verbose
+            $sourceDbMailEnabled = $sourceDbMailConfig.ConfiguredValue
+            $destDbMailEnabled = $destDbMailConfig.ConfiguredValue
 
-                    $destDbMailEnabled = ($destServer.Configuration.DatabaseMailEnabled).ConfigValue
-                    Write-Message -Message "$destServer DBMail configuration value: $destDbMailEnabled." -Level Verbose
-                    $enableDBMailStatus = [PSCustomObject]@{
-                        SourceServer      = $sourceServer.name
-                        DestinationServer = $destServer.name
-                        Name              = "Enabled on Destination"
-                        Type              = "Mail Configuration"
-                        Status            = if ($destDbMailEnabled -eq 1) { "Enabled" } else { $null }
-                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
-                    }
+            Write-Message -Message "Source Database Mail XPs: $sourceDbMailEnabled" -Level Verbose
+            Write-Message -Message "Destination Database Mail XPs: $destDbMailEnabled" -Level Verbose
+
+            $enableDBMailStatus = [PSCustomObject]@{
+                SourceServer      = $sourceServer.Name
+                DestinationServer = $destServer.Name
+                Name              = "Database Mail XPs"
+                Type              = "Mail Configuration"
+                Status            = $null
+                Notes             = $null
+                DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
+            }
+
+            if ($sourceDbMailEnabled -eq 1 -and $destDbMailEnabled -eq 0) {
+                if ($pscmdlet.ShouldProcess($destinstance, "Enabling Database Mail XPs")) {
                     try {
-                        Write-Message -Message "Enabling Database Mail on $destServer." -Level Verbose
-                        $destServer.Configuration.DatabaseMailEnabled.ConfigValue = 1
-                        $destServer.Alter()
+                        Write-Message -Message "Enabling Database Mail XPs on $destServer." -Level Verbose
+                        $null = Set-DbaSpConfigure -SqlInstance $destServer -Name "Database Mail XPs" -Value 1
                         $enableDBMailStatus.Status = "Successful"
-                        $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        $enableDBMailStatus.Notes = "Database Mail XPs enabled on destination"
                     } catch {
                         $enableDBMailStatus.Status = "Failed"
                         $enableDBMailStatus.Notes = (Get-ErrorMessage -Record $_)
-                        $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Cannot enable database mail on $destinstance | $PSItem"
-                        continue
+                        Write-Message -Level Warning -Message "Cannot enable Database Mail XPs on $destinstance | $PSItem"
                     }
+                    $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
+            } elseif ($sourceDbMailEnabled -eq 0) {
+                $enableDBMailStatus.Status = "Skipped"
+                $enableDBMailStatus.Notes = "Database Mail XPs not enabled on source"
+                Write-Message -Level Warning -Message "Database Mail XPs is not enabled on source instance $sourceServer. It will not be enabled on destination."
+                $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+            } elseif ($destDbMailEnabled -eq 1) {
+                $enableDBMailStatus.Status = "Skipped"
+                $enableDBMailStatus.Notes = "Database Mail XPs already enabled on destination"
+                Write-Message -Message "Database Mail XPs is already enabled on destination $destServer." -Level Verbose
+                $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
     }

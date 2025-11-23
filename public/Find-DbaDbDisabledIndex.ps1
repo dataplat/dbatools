@@ -90,14 +90,14 @@ function Find-DbaDbDisabledIndex {
 
     begin {
         $sql = "
-        SELECT DB_NAME() AS 'DatabaseName'
+        SELECT DB_NAME() AS DatabaseName
         ,d.database_id AS DatabaseId
-        ,s.name AS 'SchemaName'
-        ,t.name AS 'TableName'
+        ,s.name AS SchemaName
+        ,t.name AS TableName
         ,i.object_id AS ObjectId
-        ,i.name AS 'IndexName'
-        ,i.index_id as 'IndexId'
-        ,i.type_desc as 'TypeDesc'
+        ,i.name AS IndexName
+        ,i.index_id AS IndexId
+        ,i.type_desc AS TypeDesc
         FROM sys.tables t
         JOIN sys.schemas s
             ON t.schema_id = s.schema_id

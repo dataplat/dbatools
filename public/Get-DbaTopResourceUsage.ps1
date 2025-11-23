@@ -107,157 +107,157 @@ function Get-DbaTopResourceUsage {
         SERVERPROPERTY('ServerName') AS SqlInstance, "
 
         if ($database) {
-            $wheredb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') in ('$($database -join '', '')')"
+            $wheredb = " AND COALESCE(DB_NAME(st.dbid), DB_NAME(CAST(pa.value AS INT)), 'Resource') IN ('$($database -join '', '')')"
         }
 
         if ($ExcludeDatabase) {
-            $wherenotdb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') not in ('$($excludedatabase -join '', '')')"
+            $wherenotdb = " AND COALESCE(DB_NAME(st.dbid), DB_NAME(CAST(pa.value AS INT)), 'Resource') NOT IN ('$($excludedatabase -join '', '')')"
         }
 
         if ($ExcludeSystem) {
-            $whereexcludesystem = " AND coalesce(object_name(st.objectid, st.dbid), '<none>') NOT LIKE 'sp_MS%' "
+            $whereexcludesystem = " AND COALESCE(OBJECT_NAME(st.objectid, st.dbid), '<none>') NOT LIKE 'sp_MS%' "
         }
-        $duration = ";with long_queries as
+        $duration = ";WITH long_queries AS
                         (
-                            select top $Limit
+                            SELECT TOP $Limit
                                 query_hash,
-                                sum(total_elapsed_time) elapsed_time
-                            from sys.dm_exec_query_stats
-                            where query_hash <> 0x0
-                            group by query_hash
-                            order by sum(total_elapsed_time) desc
+                                SUM(total_elapsed_time) elapsed_time
+                            FROM sys.dm_exec_query_stats
+                            WHERE query_hash <> 0x0
+                            GROUP BY query_hash
+                            ORDER BY SUM(total_elapsed_time) DESC
                         )
-                        select $instancecolumns
-                            coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
-                            coalesce(object_name(st.objectid, st.dbid), '<none>') as ObjectName,
-                            qs.query_hash as QueryHash,
-                            qs.total_elapsed_time / 1000 as TotalElapsedTimeMs,
-                            qs.execution_count as ExecutionCount,
-                            cast((total_elapsed_time / 1000) / (execution_count + 0.0) as money) as AverageDurationMs,
-                            lq.elapsed_time / 1000 as QueryTotalElapsedTimeMs,
+                        SELECT $instancecolumns
+                            COALESCE(DB_NAME(st.dbid), DB_NAME(CAST(pa.value AS INT)), 'Resource') AS [Database],
+                            COALESCE(OBJECT_NAME(st.objectid, st.dbid), '<none>') AS ObjectName,
+                            qs.query_hash AS QueryHash,
+                            qs.total_elapsed_time / 1000 AS TotalElapsedTimeMs,
+                            qs.execution_count AS ExecutionCount,
+                            CAST((total_elapsed_time / 1000) / (execution_count + 0.0) AS money) AS AverageDurationMs,
+                            lq.elapsed_time / 1000 AS QueryTotalElapsedTimeMs,
                             SUBSTRING(st.TEXT,(qs.statement_start_offset + 2) / 2,
                                 (CASE
                                     WHEN qs.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),st.text)) * 2
                                     ELSE qs.statement_end_offset
-                                    END - qs.statement_start_offset) / 2) as QueryText,
-                            qp.query_plan as QueryPlan
-                        from sys.dm_exec_query_stats qs
-                        join long_queries lq
-                            on lq.query_hash = qs.query_hash
-                        cross apply sys.dm_exec_sql_text(qs.sql_handle) st
-                        cross apply sys.dm_exec_query_plan (qs.plan_handle) qp
-                        outer apply sys.dm_exec_plan_attributes(qs.plan_handle) pa
-                        where pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
-                        order by lq.elapsed_time desc,
+                                    END - qs.statement_start_offset) / 2) AS QueryText,
+                            qp.query_plan AS QueryPlan
+                        FROM sys.dm_exec_query_stats qs
+                        JOIN long_queries lq
+                            ON lq.query_hash = qs.query_hash
+                        CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
+                        CROSS APPLY sys.dm_exec_query_plan (qs.plan_handle) qp
+                        OUTER APPLY sys.dm_exec_plan_attributes(qs.plan_handle) pa
+                        WHERE pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
+                        ORDER BY lq.elapsed_time DESC,
                             lq.query_hash,
-                            qs.total_elapsed_time desc
-                        option (recompile)"
+                            qs.total_elapsed_time DESC
+                        OPTION (RECOMPILE)"
 
-        $frequency = ";with frequent_queries as
+        $frequency = ";WITH frequent_queries AS
                         (
-                            select top $Limit
+                            SELECT TOP $Limit
                                 query_hash,
-                                sum(execution_count) executions
-                            from sys.dm_exec_query_stats
-                            where query_hash <> 0x0
-                            group by query_hash
-                            order by sum(execution_count) desc
+                                SUM(execution_count) executions
+                            FROM sys.dm_exec_query_stats
+                            WHERE query_hash <> 0x0
+                            GROUP BY query_hash
+                            ORDER BY SUM(execution_count) DESC
                         )
-                        select $instancecolumns
-                            coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
-                            coalesce(object_name(st.objectid, st.dbid), '<none>') as ObjectName,
-                            qs.query_hash as QueryHash,
-                            qs.execution_count as ExecutionCount,
-                            executions as QueryTotalExecutions,
+                        SELECT $instancecolumns
+                            COALESCE(DB_NAME(st.dbid), DB_NAME(CAST(pa.value AS INT)), 'Resource') AS [Database],
+                            COALESCE(OBJECT_NAME(st.objectid, st.dbid), '<none>') AS ObjectName,
+                            qs.query_hash AS QueryHash,
+                            qs.execution_count AS ExecutionCount,
+                            executions AS QueryTotalExecutions,
                             SUBSTRING(st.TEXT,(qs.statement_start_offset + 2) / 2,
                                 (CASE
                                     WHEN qs.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),st.text)) * 2
                                     ELSE qs.statement_end_offset
-                                    END - qs.statement_start_offset) / 2) as QueryText,
-                            qp.query_plan as QueryPlan
-                        from sys.dm_exec_query_stats qs
-                        join frequent_queries fq
-                            on fq.query_hash = qs.query_hash
-                        cross apply sys.dm_exec_sql_text(qs.sql_handle) st
-                        cross apply sys.dm_exec_query_plan (qs.plan_handle) qp
-                        outer apply sys.dm_exec_plan_attributes(qs.plan_handle) pa
-                        where pa.attribute = 'dbid'  $wheredb $wherenotdb $whereexcludesystem
-                        order by fq.executions desc,
+                                    END - qs.statement_start_offset) / 2) AS QueryText,
+                            qp.query_plan AS QueryPlan
+                        FROM sys.dm_exec_query_stats qs
+                        JOIN frequent_queries fq
+                            ON fq.query_hash = qs.query_hash
+                        CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
+                        CROSS APPLY sys.dm_exec_query_plan (qs.plan_handle) qp
+                        OUTER APPLY sys.dm_exec_plan_attributes(qs.plan_handle) pa
+                        WHERE pa.attribute = 'dbid'  $wheredb $wherenotdb $whereexcludesystem
+                        ORDER BY fq.executions DESC,
                             fq.query_hash,
-                            qs.execution_count desc
-                        option (recompile)"
+                            qs.execution_count DESC
+                        OPTION (RECOMPILE)"
 
-        $io = ";with high_io_queries as
+        $io = ";WITH high_io_queries AS
                 (
-                    select top $Limit
+                    SELECT TOP $Limit
                         query_hash,
-                        sum(total_logical_reads + total_logical_writes) io
-                    from sys.dm_exec_query_stats
-                    where query_hash <> 0x0
-                    group by query_hash
-                    order by sum(total_logical_reads + total_logical_writes) desc
+                        SUM(total_logical_reads + total_logical_writes) io
+                    FROM sys.dm_exec_query_stats
+                    WHERE query_hash <> 0x0
+                    GROUP BY query_hash
+                    ORDER BY SUM(total_logical_reads + total_logical_writes) DESC
                 )
-                select $instancecolumns
-                    coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
-                    coalesce(object_name(st.objectid, st.dbid), '<none>') as ObjectName,
-                    qs.query_hash as QueryHash,
-                    qs.total_logical_reads + total_logical_writes as TotalIO,
-                    qs.execution_count as ExecutionCount,
-                    cast((total_logical_reads + total_logical_writes) / (execution_count + 0.0) as money) as AverageIO,
-                    io as QueryTotalIO,
+                SELECT $instancecolumns
+                    COALESCE(DB_NAME(st.dbid), DB_NAME(CAST(pa.value AS INT)), 'Resource') AS [Database],
+                    COALESCE(OBJECT_NAME(st.objectid, st.dbid), '<none>') AS ObjectName,
+                    qs.query_hash AS QueryHash,
+                    qs.total_logical_reads + total_logical_writes AS TotalIO,
+                    qs.execution_count AS ExecutionCount,
+                    CAST((total_logical_reads + total_logical_writes) / (execution_count + 0.0) AS money) AS AverageIO,
+                    io AS QueryTotalIO,
                     SUBSTRING(st.TEXT,(qs.statement_start_offset + 2) / 2,
                         (CASE
                             WHEN qs.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),st.text)) * 2
                             ELSE qs.statement_end_offset
-                            END - qs.statement_start_offset) / 2) as QueryText,
-                    qp.query_plan as QueryPlan
-                from sys.dm_exec_query_stats qs
-                join high_io_queries fq
-                    on fq.query_hash = qs.query_hash
-                cross apply sys.dm_exec_sql_text(qs.sql_handle) st
-                cross apply sys.dm_exec_query_plan (qs.plan_handle) qp
-                outer apply sys.dm_exec_plan_attributes(qs.plan_handle) pa
-                where pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
-                order by fq.io desc,
+                            END - qs.statement_start_offset) / 2) AS QueryText,
+                    qp.query_plan AS QueryPlan
+                FROM sys.dm_exec_query_stats qs
+                JOIN high_io_queries fq
+                    ON fq.query_hash = qs.query_hash
+                CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
+                CROSS APPLY sys.dm_exec_query_plan (qs.plan_handle) qp
+                OUTER APPLY sys.dm_exec_plan_attributes(qs.plan_handle) pa
+                WHERE pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
+                ORDER BY fq.io DESC,
                     fq.query_hash,
-                    qs.total_logical_reads + total_logical_writes desc
-                option (recompile)"
+                    qs.total_logical_reads + total_logical_writes DESC
+                OPTION (RECOMPILE)"
 
-        $cpu = ";with high_cpu_queries as
+        $cpu = ";WITH high_cpu_queries AS
                 (
-                    select top $Limit
+                    SELECT TOP $Limit
                         query_hash,
-                        sum(total_worker_time) cpuTime
-                    from sys.dm_exec_query_stats
-                    where query_hash <> 0x0
-                    group by query_hash
-                    order by sum(total_worker_time) desc
+                        SUM(total_worker_time) cpuTime
+                    FROM sys.dm_exec_query_stats
+                    WHERE query_hash <> 0x0
+                    GROUP BY query_hash
+                    ORDER BY SUM(total_worker_time) DESC
                 )
-                select $instancecolumns
-                    coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
-                    coalesce(object_name(st.objectid, st.dbid), '<none>') as ObjectName,
-                    qs.query_hash as QueryHash,
-                    qs.total_worker_time as CpuTime,
-                    qs.execution_count as ExecutionCount,
-                    cast(total_worker_time / (execution_count + 0.0) as money) as AverageCpuMs,
-                    cpuTime as QueryTotalCpu,
+                SELECT $instancecolumns
+                    COALESCE(DB_NAME(st.dbid), DB_NAME(CAST(pa.value AS INT)), 'Resource') AS [Database],
+                    COALESCE(OBJECT_NAME(st.objectid, st.dbid), '<none>') AS ObjectName,
+                    qs.query_hash AS QueryHash,
+                    qs.total_worker_time AS CpuTime,
+                    qs.execution_count AS ExecutionCount,
+                    CAST(total_worker_time / (execution_count + 0.0) AS money) AS AverageCpuMs,
+                    cpuTime AS QueryTotalCpu,
                     SUBSTRING(st.TEXT,(qs.statement_start_offset + 2) / 2,
                         (CASE
                             WHEN qs.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),st.text)) * 2
                             ELSE qs.statement_end_offset
-                            END - qs.statement_start_offset) / 2) as QueryText,
-                    qp.query_plan as QueryPlan
-                from sys.dm_exec_query_stats qs
-                join high_cpu_queries hcq
-                    on hcq.query_hash = qs.query_hash
-                cross apply sys.dm_exec_sql_text(qs.sql_handle) st
-                cross apply sys.dm_exec_query_plan (qs.plan_handle) qp
-                outer apply sys.dm_exec_plan_attributes(qs.plan_handle) pa
-                where pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
-                order by hcq.cpuTime desc,
+                            END - qs.statement_start_offset) / 2) AS QueryText,
+                    qp.query_plan AS QueryPlan
+                FROM sys.dm_exec_query_stats qs
+                JOIN high_cpu_queries hcq
+                    ON hcq.query_hash = qs.query_hash
+                CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
+                CROSS APPLY sys.dm_exec_query_plan (qs.plan_handle) qp
+                OUTER APPLY sys.dm_exec_plan_attributes(qs.plan_handle) pa
+                WHERE pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
+                ORDER BY hcq.cpuTime DESC,
                     hcq.query_hash,
-                    qs.total_worker_time desc
-                option (recompile)"
+                    qs.total_worker_time DESC
+                OPTION (RECOMPILE)"
     }
 
     process {

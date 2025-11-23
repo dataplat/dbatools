@@ -80,9 +80,9 @@ function Get-DbaXEObject {
                          WHEN 'message' THEN 'Message'
                          ELSE o.object_type
                       END,
-                o.object_type as ObjectTypeRaw,
+                o.object_type AS ObjectTypeRaw,
                 o.name AS TargetName,
-                o.description as Description
+                o.description AS Description
                 FROM sys.dm_xe_packages AS p
                 JOIN sys.dm_xe_objects AS o ON p.guid = o.package_guid
                 WHERE (p.capabilities IS NULL OR p.capabilities & 1 = 0)

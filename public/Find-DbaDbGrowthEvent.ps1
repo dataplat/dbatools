@@ -188,7 +188,7 @@ function Find-DbaDbGrowthEvent {
                             HostName,
                             SessionLoginName,
                             SPID
-                        FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
+                        FROM ::fn_trace_gettable( @base_tracefilename, DEFAULT )
                         WHERE
                             [EventClass] IN ($eventClassFilter)
                             AND [DatabaseName] IN (_DatabaseList_)

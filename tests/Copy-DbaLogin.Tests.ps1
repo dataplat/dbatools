@@ -215,7 +215,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Be $tempExportFile
             $permissions = Get-Content $tempExportFile -Raw
             $permissions | Should -BeLike '*CREATE LOGIN `[tester`]*'
-            $permissions | Should -Match "(ALTER SERVER ROLE \[sysadmin\] ADD MEMBER \[tester\]|EXEC sys.sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'tester')"
+            $permissions | Should -Match "(ALTER SERVER ROLE \[sysadmin\] ADD MEMBER \[tester\]|EXEC sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'tester')"
             $permissions | Should -BeLike '*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester`]*'
             $permissions | Should -BeLike '*CREATE LOGIN `[port`]*'
             $permissions | Should -BeLike '*GRANT CONNECT SQL TO `[port`]*'

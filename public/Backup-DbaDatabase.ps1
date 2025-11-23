@@ -502,6 +502,9 @@ function Backup-DbaDatabase {
                         if ( $base.Count -gt 4) {
                             Write-Message "AzureURL contains a folder"
                             $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                        } else {
+                            # URL is just the container, use it as-is for credential name
+                            $credentialName = $baseUrl
                         }
                         Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
                         if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
@@ -561,7 +564,7 @@ function Backup-DbaDatabase {
             $lastfull = $db.LastBackupDate.Year
 
             if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
-                $failreason = "$db does not have an existing full backup, cannot take log or differentialbackup"
+                $failreason = "$db does not have an existing full backup, cannot take log or differential backup"
                 $failures += $failreason
                 Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "$failreason" -Continue -Target $db

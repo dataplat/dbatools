@@ -266,6 +266,9 @@ function Get-DbaAgentSchedule {
 
             $scheduleCollection = @()
 
+            # Refresh the SharedSchedules collection to get latest data from SQL Server
+            $server.JobServer.SharedSchedules.Refresh()
+
             if ($Schedule -or $ScheduleUid -or $Id) {
                 if ($Schedule) {
                     $scheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }

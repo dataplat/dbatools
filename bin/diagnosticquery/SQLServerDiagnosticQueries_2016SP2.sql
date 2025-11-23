@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 10, 2025
+-- Last Modified: November 11, 2025
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -89,6 +89,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5865.1		SP2 CU15 + Security Update	1/12/2021		https://support.microsoft.com/en-us/help/4583461/kb4583461-security-update-for-sql-server-2016-sp2-cu15	
 -- 13.0.5882.1		SP2 CU16					2/11/2021		https://support.microsoft.com/en-us/office/kb5000645-cumulative-update-16-for-sql-server-2016-sp2-a3997fa9-ec49-4df0-bcc3-12dd58b78265
 -- 13.0.5888.11		SP2 CU17					3/29/2021		https://support.microsoft.com/en-us/topic/kb5001092-cumulative-update-17-for-sql-server-2016-sp2-5876a4d6-59ac-484a-93dc-4be456cd87d1
+-- 13.0.5893.48		CU17 + GDR					6/14/2022		https://support.microsoft.com/en-us/topic/kb5014351-description-of-the-security-update-for-sql-server-2016-sp2-cu17-june-14-2022-d30a69f4-1a72-41b2-a545-6a211b5fc0f7
+
 
 
 -- SP3 Builds
@@ -102,7 +104,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.6450.1		SP3 + GDR					10/8/2024		https://support.microsoft.com/en-us/topic/kb5046063-description-of-the-security-update-for-sql-server-2016-sp3-gdr-october-8-2024-87f6091b-a0c0-48e7-8de4-b10381559ba7
 -- 13.0.6455.2		SP3 + GDR					11/12/2024		https://support.microsoft.com/en-us/topic/kb5046855-description-of-the-security-update-for-sql-server-2016-sp3-gdr-november-12-2024-736b0a32-912d-4ea5-baf8-50d046cbfa1a
 -- 13.0.6465.1		SP3 + GDR					8/12/2025		https://support.microsoft.com/en-us/topic/kb5063762-description-of-the-security-update-for-sql-server-2016-sp3-gdr-august-12-2025-c7c25df6-577c-49b3-9ca9-b7e9812b9344
--- 13.0.6470.1		SP3 + GDR					9/11/2025		https://support.microsoft.com/en-us/topic/kb5065226-description-of-the-security-update-for-sql-server-2016-sp3-gdr-september-9-2025-7cf66f6b-dda8-47e1-bcb2-2f4630e5c48a	
+-- 13.0.6470.1		SP3 + GDR					9/9/2025		https://support.microsoft.com/en-us/topic/kb5065226-description-of-the-security-update-for-sql-server-2016-sp3-gdr-september-9-2025-7cf66f6b-dda8-47e1-bcb2-2f4630e5c48a
+-- 13.0.6475.1		SP3 + GDR					11/11/2025		https://support.microsoft.com/en-us/topic/kb5068401-description-of-the-security-update-for-sql-server-2016-sp3-gdr-november-11-2025-59a59fc0-f673-45c2-b8de-492b95c0e423
 
 
 -- Azure Connect Pack Builds
@@ -116,6 +119,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.7050.2		Azure Connect Pack + GDR	11/12/2024		https://support.microsoft.com/en-us/topic/kb5046856-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-november-12-2024-b180cac0-187e-48eb-b6c6-3d48d0a00902	
 -- 13.0.7060.1		Azure Connect Pack + GDR	8/12/2025		https://support.microsoft.com/en-us/topic/kb5063761-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-august-12-2025-78088dab-76e7-4a0d-8392-9ebb3f7dfefe
 -- 13.0.7065.1		Azure Connect Pack + GDR	9/9/2025		https://support.microsoft.com/en-us/topic/kb5065227-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-september-9-2025-d8b13d39-30cc-4a82-9382-0ecf1b2ff118
+-- 13.0.7070.1		Azure Connect Pack + GDR	11/11/2025		https://support.microsoft.com/en-us/topic/kb5068400-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-november-11-2025-9ea222c4-2d64-4b8d-aaf0-2fae80392540
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 

@@ -66,13 +66,13 @@ SELECT
        CASE WHEN tab.column_name IS NOT NULL THEN NULL ELSE txam.package_name END AS action_package_name,
        CASE WHEN tab.column_name IS NOT NULL THEN NULL ELSE txam.xe_action_name END AS xe_action_name
 FROM sys.trace_events AS te
-JOIN sys.trace_categories AS cat
+INNER JOIN sys.trace_categories AS cat
        ON te.category_id = cat.category_id
-JOIN sys.trace_event_bindings AS teb
+INNER JOIN sys.trace_event_bindings AS teb
        ON te.trace_event_id = teb.trace_event_id
-JOIN sys.trace_columns AS tc
+INNER JOIN sys.trace_columns AS tc
        ON teb.trace_column_id = tc.trace_column_id
-JOIN sys.trace_xe_event_map AS txem
+INNER JOIN sys.trace_xe_event_map AS txem
        ON te.trace_event_id = txem.trace_event_id
 LEFT JOIN (
           SELECT  p.name AS event_package_name,
@@ -552,9 +552,9 @@ FROM sys.fn_trace_geteventinfo(@TraceID) AS tgei
 LEFT JOIN sys.fn_trace_getfilterinfo(@TraceID) AS tfgi
        ON tgei.columnid = tfgi.columnid
               AND CAST(value AS NVARCHAR) NOT LIKE 'SQL Server Profiler%'
-JOIN sys.trace_columns AS tc
+INNER JOIN sys.trace_columns AS tc
        ON tgei.columnid = tc.trace_column_id
-JOIN sys.trace_events AS te
+INNER JOIN sys.trace_events AS te
        ON tgei.eventid = te.trace_event_id
 LEFT JOIN [#SQLskills_Trace_XE_Column_Map] AS txcm
        ON tgei.eventid = txcm.trace_event_id
@@ -606,7 +606,7 @@ SELECT @event_list = @event_list +
                                                                      ELSE CHAR(9) + CHAR(9) + CHAR(9) + ', '+ action_package_name + '.' + xe_action_name  + CHAR(9) + '-- ' + columnname + ' from SQLTrace' + CHAR(10)
                                                               END
                                                        FROM (
-                                                              SELECT eventid, action_package_name, xe_action_name, columnname, column_name, row_number() over (partition by eventid, action_package_name, xe_action_name order by columnname) AS num
+                                                              SELECT eventid, action_package_name, xe_action_name, columnname, column_name, ROW_NUMBER() OVER (PARTITION BY eventid, action_package_name, xe_action_name ORDER BY columnname) AS num
                                                               FROM @TraceInfo AS ti
                                                               ) AS ti
                                                        WHERE ti.eventid = tab.eventid
@@ -635,14 +635,14 @@ SELECT @event_list = @event_list +
                                                                                                 THEN CHAR(9) + CHAR(9) + CHAR(9) + 'AND ' + column_name + ' ' + filter_operator + ' ' + 
                                                                                                        CASE 
                                                                                                               WHEN SQL_VARIANT_PROPERTY(filter_value, 'BaseType') IN ('nvarchar', 'varchar', 'char', 'nchar') 
-                                                                                                                     THEN '''%'+CAST(filter_value AS NVARCHAR)+'%'''
-                                                                                                              ELSE CAST(filter_value AS NVARCHAR)
+                                                                                                                     THEN '''%'+CAST(filter_value AS NVARCHAR(MAX))+'%'''
+                                                                                                              ELSE CAST(filter_value AS NVARCHAR(MAX))
                                                                                                        END + CHAR(10)
                                                                                          ELSE CHAR(9) + CHAR(9) + CHAR(9) + 'AND '+ action_package_name + '.' + xe_action_name + ' ' + filter_operator + ' ' + 
                                                                                                        CASE 
                                                                                                               WHEN SQL_VARIANT_PROPERTY(filter_value, 'BaseType') IN ('nvarchar', 'varchar', 'char', 'nchar') 
-                                                                                                                     THEN '''%'+CAST(filter_value AS NVARCHAR)+'%'''
-                                                                                                              ELSE CAST(filter_value AS NVARCHAR)
+                                                                                                                     THEN '''%'+CAST(filter_value AS NVARCHAR(MAX))+'%'''
+                                                                                                              ELSE CAST(filter_value AS NVARCHAR(MAX))
                                                                                                        END + CHAR(10)
                                                                                   END
                                                                            FROM @TraceInfo AS ti

@@ -544,7 +544,7 @@ function Import-DbaCsv {
                 }
 
                 # Ensure Schema exists
-                $sql = "select count(*) from sys.schemas where name = @schema"
+                $sql = "SELECT COUNT(*) FROM sys.schemas WHERE name = @schema"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
                 $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
                 # If Schema doesn't exist create it
@@ -565,12 +565,12 @@ function Import-DbaCsv {
                 }
 
                 # Ensure table or view exists
-                $sql = "select count(*) from sys.tables where name = @table and schema_id = schema_id(@schema)"
+                $sql = "SELECT COUNT(*) FROM sys.tables WHERE name = @table AND schema_id = schema_id(@schema)"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
                 $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
                 $null = $sqlcmd.Parameters.AddWithValue('table', $table)
 
-                $sql2 = "select count(*) from sys.views where name = @table and schema_id=schema_id(@schema)"
+                $sql2 = "SELECT COUNT(*) FROM sys.views WHERE name = @table AND schema_id=schema_id(@schema)"
                 $sqlcmd2 = New-Object Microsoft.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
                 $null = $sqlcmd2.Parameters.AddWithValue('schema', $schema)
                 $null = $sqlcmd2.Parameters.AddWithValue('table', $table)

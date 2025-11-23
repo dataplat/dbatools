@@ -34,7 +34,7 @@ function Get-SqlDefaultPaths {
         if ($filepath.Length -eq 0) { $filepath = $server.Information.MasterDbLogPath }
         # Third attempt
         if ($filepath.Length -eq 0) {
-            $sql = "select SERVERPROPERTY('InstanceDefaultLogPath') as physical_name"
+            $sql = "SELECT SERVERPROPERTY('InstanceDefaultLogPath') AS physical_name"
             $filepath = $server.ConnectionContext.ExecuteScalar($sql)
         }
     } else {
@@ -44,7 +44,7 @@ function Get-SqlDefaultPaths {
         if ($filepath.Length -eq 0) { $filepath = $server.Information.MasterDbPath }
         # Third attempt
         if ($filepath.Length -eq 0) {
-            $sql = "select SERVERPROPERTY('InstanceDefaultDataPath') as physical_name"
+            $sql = "SELECT SERVERPROPERTY('InstanceDefaultDataPath') AS physical_name"
             $filepath = $server.ConnectionContext.ExecuteScalar($sql)
         }
     }

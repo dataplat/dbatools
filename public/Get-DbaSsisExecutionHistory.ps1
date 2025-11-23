@@ -163,10 +163,10 @@ function Get-DbaSsisExecutionHistory {
 
         $sql = "
         WITH
-            cteLoglevel as (
+            cteLoglevel AS (
                 SELECT
-                    execution_id as ExecutionID,
-                    cast(parameter_value AS INT) AS LoggingLevel
+                    execution_id AS ExecutionID,
+                    CAST(parameter_value AS INT) AS LoggingLevel
                 FROM
                     [catalog].[execution_parameter_values]
                 WHERE
@@ -190,15 +190,15 @@ function Get-DbaSsisExecutionHistory {
                 ) codes([key],[code])
             )
             SELECT
-                      e.execution_id as ExecutionID
-                    , e.folder_name as FolderName
-                    , e.project_name as ProjectName
-                    , e.package_name as PackageName
-                    , e.project_lsn as ProjectLsn
-                    , Environment = isnull(e.environment_folder_name, '') + isnull('\' + e.environment_name,  '')
+                      e.execution_id AS ExecutionID
+                    , e.folder_name AS FolderName
+                    , e.project_name AS ProjectName
+                    , e.package_name AS PackageName
+                    , e.project_lsn AS ProjectLsn
+                    , Environment = ISNULL(e.environment_folder_name, '') + ISNULL('\' + e.environment_name,  '')
                     , s.code AS StatusCode
-                    , start_time as StartTime
-                    , end_time as EndTime
+                    , start_time AS StartTime
+                    , end_time AS EndTime
                     , ElapsedMinutes = DATEDIFF(mi, e.start_time, e.end_time)
                     , l.LoggingLevel
             FROM

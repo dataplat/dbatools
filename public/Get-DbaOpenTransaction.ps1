@@ -61,8 +61,8 @@ function Get-DbaOpenTransaction {
             SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
             SERVERPROPERTY('ServerName') AS SqlInstance,
-            [s_tst].[session_id] as Spid,
-            [s_es].[login_name] as Login,
+            [s_tst].[session_id] AS Spid,
+            [s_es].[login_name] AS Login,
             DB_NAME (s_tdt.database_id) AS [Database],
             [s_tdt].[database_transaction_begin_time] AS [BeginTime],
             [s_tdt].[database_transaction_log_bytes_used] AS [LogBytesUsed],
@@ -76,7 +76,7 @@ function Get-DbaOpenTransaction {
             ON
                 [s_tst].[transaction_id] = [s_tdt].[transaction_id]
             JOIN
-                sys.[dm_exec_sessions] [s_es]
+                sys.dm_exec_sessions [s_es]
             ON
                 [s_es].[session_id] = [s_tst].[session_id]
             JOIN

@@ -95,28 +95,28 @@ function Get-DbaEstimatedCompletionTime {
 
     begin {
         $sql = "SELECT
-                DB_NAME(r.database_id) as [Database],
-                USER_NAME(r.user_id) as [Login],
+                DB_NAME(r.database_id) AS [Database],
+                USER_NAME(r.user_id) AS [Login],
                 Command,
-                start_time as StartTime,
-                percent_complete as PercentComplete,
+                start_time AS StartTime,
+                percent_complete AS PercentComplete,
 
-                  RIGHT('00000' + CAST(((DATEDIFF(s,start_time,GetDate()))/3600) as varchar),
+                  RIGHT('00000' + CAST(((DATEDIFF(s,start_time,GETDATE()))/3600) AS VARCHAR),
                                 CASE
-                                    WHEN LEN(((DATEDIFF(s,start_time,GetDate()))/3600)) < 2 THEN 2
-                                    ELSE LEN(((DATEDIFF(s,start_time,GetDate()))/3600))
+                                    WHEN LEN(((DATEDIFF(s,start_time,GETDATE()))/3600)) < 2 THEN 2
+                                    ELSE LEN(((DATEDIFF(s,start_time,GETDATE()))/3600))
                                  END)  + ':'
-                + RIGHT('00' + CAST((DATEDIFF(s,start_time,GetDate())%3600)/60 as varchar), 2) + ':'
-                + RIGHT('00' + CAST((DATEDIFF(s,start_time,GetDate())%60) as varchar), 2) as RunningTime,
+                + RIGHT('00' + CAST((DATEDIFF(s,start_time,GETDATE())%3600)/60 AS VARCHAR), 2) + ':'
+                + RIGHT('00' + CAST((DATEDIFF(s,start_time,GETDATE())%60) AS VARCHAR), 2) AS RunningTime,
 
-                  RIGHT('00000' + CAST((estimated_completion_time/3600000) as varchar),
+                  RIGHT('00000' + CAST((estimated_completion_time/3600000) AS VARCHAR),
                         CASE
                                     WHEN LEN((estimated_completion_time/3600000)) < 2 THEN 2
                                     ELSE LEN((estimated_completion_time/3600000))
                          END)  + ':'
-                + RIGHT('00' + CAST((estimated_completion_time %3600000)/60000 as varchar), 2) + ':'
-                + RIGHT('00' + CAST((estimated_completion_time %60000)/1000 as varchar), 2) as EstimatedTimeToGo,
-                dateadd(second,estimated_completion_time/1000, getdate()) as EstimatedCompletionTime,
+                + RIGHT('00' + CAST((estimated_completion_time %3600000)/60000 AS VARCHAR), 2) + ':'
+                + RIGHT('00' + CAST((estimated_completion_time %60000)/1000 AS VARCHAR), 2) AS EstimatedTimeToGo,
+                DATEADD(SECOND,estimated_completion_time/1000, GETDATE()) AS EstimatedCompletionTime,
                 s.Text
              FROM sys.dm_exec_requests r
             CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s

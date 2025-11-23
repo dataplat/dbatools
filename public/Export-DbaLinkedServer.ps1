@@ -43,6 +43,10 @@ function Export-DbaLinkedServer {
         Adds the exported linked server scripts to an existing file instead of overwriting it.
         Use this when combining multiple linked server exports into a single deployment script or building comprehensive migration scripts over multiple runs.
 
+    .PARAMETER Passthru
+        Returns the generated T-SQL script to the PowerShell pipeline instead of saving to file.
+        Use this to capture the script in a variable, pipe to other commands, or display directly in the console.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -69,6 +73,11 @@ function Export-DbaLinkedServer {
 
         Exports the linked servers, without passwords, from sql2017 to the file C:\temp\ls.sql
 
+    .EXAMPLE
+        PS C:\> Export-DbaLinkedServer -SqlInstance sql2017 -Passthru
+
+        Returns the T-SQL script for linked servers to the console instead of writing to a file
+
     #>
     [CmdletBinding()]
     param (
@@ -82,6 +91,7 @@ function Export-DbaLinkedServer {
         [string]$FilePath,
         [switch]$ExcludePassword,
         [switch]$Append,
+        [switch]$Passthru,
         [Microsoft.SqlServer.Management.Smo.LinkedServer[]]$InputObject,
         [switch]$EnableException
     )
@@ -159,15 +169,21 @@ function Export-DbaLinkedServer {
                     }
                 }
             }
-            try {
-                if ($Append) {
-                    Add-Content -Path $FilePath -Value $sql
-                } else {
-                    Set-Content -Path $FilePath -Value $sql
+            if ($Passthru) {
+                $sql
+            } elseif ($Path -or $FilePath) {
+                try {
+                    if ($Append) {
+                        Add-Content -Path $FilePath -Value $sql
+                    } else {
+                        Set-Content -Path $FilePath -Value $sql
+                    }
+                    Get-ChildItem -Path $FilePath
+                } catch {
+                    Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
                 }
-                Get-ChildItem -Path $FilePath
-            } catch {
-                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
+            } else {
+                $sql
             }
         }
     }

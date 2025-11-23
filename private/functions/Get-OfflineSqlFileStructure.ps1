@@ -26,7 +26,7 @@ Internal function. Returns dictionary object that contains file structures for S
     $filestream = $filelist | Where-Object { $_.Type -eq "S" }
 
     if ($filestream) {
-        $sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
+        $sql = "SELECT COALESCE(SERVERPROPERTY('FilestreamConfiguredLevel'),0) AS fs"
         $fscheck = $server.databases['master'].ExecuteWithResults($sql)
         if ($fscheck.tables.fs -eq 0) { return $false }
     }

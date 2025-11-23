@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "DisableOnSource",
                 "DisableOnDestination",
                 "Force",
+                "UseLastModified",
                 "InputObject",
                 "EnableException"
             )
@@ -84,6 +85,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "DisableOnSource",
                 "DisableOnDestination",
                 "Force",
+                "UseLastModified",
                 "InputObject",
                 "EnableException"
             )
@@ -120,6 +122,94 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
             (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeFalse
             (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeFalse
+        }
+    }
+
+    Context "Regression test for issue #9982" {
+        It "copies all jobs when -Job parameter is not specified" {
+            # Copy all jobs without specifying -Job parameter, using -Force to ensure they copy even if they exist
+            $results = Copy-DbaAgentJob -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Force
+
+            # Both jobs should be copied
+            $results.Name | Should -Contain "dbatoolsci_copyjob"
+            $results.Name | Should -Contain "dbatoolsci_copyjob_disabled"
+            $results.Status | Should -Not -Contain "Skipped"
+            $results.Status | Should -Not -Contain "Failed"
+
+            # Verify jobs exist on destination
+            $destJobsCopied = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
+            $destJobsCopied.Count | Should -BeGreaterOrEqual 2
+        }
+    }
+
+    Context "UseLastModified parameter" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create a test job on both source and destination with same modification date
+            $testJobModified = "dbatoolsci_copyjob_modified"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $testJobModified
+            Start-Sleep -Seconds 2
+
+            # Copy to destination first time
+            $splatInitialCopy = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+                Job         = $testJobModified
+            }
+            $null = Copy-DbaAgentJob @splatInitialCopy
+
+            # Ensure both jobs have the exact same date_modified by setting destination to match source
+            $escapedJobName = $testJobModified.Replace("'", "''")
+            $sourceDate = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database msdb -Query "SELECT date_modified FROM dbo.sysjobs WHERE name = '$escapedJobName'" | Select-Object -ExpandProperty date_modified
+            $updateQuery = "UPDATE msdb.dbo.sysjobs SET date_modified = '$($sourceDate.ToString("yyyy-MM-dd HH:mm:ss.fff"))' WHERE name = '$escapedJobName'"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -Query $updateQuery
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob_modified -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_copyjob_modified -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "skips job when dates are equal" {
+            $splatUseModified = @{
+                Source          = $TestConfig.instance2
+                Destination     = $TestConfig.instance3
+                Job             = "dbatoolsci_copyjob_modified"
+                UseLastModified = $true
+            }
+            $result = Copy-DbaAgentJob @splatUseModified
+
+            $result.Name | Should -Be "dbatoolsci_copyjob_modified"
+            $result.Status | Should -Be "Skipped"
+            $result.Notes | Should -BeLike "*same modification date*"
+        }
+
+        It "updates job when source is newer" {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Modify the source job to make it newer
+            $sourceJob = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_copyjob_modified"
+            $sourceJob.Description = "Modified description"
+            $sourceJob.Alter()
+            Start-Sleep -Seconds 2
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatUseModified = @{
+                Source          = $TestConfig.instance2
+                Destination     = $TestConfig.instance3
+                Job             = "dbatoolsci_copyjob_modified"
+                UseLastModified = $true
+            }
+            $result = Copy-DbaAgentJob @splatUseModified
+
+            $result.Name | Should -Be "dbatoolsci_copyjob_modified"
+            $result.Status | Should -Be "Successful"
         }
     }
 }

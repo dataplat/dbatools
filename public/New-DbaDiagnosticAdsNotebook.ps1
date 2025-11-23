@@ -90,9 +90,9 @@ function New-DbaDiagnosticAdsNotebook {
         if (-not $TargetVersion) {
             $versionQuery = "
                 SELECT SERVERPROPERTY('ProductMajorVersion') AS ProductMajorVersion,
-                SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
-                SERVERPROPERTY('ProductLevel') AS ProductLevel,
-                SERVERPROPERTY('Edition') AS Edition"
+                       SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
+                       SERVERPROPERTY('ProductLevel') AS ProductLevel,
+                       SERVERPROPERTY('Edition') AS Edition"
 
             $versions = @{
                 "9.0"   = "2005"

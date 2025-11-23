@@ -188,7 +188,7 @@ function Add-DbaAgDatabase {
         # while ($replicaAgDb.State -ne 'Existing')  - should only take milliseconds, so we set a default timeout of one minute
         # while ($stillWaiting)                      - can take a long time with automatic seeding, but progress is displayed, so we set a default timeout of one day
         # We will use two timeout configuration values, as we don't want to add more timeout parameters to the command. We will store the timeouts in seconds.
-        # The timout for synchronization can be set to a lower value to end the command even when the synchronization is not finished yet.
+        # The timeout for synchronization can be set to a lower value to end the command even when the synchronization is not finished yet.
         # The synchronization will continue even the command or the powershell session stops.
         # Even when the SQL Server instance is restarted, the synchronization will continue after the restart.
         # Set-DbatoolsConfig -FullName commands.add-dbaagdatabase.timeout.existing -Value 60

@@ -43,31 +43,31 @@ Describe $CommandName -Tag IntegrationTests {
         $collectorSetName = "Long Running Queries"
 
         # Clean up any existing collector sets before starting
-        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     BeforeEach {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
     }
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command returns all the required results with pipe" {
         It "returns only one (and the proper) template" {
-            $results = Get-DbaPfDataCollectorSetTemplate -Template $collectorSetName | Import-DbaPfDataCollectorSetTemplate
+            $results = Get-DbaPfDataCollectorSetTemplate -Template $collectorSetName | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1
             $results.Name | Should -Be $collectorSetName
             $results.ComputerName | Should -Be $env:COMPUTERNAME
         }
 
         It "returns only one (and the proper) template without pipe" {
-            $results = Import-DbaPfDataCollectorSetTemplate -Template $collectorSetName
+            $results = Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1 -Template $collectorSetName
             $results.Name | Should -Be $collectorSetName
             $results.ComputerName | Should -Be $env:COMPUTERNAME
         }

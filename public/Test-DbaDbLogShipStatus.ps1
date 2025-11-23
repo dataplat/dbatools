@@ -142,7 +142,7 @@ INSERT INTO #logshippingstatus
     RestoreThreshold ,
     IsRestoreAlertEnabled
 )
-EXEC master.sys.sp_help_log_shipping_monitor"
+EXEC sys.sp_help_log_shipping_monitor"
 
         $select = "SELECT * FROM #logshippingstatus"
 

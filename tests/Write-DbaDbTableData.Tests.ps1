@@ -61,9 +61,56 @@ Describe $CommandName -Tag IntegrationTests {
 
     # calling random function to throw data into a table
     It "defaults to dbo if no schema is specified" {
-        $results = Get-ChildItem | ConvertTo-DbaDataTable
-        $results | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $dbName -Table "childitem" -AutoCreateTable
+        Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $dbName -Table "childitem" -AutoCreateTable
+
+        # Refresh tables to ensure we see the newly created objects
+        $server.Databases[$dbName].Tables.Refresh()
 
         ($server.Databases[$dbName].Tables | Where-Object { $PSItem.Schema -eq "dbo" -and $PSItem.Name -eq "childitem" }).Count | Should -Be 1
+    }
+
+    It "automatically creates schema when using AutoCreateTable" {
+        $schemaName = "testschema$random"
+        $tableName = "testtable$random"
+
+        $splatWrite = @{
+            SqlInstance     = $TestConfig.instance1
+            Database        = $dbName
+            Schema          = $schemaName
+            Table           = $tableName
+            AutoCreateTable = $true
+        }
+        Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData @splatWrite
+
+        # Refresh schemas and tables to ensure we see the newly created objects
+        $server.Databases[$dbName].Schemas.Refresh()
+        $server.Databases[$dbName].Tables.Refresh()
+
+        # Verify schema was created
+        $server.Databases[$dbName].Schemas.Name | Should -Contain $schemaName
+
+        # Verify table was created in the correct schema
+        ($server.Databases[$dbName].Tables | Where-Object { $PSItem.Schema -eq $schemaName -and $PSItem.Name -eq $tableName }).Count | Should -Be 1
+
+        # Verify data is accessible and was written successfully
+        $query = "SELECT COUNT(*) as RowTotal FROM [$schemaName].[$tableName]"
+        $result = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbName -Query $query
+        $result.RowTotal | Should -Be 5
+    }
+
+    It "skips schema creation for temp tables" {
+        $tableName = "##globaltemptest$random"
+
+        $splatWrite = @{
+            SqlInstance     = $TestConfig.instance1
+            Database        = "tempdb"
+            Table           = $tableName
+            AutoCreateTable = $true
+        }
+        Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData @splatWrite
+
+        # If the table exists and was created successfully, we should be able to query it
+        $query = "SELECT TOP 1 * FROM [$tableName]"
+        { Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query $query -EnableException } | Should -Not -Throw
     }
 }
