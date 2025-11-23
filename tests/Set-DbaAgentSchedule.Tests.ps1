@@ -14,7 +14,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlInstance",
                 "SqlCredential",
                 "Job",
-                "ScheduleName",
+                "Schedule",
                 "NewName",
                 "Enabled",
                 "Disabled",
@@ -32,6 +32,11 @@ Describe $CommandName -Tag UnitTests {
                 "Force"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+
+        It "Should have ScheduleName as an alias for Schedule parameter" {
+            $aliases = (Get-Command $CommandName).Parameters["Schedule"].Aliases
+            $aliases | Should -Contain "ScheduleName"
         }
     }
 }
