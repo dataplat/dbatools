@@ -121,6 +121,9 @@ function Copy-DbaAgentSchedule {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
+            # Refresh the cache before checking existing schedules
+            $destServer.JobServer.SharedSchedules.Refresh()
+
             $destSchedules = Get-DbaAgentSchedule -SqlInstance $destServer -Schedule $Schedule
 
             foreach ($currentschedule in $InputObject) {

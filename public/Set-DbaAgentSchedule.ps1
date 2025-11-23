@@ -20,7 +20,7 @@ function Set-DbaAgentSchedule {
         Specifies the name of the SQL Agent job that contains the schedule to modify. You can provide multiple job names to update schedules across different jobs.
         Use this when you need to change schedule properties for specific jobs without affecting other jobs that might share the same schedule name.
 
-    .PARAMETER ScheduleName
+    .PARAMETER Schedule
         Specifies the name of the existing schedule to modify within the specified job. Schedule names are case-sensitive.
         Use this to target the specific schedule when a job has multiple schedules attached to it.
 
@@ -110,27 +110,27 @@ function Set-DbaAgentSchedule {
         https://dbatools.io/Set-DbaAgentSchedule
 
     .EXAMPLE
-        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -Enabled
 
         Changes the schedule for Job1 with the name 'daily' to enabled
 
     .EXAMPLE
-        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday
 
         Changes the schedule for Job1 with the name daily to have a new name weekly
 
     .EXAMPLE
-        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime '230000'
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -Schedule daily -StartTime '230000'
 
         Changes the start time of the schedule for Job1 to 11 PM for multiple jobs
 
     .EXAMPLE
-        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -Schedule daily -Enabled
 
         Changes the schedule for Job1 with the name daily to enabled on multiple servers
 
     .EXAMPLE
-        PS C:\> sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName daily -Enabled
+        PS C:\> sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -Schedule daily -Enabled
 
         Changes the schedule for Job1 with the name 'daily' to enabled on multiple servers using pipe line
 
@@ -145,7 +145,8 @@ function Set-DbaAgentSchedule {
         [object[]]$Job,
         [Parameter(Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
-        [string]$ScheduleName,
+        [Alias("ScheduleName")]
+        [string]$Schedule,
         [string]$NewName,
         [switch]$Enabled,
         [switch]$Disabled,
@@ -351,13 +352,13 @@ function Set-DbaAgentSchedule {
 
         # Check the start time
         if ($StartTime -and ($StartTime -notmatch $RegexTime)) {
-            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'. Schedule $ScheduleName not set." -Target $SqlInstance
+            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'. Schedule $Schedule not set." -Target $SqlInstance
             return
         }
 
         # Check the end time
         if ($EndTime -and ($EndTime -notmatch $RegexTime)) {
-            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'. Schedule $ScheduleName not set." -Target $SqlInstance
+            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'. Schedule $Schedule not set." -Target $SqlInstance
             return
         }
 
@@ -393,12 +394,12 @@ function Set-DbaAgentSchedule {
                     Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
                 } else {
                     # Check if the job schedule exists
-                    if ($server.JobServer.Jobs[$j].JobSchedules.Name -notcontains $ScheduleName) {
-                        Stop-Function -Message "Schedule $ScheduleName doesn't exists for job $j on $instance" -Target $instance -Continue
+                    if ($server.JobServer.Jobs[$j].JobSchedules.Name -notcontains $Schedule) {
+                        Stop-Function -Message "Schedule $Schedule doesn't exists for job $j on $instance" -Target $instance -Continue
                     } else {
                         # Get the job schedule
                         # If for some reason the there are multiple schedules with the same name, the first on is chosen
-                        $JobSchedule = $server.JobServer.Jobs[$j].JobSchedules[$ScheduleName][0]
+                        $JobSchedule = $server.JobServer.Jobs[$j].JobSchedules[$Schedule][0]
 
                         # Set the frequency interval to make up for newly created schedules without an interval
                         if ($JobSchedule.FrequencyInterval -eq 0 -and $Interval -lt 1) {
@@ -408,79 +409,82 @@ function Set-DbaAgentSchedule {
                         #region job step options
                         # Setting the options for the job schedule
                         if ($NewName) {
-                            if ($Pscmdlet.ShouldProcess($server, "Setting job schedule $ScheduleName Name to $NewName")) {
+                            if ($Pscmdlet.ShouldProcess($server, "Setting job schedule $Schedule Name to $NewName")) {
                                 $JobSchedule.Rename($NewName)
                             }
                         }
 
                         if ($Enabled) {
-                            Write-Message -Message "Setting job schedule to enabled for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule to enabled for schedule $Schedule" -Level Verbose
                             $JobSchedule.IsEnabled = $true
                         }
 
                         if ($Disabled) {
-                            Write-Message -Message "Setting job schedule to disabled for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule to disabled for schedule $Schedule" -Level Verbose
                             $JobSchedule.IsEnabled = $false
                         }
 
                         if ($FrequencyType -ge 1) {
-                            Write-Message -Message "Setting job schedule frequency to $FrequencyType for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency to $FrequencyType for schedule $Schedule" -Level Verbose
                             $JobSchedule.FrequencyTypes = $FrequencyType
                         }
 
                         if ($Interval -ge 1) {
-                            Write-Message -Message "Setting job schedule frequency interval to $Interval for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency interval to $Interval for schedule $Schedule" -Level Verbose
                             $JobSchedule.FrequencyInterval = $Interval
                         }
 
                         if ($FrequencySubdayType -ge 1) {
-                            Write-Message -Message "Setting job schedule frequency subday type to $FrequencySubdayType for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency subday type to $FrequencySubdayType for schedule $Schedule" -Level Verbose
                             $JobSchedule.FrequencySubDayTypes = $FrequencySubdayType
                         }
 
                         if ($FrequencySubdayInterval -ge 1) {
-                            Write-Message -Message "Setting job schedule frequency subday interval to $FrequencySubdayInterval for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency subday interval to $FrequencySubdayInterval for schedule $Schedule" -Level Verbose
                             $JobSchedule.FrequencySubDayInterval = $FrequencySubdayInterval
                         }
 
                         if (($FrequencyRelativeInterval -ge 1) -and ($FrequencyType -eq 32)) {
-                            Write-Message -Message "Setting job schedule frequency relative interval to $FrequencyRelativeInterval for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency relative interval to $FrequencyRelativeInterval for schedule $Schedule" -Level Verbose
                             $JobSchedule.FrequencyRelativeIntervals = $FrequencyRelativeInterval
                         }
 
                         if (($FrequencyRecurrenceFactor -ge 1) -and ($FrequencyType -in 8, 16, 32)) {
-                            Write-Message -Message "Setting job schedule frequency recurrence factor to $FrequencyRecurrenceFactor for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule frequency recurrence factor to $FrequencyRecurrenceFactor for schedule $Schedule" -Level Verbose
                             $JobSchedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
                         }
 
                         if ($StartDate) {
-                            Write-Message -Message "Setting job schedule start date to $StartDate for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule start date to $StartDate for schedule $Schedule" -Level Verbose
                             $JobSchedule.ActiveStartDate = $StartDate
                         }
 
                         if ($EndDate) {
-                            Write-Message -Message "Setting job schedule end date to $EndDate for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule end date to $EndDate for schedule $Schedule" -Level Verbose
                             $JobSchedule.ActiveEndDate = $EndDate
                         }
 
                         if ($StartTime) {
-                            Write-Message -Message "Setting job schedule start time to $StartTime for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule start time to $StartTime for schedule $Schedule" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $StartTime
                         }
 
                         if ($EndTime) {
-                            Write-Message -Message "Setting job schedule end time to $EndTime for schedule $ScheduleName" -Level Verbose
+                            Write-Message -Message "Setting job schedule end time to $EndTime for schedule $Schedule" -Level Verbose
                             $JobSchedule.ActiveEndTimeOfDay = $EndTime
                         }
                         #endregion job step options
 
                         # Execute the query
-                        if ($PSCmdlet.ShouldProcess($instance, "Committing changes for schedule $ScheduleName for job $j on $instance")) {
+                        if ($PSCmdlet.ShouldProcess($instance, "Committing changes for schedule $Schedule for job $j on $instance")) {
                             try {
                                 # Excute the query and save the result
-                                Write-Message -Message "Committing changes for schedule $ScheduleName for job $j" -Level Verbose
+                                Write-Message -Message "Committing changes for schedule $Schedule for job $j" -Level Verbose
 
                                 $JobSchedule.Alter()
+
+                                # Refresh the cache to pick up the changes
+                                $server.JobServer.SharedSchedules.Refresh()
 
                                 # Return updated schedule
                                 Get-DbaAgentSchedule -SqlInstance $server -ScheduleUid $JobSchedule.ScheduleUid
