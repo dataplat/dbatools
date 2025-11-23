@@ -499,6 +499,16 @@ function New-DbaAvailabilityGroup {
             return
         }
 
+        # Check if ConnectionModeInSecondaryRole is set on Standard Edition
+        if ($ConnectionModeInSecondaryRole -and $ConnectionModeInSecondaryRole -ne "AllowNoConnections") {
+            $instances = @($server) + $secondaries
+            foreach ($instance in $instances) {
+                if ($instance.EngineEdition -eq "Standard") {
+                    Write-Message -Level Warning -Message "ConnectionModeInSecondaryRole is not supported on Standard Edition. The setting will be ignored on $($instance.Name). Consider using Enterprise or Developer Edition for read-only secondary replicas."
+                }
+            }
+        }
+
         # database checks
         if ($Database) {
             $dbs += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
