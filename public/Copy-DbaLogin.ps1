@@ -228,10 +228,10 @@ function Copy-DbaLogin {
             }
 
             if ($newUserName -like "BUILTIN\Administrators" -and $sourceServer.HostPlatform -eq "Linux") {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators on Linux SQL Server")) {
-                    Write-Message -Level Warning -Message "BUILTIN\Administrators cannot be dropped on SQL Server on Linux as it breaks system stored procedures. Skipping."
+                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators")) {
+                    Write-Message -Level Verbose -Message "BUILTIN\Administrators is a critical system login and should not be dropped. Skipping."
                     $copyLoginStatus.Status = "Skipped"
-                    $copyLoginStatus.Notes = "BUILTIN\Administrators is required on Linux SQL Server"
+                    $copyLoginStatus.Notes = "BUILTIN\Administrators is a critical system login"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
                 continue
@@ -313,10 +313,10 @@ function Copy-DbaLogin {
                 }
 
                 if ($newUserName -like "BUILTIN\Administrators" -and $destServer.HostPlatform -eq "Linux") {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators on Linux SQL Server")) {
-                        Write-Message -Level Warning -Message "BUILTIN\Administrators cannot be dropped on SQL Server on Linux as it breaks system stored procedures. Skipping."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators")) {
+                        Write-Message -Level Verbose -Message "BUILTIN\Administrators is a critical system login and should not be dropped. Skipping."
                         $copyLoginStatus.Status = "Skipped"
-                        $copyLoginStatus.Notes = "BUILTIN\Administrators is required on Linux SQL Server"
+                        $copyLoginStatus.Notes = "BUILTIN\Administrators is a critical system login"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     continue

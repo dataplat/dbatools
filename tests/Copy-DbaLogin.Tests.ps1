@@ -225,10 +225,10 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Linux SQL Server protection for BUILTIN\Administrators" {
         BeforeAll {
             $linuxInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-            $isLinux = $linuxInstance.HostPlatform -eq "Linux"
+            $isLinuxPlatform = $linuxInstance.HostPlatform -eq "Linux"
         }
 
-        It "Should skip BUILTIN\Administrators on Linux source with -Force" -Skip:(-not $isLinux) {
+        It "Should skip BUILTIN\Administrators on Linux source with -Force" -Skip:(-not $isLinuxPlatform) {
             $splatCopy = @{
                 Source      = $TestConfig.instance3
                 Destination = $TestConfig.instance1
@@ -237,10 +237,10 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Copy-DbaLogin @splatCopy
             $results.Status | Should -Be "Skipped"
-            $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
+            $results.Notes | Should -Be "BUILTIN\Administrators is a critical system login"
         }
 
-        It "Should skip BUILTIN\Administrators on Linux destination with -Force" -Skip:(-not $isLinux) {
+        It "Should skip BUILTIN\Administrators on Linux destination with -Force" -Skip:(-not $isLinuxPlatform) {
             $splatCopy = @{
                 Source      = $TestConfig.instance1
                 Destination = $TestConfig.instance3
@@ -249,7 +249,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Copy-DbaLogin @splatCopy
             $results.Status | Should -Be "Skipped"
-            $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
+            $results.Notes | Should -Be "BUILTIN\Administrators is a critical system login"
         }
     }
 
@@ -294,9 +294,13 @@ Describe $CommandName -Tag IntegrationTests {
             # This test verifies that the protection code exists and is properly structured
             # Manual testing should be performed in a domain environment to verify the protection works
 
-            $publicPath = Join-Path -Path $TestConfig.ModuleBase -ChildPath "public"
-            $functionPath = Join-Path -Path $publicPath -ChildPath "Copy-DbaLogin.ps1"
-            $functionContent = Get-Content $functionPath -Raw
+            $testPath = $PSScriptRoot
+            if (-not $testPath) {
+                $testPath = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
+            }
+            $moduleRoot = Split-Path -Path $testPath -Parent
+            $functionPath = Join-Path -Path $moduleRoot -ChildPath "public\Copy-DbaLogin.ps1"
+            $functionContent = Get-Content -Path $functionPath -Raw
             $functionContent | Should -BeLike '*LoginType -eq "WindowsGroup"*'
             $functionContent | Should -BeLike '*potential lockout risk*'
             $functionContent | Should -BeLike '*xp_logininfo*'
