@@ -227,8 +227,9 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should create graph tables with IsNode and IsEdge switches" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $skipGraphTests = $server.VersionMajor -lt 14
         }
-        It "Creates a node table when -IsNode is specified" {
+        It "Creates a node table when -IsNode is specified" -Skip:$skipGraphTests {
             $map = @{
                 Name     = "NodeId"
                 Type     = "int"
@@ -238,12 +239,12 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Should -Be $tablenameNode
             $result.IsNode | Should -BeTrue
         }
-        It "Creates an edge table when -IsEdge is specified" {
+        It "Creates an edge table when -IsEdge is specified" -Skip:$skipGraphTests {
             $map = @{
-                Name     = "EdgeProperty"
-                Type     = "varchar"
+                Name      = "EdgeProperty"
+                Type      = "varchar"
                 MaxLength = 50
-                Nullable = $true
+                Nullable  = $true
             }
             $result = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablenameEdge -ColumnMap $map -IsEdge
             $result.Name | Should -Be $tablenameEdge

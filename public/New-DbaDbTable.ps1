@@ -451,10 +451,20 @@ function New-DbaDbTable {
                 }
                 try {
                     $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $db, $Name, $Schema
-                    $properties = $PSBoundParameters | Where-Object Key -notin 'SqlInstance', 'SqlCredential', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException', 'Passthru'
 
-                    foreach ($prop in $properties.Key) {
-                        $object.$prop = $properties[$prop]
+                    # Get common parameters dynamically
+                    $commonParams = [System.Management.Automation.PSCmdlet]::CommonParameters
+                    $commonParams += [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
+
+                    $excludeParams = @(
+                        'SqlInstance', 'SqlCredential', 'Database', 'Name', 'Schema',
+                        'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException', 'Passthru'
+                    ) + $commonParams
+
+                    foreach ($param in $PSBoundParameters.Keys) {
+                        if ($param -notin $excludeParams) {
+                            $object.$param = $PSBoundParameters[$param]
+                        }
                     }
 
                     foreach ($column in $ColumnObject) {
@@ -539,6 +549,7 @@ function New-DbaDbTable {
                             $null = Invoke-Create -Object $schemaObject
                         }
                         $null = Invoke-Create -Object $object
+                        $db.Tables.Refresh()
                     }
                     $db | Get-DbaDbTable -Table "[$Schema].[$Name]"
                 } catch {
