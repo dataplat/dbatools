@@ -463,6 +463,11 @@ function New-DbaDbTable {
 
                     foreach ($param in $PSBoundParameters.Keys) {
                         if ($param -notin $excludeParams) {
+                            # IsNode and IsEdge are only supported in SQL Server 2017+ (version 14+)
+                            if ($param -in 'IsNode', 'IsEdge' -and $server.VersionMajor -lt 14) {
+                                Write-Message -Level Warning -Message "Parameter $param is only supported on SQL Server 2017 and above. Current version is $($server.VersionMajor). Skipping."
+                                continue
+                            }
                             $object.$param = $PSBoundParameters[$param]
                         }
                     }
@@ -557,10 +562,14 @@ function New-DbaDbTable {
                     Write-Message -Level Verbose -Message "Failed to create table or failure while adding constraints. Will try to remove table (and schema)."
                     try {
                         $object.Refresh()
-                        $object.DropIfExists()
+                        if ($object.State -ne 'Dropped') {
+                            $object.Drop()
+                        }
                         if ($schemaObject) {
                             $schemaObject.Refresh()
-                            $schemaObject.DropIfExists()
+                            if ($schemaObject.State -ne 'Dropped') {
+                                $schemaObject.Drop()
+                            }
                         }
                     } catch {
                         Write-Message -Level Warning -Message "Failed to drop table: $_. Maybe table still exists."

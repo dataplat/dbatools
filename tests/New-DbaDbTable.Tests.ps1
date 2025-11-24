@@ -226,8 +226,17 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Should create graph tables with IsNode and IsEdge switches" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $skipGraphTests = $server.VersionMajor -lt 14
+            if (-not $skipGraphTests) {
+                $graphDbName = "dbatoolsscidb_graph_$(Get-Random)"
+                $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $graphDbName
+            }
+        }
+        AfterAll {
+            if (-not $skipGraphTests) {
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $graphDbName -Confirm:$false
+            }
         }
         It "Creates a node table when -IsNode is specified" -Skip:$skipGraphTests {
             $map = @{
@@ -235,7 +244,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Type     = "int"
                 Nullable = $false
             }
-            $result = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablenameNode -ColumnMap $map -IsNode
+            $result = New-DbaDbTable -SqlInstance $TestConfig.instance3 -Database $graphDbName -Name $tablenameNode -ColumnMap $map -IsNode
             $result.Name | Should -Be $tablenameNode
             $result.IsNode | Should -BeTrue
         }
@@ -246,7 +255,7 @@ Describe $CommandName -Tag IntegrationTests {
                 MaxLength = 50
                 Nullable  = $true
             }
-            $result = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablenameEdge -ColumnMap $map -IsEdge
+            $result = New-DbaDbTable -SqlInstance $TestConfig.instance3 -Database $graphDbName -Name $tablenameEdge -ColumnMap $map -IsEdge
             $result.Name | Should -Be $tablenameEdge
             $result.IsEdge | Should -BeTrue
         }
