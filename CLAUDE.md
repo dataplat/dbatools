@@ -76,6 +76,7 @@ When in doubt about version compatibility, use the `New-Object` cmdlet approach.
 - SQL Server 2017 = Version 14
 - SQL Server 2019 = Version 15
 - SQL Server 2022 = Version 16
+- SQL Server 2025 = Version 17
 
 **Philosophy:**
 - **Support SQL Server 2000 when it is not complex or does not add significantly to the codebase**
