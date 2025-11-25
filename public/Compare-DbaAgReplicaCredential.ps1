@@ -98,9 +98,8 @@ function Compare-DbaAgReplicaCredential {
                 foreach ($replicaInstance in $replicaInstances) {
                     try {
                         $splatConnection = @{
-                            SqlInstance     = $replicaInstance
-                            SqlCredential   = $SqlCredential
-                            EnableException = $true
+                            SqlInstance   = $replicaInstance
+                            SqlCredential = $SqlCredential
                         }
                         $replicaServer = Connect-DbaInstance @splatConnection
 
