@@ -407,6 +407,31 @@ function Get-DbaDatabase {
                 $defaults += ('LastRead as LastIndexRead', 'LastWrite as LastIndexWrite')
             }
 
+            # Get database sizes via T-SQL for fallback when SMO Size is null/0
+            # This query works for SQL Server 2000+ and calculates size from sys.master_files or sysaltfiles
+            $querySizes = if ($server.VersionMajor -ge 9) {
+                "SELECT DB_NAME(database_id) AS name,
+                    CAST(SUM(size) * 8.0 / 1024 AS DECIMAL(18,2)) AS SizeMB
+                FROM sys.master_files
+                GROUP BY database_id"
+            } else {
+                "SELECT dbname = DB_NAME(dbid),
+                    SizeMB = CAST(SUM(size) * 8.0 / 1024 AS DECIMAL(18,2))
+                FROM master.dbo.sysaltfiles
+                GROUP BY dbid"
+            }
+
+            function Invoke-QueryDatabaseSizes {
+                try {
+                    $server.Query($querySizes)
+                } catch {
+                    Write-Message -Level Warning -Message "Could not retrieve database sizes via T-SQL: $_"
+                    $null
+                }
+            }
+
+            $dbSizes = Invoke-QueryDatabaseSizes
+
             try {
                 foreach ($db in $inputObject) {
 
@@ -414,6 +439,15 @@ function Get-DbaDatabase {
                     if ($NoFullBackup -or $NoFullBackupSince) {
                         if ($db -cin $hasCopyOnly) {
                             $backupStatus = "Only CopyOnly backups"
+                        }
+                    }
+
+                    # Use T-SQL size if SMO Size is null or 0
+                    $sizeValue = $db.Size
+                    if ($null -eq $sizeValue -or $sizeValue -eq 0) {
+                        $dbSizeInfo = $dbSizes | Where-Object { $_.name -eq $db.Name }
+                        if ($dbSizeInfo) {
+                            $sizeValue = $dbSizeInfo.SizeMB
                         }
                     }
 
@@ -425,6 +459,10 @@ function Get-DbaDatabase {
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -Value $lastusedinfo.last_read
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -Value $lastusedinfo.last_write
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name IsCdcEnabled -Value ($backed_info | Where-Object { $_.name -ceq $db.name }).is_cdc_enabled
+                    # Override Size property with calculated value if SMO returned null/0
+                    if ($null -ne $sizeValue) {
+                        Add-Member -Force -InputObject $db -MemberType NoteProperty -Name Size -Value $sizeValue
+                    }
                     Select-DefaultView -InputObject $db -Property $defaults
                 }
             } catch {
