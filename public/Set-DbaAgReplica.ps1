@@ -245,6 +245,7 @@ function Set-DbaAgReplica {
                     }
 
                     $agreplica.Alter()
+                    $agreplica.Refresh()
                     $agreplica
 
                 } catch {
