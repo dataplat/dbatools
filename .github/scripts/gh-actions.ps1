@@ -435,13 +435,13 @@ exec sp_addrolemember 'userrole','bob';
 
             # Create AG with single replica
             $splatAg = @{
-                Primary      = "localhost"
-                Name         = $agName
-                ClusterType  = "None"
-                FailoverMode = "Manual"
-                Certificate  = $certName
-                SqlCredential = $cred
-                Confirm      = $false
+                Primary              = "localhost"
+                Name                 = $agName
+                ClusterType          = "None"
+                FailoverMode         = "Manual"
+                Certificate          = $certName
+                PrimarySqlCredential = $cred
+                Confirm              = $false
             }
             $ag = New-DbaAvailabilityGroup @splatAg
             $replicaName = $ag.PrimaryReplica
