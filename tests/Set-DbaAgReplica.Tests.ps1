@@ -105,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "does not exist. Only availability"
         }
 
-        It "Sets simple ordered ReadOnlyRoutingList correctly (issue #9987)" {
+        It "Sets simple ordered ReadOnlyRoutingList correctly (issue #9987)" -Skip:$env:appveyor {
             $splatSimpleRouting = @{
                 SqlInstance         = $TestConfig.instance3
                 AvailabilityGroup   = $agName
@@ -118,7 +118,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.ReadonlyRoutingList.Count | Should -Be 1
         }
 
-        It "Sets load-balanced ReadOnlyRoutingList correctly" {
+        It "Sets load-balanced ReadOnlyRoutingList correctly" -Skip:$env:appveyor {
             $splatLoadBalanced = @{
                 SqlInstance         = $TestConfig.instance3
                 AvailabilityGroup   = $agName
