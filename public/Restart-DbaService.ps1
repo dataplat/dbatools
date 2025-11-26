@@ -153,13 +153,22 @@ function Restart-DbaService {
         }
         if ($processArray) {
             if ($PSCmdlet.ShouldProcess("$ProcessArray", "Restarting Service")) {
-                $services = Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
+                $splatServiceStatus = @{
+                    InputObject     = $processArray
+                    Action          = "stop"
+                    Timeout         = $Timeout
+                    EnableException = $EnableException
+                }
+                if ($Credential) { $splatServiceStatus.Credential = $Credential }
+                $services = Update-ServiceStatus @splatServiceStatus
                 foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed' })) {
                     $service
                 }
                 $services = $services | Where-Object { $_.Status -eq 'Successful' }
                 if ($services) {
-                    Update-ServiceStatus -InputObject $services -Action 'restart' -Timeout $Timeout -EnableException $EnableException
+                    $splatServiceStatus.InputObject = $services
+                    $splatServiceStatus.Action = "restart"
+                    Update-ServiceStatus @splatServiceStatus
                 }
             }
         } else {

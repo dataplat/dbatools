@@ -119,7 +119,14 @@ function Start-DbaService {
         $processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
         if ($PSCmdlet.ShouldProcess("$ProcessArray", "Starting Service")) {
             if ($processArray) {
-                Update-ServiceStatus -InputObject $processArray -Action 'start' -Timeout $Timeout -EnableException $EnableException
+                $splatServiceStatus = @{
+                    InputObject     = $processArray
+                    Action          = "start"
+                    Timeout         = $Timeout
+                    EnableException = $EnableException
+                }
+                if ($Credential) { $splatServiceStatus.Credential = $Credential }
+                Update-ServiceStatus @splatServiceStatus
             } else {
                 Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
             }
