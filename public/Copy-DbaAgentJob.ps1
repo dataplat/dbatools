@@ -127,7 +127,17 @@ function Copy-DbaAgentJob {
     begin {
         if ($Source) {
             try {
-                $InputObject = Get-DbaAgentJob -SqlInstance $Source -SqlCredential $SourceSqlCredential -Job $Job -ExcludeJob $ExcludeJob
+                $splatGetJob = @{
+                    SqlInstance   = $Source
+                    SqlCredential = $SourceSqlCredential
+                }
+                if (Test-Bound 'Job') {
+                    $splatGetJob['Job'] = $Job
+                }
+                if (Test-Bound 'ExcludeJob') {
+                    $splatGetJob['ExcludeJob'] = $ExcludeJob
+                }
+                $InputObject = Get-DbaAgentJob @splatGetJob
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
                 return
@@ -160,8 +170,12 @@ function Copy-DbaAgentJob {
                     DateTime          = [DbaDateTime](Get-Date)
                 }
 
-                if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) {
+                if ((Test-Bound 'Job') -and $jobName -notin $Job) {
                     Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
+                    continue
+                }
+                if ((Test-Bound 'ExcludeJob') -and $jobName -in $ExcludeJob) {
+                    Write-Message -Level Verbose -Message "Job [$jobName] excluded. Skipping."
                     continue
                 }
                 Write-Message -Message "Working on job: $jobName" -Level Verbose

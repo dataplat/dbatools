@@ -228,10 +228,10 @@ function Copy-DbaLogin {
             }
 
             if ($newUserName -like "BUILTIN\Administrators" -and $sourceServer.HostPlatform -eq "Linux") {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators on Linux SQL Server")) {
-                    Write-Message -Level Warning -Message "BUILTIN\Administrators cannot be dropped on SQL Server on Linux as it breaks system stored procedures. Skipping."
+                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators")) {
+                    Write-Message -Level Verbose -Message "BUILTIN\Administrators is a critical system login and should not be dropped. Skipping."
                     $copyLoginStatus.Status = "Skipped"
-                    $copyLoginStatus.Notes = "BUILTIN\Administrators is required on Linux SQL Server"
+                    $copyLoginStatus.Notes = "BUILTIN\Administrators is a critical system login"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
                 continue
@@ -313,13 +313,84 @@ function Copy-DbaLogin {
                 }
 
                 if ($newUserName -like "BUILTIN\Administrators" -and $destServer.HostPlatform -eq "Linux") {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators on Linux SQL Server")) {
-                        Write-Message -Level Warning -Message "BUILTIN\Administrators cannot be dropped on SQL Server on Linux as it breaks system stored procedures. Skipping."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping BUILTIN\Administrators")) {
+                        Write-Message -Level Verbose -Message "BUILTIN\Administrators is a critical system login and should not be dropped. Skipping."
                         $copyLoginStatus.Status = "Skipped"
-                        $copyLoginStatus.Notes = "BUILTIN\Administrators is required on Linux SQL Server"
+                        $copyLoginStatus.Notes = "BUILTIN\Administrators is a critical system login"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     continue
+                }
+
+                # Check if dropping this Windows group would lock out the current user (Issue #8572)
+                if ($Login.LoginType -eq "WindowsGroup") {
+                    # Only check if current login is not directly in the logins list (access via group only)
+                    $currentLoginIsDirect = $currentLogin -in $destServer.Logins.Name
+                    if (-not $currentLoginIsDirect) {
+                        Write-Message -Level Verbose -Message "Current login '$currentLogin' is not a direct login on $destinstance"
+
+                        # Check if this is a high-privilege group
+                        # Note: $groupLogin is guaranteed to exist here because we're inside the block
+                        # that checks: if ($null -ne $destServer.Logins.Item($newUserName) -and $force)
+                        $groupLogin = $destServer.Logins.Item($newUserName)
+                        $isHighPrivilege = $false
+
+                        # Check for sysadmin or securityadmin roles
+                        if ($groupLogin.IsMember("sysadmin") -or $groupLogin.IsMember("securityadmin")) {
+                            $isHighPrivilege = $true
+                        }
+
+                        # Check for ALTER ANY LOGIN permission
+                        if (-not $isHighPrivilege) {
+                            try {
+                                $splatPermissions = @{
+                                    SqlInstance = $destServer
+                                    Login       = $newUserName
+                                }
+                                $permissions = Get-DbaPermission @splatPermissions | Where-Object { $_.Permission -eq "ALTER ANY LOGIN" -and $_.State -eq "GRANT" }
+                                if ($permissions) {
+                                    $isHighPrivilege = $true
+                                }
+                            } catch {
+                                Write-Message -Level Verbose -Message "Could not check ALTER ANY LOGIN permission for $newUserName"
+                            }
+                        }
+
+                        # If this is a high-privilege group, check if current user is a member
+                        if ($isHighPrivilege) {
+                            Write-Message -Level Verbose -Message "Group '$newUserName' has high privileges - checking membership"
+                            try {
+                                $memberCheckQuery = "EXEC xp_logininfo @acctname, @option = 'members'"
+                                $splatMemberCheck = @{
+                                    SqlInstance     = $destServer
+                                    Query           = $memberCheckQuery
+                                    SqlParameter    = @{ acctname = $newUserName }
+                                    EnableException = $true
+                                }
+                                $members = Invoke-DbaQuery @splatMemberCheck
+                                $memberNames = $members."account name"
+
+                                if ($currentLogin -in $memberNames) {
+                                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName - potential lockout risk")) {
+                                        Write-Message -Level Warning -Message "Skipping $newUserName. You appear to access this server only through this Windows group. Dropping it with -Force may lock you out. Either: 1) Add your individual login first, 2) Use -ExcludeLogin to skip this group, or 3) Ensure you have another way to access this server."
+                                        $copyLoginStatus.Status = "Skipped"
+                                        $copyLoginStatus.Notes = "Potential lockout risk - current user may depend on this group for access"
+                                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    }
+                                    continue
+                                }
+                            } catch {
+                                # If we cannot enumerate members (permission issues), err on the side of caution
+                                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName - cannot verify group membership")) {
+                                    Write-Message -Level Warning -Message "Cannot enumerate members of $newUserName. If you are a member of this group, dropping it may lock you out. Either: 1) Add your individual login first, 2) Use -ExcludeLogin to skip this group, or 3) Ensure you have another way to access this server."
+                                    $copyLoginStatus.Status = "Skipped"
+                                    $copyLoginStatus.Notes = "Cannot verify group membership - potential lockout risk"
+                                    $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                }
+                                continue
+                            }
+                        }
+                    }
                 }
 
                 if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $newUserName")) {

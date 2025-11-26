@@ -225,10 +225,10 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Linux SQL Server protection for BUILTIN\Administrators" {
         BeforeAll {
             $linuxInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-            $isLinux = $linuxInstance.HostPlatform -eq "Linux"
+            $isLinuxPlatform = $linuxInstance.HostPlatform -eq "Linux"
         }
 
-        It "Should skip BUILTIN\Administrators on Linux source with -Force" -Skip:(-not $isLinux) {
+        It "Should skip BUILTIN\Administrators on Linux source with -Force" -Skip:(-not $isLinuxPlatform) {
             $splatCopy = @{
                 Source      = $TestConfig.instance3
                 Destination = $TestConfig.instance1
@@ -237,10 +237,10 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Copy-DbaLogin @splatCopy
             $results.Status | Should -Be "Skipped"
-            $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
+            $results.Notes | Should -Be "BUILTIN\Administrators is a critical system login"
         }
 
-        It "Should skip BUILTIN\Administrators on Linux destination with -Force" -Skip:(-not $isLinux) {
+        It "Should skip BUILTIN\Administrators on Linux destination with -Force" -Skip:(-not $isLinuxPlatform) {
             $splatCopy = @{
                 Source      = $TestConfig.instance1
                 Destination = $TestConfig.instance3
@@ -249,7 +249,61 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Copy-DbaLogin @splatCopy
             $results.Status | Should -Be "Skipped"
-            $results.Notes | Should -Be "BUILTIN\Administrators is required on Linux SQL Server"
+            $results.Notes | Should -Be "BUILTIN\Administrators is a critical system login"
+        }
+    }
+
+    Context "Regression test for issue #8572 - Windows group lockout protection" {
+        It "Should not throw when processing SQL logins with -Force" {
+            # Verify SQL logins are not affected by Windows group checks
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "tester"
+                Force       = $true
+            }
+            $results = Copy-DbaLogin @splatCopy
+            $results.Status | Should -Be "Successful"
+        }
+
+        It "Should handle Windows logins gracefully when not in a domain" {
+            # This test verifies the code path doesn't break non-domain scenarios
+            # In CI (non-domain), Windows logins typically fail earlier in the process
+            # but the lockout protection code should not introduce new errors
+            {
+                $splatCopy = @{
+                    Source      = $TestConfig.instance1
+                    Destination = $TestConfig.instance2
+                    Login       = "NT AUTHORITY\SYSTEM"
+                    Force       = $true
+                }
+                Copy-DbaLogin @splatCopy -WarningAction SilentlyContinue
+            } | Should -Not -Throw
+        }
+
+        It "Should verify the safety check logic exists for Windows groups" {
+            # This test verifies the safety check added in issue #8572
+            # The safety check should skip Windows groups that provide the current user's only access
+            # when those groups have high privileges (sysadmin, securityadmin, or ALTER ANY LOGIN)
+
+            # Note: Full automated testing requires:
+            # 1. A Windows domain environment with AD groups
+            # 2. A test user that accesses SQL only via an AD group (no direct login)
+            # 3. The ability to test the actual lockout scenario
+
+            # This test verifies that the protection code exists and is properly structured
+            # Manual testing should be performed in a domain environment to verify the protection works
+
+            $testPath = $PSScriptRoot
+            if (-not $testPath) {
+                $testPath = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
+            }
+            $moduleRoot = Split-Path -Path $testPath -Parent
+            $functionPath = Join-Path -Path $moduleRoot -ChildPath "public\Copy-DbaLogin.ps1"
+            $functionContent = Get-Content -Path $functionPath -Raw
+            $functionContent | Should -BeLike '*LoginType -eq "WindowsGroup"*'
+            $functionContent | Should -BeLike '*potential lockout risk*'
+            $functionContent | Should -BeLike '*xp_logininfo*'
         }
     }
 }
