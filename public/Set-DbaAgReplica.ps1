@@ -210,8 +210,8 @@ function Set-DbaAgReplica {
 
                     if ($ReadOnlyRoutingList) {
                         # Detect if this is a simple ordered list or a load-balanced (nested) list
-                        # Simple list: @('Server1', 'Server2') - routes in order
-                        # Load-balanced list: @(,('Server1', 'Server2')) or @(('Server1'),('Server2','Server3')) - load balances within groups
+                        # Simple list: @('Server1', 'Server2') - routes in order, SQL: ('Server1', 'Server2')
+                        # Load-balanced list: @(,('Server1', 'Server2')) - load balances, SQL: (('Server1', 'Server2'))
                         $isLoadBalanced = $false
 
                         # Check if the first element is an array/list (indicates load-balanced routing)
@@ -219,26 +219,21 @@ function Set-DbaAgReplica {
                             $isLoadBalanced = $true
                         }
 
-                        # Always use SetLoadBalancedReadOnlyRoutingList as it's available in all SMO versions
-                        # For simple ordered lists, convert each server to its own group to maintain order
-                        $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
-
                         if ($isLoadBalanced) {
-                            # Already nested - use as-is for load-balanced routing
+                            # Load-balanced routing - use SetLoadBalancedReadOnlyRoutingList method
+                            $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
                             foreach ($rolist in $ReadOnlyRoutingList) {
                                 $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
                             }
+                            $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                         } else {
-                            # Simple ordered list - wrap each server in its own list to maintain priority order
-                            # @('Server1', 'Server2') becomes @(@('Server1'), @('Server2'))
+                            # Simple ordered routing - use property assignment
+                            # This is the standard approach for ordered routing lists
+                            $agreplica.ReadonlyRoutingList.Clear()
                             foreach ($server in $ReadOnlyRoutingList) {
-                                $serverList = New-Object System.Collections.Generic.List[string]
-                                $null = $serverList.Add([string]$server)
-                                $null = $rorl.Add($serverList)
+                                $null = $agreplica.ReadonlyRoutingList.Add([string]$server)
                             }
                         }
-
-                        $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                     }
 
                     if ($SessionTimeout) {

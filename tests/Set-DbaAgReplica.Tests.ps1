@@ -105,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "does not exist. Only availability"
         }
 
-        It "Accepts simple ordered ReadOnlyRoutingList (issue #9987)" {
+        It "Sets simple ordered ReadOnlyRoutingList correctly (issue #9987)" {
             $splatSimpleRouting = @{
                 SqlInstance         = $TestConfig.instance3
                 AvailabilityGroup   = $agName
@@ -113,10 +113,12 @@ Describe $CommandName -Tag IntegrationTests {
                 ReadOnlyRoutingList = @($replicaName)
                 WarningAction       = "SilentlyContinue"
             }
-            { Set-DbaAgReplica @splatSimpleRouting } | Should -Not -Throw
+            $result = Set-DbaAgReplica @splatSimpleRouting
+            $result.ReadonlyRoutingList | Should -Contain $replicaName
+            $result.ReadonlyRoutingList.Count | Should -Be 1
         }
 
-        It "Accepts load-balanced ReadOnlyRoutingList" {
+        It "Sets load-balanced ReadOnlyRoutingList correctly" {
             $splatLoadBalanced = @{
                 SqlInstance         = $TestConfig.instance3
                 AvailabilityGroup   = $agName
@@ -124,7 +126,9 @@ Describe $CommandName -Tag IntegrationTests {
                 ReadOnlyRoutingList = @(,($replicaName))
                 WarningAction       = "SilentlyContinue"
             }
-            { Set-DbaAgReplica @splatLoadBalanced } | Should -Not -Throw
+            $result = Set-DbaAgReplica @splatLoadBalanced
+            # Load-balanced routing lists show as comma-separated groups in the property
+            $result.ReadonlyRoutingList | Should -Not -BeNullOrEmpty
         }
     }
 } #$TestConfig.instance2 for appveyor
