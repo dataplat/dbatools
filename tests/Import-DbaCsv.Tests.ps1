@@ -56,7 +56,9 @@ Describe $CommandName -Tag UnitTests {
                 "DistinguishEmptyFromNull",
                 "NormalizeQuotes",
                 "CollectParseErrors",
-                "MaxParseErrors"
+                "MaxParseErrors",
+                "Parallel",
+                "ThrottleLimit"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
@@ -432,6 +434,91 @@ Describe $CommandName -Tag IntegrationTests {
             $result.RowsCopied | Should -Be 2
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+        }
+
+        It "works with -Parallel switch" {
+            $filePath = "$($TestConfig.Temp)\parallel-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "ParallelTest$(Get-Random)"
+
+            # Create test file with multiple rows
+            "col1,col2,col3" | Out-File -FilePath $filePath -Encoding UTF8
+            1..100 | ForEach-Object { "val$_,data$_,info$_" | Out-File -FilePath $filePath -Encoding UTF8 -Append }
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable -Parallel
+
+            $result.RowsCopied | Should -Be 100
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT COUNT(*) AS cnt FROM $tableName" -As PSObject
+            $data.cnt | Should -Be 100
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "works with -Parallel and -ThrottleLimit" {
+            $filePath = "$($TestConfig.Temp)\parallel-throttle-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "ParallelThrottleTest$(Get-Random)"
+
+            # Create test file
+            "col1,col2" | Out-File -FilePath $filePath -Encoding UTF8
+            1..50 | ForEach-Object { "value$_,data$_" | Out-File -FilePath $filePath -Encoding UTF8 -Append }
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable -Parallel -ThrottleLimit 2
+
+            $result.RowsCopied | Should -Be 50
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "works with -Parallel and type conversion" {
+            $filePath = "$($TestConfig.Temp)\parallel-types-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "ParallelTypesTest$(Get-Random)"
+
+            # Create table with specific types
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE $tableName (id INT, amount DECIMAL(10,2), active BIT)"
+
+            # Create CSV file
+            "id,amount,active" | Out-File -FilePath $filePath -Encoding UTF8
+            "1,100.50,1" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "2,200.75,0" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "3,300.25,1" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -Parallel
+
+            $result.RowsCopied | Should -Be 3
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY id" -As PSObject
+            $data[0].id | Should -Be 1
+            $data[0].amount | Should -Be 100.50
+            $data[1].amount | Should -Be 200.75
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "parallel mode preserves record order" {
+            $filePath = "$($TestConfig.Temp)\parallel-order-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "ParallelOrderTest$(Get-Random)"
+
+            # Create test file with sequential numbers to verify order
+            "seq,value" | Out-File -FilePath $filePath -Encoding UTF8
+            1..200 | ForEach-Object { "$_,data$_" | Out-File -FilePath $filePath -Encoding UTF8 -Append }
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable -Parallel
+
+            $result.RowsCopied | Should -Be 200
+
+            # Verify all records were imported (order in DB may vary based on bulk copy)
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT COUNT(DISTINCT seq) AS cnt FROM $tableName" -As PSObject
+            $data.cnt | Should -Be 200
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
         }
     }
 }

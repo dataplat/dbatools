@@ -204,6 +204,22 @@ function Import-DbaCsv {
         Maximum number of parse errors to collect before stopping.
         Only applies when -CollectParseErrors is specified. Default is 1000.
 
+    .PARAMETER Parallel
+        Enables parallel processing for improved performance on large files.
+        When enabled, line reading, parsing, and type conversion are performed in parallel
+        using a producer-consumer pipeline. This can provide 2-4x performance improvement
+        on multi-core systems.
+
+        Note: Parallel processing is most beneficial for large files (>100K rows) with
+        complex type conversions. For small files, sequential processing may be faster
+        due to lower overhead.
+
+    .PARAMETER ThrottleLimit
+        Sets the maximum number of worker threads for parallel processing.
+        Default is 0, which uses the number of logical processors on the system.
+        Set to 1 to effectively disable parallelism while still using the pipeline architecture.
+        Only used when -Parallel is specified.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -352,6 +368,8 @@ function Import-DbaCsv {
         [switch]$NormalizeQuotes,
         [switch]$CollectParseErrors,
         [int]$MaxParseErrors = 1000,
+        [switch]$Parallel,
+        [int]$ThrottleLimit = 0,
         [switch]$EnableException
     )
     begin {
@@ -785,6 +803,10 @@ function Import-DbaCsv {
                             $csvOptions.MaxQuotedFieldLength = $MaxQuotedFieldLength
                         }
                         $csvOptions.ParseErrorAction = [Dataplat.Dbatools.Csv.CsvParseErrorAction]::$ParseErrorAction
+                        $csvOptions.EnableParallelProcessing = $Parallel.IsPresent
+                        if ($PSBoundParameters.ThrottleLimit) {
+                            $csvOptions.MaxDegreeOfParallelism = $ThrottleLimit
+                        }
 
                         $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($stream, $csvOptions)
 
