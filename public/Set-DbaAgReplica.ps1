@@ -245,9 +245,28 @@ function Set-DbaAgReplica {
                     }
 
                     $agreplica.Alter()
-                    # Refresh the parent's replica collection to get updated ReadonlyRoutingList
-                    $agreplica.Parent.AvailabilityReplicas.Refresh()
-                    $agreplica.Parent.AvailabilityReplicas[$agreplica.Name]
+                    # Get fresh replica object and populate ReadonlyRoutingList from system view
+                    # SMO's Refresh() doesn't properly populate the ReadonlyRoutingList collection
+                    $agName = $agreplica.Parent.Name
+                    $replicaName = $agreplica.Name
+                    $freshReplica = Get-DbaAgReplica -SqlInstance $server -AvailabilityGroup $agName -Replica $replicaName
+
+                    # Query sys.availability_read_only_routing_lists to get actual routing data
+                    $routingQuery = "
+                        SELECT r2.replica_server_name
+                        FROM sys.availability_read_only_routing_lists rorl
+                        INNER JOIN sys.availability_replicas r1 ON rorl.replica_id = r1.replica_id
+                        INNER JOIN sys.availability_replicas r2 ON rorl.read_only_replica_id = r2.replica_id
+                        WHERE r1.replica_server_name = '$replicaName'
+                        ORDER BY rorl.routing_priority
+                    "
+                    $routingList = $server.Query($routingQuery) | Select-Object -ExpandProperty replica_server_name
+
+                    # Add the routing list as a property
+                    if ($routingList) {
+                        Add-Member -Force -InputObject $freshReplica -MemberType NoteProperty -Name ReadonlyRoutingList -Value $routingList
+                    }
+                    $freshReplica
 
                 } catch {
                     Stop-Function -Message "Failed to modify replica $($agreplica.Name) in availability group $($agreplica.Parent.Name)" -ErrorRecord $_ -Continue
