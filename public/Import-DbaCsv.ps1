@@ -214,6 +214,9 @@ function Import-DbaCsv {
         complex type conversions. For small files, sequential processing may be faster
         due to lower overhead.
 
+        When -Parallel is used, the progress bar is disabled because the progress callback
+        cannot run in background threads.
+
     .PARAMETER ThrottleLimit
         Sets the maximum number of worker threads for parallel processing.
         Default is 0, which uses the number of logical processors on the system.
@@ -763,18 +766,22 @@ function Import-DbaCsv {
                     # Write to server :D
                     try {
 
-                        [Action[double]] $progressCallback = {
-                            param($progress)
+                        $stream = [System.IO.File]::OpenRead($File)
 
-                            if (-not $NoProgress) {
-                                $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-                                $percent = [int]($progress * 100)
-                                Write-ProgressHelper -StepNumber $percent -TotalSteps 100 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows {1}% in {2} seconds", $script:totalRowsCopied, $percent, $timetaken))
+                        # ProgressStream callback doesn't work with parallel processing
+                        # (background threads can't access PowerShell runspace)
+                        if (-not $Parallel) {
+                            [Action[double]] $progressCallback = {
+                                param($progress)
+
+                                if (-not $NoProgress) {
+                                    $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
+                                    $percent = [int]($progress * 100)
+                                    Write-ProgressHelper -StepNumber $percent -TotalSteps 100 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows {1}% in {2} seconds", $script:totalRowsCopied, $percent, $timetaken))
+                                }
                             }
+                            $stream = New-Object Dataplat.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
                         }
-
-                        $stream = [System.IO.File]::OpenRead($File);
-                        $stream = New-Object Dataplat.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
 
                         # Build CsvReaderOptions with all configuration
                         $csvOptions = [Dataplat.Dbatools.Csv.Reader.CsvReaderOptions]::new()
