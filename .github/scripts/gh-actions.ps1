@@ -446,6 +446,17 @@ exec sp_addrolemember 'userrole','bob';
             $ag = New-DbaAvailabilityGroup @splatAg
             $replicaName = $ag.PrimaryReplica
 
+            # First, set ReadonlyRoutingConnectionUrl - required before setting ReadOnlyRoutingList
+            $splatRoutingUrl = @{
+                SqlInstance                  = "localhost"
+                SqlCredential                = $cred
+                AvailabilityGroup            = $agName
+                Replica                      = $replicaName
+                ReadonlyRoutingConnectionUrl = "TCP://${replicaName}:1433"
+                Confirm                      = $false
+            }
+            $null = Set-DbaAgReplica @splatRoutingUrl
+
             # Test simple ordered ReadOnlyRoutingList (issue #9987)
             $splatSimpleRouting = @{
                 SqlInstance         = "localhost"
