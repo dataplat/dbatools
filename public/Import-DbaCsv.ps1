@@ -388,7 +388,7 @@ function Import-DbaCsv {
                 [Microsoft.Data.SqlClient.SqlTransaction]$transaction
             )
 
-            $options = [Dataplat.Dbatools.Csv.CsvReaderOptions]::new()
+            $options = [Dataplat.Dbatools.Csv.Reader.CsvReaderOptions]::new()
             $options.HasHeaderRow = $FirstRowHeader
             $options.Delimiter = $Delimiter
             $options.Quote = $Quote
@@ -399,9 +399,10 @@ function Import-DbaCsv {
             $options.Encoding = [System.Text.Encoding]::$Encoding
             if ($NullValue) { $options.NullValue = $NullValue }
             $options.MaxDecompressedSize = $MaxDecompressedSize
+            $options.SkipRows = $SkipRows
 
             try {
-                $reader = [Dataplat.Dbatools.Csv.CsvDataReader]::new($Path, $options)
+                $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($Path, $options)
                 $columns = $reader.GetFieldHeaders()
             } finally {
                 $reader.Close()
@@ -519,14 +520,20 @@ function Import-DbaCsv {
             $isCompressed = $ext -eq '.gz'
 
             if (-not $isCompressed) {
-                # Does the second line contain the specified delimiter?
+                # Does the data section contain the specified delimiter?
+                # Account for SkipRows when checking
                 try {
-                    $firstlines = Get-Content -Path $file -TotalCount 2 -ErrorAction Stop
+                    $linesToRead = $SkipRows + 2
+                    $firstlines = Get-Content -Path $file -TotalCount $linesToRead -ErrorAction Stop
+                    # Get only the lines after SkipRows for delimiter check
+                    if ($SkipRows -gt 0 -and $firstlines.Count -gt $SkipRows) {
+                        $firstlines = $firstlines[$SkipRows..($firstlines.Count - 1)]
+                    }
                 } catch {
                     Stop-Function -Continue -Message "Failure reading $file" -ErrorRecord $_
                 }
                 if (-not $SingleColumn) {
-                    if ($firstlines -notmatch $Delimiter) {
+                    if ($firstlines -notmatch [regex]::Escape($Delimiter)) {
                         Stop-Function -Message "Delimiter ($Delimiter) not found in first few rows of $file. If this is a single column import, please specify -SingleColumn"
                         return
                     }
@@ -751,7 +758,7 @@ function Import-DbaCsv {
                         $stream = New-Object Dataplat.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
 
                         # Build CsvReaderOptions with all configuration
-                        $csvOptions = [Dataplat.Dbatools.Csv.CsvReaderOptions]::new()
+                        $csvOptions = [Dataplat.Dbatools.Csv.Reader.CsvReaderOptions]::new()
                         $csvOptions.HasHeaderRow = $FirstRowHeader
                         $csvOptions.Delimiter = $Delimiter
                         $csvOptions.Quote = $Quote
@@ -763,9 +770,9 @@ function Import-DbaCsv {
                         if ($NullValue) { $csvOptions.NullValue = $NullValue }
                         $csvOptions.MaxDecompressedSize = $MaxDecompressedSize
                         $csvOptions.SkipRows = $SkipRows
-                        $csvOptions.QuoteMode = [Dataplat.Dbatools.Csv.QuoteMode]::$QuoteMode
-                        $csvOptions.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
-                        $csvOptions.MismatchedFieldAction = [Dataplat.Dbatools.Csv.MismatchedFieldAction]::$MismatchedFieldAction
+                        $csvOptions.QuoteMode = [Dataplat.Dbatools.Csv.Reader.QuoteMode]::$QuoteMode
+                        $csvOptions.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.Reader.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
+                        $csvOptions.MismatchedFieldAction = [Dataplat.Dbatools.Csv.Reader.MismatchedFieldAction]::$MismatchedFieldAction
                         $csvOptions.DistinguishEmptyFromNull = $DistinguishEmptyFromNull.IsPresent
                         $csvOptions.NormalizeQuotes = $NormalizeQuotes.IsPresent
                         $csvOptions.CollectParseErrors = $CollectParseErrors.IsPresent
@@ -778,7 +785,7 @@ function Import-DbaCsv {
                         }
                         $csvOptions.ParseErrorAction = [Dataplat.Dbatools.Csv.CsvParseErrorAction]::$ParseErrorAction
 
-                        $reader = [Dataplat.Dbatools.Csv.CsvDataReader]::new($stream, $csvOptions)
+                        $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($stream, $csvOptions)
 
                         if ($shouldMapCorrectTypes) {
 
