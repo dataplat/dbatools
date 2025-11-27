@@ -74,6 +74,13 @@ Describe $CommandName -Tag IntegrationTests {
         $pathCols = "$($TestConfig.appveyorlabrepo)\csv\cols.csv"
         $pathCol2 = "$($TestConfig.appveyorlabrepo)\csv\col2.csv"
         $pathPipe3 = "$($TestConfig.appveyorlabrepo)\csv\pipe3.psv"
+        # New test files for Dataplat.Dbatools.Csv features
+        $pathMultiCharDelim = "$($TestConfig.appveyorlabrepo)\csv\multichar-delim.csv"
+        $pathCompressed = "$($TestConfig.appveyorlabrepo)\csv\compressed.csv.gz"
+        $pathWithMetadata = "$($TestConfig.appveyorlabrepo)\csv\with-metadata.csv"
+        $pathDuplicateHeaders = "$($TestConfig.appveyorlabrepo)\csv\duplicate-headers.csv"
+        $pathMismatchedFields = "$($TestConfig.appveyorlabrepo)\csv\mismatched-fields.csv"
+        $pathMalformedQuotes = "$($TestConfig.appveyorlabrepo)\csv\malformed-quotes.csv"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -347,6 +354,84 @@ Describe $CommandName -Tag IntegrationTests {
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        # Tests using static files from appveyor-lab
+        It "imports multi-character delimited file from static test file" {
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "StaticMultiCharDelim$(Get-Random)"
+
+            $result = Import-DbaCsv -Path $pathMultiCharDelim -SqlInstance $server -Database tempdb -Table $tableName -Delimiter "::" -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 3
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            $data[0].col1 | Should -Be "val1"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+        }
+
+        It "imports gzip-compressed file from static test file" {
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "StaticCompressed$(Get-Random)"
+
+            $result = Import-DbaCsv -Path $pathCompressed -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            $data[0].col1 | Should -Be "gzval1"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+        }
+
+        It "imports file with SkipRows using static test file" {
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "StaticSkipRows$(Get-Random)"
+
+            $result = Import-DbaCsv -Path $pathWithMetadata -SqlInstance $server -Database tempdb -Table $tableName -SkipRows 2 -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            $data[0].col1 | Should -Be "value1"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+        }
+
+        It "imports file with duplicate headers using static test file" {
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "StaticDupHeaders$(Get-Random)"
+
+            $result = Import-DbaCsv -Path $pathDuplicateHeaders -SqlInstance $server -Database tempdb -Table $tableName -DuplicateHeaderBehavior Rename -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            $data[0].name | Should -Be "john"
+            $data[0].name_2 | Should -Be "doe"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+        }
+
+        It "imports file with mismatched fields using static test file" {
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "StaticMismatch$(Get-Random)"
+
+            $result = Import-DbaCsv -Path $pathMismatchedFields -SqlInstance $server -Database tempdb -Table $tableName -MismatchedFieldAction PadWithNulls -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 3
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY col1" -As PSObject
+            $data[0].col1 | Should -Be "val1"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+        }
+
+        It "imports file with malformed quotes using static test file" {
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "StaticMalformed$(Get-Random)"
+
+            $result = Import-DbaCsv -Path $pathMalformedQuotes -SqlInstance $server -Database tempdb -Table $tableName -QuoteMode Lenient -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
         }
     }
 }
