@@ -245,8 +245,9 @@ function Set-DbaAgReplica {
                     }
 
                     $agreplica.Alter()
-                    $agreplica.Refresh()
-                    $agreplica
+                    # Refresh the parent's replica collection to get updated ReadonlyRoutingList
+                    $agreplica.Parent.AvailabilityReplicas.Refresh()
+                    $agreplica.Parent.AvailabilityReplicas[$agreplica.Name]
 
                 } catch {
                     Stop-Function -Message "Failed to modify replica $($agreplica.Name) in availability group $($agreplica.Parent.Name)" -ErrorRecord $_ -Continue
