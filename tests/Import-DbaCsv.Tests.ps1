@@ -47,7 +47,16 @@ Describe $CommandName -Tag UnitTests {
                 "SupportsMultiline",
                 "UseColumnDefault",
                 "EnableException",
-                "NoTransaction"
+                "NoTransaction",
+                "MaxDecompressedSize",
+                "SkipRows",
+                "QuoteMode",
+                "DuplicateHeaderBehavior",
+                "MismatchedFieldAction",
+                "DistinguishEmptyFromNull",
+                "NormalizeQuotes",
+                "CollectParseErrors",
+                "MaxParseErrors"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
@@ -202,27 +211,138 @@ Describe $CommandName -Tag IntegrationTests {
             Remove-Item $filePath -ErrorAction SilentlyContinue
         }
 
-        It "warns when multi-character delimiter is specified and uses only first character (issue #6488)" {
+        It "supports multi-character delimiters (issue #6488)" {
             $filePath = "$($TestConfig.Temp)\delimiter-test-$(Get-Random).csv"
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
             $tableName = "DelimiterTest$(Get-Random)"
 
-            "col1|col2|col3" | Out-File -FilePath $filePath -Encoding UTF8
-            "val1|val2|val3" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            # Create a file with multi-character delimiter "::"
+            "col1::col2::col3" | Out-File -FilePath $filePath -Encoding UTF8
+            "val1::val2::val3" | Out-File -FilePath $filePath -Encoding UTF8 -Append
 
             $splatImport = @{
                 Path            = $filePath
                 SqlInstance     = $server
                 Database        = "tempdb"
                 Table           = $tableName
-                Delimiter       = "||"
+                Delimiter       = "::"
                 AutoCreateTable = $true
-                WarningVariable = "warnVar"
-                WarningAction   = "SilentlyContinue"
             }
             $result = Import-DbaCsv @splatImport
 
-            $warnVar | Should -BeLike "*Multi-character delimiter*only the first character*will be used*"
+            # Should work without warnings now
+            $result.RowsCopied | Should -Be 1
+
+            # Verify data was parsed correctly with multi-char delimiter
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            $data.col1 | Should -Be "val1"
+            $data.col2 | Should -Be "val2"
+            $data.col3 | Should -Be "val3"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "supports gzip-compressed CSV files" {
+            $csvContent = "col1,col2`nvalue1,value2"
+            $filePath = "$($TestConfig.Temp)\compressed-$(Get-Random).csv.gz"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "CompressedTest$(Get-Random)"
+
+            # Create a gzipped test file
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($csvContent)
+            $ms = [System.IO.MemoryStream]::new($bytes)
+            $fs = [System.IO.File]::Create($filePath)
+            $gz = [System.IO.Compression.GZipStream]::new($fs, [System.IO.Compression.CompressionMode]::Compress)
+            $ms.CopyTo($gz)
+            $gz.Close()
+            $fs.Close()
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "supports SkipRows parameter" {
+            $filePath = "$($TestConfig.Temp)\skiprows-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "SkipRowsTest$(Get-Random)"
+
+            # Create file with metadata rows before actual CSV data
+            "This is metadata row 1" | Out-File -FilePath $filePath -Encoding UTF8
+            "This is metadata row 2" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "col1,col2" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "value1,value2" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -SkipRows 2 -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 1
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            $data.col1 | Should -Be "value1"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "supports DuplicateHeaderBehavior Rename" {
+            $filePath = "$($TestConfig.Temp)\dupheader-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "DupHeaderTest$(Get-Random)"
+
+            # Create file with duplicate headers
+            "name,value,name" | Out-File -FilePath $filePath -Encoding UTF8
+            "john,100,doe" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -DuplicateHeaderBehavior Rename -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 1
+
+            # Verify the duplicate column was renamed
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            $data.name | Should -Be "john"
+            $data.name_2 | Should -Be "doe"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "supports MismatchedFieldAction PadWithNulls" {
+            $filePath = "$($TestConfig.Temp)\mismatch-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "MismatchTest$(Get-Random)"
+
+            # Create file with missing field
+            "col1,col2,col3" | Out-File -FilePath $filePath -Encoding UTF8
+            "val1,val2" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -MismatchedFieldAction PadWithNulls -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 1
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            $data.col1 | Should -Be "val1"
+            $data.col2 | Should -Be "val2"
+            $data.col3 | Should -BeNullOrEmpty
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "supports QuoteMode Lenient for malformed quotes" {
+            $filePath = "$($TestConfig.Temp)\lenient-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "LenientTest$(Get-Random)"
+
+            # Create file with malformed quotes (embedded quotes without proper escaping)
+            "col1,col2" | Out-File -FilePath $filePath -Encoding UTF8
+            'value with "embedded" quotes,normal' | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -QuoteMode Lenient -AutoCreateTable
+
             $result.RowsCopied | Should -Be 1
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue

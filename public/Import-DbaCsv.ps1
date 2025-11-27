@@ -21,9 +21,9 @@ function Import-DbaCsv {
         When enabled, columns are mapped by ordinal position and you'll need to ensure your target table column order matches the CSV.
 
     .PARAMETER Delimiter
-        Sets the field separator character used in the CSV file. Defaults to comma if not specified.
+        Sets the field separator used in the CSV file. Defaults to comma if not specified.
         Common values include comma (,), tab (`t), pipe (|), semicolon (;), or space for different export formats from various systems.
-        Note: Due to LumenWorks library limitations, only single-character delimiters are supported. If a multi-character delimiter is provided, only the first character will be used.
+        Multi-character delimiters are fully supported (e.g., "::", "||", "\t\t").
 
     .PARAMETER SingleColumn
         Indicates the CSV contains only one column of data without delimiters. Use this for simple lists or single-value imports.
@@ -159,6 +159,51 @@ function Import-DbaCsv {
         Disables the automatic transaction wrapper, allowing partial imports to remain committed even if the operation fails.
         Use this for very large imports where you want to commit data in batches, but be aware that failed imports may leave partial data.
 
+    .PARAMETER MaxDecompressedSize
+        Maximum size in bytes for decompressed data when reading compressed CSV files (.gz, .br, .deflate, .zlib).
+        This protects against decompression bomb attacks. Default is 10GB (10737418240 bytes).
+        Set to 0 for unlimited (not recommended for untrusted files).
+
+    .PARAMETER SkipRows
+        Number of rows to skip at the beginning of the file before reading headers or data.
+        Useful for files with metadata rows before the actual CSV content.
+
+    .PARAMETER QuoteMode
+        Controls how quoted fields are parsed.
+        - Strict: RFC 4180 compliant parsing (default)
+        - Lenient: More forgiving parsing for malformed CSV files with embedded quotes
+
+    .PARAMETER DuplicateHeaderBehavior
+        Controls how duplicate column headers are handled.
+        - ThrowException: Throw an error (default)
+        - Rename: Rename duplicates (Name_2, Name_3, etc.)
+        - UseFirstOccurrence: Keep first, ignore duplicates
+        - UseLastOccurrence: Keep last, rename earlier occurrences
+
+    .PARAMETER MismatchedFieldAction
+        Controls what happens when a row has more or fewer fields than expected.
+        - ThrowException: Throw an error (default)
+        - PadWithNulls: Pad missing fields with null
+        - TruncateExtra: Remove extra fields
+        - PadOrTruncate: Both pad and truncate as needed
+
+    .PARAMETER DistinguishEmptyFromNull
+        When specified, treats empty quoted fields ("") as empty strings and
+        unquoted empty fields (,,) as null values.
+
+    .PARAMETER NormalizeQuotes
+        When specified, converts smart/curly quotes (' ' " ") to standard ASCII quotes before parsing.
+        Useful when importing data exported from Microsoft Word or Excel.
+
+    .PARAMETER CollectParseErrors
+        When specified, collects parse errors instead of throwing immediately.
+        Use with -MaxParseErrors to limit the number of errors collected.
+        Errors can be retrieved from the reader after import completes.
+
+    .PARAMETER MaxParseErrors
+        Maximum number of parse errors to collect before stopping.
+        Only applies when -CollectParseErrors is specified. Default is 1000.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -262,6 +307,7 @@ function Import-DbaCsv {
         [string]$Schema,
         [switch]$Truncate,
         [ValidateNotNullOrEmpty()]
+        [Alias("DelimiterChar")]
         [string]$Delimiter = ",",
         [switch]$SingleColumn,
         [int]$BatchSize = 50000,
@@ -294,6 +340,18 @@ function Import-DbaCsv {
         [switch]$SupportsMultiline,
         [switch]$UseColumnDefault,
         [switch]$NoTransaction,
+        [long]$MaxDecompressedSize = 10737418240,
+        [int]$SkipRows = 0,
+        [ValidateSet('Strict', 'Lenient')]
+        [string]$QuoteMode = 'Strict',
+        [ValidateSet('ThrowException', 'Rename', 'UseFirstOccurrence', 'UseLastOccurrence')]
+        [string]$DuplicateHeaderBehavior = 'ThrowException',
+        [ValidateSet('ThrowException', 'PadWithNulls', 'TruncateExtra', 'PadOrTruncate')]
+        [string]$MismatchedFieldAction = 'ThrowException',
+        [switch]$DistinguishEmptyFromNull,
+        [switch]$NormalizeQuotes,
+        [switch]$CollectParseErrors,
+        [int]$MaxParseErrors = 1000,
         [switch]$EnableException
     )
     begin {
@@ -302,14 +360,6 @@ function Import-DbaCsv {
 
         if ($PSBoundParameters.UseFileNameForSchema -and $PSBoundParameters.Schema) {
             Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
-        }
-
-        # Handle multi-character delimiters
-        if ($Delimiter.Length -gt 1) {
-            Write-Message -Level Warning -Message "Multi-character delimiter '$Delimiter' specified. Due to LumenWorks library limitations, only the first character '$($Delimiter[0])' will be used as the delimiter."
-            $delimiterChar = $Delimiter[0]
-        } else {
-            $delimiterChar = $Delimiter[0]
         }
 
         function New-SqlTable {
@@ -331,30 +381,27 @@ function Import-DbaCsv {
                 [Parameter(Mandatory)]
                 [string]$Path,
                 [Parameter(Mandatory)]
-                [char]$DelimiterChar,
+                [string]$Delimiter,
                 [Parameter(Mandatory)]
                 [bool]$FirstRowHeader,
                 [Microsoft.Data.SqlClient.SqlConnection]$sqlconn,
-                [Microsoft.Data.SqlClient.SqlTransaction]$transaction,
-                [bool]$IsCompressed
+                [Microsoft.Data.SqlClient.SqlTransaction]$transaction
             )
 
-            $stream = [System.IO.File]::OpenRead($Path);
-            if ($IsCompressed) {
-                $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
-            }
+            $options = [Dataplat.Dbatools.Csv.CsvReaderOptions]::new()
+            $options.HasHeaderRow = $FirstRowHeader
+            $options.Delimiter = $Delimiter
+            $options.Quote = $Quote
+            $options.Escape = $Escape
+            $options.Comment = $Comment
+            $options.TrimmingOptions = [Dataplat.Dbatools.Csv.ValueTrimmingOptions]::$TrimmingOption
+            $options.BufferSize = $BufferSize
+            $options.Encoding = [System.Text.Encoding]::$Encoding
+            if ($NullValue) { $options.NullValue = $NullValue }
+            $options.MaxDecompressedSize = $MaxDecompressedSize
+
             try {
-                $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                    (New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::$Encoding)),
-                    $FirstRowHeader,
-                    $DelimiterChar,
-                    $Quote,
-                    $Escape,
-                    $Comment,
-                    [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
-                    $BufferSize,
-                    $NullValue
-                )
+                $reader = [Dataplat.Dbatools.Csv.CsvDataReader]::new($Path, $options)
                 $columns = $reader.GetFieldHeaders()
             } finally {
                 $reader.Close()
@@ -590,7 +637,7 @@ function Import-DbaCsv {
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
                         try {
-                            New-SqlTable -Path $file -DelimiterChar $delimiterChar -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction -IsCompressed $isCompressed
+                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
                         } catch {
                             Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                         }
@@ -703,23 +750,35 @@ function Import-DbaCsv {
                         $stream = [System.IO.File]::OpenRead($File);
                         $stream = New-Object Dataplat.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
 
-                        if ($isCompressed) {
-                            $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
+                        # Build CsvReaderOptions with all configuration
+                        $csvOptions = [Dataplat.Dbatools.Csv.CsvReaderOptions]::new()
+                        $csvOptions.HasHeaderRow = $FirstRowHeader
+                        $csvOptions.Delimiter = $Delimiter
+                        $csvOptions.Quote = $Quote
+                        $csvOptions.Escape = $Escape
+                        $csvOptions.Comment = $Comment
+                        $csvOptions.TrimmingOptions = [Dataplat.Dbatools.Csv.ValueTrimmingOptions]::$TrimmingOption
+                        $csvOptions.BufferSize = $BufferSize
+                        $csvOptions.Encoding = [System.Text.Encoding]::$Encoding
+                        if ($NullValue) { $csvOptions.NullValue = $NullValue }
+                        $csvOptions.MaxDecompressedSize = $MaxDecompressedSize
+                        $csvOptions.SkipRows = $SkipRows
+                        $csvOptions.QuoteMode = [Dataplat.Dbatools.Csv.QuoteMode]::$QuoteMode
+                        $csvOptions.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
+                        $csvOptions.MismatchedFieldAction = [Dataplat.Dbatools.Csv.MismatchedFieldAction]::$MismatchedFieldAction
+                        $csvOptions.DistinguishEmptyFromNull = $DistinguishEmptyFromNull.IsPresent
+                        $csvOptions.NormalizeQuotes = $NormalizeQuotes.IsPresent
+                        $csvOptions.CollectParseErrors = $CollectParseErrors.IsPresent
+                        $csvOptions.MaxParseErrors = $MaxParseErrors
+                        $csvOptions.SkipEmptyLines = $SkipEmptyLine.IsPresent
+                        $csvOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        $csvOptions.UseColumnDefaults = $UseColumnDefault.IsPresent
+                        if ($PSBoundParameters.MaxQuotedFieldLength) {
+                            $csvOptions.MaxQuotedFieldLength = $MaxQuotedFieldLength
                         }
+                        $csvOptions.ParseErrorAction = [Dataplat.Dbatools.Csv.CsvParseErrorAction]::$ParseErrorAction
 
-                        $textReader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::$Encoding)
-
-                        $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                            $textReader,
-                            $FirstRowHeader,
-                            $delimiterChar,
-                            $Quote,
-                            $Escape,
-                            $Comment,
-                            [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
-                            $BufferSize,
-                            $NullValue
-                        )
+                        $reader = [Dataplat.Dbatools.Csv.CsvDataReader]::new($stream, $csvOptions)
 
                         if ($shouldMapCorrectTypes) {
 
@@ -743,14 +802,9 @@ function Import-DbaCsv {
                                             $colTypeFromSql = $sqlCol.DataType
                                             # and now we translate to C# type
                                             $colTypeCSharp = ConvertTo-DotnetType -DataType $colTypeFromSql
-                                            # and now we assign the type to the LumenCsv column
-                                            foreach ($csvCol in $reader.Columns) {
-                                                if ($csvCol.Name -eq $colNameFromCsv) {
-                                                    $csvCol.Type = $colTypeCSharp
-                                                    Write-Message -Level Verbose -Message "Mapped $colNameFromCsv --> $colNameFromSql ($colTypeCSharp --> $colTypeFromSql)"
-                                                    break
-                                                }
-                                            }
+                                            # and now we assign the type to the CsvDataReader column
+                                            $reader.SetColumnType($colNameFromCsv, $colTypeCSharp)
+                                            Write-Message -Level Verbose -Message "Mapped $colNameFromCsv --> $colNameFromSql ($colTypeCSharp --> $colTypeFromSql)"
                                             break
                                         }
                                     }
@@ -768,57 +822,37 @@ function Import-DbaCsv {
                                         $null = $bulkcopy.ColumnMappings.Add($dataRow.Index, $dataRow.Index)
                                     }
                                 }
-                                # ok we got the mappings sorted
-
-                                # we must build Lumen's columns by hand here, we can't use GetFieldHeaders()
-                                $reader.Columns = New-Object System.Collections.Generic.List[LumenWorks.Framework.IO.Csv.Column]
-
-                                foreach ($bcMapping in $bulkcopy.ColumnMappings) {
-                                    # loop over mappings, we need to be careful and assign the correct type, and we're in the "natural" order of the CSV fields
-                                    $colNameFromSql = $bcMapping.DestinationOrdinal
-                                    $colNameFromCsv = $bcMapping.SourceOrdinal
-                                    $newcol = New-Object LumenWorks.Framework.IO.Csv.Column
-                                    $newcol.Name = "c$(Get-Random)" # need to assign a name, it's required for Lumen even if we're mapping just by ordinal
-                                    foreach ($sqlCol in $tableDef) {
-                                        if ($bcMapping.DestinationOrdinal -eq -1) {
-                                            # we can map by name
-                                            $colNameFromSql = $bcMapping.DestinationColumn
-                                            $sqlColComparison = $sqlCol.Name
-                                        } else {
-                                            # we fallback to mapping by index
-                                            $colNameFromSql = $bcMapping.DestinationOrdinal
-                                            $sqlColComparison = $sqlCol.Index
-                                        }
-                                        if ($sqlColComparison -eq $colNameFromSql) {
-                                            $colTypeFromSql = $sqlCol.DataType
-                                            # and now we translate to C# type
-                                            $colTypeCSharp = ConvertTo-DotnetType -DataType $colTypeFromSql
-                                            # assign it to the column
-                                            $newcol.Type = $colTypeCSharp
-                                            # and adding to the column collection
-                                            $null = $reader.Columns.Add($newcol)
-                                            Write-Message -Level Verbose -Message "Mapped $colNameFromSql --> $colNameFromCsv ($colTypeCSharp --> $colTypeFromSql)"
-                                            break
+                                # The new CsvDataReader handles no-header scenarios differently
+                                # We need to read the first row to establish columns, then set types by ordinal
+                                $null = $reader.Read()
+                                for ($i = 0; $i -lt $reader.FieldCount; $i++) {
+                                    foreach ($bcMapping in $bulkcopy.ColumnMappings) {
+                                        $destOrdinal = $bcMapping.DestinationOrdinal
+                                        if ($destOrdinal -eq -1) {
+                                            # mapping by name
+                                            $destCol = $bcMapping.DestinationColumn
+                                            foreach ($sqlCol in $tableDef) {
+                                                if ($sqlCol.Name -eq $destCol -and $sqlCol.Index -eq $i) {
+                                                    $colTypeCSharp = ConvertTo-DotnetType -DataType $sqlCol.DataType
+                                                    $reader.SetColumnType($reader.GetName($i), $colTypeCSharp)
+                                                    Write-Message -Level Verbose -Message "Mapped ordinal $i --> $destCol ($colTypeCSharp)"
+                                                    break
+                                                }
+                                            }
+                                        } elseif ($destOrdinal -eq $i) {
+                                            # mapping by ordinal
+                                            foreach ($sqlCol in $tableDef) {
+                                                if ($sqlCol.Index -eq $destOrdinal) {
+                                                    $colTypeCSharp = ConvertTo-DotnetType -DataType $sqlCol.DataType
+                                                    $reader.SetColumnType($reader.GetName($i), $colTypeCSharp)
+                                                    Write-Message -Level Verbose -Message "Mapped ordinal $i --> ordinal $destOrdinal ($colTypeCSharp)"
+                                                    break
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-
-                        if ($PSBoundParameters.MaxQuotedFieldLength) {
-                            $reader.MaxQuotedFieldLength = $MaxQuotedFieldLength
-                        }
-                        if ($PSBoundParameters.SkipEmptyLine) {
-                            $reader.SkipEmptyLines = $SkipEmptyLine
-                        }
-                        if ($PSBoundParameters.SupportsMultiline) {
-                            $reader.SupportsMultiline = $SupportsMultiline
-                        }
-                        if ($PSBoundParameters.UseColumnDefault) {
-                            $reader.UseColumnDefaults = $UseColumnDefault
-                        }
-                        if ($PSBoundParameters.ParseErrorAction) {
-                            $reader.DefaultParseErrorAction = $ParseErrorAction
                         }
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
