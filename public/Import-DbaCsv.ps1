@@ -400,6 +400,7 @@ function Import-DbaCsv {
             if ($NullValue) { $options.NullValue = $NullValue }
             $options.MaxDecompressedSize = $MaxDecompressedSize
             $options.SkipRows = $SkipRows
+            $options.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.Reader.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
 
             try {
                 $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($Path, $options)
@@ -817,47 +818,25 @@ function Import-DbaCsv {
                                     }
                                 }
                             } else {
-                                # we need to resort to ordinals
-                                # start by getting the table definition
+                                # For no-header scenarios, we need to set up column types based on table definition
+                                # We cannot call Read() here as that would consume the first data row
                                 $tableDef = Get-TableDefinitionFromInfoSchema -table $table -schema $schema -sqlconn $sqlconn
                                 if ($tableDef.Length -eq 0) {
                                     Stop-Function -Message "Could not fetch table definition for table $table in schema $schema"
                                 }
                                 if ($bulkcopy.ColumnMappings.Count -eq 0) {
-                                    # if we land here, we aren't (probably ? ) forcing any mappings, but we kinda need them for later
+                                    # if we land here, we aren't forcing any mappings, but we need them for later
                                     foreach ($dataRow in $tableDef) {
                                         $null = $bulkcopy.ColumnMappings.Add($dataRow.Index, $dataRow.Index)
                                     }
                                 }
-                                # The new CsvDataReader handles no-header scenarios differently
-                                # We need to read the first row to establish columns, then set types by ordinal
-                                $null = $reader.Read()
-                                for ($i = 0; $i -lt $reader.FieldCount; $i++) {
-                                    foreach ($bcMapping in $bulkcopy.ColumnMappings) {
-                                        $destOrdinal = $bcMapping.DestinationOrdinal
-                                        if ($destOrdinal -eq -1) {
-                                            # mapping by name
-                                            $destCol = $bcMapping.DestinationColumn
-                                            foreach ($sqlCol in $tableDef) {
-                                                if ($sqlCol.Name -eq $destCol -and $sqlCol.Index -eq $i) {
-                                                    $colTypeCSharp = ConvertTo-DotnetType -DataType $sqlCol.DataType
-                                                    $reader.SetColumnType($reader.GetName($i), $colTypeCSharp)
-                                                    Write-Message -Level Verbose -Message "Mapped ordinal $i --> $destCol ($colTypeCSharp)"
-                                                    break
-                                                }
-                                            }
-                                        } elseif ($destOrdinal -eq $i) {
-                                            # mapping by ordinal
-                                            foreach ($sqlCol in $tableDef) {
-                                                if ($sqlCol.Index -eq $destOrdinal) {
-                                                    $colTypeCSharp = ConvertTo-DotnetType -DataType $sqlCol.DataType
-                                                    $reader.SetColumnType($reader.GetName($i), $colTypeCSharp)
-                                                    Write-Message -Level Verbose -Message "Mapped ordinal $i --> ordinal $destOrdinal ($colTypeCSharp)"
-                                                    break
-                                                }
-                                            }
-                                        }
-                                    }
+                                # For no-header mode, column names are auto-generated as "Column0", "Column1", etc.
+                                # Set up types by ordinal using the table definition
+                                foreach ($sqlCol in $tableDef) {
+                                    $colTypeCSharp = ConvertTo-DotnetType -DataType $sqlCol.DataType
+                                    $colName = "Column$($sqlCol.Index)"
+                                    $reader.SetColumnType($colName, $colTypeCSharp)
+                                    Write-Message -Level Verbose -Message "Mapped $colName --> $($sqlCol.Name) ($colTypeCSharp)"
                                 }
                             }
                         }
