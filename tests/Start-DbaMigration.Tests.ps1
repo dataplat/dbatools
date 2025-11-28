@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "WithReplace",
                 "NoRecovery",
                 "SetSourceReadOnly",
+                "SetSourceOffline",
                 "ReuseSourceFolderStructure",
                 "IncludeSupportDbs",
                 "SourceSqlCredential",
