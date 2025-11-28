@@ -7,8 +7,9 @@ function New-DbaFirewallRule {
         Creates inbound Windows firewall rules for SQL Server instances, Browser service, and Dedicated Admin Connection (DAC) to allow network connectivity.
         This automates the tedious post-installation task of configuring firewall access for SQL Server, eliminating the need to manually determine ports and create rules through Windows Firewall GUI or netsh commands.
 
-        The function intelligently detects whether instances use static or dynamic ports and creates appropriate rules.
-        For static ports, it creates port-based rules; for dynamic ports, it creates program-based rules targeting sqlservr.exe.
+        The function defaults to creating executable-based firewall rules targeting sqlservr.exe and sqlbrowser.exe.
+        This approach allows named instances running on different ports or default instances running on non-standard ports to automatically be allowed without needing to update firewall rules when ports change.
+        If the executable paths cannot be determined, the function falls back to creating port-based rules.
         When instances use non-default ports, it automatically includes a Browser service rule so clients can discover the instance.
 
         This is a wrapper around New-NetFirewallRule executed remotely on the target computer via Invoke-Command2.
@@ -28,8 +29,8 @@ function New-DbaFirewallRule {
             Enabled     = 'True'
             Direction   = 'Inbound'
             Protocol    = 'TCP'
-            LocalPort   = '<Port>' (for instances with static port)
-            Program     = '<Path ending with MSSQL\Binn\sqlservr.exe>' (for instances with dynamic port)
+            Program     = '<Path ending with MSSQL\Binn\sqlservr.exe>' (default)
+            LocalPort   = '<Port>' (fallback when Program cannot be determined)
 
         The firewall rule for the SQL Server Browser will have the following configuration (parameters for New-NetFirewallRule):
 
@@ -39,7 +40,8 @@ function New-DbaFirewallRule {
             Enabled     = 'True'
             Direction   = 'Inbound'
             Protocol    = 'UDP'
-            LocalPort   = '1434'
+            Program     = '<Path ending with sqlbrowser.exe>' (default)
+            LocalPort   = '1434' (fallback when Program cannot be determined)
 
         The firewall rule for the dedicated admin connection (DAC) will have the following configuration (parameters for New-NetFirewallRule):
 
@@ -204,7 +206,6 @@ function New-DbaFirewallRule {
     process {
         foreach ($instance in $SqlInstance) {
             $rules = @( )
-            $programNeeded = $false
             $browserNeeded = $false
             if ($PSBoundParameters.Type) {
                 $browserOptional = $false
@@ -238,36 +239,42 @@ function New-DbaFirewallRule {
                     $browserNeeded = $true
                 }
 
-                # Get information about IP addresses for LocalPort
+                # Try to get the executable path first (preferred approach)
                 try {
-                    $tcpIpAddresses = Get-DbaNetworkConfiguration -SqlInstance $instance -Credential $Credential -OutputType TcpIpAddresses -EnableException
+                    $service = Get-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Credential $Credential -Type Engine -EnableException
+                    if ($service.BinaryPath) {
+                        $rule.Config.Program = $service.BinaryPath -replace '^"?(.*sqlservr.exe).*$', '$1'
+                        Write-Message -Level Verbose -Message "Using executable-based rule for SQL Server instance: $($rule.Config.Program)"
+                    }
                 } catch {
-                    Stop-Function -Message "Failed." -Target $instance -ErrorRecord $_ -Continue
+                    Write-Message -Level Verbose -Message "Could not determine executable path for SQL Server instance, will try port-based rule as fallback."
                 }
 
-                if ($tcpIpAddresses.Count -gt 1) {
-                    # I would have to test this, so I better not support this in the first version.
-                    # As LocalPort is [<String[]>], $tcpIpAddresses.TcpPort will probably just work with the current implementation.
-                    Stop-Function -Message "SQL Server instance $instance listens on more than one IP addresses. This is currently not supported by this command." -Continue
-                }
-
-                if ($tcpIpAddresses.TcpPort -ne '') {
-                    $rule.Config.LocalPort = $tcpIpAddresses.TcpPort
-                    if ($tcpIpAddresses.TcpPort -ne '1433') {
-                        $browserNeeded = $true
-                    }
-                } else {
-                    $programNeeded = $true
-                }
-
-                if ($programNeeded) {
-                    # Get information about service for Program
+                # Fallback to port-based rule if executable path was not determined
+                if (-not $rule.Config.Program) {
                     try {
-                        $service = Get-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Credential $Credential -Type Engine -EnableException
+                        $tcpIpAddresses = Get-DbaNetworkConfiguration -SqlInstance $instance -Credential $Credential -OutputType TcpIpAddresses -EnableException
                     } catch {
-                        Stop-Function -Message "Failed." -Target $instance -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Failed to determine firewall rule configuration. Could not get executable path or network configuration." -Target $instance -ErrorRecord $_ -Continue
                     }
-                    $rule.Config.Program = $service.BinaryPath -replace '^"?(.*sqlservr.exe).*$', '$1'
+
+                    if ($tcpIpAddresses.Count -gt 1) {
+                        # I would have to test this, so I better not support this in the first version.
+                        # As LocalPort is [<String[]>], $tcpIpAddresses.TcpPort will probably just work with the current implementation.
+                        Stop-Function -Message "SQL Server instance $instance listens on more than one IP addresses. This is currently not supported by this command." -Continue
+                    }
+
+                    if ($tcpIpAddresses.TcpPort -ne '') {
+                        $rule.Config.LocalPort = $tcpIpAddresses.TcpPort
+                        Write-Message -Level Verbose -Message "Using port-based rule for SQL Server instance: $($tcpIpAddresses.TcpPort)"
+                    } else {
+                        Stop-Function -Message "Failed to determine firewall rule configuration. Could not get executable path or port information." -Target $instance -Continue
+                    }
+                }
+
+                # Determine if Browser service rule is needed
+                if ($rule.Config.LocalPort -and $rule.Config.LocalPort -ne '1433') {
+                    $browserNeeded = $true
                 }
 
                 $rules += $rule
@@ -287,8 +294,24 @@ function New-DbaFirewallRule {
                         Enabled     = 'True'
                         Direction   = 'Inbound'
                         Protocol    = 'UDP'
-                        LocalPort   = '1434'
                     }
+                }
+
+                # Try to get the Browser service executable path first (preferred approach)
+                try {
+                    $browserService = Get-DbaService -ComputerName $instance.ComputerName -Credential $Credential -Type Browser -EnableException
+                    if ($browserService.BinaryPath) {
+                        $rule.Config.Program = $browserService.BinaryPath -replace '^"?(.*sqlbrowser.exe).*$', '$1'
+                        Write-Message -Level Verbose -Message "Using executable-based rule for SQL Server Browser: $($rule.Config.Program)"
+                    }
+                } catch {
+                    Write-Message -Level Verbose -Message "Could not determine executable path for SQL Server Browser, will use port-based rule as fallback."
+                }
+
+                # Fallback to port-based rule if executable path was not determined
+                if (-not $rule.Config.Program) {
+                    $rule.Config.LocalPort = '1434'
+                    Write-Message -Level Verbose -Message "Using port-based rule for SQL Server Browser: 1434"
                 }
 
                 $rules += $rule
