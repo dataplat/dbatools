@@ -44,6 +44,10 @@ function Remove-DbaDbRole {
         Accepts piped objects from Get-DbaDbRole, Get-DbaDatabase, or SQL Server instances for processing.
         Use this for pipeline operations where you first retrieve specific roles or databases, then remove roles from them. This allows for more complex filtering and processing scenarios.
 
+    .PARAMETER Force
+        Forces schema ownership transfer to 'dbo' when the role owns schemas containing database objects. Without this, role removal fails if owned schemas contain objects.
+        Use this during security configuration cleanup when you need to ensure complete role removal regardless of schema dependencies.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -100,6 +104,7 @@ function Remove-DbaDbRole {
         [switch]$IncludeSystemDbs,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
+        [switch]$Force,
         [switch]$EnableException
     )
 
@@ -141,21 +146,54 @@ function Remove-DbaDbRole {
             foreach ($dbRole in $dbRoles) {
                 $db = $dbRole.Parent
                 $instance = $db.Parent
-                if ((!$db.IsSystemObject) -or ($db.IsSystemObject -and $IncludeSystemDbs )) {
-                    if ((!$dbRole.IsFixedRole) -and ($dbRole.Name -ne 'public')) {
-                        if ($PSCmdlet.ShouldProcess($instance, "Remove role $dbRole from database $db")) {
-                            $schemas = $dbRole.Parent.Schemas | Where-Object { $_.Owner -eq $dbRole.Name }
-                            if (!$schemas) {
-                                $dbRole.Drop()
+                $ownedObjects = $false
+
+                if ($db.IsSystemObject -and (!$IncludeSystemDbs)) {
+                    Write-Message -Level Verbose -Message "Can only remove roles from System database when IncludeSystemDbs switch used."
+                    continue
+                }
+
+                if ($dbRole.IsFixedRole -or $dbRole.Name -eq 'public') {
+                    Write-Message -Level Verbose -Message "Cannot remove fixed role $dbRole from database $db on instance $instance"
+                    continue
+                }
+
+                if ($PSCmdlet.ShouldProcess($instance, "Remove role $dbRole from database $db")) {
+                    $ownedSchemas = $db.Schemas | Where-Object Owner -eq $dbRole.Name
+
+                    foreach ($schema in $ownedSchemas) {
+                        $ownedUrns = $schema.EnumOwnedObjects()
+
+                        if ($schema.Name -eq $dbRole.Name) {
+                            if ($ownedUrns) {
+                                Write-Message -Level Warning -Message "Role $($dbRole.Name) owns the Schema $($schema.Name), which owns $($ownedUrns.Count) object(s). If you want to change the schema's owner to [dbo] and drop the role anyway, use -Force parameter. Role $($dbRole.Name) will not be removed."
+                                $ownedObjects = $true
                             } else {
-                                Write-Message -Level warning -Message "Cannot remove role $dbRole from database $db on instance $instance as it owns one or more Schemas"
+                                if ($PSCmdlet.ShouldProcess($instance, "Drop Schema $schema from Database $db.")) {
+                                    $schema.Drop()
+                                }
+                            }
+                        } else {
+                            if ($ownedUrns -and (!$Force)) {
+                                Write-Message -Level Warning -Message "Role $($dbRole.Name) owns the Schema $($schema.Name), which owns $($ownedUrns.Count) object(s). If you want to change the schema's owner to [dbo] and drop the role anyway, use -Force parameter. Role $($dbRole.Name) will not be removed."
+                                $ownedObjects = $true
+                            } else {
+                                Write-Message -Level Verbose -Message "Owner of Schema $schema will be changed to [dbo]."
+                                if ($PSCmdlet.ShouldProcess($instance, "Change the owner of Schema $schema to [dbo].")) {
+                                    $schema.Owner = "dbo"
+                                    $schema.Alter()
+                                }
                             }
                         }
-                    } else {
-                        Write-Message -Level Verbose -Message "Cannot remove fixed role $dbRole from database $db on instance $instance"
                     }
-                } else {
-                    Write-Message -Level Verbose -Message "Can only remove roles from System database when IncludeSystemDbs switch used."
+
+                    if (!$ownedObjects) {
+                        if ($PSCmdlet.ShouldProcess($instance, "Drop role $dbRole from database $db")) {
+                            $dbRole.Drop()
+                        }
+                    } else {
+                        Write-Message -Level Warning -Message "Could not remove role $dbRole because it still owns one or more schemas."
+                    }
                 }
             }
         }

@@ -19,6 +19,7 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeRole",
                 "IncludeSystemDbs",
                 "InputObject",
+                "Force",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -102,6 +103,80 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result0.Count | Should -BeGreaterThan $result1.Count
             $result1.Name -contains $role1 | Should -Be $false
+        }
+    }
+
+    Context "Schema ownership handling" {
+        BeforeEach {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $roleWithSchema = "dbatoolssci_rolesch_$(Get-Random)"
+            $roleWithDiffSchema = "dbatoolssci_rolediff_$(Get-Random)"
+            $diffSchemaName = "dbatoolssci_diffsch_$(Get-Random)"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Removes role with empty schema of same name" {
+            $null = $server.Query("CREATE ROLE $roleWithSchema", $dbname1)
+            $null = $server.Query("CREATE SCHEMA $roleWithSchema AUTHORIZATION $roleWithSchema", $dbname1)
+            $splatRemove = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = $dbname1
+                Role        = $roleWithSchema
+                Confirm     = $false
+            }
+            Remove-DbaDbRole @splatRemove
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $result.Name -contains $roleWithSchema | Should -Be $false
+        }
+
+        It "Does not remove role with schema containing objects without -Force" {
+            $null = $server.Query("CREATE ROLE $roleWithDiffSchema", $dbname1)
+            $null = $server.Query("CREATE SCHEMA $diffSchemaName AUTHORIZATION $roleWithDiffSchema", $dbname1)
+            $null = $server.Query("CREATE TABLE $diffSchemaName.TestTable (ID INT)", $dbname1)
+            $splatRemove = @{
+                SqlInstance     = $TestConfig.instance2
+                Database        = $dbname1
+                Role            = $roleWithDiffSchema
+                Confirm         = $false
+                WarningVariable = "warnOutput"
+            }
+            Remove-DbaDbRole @splatRemove
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $result.Name -contains $roleWithDiffSchema | Should -Be $true
+            $warnOutput | Should -Not -BeNullOrEmpty
+        }
+
+        It "Removes role and reassigns schema ownership with -Force" {
+            $null = $server.Query("CREATE ROLE $roleWithDiffSchema", $dbname1)
+            $null = $server.Query("CREATE SCHEMA $diffSchemaName AUTHORIZATION $roleWithDiffSchema", $dbname1)
+            $null = $server.Query("CREATE TABLE $diffSchemaName.TestTable (ID INT)", $dbname1)
+            $splatRemove = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = $dbname1
+                Role        = $roleWithDiffSchema
+                Force       = $true
+                Confirm     = $false
+            }
+            Remove-DbaDbRole @splatRemove
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $result.Name -contains $roleWithDiffSchema | Should -Be $false
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $schema = $db.Schemas | Where-Object Name -eq $diffSchemaName
+            $schema.Owner | Should -Be "dbo"
+        }
+
+        AfterEach {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $splatCleanup = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = $dbname1
+                Role        = @($roleWithSchema, $roleWithDiffSchema)
+                Force       = $true
+                Confirm     = $false
+            }
+            Remove-DbaDbRole @splatCleanup -ErrorAction SilentlyContinue
+            $null = $server.Query("IF EXISTS (SELECT * FROM sys.schemas WHERE name = '$diffSchemaName') DROP SCHEMA $diffSchemaName", $dbname1)
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
 }
