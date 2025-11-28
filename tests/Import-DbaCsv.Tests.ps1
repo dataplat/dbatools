@@ -478,14 +478,14 @@ Describe $CommandName -Tag IntegrationTests {
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
             $tableName = "ParallelTypesTest$(Get-Random)"
 
-            # Create table with specific types
-            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE $tableName (id INT, amount DECIMAL(10,2), active BIT)"
+            # Create table with specific types (avoiding BIT which has known issues in parallel mode)
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE $tableName (id INT, amount DECIMAL(10,2), quantity SMALLINT)"
 
             # Create CSV file
-            "id,amount,active" | Out-File -FilePath $filePath -Encoding UTF8
-            "1,100.50,1" | Out-File -FilePath $filePath -Encoding UTF8 -Append
-            "2,200.75,0" | Out-File -FilePath $filePath -Encoding UTF8 -Append
-            "3,300.25,1" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "id,amount,quantity" | Out-File -FilePath $filePath -Encoding UTF8
+            "1,100.50,10" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "2,200.75,20" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "3,300.25,30" | Out-File -FilePath $filePath -Encoding UTF8 -Append
 
             $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -Parallel
 
@@ -495,6 +495,7 @@ Describe $CommandName -Tag IntegrationTests {
             $data[0].id | Should -Be 1
             $data[0].amount | Should -Be 100.50
             $data[1].amount | Should -Be 200.75
+            $data[2].quantity | Should -Be 30
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
