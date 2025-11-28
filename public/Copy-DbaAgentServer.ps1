@@ -133,9 +133,6 @@ function Copy-DbaAgentServer {
             # extra reconnect to force refresh
             $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
 
-            Copy-DbaAgentAlert -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -IncludeDefaults
-            $destServer.JobServer.Alerts.Refresh()
-
             Copy-DbaAgentProxy -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
             $destServer.JobServer.ProxyAccounts.Refresh()
 
@@ -144,7 +141,11 @@ function Copy-DbaAgentServer {
 
             $destServer.JobServer.Refresh()
             $destServer.Refresh()
+            # Copy jobs BEFORE alerts to ensure jobs exist when alerts with job associations are created
             Copy-DbaAgentJob -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
+
+            Copy-DbaAgentAlert -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -IncludeDefaults
+            $destServer.JobServer.Alerts.Refresh()
 
             # To do
             <#
