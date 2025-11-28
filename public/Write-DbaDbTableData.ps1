@@ -211,6 +211,9 @@ function Write-DbaDbTableData {
     )
 
     begin {
+        # Load spatial types assembly for Geography and Geometry column support
+        Add-SpatialLibrary
+
         # Null variable to make sure upper-scope variables don't interfere later
         $steppablePipeline = $null
 

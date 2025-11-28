@@ -297,6 +297,9 @@ function Import-DbaCsv {
         [switch]$EnableException
     )
     begin {
+        # Load spatial types assembly for Geography and Geometry column support
+        Add-SpatialLibrary
+
         $FirstRowHeader = $NoHeaderRow -eq $false
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
 

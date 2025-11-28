@@ -227,6 +227,8 @@ function Copy-DbaDbTableData {
     )
 
     begin {
+        # Load spatial types assembly for Geography and Geometry column support
+        Add-SpatialLibrary
 
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
