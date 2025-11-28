@@ -90,7 +90,14 @@ function Remove-DbaLogin {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $InputObject += $server.Logins | Where-Object { $_.Name -in $Login }
+            $foundLogins = $server.Logins | Where-Object { $_.Name -in $Login }
+            $foundLoginNames = $foundLogins.Name
+            foreach ($requestedLogin in $Login) {
+                if ($requestedLogin -notin $foundLoginNames) {
+                    Write-Message -Level Warning -Message "Login '$requestedLogin' not found on instance $instance"
+                }
+            }
+            $InputObject += $foundLogins
         }
 
         foreach ($currentlogin in $InputObject) {

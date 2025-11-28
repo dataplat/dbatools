@@ -65,4 +65,19 @@ Describe $CommandName -Tag IntegrationTests {
             $verifyLogin | Should -BeNullOrEmpty
         }
     }
+
+    Context "Regression test for issue #9163 - Warn when login not found" {
+        It "Should warn when specified login does not exist" {
+            $results = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "nonexistentlogin" -WarningVariable warning 3>&1
+            $warning | Should -BeLike "*Login 'nonexistentlogin' not found on instance*"
+            $results | Should -BeNullOrEmpty
+        }
+
+        It "Should warn for each non-existent login when multiple are specified" {
+            $results = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "nonexistent1", "nonexistent2" -WarningVariable warning 3>&1
+            $warning | Where-Object { $_ -like "*nonexistent1*" } | Should -Not -BeNullOrEmpty
+            $warning | Where-Object { $_ -like "*nonexistent2*" } | Should -Not -BeNullOrEmpty
+            $results | Should -BeNullOrEmpty
+        }
+    }
 }

@@ -495,6 +495,16 @@ function Copy-DbaLogin {
             $loginsCollection += Get-DbaLogin -SqlInstance $Source -SqlCredential $SourceSqlCredential -Login $Login -EnableException:$EnableException
         }
 
+        # Warn if specific logins were requested but not found
+        if ($Login -and -not $InputObject) {
+            $foundLogins = $loginsCollection.Name
+            foreach ($requestedLogin in $Login) {
+                if ($requestedLogin -notin $foundLogins) {
+                    Write-Message -Level Warning -Message "Login '$requestedLogin' not found on source instance $Source"
+                }
+            }
+        }
+
         if ($OutFile) {
             return (Export-DbaLogin -SqlInstance $Source -SqlCredential $SourceSqlCredential -FilePath $OutFile -Login $loginsCollection -ObjectLevel:$ObjectLevel -ExcludeLogin $ExcludeLogin -EnableException:$EnableException)
         }

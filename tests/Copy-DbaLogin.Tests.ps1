@@ -253,6 +253,40 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Regression test for issue #9163 - Warn when login not found" {
+        It "Should warn when specified login does not exist on source" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "nonexistentlogin"
+            }
+            $results = Copy-DbaLogin @splatCopy -WarningVariable warning 3>&1
+            $warning | Should -BeLike "*Login 'nonexistentlogin' not found on source instance*"
+            $results | Should -BeNullOrEmpty
+        }
+
+        It "Should warn for each non-existent login when multiple are specified" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "tester", "nonexistent1", "nonexistent2"
+            }
+            $results = Copy-DbaLogin @splatCopy -WarningVariable warning 3>&1
+            $warning | Where-Object { $_ -like "*nonexistent1*" } | Should -Not -BeNullOrEmpty
+            $warning | Where-Object { $_ -like "*nonexistent2*" } | Should -Not -BeNullOrEmpty
+            $results.Name | Should -Contain "tester"
+        }
+
+        It "Should not warn when using InputObject from pipeline" {
+            $splatCopy = @{
+                Destination = $TestConfig.instance2
+            }
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin @splatCopy -WarningVariable warning -Force 3>&1
+            $warning | Where-Object { $_ -like "*not found*" } | Should -BeNullOrEmpty
+            $results.Status | Should -Be "Successful"
+        }
+    }
+
     Context "Regression test for issue #8572 - Windows group lockout protection" {
         It "Should not throw when processing SQL logins with -Force" {
             # Verify SQL logins are not affected by Windows group checks
