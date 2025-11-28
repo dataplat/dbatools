@@ -330,11 +330,10 @@ function Add-DbaAgDatabase {
                         try {
                             Write-Message -Level Verbose -Message "Restore database $($db.Name) to replica $replicaName."
                             $restoreParams = @{
-                                SqlInstance                = $replicaServerSMO[$replicaName]
-                                NoRecovery                 = $true
-                                TrustDbBackupHistory       = $true
-                                ReuseSourceFolderStructure = $true
-                                EnableException            = $true
+                                SqlInstance          = $replicaServerSMO[$replicaName]
+                                NoRecovery           = $true
+                                TrustDbBackupHistory = $true
+                                EnableException      = $true
                             }
                             $sourceOwner = $db.Owner
                             $replicaOwner = $replicaServerSMO[$replicaName].ConnectedAs
