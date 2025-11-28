@@ -39,6 +39,14 @@ function Get-DbaWaitStatistic {
         Includes wait types that are typically benign and can be safely ignored during troubleshooting, such as Service Broker idle waits and background task waits.
         Use this when you need to see all wait activity or when investigating unusual issues with specific features like mirroring or Availability Groups.
 
+    .PARAMETER ExcludeWaitType
+        Additional wait types to exclude beyond the default ignorable list. Provide an array of wait type names (e.g., "CXPACKET", "CXCONSUMER").
+        Use this when you want to filter out specific waits that may not be relevant to your analysis.
+
+    .PARAMETER IncludeWaitType
+        Wait types to always include in results, even if they appear in the ignorable list. Provide an array of wait type names.
+        Use this to ensure specific waits are shown regardless of the -IncludeIgnorable switch setting.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -81,6 +89,16 @@ function Get-DbaWaitStatistic {
 
         Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
 
+    .EXAMPLE
+        PS C:\> Get-DbaWaitStatistic -SqlInstance sql2016 -ExcludeWaitType "CXPACKET", "CXCONSUMER"
+
+        Gets wait statistics excluding parallelism waits (CXPACKET and CXCONSUMER) in addition to the default ignorable waits.
+
+    .EXAMPLE
+        PS C:\> Get-DbaWaitStatistic -SqlInstance sql2016 -IncludeWaitType "BROKER_RECEIVE_WAITFOR"
+
+        Gets wait statistics and ensures BROKER_RECEIVE_WAITFOR is included even though it's in the default ignorable list.
+
     #>
     [CmdletBinding()]
     param (
@@ -89,6 +107,8 @@ function Get-DbaWaitStatistic {
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
         [switch]$IncludeIgnorable,
+        [string[]]$ExcludeWaitType,
+        [string[]]$IncludeWaitType,
         [switch]$EnableException
     )
 
@@ -781,7 +801,7 @@ function Get-DbaWaitStatistic {
             XE_TIMER_TASK_DONE                              = 'Other'
         }
 
-        $ignorable = 'BROKER_EVENTHANDLER', 'BROKER_RECEIVE_WAITFOR', 'BROKER_TASK_STOP',
+        $defaultIgnorable = 'BROKER_EVENTHANDLER', 'BROKER_RECEIVE_WAITFOR', 'BROKER_TASK_STOP',
         'BROKER_TO_FLUSH', 'BROKER_TRANSMITTER', 'CHECKPOINT_QUEUE',
         'CHKPT', 'CLR_AUTO_EVENT', 'CLR_MANUAL_EVENT', 'CLR_SEMAPHORE', 'CXCONSUMER',
         'DBMIRROR_DBM_EVENT', 'DBMIRROR_EVENTS_QUEUE', 'DBMIRROR_WORKER_QUEUE',
@@ -816,6 +836,28 @@ function Get-DbaWaitStatistic {
         'WAIT_XTP_OFFLINE_CKPT_NEW_LOG', 'WAIT_XTP_CKPT_CLOSE', 'WAIT_XTP_RECOVERY',
         'XE_BUFFERMGR_ALLPROCESSED_EVENT', 'XE_DISPATCHER_JOIN',
         'XE_DISPATCHER_WAIT', 'XE_LIVE_TARGET_TVF', 'XE_TIMER_EVENT'
+
+        # Build the effective ignorable list
+        $ignorable = New-Object System.Collections.ArrayList
+        $ignorable.AddRange($defaultIgnorable)
+
+        # Add user-specified exclusions
+        if ($ExcludeWaitType) {
+            foreach ($waitType in $ExcludeWaitType) {
+                if ($ignorable -notcontains $waitType) {
+                    $null = $ignorable.Add($waitType)
+                }
+            }
+        }
+
+        # Remove user-specified inclusions from ignorable list
+        if ($IncludeWaitType) {
+            foreach ($waitType in $IncludeWaitType) {
+                if ($ignorable -contains $waitType) {
+                    $null = $ignorable.Remove($waitType)
+                }
+            }
+        }
 
         if ($IncludeIgnorable) {
             $sql = "WITH [Waits] AS

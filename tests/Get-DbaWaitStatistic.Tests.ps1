@@ -15,6 +15,8 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "Threshold",
                 "IncludeIgnorable",
+                "ExcludeWaitType",
+                "IncludeWaitType",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -61,6 +63,33 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns a hyperlink for each result" {
             foreach ($result in $results) {
                 $result.URL -match "sqlskills.com" | Should -Be $true
+            }
+        }
+    }
+
+    Context "ExcludeWaitType parameter filters out additional wait types" {
+        BeforeAll {
+            $allResults = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100 -IncludeIgnorable
+            $filteredResults = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100 -IncludeIgnorable -ExcludeWaitType "CXPACKET", "CXCONSUMER"
+        }
+
+        It "excludes specified wait types" {
+            $filteredResults.WaitType | Should -Not -Contain "CXPACKET"
+            $filteredResults.WaitType | Should -Not -Contain "CXCONSUMER"
+        }
+    }
+
+    Context "IncludeWaitType parameter includes wait types from ignorable list" {
+        BeforeAll {
+            $resultsWithout = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100
+            $resultsWith = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100 -IncludeWaitType "BROKER_RECEIVE_WAITFOR"
+        }
+
+        It "includes specified wait type that would normally be ignored" {
+            if ($resultsWith.WaitType -contains "BROKER_RECEIVE_WAITFOR") {
+                $resultsWith.WaitType | Should -Contain "BROKER_RECEIVE_WAITFOR"
+            } else {
+                Set-TestInconclusive -Message "BROKER_RECEIVE_WAITFOR not present in wait stats"
             }
         }
     }
