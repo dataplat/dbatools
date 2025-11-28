@@ -331,6 +331,7 @@
         'Get-DbaNetworkActivity',
         'Get-DbaNetworkCertificate',
         'Get-DbaNetworkConfiguration',
+        'Get-DbaNetworkEncryption',
         'Get-DbaOpenTransaction',
         'Get-DbaOperatingSystem',
         'Get-DbaPageFileSetting',
