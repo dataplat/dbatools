@@ -38,14 +38,14 @@ Describe $CommandName -Tag IntegrationTests {
             Set-TestInconclusive -message "Setup failed"
         }
 
-        It "Should only return true if the path IS accessible to the instance" {
+        It "Should return PSCustomObject with FileExists true if the path IS accessible to the instance" {
             $result = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $trueTest
-            $result | Should -Be $true
+            $result.FileExists | Should -Be $true
         }
 
-        It "Should only return false if the path IS NOT accessible to the instance" {
+        It "Should return PSCustomObject with FileExists false if the path IS NOT accessible to the instance" {
             $result = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $falseTest
-            $result | Should -Be $false
+            $result.FileExists | Should -Be $false
         }
 
         It "Should return multiple results when passed multiple paths" {

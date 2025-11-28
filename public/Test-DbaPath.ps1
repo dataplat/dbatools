@@ -79,26 +79,18 @@ function Test-DbaPath {
                 }
                 $sql = $query -join ';'
                 $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
-                if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
-                    if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
-                        return $true
-                    } else {
-                        return $false
+                $i = 0
+                foreach ($r in $batchresult.tables.rows) {
+                    $DoesPass = $r[0] -eq $true -or $r[1] -eq $true
+                    [PSCustomObject]@{
+                        SqlInstance  = $server.Name
+                        InstanceName = $server.ServiceName
+                        ComputerName = $server.ComputerName
+                        FilePath     = $PathsBatch[$i]
+                        FileExists   = $DoesPass
+                        IsContainer  = $r[1] -eq $true
                     }
-                } else {
-                    $i = 0
-                    foreach ($r in $batchresult.tables.rows) {
-                        $DoesPass = $r[0] -eq $true -or $r[1] -eq $true
-                        [PSCustomObject]@{
-                            SqlInstance  = $server.Name
-                            InstanceName = $server.ServiceName
-                            ComputerName = $server.ComputerName
-                            FilePath     = $PathsBatch[$i]
-                            FileExists   = $DoesPass
-                            IsContainer  = $r[1] -eq $true
-                        }
-                        $i += 1
-                    }
+                    $i += 1
                 }
             }
         }
