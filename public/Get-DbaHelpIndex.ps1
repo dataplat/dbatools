@@ -1037,76 +1037,65 @@ function Get-DbaHelpIndex {
             try {
                 $IndexDetails = $db.Query($indexesQuery)
 
-                if (!$Raw) {
-                    foreach ($detail in $IndexDetails) {
-                        $recentlyused = [datetime]$detail.MostRecentlyUsed
+                foreach ($detail in $IndexDetails) {
+                    $recentlyused = [datetime]$detail.MostRecentlyUsed
 
-                        if ($recentlyused.year -eq 1900) {
-                            $recentlyused = $null
-                        }
-
-                        [PSCustomObject]@{
-                            ComputerName       = $server.ComputerName
-                            InstanceName       = $server.ServiceName
-                            SqlInstance        = $server.DomainInstanceName
-                            Database           = $db.Name
-                            Object             = $detail.FullObjectName
-                            Index              = $detail.IndexName
-                            IndexType          = $detail.IndexType
-                            Statistics         = $detail.StatisticsName
-                            KeyColumns         = $detail.KeyColumns
-                            IncludeColumns     = $detail.IncludeColumns
-                            FilterDefinition   = $detail.FilterDefinition
-                            DataCompression    = $detail.DataCompression
-                            IndexReads         = "{0:N0}" -f $detail.IndexReads
-                            IndexUpdates       = "{0:N0}" -f $detail.IndexUpdates
-                            Size               = "{0:N0}" -f $detail.SizeKB
-                            IndexRows          = "{0:N0}" -f $detail.IndexRows
-                            IndexLookups       = "{0:N0}" -f $detail.IndexLookups
-                            MostRecentlyUsed   = $recentlyused
-                            StatsSampleRows    = "{0:N0}" -f $detail.StatsSampleRows
-                            StatsRowMods       = "{0:N0}" -f $detail.StatsRowMods
-                            HistogramSteps     = $detail.HistogramSteps
-                            StatsLastUpdated   = $detail.StatsLastUpdated
-                            IndexFragInPercent = "{0:F2}" -f $detail.IndexFragInPercent
-                        }
+                    if ($recentlyused.year -eq 1900) {
+                        $recentlyused = $null
                     }
-                }
 
-                else {
-                    foreach ($detail in $IndexDetails) {
-                        $recentlyused = [datetime]$detail.MostRecentlyUsed
+                    $outputObject = New-Object -TypeName PSObject
 
-                        if ($recentlyused.year -eq 1900) {
-                            $recentlyused = $null
-                        }
+                    # Add server/instance/database properties first
+                    $outputObject | Add-Member -MemberType NoteProperty -Name "ComputerName" -Value $server.ComputerName
+                    $outputObject | Add-Member -MemberType NoteProperty -Name "InstanceName" -Value $server.ServiceName
+                    $outputObject | Add-Member -MemberType NoteProperty -Name "SqlInstance" -Value $server.DomainInstanceName
+                    $outputObject | Add-Member -MemberType NoteProperty -Name "Database" -Value $db.Name
 
-                        [PSCustomObject]@{
-                            ComputerName       = $server.ComputerName
-                            InstanceName       = $server.ServiceName
-                            SqlInstance        = $server.DomainInstanceName
-                            Database           = $db.Name
-                            Object             = $detail.FullObjectName
-                            Index              = $detail.IndexName
-                            IndexType          = $detail.IndexType
-                            Statistics         = $detail.StatisticsName
-                            KeyColumns         = $detail.KeyColumns
-                            IncludeColumns     = $detail.IncludeColumns
-                            FilterDefinition   = $detail.FilterDefinition
-                            DataCompression    = $detail.DataCompression
-                            IndexReads         = $detail.IndexReads
-                            IndexUpdates       = $detail.IndexUpdates
-                            Size               = [dbasize]($detail.SizeKB * 1024)
-                            IndexRows          = $detail.IndexRows
-                            IndexLookups       = $detail.IndexLookups
-                            MostRecentlyUsed   = $recentlyused
-                            StatsSampleRows    = $detail.StatsSampleRows
-                            StatsRowMods       = $detail.StatsRowMods
-                            HistogramSteps     = $detail.HistogramSteps
-                            StatsLastUpdated   = $detail.StatsLastUpdated
-                            IndexFragInPercent = $detail.IndexFragInPercent
-                        }
+                    # Map query column names to output property names
+                    $propertyMapping = @{
+                        FullObjectName   = "Object"
+                        IndexName        = "Index"
+                        StatisticsName   = "Statistics"
+                        SizeKB           = "Size"
+                        MostRecentlyUsed = "MostRecentlyUsed"
                     }
+
+                    # Properties that need numeric formatting when not in Raw mode
+                    $numericProperties = @("IndexReads", "IndexUpdates", "SizeKB", "IndexRows", "IndexLookups", "StatsSampleRows", "StatsRowMods")
+                    $decimalProperties = @("IndexFragInPercent")
+
+                    # Dynamically add all properties from the query result
+                    foreach ($property in $detail.PSObject.Properties) {
+                        $propertyName = $property.Name
+                        $propertyValue = $property.Value
+
+                        # Use mapped name if one exists
+                        $outputPropertyName = if ($propertyMapping.ContainsKey($propertyName)) {
+                            $propertyMapping[$propertyName]
+                        } else {
+                            $propertyName
+                        }
+
+                        # Apply special handling for specific properties
+                        if ($propertyName -eq "MostRecentlyUsed") {
+                            $propertyValue = $recentlyused
+                        } elseif ($propertyName -eq "SizeKB") {
+                            if ($Raw) {
+                                $propertyValue = [dbasize]($propertyValue * 1024)
+                            } else {
+                                $propertyValue = "{0:N0}" -f $propertyValue
+                            }
+                        } elseif (!$Raw -and $numericProperties -contains $propertyName) {
+                            $propertyValue = "{0:N0}" -f $propertyValue
+                        } elseif (!$Raw -and $decimalProperties -contains $propertyName) {
+                            $propertyValue = "{0:F2}" -f $propertyValue
+                        }
+
+                        $outputObject | Add-Member -MemberType NoteProperty -Name $outputPropertyName -Value $propertyValue
+                    }
+
+                    $outputObject
                 }
             } catch {
                 Stop-Function -Continue -ErrorRecord $_ -Message "Cannot process $db on $server"
