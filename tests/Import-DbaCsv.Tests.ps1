@@ -521,4 +521,235 @@ Describe $CommandName -Tag IntegrationTests {
             Remove-Item $filePath -ErrorAction SilentlyContinue
         }
     }
+
+    Context "Deep data validation" {
+        It "verifies exact data values match between CSV and database" {
+            $filePath = "$($TestConfig.Temp)\deepval-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "DeepValidation$(Get-Random)"
+
+            # Create CSV with specific known values
+            $csvContent = @"
+id,name,value,date
+1,Alice,100.50,2024-01-15
+2,Bob,200.75,2024-02-20
+3,Charlie,300.25,2024-03-25
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            # Create table with proper types
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE $tableName (id INT, name VARCHAR(50), value DECIMAL(10,2), date DATE)"
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName
+
+            $result.RowsCopied | Should -Be 3
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY id" -As PSObject
+
+            # Verify each row's values exactly
+            $data[0].id | Should -Be 1
+            $data[0].name | Should -Be "Alice"
+            $data[0].value | Should -Be 100.50
+            $data[1].id | Should -Be 2
+            $data[1].name | Should -Be "Bob"
+            $data[1].value | Should -Be 200.75
+            $data[2].id | Should -Be 3
+            $data[2].name | Should -Be "Charlie"
+            $data[2].value | Should -Be 300.25
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "preserves special characters in quoted fields" {
+            $filePath = "$($TestConfig.Temp)\special-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "SpecialChars$(Get-Random)"
+
+            # Create CSV with special characters
+            $csvContent = @"
+name,description
+"John ""Jack"" Smith","Contains, commas and ""quotes"""
+"Jane's Place","Has apostrophe's"
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $splatImport = @{
+                Path            = $filePath
+                SqlInstance     = $server
+                Database        = "tempdb"
+                Table           = $tableName
+                AutoCreateTable = $true
+            }
+            $result = Import-DbaCsv @splatImport
+
+            $result.RowsCopied | Should -Be 2
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY name" -As PSObject
+
+            # Verify special characters are preserved
+            $data[0].name | Should -Be 'Jane''s Place'
+            $data[0].description | Should -Be "Has apostrophe's"
+            $data[1].name | Should -Be 'John "Jack" Smith'
+            $data[1].description | Should -Be 'Contains, commas and "quotes"'
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "truncate removes old data and replaces with new data" {
+            $filePath = "$($TestConfig.Temp)\truncate-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "TruncateTest$(Get-Random)"
+
+            # Create initial CSV
+            "id,value`n1,first`n2,second" | Out-File -FilePath $filePath -Encoding UTF8
+
+            $splatImport = @{
+                Path            = $filePath
+                SqlInstance     = $server
+                Database        = "tempdb"
+                Table           = $tableName
+                AutoCreateTable = $true
+            }
+            $null = Import-DbaCsv @splatImport
+
+            $countBefore = (Invoke-DbaQuery -SqlInstance $server -Query "SELECT COUNT(*) AS cnt FROM $tableName" -As PSObject).cnt
+            $countBefore | Should -Be 2
+
+            # Create new CSV with different data
+            "id,value`n10,newvalue1`n20,newvalue2`n30,newvalue3" | Out-File -FilePath $filePath -Encoding UTF8
+
+            $splatImportTruncate = @{
+                Path        = $filePath
+                SqlInstance = $server
+                Database    = "tempdb"
+                Table       = $tableName
+                Truncate    = $true
+            }
+            $result = Import-DbaCsv @splatImportTruncate
+
+            $result.RowsCopied | Should -Be 3
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY id" -As PSObject
+
+            # Verify old data is gone and new data is present
+            ($data | Measure-Object).Count | Should -Be 3
+            $data[0].id | Should -Be "10"
+            $data[0].value | Should -Be "newvalue1"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "type conversion works for INT, DECIMAL, BIT, and DATETIME" {
+            $filePath = "$($TestConfig.Temp)\types-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "TypeConversion$(Get-Random)"
+
+            # Create table with various types
+            $createTableSql = @"
+CREATE TABLE $tableName (
+    int_col INT,
+    decimal_col DECIMAL(10,2),
+    bit_col BIT,
+    datetime_col DATETIME,
+    bigint_col BIGINT,
+    smallint_col SMALLINT
+)
+"@
+            Invoke-DbaQuery -SqlInstance $server -Query $createTableSql
+
+            # Create CSV with type-specific values
+            $csvContent = @"
+int_col,decimal_col,bit_col,datetime_col,bigint_col,smallint_col
+42,123.45,1,2024-06-15 10:30:00,9223372036854775807,32767
+-100,0.01,0,2023-12-31 23:59:59,1234567890123,100
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName
+
+            $result.RowsCopied | Should -Be 2
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY int_col DESC" -As PSObject
+
+            # Verify type conversions
+            $data[0].int_col | Should -Be 42
+            $data[0].decimal_col | Should -Be 123.45
+            $data[0].bit_col | Should -Be $true
+            $data[0].bigint_col | Should -Be 9223372036854775807
+            $data[0].smallint_col | Should -Be 32767
+
+            $data[1].int_col | Should -Be -100
+            $data[1].decimal_col | Should -Be 0.01
+            $data[1].bit_col | Should -Be $false
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "row count matches exactly between CSV source and database" {
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "RowCountMatch$(Get-Random)"
+
+            # Use SuperSmall.csv which has 1000 rows (999 data + no header, or 1000 lines)
+            $csvPath = $pathSuperSmall
+            $csvLineCount = (Get-Content $csvPath).Count
+
+            $splatImport = @{
+                Path            = $csvPath
+                SqlInstance     = $server
+                Database        = "tempdb"
+                Table           = $tableName
+                Delimiter       = "`t"
+                NoHeaderRow     = $true
+                AutoCreateTable = $true
+            }
+            $result = Import-DbaCsv @splatImport
+
+            $dbCount = (Invoke-DbaQuery -SqlInstance $server -Query "SELECT COUNT(*) AS cnt FROM $tableName" -As PSObject).cnt
+
+            # Verify counts match
+            $result.RowsCopied | Should -Be $csvLineCount
+            $dbCount | Should -Be $csvLineCount
+            $result.RowsCopied | Should -Be $dbCount
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+        }
+
+        It "handles empty string values correctly" {
+            $filePath = "$($TestConfig.Temp)\emptyvals-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "EmptyValues$(Get-Random)"
+
+            # Create CSV with empty values
+            $csvContent = @"
+col1,col2,col3
+value1,,value3
+,middle,
+all,filled,here
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $splatImport = @{
+                Path            = $filePath
+                SqlInstance     = $server
+                Database        = "tempdb"
+                Table           = $tableName
+                AutoCreateTable = $true
+            }
+            $result = Import-DbaCsv @splatImport
+
+            $result.RowsCopied | Should -Be 3
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+
+            # Verify empty values are handled (empty string or NULL depending on settings)
+            ($data | Measure-Object).Count | Should -Be 3
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+    }
 }

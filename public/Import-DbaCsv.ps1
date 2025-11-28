@@ -310,6 +310,70 @@ function Import-DbaCsv {
 
         If the CSV has no headers, passing a ColumnMap works when you have as the key the ordinal of the column (0-based).
         In this example the first CSV field is inserted into SQL column 'FirstName' and the second CSV field is inserted into the SQL Column 'PhoneNumber'.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\data.csv -SqlInstance sql001 -Database tempdb -Table MyTable -Delimiter "::" -AutoCreateTable
+
+        Imports a CSV file that uses a multi-character delimiter (::). The new CSV reader supports delimiters of any length,
+        not just single characters.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\data.csv.gz -SqlInstance sql001 -Database tempdb -Table MyTable -AutoCreateTable
+
+        Imports a gzip-compressed CSV file. Compression is automatically detected from the .gz extension and the file
+        is decompressed on-the-fly during import without extracting to disk.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\export.csv -SqlInstance sql001 -Database tempdb -Table MyTable -SkipRows 3 -AutoCreateTable
+
+        Skips the first 3 rows of the file before reading headers and data. Useful for files that have metadata rows,
+        comments, or report headers before the actual CSV content begins.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\data.csv -SqlInstance sql001 -Database tempdb -Table MyTable -DuplicateHeaderBehavior Rename -AutoCreateTable
+
+        Handles CSV files with duplicate column headers by automatically renaming them (e.g., Name, Name_2, Name_3).
+        Without this, duplicate headers would cause an error.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\messy.csv -SqlInstance sql001 -Database tempdb -Table MyTable -MismatchedFieldAction PadWithNulls -AutoCreateTable
+
+        Imports a CSV where some rows have fewer fields than the header row. Missing fields are padded with NULL values
+        instead of throwing an error. Useful for importing data from systems that omit trailing empty fields.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\data.csv -SqlInstance sql001 -Database tempdb -Table MyTable -QuoteMode Lenient -AutoCreateTable
+
+        Uses lenient quote parsing for CSV files with improperly escaped quotes. This is useful when importing data
+        from systems that don't follow RFC 4180 strictly, such as files with embedded quotes that aren't doubled.
+
+    .EXAMPLE
+        PS C:\> # Import CSV with proper type conversion to a pre-created table
+        PS C:\> $query = "CREATE TABLE TypedData (id INT, amount DECIMAL(10,2), active BIT, created DATETIME)"
+        PS C:\> Invoke-DbaQuery -SqlInstance sql001 -Database tempdb -Query $query
+        PS C:\> Import-DbaCsv -Path C:\temp\typed.csv -SqlInstance sql001 -Database tempdb -Table TypedData
+
+        Imports CSV data into a table with specific column types. The CSV reader automatically converts string values
+        to the appropriate SQL Server types (INT, DECIMAL, BIT, DATETIME, etc.) during import.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\large.csv -SqlInstance sql001 -Database tempdb -Table BigData -AutoCreateTable -Parallel
+
+        Imports a large CSV file using parallel processing for improved performance. The -Parallel switch enables
+        concurrent line reading, parsing, and type conversion, which can provide 2-4x speedup on multi-core systems
+        for files with 100K+ rows.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\huge.csv -SqlInstance sql001 -Database tempdb -Table HugeData -AutoCreateTable -Parallel -ThrottleLimit 4
+
+        Imports a large CSV with parallel processing limited to 4 worker threads. Use -ThrottleLimit to control
+        resource usage on shared systems or when you want to limit CPU consumption during the import.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\refresh.csv -SqlInstance sql001 -Database tempdb -Table LookupData -Truncate
+
+        Performs a full data refresh by truncating the existing table before importing. The truncate and import
+        operations are wrapped in a transaction, so if the import fails, the original data is preserved.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
