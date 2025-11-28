@@ -1,10 +1,10 @@
 function Remove-DbaDbUdf {
     <#
     .SYNOPSIS
-        Removes user-defined functions from SQL Server databases.
+        Removes user-defined functions and user-defined aggregates from SQL Server databases.
 
     .DESCRIPTION
-        Removes user-defined functions from specified databases, providing a clean way to drop obsolete or unwanted UDFs without manual T-SQL scripting. This function is particularly useful during database cleanup operations, code refactoring projects, or when removing deprecated functions that are no longer needed. Supports filtering by schema and function name, and can exclude system UDFs to prevent accidental removal of built-in functions. Works seamlessly with Get-DbaDbUdf for pipeline operations.
+        Removes user-defined functions and user-defined aggregates from specified databases, providing a clean way to drop obsolete or unwanted UDFs without manual T-SQL scripting. This function is particularly useful during database cleanup operations, code refactoring projects, or when removing deprecated functions that are no longer needed. Supports filtering by schema and function name, and can exclude system UDFs to prevent accidental removal of built-in functions. Works seamlessly with Get-DbaDbUdf for pipeline operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,35 +17,35 @@ function Remove-DbaDbUdf {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies which databases to process for UDF removal. Accepts multiple database names and supports wildcards.
+        Specifies which databases to process for UDF and aggregate removal. Accepts multiple database names and supports wildcards.
         Use this to limit the operation to specific databases instead of processing all databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies databases to skip during UDF removal operations. Auto-populated with server database names for tab completion.
+        Specifies databases to skip during UDF and aggregate removal operations. Auto-populated with server database names for tab completion.
         Use this when you want to process most databases but exclude specific ones like production or system databases.
 
     .PARAMETER ExcludeSystemUdf
-        Excludes system-generated and built-in user-defined functions from removal operations.
+        Excludes system-generated and built-in user-defined functions and aggregates from removal operations.
         Use this safety switch to prevent accidental deletion of system UDFs that may be required for database functionality.
 
     .PARAMETER Schema
-        Specifies which schemas to include when removing UDFs. Accepts multiple schema names.
+        Specifies which schemas to include when removing UDFs and aggregates. Accepts multiple schema names.
         Use this to target UDFs in specific schemas like 'dbo', 'reporting', or custom application schemas while leaving others untouched.
 
     .PARAMETER ExcludeSchema
-        Specifies schemas to skip during UDF removal operations.
+        Specifies schemas to skip during UDF and aggregate removal operations.
         Use this to protect critical schemas from modification while processing UDFs in other schemas throughout the database.
 
     .PARAMETER Name
-        Specifies the exact names of UDFs to remove. Accepts multiple function names and supports wildcards.
+        Specifies the exact names of UDFs and aggregates to remove. Accepts multiple function names and supports wildcards.
         Use this for targeted removal of specific functions like deprecated calculation functions or obsolete business logic UDFs.
 
     .PARAMETER ExcludeName
-        Specifies UDF names to skip during removal operations. Accepts multiple function names and wildcards.
+        Specifies UDF and aggregate names to skip during removal operations. Accepts multiple function names and wildcards.
         Use this to protect specific functions from deletion while removing others that match your criteria.
 
     .PARAMETER InputObject
-        Accepts UDF objects directly from Get-DbaDbUdf pipeline operations.
+        Accepts UDF and UserDefinedAggregate objects directly from Get-DbaDbUdf pipeline operations.
         Use this when you need to filter or examine UDFs first before removal, enabling complex selection logic not possible with simple name matching.
 
     .PARAMETER WhatIf
@@ -103,7 +103,7 @@ function Remove-DbaDbUdf {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeName,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
-        [Microsoft.SqlServer.Management.Smo.UserDefinedFunction[]]$InputObject,
+        [object[]]$InputObject,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )

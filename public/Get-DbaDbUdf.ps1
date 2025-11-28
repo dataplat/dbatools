@@ -1,10 +1,10 @@
 function Get-DbaDbUdf {
     <#
     .SYNOPSIS
-        Retrieves User Defined Functions from SQL Server databases with filtering and metadata
+        Retrieves User Defined Functions and User Defined Aggregates from SQL Server databases with filtering and metadata
 
     .DESCRIPTION
-        Retrieves all User Defined Functions (UDFs) from one or more SQL Server databases, returning detailed metadata including schema, creation dates, and data types. This function helps DBAs inventory custom database logic, analyze code dependencies during migrations, and audit user-created functions for security or performance reviews. You can filter results by database, schema, or function name, and exclude system functions to focus on custom business logic.
+        Retrieves all User Defined Functions (UDFs) and User Defined Aggregates from one or more SQL Server databases, returning detailed metadata including schema, creation dates, and data types. This function helps DBAs inventory custom database logic, analyze code dependencies during migrations, and audit user-created functions for security or performance reviews. You can filter results by database, schema, or function name, and exclude system functions to focus on custom business logic.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,31 +17,31 @@ function Get-DbaDbUdf {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies which databases to retrieve User Defined Functions from. Accepts wildcards for pattern matching.
+        Specifies which databases to retrieve User Defined Functions and Aggregates from. Accepts wildcards for pattern matching.
         Use this when you need to audit UDFs in specific databases rather than scanning the entire instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies databases to skip when retrieving User Defined Functions. Useful for excluding system databases or databases under maintenance.
+        Specifies databases to skip when retrieving User Defined Functions and Aggregates. Useful for excluding system databases or databases under maintenance.
         Commonly used to exclude tempdb, model, or large databases that don't contain custom business logic.
 
     .PARAMETER ExcludeSystemUdf
-        Filters out built-in SQL Server system functions from the results, showing only custom user-created functions.
+        Filters out built-in SQL Server system functions and aggregates from the results, showing only custom user-created functions.
         Essential when auditing business logic since system databases can contain 100+ built-in UDFs that obscure custom code.
 
     .PARAMETER Schema
-        Limits results to User Defined Functions within specific schemas. Accepts multiple schema names.
+        Limits results to User Defined Functions and Aggregates within specific schemas. Accepts multiple schema names.
         Useful for focusing on functions owned by particular applications or development teams, such as 'Sales' or 'Reporting' schemas.
 
     .PARAMETER ExcludeSchema
-        Excludes User Defined Functions from specific schemas when retrieving results.
+        Excludes User Defined Functions and Aggregates from specific schemas when retrieving results.
         Helpful for filtering out legacy schemas, test schemas, or third-party application schemas that aren't relevant to your analysis.
 
     .PARAMETER Name
-        Retrieves specific User Defined Functions by name. Accepts multiple function names and supports wildcards.
+        Retrieves specific User Defined Functions and Aggregates by name. Accepts multiple function names and supports wildcards.
         Use this when searching for particular functions during troubleshooting or when documenting specific business logic components.
 
     .PARAMETER ExcludeName
-        Excludes specific User Defined Functions from results by name. Supports wildcards for pattern matching.
+        Excludes specific User Defined Functions and Aggregates from results by name. Supports wildcards for pattern matching.
         Useful for filtering out known test functions, deprecated functions, or utility functions that clutter audit reports.
 
     .PARAMETER EnableException
@@ -63,27 +63,27 @@ function Get-DbaDbUdf {
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance sql2016
 
-        Gets all database User Defined Functions
+        Gets all database User Defined Functions and User Defined Aggregates
 
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance Server1 -Database db1
 
-        Gets the User Defined Functions for the db1 database
+        Gets the User Defined Functions and Aggregates for the db1 database
 
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance Server1 -ExcludeDatabase db1
 
-        Gets the User Defined Functions for all databases except db1
+        Gets the User Defined Functions and Aggregates for all databases except db1
 
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance Server1 -ExcludeSystemUdf
 
-        Gets the User Defined Functions for all databases that are not system objects (there can be 100+ system User Defined Functions in each DB)
+        Gets the User Defined Functions and Aggregates for all databases that are not system objects (there can be 100+ system User Defined Functions in each DB)
 
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbUdf
 
-        Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
+        Gets the User Defined Functions and Aggregates for the databases on Sql1 and Sql2/sqlexpress
 
     #>
     [CmdletBinding()]
@@ -123,34 +123,37 @@ function Get-DbaDbUdf {
                 # Let the SMO read all properties referenced in this command for all user defined functions in the database in one query.
                 # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
                 $db.UserDefinedFunctions.ClearAndInitialize('', [string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType', 'IsSystemObject'))
+                $db.UserDefinedAggregates.ClearAndInitialize('', [string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType', 'IsSystemObject'))
 
-                $userDefinedFunctions = $db.UserDefinedFunctions
+                $allFunctions = @()
+                $allFunctions += $db.UserDefinedFunctions
+                $allFunctions += $db.UserDefinedAggregates
 
-                if (!$userDefinedFunctions) {
-                    Write-Message -Message "No User Defined Functions exist in the $db database on $instance" -Target $db -Level Verbose
+                if (!$allFunctions) {
+                    Write-Message -Message "No User Defined Functions or Aggregates exist in the $db database on $instance" -Target $db -Level Verbose
                     continue
                 }
                 if ($ExcludeSystemUdf) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object IsSystemObject -eq $false
+                    $allFunctions = $allFunctions | Where-Object IsSystemObject -eq $false
                 }
 
                 if ($Schema) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object Schema -in $Schema
+                    $allFunctions = $allFunctions | Where-Object Schema -in $Schema
                 }
 
                 if ($ExcludeSchema) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object Schema -notin $ExcludeSchema
+                    $allFunctions = $allFunctions | Where-Object Schema -notin $ExcludeSchema
                 }
 
                 if ($Name) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object Name -in $Name
+                    $allFunctions = $allFunctions | Where-Object Name -in $Name
                 }
 
                 if ($ExcludeName) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object Name -notin $ExcludeName
+                    $allFunctions = $allFunctions | Where-Object Name -notin $ExcludeName
                 }
 
-                $userDefinedFunctions | ForEach-Object {
+                $allFunctions | ForEach-Object {
 
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
