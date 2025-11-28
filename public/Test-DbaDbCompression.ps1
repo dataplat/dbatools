@@ -12,7 +12,7 @@ function Test-DbaDbCompression {
         - Percent_Scan shows the percentage of scan operations relative to total operations. Higher scan percentages indicate better candidates for page compression.
         - Compression_Type_Recommendation provides specific guidance: 'PAGE', 'ROW', 'NO_GAIN' or '?' when the algorithm cannot determine the best option.
 
-        The function automatically excludes tables that cannot be compressed: memory-optimized tables (SQL 2014+), tables with encrypted columns (SQL 2016+), graph tables (SQL 2017+), and tables with sparse columns. It only analyzes user tables with no existing compression and requires SQL Server 2016 SP1 or higher for non-Enterprise editions.
+        The function automatically excludes tables that cannot be compressed: memory-optimized tables (SQL 2014+), tables with encrypted columns (SQL 2016+), graph tables (SQL 2017+), tables with sparse columns, tables with FileStream columns, and FileTables (SQL 2012+). It only analyzes user tables with no existing compression and requires SQL Server 2016 SP1 or higher for non-Enterprise editions.
 
         Test-DbaDbCompression script derived from GitHub and the Tiger Team's repository: (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
 
@@ -260,6 +260,16 @@ function Test-DbaDbCompression {
                     AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
                 WHERE t.is_memory_optimized = 1
             END"
+                $sqlVersionRestrictions += "
+            BEGIN
+                -- remove FileTables (SQL Server 2012+)
+                DELETE tdc
+                FROM ##TestDbaCompression tdc
+                INNER JOIN sys.tables t
+                    ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
+                    AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
+                WHERE t.is_filetable = 1
+            END"
             }
             if ($sqlVersion -ge 13) {
                 $sqlVersionRestrictions += "
@@ -381,6 +391,23 @@ BEGIN
     INNER JOIN sys.columns c
         ON tdc.ObjectId = c.object_id
     WHERE c.is_sparse = 1
+END
+
+BEGIN
+    -- remove tables with FileStream columns
+    -- FileStream columns are incompatible with sp_estimate_data_compression_savings
+    -- when RCSI or Snapshot Isolation is enabled
+    DELETE tdc
+    FROM ##TestDbaCompression tdc
+    INNER JOIN sys.tables t
+        ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
+        AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
+    WHERE EXISTS (
+        SELECT 1
+        FROM sys.columns c
+        WHERE c.object_id = t.object_id
+        AND c.is_filestream = 1
+    )
 END
 
 $sqlVersionRestrictions
