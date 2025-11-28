@@ -56,6 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         $user2 = "dbatoolsci_exportdbauser_user2"
         $table = "dbatoolsci_exportdbauser_table"
         $role = "dbatoolsci_exportdbauser_role"
+        $schema = "dbatoolsci_exportdbauser_schema"
 
         $outputPath = "$($TestConfig.Temp)\Dbatoolsci_user_CustomFolder"
         $outputFile = "$($TestConfig.Temp)\Dbatoolsci_user_CustomFile.sql"
@@ -93,6 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $db.Query("CREATE TABLE $table (C1 INT);")
         $null = $db.Query("GRANT SELECT ON OBJECT::$table TO [$user];")
         $null = $db.Query("EXEC sp_addrolemember '$role', '$user';")
+        $null = $db.Query("CREATE SCHEMA [$schema] AUTHORIZATION [$user];")
         $null = $db.Query("EXEC sp_addrolemember '$role01', '$user01';")
         $null = $db.Query("EXEC sp_addrolemember '$role02', '$user01';")
         $null = $db.Query("EXEC sp_addrolemember '$role02', '$user02';")
@@ -214,6 +216,18 @@ Describe $CommandName -Tag IntegrationTests {
                 $content | Should -BeLike "*ALTER ROLE [[]$role03] ADD MEMBER [[]$user02]*"
                 $content | Should -Not -BeLike "*ALTER ROLE [[]$role01]*"
             }
+        }
+    }
+
+    Context "Schema ownership" {
+        It "Exports schema ownership for users that own schemas" {
+            $results = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -User $user -Passthru
+            $results | Should -BeLike "*ALTER AUTHORIZATION ON SCHEMA::[[]$schema] TO [[]$user]*"
+        }
+
+        It "Exports schema ownership with template placeholders" {
+            $results = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -User $user -Template -Passthru
+            $results | Should -BeLike "*ALTER AUTHORIZATION ON SCHEMA::[[]$schema] TO [[]``{templateUser``}]*"
         }
     }
 }

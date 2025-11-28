@@ -553,6 +553,16 @@ function Export-DbaUser {
                         $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$grantee]$withGrant AS [$($objectPermission.Grantor)];"
                     }
 
+                    #Schema Ownership
+                    foreach ($schema in $db.Schemas | Where-Object { $_.Owner -eq $dbuser.Name }) {
+                        if ($Template) {
+                            $ownerName = "{templateUser}"
+                        } else {
+                            $ownerName = $schema.Owner
+                        }
+                        $outsql += "ALTER AUTHORIZATION ON SCHEMA::[{0}] TO [{1}];" -f $schema.Name, $ownerName
+                    }
+
                 } catch {
                     Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                 }
