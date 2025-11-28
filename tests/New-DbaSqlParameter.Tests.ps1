@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         $output.Value | Should -Be "{""example"":""sample""}"
     }
-    It "binds a ""falsy"" value properly (see #9542)" {
+    It "binds a ""falsy"" value properly (see #9209)" {
         [int]$ZeroInt = 0
         $ZeroSqlParam = New-DbaSqlParameter -ParameterName ZeroInt -Value $ZeroInt -SqlDbType int
         $ZeroSqlParam.Value | Should -Be 0
