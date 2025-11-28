@@ -28,6 +28,10 @@ function Get-DbaAgentJob {
         Excludes disabled SQL Agent jobs from the results, showing only enabled jobs.
         Use this when focusing on active job monitoring or troubleshooting since disabled jobs won't execute.
 
+    .PARAMETER ExcludeMsxJobs
+        Excludes MSX (Master Server) jobs from the results. MSX jobs have CategoryID = 1 and originate from a multi-server administration setup.
+        Use this to avoid errors when copying jobs to secondary replicas in availability groups or when managing jobs that should not be modified on target servers.
+
     .PARAMETER Database
         Filters jobs to only those containing T-SQL job steps that target specific databases.
         Essential for database-specific maintenance planning or identifying which jobs will be affected by database operations like restores or migrations.
@@ -103,6 +107,11 @@ function Get-DbaAgentJob {
         PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a -Database msdb
 
         Finds all jobs on sqlserver2014a that T-SQL job steps associated with msdb database
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a -ExcludeMsxJobs
+
+        Returns all SQL Agent jobs except MSX (Master Server) jobs on sqlserver2014a
     #>
     [CmdletBinding()]
     param (
@@ -115,6 +124,7 @@ function Get-DbaAgentJob {
         [string[]]$Category,
         [string[]]$ExcludeCategory,
         [switch]$ExcludeDisabledJobs,
+        [switch]$ExcludeMsxJobs,
         [switch]$IncludeExecution,
         [ValidateSet("MultiServer", "Local")]
         [string[]]$Type = @("MultiServer", "Local"),
@@ -174,6 +184,9 @@ function Get-DbaAgentJob {
             }
             if ($ExcludeDisabledJobs) {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
+            }
+            if ($ExcludeMsxJobs) {
+                $jobs = $jobs | Where-Object CategoryID -ne 1
             }
             if ($Database) {
                 $dbLookup = @{}
