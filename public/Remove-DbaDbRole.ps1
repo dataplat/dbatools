@@ -4,9 +4,9 @@ function Remove-DbaDbRole {
         Removes custom database roles from SQL Server databases
 
     .DESCRIPTION
-        Removes user-defined database roles from SQL Server databases while protecting against accidental deletion of system roles. This function automatically excludes fixed database roles (like db_owner, db_datareader) and the public role, ensuring only custom roles created for specific security requirements can be removed.
+        Removes user-defined database roles from SQL Server databases while protecting against accidental deletion of system roles and intelligently handling schema ownership. This function automatically excludes fixed database roles (like db_owner, db_datareader) and the public role, ensuring only custom roles created for specific security requirements can be removed.
 
-        The function performs safety checks before removal, preventing deletion of roles that own database schemas to avoid orphaning database objects. This is particularly useful when cleaning up deprecated security configurations or removing roles from development databases that were copied from production.
+        When a role owns schemas, the function intelligently manages the cleanup: schemas with the same name as the role are dropped (if empty), while other owned schemas have their ownership transferred to 'dbo'. If schemas contain objects, use -Force to allow ownership transfer and proceed with role removal.
 
         You can target specific roles across multiple databases and instances, making it ideal for standardizing security configurations or bulk cleanup operations. By default, system databases are excluded unless explicitly included with the IncludeSystemDbs parameter.
 
@@ -44,6 +44,10 @@ function Remove-DbaDbRole {
         Accepts piped objects from Get-DbaDbRole, Get-DbaDatabase, or SQL Server instances for processing.
         Use this for pipeline operations where you first retrieve specific roles or databases, then remove roles from them. This allows for more complex filtering and processing scenarios.
 
+    .PARAMETER Force
+        Forces schema ownership transfer to 'dbo' when the role owns schemas containing database objects. Without this, role removal fails if owned schemas contain objects.
+        Use this during role cleanup when you need to ensure complete removal regardless of schema dependencies.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -57,7 +61,7 @@ function Remove-DbaDbRole {
 
     .NOTES
         Tags: Role
-        Author: Ben Miller (@DBAduck)
+        Author: Ben Miller (@DBAduck), the dbatools team + Claude
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -100,6 +104,7 @@ function Remove-DbaDbRole {
         [switch]$IncludeSystemDbs,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
+        [switch]$Force,
         [switch]$EnableException
     )
 
@@ -141,14 +146,71 @@ function Remove-DbaDbRole {
             foreach ($dbRole in $dbRoles) {
                 $db = $dbRole.Parent
                 $instance = $db.Parent
+                $ownedObjects = $false
+                $alterSchemas = @()
+                $dropSchemas = @()
+
                 if ((!$db.IsSystemObject) -or ($db.IsSystemObject -and $IncludeSystemDbs )) {
                     if ((!$dbRole.IsFixedRole) -and ($dbRole.Name -ne 'public')) {
                         if ($PSCmdlet.ShouldProcess($instance, "Remove role $dbRole from database $db")) {
-                            $schemas = $dbRole.Parent.Schemas | Where-Object { $_.Owner -eq $dbRole.Name }
-                            if (!$schemas) {
-                                $dbRole.Drop()
-                            } else {
-                                Write-Message -Level warning -Message "Cannot remove role $dbRole from database $db on instance $instance as it owns one or more Schemas"
+                            # Handle schemas owned by the role
+                            $ownedSchemas = $db.Schemas | Where-Object { $_.Owner -eq $dbRole.Name }
+
+                            if ($ownedSchemas) {
+                                Write-Message -Level Verbose -Message "Role $dbRole owns $($ownedSchemas.Count) schema(s)."
+
+                                # Need to gather up the schema changes so they can be done in a non-destructive order
+                                foreach ($schema in $ownedSchemas) {
+                                    # Drop any schema that is the same name as the role
+                                    if ($schema.Name -eq $dbRole.Name) {
+                                        # Check for owned objects early so we can exit before any changes are made
+                                        $ownedUrns = $schema.EnumOwnedObjects()
+                                        if (-not $ownedUrns) {
+                                            $dropSchemas += $schema
+                                        } else {
+                                            Write-Message -Level Warning -Message "Role $dbRole owns the Schema $schema, which owns $($ownedUrns.Count) object(s). Role $dbRole will not be removed."
+                                            $ownedObjects = $true
+                                        }
+                                    }
+
+                                    # Change the owner of any schema not the same name as the role
+                                    if ($schema.Name -ne $dbRole.Name) {
+                                        # Check for owned objects early so we can exit before any changes are made
+                                        $ownedUrns = $schema.EnumOwnedObjects()
+                                        if (($ownedUrns -and $Force) -or (-not $ownedUrns)) {
+                                            $alterSchemas += $schema
+                                        } else {
+                                            Write-Message -Level Warning -Message "Role $dbRole owns the Schema $schema, which owns $($ownedUrns.Count) object(s). If you want to change the schema's owner to [dbo] and drop the role anyway, use -Force parameter. Role $dbRole will not be removed."
+                                            $ownedObjects = $true
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (-not $ownedObjects) {
+                                try {
+                                    # Alter Schemas
+                                    foreach ($schema in $alterSchemas) {
+                                        Write-Message -Level Verbose -Message "Owner of Schema $schema will be changed to [dbo]."
+                                        if ($PSCmdlet.ShouldProcess($instance, "Change the owner of Schema $schema to [dbo].")) {
+                                            $schema.Owner = "dbo"
+                                            $schema.Alter()
+                                        }
+                                    }
+
+                                    # Drop Schemas
+                                    foreach ($schema in $dropSchemas) {
+                                        if ($PSCmdlet.ShouldProcess($instance, "Drop Schema $schema from Database $db.")) {
+                                            $schema.Drop()
+                                        }
+                                    }
+
+                                    # Drop the role
+                                    $dbRole.Drop()
+                                    Write-Message -Level Verbose -Message "Role $dbRole removed from database $db on instance $instance"
+                                } catch {
+                                    Stop-Function -Message "Failed to remove role $dbRole from database $db on instance $instance" -ErrorRecord $_ -Continue
+                                }
                             }
                         }
                     } else {
