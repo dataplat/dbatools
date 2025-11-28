@@ -524,6 +524,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaMaintenanceSolutionLog',
         'Invoke-DbaDbLogShipRecovery',
         'Find-DbaTrigger',
+        'Find-DbaObject',
         'Find-DbaView',
         'Invoke-DbaDbUpgrade',
         'Get-DbaDbUser',
