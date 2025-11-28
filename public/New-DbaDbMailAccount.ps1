@@ -40,6 +40,30 @@ function New-DbaDbMailAccount {
         Specifies the SMTP server hostname or IP address that SQL Server will use to send emails through this account. The server must be accessible from the SQL Server instance.
         If not specified, uses the SQL Server instance name as the mail server. The function validates that the mail server exists unless -Force is used.
 
+    .PARAMETER Port
+        Specifies the TCP port number for the SMTP server connection. Common values are 25 (default), 587 (submission), or 465 (SMTPS).
+        Defaults to 25 if not specified. Use port 587 for modern SMTP services like Office 365 or Gmail that require TLS encryption.
+
+    .PARAMETER EnableSSL
+        Enables SSL/TLS encryption for the SMTP connection to protect email content and credentials during transmission.
+        Required for most cloud-based email services like Office 365, Gmail, and other providers that mandate encrypted connections.
+        Use this with Port 587 or 465 for secure email delivery.
+
+    .PARAMETER UseDefaultCredentials
+        Configures the mail server to authenticate using the SQL Server Database Engine service account credentials (Windows Authentication).
+        When enabled, SQL Server uses its own Windows identity to authenticate to the SMTP server instead of requiring a username and password.
+        Useful in domain environments where the SQL Server service account has been granted relay permissions on the mail server.
+
+    .PARAMETER UserName
+        Specifies the username for SMTP server authentication when using Basic Authentication. Required by most cloud email providers.
+        For Office 365, use the full email address (user@domain.com). For Gmail, use the email address or app-specific password username.
+        Leave this parameter blank when using UseDefaultCredentials (Windows Authentication) or anonymous SMTP relay.
+
+    .PARAMETER Password
+        Specifies the password for SMTP server authentication as a SecureString when using Basic Authentication with the UserName parameter.
+        For security, use Get-Credential to prompt for credentials or convert the password: ConvertTo-SecureString "password" -AsPlainText -Force.
+        Not used when UseDefaultCredentials is enabled or when the SMTP server allows anonymous relay.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -71,6 +95,33 @@ function New-DbaDbMailAccount {
 
         Creates a new database mail account with the email address admin@ad.local on sql2017 named "The DBA Team" using the smtp.ad.local mail server.
 
+    .EXAMPLE
+        PS C:\> $params = @{
+        >>     SqlInstance = 'sql2017'
+        >>     Account     = 'Office365Alerts'
+        >>     EmailAddress = 'alerts@company.com'
+        >>     MailServer  = 'smtp.office365.com'
+        >>     Port        = 587
+        >>     EnableSSL   = $true
+        >>     UserName    = 'alerts@company.com'
+        >>     Password    = (ConvertTo-SecureString 'app-password' -AsPlainText -Force)
+        >> }
+        PS C:\> New-DbaDbMailAccount @params
+
+        Creates a Database Mail account configured for Office 365 with TLS encryption on port 587 and Basic Authentication.
+
+    .EXAMPLE
+        PS C:\> $params = @{
+        >>     SqlInstance            = 'sql2017'
+        >>     Account                = 'InternalRelay'
+        >>     EmailAddress           = 'sqlserver@company.local'
+        >>     MailServer             = 'mail-relay.company.local'
+        >>     UseDefaultCredentials  = $true
+        >> }
+        PS C:\> New-DbaDbMailAccount @params
+
+        Creates a Database Mail account that uses Windows Authentication (SQL Server service account) to connect to an internal SMTP relay server.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -86,6 +137,11 @@ function New-DbaDbMailAccount {
         [string]$EmailAddress,
         [string]$ReplyToAddress,
         [string]$MailServer,
+        [int]$Port = 25,
+        [switch]$EnableSSL,
+        [switch]$UseDefaultCredentials,
+        [string]$UserName,
+        [securestring]$Password,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -116,7 +172,17 @@ function New-DbaDbMailAccount {
                 }
 
                 try {
-                    $accountObj.MailServers.Item($($server.DomainInstanceName)).Rename($MailServer)
+                    $mailServerObj = $accountObj.MailServers.Item($($server.DomainInstanceName))
+                    $mailServerObj.Rename($MailServer)
+                    $mailServerObj.Port = $Port
+                    $mailServerObj.EnableSsl = $EnableSSL
+
+                    if ($UseDefaultCredentials) {
+                        $mailServerObj.UseDefaultCredentials = $true
+                    } elseif ($UserName) {
+                        $mailServerObj.SetAccount($UserName, $Password)
+                    }
+
                     $accountObj.Alter()
                     $accountObj.Refresh()
                     Add-Member -Force -InputObject $accountObj -MemberType NoteProperty -Name ComputerName -value $server.ComputerName

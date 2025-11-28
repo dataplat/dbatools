@@ -19,6 +19,11 @@ Describe $CommandName -Tag UnitTests {
                 "EmailAddress",
                 "ReplyToAddress",
                 "MailServer",
+                "Port",
+                "EnableSSL",
+                "UseDefaultCredentials",
+                "UserName",
+                "Password",
                 "Force",
                 "EnableException"
             )

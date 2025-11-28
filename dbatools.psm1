@@ -645,6 +645,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaDbMailServer',
         'New-DbaDbMailServer',
         'New-DbaDbMailAccount',
+        'Set-DbaDbMailAccount',
         'New-DbaDbMailProfile',
         'Get-DbaResourceGovernor',
         'Get-DbaRgResourcePool',
