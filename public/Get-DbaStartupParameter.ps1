@@ -77,6 +77,7 @@ function Get-DbaStartupParameter {
                 $scriptBlock = {
                     $computerName = $args[0]
                     $displayName = $args[1]
+                    $Simple = $args[2]
 
                     $wmisvc = $wmi.Services | Where-Object DisplayName -eq $displayName
 
@@ -181,9 +182,9 @@ function Get-DbaStartupParameter {
                 # This command is in the internal function
                 # It's sorta like Invoke-Command.
                 if ($credential) {
-                    Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName
+                    Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName, $Simple
                 } else {
-                    Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName
+                    Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName, $Simple
                 }
             } catch {
                 Stop-Function -Message "$instance failed." -ErrorRecord $_ -Continue -Target $instance

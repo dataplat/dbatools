@@ -27,5 +27,20 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaStartupParameter -SqlInstance $TestConfig.instance2
             $results | Should -Not -BeNullOrEmpty
         }
+        It "Simple parameter returns only essential properties" {
+            $results = Get-DbaStartupParameter -SqlInstance $TestConfig.instance2 -Simple
+            $results | Should -Not -BeNullOrEmpty
+            $properties = $results | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "MasterData", "MasterLog", "ErrorLog", "TraceFlags", "DebugFlags", "ParameterString")
+            $properties | Should -Be $expectedProperties
+        }
+        It "Without Simple parameter returns additional properties" {
+            $results = Get-DbaStartupParameter -SqlInstance $TestConfig.instance2
+            $results | Should -Not -BeNullOrEmpty
+            $properties = $results | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name
+            $properties | Should -Contain "CommandPromptStart"
+            $properties | Should -Contain "MinimalStart"
+            $properties | Should -Contain "MemoryToReserve"
+        }
     }
 }
