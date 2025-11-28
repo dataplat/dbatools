@@ -34,8 +34,66 @@ Write-ImportTime -Text "Started" -Timestamp $script:start
 
 $script:PSModuleRoot = $PSScriptRoot
 
+# Ensure TEMP directory is set and writable
+# This is critical for Add-Type operations in dbatools.library
 if (-not $Env:TEMP) {
     $Env:TEMP = [System.IO.Path]::GetTempPath()
+}
+
+# Verify TEMP is writable, especially important for SQL Server Agent jobs
+# where TEMP may point to C:\Windows\Temp without write access
+try {
+    $testFile = [System.IO.Path]::Combine($Env:TEMP, "dbatools_temp_test_$([System.Guid]::NewGuid().ToString()).tmp")
+    [System.IO.File]::WriteAllText($testFile, "test")
+    [System.IO.File]::Delete($testFile)
+} catch {
+    # TEMP is not writable, try to find an alternative
+    $alternativePaths = @(
+        [System.IO.Path]::Combine($env:USERPROFILE, "AppData", "Local", "Temp"),
+        [System.IO.Path]::Combine($env:LOCALAPPDATA, "Temp"),
+        [System.IO.Path]::Combine($script:PSModuleRoot, "temp")
+    )
+
+    $foundWritable = $false
+    foreach ($altPath in $alternativePaths) {
+        if ($altPath -and (Test-Path $altPath -PathType Container -ErrorAction SilentlyContinue)) {
+            try {
+                $testFile = [System.IO.Path]::Combine($altPath, "dbatools_temp_test_$([System.Guid]::NewGuid().ToString()).tmp")
+                [System.IO.File]::WriteAllText($testFile, "test")
+                [System.IO.File]::Delete($testFile)
+                $Env:TEMP = $altPath
+                $Env:TMP = $altPath
+                $foundWritable = $true
+                Write-Verbose "TEMP directory was not writable. Using alternative: $altPath"
+                break
+            } catch {
+                continue
+            }
+        }
+    }
+
+    if (-not $foundWritable) {
+        # Try to create a temp directory in the module path as last resort
+        try {
+            $moduleTempPath = [System.IO.Path]::Combine($script:PSModuleRoot, "temp")
+            if (-not (Test-Path $moduleTempPath)) {
+                $null = New-Item -Path $moduleTempPath -ItemType Directory -Force -ErrorAction Stop
+            }
+            $testFile = [System.IO.Path]::Combine($moduleTempPath, "dbatools_temp_test_$([System.Guid]::NewGuid().ToString()).tmp")
+            [System.IO.File]::WriteAllText($testFile, "test")
+            [System.IO.File]::Delete($testFile)
+            $Env:TEMP = $moduleTempPath
+            $Env:TMP = $moduleTempPath
+            Write-Verbose "TEMP directory was not writable. Created and using: $moduleTempPath"
+        } catch {
+            $tempError = "dbatools requires a writable TEMP directory to load assemblies. "
+            $tempError += "The current TEMP path ($Env:TEMP) is not writable, and no alternative writable location could be found. "
+            $tempError += "This commonly occurs in SQL Server Agent jobs running without a user profile. "
+            $tempError += "Please ensure write access to the TEMP directory, set TEMP/TMP environment variables to a writable location, "
+            $tempError += "or create a writable directory at: $moduleTempPath"
+            throw $tempError
+        }
+    }
 }
 
 $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
