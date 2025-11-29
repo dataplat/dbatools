@@ -524,7 +524,7 @@ function Import-DbaCsv {
                 [Microsoft.Data.SqlClient.SqlTransaction]$transaction
             )
 
-            $options = [Dataplat.Dbatools.Csv.Reader.CsvReaderOptions]::new()
+            $options = New-Object Dataplat.Dbatools.Csv.Reader.CsvReaderOptions
             $options.HasHeaderRow = $FirstRowHeader
             $options.Delimiter = $Delimiter
             $options.Quote = $Quote
