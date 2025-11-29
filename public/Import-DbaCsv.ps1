@@ -204,6 +204,22 @@ function Import-DbaCsv {
         Maximum number of parse errors to collect before stopping.
         Only applies when -CollectParseErrors is specified. Default is 1000.
 
+    .PARAMETER StaticColumns
+        A hashtable of static column names and values to add to every row.
+        Useful for tagging imported data with metadata like source filename or import timestamp.
+        Keys are column names, values are the static values to insert.
+        Example: @{ SourceFile = "data.csv"; ImportDate = (Get-Date) }
+
+    .PARAMETER DateTimeFormats
+        An array of custom date/time format strings for parsing date columns.
+        Useful when importing data with non-standard date formats (e.g., Oracle's dd-MMM-yyyy).
+        Example: @("dd-MMM-yyyy", "yyyy/MM/dd", "MM-dd-yyyy")
+
+    .PARAMETER Culture
+        The culture name to use for parsing numbers and dates (e.g., "de-DE", "fr-FR", "en-US").
+        Useful when importing CSV files with locale-specific number formats (e.g., comma as decimal separator).
+        Default is InvariantCulture.
+
     .PARAMETER Parallel
         Enables parallel processing for improved performance on large files.
         When enabled, line reading, parsing, and type conversion are performed in parallel
@@ -386,6 +402,25 @@ function Import-DbaCsv {
 
         Performs a full data refresh by truncating the existing table before importing. The truncate and import
         operations are wrapped in a transaction, so if the import fails, the original data is preserved.
+
+    .EXAMPLE
+        PS C:\> $static = @{ SourceFile = "sales_2024.csv"; ImportDate = (Get-Date); Region = "EMEA" }
+        PS C:\> Import-DbaCsv -Path C:\temp\sales.csv -SqlInstance sql001 -Database sales -Table SalesData -StaticColumns $static -AutoCreateTable
+
+        Imports CSV data and adds three static columns (SourceFile, ImportDate, Region) to every row.
+        This is useful for tracking data lineage and tagging imported records with metadata.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\oracle_export.csv -SqlInstance sql001 -Database tempdb -Table OracleData -DateTimeFormats @("dd-MMM-yyyy", "dd-MMM-yyyy HH:mm:ss") -AutoCreateTable
+
+        Imports a CSV with Oracle-style date formats (e.g., "15-Jan-2024"). The -DateTimeFormats parameter
+        specifies custom format strings to parse non-standard date columns correctly.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\german_data.csv -SqlInstance sql001 -Database tempdb -Table GermanData -Culture "de-DE" -AutoCreateTable
+
+        Imports a CSV with German number formatting where comma is the decimal separator (e.g., "1.234,56").
+        The -Culture parameter ensures numbers are parsed correctly according to the specified locale.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -447,6 +482,9 @@ function Import-DbaCsv {
         [switch]$NormalizeQuotes,
         [switch]$CollectParseErrors,
         [int]$MaxParseErrors = 1000,
+        [hashtable]$StaticColumns,
+        [string[]]$DateTimeFormats,
+        [string]$Culture,
         [switch]$Parallel,
         [int]$ThrottleLimit = 0,
         [int]$ParallelBatchSize = 100,
@@ -887,6 +925,20 @@ function Import-DbaCsv {
                             $csvOptions.MaxQuotedFieldLength = $MaxQuotedFieldLength
                         }
                         $csvOptions.ParseErrorAction = [Dataplat.Dbatools.Csv.CsvParseErrorAction]::$ParseErrorAction
+                        if ($PSBoundParameters.DateTimeFormats) {
+                            $csvOptions.DateTimeFormats = $DateTimeFormats
+                        }
+                        if ($PSBoundParameters.Culture) {
+                            $csvOptions.Culture = [System.Globalization.CultureInfo]::new($Culture)
+                        }
+                        if ($PSBoundParameters.StaticColumns) {
+                            $staticColumnsList = [System.Collections.Generic.List[Dataplat.Dbatools.Csv.Reader.StaticColumn]]::new()
+                            foreach ($key in $StaticColumns.Keys) {
+                                $staticCol = [Dataplat.Dbatools.Csv.Reader.StaticColumn]::new($key, $StaticColumns[$key])
+                                $staticColumnsList.Add($staticCol)
+                            }
+                            $csvOptions.StaticColumns = $staticColumnsList
+                        }
                         $csvOptions.EnableParallelProcessing = $Parallel.IsPresent
                         if ($PSBoundParameters.ThrottleLimit) {
                             $csvOptions.MaxDegreeOfParallelism = $ThrottleLimit

@@ -57,6 +57,9 @@ Describe $CommandName -Tag UnitTests {
                 "NormalizeQuotes",
                 "CollectParseErrors",
                 "MaxParseErrors",
+                "StaticColumns",
+                "DateTimeFormats",
+                "Culture",
                 "Parallel",
                 "ThrottleLimit",
                 "ParallelBatchSize"
@@ -518,6 +521,94 @@ Describe $CommandName -Tag IntegrationTests {
             # Verify all records were imported (order in DB may vary based on bulk copy)
             $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT COUNT(DISTINCT seq) AS cnt FROM $tableName" -As PSObject
             $data.cnt | Should -Be 200
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "supports StaticColumns parameter for metadata tagging (issue #6676)" {
+            $filePath = "$($TestConfig.Temp)\staticcol-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "StaticColTest$(Get-Random)"
+
+            # Create simple CSV
+            "name,value" | Out-File -FilePath $filePath -Encoding UTF8
+            "Alice,100" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "Bob,200" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            # Create table with extra columns for static data
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE $tableName (name VARCHAR(50), value INT, SourceFile VARCHAR(100), Region VARCHAR(50))"
+
+            $staticCols = @{
+                SourceFile = "test-data.csv"
+                Region     = "EMEA"
+            }
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -StaticColumns $staticCols
+
+            $result.RowsCopied | Should -Be 2
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY name" -As PSObject
+            $data[0].name | Should -Be "Alice"
+            $data[0].SourceFile | Should -Be "test-data.csv"
+            $data[0].Region | Should -Be "EMEA"
+            $data[1].name | Should -Be "Bob"
+            $data[1].SourceFile | Should -Be "test-data.csv"
+            $data[1].Region | Should -Be "EMEA"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "supports DateTimeFormats parameter for custom date parsing (issue #9694)" {
+            $filePath = "$($TestConfig.Temp)\datefmt-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "DateFmtTest$(Get-Random)"
+
+            # Create CSV with Oracle-style date format
+            "name,event_date" | Out-File -FilePath $filePath -Encoding UTF8
+            "Event1,15-Jan-2024" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "Event2,28-Feb-2024" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            # Create table with DATE column
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE $tableName (name VARCHAR(50), event_date DATE)"
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -DateTimeFormats @("dd-MMM-yyyy")
+
+            $result.RowsCopied | Should -Be 2
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY name" -As PSObject
+            $data[0].name | Should -Be "Event1"
+            $data[0].event_date.Day | Should -Be 15
+            $data[0].event_date.Month | Should -Be 1
+            $data[0].event_date.Year | Should -Be 2024
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "supports Culture parameter for locale-specific number parsing (LumenWorks issue #66)" {
+            $filePath = "$($TestConfig.Temp)\culture-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "CultureTest$(Get-Random)"
+
+            # Create CSV with German number format (semicolon delimiter, comma as decimal separator)
+            "product;price" | Out-File -FilePath $filePath -Encoding UTF8
+            "Widget;1234,56" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "Gadget;789,12" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            # Create table with DECIMAL column
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE $tableName (product VARCHAR(50), price DECIMAL(10,2))"
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -Delimiter ";" -Culture "de-DE"
+
+            $result.RowsCopied | Should -Be 2
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY product" -As PSObject
+            $data[0].product | Should -Be "Gadget"
+            $data[0].price | Should -Be 789.12
+            $data[1].product | Should -Be "Widget"
+            $data[1].price | Should -Be 1234.56
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
