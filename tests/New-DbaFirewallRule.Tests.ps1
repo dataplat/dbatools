@@ -14,6 +14,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlInstance",
                 "Credential",
                 "Type",
+                "Method",
                 "Configuration",
                 "Force",
                 "EnableException"
@@ -30,10 +31,17 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
 
-        # Create firewall rules and get results for testing
-        $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.instance2
-        $resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
-        $resultsRemoveBrowser = $resultsGet | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule
+        # Create firewall rules with default Method (Program) and get results for testing
+        $resultsNewProgram = New-DbaFirewallRule -SqlInstance $TestConfig.instance2
+        $resultsGetProgram = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
+
+        # Clean up and create port-based rules for testing
+        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
+        $resultsNewPort = New-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Method Port
+        $resultsGetPort = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
+
+        # Test removal
+        $resultsRemoveBrowser = $resultsGetPort | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule
         $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Type AllInstance
 
         $instanceName = ([DbaInstanceParameter]$TestConfig.instance2).InstanceName
@@ -51,39 +59,76 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    # If remote DAC is enabled, also creates rule for DAC.
-    It "creates at least two firewall rules" {
-        $resultsNew.Count | Should -BeGreaterOrEqual 2
+    Context "Program-based rules (default)" {
+        # If remote DAC is enabled, also creates rule for DAC.
+        It "creates at least two firewall rules" {
+            $resultsNewProgram.Count | Should -BeGreaterOrEqual 2
+        }
+
+        It "creates first firewall rule for SQL Server instance" {
+            $resultsNewProgram[0].Successful | Should -Be $true
+            $resultsNewProgram[0].Type | Should -Be "Engine"
+            $resultsNewProgram[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+            $resultsNewProgram[0].Status | Should -Be "The rule was successfully created."
+        }
+
+        It "creates program-based rule with Program property set for Engine" {
+            $engineRule = $resultsNewProgram | Where-Object Type -eq "Engine"
+            $engineRule.Program | Should -Not -BeNullOrEmpty
+            $engineRule.Program | Should -BeLike "*sqlservr.exe"
+        }
+
+        It "creates second firewall rule for SQL Server Browser" {
+            $resultsNewProgram[1].Successful | Should -Be $true
+            $resultsNewProgram[1].Type | Should -Be "Browser"
+            $resultsNewProgram[1].DisplayName | Should -Be "SQL Server Browser"
+            $resultsNewProgram[1].Status | Should -Be "The rule was successfully created."
+        }
+
+        It "creates program-based rule with Program property set for Browser" {
+            $browserRule = $resultsNewProgram | Where-Object Type -eq "Browser"
+            $browserRule.Program | Should -Not -BeNullOrEmpty
+            $browserRule.Program | Should -BeLike "*sqlbrowser.exe"
+        }
+
+        # If remote DAC is enabled, also creates rule for DAC.
+        It "returns at least two firewall rules" {
+            $resultsGetProgram.Count | Should -BeGreaterOrEqual 2
+        }
+
+        It "returns one firewall rule for SQL Server instance with TCP protocol" {
+            $resultInstance = $resultsGetProgram | Where-Object Type -eq "Engine"
+            $resultInstance.Protocol | Should -Be "TCP"
+        }
+
+        It "returns one firewall rule for SQL Server Browser with UDP protocol" {
+            $resultBrowser = $resultsGetProgram | Where-Object Type -eq "Browser"
+            $resultBrowser.Protocol | Should -Be "UDP"
+        }
     }
 
-    It "creates first firewall rule for SQL Server instance" {
-        $resultsNew[0].Successful | Should -Be $true
-        $resultsNew[0].Type | Should -Be "Engine"
-        $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
-        $resultsNew[0].Status | Should -Be "The rule was successfully created."
-    }
+    Context "Port-based rules (Method Port)" {
+        It "creates at least two port-based firewall rules" {
+            $resultsNewPort.Count | Should -BeGreaterOrEqual 2
+        }
 
-    It "creates second firewall rule for SQL Server Browser" {
-        $resultsNew[1].Successful | Should -Be $true
-        $resultsNew[1].Type | Should -Be "Browser"
-        $resultsNew[1].DisplayName | Should -Be "SQL Server Browser"
-        $resultsNew[1].Status | Should -Be "The rule was successfully created."
-    }
+        It "creates port-based rule with LocalPort property set for Engine" {
+            $engineRule = $resultsNewPort | Where-Object Type -eq "Engine"
+            $engineRule.LocalPort | Should -Not -BeNullOrEmpty
+            $engineRule.Program | Should -BeNullOrEmpty
+        }
 
-    # If remote DAC is enabled, also creates rule for DAC.
-    It "returns at least two firewall rules" {
-        $resultsGet.Count | Should -BeGreaterOrEqual 2
-    }
+        It "creates port-based rule with LocalPort 1434 for Browser" {
+            $browserRule = $resultsNewPort | Where-Object Type -eq "Browser"
+            $browserRule.LocalPort | Should -Be "1434"
+            $browserRule.Program | Should -BeNullOrEmpty
+        }
 
-    It "returns one firewall rule for SQL Server instance" {
-        $resultInstance = $resultsGet | Where-Object Type -eq "Engine"
-        $resultInstance.Protocol | Should -Be "TCP"
-    }
-
-    It "returns one firewall rule for SQL Server Browser" {
-        $resultBrowser = $resultsGet | Where-Object Type -eq "Browser"
-        $resultBrowser.Protocol | Should -Be "UDP"
-        $resultBrowser.LocalPort | Should -Be "1434"
+        It "returns one firewall rule for SQL Server Browser with port 1434" {
+            $resultBrowser = $resultsGetPort | Where-Object Type -eq "Browser"
+            $resultBrowser.Protocol | Should -Be "UDP"
+            $resultBrowser.LocalPort | Should -Be "1434"
+        }
     }
 
     It "removes firewall rule for Browser" {
