@@ -167,6 +167,12 @@ function Get-DbaDbTable {
                 $null = $properties.Add('IsMemoryOptimized')
             }
 
+            # IsNode and IsEdge introduced in SQL Server 2017 (VersionMajor 14)
+            if ($server.VersionMajor -ge 14) {
+                $null = $properties.Add('IsNode')
+                $null = $properties.Add('IsEdge')
+            }
+
             $db.Tables.ClearAndInitialize('', [string[]]$properties)
 
             if ($fqTns) {
@@ -216,6 +222,10 @@ function Get-DbaDbTable {
                 }
                 if ($server.VersionMajor -ge 12) {
                     $null = $defaultProps.Add("IsMemoryOptimized")
+                }
+                if ($server.VersionMajor -ge 14) {
+                    $null = $defaultProps.Add("IsNode")
+                    $null = $defaultProps.Add("IsEdge")
                 }
 
                 # FullTextIndex is a complex object but can be displayed in output (accessed on-demand)

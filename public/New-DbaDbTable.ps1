@@ -451,10 +451,25 @@ function New-DbaDbTable {
                 }
                 try {
                     $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $db, $Name, $Schema
-                    $properties = $PSBoundParameters | Where-Object Key -notin 'SqlInstance', 'SqlCredential', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException', 'Passthru'
 
-                    foreach ($prop in $properties.Key) {
-                        $object.$prop = $prop
+                    # Get common parameters dynamically
+                    $commonParams = [System.Management.Automation.PSCmdlet]::CommonParameters
+                    $commonParams += [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
+
+                    $excludeParams = @(
+                        'SqlInstance', 'SqlCredential', 'Database', 'Name', 'Schema',
+                        'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException', 'Passthru'
+                    ) + $commonParams
+
+                    foreach ($param in $PSBoundParameters.Keys) {
+                        if ($param -notin $excludeParams) {
+                            # IsNode and IsEdge are only supported in SQL Server 2017+ (version 14+)
+                            if ($param -in 'IsNode', 'IsEdge' -and $server.VersionMajor -lt 14) {
+                                Write-Message -Level Warning -Message "Parameter $param is only supported on SQL Server 2017 and above. Current version is $($server.VersionMajor). Skipping."
+                                continue
+                            }
+                            $object.$param = $PSBoundParameters[$param]
+                        }
                     }
 
                     foreach ($column in $ColumnObject) {
@@ -539,6 +554,7 @@ function New-DbaDbTable {
                             $null = Invoke-Create -Object $schemaObject
                         }
                         $null = Invoke-Create -Object $object
+                        $db.Tables.Refresh()
                     }
                     $db | Get-DbaDbTable -Table "[$Schema].[$Name]"
                 } catch {
@@ -546,10 +562,14 @@ function New-DbaDbTable {
                     Write-Message -Level Verbose -Message "Failed to create table or failure while adding constraints. Will try to remove table (and schema)."
                     try {
                         $object.Refresh()
-                        $object.DropIfExists()
+                        if ($object.State -ne 'Dropped') {
+                            $object.Drop()
+                        }
                         if ($schemaObject) {
                             $schemaObject.Refresh()
-                            $schemaObject.DropIfExists()
+                            if ($schemaObject.State -ne 'Dropped') {
+                                $schemaObject.Drop()
+                            }
                         }
                     } catch {
                         Write-Message -Level Warning -Message "Failed to drop table: $_. Maybe table still exists."

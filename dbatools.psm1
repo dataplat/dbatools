@@ -715,6 +715,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Unregister-DbatoolsConfig',
         'Join-DbaPath',
         'Resolve-DbaPath',
+        'Export-DbaCsv',
         'Import-DbaCsv',
         'Invoke-DbaDbDataMasking',
         'New-DbaDbMaskingConfig',

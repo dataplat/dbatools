@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 3, 2025
+-- Last Modified: November 19, 2025
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -62,6 +62,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 17.0.800.9		CTP 2.1								6-12-2025
 -- 17.0.900.7		RC0									8-22-2025
 -- 17.0.925.4		RC1									9-16-2025
+-- 17.0.1000.7		RTM									11-18-2025
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -164,6 +165,14 @@ ORDER BY name OPTION (RECOMPILE);
 -- https://bit.ly/2HsyDZI
 
 -- New in SQL Server 2025 *********************************************************************************************************
+-- ADR cleaner lock timeout (s)
+-- allow server scoped db credentials
+-- availability group commit time (ms)
+-- external AI runtimes enabled
+-- external rest endpoint enabled
+-- max server tiered memory (MB)
+-- max UCS send boxcars
+-- SLOG memory quota (%)
 
 
 -- Returns a list of all global trace flags that are enabled (Query 5) (Global Trace Flags)

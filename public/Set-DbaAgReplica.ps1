@@ -209,10 +209,35 @@ function Set-DbaAgReplica {
                     }
 
                     if ($ReadOnlyRoutingList) {
-                        $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
-                        foreach ($rolist in $ReadOnlyRoutingList) {
-                            $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
+                        # Detect if this is a simple ordered list or a load-balanced (nested) list
+                        # Simple list: @('Server1', 'Server2') - routes in order
+                        # Load-balanced list: @(,('Server1', 'Server2')) or @(('Server1'),('Server2','Server3')) - load balances within groups
+                        $isLoadBalanced = $false
+
+                        # Check if the first element is an array/list (indicates load-balanced routing)
+                        if ($ReadOnlyRoutingList.Count -gt 0 -and $ReadOnlyRoutingList[0] -is [System.Array]) {
+                            $isLoadBalanced = $true
                         }
+
+                        # Always use SetLoadBalancedReadOnlyRoutingList as it's available in all SMO versions
+                        # For simple ordered lists, convert each server to its own group to maintain order
+                        $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
+
+                        if ($isLoadBalanced) {
+                            # Already nested - use as-is for load-balanced routing
+                            foreach ($rolist in $ReadOnlyRoutingList) {
+                                $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
+                            }
+                        } else {
+                            # Simple ordered list - wrap each server in its own list to maintain priority order
+                            # @('Server1', 'Server2') becomes @(@('Server1'), @('Server2'))
+                            foreach ($server in $ReadOnlyRoutingList) {
+                                $serverList = New-Object System.Collections.Generic.List[string]
+                                $null = $serverList.Add([string]$server)
+                                $null = $rorl.Add($serverList)
+                            }
+                        }
+
                         $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                     }
 
@@ -228,7 +253,7 @@ function Set-DbaAgReplica {
                     $agreplica
 
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to modify replica $($agreplica.Name) in availability group $($agreplica.Parent.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }

@@ -90,6 +90,9 @@ Describe $CommandName -Tag IntegrationTests {
             @{ version = "2014"; canonicVersion = "12.0"; mainNode = "OPTIONS" }
             @{ version = "2016"; canonicVersion = "13.0"; mainNode = "OPTIONS" }
             @{ version = "2017"; canonicVersion = "14.0"; mainNode = "OPTIONS" }
+            @{ version = "2019"; canonicVersion = "15.0"; mainNode = "OPTIONS" }
+            @{ version = "2022"; canonicVersion = "16.0"; mainNode = "OPTIONS" }
+            @{ version = "2025"; canonicVersion = "17.0"; mainNode = "OPTIONS" }
         ) {
             param($version, $canonicVersion, $mainNode)
             # Create a dummy Configuration.ini
@@ -113,7 +116,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be "$TestDrive\dummy.exe"
             $result.Notes | Should -BeNullOrEmpty
-            if ($version -in "2016", "2017") {
+            if ($version -in "2016", "2017", "2019", "2022", "2025") {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
             }
         }
@@ -125,6 +128,9 @@ Describe $CommandName -Tag IntegrationTests {
             @{ version = "2014"; canonicVersion = "12.0"; mainNode = "OPTIONS" }
             @{ version = "2016"; canonicVersion = "13.0"; mainNode = "OPTIONS" }
             @{ version = "2017"; canonicVersion = "14.0"; mainNode = "OPTIONS" }
+            @{ version = "2019"; canonicVersion = "15.0"; mainNode = "OPTIONS" }
+            @{ version = "2022"; canonicVersion = "16.0"; mainNode = "OPTIONS" }
+            @{ version = "2025"; canonicVersion = "17.0"; mainNode = "OPTIONS" }
         ) {
             param($version, $canonicVersion, $mainNode)
             $params = @{
@@ -166,7 +172,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Configuration.$mainNode.SAPWD | Should -Be "foo"
             $result.Configuration.$mainNode.SQLSVCACCOUNT | Should -Be "foo"
             $result.Configuration.$mainNode.SQLSYSADMINACCOUNTS | Should -Be """local\foo"" ""local\bar"""
-            if ($version -in "2016", "2017") {
+            if ($version -in "2016", "2017", "2019", "2022", "2025") {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
             }
         }
@@ -178,6 +184,9 @@ Describe $CommandName -Tag IntegrationTests {
             @{ version = "2014"; canonicVersion = "12.0"; mainNode = "OPTIONS" }
             @{ version = "2016"; canonicVersion = "13.0"; mainNode = "OPTIONS" }
             @{ version = "2017"; canonicVersion = "14.0"; mainNode = "OPTIONS" }
+            @{ version = "2019"; canonicVersion = "15.0"; mainNode = "OPTIONS" }
+            @{ version = "2022"; canonicVersion = "16.0"; mainNode = "OPTIONS" }
+            @{ version = "2025"; canonicVersion = "17.0"; mainNode = "OPTIONS" }
         ) {
             param($version, $canonicVersion, $mainNode)
             # Create a dummy Configuration.ini
@@ -210,7 +219,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Notes | Should -BeNullOrEmpty
             $result.Configuration.$mainNode.FEATURES | Should -Be "SQLEngine,AS"
             $result.Configuration.$mainNode.SQLSVCACCOUNT | Should -Be "foo\bar"
-            if ($version -in "2016", "2017") {
+            if ($version -in "2016", "2017", "2019", "2022", "2025") {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
             }
         }
@@ -222,6 +231,9 @@ Describe $CommandName -Tag IntegrationTests {
             @{ version = "2014"; canonicVersion = "12.0"; mainNode = "OPTIONS" }
             @{ version = "2016"; canonicVersion = "13.0"; mainNode = "OPTIONS" }
             @{ version = "2017"; canonicVersion = "14.0"; mainNode = "OPTIONS" }
+            @{ version = "2019"; canonicVersion = "15.0"; mainNode = "OPTIONS" }
+            @{ version = "2022"; canonicVersion = "16.0"; mainNode = "OPTIONS" }
+            @{ version = "2025"; canonicVersion = "17.0"; mainNode = "OPTIONS" }
         ) {
             param($version, $canonicVersion, $mainNode)
             $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -UpdateSourcePath TestDrive:
@@ -248,6 +260,9 @@ Describe $CommandName -Tag IntegrationTests {
             @{ version = "2014"; canonicVersion = "12.0"; mainNode = "OPTIONS" }
             @{ version = "2016"; canonicVersion = "13.0"; mainNode = "OPTIONS" }
             @{ version = "2017"; canonicVersion = "14.0"; mainNode = "OPTIONS" }
+            @{ version = "2019"; canonicVersion = "15.0"; mainNode = "OPTIONS" }
+            @{ version = "2022"; canonicVersion = "16.0"; mainNode = "OPTIONS" }
+            @{ version = "2025"; canonicVersion = "17.0"; mainNode = "OPTIONS" }
         ) {
             param($version, $canonicVersion, $mainNode)
             # temporary replacing that mock with exit code 3010
@@ -271,7 +286,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Installer | Should -Be "$TestDrive\dummy.exe"
             $result.Notes | Should -BeNullOrEmpty
             $result.Configuration.$mainNode.FEATURES -join "," | Should -BeLike *SQLEngine*
-            if ($version -in "2016", "2017") {
+            if ($version -in "2016", "2017", "2019", "2022", "2025") {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
             }
 
@@ -286,6 +301,9 @@ Describe $CommandName -Tag IntegrationTests {
             @{ version = "2014"; canonicVersion = "12.0"; mainNode = "OPTIONS" }
             @{ version = "2016"; canonicVersion = "13.0"; mainNode = "OPTIONS" }
             @{ version = "2017"; canonicVersion = "14.0"; mainNode = "OPTIONS" }
+            @{ version = "2019"; canonicVersion = "15.0"; mainNode = "OPTIONS" }
+            @{ version = "2022"; canonicVersion = "16.0"; mainNode = "OPTIONS" }
+            @{ version = "2025"; canonicVersion = "17.0"; mainNode = "OPTIONS" }
         ) {
             param($version, $canonicVersion, $mainNode)
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools

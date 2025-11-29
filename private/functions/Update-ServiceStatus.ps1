@@ -190,7 +190,13 @@ process {
         Write-Message -Message "Getting CIM objects from computer $($group.Name)"
         $serviceNames = $group.Group.ServiceName -join "' OR name = '"
         try {
-            $svcCim = Get-DbaCmObject -ComputerName $group.Name -Namespace "root\cimv2" -query "SELECT * FROM Win32_Service WHERE name = '$serviceNames'" -Credential $credential
+            $splatCmObject = @{
+                ComputerName = $group.Name
+                Namespace    = "root\cimv2"
+                Query        = "SELECT * FROM Win32_Service WHERE name = '$serviceNames'"
+            }
+            if ($Credential) { $splatCmObject.Credential = $Credential }
+            $svcCim = Get-DbaCmObject @splatCmObject
         } catch {
             Stop-Function -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to get CIM session for the services on $($group.Name) returned the following error: " + ($_.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $_
         }

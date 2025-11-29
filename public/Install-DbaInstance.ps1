@@ -93,7 +93,7 @@ function Install-DbaInstance {
 
     .PARAMETER Version
         Specifies the SQL Server version to install using the year-based identifier.
-        Valid values are 2008, 2008R2, 2012, 2014, 2016, 2017, 2019, and 2022.
+        Valid values are 2008, 2008R2, 2012, 2014, 2016, 2017, 2019, 2022, and 2025.
         This parameter determines which setup.exe file to locate in the installation media and configures version-specific features like tempdb file optimization (SQL 2016+).
 
     .PARAMETER InstanceName
@@ -319,7 +319,7 @@ function Install-DbaInstance {
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019", "2022")]
+        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019", "2022", "2025")]
         [string]$Version,
         [string]$InstanceName,
         [PSCredential]$SaCredential,
@@ -469,6 +469,7 @@ function Install-DbaInstance {
             2017 { '14.0' }
             2019 { '15.0' }
             2022 { '16.0' }
+            2025 { '17.0' }
             default {
                 Stop-Function -Message "Version $Version is not supported"
                 return

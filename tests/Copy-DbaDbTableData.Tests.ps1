@@ -184,8 +184,8 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = $sourceDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_computed_source")
-            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_computed_dest")
+            $null = $sourceDb.Query("IF OBJECT_ID('dbo.dbatoolsci_computed_source', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_computed_source")
+            $null = $destinationDb.Query("IF OBJECT_ID('dbo.dbatoolsci_computed_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_computed_dest")
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -211,8 +211,8 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = $sourceDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_ordering_test")
-            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_ordering_test_dest")
+            $null = $sourceDb.Query("IF OBJECT_ID('dbo.dbatoolsci_ordering_test', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_ordering_test")
+            $null = $destinationDb.Query("IF OBJECT_ID('dbo.dbatoolsci_ordering_test_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_ordering_test_dest")
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
