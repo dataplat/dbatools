@@ -214,20 +214,20 @@ function Import-DbaCsv {
         complex type conversions. For small files, sequential processing may be faster
         due to lower overhead.
 
-        When -Parallel is used, the progress bar is disabled because the progress callback
+        When Parallel is used, the progress bar is disabled because the progress callback
         cannot run in background threads.
 
     .PARAMETER ThrottleLimit
         Sets the maximum number of worker threads for parallel processing.
         Default is 0, which uses the number of logical processors on the system.
         Set to 1 to effectively disable parallelism while still using the pipeline architecture.
-        Only used when -Parallel is specified.
+        Only used when Parallel is specified.
 
     .PARAMETER ParallelBatchSize
         Sets the number of records to batch before yielding to the consumer during parallel processing.
         Larger batches reduce synchronization overhead but increase memory usage and latency.
         Default is 100. Minimum is 1.
-        Only used when -Parallel is specified.
+        Only used when Parallel is specified.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
