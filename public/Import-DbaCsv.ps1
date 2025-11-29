@@ -223,6 +223,12 @@ function Import-DbaCsv {
         Set to 1 to effectively disable parallelism while still using the pipeline architecture.
         Only used when -Parallel is specified.
 
+    .PARAMETER ParallelBatchSize
+        Sets the number of records to batch before yielding to the consumer during parallel processing.
+        Larger batches reduce synchronization overhead but increase memory usage and latency.
+        Default is 100. Minimum is 1.
+        Only used when -Parallel is specified.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -370,6 +376,12 @@ function Import-DbaCsv {
         resource usage on shared systems or when you want to limit CPU consumption during the import.
 
     .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\massive.csv -SqlInstance sql001 -Database tempdb -Table MassiveData -AutoCreateTable -Parallel -ParallelBatchSize 500
+
+        Imports a very large CSV with parallel processing using larger batch sizes. Increase -ParallelBatchSize
+        for very large files (millions of rows) to reduce synchronization overhead. The default is 100.
+
+    .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\refresh.csv -SqlInstance sql001 -Database tempdb -Table LookupData -Truncate
 
         Performs a full data refresh by truncating the existing table before importing. The truncate and import
@@ -437,6 +449,7 @@ function Import-DbaCsv {
         [int]$MaxParseErrors = 1000,
         [switch]$Parallel,
         [int]$ThrottleLimit = 0,
+        [int]$ParallelBatchSize = 100,
         [switch]$EnableException
     )
     begin {
@@ -877,6 +890,9 @@ function Import-DbaCsv {
                         $csvOptions.EnableParallelProcessing = $Parallel.IsPresent
                         if ($PSBoundParameters.ThrottleLimit) {
                             $csvOptions.MaxDegreeOfParallelism = $ThrottleLimit
+                        }
+                        if ($PSBoundParameters.ParallelBatchSize) {
+                            $csvOptions.ParallelBatchSize = $ParallelBatchSize
                         }
 
                         $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($stream, $csvOptions)
