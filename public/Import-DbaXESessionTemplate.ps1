@@ -181,7 +181,7 @@ function Import-DbaXESessionTemplate {
 
                     Write-Message -Level Verbose -Message "$TargetFilePath does not exist on $server, creating now."
                     try {
-                        if (-not (Test-DbaPath -SqlInstance $server -Path $TargetFilePath)) {
+                        if (-not (Test-DbaPath -SqlInstance $server -Path $TargetFilePath).FileExists) {
                             $null = New-DbaDirectory -SqlInstance $server -Path $TargetFilePath
                         }
                     } catch {

@@ -736,7 +736,7 @@ function Backup-DbaDatabase {
             if (-not $IgnoreFileChecks -and -not $AzureBaseUrl -and -not $isdestlinux) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
-                    if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
+                    if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath).FileExists) {
                         if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
                             $null = New-DbaDirectory -SqlInstance $server -Path $parentPath
                         } else {

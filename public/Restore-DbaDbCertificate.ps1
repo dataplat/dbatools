@@ -103,7 +103,7 @@ function Restore-DbaDbCertificate {
         }
 
         foreach ($dir in $Path) {
-            if (-not (Test-DbaPath -SqlInstance $server -Path $dir)) {
+            if (-not (Test-DbaPath -SqlInstance $server -Path $dir).FileExists) {
                 Stop-Function -Message "$SqlInstance cannot access $dir" -Continue -Target $dir
             }
 

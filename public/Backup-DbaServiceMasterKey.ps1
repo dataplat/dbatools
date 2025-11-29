@@ -103,7 +103,7 @@ function Backup-DbaServiceMasterKey {
                 Stop-Function -Message "Path discovery failed. Please explicitly specify -Path" -Target $server -Continue
             }
 
-            if (!(Test-DbaPath -SqlInstance $server -Path $Path)) {
+            if (!(Test-DbaPath -SqlInstance $server -Path $Path).FileExists) {
                 Stop-Function -Message "$instance cannot access $Path" -Target $server -Continue
             }
 
@@ -131,7 +131,7 @@ function Backup-DbaServiceMasterKey {
             $exportFileName = Join-DbaPath -SqlInstance $server -Path $Path -ChildPath "$targetBaseName.key"
 
             # if the base file name exists, then default to old style of appending a timestamp
-            if (Test-DbaPath -SqlInstance $server -Path $exportFileName) {
+            if ((Test-DbaPath -SqlInstance $server -Path $exportFileName).FileExists) {
                 $time = Get-Date -Format yyyyMMddHHmmss
                 $exportFileName = Join-DbaPath -SqlInstance $server -Path $Path -ChildPath "$targetBaseName-$time.key"
                 # Sleep for a second to avoid another export in the same second

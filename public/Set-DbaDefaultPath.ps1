@@ -84,7 +84,7 @@ function Set-DbaDefaultPath {
 
             $Path = $Path.Trim().TrimEnd("\")
 
-            if (-not (Test-DbaPath -SqlInstance $server -Path $Path)) {
+            if (-not (Test-DbaPath -SqlInstance $server -Path $Path).FileExists) {
                 Stop-Function -Message "Path $Path is not accessible on $($server.Name)" -Target $instance -Continue
             }
 

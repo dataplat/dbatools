@@ -632,7 +632,7 @@ function Invoke-DbaDbLogShipping {
         } else {
             # Check the backup network path
             Write-Message -Message "Testing backup network path $SharedPath" -Level Verbose
-            if ((Test-DbaPath -Path $SharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential) -ne $true) {
+            if ((Test-DbaPath -Path $SharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential).FileExists -ne $true) {
                 Stop-Function -Message "Backup network path $SharedPath is not valid or can't be reached." -Target $SourceSqlInstance
                 return
             } elseif ($SharedPath -notmatch $RegexUnc) {
@@ -995,7 +995,7 @@ function Invoke-DbaDbLogShipping {
 
                     # Check to see if the path already exists
                     Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
-                    if (Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) {
+                    if ((Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential).FileExists) {
                         Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
                     } else {
                     # Check if force is being used
@@ -1068,7 +1068,7 @@ function Invoke-DbaDbLogShipping {
             # Validate copy destination (skip for Azure since it's a URL)
             if (-not $UseAzure) {
                 Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
-                if ((Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
+                if ((Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential).FileExists -ne $true) {
                     $setupResult = "Failed"
                     $comment = "Copy destination folder $CopyDestinationFolder is not valid or can't be reached"
                     Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $destInstance

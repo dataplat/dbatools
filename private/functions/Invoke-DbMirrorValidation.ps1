@@ -153,7 +153,7 @@ function Invoke-DbMirrorValidation {
                 $destdbexists = $false
             }
 
-            if ((Test-Bound -ParameterName SharedPath) -and -not (Test-DbaPath -SqlInstance $dest -Path $SharedPath)) {
+            if ((Test-Bound -ParameterName SharedPath) -and -not (Test-DbaPath -SqlInstance $dest -Path $SharedPath).FileExists) {
                 Write-Message -Level Verbose -Message "Cannot access $SharedPath from $($destdb.Parent.Name)"
                 $canmirror = $false
                 $nexists = $false

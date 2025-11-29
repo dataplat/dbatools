@@ -226,7 +226,7 @@ function New-DbaLogShippingSecondaryPrimary {
             Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
             return
         } else {
-            if (-not ((Test-DbaPath -Path $BackupDestinationDirectory -SqlInstance $ServerSecondary) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
+            if (-not ((Test-DbaPath -Path $BackupDestinationDirectory -SqlInstance $ServerSecondary).FileExists -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
                 Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
                 return
             }

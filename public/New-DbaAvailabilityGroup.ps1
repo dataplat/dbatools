@@ -465,7 +465,7 @@ function New-DbaAvailabilityGroup {
         }
 
         if (($SharedPath)) {
-            if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $SharedPath)) {
+            if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $SharedPath).FileExists) {
                 Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Continue -Message "Cannot access $SharedPath from $Primary"
                 return

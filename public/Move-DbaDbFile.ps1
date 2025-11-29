@@ -242,12 +242,12 @@ function Move-DbaDbFile {
                 # Test if defined paths are accessible by the instance
                 $testPathResults = @()
                 if ($FileDestination) {
-                    if (-not (Test-DbaPath -SqlInstance $server -Path $FileDestination)) {
+                    if (-not (Test-DbaPath -SqlInstance $server -Path $FileDestination).FileExists) {
                         $testPathResults += $FileDestination
                     }
                 } else {
                     foreach ($filePath in $FileToMove.Keys) {
-                        if (-not (Test-DbaPath -SqlInstance $server -Path $FileToMove[$filePath])) {
+                        if (-not (Test-DbaPath -SqlInstance $server -Path $FileToMove[$filePath]).FileExists) {
                             $testPathResults += $FileToMove[$filePath]
                         }
                     }

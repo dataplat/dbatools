@@ -183,7 +183,7 @@ function New-DbaLogShippingPrimaryDatabase {
             Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
             return
         } else {
-            if (-not ((Test-DbaPath -Path $BackupShare -SqlInstance $server) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
+            if (-not ((Test-DbaPath -Path $BackupShare -SqlInstance $server).FileExists -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
                 Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
                 return
             }

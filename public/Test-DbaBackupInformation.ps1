@@ -165,7 +165,7 @@ function Test-DbaBackupInformation {
                         $pathSep = Get-DbaPathSep -Server $RestoreInstance
                         $ParentPath = Split-Path $path -Parent
                         $ParentPath = $ParentPath.Replace('\', $pathSep)
-                        if (!(Test-DbaPath -SqlInstance $RestoreInstance -Path $ParentPath) ) {
+                        if (!(Test-DbaPath -SqlInstance $RestoreInstance -Path $ParentPath).FileExists) {
                             if (-not $OutputScriptOnly) {
                                 $ConfirmMessage = "`n Creating Folder $ParentPath on $SqlInstance `n"
                                 if ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
