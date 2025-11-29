@@ -58,7 +58,8 @@ Describe $CommandName -Tag UnitTests {
                 "CollectParseErrors",
                 "MaxParseErrors",
                 "Parallel",
-                "ThrottleLimit"
+                "ThrottleLimit",
+                "ParallelBatchSize"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
