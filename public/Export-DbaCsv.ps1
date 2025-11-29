@@ -221,7 +221,13 @@ function Export-DbaCsv {
         $writerOptions.UseUtc = $UseUtc.IsPresent
         $writerOptions.QuotingBehavior = [Dataplat.Dbatools.Csv.Writer.CsvQuotingBehavior]::$QuotingBehavior
         $writerOptions.CompressionType = [Dataplat.Dbatools.Csv.Compression.CompressionType]::$CompressionType
-        $writerOptions.CompressionLevel = [System.IO.Compression.CompressionLevel]::$CompressionLevel
+        # SmallestSize was added in .NET 6 - map to Optimal on .NET Framework
+        $effectiveCompressionLevel = $CompressionLevel
+        if ($CompressionLevel -eq "SmallestSize" -and $PSVersionTable.PSEdition -ne "Core") {
+            Write-Message -Level Warning -Message "CompressionLevel 'SmallestSize' is not available in Windows PowerShell. Using 'Optimal' instead."
+            $effectiveCompressionLevel = "Optimal"
+        }
+        $writerOptions.CompressionLevel = [System.IO.Compression.CompressionLevel]::$effectiveCompressionLevel
 
         # Set encoding
         switch ($Encoding) {
@@ -359,7 +365,7 @@ function Export-DbaCsv {
             try {
                 $writer.Dispose()
             } catch {
-                $null = $_ # Ignore disposal errors
+                Write-Message -Level Verbose -Message "Error disposing CSV writer: $_"
             }
         }
 

@@ -281,7 +281,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             Test-Path $filePath | Should -BeTrue
         }
 
-        It "exports with SmallestSize compression level" {
+        It "exports with SmallestSize compression level" -Skip:($PSVersionTable.PSEdition -ne "Core") {
             $filePath = "$testExportPath\smallest.csv.gz"
 
             $splatExport = @{
@@ -357,7 +357,11 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
         }
 
         It "exports with each compression level" {
-            $compressionLevels = @("Fastest", "Optimal", "SmallestSize")
+            # SmallestSize is only available in .NET 6+ (PowerShell Core)
+            $compressionLevels = @("Fastest", "Optimal")
+            if ($PSVersionTable.PSEdition -eq "Core") {
+                $compressionLevels += "SmallestSize"
+            }
 
             foreach ($compressionLevel in $compressionLevels) {
                 $filePath = "$testExportPath\level-$compressionLevel.csv.gz"
