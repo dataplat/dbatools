@@ -905,7 +905,7 @@ function Import-DbaCsv {
                         }
 
                         # Build CsvReaderOptions with all configuration
-                        $csvOptions = [Dataplat.Dbatools.Csv.Reader.CsvReaderOptions]::new()
+                        $csvOptions = New-Object Dataplat.Dbatools.Csv.Reader.CsvReaderOptions
                         $csvOptions.HasHeaderRow = $FirstRowHeader
                         $csvOptions.Delimiter = $Delimiter
                         $csvOptions.Quote = $Quote
