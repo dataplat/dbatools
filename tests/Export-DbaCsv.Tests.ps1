@@ -70,7 +70,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup test table
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "DROP TABLE IF EXISTS $tableName" -ErrorAction SilentlyContinue
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "IF OBJECT_ID('$tableName', 'U') IS NOT NULL DROP TABLE $tableName" -ErrorAction SilentlyContinue
 
         # Cleanup test files
         Remove-Item -Path $testExportPath -Recurse -ErrorAction SilentlyContinue
