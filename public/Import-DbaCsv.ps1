@@ -873,6 +873,12 @@ function Import-DbaCsv {
                             }
                         }
 
+                        # Add static column mappings for metadata tagging (issue #6676)
+                        if ($PSBoundParameters.StaticColumns) {
+                            foreach ($key in $StaticColumns.Keys) {
+                                $null = $bulkcopy.ColumnMappings.Add($key, $key)
+                            }
+                        }
 
                     } catch {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
@@ -929,12 +935,12 @@ function Import-DbaCsv {
                             $csvOptions.DateTimeFormats = $DateTimeFormats
                         }
                         if ($PSBoundParameters.Culture) {
-                            $csvOptions.Culture = [System.Globalization.CultureInfo]::new($Culture)
+                            $csvOptions.Culture = New-Object System.Globalization.CultureInfo($Culture)
                         }
                         if ($PSBoundParameters.StaticColumns) {
-                            $staticColumnsList = [System.Collections.Generic.List[Dataplat.Dbatools.Csv.Reader.StaticColumn]]::new()
+                            $staticColumnsList = New-Object "System.Collections.Generic.List[Dataplat.Dbatools.Csv.Reader.StaticColumn]"
                             foreach ($key in $StaticColumns.Keys) {
-                                $staticCol = [Dataplat.Dbatools.Csv.Reader.StaticColumn]::new($key, $StaticColumns[$key])
+                                $staticCol = New-Object Dataplat.Dbatools.Csv.Reader.StaticColumn($key, $StaticColumns[$key])
                                 $staticColumnsList.Add($staticCol)
                             }
                             $csvOptions.StaticColumns = $staticColumnsList
