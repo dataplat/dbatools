@@ -62,6 +62,7 @@ Describe $CommandName -Tag UnitTests {
                 "StopAfterDate",
                 "ExecuteAs",
                 "Checksum",
+                "Restart",
                 "NoXpDirRecurse"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

@@ -242,6 +242,11 @@ function Restore-DbaDatabase {
         Use this to ensure backup files contain checksums and validate them during restore, following backup best practices.
         Without this parameter, SQL Server verifies checksums if present but doesn't fail if checksums are missing. With this parameter, the operation fails if checksums are not present in the backup.
 
+    .PARAMETER Restart
+        Instructs the restore operation to restart an interrupted restore sequence.
+        Use this when a previous restore operation was interrupted due to a reboot, service failure, or other system event.
+        Allows resuming large transaction log restores that were partially completed before interruption.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -450,7 +455,8 @@ function Restore-DbaDatabase {
         [string]$StopMark,
         [datetime]$StopAfterDate = (Get-Date '01/01/1971'),
         [int]$StatementTimeout = 0,
-        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Checksum
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Checksum,
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Restart
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
@@ -843,6 +849,7 @@ function Restore-DbaDatabase {
                     StopBefore       = $StopBefore
                     ExecuteAs        = $ExecuteAs
                     Checksum         = $Checksum
+                    Restart          = $Restart
                     EnableException  = $true
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
