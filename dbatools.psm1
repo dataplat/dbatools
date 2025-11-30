@@ -34,40 +34,19 @@ Write-ImportTime -Text "Started" -Timestamp $script:start
 
 $script:PSModuleRoot = $PSScriptRoot
 
-# Ensure TEMP directory is set and writable
+# Ensure TEMP directory is set
 # This is critical for Add-Type operations in dbatools.library
+# If TEMP doesn't exist, try to set it from GetTempPath or find an alternative
 if (-not $Env:TEMP) {
-    $Env:TEMP = [System.IO.Path]::GetTempPath()
-}
-
-# Detect if running in SQL Server Agent context
-# Only perform expensive TEMP writability check when likely to be needed
-$isAgentContext = $false
-try {
-    $parentProcess = (Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $PID" -ErrorAction SilentlyContinue).ParentProcessId
-    if ($parentProcess) {
-        $parentName = (Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $parentProcess" -ErrorAction SilentlyContinue).Name
-        if ($parentName -eq "SQLAGENT.EXE") {
-            $isAgentContext = $true
-        }
-    }
-} catch {
-    # If we can't determine parent process, check if TEMP points to Windows directory
-    # This is a common misconfiguration in Agent jobs
-    if ($Env:TEMP -like "*\Windows\*") {
-        $isAgentContext = $true
-    }
-}
-
-# Only verify TEMP writability in SQL Server Agent context or when TEMP points to Windows directory
-# This avoids performance impact on normal PowerShell sessions
-if ($isAgentContext) {
+    # Try to get system temp path first
     try {
-        $testFile = [System.IO.Path]::Combine($Env:TEMP, "dbatools_temp_test_$([System.Guid]::NewGuid().ToString()).tmp")
-        [System.IO.File]::WriteAllText($testFile, "test")
-        [System.IO.File]::Delete($testFile)
+        $systemTemp = [System.IO.Path]::GetTempPath()
+        if ($systemTemp) {
+            $Env:TEMP = $systemTemp
+            $Env:TMP = $systemTemp
+        }
     } catch {
-        # TEMP is not writable, try to find an alternative
+        # GetTempPath failed, try to find an alternative
         $alternativePaths = @(
             [System.IO.Path]::Combine($env:USERPROFILE, "AppData", "Local", "Temp"),
             [System.IO.Path]::Combine($env:LOCALAPPDATA, "Temp"),
@@ -84,7 +63,7 @@ if ($isAgentContext) {
                     $Env:TEMP = $altPath
                     $Env:TMP = $altPath
                     $foundWritable = $true
-                    Write-Verbose "TEMP directory was not writable. Using alternative: $altPath"
+                    Write-Verbose "TEMP environment variable was not set. Using: $altPath"
                     break
                 } catch {
                     continue
@@ -104,12 +83,12 @@ if ($isAgentContext) {
                 [System.IO.File]::Delete($testFile)
                 $Env:TEMP = $moduleTempPath
                 $Env:TMP = $moduleTempPath
-                Write-Verbose "TEMP directory was not writable. Created and using: $moduleTempPath"
+                Write-Verbose "TEMP environment variable was not set. Created and using: $moduleTempPath"
             } catch {
-                $tempError = "dbatools requires a writable TEMP directory to load assemblies. "
-                $tempError += "The current TEMP path ($Env:TEMP) is not writable, and no alternative writable location could be found. "
+                $tempError = "dbatools requires a TEMP environment variable to load assemblies. "
+                $tempError += "The TEMP environment variable is not set, and no alternative writable location could be found. "
                 $tempError += "This commonly occurs in SQL Server Agent jobs running without a user profile. "
-                $tempError += "Please ensure write access to the TEMP directory, set TEMP/TMP environment variables to a writable location, "
+                $tempError += "Please set TEMP/TMP environment variables to a writable location, "
                 $tempError += "or create a writable directory at: $moduleTempPath"
                 throw $tempError
             }
