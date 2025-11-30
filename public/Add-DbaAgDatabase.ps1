@@ -335,6 +335,17 @@ function Add-DbaAgDatabase {
                                 TrustDbBackupHistory = $true
                                 EnableException      = $true
                             }
+
+                            # Only use ReuseSourceFolderStructure if primary and replica are on the same platform
+                            $primaryPlatform = $server.HostPlatform
+                            $replicaPlatform = $replicaServerSMO[$replicaName].HostPlatform
+                            if ($primaryPlatform -eq $replicaPlatform) {
+                                Write-Message -Level Verbose -Message "Primary platform ($primaryPlatform) matches replica platform ($replicaPlatform). Using ReuseSourceFolderStructure."
+                                $restoreParams['ReuseSourceFolderStructure'] = $true
+                            } else {
+                                Write-Message -Level Verbose -Message "Primary platform ($primaryPlatform) does not match replica platform ($replicaPlatform). Using replica's default paths."
+                            }
+
                             $sourceOwner = $db.Owner
                             $replicaOwner = $replicaServerSMO[$replicaName].ConnectedAs
                             if ($sourceOwner -ne $replicaOwner) {
