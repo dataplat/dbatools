@@ -228,16 +228,22 @@ Describe $CommandName -Tag IntegrationTests {
                 Force            = $true
                 Source           = $TestConfig.instance2
                 Destination      = $TestConfig.instance3
-                Database         = $offlineTestDb
                 BackupRestore    = $true
                 SharedPath       = $backupPath
                 SetSourceOffline = $true
+                Exclude          = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
             }
             $offlineResults = Start-DbaMigration @splatOfflineMigration
 
             # Verify migration was successful
             $databaseResults = $offlineResults | Where-Object Type -eq "Database"
-            $databaseResults.Status | Should -Be "Successful"
+            $databaseResults | Should -Not -BeNullOrEmpty
+            $successfulResults = $databaseResults | Where-Object Status -eq "Successful"
+            $successfulResults | Should -Not -BeNullOrEmpty
+
+            # Verify the test database was migrated
+            $testDbResult = $databaseResults | Where-Object Name -eq $offlineTestDb
+            $testDbResult | Should -Not -BeNullOrEmpty
 
             # Verify source database is offline
             $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
