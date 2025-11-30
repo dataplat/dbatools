@@ -1044,14 +1044,6 @@ function Get-DbaHelpIndex {
                         $recentlyused = $null
                     }
 
-                    $outputObject = New-Object -TypeName PSObject
-
-                    # Add server/instance/database properties first
-                    $outputObject | Add-Member -MemberType NoteProperty -Name "ComputerName" -Value $server.ComputerName
-                    $outputObject | Add-Member -MemberType NoteProperty -Name "InstanceName" -Value $server.ServiceName
-                    $outputObject | Add-Member -MemberType NoteProperty -Name "SqlInstance" -Value $server.DomainInstanceName
-                    $outputObject | Add-Member -MemberType NoteProperty -Name "Database" -Value $db.Name
-
                     # Map query column names to output property names
                     $propertyMapping = @{
                         FullObjectName   = "Object"
@@ -1064,6 +1056,14 @@ function Get-DbaHelpIndex {
                     # Properties that need numeric formatting when not in Raw mode
                     $numericProperties = @("IndexReads", "IndexUpdates", "SizeKB", "IndexRows", "IndexLookups", "StatsSampleRows", "StatsRowMods")
                     $decimalProperties = @("IndexFragInPercent")
+
+                    # Build hashtable with all properties
+                    $properties = @{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.Name
+                    }
 
                     # Dynamically add all properties from the query result
                     foreach ($property in $detail.PSObject.Properties) {
@@ -1092,10 +1092,10 @@ function Get-DbaHelpIndex {
                             $propertyValue = "{0:F2}" -f $propertyValue
                         }
 
-                        $outputObject | Add-Member -MemberType NoteProperty -Name $outputPropertyName -Value $propertyValue
+                        $properties[$outputPropertyName] = $propertyValue
                     }
 
-                    $outputObject
+                    [pscustomobject]$properties
                 }
             } catch {
                 Stop-Function -Continue -ErrorRecord $_ -Message "Cannot process $db on $server"
