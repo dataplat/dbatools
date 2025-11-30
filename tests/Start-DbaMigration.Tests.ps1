@@ -195,4 +195,57 @@ Describe $CommandName -Tag IntegrationTests {
             $sourceDbs.Owner | Should -Be $destDbs.Owner
         }
     }
+
+    Context "When using SetSourceOffline parameter" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create a unique test database for this context
+            $random = Get-Random
+            $offlineTestDb = "dbatoolsci_offlinetest$random"
+
+            # Clean up any existing database with this name first
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $offlineTestDb -ErrorAction SilentlyContinue
+
+            # Create the test database on instance2
+            $splatOfflineDb = @{
+                SqlInstance = $TestConfig.instance2
+                Query       = "CREATE DATABASE $offlineTestDb; ALTER DATABASE $offlineTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+            }
+            Invoke-DbaQuery @splatOfflineDb
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $offlineTestDb -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should set source database offline before migration and bring destination online" {
+            $splatOfflineMigration = @{
+                Force            = $true
+                Source           = $TestConfig.instance2
+                Destination      = $TestConfig.instance3
+                Database         = $offlineTestDb
+                BackupRestore    = $true
+                SharedPath       = $backupPath
+                SetSourceOffline = $true
+            }
+            $offlineResults = Start-DbaMigration @splatOfflineMigration
+
+            # Verify migration was successful
+            $databaseResults = $offlineResults | Where-Object Type -eq "Database"
+            $databaseResults.Status | Should -Be "Successful"
+
+            # Verify source database is offline
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
+            $sourceDb.Status | Should -BeLike "*Offline*"
+
+            # Verify destination database is online
+            $destDb = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $offlineTestDb
+            $destDb.Status | Should -Be "Normal"
+        }
+    }
 }
