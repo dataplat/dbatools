@@ -34,6 +34,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlExecutionModes",
                 "StatementTimeout",
                 "TrustServerCertificate",
+                "AllowTrustServerCertificate",
                 "WorkstationId",
                 "AlwaysEncrypted",
                 "AppendConnectionString",
