@@ -59,8 +59,17 @@ function Set-DbaAgReplica {
         Required when setting up read-only routing to distribute read workloads across secondary replicas for load balancing.
 
     .PARAMETER ReadOnlyRoutingList
-        Defines the ordered list of secondary replicas that should receive read-only connections when this replica is primary. Accepts arrays for load-balanced routing or simple arrays for priority-based routing.
-        Use this to establish read-only routing policies that distribute read workloads across available secondary replicas.
+        Defines the ordered list of secondary replicas that should receive read-only connections when this replica is primary.
+        Accepts arrays for priority-based routing or nested arrays for load-balanced routing.
+
+        IMPORTANT: Read-only routing requires proper setup:
+        1. The availability group must have at least two replicas (primary + secondary)
+        2. Target replicas must exist in the availability group
+        3. Secondary replicas must have ConnectionModeInSecondaryRole set to AllowReadIntentConnectionsOnly or AllowAllConnections
+        4. Each replica in the routing list must have ReadonlyRoutingConnectionUrl configured
+        5. An availability group listener is required for read-only routing to function
+
+        For more information, see: https://learn.microsoft.com/sql/database-engine/availability-groups/windows/configure-read-only-routing-for-an-availability-group-sql-server
 
     .PARAMETER SeedingMode
         Controls the database initialization method for new databases added to the availability group. Automatic performs direct seeding over the network without manual backup/restore steps, while Manual requires traditional backup and restore operations.
@@ -113,6 +122,22 @@ function Set-DbaAgReplica {
         >> Set-DbaAgReplica -ReadOnlyRoutingList @(,('Replica2','Replica3'));
 
         Equivalent to running "ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = (('Replica2', 'Replica3')));" setting a load balanced routing list for when Replica1 is the primary replica.
+
+    .EXAMPLE
+        PS C:\> # Complete read-only routing setup for a two-replica AG
+        PS C:\> # Step 1: Configure secondary replica to accept read-only connections
+        PS C:\> Set-DbaAgReplica -SqlInstance $primary -AvailabilityGroup MyAG -Replica Secondary1 -ConnectionModeInSecondaryRole AllowReadIntentConnectionsOnly
+        PS C:\>
+        PS C:\> # Step 2: Set the routing URL for each replica
+        PS C:\> Set-DbaAgReplica -SqlInstance $primary -AvailabilityGroup MyAG -Replica Primary1 -ReadonlyRoutingConnectionUrl "TCP://Primary1:1433"
+        PS C:\> Set-DbaAgReplica -SqlInstance $primary -AvailabilityGroup MyAG -Replica Secondary1 -ReadonlyRoutingConnectionUrl "TCP://Secondary1:1433"
+        PS C:\>
+        PS C:\> # Step 3: Set the routing list (which replicas receive read-only traffic when this replica is primary)
+        PS C:\> Set-DbaAgReplica -SqlInstance $primary -AvailabilityGroup MyAG -Replica Primary1 -ReadOnlyRoutingList Secondary1, Primary1
+
+        Complete example showing the prerequisites for read-only routing. The routing list specifies where to route
+        read-intent connections when Primary1 is the primary replica. Note that all replicas in the routing list
+        must have their ReadonlyRoutingConnectionUrl configured first.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
@@ -210,8 +235,8 @@ function Set-DbaAgReplica {
 
                     if ($ReadOnlyRoutingList) {
                         # Detect if this is a simple ordered list or a load-balanced (nested) list
-                        # Simple list: @('Server1', 'Server2') - routes in order, SQL: ('Server1', 'Server2')
-                        # Load-balanced list: @(,('Server1', 'Server2')) - load balances, SQL: (('Server1', 'Server2'))
+                        # Simple list: @('Server1', 'Server2') - routes in order
+                        # Load-balanced list: @(,('Server1', 'Server2')) or @(('Server1'),('Server2','Server3')) - load balances within groups
                         $isLoadBalanced = $false
 
                         # Check if the first element is an array/list (indicates load-balanced routing)
@@ -219,21 +244,26 @@ function Set-DbaAgReplica {
                             $isLoadBalanced = $true
                         }
 
+                        # Always use SetLoadBalancedReadOnlyRoutingList as it's available in all SMO versions
+                        # For simple ordered lists, convert each server to its own group to maintain order
+                        $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
+
                         if ($isLoadBalanced) {
-                            # Load-balanced routing - use SetLoadBalancedReadOnlyRoutingList method
-                            $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
+                            # Already nested - use as-is for load-balanced routing
                             foreach ($rolist in $ReadOnlyRoutingList) {
                                 $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
                             }
-                            $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                         } else {
-                            # Simple ordered routing - use property assignment
-                            # This is the standard approach for ordered routing lists
-                            $agreplica.ReadonlyRoutingList.Clear()
-                            foreach ($routingReplica in $ReadOnlyRoutingList) {
-                                $null = $agreplica.ReadonlyRoutingList.Add([string]$routingReplica)
+                            # Simple ordered list - wrap each server in its own list to maintain priority order
+                            # @('Server1', 'Server2') becomes @(@('Server1'), @('Server2'))
+                            foreach ($server in $ReadOnlyRoutingList) {
+                                $serverList = New-Object System.Collections.Generic.List[string]
+                                $null = $serverList.Add([string]$server)
+                                $null = $rorl.Add($serverList)
                             }
                         }
+
+                        $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                     }
 
                     if ($SessionTimeout) {
@@ -245,28 +275,7 @@ function Set-DbaAgReplica {
                     }
 
                     $agreplica.Alter()
-                    # Get fresh replica object and populate ReadonlyRoutingList from system view
-                    # SMO's Refresh() doesn't properly populate the ReadonlyRoutingList collection
-                    $agName = $agreplica.Parent.Name
-                    $replicaName = $agreplica.Name
-                    $freshReplica = Get-DbaAgReplica -SqlInstance $server -AvailabilityGroup $agName -Replica $replicaName
-
-                    # Query sys.availability_read_only_routing_lists to get actual routing data
-                    $routingQuery = "
-                        SELECT r2.replica_server_name
-                        FROM sys.availability_read_only_routing_lists rorl
-                        INNER JOIN sys.availability_replicas r1 ON rorl.replica_id = r1.replica_id
-                        INNER JOIN sys.availability_replicas r2 ON rorl.read_only_replica_id = r2.replica_id
-                        WHERE r1.replica_server_name = '$replicaName'
-                        ORDER BY rorl.routing_priority
-                    "
-                    $routingList = $server.Query($routingQuery) | Select-Object -ExpandProperty replica_server_name
-
-                    # Add the routing list as a property
-                    if ($routingList) {
-                        Add-Member -Force -InputObject $freshReplica -MemberType NoteProperty -Name ReadonlyRoutingList -Value $routingList
-                    }
-                    $freshReplica
+                    $agreplica
 
                 } catch {
                     Stop-Function -Message "Failed to modify replica $($agreplica.Name) in availability group $($agreplica.Parent.Name)" -ErrorRecord $_ -Continue

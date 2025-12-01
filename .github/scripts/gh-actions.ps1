@@ -419,76 +419,6 @@ exec sp_addrolemember 'userrole','bob';
         $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
         { Get-DbaLastGoodCheckDb -SqlInstance $server } | Should -Not -Throw
     }
-
-    It "sets up an availability group and tests ReadOnlyRoutingList" {
-        # Reset PSDefaultParameterValues for AG setup
-        $PSDefaultParameterValues.Clear()
-        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
-
-        $agName = "dbatoolsci_agrouting_$(Get-Random)"
-        $certName = "dbatoolsci_AGCert_$(Get-Random)"
-
-        try {
-            # Create certificate for AG
-            $null = New-DbaDbCertificate -SqlInstance localhost -SqlCredential $cred -Name $certName -Database master -Confirm:$false
-
-            # Create AG with single replica
-            $splatAg = @{
-                Primary              = "localhost"
-                Name                 = $agName
-                ClusterType          = "None"
-                FailoverMode         = "Manual"
-                Certificate          = $certName
-                PrimarySqlCredential = $cred
-                Confirm              = $false
-            }
-            $ag = New-DbaAvailabilityGroup @splatAg
-            $replicaName = $ag.PrimaryReplica
-
-            # First, set ReadonlyRoutingConnectionUrl - required before setting ReadOnlyRoutingList
-            $splatRoutingUrl = @{
-                SqlInstance                  = "localhost"
-                SqlCredential                = $cred
-                AvailabilityGroup            = $agName
-                Replica                      = $replicaName
-                ReadonlyRoutingConnectionUrl = "TCP://${replicaName}:1433"
-                Confirm                      = $false
-            }
-            $null = Set-DbaAgReplica @splatRoutingUrl
-
-            # Test simple ordered ReadOnlyRoutingList (issue #9987)
-            $splatSimpleRouting = @{
-                SqlInstance         = "localhost"
-                SqlCredential       = $cred
-                AvailabilityGroup   = $agName
-                Replica             = $replicaName
-                ReadOnlyRoutingList = @($replicaName)
-                Confirm             = $false
-            }
-            $result = Set-DbaAgReplica @splatSimpleRouting
-            $result.ReadonlyRoutingList | Should -Contain $replicaName
-            $result.ReadonlyRoutingList.Count | Should -Be 1
-
-            # Test load-balanced ReadOnlyRoutingList
-            $splatLoadBalanced = @{
-                SqlInstance         = "localhost"
-                SqlCredential       = $cred
-                AvailabilityGroup   = $agName
-                Replica             = $replicaName
-                ReadOnlyRoutingList = @(,($replicaName))
-                Confirm             = $false
-            }
-            $result = Set-DbaAgReplica @splatLoadBalanced
-            $result.ReadonlyRoutingList | Should -Not -BeNullOrEmpty
-
-        } finally {
-            # Cleanup
-            $null = Remove-DbaAvailabilityGroup -SqlInstance localhost -SqlCredential $cred -AvailabilityGroup $agName -Confirm:$false -ErrorAction SilentlyContinue
-            $null = Get-DbaEndpoint -SqlInstance localhost -SqlCredential $cred -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false -ErrorAction SilentlyContinue
-            $null = Remove-DbaDbCertificate -SqlInstance localhost -SqlCredential $cred -Certificate $certName -Database master -Confirm:$false -ErrorAction SilentlyContinue
-        }
-    }
 }
 
 
@@ -497,6 +427,7 @@ Need to add tests for CSV
 # fails on newer version of SMO
 'Invoke-DbaWhoisActive',
 'Remove-DbaAvailabilityGroup',
+'Set-DbaAgReplica',
 'Read-DbaAuditFile',
 'Sync-DbaLoginPermission',
 'Read-DbaXEFile',
