@@ -70,4 +70,47 @@ CREATE LOGIN [$DBUserName]
             $permissionsAfter.member | Should -Be $DBUserName
         }
     }
+
+    Context "Login state synchronization" {
+        BeforeAll {
+            $tempLoginGuid = [guid]::newguid()
+            $stateTestLogin = "dbatoolssci_state_$($tempLoginGuid.guid)"
+            $createStateLogin = @"
+CREATE LOGIN [$stateTestLogin]
+    WITH PASSWORD = '$($tempLoginGuid.guid)';
+"@
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $createStateLogin
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -Query $createStateLogin
+
+            # Disable and deny connect on source
+            $splatDisable = @{
+                SqlInstance = $TestConfig.instance2
+                Query       = "ALTER LOGIN [$stateTestLogin] DISABLE; DENY CONNECT SQL TO [$stateTestLogin];"
+            }
+            Invoke-DbaQuery @splatDisable
+        }
+        AfterAll {
+            $dropStateLogin = "DROP LOGIN [$stateTestLogin]"
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query $dropStateLogin -Database master
+        }
+
+        It "Should sync login disabled state from source to destination" {
+            $sourceLogin = Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login $stateTestLogin
+            $sourceLogin.IsDisabled | Should -Be $true
+
+            $destLoginBefore = Get-DbaLogin -SqlInstance $TestConfig.instance3 -Login $stateTestLogin
+            $destLoginBefore.IsDisabled | Should -Be $false
+
+            $splatSync = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+                Login       = $stateTestLogin
+            }
+            $results = Sync-DbaLoginPermission @splatSync
+            $results.Status | Should -Be "Successful"
+
+            $destLoginAfter = Get-DbaLogin -SqlInstance $TestConfig.instance3 -Login $stateTestLogin
+            $destLoginAfter.IsDisabled | Should -Be $true
+        }
+    }
 }

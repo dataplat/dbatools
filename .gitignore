@@ -59,3 +59,4 @@ allcommands.ps1
 .aider*
 /.shadowgit.git
 /.claude
+publish.ps1

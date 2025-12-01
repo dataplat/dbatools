@@ -922,7 +922,16 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Building database list."
             $databaseList = New-Object System.Collections.ArrayList
             $SupportDBs = "ReportServer", "ReportServerTempDB", "distribution", "SSISDB"
-            foreach ($currentdb in ($sourceServer.Databases | Where-Object IsAccessible)) {
+
+            # Only filter by IsAccessible if operations require source database accessibility
+            $requiresAccessible = $SetSourceReadOnly -or $SetSourceOffline
+            if ($requiresAccessible) {
+                $sourceDatabases = $sourceServer.Databases | Where-Object IsAccessible
+            } else {
+                $sourceDatabases = $sourceServer.Databases
+            }
+
+            foreach ($currentdb in $sourceDatabases) {
                 $dbName = $currentdb.Name
                 $dbOwner = $currentdb.Owner
 
@@ -1030,14 +1039,19 @@ function Copy-DbaDatabase {
 
                     Write-Message -Level Verbose -Message "Checking for accessibility."
                     if ($currentdb.IsAccessible -eq $false) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName. Database is inaccessible.")) {
-                            Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
+                        # Check if inaccessible database is being used with operations that require accessibility
+                        if ($SetSourceReadOnly -or $SetSourceOffline) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName. Database is inaccessible and -SetSourceReadOnly or -SetSourceOffline was specified.")) {
+                                Write-Message -Level Warning -Message "Skipping $dbName. Database is inaccessible and cannot be set to read-only or offline. Consider removing -SetSourceReadOnly and -SetSourceOffline parameters for AG secondary replicas."
 
-                            $copyDatabaseStatus.Status = "Skipped"
-                            $copyDatabaseStatus.Notes = "Database is not accessible"
-                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                $copyDatabaseStatus.Status = "Skipped"
+                                $copyDatabaseStatus.Notes = "Database is not accessible (required for SetSourceReadOnly or SetSourceOffline)"
+                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
+                            continue
                         }
-                        continue
+                        # For BackupRestore without SetSourceReadOnly/SetSourceOffline, inaccessible is OK
+                        Write-Message -Level Verbose -Message "Database $dbName is not accessible but will attempt migration using backup history."
                     }
 
                     if ($fsWarning) {

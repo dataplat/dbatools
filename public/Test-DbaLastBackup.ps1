@@ -154,6 +154,11 @@ function Test-DbaLastBackup {
         Use this to ensure backup files contain checksums and validate them during testing, following backup best practices.
         Without this parameter, SQL Server verifies checksums if present but doesn't fail if checksums are missing. With this parameter, the operation fails if checksums are not present in the backup.
 
+    .PARAMETER Wait
+        Specifies the number of seconds to wait between each database restore test.
+        Use this to prevent I/O errors on checkpoint files by allowing time for cleanup between restore operations.
+        Helpful when restoring to network shares or storage systems that need additional time to release file handles.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -235,6 +240,11 @@ function Test-DbaLastBackup {
        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly -Checksum
 
        Verifies the backup files using RESTORE VERIFYONLY WITH CHECKSUM. This will fail if the backups do not contain checksums, ensuring that backups follow best practices.
+
+    .EXAMPLE
+        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -Wait 5
+
+        Tests all database backups on sql2016 and waits 5 seconds between each database restore test. This helps prevent I/O errors on checkpoint files when restoring to network shares.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationSqlCredential and AzureCredential")]
@@ -267,6 +277,7 @@ function Test-DbaLastBackup {
         [int]$MaxDop,
         [switch]$ReuseSourceFolderStructure,
         [switch]$Checksum,
+        [int]$Wait,
         [switch]$EnableException
     )
     process {
@@ -645,6 +656,11 @@ function Test-DbaLastBackup {
                     BackupDates    = [dbadatetime[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }
+            }
+
+            if ($Wait) {
+                Write-Message -Level Verbose -Message "Waiting $Wait seconds before processing next database."
+                Start-Sleep -Seconds $Wait
             }
         }
     }

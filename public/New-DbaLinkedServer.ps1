@@ -28,7 +28,8 @@ function New-DbaLinkedServer {
 
     .PARAMETER Provider
         Specifies the OLE DB provider used to connect to the remote data source.
-        Common providers include 'SQLNCLI' or 'MSOLEDBSQL' for SQL Server, 'OraOLEDB.Oracle' for Oracle, or 'Microsoft.ACE.OLEDB.12.0' for Access databases.
+        For SQL Server, use 'MSOLEDBSQL' or 'MSOLEDBSQL19' (recommended) - SQL Server Native Client (SQLNCLI) is deprecated and removed from SQL Server 2022 and SSMS 19.
+        Other common providers include 'OraOLEDB.Oracle' for Oracle or 'Microsoft.ACE.OLEDB.12.0' for Access databases.
         The provider must be installed and registered on the SQL Server instance.
 
     .PARAMETER DataSource
@@ -88,19 +89,19 @@ function New-DbaLinkedServer {
         https://dbatools.io/New-DbaLinkedServer
 
     .EXAMPLE
-        PS C:\>New-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -ServerProduct mssql -Provider sqlncli -DataSource sql02
+        PS C:\>New-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -ServerProduct mssql -Provider MSOLEDBSQL -DataSource sql02
 
-        Creates a new linked server named linkedServer1 on the sql01 instance. The link is via the SQL Native Client and is connected to the sql02 instance.
-
-    .EXAMPLE
-        PS C:\>Connect-DbaInstance -SqlInstance sql01 | New-DbaLinkedServer -LinkedServer linkedServer1 -ServerProduct mssql -Provider sqlncli -DataSource sql02
-
-        Creates a new linked server named linkedServer1 on the sql01 instance. The link is via the SQL Native Client and is connected to the sql02 instance. The sql01 instance is passed in via pipeline.
+        Creates a new linked server named linkedServer1 on the sql01 instance. The link uses the Microsoft OLE DB Driver for SQL Server and is connected to the sql02 instance.
 
     .EXAMPLE
-        PS C:\>New-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -ServerProduct mssql -Provider sqlncli -DataSource sql02 -SecurityContext CurrentSecurityContext
+        PS C:\>Connect-DbaInstance -SqlInstance sql01 | New-DbaLinkedServer -LinkedServer linkedServer1 -ServerProduct mssql -Provider MSOLEDBSQL -DataSource sql02
 
-        Creates a new linked server named linkedServer1 on the sql01 instance. The link is via the SQL Native Client and is connected to the sql02 instance. Connections with logins that are not explicitly mapped to the remote server will use the current login's security context.
+        Creates a new linked server named linkedServer1 on the sql01 instance. The link uses the Microsoft OLE DB Driver for SQL Server and is connected to the sql02 instance. The sql01 instance is passed in via pipeline.
+
+    .EXAMPLE
+        PS C:\>New-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -ServerProduct mssql -Provider MSOLEDBSQL -DataSource sql02 -SecurityContext CurrentSecurityContext
+
+        Creates a new linked server named linkedServer1 on the sql01 instance. The link uses the Microsoft OLE DB Driver for SQL Server and is connected to the sql02 instance. Connections with logins that are not explicitly mapped to the remote server will use the current login's security context.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (

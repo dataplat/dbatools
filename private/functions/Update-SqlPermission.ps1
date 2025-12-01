@@ -42,6 +42,19 @@ function Update-SqlPermission {
 
     $saname = Get-SaLoginName -SqlInstance $DestServer
 
+    # Sync login enabled/disabled state
+    if ($SourceLogin.IsDisabled -ne $DestLogin.IsDisabled) {
+        if ($Pscmdlet.ShouldProcess($destination, "Setting login $newLoginName IsDisabled to $($SourceLogin.IsDisabled).")) {
+            try {
+                $DestLogin.IsDisabled = $SourceLogin.IsDisabled
+                $DestLogin.Alter()
+                Write-Message -Level Verbose -Message "Setting login $newLoginName IsDisabled to $($SourceLogin.IsDisabled) on $destination successfully performed."
+            } catch {
+                Stop-Function -Message "Failed to set login $newLoginName IsDisabled to $($SourceLogin.IsDisabled) on $destination." -Target $DestLogin -ErrorRecord $_
+            }
+        }
+    }
+
     # gotta close because enum repeatedly causes problems with the datareader
     $null = $SourceServer.ConnectionContext.SqlConnectionObject.Close()
     $null = $DestServer.ConnectionContext.SqlConnectionObject.Close()

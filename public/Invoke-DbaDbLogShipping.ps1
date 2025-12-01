@@ -1435,10 +1435,26 @@ function Invoke-DbaDbLogShipping {
                     if ((Test-DbaPath -Path $DatabaseCopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
                         if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
                             try {
-                                Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                                # If the destination server is remote and the credential is set
+                                if (-not $IsDestinationLocal -and $DestinationCredential) {
+                                    Invoke-Command2 -ComputerName $DestinationServerName -Credential $DestinationCredential -ScriptBlock {
+                                        Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
+                                        $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Force:$Force
+                                    }
+                                }
+                                # If the server is local and the credential is set
+                                elseif ($DestinationCredential) {
+                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                                        Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
+                                        $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Force:$Force
+                                    }
+                                }
+                                # If the server is local and the credential is not set
+                                else {
                                     Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
                                     $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Force:$Force
                                 }
+                                Write-Message -Message "Database copy destination folder $DatabaseCopyDestinationFolder created." -Level Verbose
                             } catch {
                                 $setupResult = "Failed"
                                 $comment = "Something went wrong creating the database copy destination folder"
