@@ -72,9 +72,10 @@ Describe $CommandName -Tag IntegrationTests {
         $startmigrationrestoredb = "dbatoolsci_startmigrationrestore$random"
         $startmigrationrestoredb2 = "dbatoolsci_startmigrationrestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
+        $offlineTestDb = "dbatoolsci_offlinetest$random"
 
         # Clean up any existing databases with these names first
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2 -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2, $offlineTestDb -ErrorAction SilentlyContinue
 
         # Create the test databases on instance3 first
         $splatInstance3 = @{
@@ -102,6 +103,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Invoke-DbaQuery @splatInstance2Db3
 
+        $splatInstance2OfflineDb = @{
+            SqlInstance = $TestConfig.instance2
+            Query       = "CREATE DATABASE $offlineTestDb; ALTER DATABASE $offlineTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+        }
+        Invoke-DbaQuery @splatInstance2OfflineDb
+
         # Set database owners
         $splatDbOwner = @{
             SqlInstance = $TestConfig.instance2
@@ -119,7 +126,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2 -ErrorAction SilentlyContinue
+        # First bring offline databases back online so they can be dropped
+        Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $offlineTestDb -Online -Force -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2, $offlineTestDb -ErrorAction SilentlyContinue
 
         # Remove the backup directory only if we created it (Windows to Windows scenario)
         # For Linux/Docker we use the default backup path and don't delete it
@@ -128,6 +137,49 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When using SetSourceOffline parameter" {
+        BeforeAll {
+            $splatOfflineMigration = @{
+                Force            = $true
+                Source           = $TestConfig.instance2
+                Destination      = $TestConfig.instance3
+                BackupRestore    = $true
+                SharedPath       = $backupPath
+                SetSourceOffline = $true
+                Exclude          = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures", "MasterCertificates"
+            }
+            $results = Start-DbaMigration @splatOfflineMigration
+        }
+
+        AfterAll {
+            # Bring databases back online for subsequent tests
+            $databasesToRestore = @($startmigrationrestoredb, $startmigrationrestoredb2, $detachattachdb, $offlineTestDb)
+            Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $databasesToRestore -Online -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Should return at least one result" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should copy databases successfully" {
+            $databaseResults = $results | Where-Object Type -eq "Database"
+            $databaseResults | Should -Not -BeNullOrEmpty
+            $successfulResults = $databaseResults | Where-Object Status -eq "Successful"
+            $successfulResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should set source databases offline after migration" {
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
+            $sourceDb.Status | Should -Match "Offline"
+        }
+
+        It "Should have databases online on destination" {
+            $destDb = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $offlineTestDb
+            $destDb | Should -Not -BeNullOrEmpty
+            $destDb.Status | Should -Be "Normal"
+        }
     }
 
     Context "When using backup restore method" {

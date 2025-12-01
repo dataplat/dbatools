@@ -1188,7 +1188,8 @@ function Copy-DbaDatabase {
                         }
                     }
 
-                    if ($SetSourceOffline) {
+                    if ($SetSourceOffline -and $DetachAttach) {
+                        # For DetachAttach, set offline before detach to kill connections
                         If ($Pscmdlet.ShouldProcess($source, "Set $dbName to offline")) {
                             Write-Message -Level Verbose -Message "Setting database to offline."
                             try {
@@ -1250,6 +1251,17 @@ function Copy-DbaDatabase {
                                     $backupCollection += $backupTmpResult
                                 }
                             }
+
+                            # For BackupRestore, set source offline after backup completes but before restore
+                            if ($SetSourceOffline) {
+                                Write-Message -Level Verbose -Message "Setting source database $dbName to offline after backup."
+                                try {
+                                    $null = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -Offline -EnableException -Force
+                                } catch {
+                                    Stop-Function -Continue -Message "Couldn't set database to offline after backup. Aborting routine for this database" -ErrorRecord $_
+                                }
+                            }
+
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                             try {
                                 $msg = $null
