@@ -11,7 +11,7 @@ function Connect-ReplicationDB {
     $repDB = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
 
     $repDB.Name = $Database.Name
-    $repDB.ConnectionContext = $Server.ConnectionContext.SqlConnectionObject
+    $repDB.ConnectionContext = $Server.ConnectionContext
 
     if (-not $repDB.LoadProperties()) {
         Write-Message -Level Verbose -Message "Skipping $($Database.Name). Failed to load properties correctly."

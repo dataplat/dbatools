@@ -159,6 +159,7 @@ function Copy-DbaAgentJob {
                 $jobName = $serverJob.Name
                 $jobId = $serverJob.JobId
                 $sourceserver = $serverJob.Parent.Parent
+                $alertsReferencingJob = @()
 
                 $copyJobStatus = [PSCustomObject]@{
                     SourceServer      = $sourceserver.Name
@@ -292,6 +293,15 @@ function Copy-DbaAgentJob {
                                 if ($Pscmdlet.ShouldProcess($destinstance, "Source job is newer (modified $sourceDate). Dropping and recreating job $jobName")) {
                                     try {
                                         Write-Message -Message "Source job $jobName is newer. Dropping and recreating." -Level Verbose
+                                        # Before dropping, save which alerts reference this job
+                                        $splatAlertsForJob = @{
+                                            SqlInstance  = $destServer
+                                            Database     = "msdb"
+                                            Query        = "SELECT name FROM dbo.sysalerts WHERE job_id = (SELECT job_id FROM dbo.sysjobs WHERE name = @jobName)"
+                                            SqlParameter = @{ jobName = $jobName }
+                                        }
+                                        $alertsReferencingJob = (Invoke-DbaQuery @splatAlertsForJob).name
+                                        Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $jobName" -Level Verbose
                                         $destServer.JobServer.Jobs[$jobName].Drop()
                                     } catch {
                                         $copyJobStatus.Status = "Failed"
@@ -344,6 +354,15 @@ function Copy-DbaAgentJob {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping job $jobName and recreating")) {
                             try {
                                 Write-Message -Message "Dropping Job $jobName" -Level Verbose
+                                # Before dropping, save which alerts reference this job
+                                $splatAlertsForJob = @{
+                                    SqlInstance  = $destServer
+                                    Database     = "msdb"
+                                    Query        = "SELECT name FROM dbo.sysalerts WHERE job_id = (SELECT job_id FROM dbo.sysjobs WHERE name = @jobName)"
+                                    SqlParameter = @{ jobName = $jobName }
+                                }
+                                $alertsReferencingJob = (Invoke-DbaQuery @splatAlertsForJob).name
+                                Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $jobName" -Level Verbose
                                 $destServer.JobServer.Jobs[$jobName].Drop()
                             } catch {
                                 $copyJobStatus.Status = "Failed"
@@ -363,10 +382,10 @@ function Copy-DbaAgentJob {
 
                         if ($missingLogin.Count -gt 0 -and $force) {
                             $saLogin = Get-SqlSaLogin -SqlInstance $destServer
-                            $sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), [Regex]::Escape("@owner_login_name=N'$saLogin'")
+                            $sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), "@owner_login_name=N'$saLogin'"
                         }
 
-                        $sql = $sql -replace [Regex]::Escape("@server=N'$($sourceserver.DomainInstanceName)'"), [Regex]::Escape("@server=N'$($destServer.DomainInstanceName)'")
+                        $sql = $sql -replace [Regex]::Escape("@server=N'$($sourceserver.DomainInstanceName)'"), "@server=N'$($destServer.DomainInstanceName)'"
 
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql)
@@ -374,6 +393,29 @@ function Copy-DbaAgentJob {
                         $destServer.JobServer.Jobs.Refresh()
                         $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
                         $destServer.JobServer.Jobs[$serverJob.name].Alter()
+
+                        # Restore alert-to-job links if job was dropped and recreated
+                        if ($alertsReferencingJob -and $alertsReferencingJob.Count -gt 0) {
+                            Write-Message -Message "Restoring alert-to-job links for $jobName" -Level Verbose
+                            foreach ($alertName in $alertsReferencingJob) {
+                                try {
+                                    $splatUpdateAlert = @{
+                                        SqlInstance  = $destServer
+                                        Database     = "msdb"
+                                        Query        = "EXEC dbo.sp_update_alert @name = @alertName, @job_name = @jobName"
+                                        SqlParameter = @{
+                                            alertName = $alertName
+                                            jobName   = $jobName
+                                        }
+                                    }
+                                    $null = Invoke-DbaQuery @splatUpdateAlert
+                                    Write-Message -Message "Restored link between alert [$alertName] and job [$jobName]" -Level Verbose
+                                } catch {
+                                    Write-Message -Level Warning -Message "Failed to restore alert link for [$alertName] to job [$jobName] | $PSItem"
+                                }
+                            }
+                        }
+
                         $copyJobStatus.Status = "Successful"
                         $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {

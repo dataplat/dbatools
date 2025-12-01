@@ -38,7 +38,8 @@ Describe $CommandName -Tag UnitTests {
                 "BufferCount",
                 "IgnoreDiffBackup",
                 "ReuseSourceFolderStructure",
-                "Checksum"
+                "Checksum",
+                "Wait"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }

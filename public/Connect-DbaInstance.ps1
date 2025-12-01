@@ -107,6 +107,11 @@ function Connect-DbaInstance {
         Bypasses certificate validation when using encrypted connections.
         Use this for development environments or when connecting to servers with self-signed certificates, but avoid in production for security reasons.
 
+    .PARAMETER AllowTrustServerCertificate
+        Attempts connection with proper TLS validation first, then retries with TrustServerCertificate if the initial connection fails due to certificate validation.
+        Provides a secure-by-default approach for mixed environments where some servers have valid certificates and others do not.
+        Only retries on certificate validation failures, not on other connection errors like authentication or network issues.
+
     .PARAMETER WorkstationId
         Sets the workstation name visible in SQL Server monitoring and session information.
         Use this to identify the source of connections in sys.dm_exec_sessions or when troubleshooting connection issues.
@@ -290,6 +295,15 @@ function Connect-DbaInstance {
         Opens a grid view to let the user select processes to be stopped.
         Closes the connection.
 
+    .EXAMPLE
+        PS C:\> $servers = "sql1", "sql2", "sql3"
+        PS C:\> $servers | Connect-DbaInstance -AllowTrustServerCertificate
+
+        Connects to multiple servers where some may have valid TLS certificates and others may not.
+        For each server, attempts connection with proper TLS validation first.
+        If a server fails due to certificate validation, automatically retries with TrustServerCertificate enabled.
+        This provides a secure-by-default approach for mixed environments without requiring separate connection logic.
+
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
@@ -322,6 +336,7 @@ function Connect-DbaInstance {
         [string]$SqlExecutionModes,
         [int]$StatementTimeout = (Get-DbatoolsConfigValue -FullName 'sql.execution.timeout'),
         [switch]$TrustServerCertificate = (Get-DbatoolsConfigValue -FullName 'sql.connection.trustcert'),
+        [switch]$AllowTrustServerCertificate = (Get-DbatoolsConfigValue -FullName 'sql.connection.allowtrustcert'),
         [string]$WorkstationId,
         [switch]$AlwaysEncrypted,
         [string]$AppendConnectionString,
@@ -566,7 +581,7 @@ function Connect-DbaInstance {
 
             # Check for ignored parameters
             # We do not check for SqlCredential as this parameter is widely used even if a server SMO is passed in and we don't want to output a message for that
-            $ignoredParameters = 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'TrustServerCertificate', 'WorkstationId', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken'
+            $ignoredParameters = 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'TrustServerCertificate', 'AllowTrustServerCertificate', 'WorkstationId', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken'
             if ($inputObjectType -eq 'Server') {
                 if (Test-Bound -ParameterName $ignoredParameters) {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
@@ -1015,12 +1030,51 @@ function Connect-DbaInstance {
             # But ConnectionContext.IsOpen does not tell the truth if the instance was just shut down
             # And we don't use $server.ConnectionContext.Connect() as this would create a non pooled connection
             # Instead we run a real T-SQL command and just SELECT something to be sure we have a valid connection and let the SMO handle the connection
+            $connectionSucceeded = $false
+            $connectionError = $null
             try {
                 Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
                 $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
                 Write-Message -Level Debug -Message "We have a connected server object"
+                $connectionSucceeded = $true
             } catch {
-                Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
+                $connectionError = $_
+                $errorMessage = $_.Exception.Message
+
+                # Check if AllowTrustServerCertificate is enabled and this is a new connection attempt and not already using TrustServerCertificate
+                # Also verify this is a certificate validation error
+                $isCertError = $errorMessage -match "certificate" -or $errorMessage -match "SSL" -or $errorMessage -match "TLS" -or $errorMessage -match "trust"
+                if ($AllowTrustServerCertificate -and $isNewConnection -and -not $TrustServerCertificate -and $isCertError -and $inputObjectType -eq 'String') {
+                    Write-Message -Level Verbose -Message "Initial connection failed due to certificate validation. Retrying with TrustServerCertificate enabled."
+                    Write-Message -Level Debug -Message "Original error: $errorMessage"
+
+                    # Recreate the connection with TrustServerCertificate enabled
+                    try {
+                        # Update the SqlConnectionInfo to trust the server certificate
+                        $server.ConnectionContext.SqlConnectionObject.ConnectionString = $server.ConnectionContext.SqlConnectionObject.ConnectionString -replace "Trust Server Certificate=False", "Trust Server Certificate=True"
+                        if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Trust Server Certificate") {
+                            if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -match ";$") {
+                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += "Trust Server Certificate=True;"
+                            } else {
+                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += ";Trust Server Certificate=True;"
+                            }
+                        }
+
+                        # Retry the connection
+                        Write-Message -Level Debug -Message "Retrying connection with TrustServerCertificate enabled"
+                        $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection with TrustServerCertificate'")
+                        Write-Message -Level Verbose -Message "Connection succeeded with TrustServerCertificate enabled"
+                        $connectionSucceeded = $true
+                    } catch {
+                        Write-Message -Level Debug -Message "Retry with TrustServerCertificate also failed: $($_.Exception.Message)"
+                        # Use the original error for reporting since the retry also failed
+                        $connectionError = $_
+                    }
+                }
+
+                if (-not $connectionSucceeded) {
+                    Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $connectionError -Continue
+                }
             }
 
             if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {

@@ -108,13 +108,36 @@ function Remove-DbaCustomError {
 
             if ($Pscmdlet.ShouldProcess($instance, "Removing server message with id $MessageID from $instance")) {
                 Write-Message -Level Verbose -Message "Removing server message with id $MessageID and language $Language from $instance"
+
+                # Use sp_dropmessage directly - more reliable than SMO Drop() method
+                # sp_dropmessage handles the proper drop order automatically
                 try {
-                    # find the message using language or languageID or the 'session language' message if they specified 'all'. SMO will drop all related messages for an ID if the english message is dropped.
-                    $userDefinedMessage = $server.UserDefinedMessages | Where-Object { $_.ID -eq $MessageID -and ($_.Language -in $languageName, $languageAlias -or $_.LanguageID -eq $langId -or ($Language -ieq "All" -and $_.Language -like "*english")) }
-                    $userDefinedMessage.Drop()
+                    if ($Language -ieq "All") {
+                        $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = 'all'")
+                    } else {
+                        # Check if this is English and other language versions exist
+                        # SQL Server requires all localized versions to be dropped before us_english
+                        # If dropping English, we must drop all versions
+                        if ($languageName -eq "us_english") {
+                            $otherLanguages = $server.Query("SELECT COUNT(*) AS cnt FROM sys.messages WHERE message_id = $MessageID AND language_id <> 1033")
+                            if ($otherLanguages.cnt -gt 0) {
+                                # Other languages exist, must drop all
+                                $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = 'all'")
+                            } else {
+                                # Only English exists, drop just English
+                                $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = '$languageName'")
+                            }
+                        } else {
+                            # Non-English language, drop just that language
+                            $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = '$languageName'")
+                        }
+                    }
                 } catch {
-                    Stop-Function -Message "Error occurred while trying to remove a message with id $MessageID from $instance" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Error occurred while trying to remove message $MessageID from $instance" -ErrorRecord $_ -Continue
                 }
+
+                # Refresh the UserDefinedMessages collection to reflect the changes
+                $server.UserDefinedMessages.Refresh()
             }
         }
     }
