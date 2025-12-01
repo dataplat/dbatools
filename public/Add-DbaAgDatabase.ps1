@@ -78,6 +78,11 @@ function Add-DbaAgDatabase {
         Use this when you want the command to return immediately after adding the database to the AG, allowing seeding to continue in the background.
         This is particularly useful in deployments where seeding can take a long time and you want to start using the environment before synchronization completes.
 
+    .PARAMETER SkipReuseSourceFolderStructure
+        Prevents restores from using the source server's folder structure when restoring databases to secondary replicas.
+        When enabled, Restore-DbaDatabase uses the replica's default data and log directories instead of attempting to replicate the primary's folder structure.
+        This is automatically set to true when the primary and replica servers run on different operating system platforms (e.g., Windows primary with Linux replica).
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -177,6 +182,9 @@ function Add-DbaAgDatabase {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$NoWait,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
+        [switch]$SkipReuseSourceFolderStructure,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
@@ -336,14 +344,23 @@ function Add-DbaAgDatabase {
                                 EnableException      = $true
                             }
 
-                            # Only use ReuseSourceFolderStructure if primary and replica are on the same platform
-                            $primaryPlatform = $server.HostPlatform
-                            $replicaPlatform = $replicaServerSMO[$replicaName].HostPlatform
-                            if ($primaryPlatform -eq $replicaPlatform) {
-                                Write-Message -Level Verbose -Message "Primary platform ($primaryPlatform) matches replica platform ($replicaPlatform). Using ReuseSourceFolderStructure."
+                            # Check if we should skip ReuseSourceFolderStructure
+                            if (-not $SkipReuseSourceFolderStructure) {
+                                # Check if primary and replica are on the same platform
+                                $primaryPlatform = $server.HostPlatform
+                                $replicaPlatform = $replicaServerSMO[$replicaName].HostPlatform
+                                if ($primaryPlatform -ne $replicaPlatform) {
+                                    Write-Message -Level Verbose -Message "Primary platform ($primaryPlatform) does not match replica platform ($replicaPlatform). Setting SkipReuseSourceFolderStructure."
+                                    $SkipReuseSourceFolderStructure = $true
+                                }
+                            }
+
+                            # Only use ReuseSourceFolderStructure if not skipped
+                            if (-not $SkipReuseSourceFolderStructure) {
+                                Write-Message -Level Verbose -Message "Using ReuseSourceFolderStructure to maintain consistent folder layout."
                                 $restoreParams['ReuseSourceFolderStructure'] = $true
                             } else {
-                                Write-Message -Level Verbose -Message "Primary platform ($primaryPlatform) does not match replica platform ($replicaPlatform). Using replica's default paths."
+                                Write-Message -Level Verbose -Message "Using replica's default paths for database files."
                             }
 
                             $sourceOwner = $db.Owner
