@@ -23,6 +23,7 @@ Describe $CommandName -Tag UnitTests {
                 "UseLastBackup",
                 "AdvancedBackupParams",
                 "NoWait",
+                "SkipReuseSourceFolderStructure",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
