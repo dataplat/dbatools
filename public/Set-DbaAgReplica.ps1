@@ -230,8 +230,8 @@ function Set-DbaAgReplica {
                             # Simple ordered routing - use property assignment
                             # This is the standard approach for ordered routing lists
                             $agreplica.ReadonlyRoutingList.Clear()
-                            foreach ($server in $ReadOnlyRoutingList) {
-                                $null = $agreplica.ReadonlyRoutingList.Add([string]$server)
+                            foreach ($routingReplica in $ReadOnlyRoutingList) {
+                                $null = $agreplica.ReadonlyRoutingList.Add([string]$routingReplica)
                             }
                         }
                     }
