@@ -253,6 +253,44 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Regression test for issue #9163 - Warn when login not found" {
+        It "Should warn when specified login does not exist on source" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "nonexistentlogin"
+            }
+            $result = Copy-DbaLogin @splatCopy -WarningVariable warn -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+            $warn | Should -Not -BeNullOrEmpty
+            $warn | Should -BeLike "*nonexistentlogin*not found*"
+        }
+
+        It "Should warn for each non-existent login when multiple are specified" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "nonexistent1", "nonexistent2"
+            }
+            $result = Copy-DbaLogin @splatCopy -WarningVariable warn -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+            $warn.Count | Should -Be 2
+            $warn[0] | Should -BeLike "*nonexistent1*not found*"
+            $warn[1] | Should -BeLike "*nonexistent2*not found*"
+        }
+
+        It "Should not warn when login exists" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "tester"
+            }
+            $result = Copy-DbaLogin @splatCopy -WarningVariable warn -WarningAction SilentlyContinue
+            $result.Status | Should -Be "Successful"
+            $warn | Should -BeNullOrEmpty
+        }
+    }
+
     Context "Regression test for issue #8572 - Windows group lockout protection" {
         It "Should not throw when processing SQL logins with -Force" {
             # Verify SQL logins are not affected by Windows group checks
