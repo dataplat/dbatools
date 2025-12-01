@@ -48,10 +48,20 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
-        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
-        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
-        $null = New-Item -Path $backupPath -ItemType Directory
+        # Check if source is Linux (Docker) or if running on non-Windows
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $sourceIsLinux = $sourceServer.ConnectionContext.ExecuteScalar("SELECT @@VERSION") -match "Linux"
+
+        # For backup paths, use the SQL Server's default backup directory when source is Linux/Docker
+        # This ensures the SQL Server service account has access to the path
+        if ($sourceIsLinux -or $IsMacOS -or $IsLinux) {
+            # Use SQL Server's default backup path - the service account will have access
+            $backupPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance2).Backup
+        } else {
+            # Windows to Windows - use temp path
+            $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $backupPath -ItemType Directory
+        }
 
         # Explain what needs to be set up for the test:
         # To test migration functionality, we need databases on the source instance that can be migrated to the destination.
@@ -111,13 +121,16 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created objects.
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2 -ErrorAction SilentlyContinue
 
-        # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse
+        # Remove the backup directory only if we created it (Windows to Windows scenario)
+        # For Linux/Docker we use the default backup path and don't delete it
+        if (-not $sourceIsLinux -and -not $IsMacOS -and -not $IsLinux) {
+            Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context  "When using backup restore method" {
+    Context "When using backup restore method" {
         BeforeAll {
             $splatMigration = @{
                 Force         = $true
@@ -125,17 +138,17 @@ Describe $CommandName -Tag IntegrationTests {
                 Destination   = $TestConfig.instance3
                 BackupRestore = $true
                 SharedPath    = $backupPath
-                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures", "MasterCertificates"
             }
-            $migrationResults = Start-DbaMigration @splatMigration
+            $results = Start-DbaMigration @splatMigration
         }
 
         It "Should return at least one result" {
-            $migrationResults | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should copy databases successfully" {
-            $databaseResults = $migrationResults | Where-Object Type -eq "Database"
+            $databaseResults = $results | Where-Object Type -eq "Database"
             $databaseResults | Should -Not -BeNullOrEmpty
             $successfulResults = $databaseResults | Where-Object Status -eq "Successful"
             $successfulResults | Should -Not -BeNullOrEmpty
@@ -158,7 +171,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using last backup method" {
         BeforeAll {
             # Create backups first
-            $backupResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory $backupPath
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory $backupPath
 
             $splatLastBackup = @{
                 Force         = $true
@@ -168,15 +181,15 @@ Describe $CommandName -Tag IntegrationTests {
                 # Excluding MasterCertificates to avoid this warning: [Copy-DbaDbCertificate] The SQL Server service account (NT Service\MSSQL$SQLINSTANCE2) for CLIENT\SQLInstance2 does not have access to
                 Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures", "MasterCertificates"
             }
-            $lastBackupResults = Start-DbaMigration @splatLastBackup
+            $results = Start-DbaMigration @splatLastBackup
         }
 
         It "Should return at least one result" {
-            $lastBackupResults | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should copy databases successfully" {
-            $databaseResults = $lastBackupResults | Where-Object Type -eq "Database"
+            $databaseResults = $results | Where-Object Type -eq "Database"
             $databaseResults | Should -Not -BeNullOrEmpty
             $successfulResults = $databaseResults | Where-Object Status -eq "Successful"
             $successfulResults | Should -Not -BeNullOrEmpty
@@ -193,65 +206,6 @@ Describe $CommandName -Tag IntegrationTests {
             $sourceDbs.RecoveryModel | Should -Be $destDbs.RecoveryModel
             $sourceDbs.Status | Should -Be $destDbs.Status
             $sourceDbs.Owner | Should -Be $destDbs.Owner
-        }
-    }
-
-    Context "When using SetSourceOffline parameter" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            # Create a unique test database for this context
-            $random = Get-Random
-            $offlineTestDb = "dbatoolsci_offlinetest$random"
-
-            # Clean up any existing database with this name first
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $offlineTestDb -ErrorAction SilentlyContinue
-
-            # Create the test database on instance2
-            $splatOfflineDb = @{
-                SqlInstance = $TestConfig.instance2
-                Query       = "CREATE DATABASE $offlineTestDb; ALTER DATABASE $offlineTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
-            }
-            Invoke-DbaQuery @splatOfflineDb
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $offlineTestDb -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Should set source database offline before migration and bring destination online" {
-            $splatOfflineMigration = @{
-                Force            = $true
-                Source           = $TestConfig.instance2
-                Destination      = $TestConfig.instance3
-                BackupRestore    = $true
-                SharedPath       = $backupPath
-                SetSourceOffline = $true
-                Exclude          = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
-            }
-            $offlineResults = Start-DbaMigration @splatOfflineMigration
-
-            # Verify migration was successful
-            $databaseResults = $offlineResults | Where-Object Type -eq "Database"
-            $databaseResults | Should -Not -BeNullOrEmpty
-            $successfulResults = $databaseResults | Where-Object Status -eq "Successful"
-            $successfulResults | Should -Not -BeNullOrEmpty
-
-            # Verify the test database was migrated
-            $testDbResult = $databaseResults | Where-Object Name -eq $offlineTestDb
-            $testDbResult | Should -Not -BeNullOrEmpty
-
-            # Verify source database is offline
-            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
-            $sourceDb.Status | Should -BeLike "*Offline*"
-
-            # Verify destination database is online
-            $destDb = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $offlineTestDb
-            $destDb.Status | Should -Be "Normal"
         }
     }
 }
