@@ -436,7 +436,9 @@ function Start-DbaMigration {
                 }
             }
 
-            Copy-DbaDatabase @CopyDatabaseSplat
+            Copy-DbaDatabase @CopyDatabaseSplat | ForEach-Object {
+                $PSItem
+            }
         }
 
         if ($Exclude -notcontains 'Logins') {
