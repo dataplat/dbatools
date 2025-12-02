@@ -18,7 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "Database",
                 "Category",
                 "ExcludeDisabledJobs",
-                "IncludeMsxJobs",
                 "EnableException",
                 "ExcludeCategory",
                 "IncludeExecution",
