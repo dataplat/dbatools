@@ -28,9 +28,9 @@ function Get-DbaAgentJob {
         Excludes disabled SQL Agent jobs from the results, showing only enabled jobs.
         Use this when focusing on active job monitoring or troubleshooting since disabled jobs won't execute.
 
-    .PARAMETER ExcludeMsxJobs
-        Excludes MSX (Master Server) jobs from the results. MSX jobs have CategoryID = 1 and originate from a multi-server administration setup.
-        Use this to avoid errors when copying jobs to secondary replicas in availability groups or when managing jobs that should not be modified on target servers.
+    .PARAMETER IncludeMsxJobs
+        Includes MSX (Master Server) jobs in the results. By default, MSX jobs (CategoryID = 1) are excluded because they originate from multi-server administration and cannot be modified on target servers.
+        Only use this switch when you need to view MSX jobs for informational purposes. Do not attempt to copy or modify MSX jobs.
 
     .PARAMETER Database
         Filters jobs to only those containing T-SQL job steps that target specific databases.
@@ -94,6 +94,11 @@ function Get-DbaAgentJob {
         Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
 
     .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a -IncludeMsxJobs
+
+        Returns all SQL Agent jobs including MSX (Master Server) jobs on sqlserver2014a. By default, MSX jobs are excluded.
+
+    .EXAMPLE
         PS C:\> $servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf
 
         Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
@@ -107,11 +112,6 @@ function Get-DbaAgentJob {
         PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a -Database msdb
 
         Finds all jobs on sqlserver2014a that T-SQL job steps associated with msdb database
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a -ExcludeMsxJobs
-
-        Returns all SQL Agent jobs except MSX (Master Server) jobs on sqlserver2014a
     #>
     [CmdletBinding()]
     param (
@@ -124,7 +124,7 @@ function Get-DbaAgentJob {
         [string[]]$Category,
         [string[]]$ExcludeCategory,
         [switch]$ExcludeDisabledJobs,
-        [switch]$ExcludeMsxJobs,
+        [switch]$IncludeMsxJobs,
         [switch]$IncludeExecution,
         [ValidateSet("MultiServer", "Local")]
         [string[]]$Type = @("MultiServer", "Local"),
@@ -185,7 +185,7 @@ function Get-DbaAgentJob {
             if ($ExcludeDisabledJobs) {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
-            if ($ExcludeMsxJobs) {
+            if (-not $IncludeMsxJobs) {
                 $jobs = $jobs | Where-Object CategoryID -ne 1
             }
             if ($Database) {

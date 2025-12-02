@@ -335,10 +335,9 @@ function Sync-DbaAvailabilityGroup {
 
             if ($Exclude -notcontains "AgentJob") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
-                # Get jobs excluding MSX jobs to avoid errors
+                # MSX jobs are automatically excluded by Get-DbaAgentJob to avoid errors
                 $splatGetJob = @{
-                    SqlInstance    = $server
-                    ExcludeMsxJobs = $true
+                    SqlInstance = $server
                 }
                 if (Test-Bound 'Job') {
                     $splatGetJob['Job'] = $Job
