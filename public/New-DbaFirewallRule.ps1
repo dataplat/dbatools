@@ -7,9 +7,9 @@ function New-DbaFirewallRule {
         Creates inbound Windows firewall rules for SQL Server instances, Browser service, and Dedicated Admin Connection (DAC) to allow network connectivity.
         This automates the tedious post-installation task of configuring firewall access for SQL Server, eliminating the need to manually determine ports and create rules through Windows Firewall GUI or netsh commands.
 
-        The function intelligently detects whether instances use static or dynamic ports and creates appropriate rules.
-        For static ports, it creates port-based rules; for dynamic ports, it creates program-based rules targeting sqlservr.exe.
-        When instances use non-default ports, it automatically includes a Browser service rule so clients can discover the instance.
+        By default, the function creates program-based firewall rules that target SQL Server executables (sqlservr.exe, sqlbrowser.exe).
+        This approach allows instances to work regardless of port configuration changes - named instances on different ports or default instances on non-standard ports are automatically allowed without needing to update firewall rules.
+        Alternatively, you can use -RuleType Port to create traditional port-based firewall rules.
 
         This is a wrapper around New-NetFirewallRule executed remotely on the target computer via Invoke-Command2.
         Both DisplayName and Name are set to the same value to ensure unique rule identification and prevent duplicates.
@@ -20,7 +20,7 @@ function New-DbaFirewallRule {
         As long as you can read this note here, there may be breaking changes in future versions.
         So please review your scripts using this command after updating dbatools.
 
-        The firewall rule for the instance itself will have the following configuration (parameters for New-NetFirewallRule):
+        With -RuleType Program (default), the firewall rule for the instance itself will have the following configuration (parameters for New-NetFirewallRule):
 
             DisplayName = 'SQL Server default instance' or 'SQL Server instance <InstanceName>'
             Name        = 'SQL Server default instance' or 'SQL Server instance <InstanceName>'
@@ -28,10 +28,29 @@ function New-DbaFirewallRule {
             Enabled     = 'True'
             Direction   = 'Inbound'
             Protocol    = 'TCP'
-            LocalPort   = '<Port>' (for instances with static port)
-            Program     = '<Path ending with MSSQL\Binn\sqlservr.exe>' (for instances with dynamic port)
+            Program     = '<Path ending with MSSQL\Binn\sqlservr.exe>'
 
-        The firewall rule for the SQL Server Browser will have the following configuration (parameters for New-NetFirewallRule):
+        With -RuleType Port, the firewall rule for the instance itself will have the following configuration (parameters for New-NetFirewallRule):
+
+            DisplayName = 'SQL Server default instance' or 'SQL Server instance <InstanceName>'
+            Name        = 'SQL Server default instance' or 'SQL Server instance <InstanceName>'
+            Group       = 'SQL Server'
+            Enabled     = 'True'
+            Direction   = 'Inbound'
+            Protocol    = 'TCP'
+            LocalPort   = '<Port>'
+
+        With -RuleType Program (default), the firewall rule for the SQL Server Browser will have the following configuration (parameters for New-NetFirewallRule):
+
+            DisplayName = 'SQL Server Browser'
+            Name        = 'SQL Server Browser'
+            Group       = 'SQL Server'
+            Enabled     = 'True'
+            Direction   = 'Inbound'
+            Protocol    = 'Any'
+            Program     = '<Path ending with sqlbrowser.exe>'
+
+        With -RuleType Port, the firewall rule for the SQL Server Browser will have the following configuration (parameters for New-NetFirewallRule):
 
             DisplayName = 'SQL Server Browser'
             Name        = 'SQL Server Browser'
@@ -75,6 +94,13 @@ function New-DbaFirewallRule {
         Use this when you need to create specific rules instead of the automatic detection behavior.
         Valid values are Engine (SQL Server instance), Browser (SQL Server Browser service), DAC (Dedicated Admin Connection) and DatabaseMirroring (database mirroring or Availability Groups). When omitted, the function automatically creates Engine rules plus Browser rules for non-default ports and DAC rules when remote DAC is enabled.
 
+    .PARAMETER RuleType
+        Specifies how firewall rules identify SQL Server traffic - either by targeting the executable program or by targeting specific TCP/UDP ports.
+        Valid values are Program (targets sqlservr.exe and sqlbrowser.exe executables) and Port (targets TCP/UDP port numbers).
+        Defaults to Program, which allows instances to work regardless of port configuration changes (named instances on different ports, default instances on non-standard ports).
+        Use Port when you need traditional port-based rules or when Program-based rules cannot be created.
+        Note: DAC and DatabaseMirroring rules are always port-based regardless of this setting.
+
     .PARAMETER Configuration
         Provides custom settings to override the default firewall rule configuration when calling New-NetFirewallRule.
         Use this when you need to restrict rules to specific network profiles (Domain, Private, Public) or modify other advanced firewall settings.
@@ -111,6 +137,13 @@ function New-DbaFirewallRule {
         PS C:\> New-DbaFirewallRule -SqlInstance SRV1, SRV1\TEST
 
         Automatically configures the needed firewall rules for both the default instance and the instance named TEST on SRV1.
+        By default, creates program-based rules targeting the SQL Server executables, allowing the instances to work regardless of port configuration changes.
+
+    .EXAMPLE
+        PS C:\> New-DbaFirewallRule -SqlInstance SRV1, SRV1\TEST -RuleType Port
+
+        Creates port-based firewall rules instead of the default program-based rules.
+        This creates traditional TCP/UDP port rules for the instances.
 
     .EXAMPLE
         PS C:\> New-DbaFirewallRule -SqlInstance SRV1, SRV1\TEST -Configuration @{ Profile = 'Domain' }
@@ -141,6 +174,8 @@ function New-DbaFirewallRule {
         [PSCredential]$Credential,
         [ValidateSet('Engine', 'Browser', 'DAC', 'DatabaseMirroring')]
         [string[]]$Type,
+        [ValidateSet('Program', 'Port')]
+        [string]$RuleType = "Program",
         [hashtable]$Configuration,
         [switch]$Force,
         [switch]$EnableException
@@ -251,23 +286,46 @@ function New-DbaFirewallRule {
                     Stop-Function -Message "SQL Server instance $instance listens on more than one IP addresses. This is currently not supported by this command." -Continue
                 }
 
-                if ($tcpIpAddresses.TcpPort -ne '') {
-                    $rule.Config.LocalPort = $tcpIpAddresses.TcpPort
-                    if ($tcpIpAddresses.TcpPort -ne '1433') {
-                        $browserNeeded = $true
-                    }
-                } else {
-                    $programNeeded = $true
-                }
-
-                if ($programNeeded) {
-                    # Get information about service for Program
+                # Determine whether to use Program or Port based on RuleType parameter
+                if ($RuleType -eq 'Program') {
+                    # Try to get the program path for executable-based rule
                     try {
                         $service = Get-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Credential $Credential -Type Engine -EnableException
+                        $programPath = $service.BinaryPath -replace '^"?(.*sqlservr.exe).*$', '$1'
+                        if ($programPath) {
+                            $rule.Config.Program = $programPath
+                            Write-Message -Level Verbose -Message "Creating program-based firewall rule targeting: $programPath"
+                        } else {
+                            Write-Message -Level Warning -Message "Could not determine executable path for instance $instance. Falling back to port-based rule."
+                            $programNeeded = $false
+                        }
                     } catch {
-                        Stop-Function -Message "Failed." -Target $instance -ErrorRecord $_ -Continue
+                        Write-Message -Level Warning -Message "Failed to get service information for instance $instance. Falling back to port-based rule."
+                        $programNeeded = $false
                     }
-                    $rule.Config.Program = $service.BinaryPath -replace '^"?(.*sqlservr.exe).*$', '$1'
+
+                    # If we couldn't get the program path, fall back to port-based rule
+                    if (-not $rule.Config.Program) {
+                        if ($tcpIpAddresses.TcpPort -ne '') {
+                            $rule.Config.LocalPort = $tcpIpAddresses.TcpPort
+                            Write-Message -Level Verbose -Message "Fallback: Creating port-based firewall rule on port: $($tcpIpAddresses.TcpPort)"
+                        } else {
+                            Stop-Function -Message "Cannot create firewall rule for instance $instance. No port configured and executable path unavailable." -Continue
+                        }
+                    }
+                } else {
+                    # RuleType is 'Port' - use port-based rule
+                    if ($tcpIpAddresses.TcpPort -ne '') {
+                        $rule.Config.LocalPort = $tcpIpAddresses.TcpPort
+                        Write-Message -Level Verbose -Message "Creating port-based firewall rule on port: $($tcpIpAddresses.TcpPort)"
+                    } else {
+                        Stop-Function -Message "Cannot create port-based firewall rule for instance $instance. Instance is configured for dynamic ports. Use -RuleType Program instead." -Continue
+                    }
+                }
+
+                # Determine if Browser rule is needed (for named instances or non-default ports)
+                if ($tcpIpAddresses.TcpPort -ne '' -and $tcpIpAddresses.TcpPort -ne '1433') {
+                    $browserNeeded = $true
                 }
 
                 $rules += $rule
@@ -287,8 +345,31 @@ function New-DbaFirewallRule {
                         Enabled     = 'True'
                         Direction   = 'Inbound'
                         Protocol    = 'UDP'
-                        LocalPort   = '1434'
                     }
+                }
+
+                # Determine whether to use Program or Port based on RuleType parameter
+                if ($RuleType -eq 'Program') {
+                    # Try to get the SQL Browser service executable path
+                    try {
+                        $browserService = Get-DbaService -ComputerName $instance.ComputerName -Credential $Credential -Type Browser -EnableException | Select-Object -First 1
+                        $browserPath = $browserService.BinaryPath -replace '^"?(.*sqlbrowser.exe).*$', '$1'
+                        if ($browserPath) {
+                            $rule.Config.Program = $browserPath
+                            $rule.Config.Protocol = 'Any'
+                            Write-Message -Level Verbose -Message "Creating program-based firewall rule for Browser targeting: $browserPath"
+                        } else {
+                            Write-Message -Level Warning -Message "Could not determine SQL Browser executable path. Falling back to port-based rule."
+                            $rule.Config.LocalPort = '1434'
+                        }
+                    } catch {
+                        Write-Message -Level Warning -Message "Failed to get SQL Browser service information. Falling back to port-based rule."
+                        $rule.Config.LocalPort = '1434'
+                    }
+                } else {
+                    # RuleType is 'Port' - use port-based rule
+                    $rule.Config.LocalPort = '1434'
+                    Write-Message -Level Verbose -Message "Creating port-based firewall rule for Browser on UDP port: 1434"
                 }
 
                 $rules += $rule
