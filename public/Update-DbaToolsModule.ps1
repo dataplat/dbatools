@@ -103,7 +103,7 @@ function Update-DbaToolsModule {
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [Alias('cn', 'host', 'Server', 'SqlInstance')]
-        [string[]]$ComputerName,
+        [DbaInstanceParameter[]]$ComputerName,
 
         [PSCredential]$Credential,
 
@@ -118,15 +118,21 @@ function Update-DbaToolsModule {
         # Helper functions for standalone use (when dbatools private functions aren't available)
         if (-not (Get-Command Stop-Function -ErrorAction SilentlyContinue)) {
             function Stop-Function {
-                param($Message, $Continue, $ErrorRecord)
+                param($Message, [switch]$Continue, $ErrorRecord)
                 if ($EnableException) {
                     if ($ErrorRecord) {
                         throw $ErrorRecord
-                    } else {
+                    }
+                    else {
                         throw $Message
                     }
-                } else {
+                }
+                else {
                     Write-Warning $Message
+                    if (-not $Continue) {
+                        # Only return (stop processing) if -Continue is not specified
+                        return
+                    }
                 }
             }
         }
@@ -152,7 +158,8 @@ function Update-DbaToolsModule {
         # Get source
         if ($SourcePath) {
             $source = $SourcePath
-        } else {
+        }
+        else {
             $mod = Get-Module dbatools
             if (-not $mod) {
                 Stop-Function -Message "dbatools module is not loaded and no SourcePath specified. Please load dbatools or specify -SourcePath"
@@ -172,11 +179,13 @@ function Update-DbaToolsModule {
             try {
                 $ver = (Import-PowerShellDataFile $manifest).ModuleVersion
                 Write-Message -Level Output -Message "Deploying dbatools version: $ver"
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Could not read module manifest" -ErrorRecord $_
                 return
             }
-        } else {
+        }
+        else {
             Stop-Function -Message "Module manifest not found: $manifest"
             return
         }
@@ -189,7 +198,8 @@ function Update-DbaToolsModule {
             # Handle both string and DbaInstanceParameter types
             if ($computer -is [string]) {
                 $comp = $computer
-            } else {
+            }
+            else {
                 $comp = $computer.ComputerName
             }
             
@@ -223,33 +233,37 @@ function Update-DbaToolsModule {
                             Write-Message -Level Warning -Message "[$comp] Cannot verify module loads correctly (no remote execution capability)"
                             
                             [PSCustomObject]@{
-                                ComputerName     = $comp
-                                Status           = 'Success'
-                                Version          = $ver
-                                Method           = 'AdminShare'
-                                Path             = $target
-                                RemoteVerified   = $false
+                                ComputerName = $comp
+                                Status = 'Success'
+                                Version = $ver
+                                Method = 'AdminShare'
+                                Path = $target
+                                RemoteVerified = $false
                             }
-                        } else {
+                        }
+                        else {
                             Stop-Function -Message "[$comp] Module manifest not found after copy" -Continue
                         }
-                    } catch {
+                    }
+                    catch {
                         Stop-Function -Message "[$comp] Failed to copy files via admin share" -ErrorRecord $_ -Continue
                     }
                 }
-            } else {
+            }
+            else {
                 # PSRemoting method
                 Write-Message -Level Verbose -Message "[$comp] Testing PowerShell remoting"
                 try {
                     $null = Test-WSMan $comp -ErrorAction Stop
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "[$comp] PowerShell remoting not available. Run 'Enable-PSRemoting' on target or use -UseAdminShare switch" -Continue
                 }
 
                 $sess = $null
                 try {
                     Write-Message -Level Verbose -Message "[$comp] Creating remote session"
-                    $sessParams = @{ComputerName = $comp; ErrorAction = 'Stop'}
+                    $sessParams = @{ComputerName = $comp; ErrorAction = 'Stop' }
                     if ($Credential) { $sessParams.Credential = $Credential }
                     
                     $sess = New-PSSession @sessParams
@@ -298,16 +312,18 @@ function Update-DbaToolsModule {
                                         Success = $true
                                         Version = $mod.Version.ToString()
                                     }
-                                } catch {
+                                }
+                                catch {
                                     return @{
                                         Success = $false
-                                        Error   = $_.Exception.Message
+                                        Error = $_.Exception.Message
                                     }
                                 }
-                            } else {
+                            }
+                            else {
                                 return @{
                                     Success = $false
-                                    Error   = "Manifest not found"
+                                    Error = "Manifest not found"
                                 }
                             }
                         } -ArgumentList $target
@@ -316,20 +332,23 @@ function Update-DbaToolsModule {
                             Write-Message -Level Output -Message "[$comp] Successfully deployed and verified version $($verification.Version)"
                             
                             [PSCustomObject]@{
-                                ComputerName   = $comp
-                                Status         = 'Success'
-                                Version        = $verification.Version
-                                Method         = 'PSRemoting'
-                                Path           = $target
+                                ComputerName = $comp
+                                Status = 'Success'
+                                Version = $verification.Version
+                                Method = 'PSRemoting'
+                                Path = $target
                                 RemoteVerified = $true
                             }
-                        } else {
+                        }
+                        else {
                             Stop-Function -Message "[$comp] Module verification failed: $($verification.Error)" -Continue
                         }
                     }
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "[$comp] Failed to deploy via PSRemoting" -ErrorRecord $_ -Continue
-                } finally {
+                }
+                finally {
                     if ($sess) { 
                         Write-Message -Level Verbose -Message "[$comp] Cleaning up remote session"
                         Remove-PSSession $sess -ErrorAction SilentlyContinue

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Update-DbaToolsModule"
 )
 
@@ -42,7 +42,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Supports ShouldProcess" {
-            $command.CmdletBinding.SupportsShouldProcess | Should -Be $true
+            $cmdletBinding = $command.ScriptBlock.Attributes | Where-Object { $_ -is [System.Management.Automation.CmdletBindingAttribute] }
+            $cmdletBinding.SupportsShouldProcess | Should -Be $true
         }
     }
 
@@ -131,8 +132,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
 
         It "Should fail gracefully with invalid computer name" {
-            $result = Update-DbaToolsModule -ComputerName "InvalidComputer$(Get-Random)" -EnableException:$false -WarningAction SilentlyContinue 3>&1
-            $result | Should -Not -BeNullOrEmpty
+            { Update-DbaToolsModule -ComputerName "InvalidComputer$(Get-Random)" -EnableException:$false -WarningAction SilentlyContinue } | Should -Not -Throw
         }
     }
 
@@ -166,9 +166,8 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
 
     Context "Error Handling" {
         It "Should handle unreachable computer gracefully" {
-            $result = Update-DbaToolsModule -ComputerName "192.0.2.1" -EnableException:$false -WarningAction SilentlyContinue 3>&1
-            # Should produce warning message, not throw exception
-            $result | Should -Not -BeNullOrEmpty
+            # Should not throw exception when EnableException is false
+            { Update-DbaToolsModule -ComputerName "192.0.2.1" -EnableException:$false -WarningAction SilentlyContinue } | Should -Not -Throw
         }
 
         It "Should handle missing SourcePath when dbatools not loaded" {

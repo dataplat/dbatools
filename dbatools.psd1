@@ -708,6 +708,7 @@
         'Update-DbaInstance',
         'Update-DbaServiceAccount',
         'Update-Dbatools',
+        'Update-DbaToolsModule',
         'Watch-DbaDbLogin',
         'Watch-DbaXESession',
         'Write-DbaDbTableData',
