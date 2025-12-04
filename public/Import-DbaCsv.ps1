@@ -660,7 +660,14 @@ function Import-DbaCsv {
                 [Microsoft.Data.SqlClient.SqlTransaction]$transaction
             )
 
-            $sql = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::GenerateCreateTableStatement($InferredColumns, $table, $schema)
+            # Convert PowerShell array back to List<InferredColumn> for C# interop
+            # PowerShell unwraps List<T> to Object[] when passing through functions
+            $columnList = New-Object 'System.Collections.Generic.List[Dataplat.Dbatools.Csv.Reader.InferredColumn]'
+            foreach ($col in $InferredColumns) {
+                $columnList.Add($col)
+            }
+
+            $sql = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::GenerateCreateTableStatement($columnList, $table, $schema)
 
             Write-Message -Level Debug -Message $sql
 
@@ -786,8 +793,9 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 if ($maxLen -eq 0) { $maxLen = 1 }
 
                 # Check if it needs nvarchar (unicode) or varchar
-                # Use binary collation for exact comparison - some collations can represent accented chars in varchar
-                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE [$col] COLLATE Latin1_General_BIN2 <> CAST([$col] AS VARCHAR(MAX)) COLLATE Latin1_General_BIN2 AND [$col] IS NOT NULL"
+                # Use round-trip conversion: if converting to varchar and back changes the value, it has Unicode
+                # This approach works on all SQL Server versions (2005+) without relying on specific collations
+                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE CAST(CAST([$col] AS VARCHAR(MAX)) AS NVARCHAR(MAX)) <> [$col] AND [$col] IS NOT NULL"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($checkUnicodeSql, $SqlConn)
                 $hasUnicode = $null -ne $sqlcmd.ExecuteScalar()
 
