@@ -23,6 +23,7 @@ Describe $CommandName -Tag UnitTests {
                 "BasicAvailabilityGroup",
                 "DatabaseHealthTrigger",
                 "IsDistributedAvailabilityGroup",
+                "ClusterConnectionOption",
                 "InputObject",
                 "EnableException"
             )

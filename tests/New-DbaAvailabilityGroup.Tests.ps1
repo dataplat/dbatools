@@ -44,6 +44,7 @@ Describe $CommandName -Tag UnitTests {
                 "SubnetMask",
                 "Port",
                 "Dhcp",
+                "ClusterConnectionOption",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
