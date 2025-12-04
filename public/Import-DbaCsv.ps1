@@ -793,9 +793,9 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 if ($maxLen -eq 0) { $maxLen = 1 }
 
                 # Check if it needs nvarchar (unicode) or varchar
-                # Use round-trip conversion: if converting to varchar and back changes the value, it has Unicode
-                # This approach works on all SQL Server versions (2005+) without relying on specific collations
-                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE CAST(CAST([$col] AS VARCHAR(MAX)) AS NVARCHAR(MAX)) <> [$col] AND [$col] IS NOT NULL"
+                # Detect Unicode by checking if converting to VARCHAR introduces ? characters that weren't there before
+                # This happens when Unicode chars can't be represented in the server's default code page
+                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE CHARINDEX(N'?', CAST([$col] AS VARCHAR(MAX))) > 0 AND CHARINDEX(N'?', [$col]) = 0 AND [$col] IS NOT NULL"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($checkUnicodeSql, $SqlConn)
                 $hasUnicode = $null -ne $sqlcmd.ExecuteScalar()
 
@@ -808,10 +808,27 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                     continue
                 }
 
-                $newType = "$baseType($maxLen)"
+                # Add padding to the length to allow for future data that may be slightly longer
+                # This prevents issues when re-importing to the same table with -Truncate
+                # Round up to common sizes: 16, 32, 64, 128, 256, 512, 1024, 2048, 4000/8000
+                $paddedLen = switch ($true) {
+                    ($maxLen -le 16) { 16 }
+                    ($maxLen -le 32) { 32 }
+                    ($maxLen -le 64) { 64 }
+                    ($maxLen -le 128) { 128 }
+                    ($maxLen -le 256) { 256 }
+                    ($maxLen -le 512) { 512 }
+                    ($maxLen -le 1024) { 1024 }
+                    ($maxLen -le 2048) { 2048 }
+                    default { $maxAllowed }
+                }
+                # Ensure we don't exceed the max allowed
+                if ($paddedLen -gt $maxAllowed) { $paddedLen = $maxAllowed }
+
+                $newType = "$baseType($paddedLen)"
                 $alterSql = "ALTER TABLE [$Schema].[$Table] ALTER COLUMN [$col] $newType"
 
-                Write-Message -Level Verbose -Message "Optimizing [$col]: nvarchar(MAX) -> $newType"
+                Write-Message -Level Verbose -Message "Optimizing [$col]: nvarchar(MAX) -> $newType (max data length: $maxLen, padded to: $paddedLen)"
 
                 try {
                     $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($alterSql, $SqlConn)
@@ -1160,8 +1177,14 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                                 try {
                                     $ColumnMap = @{ }
                                     $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
+                                    $isFirst = $true
                                     $firstline -split "$Delimiter", 0, "SimpleMatch" | ForEach-Object {
                                         $trimmed = $PSItem.Trim('"')
+                                        # Remove UTF-8 BOM from first column if present (U+FEFF)
+                                        if ($isFirst) {
+                                            $trimmed = $trimmed.TrimStart([char]0xFEFF)
+                                            $isFirst = $false
+                                        }
                                         Write-Message -Level Verbose -Message "Adding $trimmed to ColumnMap"
                                         $ColumnMap.Add($trimmed, $trimmed)
                                     }
