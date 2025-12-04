@@ -786,7 +786,8 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 if ($maxLen -eq 0) { $maxLen = 1 }
 
                 # Check if it needs nvarchar (unicode) or varchar
-                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE [$col] <> CAST([$col] AS VARCHAR(MAX)) AND [$col] IS NOT NULL"
+                # Use binary collation for exact comparison - some collations can represent accented chars in varchar
+                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE [$col] COLLATE Latin1_General_BIN2 <> CAST([$col] AS VARCHAR(MAX)) COLLATE Latin1_General_BIN2 AND [$col] IS NOT NULL"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($checkUnicodeSql, $SqlConn)
                 $hasUnicode = $null -ne $sqlcmd.ExecuteScalar()
 
