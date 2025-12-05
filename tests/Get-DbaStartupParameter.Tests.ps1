@@ -30,9 +30,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Simple parameter returns only essential properties" {
             $results = Get-DbaStartupParameter -SqlInstance $TestConfig.instance2 -Simple
             $results | Should -Not -BeNullOrEmpty
-            $properties = $results | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "MasterData", "MasterLog", "ErrorLog", "TraceFlags", "DebugFlags", "ParameterString")
-            $properties | Should -Be $expectedProperties
+            $properties = ($results | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) | Sort-Object
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "MasterData", "MasterLog", "ErrorLog", "TraceFlags", "DebugFlags", "ParameterString") | Sort-Object
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $properties | Should -BeNullOrEmpty
         }
         It "Without Simple parameter returns additional properties" {
             $results = Get-DbaStartupParameter -SqlInstance $TestConfig.instance2
