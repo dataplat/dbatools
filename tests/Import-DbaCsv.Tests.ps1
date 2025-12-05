@@ -641,9 +641,10 @@ XYZ,Another medium,Another longer piece of text for testing purposes here
             $mediumCol = $columns | Where-Object Name -eq "MediumCol"
             $longCol = $columns | Where-Object Name -eq "LongCol"
 
-            # Should be varchar with specific lengths, not MAX (-1)
+            # Should be varchar with padded lengths, not MAX (-1)
+            # Padding rounds up to: 16, 32, 64, 128, 256, 512, 1024, 2048, max
             $shortCol.DataType.MaximumLength | Should -Not -Be -1
-            $shortCol.DataType.MaximumLength | Should -BeLessOrEqual 10
+            $shortCol.DataType.MaximumLength | Should -Be 16  # "ABC" (3 chars) padded to 16
             $mediumCol.DataType.MaximumLength | Should -Not -Be -1
             $longCol.DataType.MaximumLength | Should -Not -Be -1
 

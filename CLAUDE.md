@@ -973,6 +973,8 @@ To test commands locally during development:
 ```powershell
 # 1. Import the module directly from the psm1 file
 Import-Module .\dbatools.psm1
+# 1a. ONLY IF any errors about dbatools.library
+Import-Module C:\gallery\dbatools.library
 
 # 2. Get the test configuration (private command)
 $TestConfig = Get-TestConfig
@@ -981,8 +983,10 @@ $TestConfig = Get-TestConfig
 $TestConfig.instance1    # First test SQL instance
 $TestConfig.instance2    # Second test SQL instance
 $TestConfig.instance3    # Third test SQL instance
-$TestConfig.SqlCredential # Test credentials
+$TestConfig.SqlCred      # Test credentials, all connections need this
 $TestConfig.Temp         # Temp directory for test files
+# 4. Set the default paras for sqlcred
+$PSDefaultParameterValues["*:SqlCredential"] = $TestCofig.SqlCred
 ```
 
 This allows you to manually test commands against actual SQL Server instances before running the full test suite.

@@ -812,21 +812,23 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 # This prevents issues when re-importing to the same table with -Truncate
                 # Round up to common sizes: 16, 32, 64, 128, 256, 512, 1024, 2048, 4000/8000
                 $paddedLen = switch ($true) {
-                    ($maxLen -le 16) { 16 }
-                    ($maxLen -le 32) { 32 }
-                    ($maxLen -le 64) { 64 }
-                    ($maxLen -le 128) { 128 }
-                    ($maxLen -le 256) { 256 }
-                    ($maxLen -le 512) { 512 }
-                    ($maxLen -le 1024) { 1024 }
-                    ($maxLen -le 2048) { 2048 }
+                    ($maxLen -le 16) { 16; break }
+                    ($maxLen -le 32) { 32; break }
+                    ($maxLen -le 64) { 64; break }
+                    ($maxLen -le 128) { 128; break }
+                    ($maxLen -le 256) { 256; break }
+                    ($maxLen -le 512) { 512; break }
+                    ($maxLen -le 1024) { 1024; break }
+                    ($maxLen -le 2048) { 2048; break }
                     default { $maxAllowed }
                 }
                 # Ensure we don't exceed the max allowed
                 if ($paddedLen -gt $maxAllowed) { $paddedLen = $maxAllowed }
 
-                $newType = "$baseType($paddedLen)"
-                $alterSql = "ALTER TABLE [$Schema].[$Table] ALTER COLUMN [$col] $newType"
+                $newType = "${baseType}($paddedLen)"
+                # SQL Server 2008 R2 and earlier require NULL/NOT NULL in ALTER COLUMN
+                # Original columns were nvarchar(MAX) NULL, so we preserve NULL
+                $alterSql = "ALTER TABLE [$Schema].[$Table] ALTER COLUMN [$col] $newType NULL"
 
                 Write-Message -Level Verbose -Message "Optimizing [$col]: nvarchar(MAX) -> $newType (max data length: $maxLen, padded to: $paddedLen)"
 
