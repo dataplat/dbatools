@@ -65,7 +65,10 @@ function Import-DbaCsv {
 
     .PARAMETER AutoCreateTable
         Creates the destination table automatically if it doesn't exist, using nvarchar(max) for all columns.
-        Convenient for quick imports or testing, but for production use, create tables manually with appropriate data types, indexes, and constraints.
+        After import, column sizes are automatically optimized based on actual data lengths (nvarchar(MAX) -> nvarchar(16/32/64/etc.)).
+
+        For proper type inference (int, decimal, datetime2, varchar vs nvarchar), use -SampleRows or -DetectColumnTypes instead.
+        For production use with specific constraints, create tables manually with appropriate data types, indexes, and constraints.
 
     .PARAMETER Truncate
         Removes all existing data from the destination table before importing. The truncate operation is part of the transaction.
@@ -219,6 +222,36 @@ function Import-DbaCsv {
         The culture name to use for parsing numbers and dates (e.g., "de-DE", "fr-FR", "en-US").
         Useful when importing CSV files with locale-specific number formats (e.g., comma as decimal separator).
         Default is InvariantCulture.
+
+    .PARAMETER SampleRows
+        Enables smart type detection by sampling the first N rows of the CSV file.
+        When specified, the command analyzes the sample to infer optimal SQL Server column types
+        instead of using nvarchar(MAX) for all columns.
+
+        This is faster than -DetectColumnTypes but has a small risk if data patterns change
+        after the sampled rows (e.g., row 10001 has a longer string than any in the sample).
+
+        Implies -AutoCreateTable behavior for type detection.
+
+        Example: -SampleRows 10000 samples the first 10,000 rows to determine types like
+        int, bigint, decimal(p,s), datetime2, bit, uniqueidentifier, or varchar(n)/nvarchar(n)
+        with appropriate lengths. Unlike plain -AutoCreateTable, this can infer varchar for
+        ASCII-only string data, saving storage space.
+
+    .PARAMETER DetectColumnTypes
+        Enables smart type detection by scanning the entire CSV file before import.
+        This guarantees no import failures due to type mismatches but requires reading
+        the file twice (once for analysis, once for import).
+
+        A separate progress bar is displayed during the type detection phase.
+        The final output (Elapsed, RowsPerSecond) reflects only the import time,
+        not the detection overhead.
+
+        Implies -AutoCreateTable behavior for type detection.
+
+        Detected types include: int, bigint, decimal(p,s), datetime2, bit,
+        uniqueidentifier, varchar(n) for ASCII-only strings, and nvarchar(n) when Unicode is detected.
+        This provides optimal storage by using varchar where possible.
 
     .PARAMETER Parallel
         Enables parallel processing for improved performance on large files.
@@ -421,6 +454,38 @@ function Import-DbaCsv {
 
         Imports a CSV with German number formatting where comma is the decimal separator (e.g., "1.234,56").
         The -Culture parameter ensures numbers are parsed correctly according to the specified locale.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\sales.csv -SqlInstance sql001 -Database sales -Table SalesData -AutoCreateTable -SampleRows 10000
+
+        Imports sales.csv and creates the table with optimal column types inferred from the first 10,000 rows.
+        Instead of nvarchar(MAX) for all columns, the table will have appropriate types like int, decimal(10,2),
+        datetime2, bit, or varchar(50) based on the actual data patterns detected.
+
+        This is fast but has a small risk if data patterns change after the sampled rows.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\large_dataset.csv -SqlInstance sql001 -Database warehouse -Table FactSales -AutoCreateTable -DetectColumnTypes
+
+        Imports large_dataset.csv with guaranteed optimal column types by scanning the entire file first.
+        A separate progress bar shows "Analyzing column types..." during the detection phase.
+        The final output (Elapsed, RowsPerSecond) reflects only the import time, not the detection overhead.
+
+        This is slower (reads file twice) but guarantees no import failures due to type mismatches.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\products.csv -SqlInstance sql001 -Database inventory -Table Products -AutoCreateTable -SampleRows 5000 -DateTimeFormats @("dd-MMM-yyyy", "yyyy/MM/dd")
+
+        Imports products.csv with type detection from 5,000 rows, using custom date formats for parsing.
+        Columns containing dates in formats like "15-Jan-2024" or "2024/01/15" will be detected as datetime2.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\quickload.csv -SqlInstance sql001 -Database tempdb -Table QuickData -AutoCreateTable
+
+        Imports quickload.csv with AutoCreateTable. After import completes, column sizes are automatically
+        optimized by querying actual max lengths and altering columns from nvarchar(MAX) to padded sizes
+        like nvarchar(16), nvarchar(32), nvarchar(64), etc. The nvarchar type is preserved to avoid any
+        risk of data loss from Unicode conversion. For ASCII->varchar conversion, use -SampleRows or -DetectColumnTypes.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -485,6 +550,8 @@ function Import-DbaCsv {
         [hashtable]$StaticColumns,
         [string[]]$DateTimeFormats,
         [string]$Culture,
+        [int]$SampleRows,
+        [switch]$DetectColumnTypes,
         [switch]$Parallel,
         [int]$ThrottleLimit = 0,
         [int]$ParallelBatchSize = 100,
@@ -496,6 +563,16 @@ function Import-DbaCsv {
 
         if ($PSBoundParameters.UseFileNameForSchema -and $PSBoundParameters.Schema) {
             Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
+        }
+
+        # Type detection implies AutoCreateTable behavior
+        $useTypeDetection = $PSBoundParameters.SampleRows -or $DetectColumnTypes
+        if ($useTypeDetection -and -not $AutoCreateTable) {
+            Write-Message -Level Verbose -Message "Type detection enabled - AutoCreateTable behavior will be used for table creation."
+        }
+
+        if ($PSBoundParameters.SampleRows -and $DetectColumnTypes) {
+            Write-Message -Level Warning -Message "Both SampleRows and DetectColumnTypes specified. DetectColumnTypes (full scan) takes precedence for zero-risk type detection."
         }
 
         function New-SqlTable {
@@ -567,8 +644,206 @@ function Import-DbaCsv {
             Write-Message -Level Verbose -Message "Consider creating the table first using best practices if the data will be used in production."
         }
 
+        function New-SqlTableWithInferredSchema {
+            <#
+                .SYNOPSIS
+                    Creates new Table using inferred column types from CSV analysis.
 
+                .DESCRIPTION
+                    Uses CsvSchemaInference to analyze CSV data and create a table with optimal
+                    SQL Server column types instead of nvarchar(MAX) for everything.
 
+                .EXAMPLE
+                    New-SqlTableWithInferredSchema -Path $Path -InferredColumns $columns -SqlConn $sqlconn -Transaction $transaction
+            #>
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+            param (
+                [Parameter(Mandatory)]
+                [string]$Path,
+                [Parameter(Mandatory)]
+                [object[]]$InferredColumns,
+                [Microsoft.Data.SqlClient.SqlConnection]$sqlconn,
+                [Microsoft.Data.SqlClient.SqlTransaction]$transaction
+            )
+
+            # Convert PowerShell array back to List<InferredColumn> for C# interop
+            # PowerShell unwraps List<T> to Object[] when passing through functions
+            $columnList = New-Object 'System.Collections.Generic.List[Dataplat.Dbatools.Csv.Reader.InferredColumn]'
+            foreach ($col in $InferredColumns) {
+                $columnList.Add($col)
+            }
+
+            $sql = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::GenerateCreateTableStatement($columnList, $table, $schema)
+
+            Write-Message -Level Debug -Message $sql
+
+            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+
+            try {
+                $null = $sqlcmd.ExecuteNonQuery()
+            } catch {
+                $errormessage = $_.Exception.Message.ToString()
+                Stop-Function -Continue -Message "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
+            }
+
+            $typeList = ($InferredColumns | ForEach-Object { "[$($_.ColumnName)] $($_.SqlDataType) $(if ($_.IsNullable) { 'NULL' } else { 'NOT NULL' })" }) -join "`n  "
+            Write-Message -Level Verbose -Message "Successfully created table $schema.$table with inferred column types:`n  $typeList"
+        }
+
+        function Get-InferredSchema {
+            <#
+                .SYNOPSIS
+                    Infers SQL Server column types from CSV file.
+
+                .DESCRIPTION
+                    Uses CsvSchemaInference to analyze CSV data and return optimal column definitions.
+            #>
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+            param (
+                [Parameter(Mandatory)]
+                [string]$Path,
+                [object]$CsvOptions,
+                [int]$SampleRows,
+                [switch]$FullScan
+            )
+
+            if ($FullScan) {
+                # Full scan with progress callback
+                [Action[double]]$progressCallback = {
+                    param($progress)
+                    $percent = [int]($progress * 100)
+                    Write-Progress -Id 2 -Activity "Analyzing column types" -Status "$percent% complete" -PercentComplete $percent
+                }
+
+                $inferredColumns = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::InferSchema($Path, $CsvOptions, $progressCallback)
+
+                Write-Progress -Id 2 -Activity "Analyzing column types" -Status "Complete" -Completed
+            } else {
+                # Sample-based inference
+                Write-Message -Level Verbose -Message "Sampling first $SampleRows rows for type inference..."
+                $inferredColumns = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::InferSchemaFromSample($Path, $CsvOptions, $SampleRows)
+            }
+
+            return $inferredColumns
+        }
+
+        function Optimize-ColumnSize {
+            <#
+                .SYNOPSIS
+                    Optimizes nvarchar(MAX) columns to appropriate sizes after import.
+
+                .DESCRIPTION
+                    Queries MAX(LEN()) for each column and ALTERs to appropriate varchar/nvarchar sizes.
+                    This is called automatically when AutoCreateTable is used without type detection.
+
+                .NOTES
+                    Requires SQL Server 2005 or higher. This is not a limitation since nvarchar(MAX)
+                    was introduced in SQL Server 2005 - the feature this optimizes cannot exist on SQL 2000.
+            #>
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+            param (
+                [Microsoft.Data.SqlClient.SqlConnection]$SqlConn,
+                [string]$Schema,
+                [string]$Table
+            )
+
+            Write-Message -Level Verbose -Message "Optimizing column sizes for $Schema.$Table..."
+
+            # Get column names and their current types from the table
+            $getColumnsSql = @"
+SELECT c.name AS ColumnName, t.name AS TypeName
+FROM sys.columns c
+INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+WHERE c.object_id = OBJECT_ID(@tableName)
+  AND t.name IN ('nvarchar', 'varchar')
+  AND c.max_length = -1
+"@
+            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($getColumnsSql, $SqlConn)
+            $null = $sqlcmd.Parameters.AddWithValue('tableName', "[$Schema].[$Table]")
+
+            $columns = @{}
+            $reader = $sqlcmd.ExecuteReader()
+            while ($reader.Read()) {
+                $columns[$reader["ColumnName"]] = $reader["TypeName"]
+            }
+            $reader.Close()
+
+            if ($columns.Count -eq 0) {
+                Write-Message -Level Verbose -Message "No nvarchar(MAX)/varchar(MAX) columns to optimize."
+                return
+            }
+
+            # Build MAX(LEN()) query for all columns
+            $columnNames = @($columns.Keys)
+            $maxLenSelects = $columnNames | ForEach-Object { "MAX(LEN([$_])) AS [$_]" }
+            $maxLenSql = "SELECT $($maxLenSelects -join ', ') FROM [$Schema].[$Table]"
+
+            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($maxLenSql, $SqlConn)
+            $reader = $sqlcmd.ExecuteReader()
+
+            $maxLengths = @{}
+            if ($reader.Read()) {
+                foreach ($col in $columnNames) {
+                    $val = $reader[$col]
+                    if ($val -is [DBNull] -or $null -eq $val) {
+                        $maxLengths[$col] = 1
+                    } else {
+                        $maxLengths[$col] = [int]$val
+                    }
+                }
+            }
+            $reader.Close()
+
+            # ALTER each column to appropriate size, preserving original type
+            foreach ($col in $columnNames) {
+                $maxLen = $maxLengths[$col]
+                if ($maxLen -eq 0) { $maxLen = 1 }
+
+                # Preserve the original column type (nvarchar stays nvarchar, varchar stays varchar)
+                # This is safer than trying to detect Unicode - no risk of data loss
+                $baseType = $columns[$col]
+                $maxAllowed = if ($baseType -eq "nvarchar") { 4000 } else { 8000 }
+
+                if ($maxLen -gt $maxAllowed) {
+                    # Keep as MAX if truly needed
+                    Write-Message -Level Verbose -Message "Column [$col] requires $baseType(MAX) - max length is $maxLen"
+                    continue
+                }
+
+                # Add padding to the length to allow for future data that may be slightly longer
+                # This prevents issues when re-importing to the same table with -Truncate
+                # Round up to common sizes: 16, 32, 64, 128, 256, 512, 1024, 2048, 4000/8000
+                $paddedLen = switch ($true) {
+                    ($maxLen -le 16) { 16; break }
+                    ($maxLen -le 32) { 32; break }
+                    ($maxLen -le 64) { 64; break }
+                    ($maxLen -le 128) { 128; break }
+                    ($maxLen -le 256) { 256; break }
+                    ($maxLen -le 512) { 512; break }
+                    ($maxLen -le 1024) { 1024; break }
+                    ($maxLen -le 2048) { 2048; break }
+                    default { $maxAllowed }
+                }
+                # Ensure we don't exceed the max allowed
+                if ($paddedLen -gt $maxAllowed) { $paddedLen = $maxAllowed }
+
+                $newType = "${baseType}($paddedLen)"
+                # SQL Server 2008 R2 and earlier require NULL/NOT NULL in ALTER COLUMN
+                # Original columns were nvarchar(MAX) NULL, so we preserve NULL
+                $alterSql = "ALTER TABLE [$Schema].[$Table] ALTER COLUMN [$col] $newType NULL"
+
+                Write-Message -Level Verbose -Message "Optimizing [$col]: nvarchar(MAX) -> $newType (max data length: $maxLen, padded to: $paddedLen)"
+
+                try {
+                    $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($alterSql, $SqlConn)
+                    $null = $sqlcmd.ExecuteNonQuery()
+                } catch {
+                    Write-Message -Level Warning -Message "Failed to optimize column [$col]: $($_.Exception.Message)"
+                }
+            }
+
+            Write-Message -Level Verbose -Message "Column size optimization complete."
+        }
 
         function ConvertTo-DotnetType {
             param (
@@ -734,6 +1009,9 @@ function Import-DbaCsv {
                     }
                 }
 
+                # Determine if we should auto-create (type detection also implies auto-create)
+                $shouldAutoCreate = $AutoCreateTable -or $useTypeDetection
+
                 # Ensure Schema exists
                 $sql = "SELECT COUNT(*) FROM sys.schemas WHERE name = @schema"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
@@ -741,7 +1019,7 @@ function Import-DbaCsv {
                 # If Schema doesn't exist create it
                 # Defaulting to dbo.
                 if (($sqlcmd.ExecuteScalar()) -eq 0) {
-                    if (-not $AutoCreateTable) {
+                    if (-not $shouldAutoCreate) {
                         Stop-Function -Continue -Message "Schema $Schema does not exist and AutoCreateTable was not specified"
                     }
                     $sql = "CREATE SCHEMA [$schema] AUTHORIZATION dbo"
@@ -771,24 +1049,82 @@ function Import-DbaCsv {
                 # we opt-in only if the table already exists but not when we create the default table (which is basic, and it's all nvarchar(max)s columns)
                 $shouldMapCorrectTypes = $false
 
+                # Store inferred columns for later use with CsvDataReader type mapping
+                $inferredColumns = $null
+
+                # Track if we created a "fat" table (nvarchar(MAX) for all columns) that needs post-import optimization
+                $createdFatTable = $false
 
                 # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
                 # new table will no longer exist.
                 if (($sqlcmd.ExecuteScalar()) -eq 0 -and ($sqlcmd2.ExecuteScalar()) -eq 0) {
-                    if (-not $AutoCreateTable) {
+                    if (-not $shouldAutoCreate) {
                         Stop-Function -Continue -Message "Table or view $table does not exist and AutoCreateTable was not specified"
                     }
                     Write-Message -Level Verbose -Message "Table does not exist"
-                    if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
-                        try {
-                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
-                        } catch {
-                            Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+
+                    if ($useTypeDetection) {
+                        # Build CsvReaderOptions for schema inference
+                        $inferOptions = New-Object Dataplat.Dbatools.Csv.Reader.CsvReaderOptions
+                        $inferOptions.HasHeaderRow = $FirstRowHeader
+                        $inferOptions.Delimiter = $Delimiter
+                        $inferOptions.Quote = $Quote
+                        $inferOptions.Escape = $Escape
+                        $inferOptions.Comment = $Comment
+                        $inferOptions.Encoding = [System.Text.Encoding]::$Encoding
+                        if ($PSBoundParameters.DateTimeFormats) {
+                            $inferOptions.DateTimeFormats = $DateTimeFormats
+                        }
+                        if ($PSBoundParameters.Culture) {
+                            $inferOptions.Culture = New-Object System.Globalization.CultureInfo($Culture)
+                        }
+
+                        # Infer schema (this happens before the import timer starts)
+                        $splatInfer = @{
+                            Path       = $file
+                            CsvOptions = $inferOptions
+                        }
+
+                        if ($DetectColumnTypes) {
+                            # Full scan - guarantees zero risk
+                            $splatInfer.FullScan = $true
+                            Write-Message -Level Verbose -Message "Performing full file scan for type detection (zero risk)..."
+                        } else {
+                            # Sample-based
+                            $splatInfer.SampleRows = $SampleRows
+                            Write-Message -Level Verbose -Message "Sampling $SampleRows rows for type detection..."
+                        }
+
+                        $inferredColumns = Get-InferredSchema @splatInfer
+
+                        if ($PSCmdlet.ShouldProcess($instance, "Creating table $table with inferred column types")) {
+                            try {
+                                New-SqlTableWithInferredSchema -Path $file -InferredColumns $inferredColumns -SqlConn $sqlconn -Transaction $transaction
+                                # With inferred types, we want to use type conversion during import
+                                $shouldMapCorrectTypes = $true
+                            } catch {
+                                Stop-Function -Continue -Message "Failure creating table with inferred types" -ErrorRecord $_
+                            }
+                        }
+                    } else {
+                        # Original behavior - nvarchar(MAX) for all columns, then optimize after import
+                        if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
+                            try {
+                                New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                                $createdFatTable = $true
+                            } catch {
+                                Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                            }
                         }
                     }
                 } else {
                     $shouldMapCorrectTypes = $true
                     Write-Message -Level Verbose -Message "Table exists"
+                }
+
+                # Reset the elapsed timer if we did type detection, so output reflects import time only
+                if ($useTypeDetection -and $inferredColumns) {
+                    $elapsed.Restart()
                 }
 
                 # Truncate if specified. Remember, this will occur within a transaction, so if the script fails, the
@@ -845,8 +1181,14 @@ function Import-DbaCsv {
                                 try {
                                     $ColumnMap = @{ }
                                     $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
+                                    $isFirst = $true
                                     $firstline -split "$Delimiter", 0, "SimpleMatch" | ForEach-Object {
                                         $trimmed = $PSItem.Trim('"')
+                                        # Remove UTF-8 BOM from first column if present (U+FEFF)
+                                        if ($isFirst) {
+                                            $trimmed = $trimmed.TrimStart([char]0xFEFF)
+                                            $isFirst = $false
+                                        }
                                         Write-Message -Level Verbose -Message "Adding $trimmed to ColumnMap"
                                         $ColumnMap.Add($trimmed, $trimmed)
                                     }
@@ -1043,11 +1385,27 @@ function Import-DbaCsv {
                                     $null = $transaction.Commit()
                                 } catch {
                                 }
+
+                                # Optimize column sizes after commit if we created a fat table
+                                if ($createdFatTable) {
+                                    try {
+                                        Optimize-ColumnSize -SqlConn $sqlconn -Schema $schema -Table $table
+                                    } catch {
+                                        Write-Message -Level Warning -Message "Column size optimization failed: $($_.Exception.Message)"
+                                    }
+                                }
                             } else {
                                 try {
                                     $null = $transaction.Rollback()
                                 } catch {
                                 }
+                            }
+                        } elseif ($completed -and $createdFatTable) {
+                            # NoTransaction mode - still optimize if we created a fat table
+                            try {
+                                Optimize-ColumnSize -SqlConn $sqlconn -Schema $schema -Table $table
+                            } catch {
+                                Write-Message -Level Warning -Message "Column size optimization failed: $($_.Exception.Message)"
                             }
                         }
 
