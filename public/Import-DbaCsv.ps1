@@ -743,9 +743,9 @@ function Import-DbaCsv {
 
             Write-Message -Level Verbose -Message "Optimizing column sizes for $Schema.$Table..."
 
-            # Get column names from the table
+            # Get column names and their current types from the table
             $getColumnsSql = @"
-SELECT c.name AS ColumnName
+SELECT c.name AS ColumnName, t.name AS TypeName
 FROM sys.columns c
 INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
 WHERE c.object_id = OBJECT_ID(@tableName)
@@ -755,10 +755,10 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($getColumnsSql, $SqlConn)
             $null = $sqlcmd.Parameters.AddWithValue('tableName', "[$Schema].[$Table]")
 
-            $columns = @()
+            $columns = @{}
             $reader = $sqlcmd.ExecuteReader()
             while ($reader.Read()) {
-                $columns += $reader["ColumnName"]
+                $columns[$reader["ColumnName"]] = $reader["TypeName"]
             }
             $reader.Close()
 
@@ -768,7 +768,8 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             }
 
             # Build MAX(LEN()) query for all columns
-            $maxLenSelects = $columns | ForEach-Object { "MAX(LEN([$_])) AS [$_]" }
+            $columnNames = @($columns.Keys)
+            $maxLenSelects = $columnNames | ForEach-Object { "MAX(LEN([$_])) AS [$_]" }
             $maxLenSql = "SELECT $($maxLenSelects -join ', ') FROM [$Schema].[$Table]"
 
             $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($maxLenSql, $SqlConn)
@@ -776,7 +777,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
 
             $maxLengths = @{}
             if ($reader.Read()) {
-                foreach ($col in $columns) {
+                foreach ($col in $columnNames) {
                     $val = $reader[$col]
                     if ($val -is [DBNull] -or $null -eq $val) {
                         $maxLengths[$col] = 1
@@ -787,20 +788,15 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             }
             $reader.Close()
 
-            # ALTER each column to appropriate size
-            foreach ($col in $columns) {
+            # ALTER each column to appropriate size, preserving original type
+            foreach ($col in $columnNames) {
                 $maxLen = $maxLengths[$col]
                 if ($maxLen -eq 0) { $maxLen = 1 }
 
-                # Check if it needs nvarchar (unicode) or varchar
-                # Detect Unicode by checking if round-tripping through VARCHAR loses data
-                # If CAST(CAST(col AS VARCHAR) AS NVARCHAR) <> col, then Unicode chars would be lost
-                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE CAST(CAST([$col] AS VARCHAR(MAX)) AS NVARCHAR(MAX)) <> [$col] AND [$col] IS NOT NULL"
-                $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($checkUnicodeSql, $SqlConn)
-                $hasUnicode = $null -ne $sqlcmd.ExecuteScalar()
-
-                $baseType = if ($hasUnicode) { "nvarchar" } else { "varchar" }
-                $maxAllowed = if ($hasUnicode) { 4000 } else { 8000 }
+                # Preserve the original column type (nvarchar stays nvarchar, varchar stays varchar)
+                # This is safer than trying to detect Unicode - no risk of data loss
+                $baseType = $columns[$col]
+                $maxAllowed = if ($baseType -eq "nvarchar") { 4000 } else { 8000 }
 
                 if ($maxLen -gt $maxAllowed) {
                     # Keep as MAX if truly needed

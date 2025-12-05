@@ -652,7 +652,7 @@ XYZ,Another medium,Another longer piece of text for testing purposes here
             Remove-Item $filePath -ErrorAction SilentlyContinue
         }
 
-        It "detects and uses varchar for ASCII-only data" {
+        It "preserves nvarchar type while optimizing size" {
             $filePath = "$($TestConfig.Temp)\ascii-$(Get-Random).csv"
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
             $tableName = "AsciiTest$(Get-Random)"
@@ -669,11 +669,13 @@ Jane Doe,XYZ789
 
             $result.RowsCopied | Should -Be 2
 
-            # Should be varchar (not nvarchar) since data is ASCII-only
+            # AutoCreateTable creates nvarchar(MAX), optimization preserves type but optimizes size
+            # Use SampleRows or DetectColumnTypes for proper varchar/nvarchar inference
             $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
             $nameCol = $columns | Where-Object Name -eq "Name"
 
-            $nameCol.DataType.Name | Should -Be "varchar"
+            $nameCol.DataType.Name | Should -Be "nvarchar"
+            $nameCol.DataType.MaximumLength | Should -Not -Be -1  # Optimized, not MAX
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
