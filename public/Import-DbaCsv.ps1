@@ -65,7 +65,10 @@ function Import-DbaCsv {
 
     .PARAMETER AutoCreateTable
         Creates the destination table automatically if it doesn't exist, using nvarchar(max) for all columns.
-        Convenient for quick imports or testing, but for production use, create tables manually with appropriate data types, indexes, and constraints.
+        After import, column sizes are automatically optimized based on actual data lengths (nvarchar(MAX) -> nvarchar(16/32/64/etc.)).
+
+        For proper type inference (int, decimal, datetime2, varchar vs nvarchar), use -SampleRows or -DetectColumnTypes instead.
+        For production use with specific constraints, create tables manually with appropriate data types, indexes, and constraints.
 
     .PARAMETER Truncate
         Removes all existing data from the destination table before importing. The truncate operation is part of the transaction.
@@ -232,7 +235,8 @@ function Import-DbaCsv {
 
         Example: -SampleRows 10000 samples the first 10,000 rows to determine types like
         int, bigint, decimal(p,s), datetime2, bit, uniqueidentifier, or varchar(n)/nvarchar(n)
-        with appropriate lengths.
+        with appropriate lengths. Unlike plain -AutoCreateTable, this can infer varchar for
+        ASCII-only string data, saving storage space.
 
     .PARAMETER DetectColumnTypes
         Enables smart type detection by scanning the entire CSV file before import.
@@ -246,7 +250,8 @@ function Import-DbaCsv {
         Implies -AutoCreateTable behavior for type detection.
 
         Detected types include: int, bigint, decimal(p,s), datetime2, bit,
-        uniqueidentifier, varchar(n), and nvarchar(n) when Unicode is detected.
+        uniqueidentifier, varchar(n) for ASCII-only strings, and nvarchar(n) when Unicode is detected.
+        This provides optimal storage by using varchar where possible.
 
     .PARAMETER Parallel
         Enables parallel processing for improved performance on large files.
@@ -478,8 +483,9 @@ function Import-DbaCsv {
         PS C:\> Import-DbaCsv -Path C:\temp\quickload.csv -SqlInstance sql001 -Database tempdb -Table QuickData -AutoCreateTable
 
         Imports quickload.csv with AutoCreateTable. After import completes, column sizes are automatically
-        optimized by querying actual max lengths and altering columns from nvarchar(MAX) to appropriate sizes.
-        This "just works" approach imports first, then optimizes - no risk of import failures.
+        optimized by querying actual max lengths and altering columns from nvarchar(MAX) to padded sizes
+        like nvarchar(16), nvarchar(32), nvarchar(64), etc. The nvarchar type is preserved to avoid any
+        risk of data loss from Unicode conversion. For ASCII->varchar conversion, use -SampleRows or -DetectColumnTypes.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
