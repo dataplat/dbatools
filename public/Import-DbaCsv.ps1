@@ -793,9 +793,9 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 if ($maxLen -eq 0) { $maxLen = 1 }
 
                 # Check if it needs nvarchar (unicode) or varchar
-                # Detect Unicode by checking if converting to VARCHAR introduces ? characters that weren't there before
-                # This happens when Unicode chars can't be represented in the server's default code page
-                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE CHARINDEX(N'?', CAST([$col] AS VARCHAR(MAX))) > 0 AND CHARINDEX(N'?', [$col]) = 0 AND [$col] IS NOT NULL"
+                # Detect Unicode by checking if round-tripping through VARCHAR loses data
+                # If CAST(CAST(col AS VARCHAR) AS NVARCHAR) <> col, then Unicode chars would be lost
+                $checkUnicodeSql = "SELECT TOP 1 1 FROM [$Schema].[$Table] WHERE CAST(CAST([$col] AS VARCHAR(MAX)) AS NVARCHAR(MAX)) <> [$col] AND [$col] IS NOT NULL"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($checkUnicodeSql, $SqlConn)
                 $hasUnicode = $null -ne $sqlcmd.ExecuteScalar()
 
