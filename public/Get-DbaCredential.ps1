@@ -95,19 +95,19 @@ function Get-DbaCredential {
             $creds = $server.Credentials
 
             if ($Credential) {
-                $creds = $creds | Where-Object { $Credential -contains $_.Name }
+                $creds = $creds | Where-Object { $_.Name.Contains($Credential) }
             }
 
             if ($ExcludeCredential) {
-                $creds = $creds | Where-Object { $ExcludeCredential -notcontains $_.Name }
+                $creds = $creds | Where-Object { $_.Name.NotContains($ExcludeCredential) }
             }
 
             if ($Identity) {
-                $creds = $creds | Where-Object { $Identity -contains $_.Identity }
+                $creds = $creds | Where-Object {$_.Identity.Contains($Identity) }
             }
 
             if ($ExcludeIdentity) {
-                $creds = $creds | Where-Object { $ExcludeIdentity -notcontains $_.Identity }
+                $creds = $creds | Where-Object { $_.Identity.NotContains($ExcludeIdentity) }
             }
 
             foreach ($currentcredential in $creds) {
