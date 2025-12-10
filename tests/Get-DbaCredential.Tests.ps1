@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $logins = "thor", "thorsmomma"
+        $logins = "thor", "thorsmomma", "wildcardcred"
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
