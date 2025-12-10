@@ -66,6 +66,10 @@ function Get-DbaCredential {
 
         Returns the SQL Credentials for the account 'ad\powershell' on the local and sql2016 SQL Server instances
 
+    .EXAMPLE
+        PS C:\> Get-DbaCredential -SqlInstance localhost, sql2016 -Identity "wild"
+
+        Returns the SQL Credentials where the phrase "wild" is contained in the identity on the local and sql2016 SQL Server instances
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
@@ -95,19 +99,19 @@ function Get-DbaCredential {
             $creds = $server.Credentials
 
             if ($Credential) {
-                $creds = $creds | Where-Object { $_.Name.Contains($Credential) }
+                $creds = $creds | Where-Object { $_.Name -match $Credential }
             }
 
             if ($ExcludeCredential) {
-                $creds = $creds | Where-Object { $_.Name.NotContains($ExcludeCredential) }
+                $creds = $creds | Where-Object { $_.Name -notmatch $ExcludeCredential }
             }
 
             if ($Identity) {
-                $creds = $creds | Where-Object {$_.Identity.Contains($Identity) }
+                $creds = $creds | Where-Object {$_.Identity -match $Identity }
             }
 
             if ($ExcludeIdentity) {
-                $creds = $creds | Where-Object { $_.Identity.NotContains($ExcludeIdentity) }
+                $creds = $creds | Where-Object { $_.Identity -notmatch $ExcludeIdentity }
             }
 
             foreach ($currentcredential in $creds) {
