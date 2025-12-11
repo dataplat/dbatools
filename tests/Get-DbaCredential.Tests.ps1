@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $logins = "thor", "thorsmomma", "wildcardcred"
+        $logins = "thor", "thorsmomma"
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
@@ -53,13 +53,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = New-DbaCredential @splatThorsmormmaCred
 
-        $splatWildcardCred = @{
-            SqlInstance = $TestConfig.instance2
-            Identity    = "wildcardcred"
-            Password    = $password
-        }
-        $null = New-DbaCredential @splatWildcardCred
-
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -70,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         try {
             $splatGetCred = @{
                 SqlInstance   = $TestConfig.instance2
-                Identity      = "thor", "thorsmomma", "wildcardcred"
+                Identity      = "thor", "thorsmomma"
                 ErrorAction   = "Stop"
                 WarningAction = "SilentlyContinue"
             }
@@ -96,22 +89,22 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Identity | Should -Be "thorsmomma"
         }
         It "Should get just one credential when using a wildcard in Identity" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity "card"
-            $results.Name | Should -Be "wildcardcred"
-            $results.Identity | Should -Be "wildcardcred"
+            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity "momma"
+            $results.Name | Should -Be "thorsmomma"
+            $results.Identity | Should -Be "thorsmomma"
         }
         It "Should get two credentials when excluding the wildcardcred in ExcludeIdentity" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -ExcludeIdentity "card"
-            $results.Name | Should -Be @("thorcred", "thorsmomma")
-            $results.Identity | Should -Be @("thor", "thorsmomma")
+            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -ExcludeIdentity "momma"
+            $results.Name | Should -Be "thorcred"
+            $results.Identity | Should -Be "thor"
         }
         It "gets more than one credential" {
             $splatMultipleCreds = @{
                 SqlInstance = $TestConfig.instance2
-                Identity    = "thor", "thorsmomma", "wildcardcred"
+                Identity    = "thor", "thorsmomma"
             }
             $results = Get-DbaCredential @splatMultipleCreds
-            $results.Count | Should -BeGreaterThan 2
+            $results.Count | Should -BeGreaterThan 1
         }
     }
 }
