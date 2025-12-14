@@ -196,6 +196,7 @@ Describe $CommandName -Tag IntegrationTests {
             $MissingPath = "$DestBackupDir\Missing1\Awol2"
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $MissingPathTrailing -BuildPath -WarningAction SilentlyContinue
             $results.BackupFolder | Should -Be "$MissingPath"
+            $results.Path | Should -Not -BeLike "*\\*"
         }
     }
 
@@ -302,14 +303,10 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("Backup-DbaDatabase:Path")
             $defaultBackupPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance1).Backup
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName "PesterTest.bak"
-            $targetPath = $results.FullName
-            if (-not ([DbaInstanceParameter]($TestConfig.instance1)).IsLocalHost -and $defaultBackupPath.Substring(1, 1) -eq ':') {
-                $targetPath = $targetPath -replace '^(.):(.*)$', "\\$(([DbaInstanceParameter]($TestConfig.instance1)).ComputerName)\`$1`$$`$2"
-            }
         }
 
         AfterAll {
-            Get-ChildItem -Path $targetPath | Remove-Item -ErrorAction SilentlyContinue
+            Get-ChildItem -Path $results.FullName | Remove-Item -ErrorAction SilentlyContinue
             $PSDefaultParameterValues["Backup-DbaDatabase:Path"] = $DestBackupDir
         }
 
@@ -318,7 +315,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have backed up to the path with the corrrect name" {
-            Test-Path $targetPath | Should -BeTrue
+            Test-Path "$defaultBackupPath\PesterTest.bak" | Should -BeTrue
         }
     }
 
@@ -448,11 +445,7 @@ go
 
         It "Should compress an encrypted db" {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database encrypted -Compress
-            if ($results.FullName -like '\\*') {
-                Remove-Item -Path $results.FullName
-            } else {
-                Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $results.FullName
-            }
+            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $results.FullName
             $results.script | Should -BeLike "*D, COMPRESSION,*"
         }
     }
@@ -489,11 +482,7 @@ go
             $securePass = ConvertTo-SecureString "MyStrongPassword123!" -AsPlainText -Force
             $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master -Name BackupCertt -Subject BackupCertt
             $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName "encryptiontest.bak" -Description "Encrypted backup"
-            if ($encBackupResults.FullName -like '\\*') {
-                Remove-Item -Path $encBackupResults.FullName
-            } else {
-                Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $encBackupResults.FullName
-            }
+            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $encBackupResults.FullName
         }
 
         AfterAll {
@@ -501,7 +490,7 @@ go
         }
 
         It "Should encrypt the backup" {
-            $encBackupResults.EncryptorType | Should -BeLike "CERTIFICATE*"  # 2025 returns: CERTIFICATE_OAEP_256
+            $encBackupResults.EncryptorType | Should -Be "CERTIFICATE"
             $encBackupResults.KeyAlgorithm | Should -Be "aes_128"
         }
     }
