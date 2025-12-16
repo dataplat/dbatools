@@ -88,16 +88,6 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "thorsmomma"
             $results.Identity | Should -Be "thorsmomma"
         }
-        It "Should get just one credential when using a wildcard in Identity" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity "momma"
-            $results.Name | Should -Be "thorsmomma"
-            $results.Identity | Should -Be "thorsmomma"
-        }
-        It "Should get two credentials when excluding the wildcardcred in ExcludeIdentity" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -ExcludeIdentity "momma"
-            $results.Name | Should -Be "thorcred"
-            $results.Identity | Should -Be "thor"
-        }
         It "gets more than one credential" {
             $splatMultipleCreds = @{
                 SqlInstance = $TestConfig.instance2
