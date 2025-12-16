@@ -456,6 +456,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
         'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'Connect-DbaInstance',
         'Get-DbaDbBackupHistory',

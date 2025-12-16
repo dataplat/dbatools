@@ -84,6 +84,7 @@
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
         'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'Connect-DbaInstance',
         'ConvertTo-DbaDataTable',
