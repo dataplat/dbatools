@@ -23,8 +23,8 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Verifying command works" {
         It "returns a result with the right computername and name is not null" {
-            $results = Get-DbaFeature | Select-Object -First 1
-            $results.ComputerName | Should -Be $env:COMPUTERNAME
+            $results = Get-DbaFeature -ComputerName $TestConfig.instance1 | Select-Object -First 1
+            $results.ComputerName | Should -Be ([DbaInstanceParameter]($TestConfig.instance1)).ComputerName
         }
     }
 }
