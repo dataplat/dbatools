@@ -290,7 +290,7 @@ function Expand-DbaDbLogFile {
                                 }
 
                             }
-                            while (!$match -or ([string]::IsNullOrEmpty($DrivePath)))
+                            while (!$match -and (-not [string]::IsNullOrEmpty($DrivePath)) -and ($DrivePath -ne "\"))
 
                             Write-Message -Level Verbose -Message "Total TLog Free Disk Space in MB: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))"
 
@@ -300,17 +300,12 @@ function Expand-DbaDbLogFile {
                         }
 
                         if (($TotalTLogFreeDiskSpaceKB -le 0) -or ([string]::IsNullOrEmpty($TotalTLogFreeDiskSpaceKB))) {
-                            $title = "Choose increment value for database '$dbName':"
-                            $message = "Cannot validate freespace on drive where the log file resides. Do you wish to continue? (Y/N)"
-                            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
-                            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
-                            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-                            $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-                            #no
-                            if ($result -eq 1) {
-                                Write-Message -Level Warning -Message "You have cancelled the execution"
+                            $message = "Cannot validate freespace on drive where the log file resides for database '$dbName'. Continuing without disk space validation."
+                            if (-not $PSCmdlet.ShouldProcess($server.name, $message)) {
+                                Write-Message -Level Warning -Message "Operation cancelled by user"
                                 return
                             }
+                            Write-Message -Level Warning -Message $message
                         } elseif ($requiredSpace -gt $TotalTLogFreeDiskSpaceKB) {
                             Write-Message -Level Verbose -Message "There is not enough space on volume to perform this task. `r`n" `
                                 "Available space: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))MB;`r`n" `
