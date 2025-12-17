@@ -317,16 +317,18 @@ function Find-DbaInstance {
 
                     # $ports required for all scans
                     Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Testing TCP ports"
-                    $ports = $TCPPort | Test-TcpPort -ComputerName $computer
 
                     if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
                         try {
                             Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Probing Browser service"
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
+                            $ports = $browseResult.TCPPort | Test-TcpPort -ComputerName $computer
                         } catch {
                             # here to avoid an empty catch
                             $null = 1
                         }
+                    } else {
+                        $ports = $TCPPort | Test-TcpPort -ComputerName $computer
                     }
 
                     if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
