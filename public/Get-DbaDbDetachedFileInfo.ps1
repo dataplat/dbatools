@@ -92,6 +92,7 @@ function Get-DbaDbDetachedFileInfo {
 
             # Source: https://sqlserverbuilds.blogspot.com/2014/01/sql-server-internal-database-versions.html
             switch ($exactdbversion) {
+                998 { $dbversion = "SQL Server 2025" }
                 957 { $dbversion = "SQL Server 2022" }
                 904 { $dbversion = "SQL Server 2019" }
                 869 { $dbversion = "SQL Server 2017" }
