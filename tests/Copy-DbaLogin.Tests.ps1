@@ -139,8 +139,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "ExcludeSystemLogins Parameter" {
         It "Should say skipped" {
             $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -ExcludeSystemLogins
-            $results.Status.Contains('Skipped') | Should -Be $true
-            $results.Notes.Contains('System login') | Should -Be $true
+            $results.Status | Should -Contain 'Skipped'
+            if (([DbaInstanceParameter]$TestConfig.instance1).ComputerName -ne ([DbaInstanceParameter]$TestConfig.instance2).ComputerName) {
+                $results.Notes | Should -Contain 'Local machine name'
+            } else {
+                $results.Notes | Should -Contain 'System login'
+            }
         }
     }
 
