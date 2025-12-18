@@ -39,21 +39,21 @@ function Copy-DbaCredential {
         This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
 
     .PARAMETER Name
-        Specifies the credential names to copy from the source server. Supports wildcards for pattern matching.
+        Specifies the credential names to copy from the source server. Does not supports wildcards for pattern matching.
         Use this when you only need to migrate specific credentials instead of all credentials on the server.
         Note: if spaces exist in the credential name, you will have to type "" or '' around it.
 
     .PARAMETER ExcludeName
-        Specifies credential names to exclude from the copy operation. Supports wildcards for pattern matching.
+        Specifies credential names to exclude from the copy operation. Does not support wildcards for pattern matching.
         Use this when you want to copy most credentials but skip specific ones like test accounts or deprecated credentials.
 
     .PARAMETER Identity
-        Specifies the credential identities (user accounts) to copy from the source server. Supports wildcards for pattern matching.
+        Specifies the credential identities (user accounts) to copy from the source server. Does not support wildcards for pattern matching.
         Use this when you need to migrate credentials for specific service accounts or domain users rather than filtering by credential name.
         Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
 
     .PARAMETER ExcludeIdentity
-        Specifies credential identities (user accounts) to exclude from the copy operation. Supports wildcards for pattern matching.
+        Specifies credential identities (user accounts) to exclude from the copy operation. Does not support wildcards for pattern matching.
         Use this when you want to copy most credentials but skip those associated with specific service accounts or domain users.
 
     .PARAMETER Force
