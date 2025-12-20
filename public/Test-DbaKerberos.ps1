@@ -599,14 +599,31 @@ function Test-DbaKerberos {
                         Write-Message -Level Verbose -Message "Verifying SQL Server service account"
                         $serviceAccount = $server.ServiceAccount
 
-                        if ($serviceAccount -like "NT SERVICE\*" -or $serviceAccount -eq "LocalSystem" -or $serviceAccount -eq "NetworkService") {
-                            $status = "Warning"
-                            $details = "SQL Server running as $serviceAccount. Kerberos requires domain account."
-                            $remediation = "Configure SQL Server to run under domain service account for Kerberos authentication"
-                        } else {
+                        if ($serviceAccount -like "*\*$") {
+                            # gMSA or computer account (ends with $)
                             $status = "Pass"
-                            $details = "SQL Server running as domain account: $serviceAccount"
+                            $details = "SQL Server running as managed service account or computer account: $serviceAccount (supports Kerberos)"
                             $remediation = "None"
+                        } elseif ($serviceAccount -eq "LocalSystem" -or $serviceAccount -eq "NetworkService") {
+                            # LocalSystem or NetworkService - uses computer account for network auth
+                            $status = "Pass"
+                            $details = "SQL Server running as $serviceAccount. Uses computer account for Kerberos (works for single instance setups)"
+                            $remediation = "Consider using gMSA or dedicated domain service account for best practice, especially with multiple instances"
+                        } elseif ($serviceAccount -like "NT SERVICE\*") {
+                            # Virtual account - uses computer account for network auth
+                            $status = "Pass"
+                            $details = "SQL Server running as virtual account $serviceAccount. Uses computer account for Kerberos (works for single instance setups)"
+                            $remediation = "Consider using gMSA or dedicated domain service account for best practice, especially with multiple instances"
+                        } elseif ($serviceAccount -match "^[^\\]+\\[^\\]+$" -and $serviceAccount -notlike "*\*$") {
+                            # Domain account (has backslash, no $ at end)
+                            $status = "Pass"
+                            $details = "SQL Server running as domain service account: $serviceAccount (supports Kerberos)"
+                            $remediation = "None"
+                        } else {
+                            # Local account or unrecognized format
+                            $status = "Fail"
+                            $details = "SQL Server running as local account: $serviceAccount. Kerberos requires domain-joined identity (gMSA, domain account, or computer account)"
+                            $remediation = "Change service account to gMSA (best practice), domain service account, or built-in account (LocalSystem/NetworkService/NT SERVICE)"
                         }
 
                         $null = $checkResults.Add([PSCustomObject]@{
@@ -626,7 +643,7 @@ function Test-DbaKerberos {
                                 Category     = "Service Account"
                                 Status       = "Warning"
                                 Details      = "Unable to verify service account: $($_.Exception.Message)"
-                                Remediation  = "Manually verify SQL Server is running under domain account"
+                                Remediation  = "Manually verify SQL Server service account supports Kerberos (gMSA, domain account, or computer account)"
                             })
                     }
                 }
@@ -1168,22 +1185,37 @@ function Test-DbaKerberos {
                         Write-Message -Level Verbose -Message "Validating SQL Server service account configuration"
                         $serviceAccount = $server.ServiceAccount
 
-                        if ($serviceAccount -eq "LocalSystem") {
-                            $status = "Fail"
-                            $details = "SQL Server running as LocalSystem cannot use Kerberos"
-                            $remediation = "Change service account to domain account using SQL Server Configuration Manager"
-                        } elseif ($serviceAccount -like "NT SERVICE\*") {
-                            $status = "Warning"
-                            $details = "SQL Server running as virtual account $serviceAccount"
-                            $remediation = "Consider using domain account for Kerberos authentication"
-                        } elseif ($serviceAccount -eq "NetworkService") {
-                            $status = "Warning"
-                            $details = "SQL Server running as NetworkService uses computer account for Kerberos"
-                            $remediation = "Consider using dedicated domain service account"
-                        } else {
+                        if ($serviceAccount -like "*\*$") {
+                            # gMSA or computer account (ends with $)
+                            if ($serviceAccount -like "*gMSA*" -or $serviceAccount -match "^\w+\\\w+\$$") {
+                                $status = "Pass"
+                                $details = "SQL Server using gMSA or managed service account: $serviceAccount (best practice for Kerberos)"
+                                $remediation = "None"
+                            } else {
+                                $status = "Pass"
+                                $details = "SQL Server using computer account: $serviceAccount (supports Kerberos)"
+                                $remediation = "None"
+                            }
+                        } elseif ($serviceAccount -eq "LocalSystem" -or $serviceAccount -eq "NetworkService") {
+                            # LocalSystem or NetworkService - uses computer account
                             $status = "Pass"
-                            $details = "SQL Server using domain service account: $serviceAccount"
+                            $details = "SQL Server running as $serviceAccount (uses computer account for Kerberos)"
+                            $remediation = "For best practice, consider gMSA or dedicated domain service account, especially in multi-instance or clustered environments"
+                        } elseif ($serviceAccount -like "NT SERVICE\*") {
+                            # Virtual account - uses computer account
+                            $status = "Pass"
+                            $details = "SQL Server running as virtual account $serviceAccount (uses computer account for Kerberos)"
+                            $remediation = "For best practice, consider gMSA or dedicated domain service account, especially in multi-instance or clustered environments"
+                        } elseif ($serviceAccount -match "^[^\\]+\\[^\\]+$" -and $serviceAccount -notlike "*\*$") {
+                            # Domain account (has backslash, no $ at end)
+                            $status = "Pass"
+                            $details = "SQL Server using domain service account: $serviceAccount (supports Kerberos)"
                             $remediation = "None"
+                        } else {
+                            # Local account or unrecognized format
+                            $status = "Fail"
+                            $details = "SQL Server running as local account: $serviceAccount (does not support Kerberos)"
+                            $remediation = "Change service account to gMSA (best practice), domain service account, or built-in account (LocalSystem/NetworkService/NT SERVICE) using SQL Server Configuration Manager"
                         }
 
                         $null = $checkResults.Add([PSCustomObject]@{
@@ -1203,7 +1235,7 @@ function Test-DbaKerberos {
                                 Category     = "SQL Configuration"
                                 Status       = "Warning"
                                 Details      = "Unable to verify service account: $($_.Exception.Message)"
-                                Remediation  = "Manually verify service account in SQL Server Configuration Manager"
+                                Remediation  = "Manually verify service account supports Kerberos in SQL Server Configuration Manager"
                             })
                     }
                 }
