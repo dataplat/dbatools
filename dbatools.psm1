@@ -413,6 +413,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Copy-DbaStartupProcedure',
         'Get-DbaDbDetachedFileInfo',
         'Copy-DbaAgentJobCategory',
+        'Copy-DbaAgentJobStep',
         'Get-DbaLinkedServerLogin',
         'Test-DbaPath',
         'Export-DbaLogin',
