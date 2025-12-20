@@ -155,7 +155,6 @@ function Compare-DbaAgReplicaSync {
 
                     foreach ($loginName in $allLoginNames) {
                         $loginConfigs = @{}
-                        $differences = New-Object System.Collections.ArrayList
 
                         # Collect login configurations from all replicas
                         foreach ($replicaInstance in $replicaInstances) {
@@ -167,14 +166,14 @@ function Compare-DbaAgReplicaSync {
                             } else {
                                 # Build comprehensive login configuration
                                 $config = @{
-                                    IsDisabled               = $login.IsDisabled
-                                    DenyWindowsLogin         = $login.DenyWindowsLogin
-                                    DefaultDatabase          = $login.DefaultDatabase
-                                    Language                 = $login.Language
-                                    LoginType                = $login.LoginType
+                                    IsDisabled                = $login.IsDisabled
+                                    DenyWindowsLogin          = $login.DenyWindowsLogin
+                                    DefaultDatabase           = $login.DefaultDatabase
+                                    Language                  = $login.Language
+                                    LoginType                 = $login.LoginType
                                     PasswordExpirationEnabled = $null
-                                    PasswordPolicyEnforced   = $null
-                                    ServerRoles              = @()
+                                    PasswordPolicyEnforced    = $null
+                                    ServerRoles               = @()
                                 }
 
                                 # SQL Login specific properties
@@ -212,15 +211,15 @@ function Compare-DbaAgReplicaSync {
                             $config = $loginConfigs[$replicaInstance]
 
                             if ($null -eq $config) {
-                                # Login is missing
-                                $null = $differences.Add([PSCustomObject]@{
-                                        AvailabilityGroup    = $ag.Name
-                                        Replica              = $replicaInstance
-                                        ObjectType           = "Login"
-                                        ObjectName           = $loginName
-                                        Status               = "Missing"
-                                        PropertyDifferences  = $null
-                                    })
+                                # Login is missing - output directly
+                                [PSCustomObject]@{
+                                    AvailabilityGroup   = $ag.Name
+                                    Replica             = $replicaInstance
+                                    ObjectType          = "Login"
+                                    ObjectName          = $loginName
+                                    Status              = "Missing"
+                                    PropertyDifferences = $null
+                                }
                             } elseif ($null -ne $baseConfig) {
                                 # Compare properties
                                 $propertyDiffs = New-Object System.Collections.ArrayList
@@ -260,22 +259,15 @@ function Compare-DbaAgReplicaSync {
                                 }
 
                                 if ($propertyDiffs.Count -gt 0) {
-                                    $null = $differences.Add([PSCustomObject]@{
-                                            AvailabilityGroup   = $ag.Name
-                                            Replica             = $replicaInstance
-                                            ObjectType          = "Login"
-                                            ObjectName          = $loginName
-                                            Status              = "Different"
-                                            PropertyDifferences = ($propertyDiffs -join "; ")
-                                        })
+                                    [PSCustomObject]@{
+                                        AvailabilityGroup   = $ag.Name
+                                        Replica             = $replicaInstance
+                                        ObjectType          = "Login"
+                                        ObjectName          = $loginName
+                                        Status              = "Different"
+                                        PropertyDifferences = ($propertyDiffs -join "; ")
+                                    }
                                 }
-                            }
-                        }
-
-                        # Output differences
-                        if ($differences.Count -gt 0) {
-                            foreach ($diff in $differences) {
-                                $diff
                             }
                         }
                     }
@@ -307,27 +299,16 @@ function Compare-DbaAgReplicaSync {
                     }
 
                     foreach ($jobName in $allJobNames) {
-                        $differences = New-Object System.Collections.ArrayList
-
                         foreach ($replicaInstance in $replicaInstances) {
                             $job = $jobsByReplica[$replicaInstance] | Where-Object Name -eq $jobName
 
                             if (-not $job) {
-                                $null = $differences.Add([PSCustomObject]@{
-                                        AvailabilityGroup = $ag.Name
-                                        Replica           = $replicaInstance
-                                        ObjectType        = "AgentJob"
-                                        ObjectName        = $jobName
-                                        Status            = "Missing"
-                                    })
-                            }
-                        }
-
-                        if ($differences.Count -gt 0) {
-                            $hasMissing = $differences | Where-Object Status -eq "Missing"
-                            if ($hasMissing) {
-                                foreach ($diff in $differences) {
-                                    $diff
+                                [PSCustomObject]@{
+                                    AvailabilityGroup = $ag.Name
+                                    Replica           = $replicaInstance
+                                    ObjectType        = "AgentJob"
+                                    ObjectName        = $jobName
+                                    Status            = "Missing"
                                 }
                             }
                         }
@@ -360,27 +341,16 @@ function Compare-DbaAgReplicaSync {
                     }
 
                     foreach ($credentialName in $allCredentialNames) {
-                        $differences = New-Object System.Collections.ArrayList
-
                         foreach ($replicaInstance in $replicaInstances) {
                             $credential = $credentialsByReplica[$replicaInstance] | Where-Object Name -eq $credentialName
 
                             if (-not $credential) {
-                                $null = $differences.Add([PSCustomObject]@{
-                                        AvailabilityGroup = $ag.Name
-                                        Replica           = $replicaInstance
-                                        ObjectType        = "Credential"
-                                        ObjectName        = $credentialName
-                                        Status            = "Missing"
-                                    })
-                            }
-                        }
-
-                        if ($differences.Count -gt 0) {
-                            $hasMissing = $differences | Where-Object Status -eq "Missing"
-                            if ($hasMissing) {
-                                foreach ($diff in $differences) {
-                                    $diff
+                                [PSCustomObject]@{
+                                    AvailabilityGroup = $ag.Name
+                                    Replica           = $replicaInstance
+                                    ObjectType        = "Credential"
+                                    ObjectName        = $credentialName
+                                    Status            = "Missing"
                                 }
                             }
                         }
@@ -413,27 +383,16 @@ function Compare-DbaAgReplicaSync {
                     }
 
                     foreach ($linkedServerName in $allLinkedServerNames) {
-                        $differences = New-Object System.Collections.ArrayList
-
                         foreach ($replicaInstance in $replicaInstances) {
                             $linkedServer = $linkedServersByReplica[$replicaInstance] | Where-Object Name -eq $linkedServerName
 
                             if (-not $linkedServer) {
-                                $null = $differences.Add([PSCustomObject]@{
-                                        AvailabilityGroup = $ag.Name
-                                        Replica           = $replicaInstance
-                                        ObjectType        = "LinkedServer"
-                                        ObjectName        = $linkedServerName
-                                        Status            = "Missing"
-                                    })
-                            }
-                        }
-
-                        if ($differences.Count -gt 0) {
-                            $hasMissing = $differences | Where-Object Status -eq "Missing"
-                            if ($hasMissing) {
-                                foreach ($diff in $differences) {
-                                    $diff
+                                [PSCustomObject]@{
+                                    AvailabilityGroup = $ag.Name
+                                    Replica           = $replicaInstance
+                                    ObjectType        = "LinkedServer"
+                                    ObjectName        = $linkedServerName
+                                    Status            = "Missing"
                                 }
                             }
                         }
@@ -466,27 +425,16 @@ function Compare-DbaAgReplicaSync {
                     }
 
                     foreach ($operatorName in $allOperatorNames) {
-                        $differences = New-Object System.Collections.ArrayList
-
                         foreach ($replicaInstance in $replicaInstances) {
                             $operator = $operatorsByReplica[$replicaInstance] | Where-Object Name -eq $operatorName
 
                             if (-not $operator) {
-                                $null = $differences.Add([PSCustomObject]@{
-                                        AvailabilityGroup = $ag.Name
-                                        Replica           = $replicaInstance
-                                        ObjectType        = "AgentOperator"
-                                        ObjectName        = $operatorName
-                                        Status            = "Missing"
-                                    })
-                            }
-                        }
-
-                        if ($differences.Count -gt 0) {
-                            $hasMissing = $differences | Where-Object Status -eq "Missing"
-                            if ($hasMissing) {
-                                foreach ($diff in $differences) {
-                                    $diff
+                                [PSCustomObject]@{
+                                    AvailabilityGroup = $ag.Name
+                                    Replica           = $replicaInstance
+                                    ObjectType        = "AgentOperator"
+                                    ObjectName        = $operatorName
+                                    Status            = "Missing"
                                 }
                             }
                         }
@@ -519,27 +467,16 @@ function Compare-DbaAgReplicaSync {
                     }
 
                     foreach ($alertName in $allAlertNames) {
-                        $differences = New-Object System.Collections.ArrayList
-
                         foreach ($replicaInstance in $replicaInstances) {
                             $alert = $alertsByReplica[$replicaInstance] | Where-Object Name -eq $alertName
 
                             if (-not $alert) {
-                                $null = $differences.Add([PSCustomObject]@{
-                                        AvailabilityGroup = $ag.Name
-                                        Replica           = $replicaInstance
-                                        ObjectType        = "AgentAlert"
-                                        ObjectName        = $alertName
-                                        Status            = "Missing"
-                                    })
-                            }
-                        }
-
-                        if ($differences.Count -gt 0) {
-                            $hasMissing = $differences | Where-Object Status -eq "Missing"
-                            if ($hasMissing) {
-                                foreach ($diff in $differences) {
-                                    $diff
+                                [PSCustomObject]@{
+                                    AvailabilityGroup = $ag.Name
+                                    Replica           = $replicaInstance
+                                    ObjectType        = "AgentAlert"
+                                    ObjectName        = $alertName
+                                    Status            = "Missing"
                                 }
                             }
                         }
@@ -572,27 +509,16 @@ function Compare-DbaAgReplicaSync {
                     }
 
                     foreach ($proxyName in $allProxyNames) {
-                        $differences = New-Object System.Collections.ArrayList
-
                         foreach ($replicaInstance in $replicaInstances) {
                             $proxy = $proxiesByReplica[$replicaInstance] | Where-Object Name -eq $proxyName
 
                             if (-not $proxy) {
-                                $null = $differences.Add([PSCustomObject]@{
-                                        AvailabilityGroup = $ag.Name
-                                        Replica           = $replicaInstance
-                                        ObjectType        = "AgentProxy"
-                                        ObjectName        = $proxyName
-                                        Status            = "Missing"
-                                    })
-                            }
-                        }
-
-                        if ($differences.Count -gt 0) {
-                            $hasMissing = $differences | Where-Object Status -eq "Missing"
-                            if ($hasMissing) {
-                                foreach ($diff in $differences) {
-                                    $diff
+                                [PSCustomObject]@{
+                                    AvailabilityGroup = $ag.Name
+                                    Replica           = $replicaInstance
+                                    ObjectType        = "AgentProxy"
+                                    ObjectName        = $proxyName
+                                    Status            = "Missing"
                                 }
                             }
                         }
@@ -625,27 +551,16 @@ function Compare-DbaAgReplicaSync {
                     }
 
                     foreach ($errorId in $allErrorIds) {
-                        $differences = New-Object System.Collections.ArrayList
-
                         foreach ($replicaInstance in $replicaInstances) {
                             $error = $errorsByReplica[$replicaInstance] | Where-Object ID -eq $errorId
 
                             if (-not $error) {
-                                $null = $differences.Add([PSCustomObject]@{
-                                        AvailabilityGroup = $ag.Name
-                                        Replica           = $replicaInstance
-                                        ObjectType        = "CustomError"
-                                        ObjectName        = "Error $errorId"
-                                        Status            = "Missing"
-                                    })
-                            }
-                        }
-
-                        if ($differences.Count -gt 0) {
-                            $hasMissing = $differences | Where-Object Status -eq "Missing"
-                            if ($hasMissing) {
-                                foreach ($diff in $differences) {
-                                    $diff
+                                [PSCustomObject]@{
+                                    AvailabilityGroup = $ag.Name
+                                    Replica           = $replicaInstance
+                                    ObjectType        = "CustomError"
+                                    ObjectName        = "Error $errorId"
+                                    Status            = "Missing"
                                 }
                             }
                         }
