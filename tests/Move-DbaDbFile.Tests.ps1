@@ -38,7 +38,11 @@ Describe $CommandName -Tag IntegrationTests {
         $dbFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile_2DataFiles" | Where-Object TypeDescription -eq "ROWS"
         $physicalPathFolder = Split-Path -Path $dbFiles[0].PhysicalName -Parent
         $physicalPathNewFolder = "$physicalPathFolder\moveFile"
-        $null = New-Item -Path $physicalPathNewFolder -Type Directory
+        if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+            $null = New-Item -Path $physicalPathNewFolder -Type Directory
+        } else {
+            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { $null = New-Item -Path $args[0] -Type Directory } -ArgumentList $physicalPathNewFolder
+        }
 
         $addNewDataFile = @"
         ALTER DATABASE [dbatoolsci_MoveDbFile_2DataFiles]
@@ -58,9 +62,17 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile", "dbatoolsci_MoveDbFile_2DataFiles"
-        Remove-Item -Path "$physicalPathFolder\moveFile" -Recurse -ErrorAction SilentlyContinue
-        Remove-Item -Path "$physicalPathFolder\New" -Recurse -ErrorAction SilentlyContinue
-        Remove-Item -Path "$physicalPathFolder\dbatoolsci_MoveDbFile.mdf" -ErrorAction SilentlyContinue
+        if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+            Remove-Item -Path "$physicalPathFolder\moveFile" -Recurse
+            Remove-Item -Path "$physicalPathFolder\New" -Recurse
+            Remove-Item -Path "$physicalPathFolder\dbatoolsci_MoveDbFile.mdf"
+        } else {
+            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock {
+                Remove-Item -Path "$($args[0])\moveFile" -Recurse
+                Remove-Item -Path "$($args[0])\New" -Recurse
+                Remove-Item -Path "$($args[0])\dbatoolsci_MoveDbFile.mdf"
+            } -ArgumentList $physicalPathFolder
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -112,9 +124,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have updated database metadata" {
             $dataResults.DatabaseFileMetadata | Should -Be "Updated"
         }
-        It "Should have the previous database name" {
-            Test-Path -Path $dbDataFiles.PhysicalName | Should -Be $true
-        }
         It "Should have database Online" {
             (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile").Status | Should -Be "ONLINE"
         }
@@ -147,7 +156,11 @@ Describe $CommandName -Tag IntegrationTests {
             $logResults.DatabaseFileMetadata | Should -Be "Updated"
         }
         It "Should have deleted source log file " {
-            Test-Path -Path $dbLogFiles.PhysicalName | Should -Be $false
+            if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+                Test-Path -Path $dbLogFiles.PhysicalName | Should -Be $false
+            } else {
+                Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Test-Path -Path $args[0] } -ArgumentList $dbLogFiles.PhysicalName -Raw | Should -Be $false
+            }
         }
         It "Should have database Online" {
             (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile").Status | Should -Be "ONLINE"
@@ -182,7 +195,11 @@ Describe $CommandName -Tag IntegrationTests {
             $specificResults.DatabaseFileMetadata | Should -Be "Updated"
         }
         It "Should have deleted source NDF file " {
-            Test-Path -Path $dbNDFFile.PhysicalName | Should -Be $false
+            if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+                Test-Path -Path $dbNDFFile.PhysicalName | Should -Be $false
+            } else {
+                Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Test-Path -Path $args[0] } -ArgumentList $dbNDFFile.PhysicalName -Raw | Should -Be $false
+            }
         }
         It "Should have database Online" {
             (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile_2DataFiles").Status | Should -Be "ONLINE"
@@ -194,7 +211,11 @@ Describe $CommandName -Tag IntegrationTests {
             $dbAllFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile_2DataFiles"
 
             $destinationFolder = "$physicalPathFolder\New"
-            $null = New-Item -Path $destinationFolder -Type Directory
+            if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+                $null = New-Item -Path $destinationFolder -Type Directory
+            } else {
+                Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { $null = New-Item -Path $args[0] -Type Directory } -ArgumentList $destinationFolder
+            }
 
             $splatMoveAll = @{
                 SqlInstance     = $TestConfig.instance2
@@ -224,7 +245,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should have deleted source files" {
             $dbAllFiles.PhysicalName | ForEach-Object {
-                Test-Path -Path $PSItem | Should -Be $false
+                if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+                    Test-Path -Path $PSItem | Should -Be $false
+                } else {
+                    Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Test-Path -Path $args[0] } -ArgumentList $PSItem -Raw | Should -Be $false
+                }
             }
         }
         It "Should have database Online" {

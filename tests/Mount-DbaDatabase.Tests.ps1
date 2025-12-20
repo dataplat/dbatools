@@ -29,10 +29,12 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $tempDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Type Container -Path $tempDir
+
         # Setup removes, restores and backups on the local drive for Mount-DbaDatabase
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\detachattach\detachattach.bak" -WithReplace
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Backup-DbaDatabase -BackupFileName C:\Temp\detachattach.bak
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\detachattach\detachattach.bak"
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Backup-DbaDatabase -BackupFileName $tempDir\detachattach.bak
         $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -45,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase
-        Remove-Item -Path C:\Temp\detachattach.bak -ErrorAction SilentlyContinue
+        Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -27,9 +27,12 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $tempDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Type Container -Path $tempDir
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "CREATE SERVER AUDIT LoginAudit
-                TO FILE (FILEPATH = N'C:\temp',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
+                TO FILE (FILEPATH = N'$tempDir',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
                 WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)
 
                 CREATE SERVER AUDIT SPECIFICATION TrackAllLogins
@@ -51,7 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
                 DROP SERVER AUDIT SPECIFICATION TrackAllLogins
                 DROP SERVER AUDIT LoginAudit"
         $server.Query($sql)
-        Remove-Item -Path "C:\temp\LoginAudit*sqlaudit" -ErrorAction SilentlyContinue
+
+        Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
