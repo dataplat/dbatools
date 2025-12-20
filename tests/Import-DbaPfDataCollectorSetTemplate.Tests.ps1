@@ -42,34 +42,35 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $collectorSetName = "Long Running Queries"
 
+        $computerName = ([DbaInstanceParameter]($TestConfig.instance1)).ComputerName
         # Clean up any existing collector sets before starting
-        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $computerName -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     BeforeEach {
-        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $computerName -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
     }
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $computerName -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command returns all the required results with pipe" {
         It "returns only one (and the proper) template" {
-            $results = Get-DbaPfDataCollectorSetTemplate -Template $collectorSetName | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1
+            $results = Get-DbaPfDataCollectorSetTemplate -Template $collectorSetName | Import-DbaPfDataCollectorSetTemplate -ComputerName $computerName
             $results.Name | Should -Be $collectorSetName
-            $results.ComputerName | Should -Be $env:COMPUTERNAME
+            $results.ComputerName | Should -Be $computerName
         }
 
         It "returns only one (and the proper) template without pipe" {
-            $results = Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1 -Template $collectorSetName
+            $results = Import-DbaPfDataCollectorSetTemplate -ComputerName $computerName -Template $collectorSetName
             $results.Name | Should -Be $collectorSetName
-            $results.ComputerName | Should -Be $env:COMPUTERNAME
+            $results.ComputerName | Should -Be $computerName
         }
     }
 }
