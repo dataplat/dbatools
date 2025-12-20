@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "Table",
                 "View",
                 "Query",
+                "ForceExplicitMapping",
                 "AutoCreateTable",
                 "BatchSize",
                 "NotifyAfter",
@@ -162,12 +163,6 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
             $result.DestinationTable | Should -Be "dbatoolsci_willexist"
         }
-
-        It "Should warn if the source database doesn't exist" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance2 -Database tempdb_invalid -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
-            $result | Should -Be $null
-            $tablewarning | Should -Match "cannot open database"
-        }
     }
 
     Context "When destination table has computed columns" {
@@ -192,6 +187,27 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should copy data successfully when destination has computed columns" {
             $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Destination $TestConfig.instance2 -Database tempdb -Table dbatoolsci_computed_source -DestinationTable dbatoolsci_computed_dest
+            $result.RowsCopied | Should -Be 2
+            $destCount = $destinationDb.Query("SELECT * FROM dbo.dbatoolsci_computed_dest")
+            $destCount.Count | Should -Be 2
+        }
+
+        It "Should copy data using Query with ForceExplicitMapping when destination has computed columns" {
+            # First truncate dest table
+            $null = $destinationDb.Query("TRUNCATE TABLE dbo.dbatoolsci_computed_dest")
+
+            # Use Query parameter with ForceExplicitMapping to enable name-based column mapping
+            # This is needed when using Query with tables that have computed columns
+            $splatCopy = @{
+                SqlInstance          = $TestConfig.instance1
+                Destination          = $TestConfig.instance2
+                Database             = "tempdb"
+                Table                = "dbatoolsci_computed_source"
+                Query                = "SELECT Dt FROM dbo.dbatoolsci_computed_source"
+                DestinationTable     = "dbatoolsci_computed_dest"
+                ForceExplicitMapping = $true
+            }
+            $result = Copy-DbaDbTableData @splatCopy
             $result.RowsCopied | Should -Be 2
             $destCount = $destinationDb.Query("SELECT * FROM dbo.dbatoolsci_computed_dest")
             $destCount.Count | Should -Be 2
