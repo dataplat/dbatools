@@ -317,9 +317,8 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
 
     Context "Connect to an instance (ideally a remote instance) using a SqlCredential and decrypt an object" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination .
-            (Get-Content $result.OutputFile | Out-String).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
-            Remove-Item $result.OutputFile
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination $tempDir
+            (Get-Content $result.OutputFile -Raw).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
         }
     }
 }
