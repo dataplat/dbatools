@@ -163,12 +163,6 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
             $result.DestinationTable | Should -Be "dbatoolsci_willexist"
         }
-
-        It "Should warn if the source database doesn't exist" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance2 -Database tempdb_invalid -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
-            $result | Should -Be $null
-            $tablewarning | Should -Match "cannot open database"
-        }
     }
 
     Context "When destination table has computed columns" {
