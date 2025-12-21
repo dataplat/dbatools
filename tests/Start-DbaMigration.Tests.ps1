@@ -119,7 +119,11 @@ Describe $CommandName -Tag IntegrationTests {
         Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $offlineTestDb -Online -Force -ErrorAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2, $offlineTestDb -ErrorAction SilentlyContinue
 
-        # Note: We don't delete the backup path since we use SQL Server's default backup directory
+        # Clean up backup files created during the test
+        $databasesToClean = @($startmigrationrestoredb, $startmigrationrestoredb2, $detachattachdb, $offlineTestDb)
+        foreach ($dbName in $databasesToClean) {
+            Get-ChildItem -Path $backupPath -Filter "$dbName*" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
