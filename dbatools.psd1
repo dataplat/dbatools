@@ -93,6 +93,7 @@
         'Copy-DbaAgentAlert',
         'Copy-DbaAgentJob',
         'Copy-DbaAgentJobCategory',
+        'Copy-DbaAgentJobStep',
         'Copy-DbaAgentOperator',
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentSchedule',
