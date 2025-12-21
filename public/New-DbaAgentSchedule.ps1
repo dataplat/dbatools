@@ -180,6 +180,136 @@ function New-DbaAgentSchedule {
 
         Create a schedule with the name "Every sunday at 02:00:00" that will run jobs once a week on Sunday @ 2:00AM
 
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance             = "sql01"
+            Schedule                = "HourlyBusinessHours"
+            FrequencyType           = "Daily"
+            FrequencySubdayType     = "Hours"
+            FrequencySubdayInterval = 1
+            StartTime               = "080000"
+            EndTime                 = "170000"
+            Force                   = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a schedule that runs every hour between 8:00 AM and 5:00 PM. Jobs using this schedule execute at 8 AM, 9 AM, 10 AM, etc., stopping at 5 PM.
+
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance             = "sql01"
+            Schedule                = "EveryFiveMinutes"
+            FrequencyType           = "Daily"
+            FrequencySubdayType     = "Minutes"
+            FrequencySubdayInterval = 5
+            Force                   = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a schedule that runs every 5 minutes throughout the day. Useful for frequent monitoring jobs that need to check system health regularly.
+
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance = "sql01"
+            Schedule    = "TwiceDaily"
+            FrequencyType           = "Daily"
+            FrequencySubdayType     = "Hours"
+            FrequencySubdayInterval = 12
+            StartTime               = "060000"
+            Force                   = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a schedule that runs twice per day at 6:00 AM and 6:00 PM. The 12-hour interval ensures jobs execute exactly twice daily.
+
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance               = "sql01"
+            Schedule                  = "FirstMondayOfMonth"
+            FrequencyType             = "MonthlyRelative"
+            FrequencyInterval         = "Monday"
+            FrequencyRelativeInterval = "First"
+            FrequencyRecurrenceFactor = 1
+            StartTime                 = "020000"
+            Force                     = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a schedule that runs on the first Monday of every month at 2:00 AM. Perfect for monthly maintenance tasks that should run on a specific weekday.
+
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance = "sql01"
+            Schedule    = "MaintenanceWindow"
+            FrequencyType = "Weekly"
+            FrequencyInterval = "Saturday", "Sunday"
+            StartTime   = "220000"
+            EndTime     = "060000"
+            StartDate   = "20250101"
+            EndDate     = "20251231"
+            Force       = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a schedule for weekend maintenance windows running Saturday and Sunday nights from 10:00 PM to 6:00 AM. The schedule is active only during 2025.
+
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance = "sql01"
+            Schedule    = "PreprodRefresh"
+            Disabled    = $true
+            FrequencyType = "Weekly"
+            FrequencyInterval = "Sunday"
+            StartTime   = "040000"
+            Force       = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a disabled schedule for pre-production database refreshes. The schedule is configured but won't execute until manually enabled, allowing you to prepare schedules in advance.
+
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance = "sql01"
+            Job         = "BackupUserDatabases", "CheckDBIntegrity", "UpdateStatistics"
+            Schedule    = "NightlyMaintenance"
+            FrequencyType = "Daily"
+            StartTime   = "010000"
+            Force       = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a schedule and immediately attaches it to three different jobs. This demonstrates how to apply a single schedule to multiple jobs in one command.
+
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance = "sql01"
+            Schedule    = "QuarterEndReports"
+            FrequencyType = "Monthly"
+            FrequencyInterval = 31
+            FrequencyRecurrenceFactor = 3
+            StartTime   = "180000"
+            Owner       = "DOMAIN\SQLServiceAccount"
+            Force       = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a schedule that runs every 3 months on the 31st (or last day of month) at 6:00 PM. The Owner parameter specifies which account owns the schedule for permission management.
+
+    .EXAMPLE
+        PS C:\> $splatSchedule = @{
+            SqlInstance = "sql01"
+            Schedule    = "BusinessHoursEvery30Min"
+            FrequencyType           = "Daily"
+            FrequencySubdayType     = "Minutes"
+            FrequencySubdayInterval = 30
+            StartTime               = "083000"
+            EndTime                 = "173000"
+            Force                   = $true
+        }
+        PS C:\> New-DbaAgentSchedule @splatSchedule
+
+        Creates a schedule that runs every 30 minutes during business hours (8:30 AM to 5:30 PM). First execution is at 8:30 AM, last execution at 5:00 PM.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]

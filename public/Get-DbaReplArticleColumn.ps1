@@ -93,15 +93,61 @@ function Get-DbaReplArticleColumn {
 
         foreach ($art in $articles) {
             try {
+                # Load the article properties to ensure we have current data
+                $null = $art.LoadProperties()
 
-                $columns = $art.ListReplicatedColumns()
+                # Get the source table to enumerate columns
+                $server = $art.SqlInstance
+                $database = $server.Databases[$art.DatabaseName]
+                $table = $database.Tables[$art.SourceObjectName, $art.SourceObjectOwner]
+
+                if ($null -eq $table) {
+                    Write-Message -Level Warning -Message "Could not find source table [$($art.SourceObjectOwner)].[$($art.SourceObjectName)] for article $($art.Name)"
+                    continue
+                }
+
+                # Get all columns from the table
+                $allColumns = $table.Columns
+
+                # If vertical partitioning is not enabled, all columns are replicated
+                # If it is enabled, we need to check which columns are included
+                if (-not $art.VerticalPartition) {
+                    # All columns are replicated
+                    $columns = $allColumns.Name
+                } else {
+                    # Only specific columns are replicated - enumerate them from the article
+                    # For vertical partitioning, we need to get the columns from the article's metadata
+                    # Unfortunately, RMO doesn't expose this directly in a simple way
+                    # We'll use the SMO connection to query the replication metadata
+                    $splatQuery = @{
+                        SqlInstance = $server
+                        Database    = $art.DatabaseName
+                        Query       = @"
+SELECT c.name as ColumnName
+FROM sysarticlecolumns ac
+INNER JOIN sys.columns c ON ac.colid = c.column_id
+INNER JOIN sys.tables t ON c.object_id = t.object_id AND ac.artid = (
+    SELECT artid FROM sysarticles WHERE name = @articleName
+)
+WHERE t.name = @tableName
+    AND SCHEMA_NAME(t.schema_id) = @schemaName
+ORDER BY c.column_id
+"@
+                        SqlParameter = @{
+                            articleName = $art.Name
+                            tableName   = $art.SourceObjectName
+                            schemaName  = $art.SourceObjectOwner
+                        }
+                    }
+                    $columnData = Invoke-DbaQuery @splatQuery
+                    $columns = $columnData.ColumnName
+                }
 
                 if ($Column) {
                     $columns = $columns | Where-Object { $_ -In $Column }
                 }
 
                 foreach ($col in $columns) {
-
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ComputerName -Value $art.ComputerName
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name InstanceName -Value $art.InstanceName
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SqlInstance -Value $art.SqlInstance

@@ -116,6 +116,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "exports to the correct directory" {
             $relativePath = ".\"
             $expectedPath = (Resolve-Path $relativePath).Path
+            $expectedPath = $expectedPath -replace '^(.*::)?(.*)$', '$2'  # remove prefix like 'Microsoft.PowerShell.Core\FileSystem::'
             $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -Path $relativePath
             $results.Path | Split-Path | Should -Be $expectedPath
             Test-Path $results.Path | Should -BeTrue

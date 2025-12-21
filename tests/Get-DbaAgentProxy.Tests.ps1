@@ -32,11 +32,16 @@ Describe $CommandName -Tag IntegrationTests {
         $proxyName1 = "STIG"
         $proxyName2 = "STIGX"
 
-        $null = New-LocalUser -Name $tUserName -Password $tPassword -Disabled:$false
+        if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+            $null = New-LocalUser -Name $tUserName -Password $tPassword -Disabled:$false
+        } else {
+            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false } -ArgumentList $tUserName, $tPassword
+        }
+
         $splatCredential = @{
             SqlInstance = $TestConfig.instance2
             Name        = $tUserName
-            Identity    = "$env:COMPUTERNAME\$tUserName"
+            Identity    = "$(([DbaInstanceParameter]($TestConfig.instance2)).ComputerName)\$tUserName"
             Password    = $tPassword
         }
         $null = New-DbaCredential @splatCredential
@@ -67,7 +72,11 @@ Describe $CommandName -Tag IntegrationTests {
         $proxyName1 = "STIG"
         $proxyName2 = "STIGX"
 
-        Remove-LocalUser -Name $tUserName -ErrorAction SilentlyContinue
+        if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+            $null = Remove-LocalUser -Name $tUserName -ErrorAction SilentlyContinue
+        } else {
+            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue } -ArgumentList $tUserName
+        }
         $credential = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Name $tUserName
         if ($credential) {
             $credential.DROP()

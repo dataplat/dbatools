@@ -1,14 +1,14 @@
 function Export-DbaDacPackage {
     <#
     .SYNOPSIS
-        Creates DACPAC or BACPAC deployment packages from SQL Server databases using SqlPackage
+        Exports DACPAC or BACPAC packages from SQL Server databases using the DacFx framework
 
     .DESCRIPTION
-        Creates database deployment packages for version control, migrations, and schema distribution. Generates DACPAC files containing database schema definitions or BACPAC files that include both schema and data. This automates the SqlPackage utility so you don't have to remember complex command-line syntax or manage connection strings manually.
+        Creates database deployment packages for version control, migrations, and schema distribution. Generates DACPAC files containing database schema definitions or BACPAC files that include both schema and data.
 
         Perfect for creating deployable packages from development databases, capturing schema snapshots for source control, or preparing migration artifacts for different environments. The function handles multiple databases in batch operations and provides flexible table filtering when you only need specific objects.
 
-        Uses Microsoft DAC Services under the hood with automatic SqlPackage installation if needed. Note that extraction can fail with three-part references to external databases or complex cross-database dependencies.
+        Uses Microsoft DacFx API from dbatools.library. Note that extraction can fail with three-part references to external databases or complex cross-database dependencies.
 
         For help with the extract action parameters and properties, refer to https://learn.microsoft.com/en-us/sql/tools/sqlpackage/sqlpackage-extract
 
@@ -55,10 +55,12 @@ function Export-DbaDacPackage {
     .PARAMETER ExtendedParameters
         Passes additional command-line parameters directly to SqlPackage.exe for advanced scenarios (e.g., '/OverwriteFiles:true /Quiet:true').
         Use this when you need SqlPackage options not available through DacOption or when integrating with existing SqlPackage workflows.
+        Note: This parameter requires SqlPackage.exe to be installed via Install-DbaSqlPackage or locally.
 
     .PARAMETER ExtendedProperties
         Passes additional property settings directly to SqlPackage.exe for fine-tuned control over extraction behavior.
         Use this when you need to set specific SqlPackage properties that aren't exposed through the standard DacOption parameter.
+        Note: This parameter requires SqlPackage.exe to be installed via Install-DbaSqlPackage.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -98,11 +100,10 @@ function Export-DbaDacPackage {
         PS C:\> $moreparams = "/OverwriteFiles:$true /Quiet:$true"
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedParameters $moreparams
 
-        Using extended parameters to over-write the files and performs the extraction in quiet mode to C:\temp\sql2016-SharePoint_Config-20201227140759-dacpackage.dacpac. Uses command line instead of SMO behind the scenes. As noted the generated filename will contain the server name, database name, and the current timestamp in the "%Y%m%d%H%M%S" format.
+        Using extended parameters to over-write the files and performs the extraction in quiet mode to C:\temp\sql2016-SharePoint_Config-20201227140759-dacpackage.dacpac. Uses SqlPackage.exe command line instead of DacFx API behind the scenes. As noted the generated filename will contain the server name, database name, and the current timestamp in the "%Y%m%d%H%M%S" format.
     #>
     [CmdletBinding(DefaultParameterSetName = 'SMO')]
-    param
-    (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -128,25 +129,12 @@ function Export-DbaDacPackage {
     begin {
         $null = Test-ExportDirectory -Path $Path
 
-        # Check if sqlpackage is available
-        $sqlPackagePath = Get-DbaSqlPackagePath
-        if (-not $sqlPackagePath) {
-            $installChoice = Read-Host "SqlPackage is required but not found. Would you like to install it now using Install-DbaSqlPackage? (Y/N)"
-            if ($installChoice -match '^[Yy]') {
-                try {
-                    Install-DbaSqlPackage
-                    Write-Message -Level Output -Message "SqlPackage installed successfully. Continuing with export..."
-                    $sqlPackagePath = Get-DbaSqlPackagePath
-                    if (-not $sqlPackagePath) {
-                        Stop-Function -Message "Failed to locate SqlPackage after installation. Please verify the installation." -EnableException:$EnableException
-                        return
-                    }
-                } catch {
-                    Stop-Function -Message "Failed to install SqlPackage. Please install manually or use Install-DbaSqlPackage." -EnableException:$EnableException
-                    return
-                }
-            } else {
-                Stop-Function -Message "SqlPackage is required for this operation. Please install SqlPackage manually or use Install-DbaSqlPackage." -EnableException:$EnableException
+        # For CMD parameter set (ExtendedParameters/ExtendedProperties), we need SqlPackage.exe
+        # For SMO parameter set (default), we use the DacFx API from dbatools.library
+        if ($PSCmdlet.ParameterSetName -eq 'CMD') {
+            $sqlPackagePath = Get-DbaSqlPackagePath
+            if (-not $sqlPackagePath) {
+                Stop-Function -Message "SqlPackage.exe is required when using -ExtendedParameters or -ExtendedProperties. Install it using Install-DbaSqlPackage or use the default DacFx API mode without these parameters."
                 return
             }
         }
@@ -280,12 +268,12 @@ WHERE database_id > 4  -- Exclude system databases (master=1, tempdb=2, model=3,
 
                 $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type $ext -ServerName $instance -DatabaseName $dbName
 
-                #using SMO by default
+                #using DacFx API by default
                 if ($PsCmdlet.ParameterSetName -eq 'SMO') {
                     try {
                         $dacSvc = New-Object -TypeName Microsoft.SqlServer.Dac.DacServices -ArgumentList $connstring -ErrorAction Stop
                     } catch {
-                        Stop-Function -Message "Could not connect to the connection string $connstring"-Target $instance -Continue
+                        Stop-Function -Message "Could not connect to the connection string $connstring" -Target $instance -Continue
                     }
                     if (-not $DacOption) {
                         $opts = New-DbaDacOption -Type $Type -Action Export
@@ -351,7 +339,7 @@ WHERE database_id > 4  -- Exclude system databases (master=1, tempdb=2, model=3,
                     }
 
                     if ($process.ExitCode -ne 0) {
-                        Stop-Function -Message "Standard output - $stderr"-Continue
+                        Stop-Function -Message "Standard output - $stderr" -Continue
                     }
                 }
                 [PSCustomObject]@{

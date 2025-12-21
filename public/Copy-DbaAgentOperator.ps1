@@ -168,6 +168,7 @@ function Copy-DbaAgentOperator {
                         $sql = $sOperator.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
+                        $destServer.JobServer.Operators.Refresh()
 
                         $copyOperatorStatus.Status = "Successful"
                         $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

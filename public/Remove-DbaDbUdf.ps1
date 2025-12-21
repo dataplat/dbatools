@@ -1,10 +1,10 @@
 function Remove-DbaDbUdf {
     <#
     .SYNOPSIS
-        Removes user-defined functions from SQL Server databases.
+        Removes user-defined functions and user-defined aggregates from SQL Server databases.
 
     .DESCRIPTION
-        Removes user-defined functions from specified databases, providing a clean way to drop obsolete or unwanted UDFs without manual T-SQL scripting. This function is particularly useful during database cleanup operations, code refactoring projects, or when removing deprecated functions that are no longer needed. Supports filtering by schema and function name, and can exclude system UDFs to prevent accidental removal of built-in functions. Works seamlessly with Get-DbaDbUdf for pipeline operations.
+        Removes user-defined functions and user-defined aggregates from specified databases, providing a clean way to drop obsolete or unwanted UDFs and UDAs without manual T-SQL scripting. This function is particularly useful during database cleanup operations, code refactoring projects, or when removing deprecated functions that are no longer needed. Supports filtering by schema and function name, and can exclude system UDFs to prevent accidental removal of built-in functions. Works seamlessly with Get-DbaDbUdf for pipeline operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -45,8 +45,8 @@ function Remove-DbaDbUdf {
         Use this to protect specific functions from deletion while removing others that match your criteria.
 
     .PARAMETER InputObject
-        Accepts UDF objects directly from Get-DbaDbUdf pipeline operations.
-        Use this when you need to filter or examine UDFs first before removal, enabling complex selection logic not possible with simple name matching.
+        Accepts UDF and UDA objects directly from Get-DbaDbUdf pipeline operations.
+        Use this when you need to filter or examine UDFs or UDAs first before removal, enabling complex selection logic not possible with simple name matching.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -103,7 +103,7 @@ function Remove-DbaDbUdf {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeName,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
-        [Microsoft.SqlServer.Management.Smo.UserDefinedFunction[]]$InputObject,
+        [object[]]$InputObject,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )

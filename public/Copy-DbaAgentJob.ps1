@@ -247,8 +247,8 @@ function Copy-DbaAgentJob {
                 $missingOperators = $operators | Where-Object { $destServer.JobServer.Operators.Name -notcontains $_ }
 
                 if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
+                    $missingOperator = ($missingOperators | Sort-Object | Get-Unique) -join ", "
                     if ($Pscmdlet.ShouldProcess($destinstance, "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]")) {
-                        $missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
                         $copyJobStatus.Status = "Skipped"
                         $copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
                         $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

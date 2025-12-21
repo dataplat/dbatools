@@ -72,16 +72,16 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            $tempDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Type Container -Path $tempDir
+
             $darlingDbLocalFile = "dbatoolsci_darling_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $server.Query("CREATE DATABASE $darlingDbLocalFile")
 
-            $outfile = "DarlingData-main.zip"
+            $outfile = "$tempDir\DarlingData-main.zip"
             Invoke-WebRequest -Uri "https://github.com/erikdarlingdata/DarlingData/archive/main.zip" -OutFile $outfile
-            if (Test-Path $outfile) {
-                $fullOutfile = (Get-ChildItem $outfile).FullName
-            }
-            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $TestConfig.instance3 -Database $darlingDbLocalFile -Branch main -LocalFile $fullOutfile -Force
+            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $TestConfig.instance3 -Database $darlingDbLocalFile -Branch main -LocalFile $outfile -Force
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -92,6 +92,8 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $darlingDbLocalFile
+
+            Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
