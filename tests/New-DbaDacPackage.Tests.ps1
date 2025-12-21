@@ -99,13 +99,13 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
     Context "Build DACPAC from SQL files" {
         It "Builds a DACPAC from a directory with SQL files recursively" {
             $outputDacpac = "$testFolder\output-recursive.dacpac"
-            $splatBuild = @{
+            $splatBuildRecursive = @{
                 Path         = $sqlSourcePath
                 OutputPath   = $outputDacpac
                 Recursive    = $true
                 DatabaseName = "TestDatabase"
             }
-            $result = New-DbaDacPackage @splatBuild
+            $result = New-DbaDacPackage @splatBuildRecursive
 
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
@@ -118,7 +118,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
 
         It "Builds a DACPAC with custom version and description" {
             $outputDacpac = "$testFolder\output-versioned.dacpac"
-            $splatBuildVersion = @{
+            $splatBuildVersioned = @{
                 Path           = $sqlSourcePath
                 OutputPath     = $outputDacpac
                 Recursive      = $true
@@ -126,7 +126,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 DacVersion     = "2.1.0.0"
                 DacDescription = "Test DACPAC with version"
             }
-            $result = New-DbaDacPackage @splatBuildVersion
+            $result = New-DbaDacPackage @splatBuildVersioned
 
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
@@ -136,14 +136,14 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
 
         It "Uses SQL Server version targeting" {
             $outputDacpac = "$testFolder\output-sql2017.dacpac"
-            $splatBuildSqlVersion = @{
+            $splatBuildTargeted = @{
                 Path             = $sqlSourcePath
                 OutputPath       = $outputDacpac
                 Recursive        = $true
                 DatabaseName     = "Sql2017DB"
                 SqlServerVersion = "Sql140"
             }
-            $result = New-DbaDacPackage @splatBuildSqlVersion
+            $result = New-DbaDacPackage @splatBuildTargeted
 
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
@@ -152,12 +152,12 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
 
         It "Builds from non-recursive directory scan" {
             $outputDacpac = "$testFolder\output-nonrecursive.dacpac"
-            $splatBuildNoRecurse = @{
+            $splatBuildNonRecursive = @{
                 Path         = $sqlSourcePath
                 OutputPath   = $outputDacpac
                 DatabaseName = "NonRecursiveDB"
             }
-            $result = New-DbaDacPackage @splatBuildNoRecurse
+            $result = New-DbaDacPackage @splatBuildNonRecursive
 
             # Non-recursive should only find the EmptyFile.sql in the root
             $result | Should -Not -BeNullOrEmpty
@@ -184,22 +184,14 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
 
     Context "Error handling" {
         It "Handles non-existent path gracefully" {
-            $splatBadPath = @{
-                Path       = "$testFolder\NonExistentPath"
-                OutputPath = "$testFolder\should-not-exist.dacpac"
-            }
-            { New-DbaDacPackage @splatBadPath -EnableException } | Should -Throw
+            { New-DbaDacPackage -Path "$testFolder\NonExistentPath" -OutputPath "$testFolder\should-not-exist.dacpac" -EnableException } | Should -Throw
         }
 
         It "Handles empty directory gracefully" {
             $emptyDir = "$testFolder\EmptyDir"
             $null = New-Item -Path $emptyDir -ItemType Directory -Force
 
-            $splatEmptyDir = @{
-                Path       = $emptyDir
-                OutputPath = "$testFolder\should-not-exist-empty.dacpac"
-            }
-            { New-DbaDacPackage @splatEmptyDir -EnableException } | Should -Throw
+            { New-DbaDacPackage -Path $emptyDir -OutputPath "$testFolder\should-not-exist-empty.dacpac" -EnableException } | Should -Throw
         }
     }
 
