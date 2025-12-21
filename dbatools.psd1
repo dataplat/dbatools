@@ -76,6 +76,7 @@
         'Backup-DbaDbCertificate',
         'Backup-DbaDbMasterKey',
         'Backup-DbaServiceMasterKey',
+        'Build-DbaDacPackage',
         'Clear-DbaConnectionPool',
         'Clear-DbaLatchStatistics',
         'Clear-DbaPlanCache',
