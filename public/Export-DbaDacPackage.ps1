@@ -55,7 +55,7 @@ function Export-DbaDacPackage {
     .PARAMETER ExtendedParameters
         Passes additional command-line parameters directly to SqlPackage.exe for advanced scenarios (e.g., '/OverwriteFiles:true /Quiet:true').
         Use this when you need SqlPackage options not available through DacOption or when integrating with existing SqlPackage workflows.
-        Note: This parameter requires SqlPackage.exe to be installed via Install-DbaSqlPackage.
+        Note: This parameter requires SqlPackage.exe to be installed via Install-DbaSqlPackage or locally.
 
     .PARAMETER ExtendedProperties
         Passes additional property settings directly to SqlPackage.exe for fine-tuned control over extraction behavior.
