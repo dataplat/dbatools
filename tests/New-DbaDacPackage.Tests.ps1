@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Build-DbaDacPackage",
+    $CommandName = "New-DbaDacPackage",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -105,7 +105,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 Recursive    = $true
                 DatabaseName = "TestDatabase"
             }
-            $result = Build-DbaDacPackage @splatBuild
+            $result = New-DbaDacPackage @splatBuild
 
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
@@ -126,7 +126,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 DacVersion     = "2.1.0.0"
                 DacDescription = "Test DACPAC with version"
             }
-            $result = Build-DbaDacPackage @splatBuildVersion
+            $result = New-DbaDacPackage @splatBuildVersion
 
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
@@ -143,7 +143,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 DatabaseName     = "Sql2017DB"
                 SqlServerVersion = "Sql140"
             }
-            $result = Build-DbaDacPackage @splatBuildSqlVersion
+            $result = New-DbaDacPackage @splatBuildSqlVersion
 
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
@@ -157,7 +157,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 OutputPath   = $outputDacpac
                 DatabaseName = "NonRecursiveDB"
             }
-            $result = Build-DbaDacPackage @splatBuildNoRecurse
+            $result = New-DbaDacPackage @splatBuildNoRecurse
 
             # Non-recursive should only find the EmptyFile.sql in the root
             $result | Should -Not -BeNullOrEmpty
@@ -174,7 +174,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 Recursive    = $true
                 DatabaseName = "PipelineDB"
             }
-            $result = Build-DbaDacPackage @splatBuildPipeline
+            $result = New-DbaDacPackage @splatBuildPipeline
 
             $result | Should -Not -BeNullOrEmpty
             $result.Path | Should -Not -BeNullOrEmpty
@@ -188,7 +188,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 Path       = "$testFolder\NonExistentPath"
                 OutputPath = "$testFolder\should-not-exist.dacpac"
             }
-            { Build-DbaDacPackage @splatBadPath -EnableException } | Should -Throw
+            { New-DbaDacPackage @splatBadPath -EnableException } | Should -Throw
         }
 
         It "Handles empty directory gracefully" {
@@ -199,7 +199,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 Path       = $emptyDir
                 OutputPath = "$testFolder\should-not-exist-empty.dacpac"
             }
-            { Build-DbaDacPackage @splatEmptyDir -EnableException } | Should -Throw
+            { New-DbaDacPackage @splatEmptyDir -EnableException } | Should -Throw
         }
     }
 
@@ -212,7 +212,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 Recursive    = $true
                 DatabaseName = "LoadTestDB"
             }
-            $result = Build-DbaDacPackage @splatBuildLoadTest
+            $result = New-DbaDacPackage @splatBuildLoadTest
 
             $result.Success | Should -BeTrue
 

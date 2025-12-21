@@ -1,10 +1,10 @@
-function Build-DbaDacPackage {
+function New-DbaDacPackage {
     <#
     .SYNOPSIS
-        Builds a DACPAC package from SQL source files using the DacFx framework
+        Creates a DACPAC package from SQL source files using the DacFx framework
 
     .DESCRIPTION
-        Builds a DACPAC (Data-tier Application Package) from SQL source files without requiring MSBuild, Visual Studio, or the .NET SDK. Uses the Microsoft.SqlServer.Dac.Model.TSqlModel API to parse SQL files, validate the model, and generate a deployable DACPAC package.
+        Creates a DACPAC (Data-tier Application Package) from SQL source files without requiring MSBuild, Visual Studio, or the .NET SDK. Uses the Microsoft.SqlServer.Dac.Model.TSqlModel API to parse SQL files, validate the model, and generate a deployable DACPAC package.
 
         This command enables a pure PowerShell-based build workflow for database projects, making it ideal for CI/CD pipelines, development environments without Visual Studio, and cross-platform scenarios (Windows, Linux, macOS).
 
@@ -55,7 +55,7 @@ function Build-DbaDacPackage {
         Prompts you for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Dacpac, Build, Deployment
+        Tags: Dacpac, Deployment
         Author: the dbatools team + Claude
 
         Website: https://dbatools.io
@@ -66,42 +66,42 @@ function Build-DbaDacPackage {
 
         Key differences from other DACPAC workflows:
         - Export-DbaDacPackage: Extracts DACPAC from an EXISTING database (requires SQL Server connection)
-        - Build-DbaDacPackage: Creates DACPAC from SQL SOURCE FILES (no SQL Server required)
+        - New-DbaDacPackage: Creates DACPAC from SQL SOURCE FILES (no SQL Server required)
         - Publish-DbaDacPackage: Deploys DACPAC to a database (requires SQL Server connection)
 
     .LINK
-        https://dbatools.io/Build-DbaDacPackage
+        https://dbatools.io/New-DbaDacPackage
 
     .EXAMPLE
-        PS C:\> Build-DbaDacPackage -Path C:\Projects\MyDatabase\Schema -OutputPath C:\Build\MyDatabase.dacpac
+        PS C:\> New-DbaDacPackage -Path C:\Projects\MyDatabase\Schema -OutputPath C:\Build\MyDatabase.dacpac
 
-        Builds a DACPAC from all SQL files in C:\Projects\MyDatabase\Schema and saves it to C:\Build\MyDatabase.dacpac.
-
-    .EXAMPLE
-        PS C:\> Build-DbaDacPackage -Path C:\Projects\MyDatabase\Schema -Recursive -DatabaseName "MyAppDB" -DacVersion "2.1.0.0"
-
-        Builds a DACPAC from all SQL files in the Schema directory and subdirectories, setting the database name to "MyAppDB" and version to "2.1.0.0".
+        Creates a DACPAC from all SQL files in C:\Projects\MyDatabase\Schema and saves it to C:\Build\MyDatabase.dacpac.
 
     .EXAMPLE
-        PS C:\> Build-DbaDacPackage -Path C:\Projects\MyDatabase -Recursive | Publish-DbaDacPackage -SqlInstance sql2019 -Database TestDeploy
+        PS C:\> New-DbaDacPackage -Path C:\Projects\MyDatabase\Schema -Recursive -DatabaseName "MyAppDB" -DacVersion "2.1.0.0"
 
-        Builds a DACPAC from source files and immediately deploys it to the TestDeploy database on sql2019.
-
-    .EXAMPLE
-        PS C:\> Build-DbaDacPackage -Path C:\Projects\MyDatabase\Schema -SqlServerVersion Sql140 -Recursive
-
-        Builds a DACPAC targeting SQL Server 2017 compatibility, useful when deploying to older SQL Server versions.
+        Creates a DACPAC from all SQL files in the Schema directory and subdirectories, setting the database name to "MyAppDB" and version to "2.1.0.0".
 
     .EXAMPLE
-        PS C:\> Build-DbaDacPackage -Path C:\Projects\MyDatabase -Filter "*Table*.sql" -Recursive
+        PS C:\> New-DbaDacPackage -Path C:\Projects\MyDatabase -Recursive | Publish-DbaDacPackage -SqlInstance sql2019 -Database TestDeploy
 
-        Builds a DACPAC including only SQL files with "Table" in their filename.
+        Creates a DACPAC from source files and immediately deploys it to the TestDeploy database on sql2019.
 
     .EXAMPLE
-        PS C:\> $result = Build-DbaDacPackage -Path .\sql\Schema -Recursive -DatabaseName "dbatoolspro" -DacVersion "1.0.0"
+        PS C:\> New-DbaDacPackage -Path C:\Projects\MyDatabase\Schema -SqlServerVersion Sql140 -Recursive
+
+        Creates a DACPAC targeting SQL Server 2017 compatibility, useful when deploying to older SQL Server versions.
+
+    .EXAMPLE
+        PS C:\> New-DbaDacPackage -Path C:\Projects\MyDatabase -Filter "*Table*.sql" -Recursive
+
+        Creates a DACPAC including only SQL files with "Table" in their filename.
+
+    .EXAMPLE
+        PS C:\> $result = New-DbaDacPackage -Path .\sql\Schema -Recursive -DatabaseName "dbatoolspro" -DacVersion "1.0.0"
         PS C:\> $result | Format-List
 
-        Builds a DACPAC and displays detailed results including object count, duration, and any errors or warnings.
+        Creates a DACPAC and displays detailed results including object count, duration, and any errors or warnings.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -119,28 +119,12 @@ function Build-DbaDacPackage {
     )
 
     begin {
-        # Load the DacFx Extensions assembly which contains TSqlModel and BuildPackage
-        # The base dbatools.library only includes core DacFx types, not the model building API
-        $sqlPackagePath = Get-DbaSqlPackagePath
-        if (-not $sqlPackagePath) {
-            Stop-Function -Message "SqlPackage is required but not found. Install using Install-DbaSqlPackage."
-            return
-        }
-
-        $sqlPackageDir = Split-Path -Path $sqlPackagePath -Parent
-        $dacExtensionsPath = Join-Path -Path $sqlPackageDir -ChildPath "Microsoft.SqlServer.Dac.Extensions.dll"
-
-        if (-not (Test-Path -Path $dacExtensionsPath)) {
-            Stop-Function -Message "DacFx Extensions assembly not found at $dacExtensionsPath. Please reinstall SqlPackage using Install-DbaSqlPackage."
-            return
-        }
-
+        # The DacFx types are loaded by dbatools.library - verify they are available
         try {
-            # Load the Extensions assembly which provides TSqlModel and DacPackageExtensions.BuildPackage
-            Add-Type -Path $dacExtensionsPath -ErrorAction Stop
-            Write-Message -Level Verbose -Message "Loaded DacFx Extensions from $dacExtensionsPath"
+            $null = [Microsoft.SqlServer.Dac.Model.TSqlModel]
+            Write-Message -Level Verbose -Message "DacFx Model types are available from dbatools.library"
         } catch {
-            Stop-Function -Message "Failed to load DacFx Extensions assembly from $dacExtensionsPath" -ErrorRecord $_
+            Stop-Function -Message "DacFx Model types are not available. Ensure dbatools.library is properly loaded."
             return
         }
 
@@ -217,10 +201,17 @@ function Build-DbaDacPackage {
 
         Write-Message -Level Verbose -Message "Creating TSqlModel with target version: $SqlServerVersion"
 
-        # Create TSqlModel
+        # Create TSqlModel - handle different DacFx versions
         try {
-            $modelOptions = New-Object Microsoft.SqlServer.Dac.Model.TSqlModelOptions
-            $model = New-Object Microsoft.SqlServer.Dac.Model.TSqlModel -ArgumentList $sqlVersionEnum, $modelOptions
+            # First try with TSqlModelOptions (newer DacFx versions)
+            [Microsoft.SqlServer.Dac.Model.TSqlModelOptions]$modelOptions = New-Object Microsoft.SqlServer.Dac.Model.TSqlModelOptions
+            try {
+                $model = New-Object Microsoft.SqlServer.Dac.Model.TSqlModel -ArgumentList @($sqlVersionEnum, $modelOptions)
+            } catch {
+                # Fallback: try with $null for options (some DacFx versions require this)
+                Write-Message -Level Verbose -Message "Retrying TSqlModel creation with null options"
+                $model = New-Object Microsoft.SqlServer.Dac.Model.TSqlModel -ArgumentList @($sqlVersionEnum, $null)
+            }
         } catch {
             Stop-Function -Message "Failed to create TSqlModel. Ensure DacFx is properly loaded." -ErrorRecord $_
             return
@@ -293,22 +284,22 @@ function Build-DbaDacPackage {
 
             # Return result with errors but don't build
             $result = [PSCustomObject]@{
-                DacpacPath    = $null
-                DatabaseName  = $DatabaseName
-                Version       = $DacVersion.ToString()
-                FileCount     = $fileCount
-                ObjectCount   = $objectCount
-                Duration      = [prettytimespan]($resultsTime.Elapsed)
-                Success       = $false
-                Errors        = $buildErrors.ToArray()
-                Warnings      = $buildWarnings.ToArray()
+                DacpacPath   = $null
+                DatabaseName = $DatabaseName
+                Version      = $DacVersion.ToString()
+                FileCount    = $fileCount
+                ObjectCount  = $objectCount
+                Duration     = [prettytimespan]($resultsTime.Elapsed)
+                Success      = $false
+                Errors       = $buildErrors.ToArray()
+                Warnings     = $buildWarnings.ToArray()
             }
 
             Stop-Function -Message "Build failed with $($buildErrors.Count) error(s). Use -Verbose for details."
             return $result
         }
 
-        if ($PSCmdlet.ShouldProcess($OutputPath, "Build DACPAC from $fileCount SQL files")) {
+        if ($PSCmdlet.ShouldProcess($OutputPath, "Create DACPAC from $fileCount SQL files")) {
             try {
                 # Create package metadata
                 $packageMetadata = New-Object Microsoft.SqlServer.Dac.PackageMetadata
@@ -323,14 +314,14 @@ function Build-DbaDacPackage {
                 $packageOptions = New-Object Microsoft.SqlServer.Dac.PackageOptions
 
                 # Build the DACPAC
-                Write-Message -Level Verbose -Message "Building DACPAC to $OutputPath"
+                Write-Message -Level Verbose -Message "Creating DACPAC at $OutputPath"
 
                 [Microsoft.SqlServer.Dac.DacPackageExtensions]::BuildPackage($OutputPath, $model, $packageMetadata, $packageOptions)
 
-                Write-Message -Level Output -Message "Successfully built DACPAC: $OutputPath"
+                Write-Message -Level Output -Message "Successfully created DACPAC: $OutputPath"
 
             } catch {
-                $errorMessage = "Failed to build DACPAC: $($_.Exception.Message)"
+                $errorMessage = "Failed to create DACPAC: $($_.Exception.Message)"
                 $null = $buildErrors.Add($errorMessage)
                 Stop-Function -Message $errorMessage -ErrorRecord $_
                 return
@@ -341,17 +332,17 @@ function Build-DbaDacPackage {
 
         # Return result object (pipeline-friendly for Publish-DbaDacPackage)
         [PSCustomObject]@{
-            ComputerName  = $env:COMPUTERNAME
-            Path          = $OutputPath
-            Database      = $DatabaseName
-            DatabaseName  = $DatabaseName
-            Version       = $DacVersion.ToString()
-            FileCount     = $fileCount
-            ObjectCount   = $objectCount
-            Duration      = [prettytimespan]($resultsTime.Elapsed)
-            Success       = $true
-            Errors        = $buildErrors.ToArray()
-            Warnings      = $buildWarnings.ToArray()
+            ComputerName = $env:COMPUTERNAME
+            Path         = $OutputPath
+            Database     = $DatabaseName
+            DatabaseName = $DatabaseName
+            Version      = $DacVersion.ToString()
+            FileCount    = $fileCount
+            ObjectCount  = $objectCount
+            Duration     = [prettytimespan]($resultsTime.Elapsed)
+            Success      = $true
+            Errors       = $buildErrors.ToArray()
+            Warnings     = $buildWarnings.ToArray()
         } | Select-DefaultView -Property Path, DatabaseName, Version, FileCount, ObjectCount, Duration, Success
     }
 }
