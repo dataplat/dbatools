@@ -496,6 +496,7 @@
         'New-DbaCredential',
         'New-DbaCustomError',
         'New-DbaDacOption',
+        'New-DbaDacPackage',
         'New-DbaDacProfile',
         'New-DbaDatabase',
         'New-DbaDbAsymmetricKey',

@@ -648,6 +648,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaBackupInformation',
         'Invoke-DbaBalanceDataFiles',
         'Select-DbaBackupInformation',
+        'New-DbaDacPackage',
         'Publish-DbaDacPackage',
         'Copy-DbaDbTableData',
         'Copy-DbaDbViewData',
