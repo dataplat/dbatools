@@ -48,20 +48,9 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Check if source is Linux (Docker) or if running on non-Windows
-        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $sourceIsLinux = $sourceServer.ConnectionContext.ExecuteScalar("SELECT @@VERSION") -match "Linux"
-
-        # For backup paths, use the SQL Server's default backup directory when source is Linux/Docker
-        # This ensures the SQL Server service account has access to the path
-        if ($sourceIsLinux -or $IsMacOS -or $IsLinux) {
-            # Use SQL Server's default backup path - the service account will have access
-            $backupPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance2).Backup
-        } else {
-            # Windows to Windows - use temp path
-            $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
-            $null = New-Item -Path $backupPath -ItemType Directory
-        }
+        # Always use SQL Server's default backup directory to ensure the service account has access
+        # This works for both Linux (Docker) and Windows environments
+        $backupPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance2).Backup
 
         # Explain what needs to be set up for the test:
         # To test migration functionality, we need databases on the source instance that can be migrated to the destination.
@@ -130,11 +119,7 @@ Describe $CommandName -Tag IntegrationTests {
         Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $offlineTestDb -Online -Force -ErrorAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2, $offlineTestDb -ErrorAction SilentlyContinue
 
-        # Remove the backup directory only if we created it (Windows to Windows scenario)
-        # For Linux/Docker we use the default backup path and don't delete it
-        if (-not $sourceIsLinux -and -not $IsMacOS -and -not $IsLinux) {
-            Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
-        }
+        # Note: We don't delete the backup path since we use SQL Server's default backup directory
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
