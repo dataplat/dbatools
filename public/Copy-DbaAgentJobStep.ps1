@@ -35,6 +35,10 @@ function Copy-DbaAgentJobStep {
         Specifies which SQL Agent jobs to skip during the copy operation. Accepts wildcards and multiple job names.
         Use this to exclude specific jobs from bulk operations, such as skipping environment-specific jobs that shouldn't be synchronized.
 
+    .PARAMETER Step
+        Specifies which job steps to copy by name. If not specified, all steps are copied.
+        Use this to synchronize specific steps rather than all steps from a job.
+
     .PARAMETER InputObject
         Accepts SQL Agent job objects from the pipeline, typically from Get-DbaAgentJob.
         Use this to copy steps for pre-filtered jobs or when combining with other job management cmdlets for complex workflows.
@@ -90,6 +94,7 @@ function Copy-DbaAgentJobStep {
         [PSCredential]$DestinationSqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
+        [string[]]$Step,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$EnableException
@@ -158,28 +163,46 @@ function Copy-DbaAgentJobStep {
                     continue
                 }
 
+                # Filter source steps if Step parameter is specified
+                $sourceSteps = $sourceJob.JobSteps
+                if (Test-Bound "Step") {
+                    $sourceSteps = $sourceSteps | Where-Object Name -in $Step
+                    if (-not $sourceSteps) {
+                        Write-Message -Level Warning -Message "No matching steps found in job $jobName for specified step names: $($Step -join ', ')"
+                        continue
+                    }
+                }
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Synchronizing steps for job $jobName")) {
                     try {
                         $destJob = $destServer.JobServer.Jobs[$jobName]
 
-                        Write-Message -Message "Removing existing steps from $jobName on $destinstance" -Level Verbose
-                        foreach ($step in $destJob.JobSteps) {
-                            Write-Message -Message "Removing step $($step.Name) from $jobName on $destinstance" -Level Verbose
-                            $step.Drop()
+                        # Remove existing steps - copy to array first to avoid collection modification during enumeration
+                        $stepsToRemove = @($destJob.JobSteps | ForEach-Object { $_ })
+                        if (Test-Bound "Step") {
+                            $stepsToRemove = $stepsToRemove | Where-Object Name -in $Step
+                        }
+
+                        Write-Message -Message "Removing $($stepsToRemove.Count) existing step(s) from $jobName on $destinstance" -Level Verbose
+                        foreach ($stepToRemove in $stepsToRemove) {
+                            Write-Message -Message "Removing step $($stepToRemove.Name) from $jobName on $destinstance" -Level Verbose
+                            $stepToRemove.Drop()
                         }
                         $destJob.JobSteps.Refresh()
 
-                        Write-Message -Message "Copying $($sourceJob.JobSteps.Count) step(s) from $jobName to $destinstance" -Level Verbose
-                        foreach ($sourceStep in $sourceJob.JobSteps) {
+                        Write-Message -Message "Copying $($sourceSteps.Count) step(s) from $jobName to $destinstance" -Level Verbose
+                        foreach ($sourceStep in $sourceSteps) {
                             Write-Message -Message "Creating step $($sourceStep.Name) in $jobName on $destinstance" -Level Verbose
                             $sql = $sourceStep.Script() | Out-String
+                            # Replace @job_id with @job_name since the destination job has a different GUID
+                            $sql = $sql -replace "@job_id=N'[0-9a-fA-F-]+'", "@job_name=N'$($jobName -replace "'", "''")'"
                             Write-Message -Message $sql -Level Debug
                             $destServer.Query($sql)
                         }
 
                         $destJob.JobSteps.Refresh()
                         $copyJobStepStatus.Status = "Successful"
-                        $copyJobStepStatus.Notes = "Synchronized $($sourceJob.JobSteps.Count) job step(s)"
+                        $copyJobStepStatus.Notes = "Synchronized $($sourceSteps.Count) job step(s)"
                         $copyJobStepStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyJobStepStatus.Status = "Failed"

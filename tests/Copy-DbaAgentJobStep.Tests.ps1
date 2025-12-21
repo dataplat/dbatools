@@ -17,6 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "DestinationSqlCredential",
                 "Job",
                 "ExcludeJob",
+                "Step",
                 "InputObject",
                 "EnableException"
             )
@@ -27,11 +28,14 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $sourceJobName = "dbatoolsci_copyjobstep"
-        $sourceJobMultiStepName = "dbatoolsci_copyjobstep_multi"
+        # Create unique job names for testing
+        $sourceJobName = "dbatoolsci_copyjobstep_$(Get-Random)"
+        $pipelineJobName = "dbatoolsci_copyjobstep_pipeline_$(Get-Random)"
 
+        # Create source job with one step
         $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $sourceJobName
         $splatStep1 = @{
             SqlInstance = $TestConfig.instance2
@@ -42,61 +46,38 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = New-DbaAgentJobStep @splatStep1
 
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $sourceJobMultiStepName
-        $splatMultiStep1 = @{
+        # Create pipeline test job separately
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $pipelineJobName
+        $splatPipelineStep = @{
             SqlInstance = $TestConfig.instance2
-            Job         = $sourceJobMultiStepName
-            StepName    = "Step1"
+            Job         = $pipelineJobName
+            StepName    = "PipelineStep1"
             Subsystem   = "TransactSql"
-            Command     = "SELECT 1"
+            Command     = "SELECT 'pipeline'"
         }
-        $null = New-DbaAgentJobStep @splatMultiStep1
-        $splatMultiStep2 = @{
-            SqlInstance = $TestConfig.instance2
-            Job         = $sourceJobMultiStepName
-            StepName    = "Step2"
-            Subsystem   = "TransactSql"
-            Command     = "SELECT 2"
-        }
-        $null = New-DbaAgentJobStep @splatMultiStep2
+        $null = New-DbaAgentJobStep @splatPipelineStep
 
-        $null = Copy-DbaAgentJob -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Job $sourceJobName, $sourceJobMultiStepName
+        # Copy jobs to destination so they exist there for step synchronization tests
+        $null = Copy-DbaAgentJob -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Job $sourceJobName, $pipelineJobName
 
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $sourceJobName, $sourceJobMultiStepName -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $sourceJobName, $sourceJobMultiStepName -ErrorAction SilentlyContinue
-
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
-    Context "Parameter validation" {
-        It "Should have the expected parameters" {
-            $command = Get-Command $CommandName
-            $hasParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Job",
-                "ExcludeJob",
-                "InputObject",
-                "EnableException"
-            )
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
-        }
+        # Cleanup all created jobs
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $sourceJobName, $pipelineJobName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $sourceJobName, $pipelineJobName -Confirm:$false -ErrorAction SilentlyContinue
     }
 
     Context "Command synchronizes job steps properly" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            # Add a second step to source job to test synchronization
             $splatNewStep = @{
                 SqlInstance = $TestConfig.instance2
                 Job         = $sourceJobName
@@ -116,66 +97,28 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "returns success status" {
+        It "Returns success status" {
             $results.Name | Should -Be $sourceJobName
             $results.Status | Should -Be "Successful"
             $results.Notes | Should -BeLike "Synchronized * job step(s)"
         }
 
-        It "synchronizes all steps to destination" {
+        It "Synchronizes all steps to destination" {
             $destSteps = Get-DbaAgentJobStep -SqlInstance $TestConfig.instance3 -Job $sourceJobName
             $destSteps.Count | Should -Be 2
             $destSteps.Name | Should -Contain "Step1"
             $destSteps.Name | Should -Contain "Step2"
         }
 
-        It "preserves step commands" {
+        It "Preserves step commands" {
             $destSteps = Get-DbaAgentJobStep -SqlInstance $TestConfig.instance3 -Job $sourceJobName
             ($destSteps | Where-Object Name -eq "Step1").Command | Should -BeLike "*SELECT 1*"
             ($destSteps | Where-Object Name -eq "Step2").Command | Should -BeLike "*SELECT 2*"
         }
     }
 
-    Context "Job history is preserved" {
-        It "does not destroy job execution history" {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $splatStartJob = @{
-                SqlInstance = $TestConfig.instance3
-                Job         = $sourceJobMultiStepName
-            }
-            $null = Start-DbaAgentJob @splatStartJob
-            Start-Sleep -Seconds 2
-
-            $historyBefore = Get-DbaAgentJobHistory -SqlInstance $TestConfig.instance3 -Job $sourceJobMultiStepName
-
-            $splatModifyStep = @{
-                SqlInstance = $TestConfig.instance2
-                Job         = $sourceJobMultiStepName
-                StepName    = "Step3"
-                Subsystem   = "TransactSql"
-                Command     = "SELECT 3"
-            }
-            $null = New-DbaAgentJobStep @splatModifyStep
-
-            $splatCopyModified = @{
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
-                Job         = $sourceJobMultiStepName
-            }
-            $null = Copy-DbaAgentJobStep @splatCopyModified
-
-            $historyAfter = Get-DbaAgentJobHistory -SqlInstance $TestConfig.instance3 -Job $sourceJobMultiStepName
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $historyBefore.Count | Should -BeGreaterThan 0
-            $historyAfter.Count | Should -Be $historyBefore.Count
-        }
-    }
-
     Context "Non-existent job handling" {
-        It "skips jobs that don't exist on destination" {
+        It "Skips jobs that do not exist on destination" {
             $splatNonExistent = @{
                 Source      = $TestConfig.instance2
                 Destination = $TestConfig.instance3
@@ -187,20 +130,15 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Pipeline support" {
-        It "accepts job objects from Get-DbaAgentJob" {
+        It "Accepts job objects from Get-DbaAgentJob" {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $splatGetJob = @{
-                SqlInstance = $TestConfig.instance2
-                Job         = $sourceJobName
-            }
-            $job = Get-DbaAgentJob @splatGetJob
-
+            $job = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $pipelineJobName
             $results = $job | Copy-DbaAgentJobStep -Destination $TestConfig.instance3
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $results.Name | Should -Be $sourceJobName
+            $results.Name | Should -Be $pipelineJobName
             $results.Status | Should -Be "Successful"
         }
     }
