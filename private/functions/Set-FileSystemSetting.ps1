@@ -60,7 +60,7 @@ function Set-FileSystemSetting {
 
                 Write-Message -Level Verbose -Message "Attempting to connect to $computerName's CIM"
                 $namespaces = Get-DbaCmObject -ComputerName $computerName -Credential $Credential -Namespace root\Microsoft\SQLServer -Query "SELECT NAME FROM __NAMESPACE WHERE NAME LIKE 'ComputerManagement%'" -EnableException
-                $fileStreamNamespace = $namespaces | Where-Object { (Get-DbaCmObject -ComputerName $computerName -Credential $Credential -Namespace "root\Microsoft\SQLServer\$($PSItem.Name)" -ClassName FilestreamSettings -EnableException).Count -gt 0 } | Sort-Object Name -Descending | Select-Object -First 1
+                $fileStreamNamespace = $namespaces | Where-Object { (@(Get-DbaCmObject -ComputerName $computerName -Credential $Credential -Namespace "root\Microsoft\SQLServer\$($PSItem.Name)" -ClassName FilestreamSettings -EnableException)).Count -gt 0 } | Sort-Object Name -Descending | Select-Object -First 1
                 if ($fileStreamNamespace) {
                     $fileStreamCim = Get-DbaCmObject -ComputerName $computerName -Credential $Credential -Namespace root\Microsoft\SQLServer\$($fileStreamNamespace.Name) -ClassName FilestreamSettings | Where-Object { $PSItem.InstanceName -eq $instanceName }
                     if ($fileStreamCim) {

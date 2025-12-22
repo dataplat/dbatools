@@ -81,16 +81,16 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            $tempDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Type Container -Path $tempDir
+
             $database = "dbatoolsci_frk_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $server.Query("CREATE DATABASE $database")
 
-            $outfile = "SQL-Server-First-Responder-Kit-main.zip"
+            $outfile = "$tempDir\SQL-Server-First-Responder-Kit-main.zip"
             Invoke-WebRequest -Uri "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/main.zip" -OutFile $outfile
-            if (Test-Path $outfile) {
-                $fullOutfile = (Get-ChildItem $outfile).FullName
-            }
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database -Branch main -LocalFile $fullOutfile -Force
+            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database -Branch main -LocalFile $outfile -Force
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -100,6 +100,8 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database
+
+            Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }

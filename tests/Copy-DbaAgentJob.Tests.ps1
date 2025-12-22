@@ -212,4 +212,78 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Status | Should -Be "Successful"
         }
     }
+
+    Context "Regression test for issue #9316 - alert-to-job links preserved with -Force" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $testJobWithAlert = "dbatoolsci_copyjob_alert"
+            $testAlertName = "dbatoolsci_alert_for_job"
+
+            # Create job on both instances
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $testJobWithAlert
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $testJobWithAlert
+
+            # Create alert on destination that references the job
+            $splatCreateAlert = @{
+                SqlInstance = $TestConfig.instance3
+                Database    = "msdb"
+                Query       = @"
+EXEC msdb.dbo.sp_add_alert
+    @name = N'$testAlertName',
+    @message_id = 0,
+    @severity = 16,
+    @enabled = 1,
+    @delay_between_responses = 0,
+    @include_event_description_in = 1,
+    @job_name = N'$testJobWithAlert'
+"@
+            }
+            $null = Invoke-DbaQuery @splatCreateAlert
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $splatDropAlert = @{
+                SqlInstance = $TestConfig.instance3
+                Database    = "msdb"
+                Query       = "EXEC msdb.dbo.sp_delete_alert @name = N'$testAlertName'"
+            }
+            $null = Invoke-DbaQuery @splatDropAlert -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $testJobWithAlert -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $testJobWithAlert -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "preserves alert-to-job link when copying with -Force" {
+            # Copy the job with -Force, which should drop and recreate it
+            $splatCopyForce = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+                Job         = $testJobWithAlert
+                Force       = $true
+            }
+            $result = Copy-DbaAgentJob @splatCopyForce
+
+            $result.Status | Should -Be "Successful"
+
+            # Verify the alert still has the job association
+            $splatCheckAlert = @{
+                SqlInstance = $TestConfig.instance3
+                Database    = "msdb"
+                Query       = @"
+SELECT a.name as AlertName, j.name as JobName
+FROM msdb.dbo.sysalerts a
+LEFT JOIN msdb.dbo.sysjobs j ON a.job_id = j.job_id
+WHERE a.name = '$testAlertName'
+"@
+            }
+            $alertCheck = Invoke-DbaQuery @splatCheckAlert
+
+            $alertCheck.AlertName | Should -Be $testAlertName
+            $alertCheck.JobName | Should -Be $testJobWithAlert
+        }
+    }
 }

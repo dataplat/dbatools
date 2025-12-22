@@ -34,8 +34,66 @@ Write-ImportTime -Text "Started" -Timestamp $script:start
 
 $script:PSModuleRoot = $PSScriptRoot
 
+# Ensure TEMP directory is set
+# This is critical for Add-Type operations in dbatools.library
+# If TEMP doesn't exist, try to set it from GetTempPath or find an alternative
 if (-not $Env:TEMP) {
-    $Env:TEMP = [System.IO.Path]::GetTempPath()
+    # Try to get system temp path first
+    try {
+        $systemTemp = [System.IO.Path]::GetTempPath()
+        if ($systemTemp) {
+            $Env:TEMP = $systemTemp
+            $Env:TMP = $systemTemp
+        }
+    } catch {
+        # GetTempPath failed, try to find an alternative
+        $alternativePaths = @(
+            [System.IO.Path]::Combine($env:USERPROFILE, "AppData", "Local", "Temp"),
+            [System.IO.Path]::Combine($env:LOCALAPPDATA, "Temp"),
+            [System.IO.Path]::Combine($script:PSModuleRoot, "temp")
+        )
+
+        $foundWritable = $false
+        foreach ($altPath in $alternativePaths) {
+            if ($altPath -and (Test-Path $altPath -PathType Container -ErrorAction SilentlyContinue)) {
+                try {
+                    $testFile = [System.IO.Path]::Combine($altPath, "dbatools_temp_test_$([System.Guid]::NewGuid().ToString()).tmp")
+                    [System.IO.File]::WriteAllText($testFile, "test")
+                    [System.IO.File]::Delete($testFile)
+                    $Env:TEMP = $altPath
+                    $Env:TMP = $altPath
+                    $foundWritable = $true
+                    Write-Verbose "TEMP environment variable was not set. Using: $altPath"
+                    break
+                } catch {
+                    continue
+                }
+            }
+        }
+
+        if (-not $foundWritable) {
+            # Try to create a temp directory in the module path as last resort
+            try {
+                $moduleTempPath = [System.IO.Path]::Combine($script:PSModuleRoot, "temp")
+                if (-not (Test-Path $moduleTempPath)) {
+                    $null = New-Item -Path $moduleTempPath -ItemType Directory -Force -ErrorAction Stop
+                }
+                $testFile = [System.IO.Path]::Combine($moduleTempPath, "dbatools_temp_test_$([System.Guid]::NewGuid().ToString()).tmp")
+                [System.IO.File]::WriteAllText($testFile, "test")
+                [System.IO.File]::Delete($testFile)
+                $Env:TEMP = $moduleTempPath
+                $Env:TMP = $moduleTempPath
+                Write-Verbose "TEMP environment variable was not set. Created and using: $moduleTempPath"
+            } catch {
+                $tempError = "dbatools requires a TEMP environment variable to load assemblies. "
+                $tempError += "The TEMP environment variable is not set, and no alternative writable location could be found. "
+                $tempError += "This commonly occurs in SQL Server Agent jobs running without a user profile. "
+                $tempError += "Please set TEMP/TMP environment variables to a writable location, "
+                $tempError += "or create a writable directory at: $moduleTempPath"
+                throw $tempError
+            }
+        }
+    }
 }
 
 $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
@@ -355,6 +413,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Copy-DbaStartupProcedure',
         'Get-DbaDbDetachedFileInfo',
         'Copy-DbaAgentJobCategory',
+        'Copy-DbaAgentJobStep',
         'Get-DbaLinkedServerLogin',
         'Test-DbaPath',
         'Export-DbaLogin',
@@ -398,6 +457,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
         'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'Connect-DbaInstance',
         'Get-DbaDbBackupHistory',
@@ -588,6 +648,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaBackupInformation',
         'Invoke-DbaBalanceDataFiles',
         'Select-DbaBackupInformation',
+        'New-DbaDacPackage',
         'Publish-DbaDacPackage',
         'Copy-DbaDbTableData',
         'Copy-DbaDbViewData',

@@ -29,6 +29,9 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $tempDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Type Container -Path $tempDir
+
         # Get a random value for the database name
         $random = Get-Random
 
@@ -219,10 +222,15 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname
 
-        # Set the original configuration
-        Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteDacConnectionsEnabled -Value $config.ConfiguredValue -WarningAction SilentlyContinue
-        Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -ConfigName RemoteDacConnectionsEnabled -Value $instance2Config.ConfiguredValue -WarningAction SilentlyContinue
+        Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
+        # Set the original configuration
+        if ($config.ConfiguredValue -ne 1) {
+            Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteDacConnectionsEnabled -Value $false
+        }
+        if ($instance2Config.ConfiguredValue -ne 1) {
+            Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -ConfigName RemoteDacConnectionsEnabled -Value $false
+        }
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
@@ -292,15 +300,14 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
 
     Context "Decrypt view and use a destination folder" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName dbatoolsci_test_vw -ExportDestination .
-            (Get-Content $result.OutputFile | Out-String).Trim() | Should -Be $setupView.Trim()
-            Remove-Item $result.OutputFile
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName dbatoolsci_test_vw -ExportDestination $tempDir
+            (Get-Content $result.OutputFile -Raw).Trim() | Should -Be $setupView.Trim()
         }
     }
 
     Context "Decrypt all encrypted objects and use a destination folder" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ExportDestination .
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ExportDestination $tempDir
             @($result | Where-Object { $_.Type -eq 'StoredProcedure' }).Count | Should -Be 1
             @($result | Where-Object { $_.Type -eq 'Trigger' }).Count | Should -Be 1
             @($result | Where-Object { $_.Type -eq 'UserDefinedFunction' }).Count | Should -Be 3
@@ -310,9 +317,8 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
 
     Context "Connect to an instance (ideally a remote instance) using a SqlCredential and decrypt an object" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination .
-            (Get-Content $result.OutputFile | Out-String).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
-            Remove-Item $result.OutputFile
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination $tempDir
+            (Get-Content $result.OutputFile -Raw).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
         }
     }
 }

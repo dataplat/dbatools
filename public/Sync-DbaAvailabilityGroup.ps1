@@ -335,17 +335,23 @@ function Sync-DbaAvailabilityGroup {
 
             if ($Exclude -notcontains "AgentJob") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
-                $splatCopyJob = @{
-                    Source                 = $server
-                    Destination            = $secondaries
-                    Force                  = $force
-                    DisableOnDestination   = $DisableJobOnDestination
+                # MSX jobs are automatically excluded by Get-DbaAgentJob to avoid errors
+                $splatGetJob = @{
+                    SqlInstance = $server
                 }
                 if (Test-Bound 'Job') {
-                    $splatCopyJob['Job'] = $Job
+                    $splatGetJob['Job'] = $Job
                 }
                 if (Test-Bound 'ExcludeJob') {
-                    $splatCopyJob['ExcludeJob'] = $ExcludeJob
+                    $splatGetJob['ExcludeJob'] = $ExcludeJob
+                }
+                $jobsToSync = Get-DbaAgentJob @splatGetJob
+
+                $splatCopyJob = @{
+                    Destination          = $secondaries
+                    Force                = $force
+                    DisableOnDestination = $DisableJobOnDestination
+                    InputObject          = $jobsToSync
                 }
                 Copy-DbaAgentJob @splatCopyJob
             }

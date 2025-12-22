@@ -43,7 +43,11 @@ Describe $CommandName -Tag IntegrationTests {
             $plaintext = "BigOlPassword!"
             $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
-            $null = Invoke-Command2 -ScriptBlock { net user $login $plaintext /add *>&1 } -ComputerName $instance2.ComputerName
+            if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+                $null = New-LocalUser -Name $login -Password $password -Disabled:$false
+            } else {
+                Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false } -ArgumentList $login, $password
+            }
             $credential = New-DbaCredential -SqlInstance $instance2 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
 
             # if replication is installed then these can be tested also: Distribution, LogReader, Merge, QueueReader, Snapshot
@@ -72,7 +76,11 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName -ErrorAction SilentlyContinue
+            if (([DbaInstanceParameter]($TestConfig.instance2)).IsLocalHost) {
+                $null = Remove-LocalUser -Name $login -ErrorAction SilentlyContinue
+            } else {
+                Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue } -ArgumentList $login
+            }
             if ($credential) { $credential.Drop() }
             if ($sqlLogin) { $sqlLogin.Drop() }
             if ($agentProxyAllSubsystems) { $agentProxyAllSubsystems.Drop() }

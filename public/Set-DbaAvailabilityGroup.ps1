@@ -57,6 +57,25 @@ function Set-DbaAvailabilityGroup {
         Configures the availability group as a Distributed AG that spans multiple WSFC clusters or standalone instances.
         Used for disaster recovery scenarios across geographic locations or different domains. Requires SQL Server 2016 or later.
 
+    .PARAMETER ClusterConnectionOption
+        Specifies connection options for TDS 8.0 support in SQL Server 2025 and above.
+        This allows the Windows Server Failover Cluster (WSFC) to connect to SQL Server instances using ODBC with TLS 1.3 encryption.
+        The value is a string containing semicolon-delimited key-value pairs.
+
+        Available keys:
+        - Encrypt: Controls connection encryption
+        - TrustServerCertificate: Whether to trust the server certificate
+        - HostNameInCertificate: Expected hostname in the certificate
+        - ServerCertificate: Path to server certificate
+
+        This setting is persisted by WSFC in the registry and used continuously for cluster-to-instance communication.
+        Note: PowerShell does not validate these values - invalid combinations will be rejected by SMO or the ODBC driver.
+
+        Example: "Encrypt=Strict;TrustServerCertificate=False"
+
+        For detailed documentation, see:
+        https://learn.microsoft.com/en-us/sql/t-sql/statements/alter-availability-group-transact-sql
+
     .PARAMETER InputObject
         Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline operations.
         Use this to pipe specific AG objects directly to the function instead of specifying SqlInstance and AG names separately.
@@ -115,6 +134,7 @@ function Set-DbaAvailabilityGroup {
         [switch]$BasicAvailabilityGroup,
         [switch]$DatabaseHealthTrigger,
         [switch]$IsDistributedAvailabilityGroup,
+        [string]$ClusterConnectionOption,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
@@ -142,6 +162,16 @@ function Set-DbaAvailabilityGroup {
                             $ag.$prop = (Get-Variable -Name $prop -ValueOnly)
                         }
                     }
+
+                    # ClusterConnectionOption requires SQL Server 2025+ (version 17)
+                    if ((Test-Bound -ParameterName ClusterConnectionOption)) {
+                        if ($ag.Parent.VersionMajor -ge 17) {
+                            $ag.ClusterConnectionOptions = $ClusterConnectionOption
+                        } else {
+                            Write-Message -Level Warning -Message "ClusterConnectionOption is only supported in SQL Server 2025 and above. Skipping this setting on $($ag.Parent.Name)."
+                        }
+                    }
+
                     $ag.Alter()
                     $ag
                 }

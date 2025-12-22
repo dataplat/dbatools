@@ -60,6 +60,8 @@ Describe $CommandName -Tag UnitTests {
                 "StaticColumns",
                 "DateTimeFormats",
                 "Culture",
+                "SampleRows",
+                "DetectColumnTypes",
                 "Parallel",
                 "ThrottleLimit",
                 "ParallelBatchSize"
@@ -609,6 +611,237 @@ Describe $CommandName -Tag IntegrationTests {
             $data[0].price | Should -Be 789.12
             $data[1].product | Should -Be "Widget"
             $data[1].price | Should -Be 1234.56
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context "AutoCreateTable post-import optimization" {
+        It "optimizes nvarchar(MAX) columns to appropriate sizes after import" {
+            $filePath = "$($TestConfig.Temp)\optimize-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "OptimizeTest$(Get-Random)"
+
+            # Create CSV with string data of known lengths
+            $csvContent = @"
+ShortCol,MediumCol,LongCol
+ABC,This is medium,This is a longer piece of text that should still fit
+XYZ,Another medium,Another longer piece of text for testing purposes here
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+
+            # Verify columns were optimized (not nvarchar(MAX))
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $shortCol = $columns | Where-Object Name -eq "ShortCol"
+            $mediumCol = $columns | Where-Object Name -eq "MediumCol"
+            $longCol = $columns | Where-Object Name -eq "LongCol"
+
+            # Should be varchar with padded lengths, not MAX (-1)
+            # Padding rounds up to: 16, 32, 64, 128, 256, 512, 1024, 2048, max
+            $shortCol.DataType.MaximumLength | Should -Not -Be -1
+            $shortCol.DataType.MaximumLength | Should -Be 16  # "ABC" (3 chars) padded to 16
+            $mediumCol.DataType.MaximumLength | Should -Not -Be -1
+            $longCol.DataType.MaximumLength | Should -Not -Be -1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "preserves nvarchar type while optimizing size" {
+            $filePath = "$($TestConfig.Temp)\ascii-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "AsciiTest$(Get-Random)"
+
+            # Create CSV with ASCII-only data
+            $csvContent = @"
+Name,Code
+John Smith,ABC123
+Jane Doe,XYZ789
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+
+            # AutoCreateTable creates nvarchar(MAX), optimization preserves type but optimizes size
+            # Use SampleRows or DetectColumnTypes for proper varchar/nvarchar inference
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $nameCol = $columns | Where-Object Name -eq "Name"
+
+            $nameCol.DataType.Name | Should -Be "nvarchar"
+            $nameCol.DataType.MaximumLength | Should -Not -Be -1  # Optimized, not MAX
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "keeps nvarchar for Unicode data" {
+            $filePath = "$($TestConfig.Temp)\unicode-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "UnicodeOptTest$(Get-Random)"
+
+            # Create CSV with Unicode characters
+            $csvContent = @"
+Name,City
+José García,São Paulo
+田中太郎,東京
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+
+            # Should be nvarchar since data contains Unicode
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $nameCol = $columns | Where-Object Name -eq "Name"
+            $cityCol = $columns | Where-Object Name -eq "City"
+
+            $nameCol.DataType.Name | Should -Be "nvarchar"
+            $cityCol.DataType.Name | Should -Be "nvarchar"
+            # But still optimized to appropriate length
+            $nameCol.DataType.MaximumLength | Should -Not -Be -1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context "Type detection with SampleRows and DetectColumnTypes" {
+        It "creates table with inferred types using SampleRows" {
+            $filePath = "$($TestConfig.Temp)\samplerows-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "SampleRowsTest$(Get-Random)"
+
+            # Create CSV with typed data
+            $csvContent = @"
+Id,Name,Price,Quantity,IsActive,Created,UniqueId
+1,Widget A,19.99,100,true,2024-01-15,550e8400-e29b-41d4-a716-446655440000
+2,Widget B,29.50,50,false,2024-02-20,6ba7b810-9dad-11d1-80b4-00c04fd430c8
+3,Gadget C,99.00,25,yes,2024-03-25,f47ac10b-58cc-4372-a567-0e02b2c3d479
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -SampleRows 1000
+
+            $result.RowsCopied | Should -Be 3
+
+            # Verify the table was created with proper types (not all nvarchar(MAX))
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $idCol = $columns | Where-Object Name -eq "Id"
+            $priceCol = $columns | Where-Object Name -eq "Price"
+            $isActiveCol = $columns | Where-Object Name -eq "IsActive"
+            $createdCol = $columns | Where-Object Name -eq "Created"
+            $uniqueIdCol = $columns | Where-Object Name -eq "UniqueId"
+
+            $idCol.DataType.Name | Should -Be "int"
+            $priceCol.DataType.Name | Should -Be "decimal"
+            $isActiveCol.DataType.Name | Should -Be "bit"
+            $createdCol.DataType.Name | Should -Be "datetime2"
+            $uniqueIdCol.DataType.Name | Should -Be "uniqueidentifier"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "creates table with inferred types using DetectColumnTypes (full scan)" {
+            $filePath = "$($TestConfig.Temp)\detecttypes-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "DetectTypesTest$(Get-Random)"
+
+            # Create CSV with typed data
+            $csvContent = @"
+OrderId,Amount,Status
+1001,1500.75,true
+1002,2500.00,false
+1003,750.25,true
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -DetectColumnTypes
+
+            $result.RowsCopied | Should -Be 3
+
+            # Verify the table was created with proper types
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $orderIdCol = $columns | Where-Object Name -eq "OrderId"
+            $amountCol = $columns | Where-Object Name -eq "Amount"
+            $statusCol = $columns | Where-Object Name -eq "Status"
+
+            $orderIdCol.DataType.Name | Should -Be "int"
+            $amountCol.DataType.Name | Should -Be "decimal"
+            $statusCol.DataType.Name | Should -Be "bit"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "infers varchar with correct max length instead of varchar(MAX)" {
+            $filePath = "$($TestConfig.Temp)\varcharlength-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "VarcharLengthTest$(Get-Random)"
+
+            # Create CSV with string data of known lengths
+            $csvContent = @"
+ShortName,LongDescription
+ABC,This is a longer description text
+XYZ,Another description here
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -SampleRows 1000
+
+            $result.RowsCopied | Should -Be 2
+
+            # Verify varchar columns have appropriate lengths (not MAX)
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $shortCol = $columns | Where-Object Name -eq "ShortName"
+            $longCol = $columns | Where-Object Name -eq "LongDescription"
+
+            # Should be varchar with specific length, not varchar(MAX)
+            $shortCol.DataType.Name | Should -Be "varchar"
+            $shortCol.DataType.MaximumLength | Should -BeLessOrEqual 10
+            $shortCol.DataType.MaximumLength | Should -Not -Be -1  # -1 means MAX
+            $longCol.DataType.Name | Should -Be "varchar"
+            $longCol.DataType.MaximumLength | Should -Not -Be -1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "detects nullable columns correctly" {
+            $filePath = "$($TestConfig.Temp)\nullable-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "NullableTest$(Get-Random)"
+
+            # Create CSV with some null/empty values
+            $csvContent = @"
+Id,RequiredName,OptionalValue
+1,John,100
+2,Jane,
+3,Bob,300
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -SampleRows 1000
+
+            $result.RowsCopied | Should -Be 3
+
+            # Verify nullability
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $idCol = $columns | Where-Object Name -eq "Id"
+            $nameCol = $columns | Where-Object Name -eq "RequiredName"
+            $optCol = $columns | Where-Object Name -eq "OptionalValue"
+
+            $idCol.Nullable | Should -Be $false
+            $nameCol.Nullable | Should -Be $false
+            $optCol.Nullable | Should -Be $true
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue

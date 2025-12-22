@@ -202,6 +202,25 @@ function New-DbaAvailabilityGroup {
         The cluster will request an IP address from DHCP servers on each replica's subnet.
         Use this when static IP management is not desired and DHCP reservations can provide consistent addressing.
 
+    .PARAMETER ClusterConnectionOption
+        Specifies connection options for TDS 8.0 support in SQL Server 2025 and above.
+        This allows the Windows Server Failover Cluster (WSFC) to connect to SQL Server instances using ODBC with TLS 1.3 encryption.
+        The value is a string containing semicolon-delimited key-value pairs.
+
+        Available keys:
+        - Encrypt: Controls connection encryption
+        - TrustServerCertificate: Whether to trust the server certificate
+        - HostNameInCertificate: Expected hostname in the certificate
+        - ServerCertificate: Path to server certificate
+
+        This setting is persisted by WSFC in the registry and used continuously for cluster-to-instance communication.
+        Note: PowerShell does not validate these values - invalid combinations will be rejected by SMO or the ODBC driver.
+
+        Example: "Encrypt=Strict;TrustServerCertificate=False"
+
+        For detailed documentation, see:
+        https://learn.microsoft.com/en-us/sql/t-sql/statements/create-availability-group-transact-sql
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -335,6 +354,7 @@ function New-DbaAvailabilityGroup {
         [ipaddress]$SubnetMask = "255.255.255.0",
         [int]$Port = 1433,
         [switch]$Dhcp,
+        [string]$ClusterConnectionOption,
         [switch]$EnableException
     )
     begin {
@@ -561,6 +581,10 @@ function New-DbaAvailabilityGroup {
                 if ($server.VersionMajor -ge 16) {
                     $ag.IsContained = $IsContained
                     $ag.ReuseSystemDatabases = $ReuseSystemDatabases
+                }
+
+                if ($server.VersionMajor -ge 17 -and $ClusterConnectionOption) {
+                    $ag.ClusterConnectionOptions = $ClusterConnectionOption
                 }
 
                 if ($PassThru) {

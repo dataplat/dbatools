@@ -24,9 +24,9 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests -Skip:$env:AppVeyor {
     # Skip IntegrationTests on AppVeyor because they fail for unknown reasons.
 
-    Context "Gets ProductKey for Instances on $($env:ComputerName)" {
+    Context "Gets ProductKey for Instances on $(([DbaInstanceParameter]($TestConfig.instance1)).ComputerName)" {
         BeforeAll {
-            $results = Get-DbaProductKey -ComputerName $env:ComputerName
+            $results = Get-DbaProductKey -ComputerName ([DbaInstanceParameter]($TestConfig.instance1)).ComputerName
         }
 
         It "Gets results" {

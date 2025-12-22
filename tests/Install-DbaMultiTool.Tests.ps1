@@ -27,14 +27,25 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Testing DBA MultiTool installer with download" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database
 
             $resultsDownload = Install-DbaMultiTool -SqlInstance $TestConfig.instance2 -Database $database -Branch $branch -Force -Verbose:$false
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Installs to specified database: $database" {
@@ -66,20 +77,33 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Testing DBA MultiTool installer with LocalFile" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $server.Query("CREATE DATABASE $database")
 
-            $outfile = "dba-multitool-$branch.zip"
+            $tempDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Type Container -Path $tempDir
+
+            $outfile = "$tempDir\dba-multitool-$branch.zip"
             Invoke-WebRequest -Uri "https://github.com/LowlyDBA/dba-multitool/archive/$branch.zip" -OutFile $outfile
-            if (Test-Path $outfile) {
-                $fullOutfile = (Get-ChildItem $outfile).FullName
-            }
-            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database -Branch $branch -LocalFile $fullOutfile -Force
+            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database -Branch $branch -LocalFile $outfile -Force
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database -ErrorAction SilentlyContinue
+
+            Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Installs to specified database: $database" {

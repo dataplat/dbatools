@@ -175,6 +175,8 @@ function Get-DbaAgentJob {
             if ($ExcludeDisabledJobs) {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
+            # Always exclude MSX jobs (CategoryID = 1) - they cannot be synced to secondary replicas
+            $jobs = $jobs | Where-Object CategoryID -ne 1
             if ($Database) {
                 $dbLookup = @{}
                 foreach ($db in $Database) {

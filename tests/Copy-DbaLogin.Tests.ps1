@@ -139,8 +139,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "ExcludeSystemLogins Parameter" {
         It "Should say skipped" {
             $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -ExcludeSystemLogins
-            $results.Status.Contains('Skipped') | Should -Be $true
-            $results.Notes.Contains('System login') | Should -Be $true
+            $results.Status | Should -Contain 'Skipped'
+            if (([DbaInstanceParameter]$TestConfig.instance1).ComputerName -ne ([DbaInstanceParameter]$TestConfig.instance2).ComputerName) {
+                $results.Notes | Should -Contain 'Local machine name'
+            } else {
+                $results.Notes | Should -Contain 'System login'
+            }
         }
     }
 
@@ -250,6 +254,44 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Copy-DbaLogin @splatCopy
             $results.Status | Should -Be "Skipped"
             $results.Notes | Should -Be "BUILTIN\Administrators is a critical system login"
+        }
+    }
+
+    Context "Regression test for issue #9163 - Warn when login not found" {
+        It "Should warn when specified login does not exist on source" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "nonexistentlogin"
+            }
+            $result = Copy-DbaLogin @splatCopy -WarningVariable warn -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+            $warn | Should -Not -BeNullOrEmpty
+            $warn | Should -BeLike "*nonexistentlogin*not found*"
+        }
+
+        It "Should warn for each non-existent login when multiple are specified" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "nonexistent1", "nonexistent2"
+            }
+            $result = Copy-DbaLogin @splatCopy -WarningVariable warn -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+            $warn.Count | Should -Be 2
+            $warn[0] | Should -BeLike "*nonexistent1*not found*"
+            $warn[1] | Should -BeLike "*nonexistent2*not found*"
+        }
+
+        It "Should not warn when login exists" {
+            $splatCopy = @{
+                Source      = $TestConfig.instance1
+                Destination = $TestConfig.instance2
+                Login       = "tester"
+            }
+            $result = Copy-DbaLogin @splatCopy -WarningVariable warn -WarningAction SilentlyContinue
+            $result.Status | Should -Be "Successful"
+            $warn | Should -BeNullOrEmpty
         }
     }
 

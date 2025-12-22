@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.7.12'
+    ModuleVersion      = '2.7.14'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -31,7 +31,7 @@
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
         ModuleName    = 'dbatools.library';
-        ModuleVersion = '2025.11.29'
+        ModuleVersion = '2025.12.21'
     }
 
     # Assemblies that must be loaded prior to importing this module
@@ -84,6 +84,7 @@
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
         'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'Connect-DbaInstance',
         'ConvertTo-DbaDataTable',
@@ -92,6 +93,7 @@
         'Copy-DbaAgentAlert',
         'Copy-DbaAgentJob',
         'Copy-DbaAgentJobCategory',
+        'Copy-DbaAgentJobStep',
         'Copy-DbaAgentOperator',
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentSchedule',
@@ -494,6 +496,7 @@
         'New-DbaCredential',
         'New-DbaCustomError',
         'New-DbaDacOption',
+        'New-DbaDacPackage',
         'New-DbaDacProfile',
         'New-DbaDatabase',
         'New-DbaDbAsymmetricKey',
