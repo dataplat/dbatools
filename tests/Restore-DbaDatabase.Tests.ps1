@@ -847,7 +847,7 @@ use master
         }
 
         It "Should encrypt the backup" {
-            $encBackupResults.EncryptorType | Should -Be "CERTIFICATE"
+            $encBackupResults.EncryptorType | Should -BeLike "CERTIFICATE*"  # 2025 returns: CERTIFICATE_OAEP_256
             $encBackupResults.KeyAlgorithm | Should -Be "aes_128"
         }
 

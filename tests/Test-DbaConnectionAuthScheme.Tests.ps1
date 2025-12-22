@@ -26,7 +26,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "returns the proper transport" {
         It "returns ntlm auth scheme" {
             $results = Test-DbaConnectionAuthScheme -SqlInstance $TestConfig.instance1
-            $results.AuthScheme | Should -Be 'ntlm'
+            if (([DbaInstanceParameter]($TestConfig.instance1)).IsLocalHost) {
+                $results.AuthScheme | Should -Be 'ntlm'
+            } else {
+                $results.AuthScheme | Should -Be 'KERBEROS'
+            }
+
         }
     }
 }
