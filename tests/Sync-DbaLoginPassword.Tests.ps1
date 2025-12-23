@@ -145,7 +145,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaLogin @splatLogin
 
             # Ensure login does NOT exist on destination (handle AG/replication scenarios)
-            $null = Remove-DbaLogin -SqlInstance $secondaryInstance -Login $nonExistentLogin -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Get-DbaLogin -SqlInstance $secondaryInstance -Login $nonExistentLogin | Remove-DbaLogin
 
             # Try to sync - should skip because login doesn't exist on destination
             $splatSync = @{

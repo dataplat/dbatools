@@ -38,8 +38,6 @@ CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION
 CREATE DATABASE dbatoolsci_orphan;
 "@
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force
-        $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
         $null = Invoke-DbaQuery -SqlInstance $server -Query $loginSql
         $userSql = @"
 CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
@@ -64,7 +62,7 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force
+        $null = Get-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 | Remove-DbaLogin -Force
         $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

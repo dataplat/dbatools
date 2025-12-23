@@ -100,13 +100,15 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
         It "Builds a DACPAC from a directory with SQL files recursively" {
             $outputDacpac = "$testFolder\output-recursive.dacpac"
             $splatBuildRecursive = @{
-                Path         = $sqlSourcePath
-                OutputPath   = $outputDacpac
-                Recursive    = $true
-                DatabaseName = "TestDatabase"
+                Path          = $sqlSourcePath
+                OutputPath    = $outputDacpac
+                Recursive     = $true
+                DatabaseName  = "TestDatabase"
+                WarningAction = "SilentlyContinue"
             }
             $result = New-DbaDacPackage @splatBuildRecursive
 
+            $WarnVar | Should -BeLike "*Skipping empty file: *\Schema\EmptyFile.sql"
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
             $result.Path | Should -Be $outputDacpac
@@ -125,9 +127,11 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 DatabaseName   = "VersionedDB"
                 DacVersion     = "2.1.0.0"
                 DacDescription = "Test DACPAC with version"
+                WarningAction  = "SilentlyContinue"
             }
             $result = New-DbaDacPackage @splatBuildVersioned
 
+            $WarnVar | Should -BeLike "*Skipping empty file: *\Schema\EmptyFile.sql"
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
             $result.Version | Should -Be "2.1.0.0"
@@ -142,9 +146,11 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 Recursive        = $true
                 DatabaseName     = "Sql2017DB"
                 SqlServerVersion = "Sql140"
+                WarningAction    = "SilentlyContinue"
             }
             $result = New-DbaDacPackage @splatBuildTargeted
 
+            $WarnVar | Should -BeLike "*Skipping empty file: *\Schema\EmptyFile.sql"
             $result | Should -Not -BeNullOrEmpty
             $result.Success | Should -BeTrue
             Test-Path $outputDacpac | Should -BeTrue
@@ -153,13 +159,15 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
         It "Builds from non-recursive directory scan" {
             $outputDacpac = "$testFolder\output-nonrecursive.dacpac"
             $splatBuildNonRecursive = @{
-                Path         = $sqlSourcePath
-                OutputPath   = $outputDacpac
-                DatabaseName = "NonRecursiveDB"
+                Path          = $sqlSourcePath
+                OutputPath    = $outputDacpac
+                DatabaseName  = "NonRecursiveDB"
+                WarningAction = "SilentlyContinue"
             }
             $result = New-DbaDacPackage @splatBuildNonRecursive
 
             # Non-recursive should only find the EmptyFile.sql in the root
+            $WarnVar | Should -BeLike "*Skipping empty file: *\Schema\EmptyFile.sql"
             $result | Should -Not -BeNullOrEmpty
             # May succeed or fail depending on if there are valid SQL files in root
         }
@@ -169,13 +177,15 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
         It "Returns object with Path property for pipeline compatibility" {
             $outputDacpac = "$testFolder\output-pipeline.dacpac"
             $splatBuildPipeline = @{
-                Path         = $sqlSourcePath
-                OutputPath   = $outputDacpac
-                Recursive    = $true
-                DatabaseName = "PipelineDB"
+                Path          = $sqlSourcePath
+                OutputPath    = $outputDacpac
+                Recursive     = $true
+                DatabaseName  = "PipelineDB"
+                WarningAction = "SilentlyContinue"
             }
             $result = New-DbaDacPackage @splatBuildPipeline
 
+            $WarnVar | Should -BeLike "*Skipping empty file: *\Schema\EmptyFile.sql"
             $result | Should -Not -BeNullOrEmpty
             $result.Path | Should -Not -BeNullOrEmpty
             $result.Database | Should -Not -BeNullOrEmpty
@@ -199,13 +209,15 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
         It "Built DACPAC can be loaded by DacFx" {
             $outputDacpac = "$testFolder\output-loadtest.dacpac"
             $splatBuildLoadTest = @{
-                Path         = $sqlSourcePath
-                OutputPath   = $outputDacpac
-                Recursive    = $true
-                DatabaseName = "LoadTestDB"
+                Path          = $sqlSourcePath
+                OutputPath    = $outputDacpac
+                Recursive     = $true
+                DatabaseName  = "LoadTestDB"
+                WarningAction = "SilentlyContinue"
             }
             $result = New-DbaDacPackage @splatBuildLoadTest
 
+            $WarnVar | Should -BeLike "*Skipping empty file: *\Schema\EmptyFile.sql"
             $result.Success | Should -BeTrue
 
             # Verify the DACPAC can be loaded
