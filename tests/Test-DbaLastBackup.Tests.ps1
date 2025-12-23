@@ -174,6 +174,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have skipped bigtestrest and tested smalltestrest" {
             $sizeResults[0].RestoreResult | Should -BeLike "*exceeds the specified maximum*"
             $sizeResults[0].DbccResult | Should -Be "Skipped"
+            $sizeResults[1] | Should -BeNullOrEmpty   # Just added to analyse the problem
             $sizeResults[1].RestoreResult | Should -Be "Success"
             $sizeResults[1].DbccResult | Should -Be "Success"
         }
