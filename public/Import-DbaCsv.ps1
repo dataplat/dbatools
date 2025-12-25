@@ -991,7 +991,18 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             foreach ($instance in $SqlInstance) {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
+                # Detect if user passed an already-open connection that we should preserve
+                $startedWithAnOpenConnection = $false
                 try {
+                    # Check if user passed a Server SMO object with an open connection
+                    # Following the pattern from Invoke-DbaQuery.ps1
+                    if ($instance.InputObject.GetType().Name -eq "Server" -and
+                        (-not $SqlCredential) -and
+                        ($instance.InputObject.ConnectionContext.DatabaseName -eq $Database -or -not $Database)) {
+                        $startedWithAnOpenConnection = $true
+                        Write-Message -Level Debug -Message "User provided an open connection - will preserve it after import"
+                    }
+
                     $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -MinimumVersion 9
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     if ($sqlconn.State -ne 'Open') {
@@ -1409,10 +1420,13 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                             }
                         }
 
-                        try {
-                            $sqlconn.Close()
-                            $sqlconn.Dispose()
-                        } catch {
+                        # Only close connection if we created it (not user-provided)
+                        if (-not $startedWithAnOpenConnection) {
+                            try {
+                                $sqlconn.Close()
+                                $sqlconn.Dispose()
+                            } catch {
+                            }
                         }
 
                         try {
@@ -1461,10 +1475,16 @@ WHERE c.object_id = OBJECT_ID(@tableName)
     }
     end {
         # Close everything just in case & ignore errors
+        # Only close SQL connection if we created it (not user-provided)
         try {
-            $null = $sqlconn.Close(); $null = $sqlconn.Dispose();
-            $null = $bulkCopy.Close(); $bulkcopy.Dispose();
-            $null = $reader.Close(); $null = $reader.Dispose()
+            if (-not $startedWithAnOpenConnection) {
+                $null = $sqlconn.Close()
+                $null = $sqlconn.Dispose()
+            }
+            $null = $bulkCopy.Close()
+            $bulkcopy.Dispose()
+            $null = $reader.Close()
+            $null = $reader.Dispose()
         } catch {
             #here to avoid an empty catch
             $null = 1

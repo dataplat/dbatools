@@ -592,6 +592,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
             $sourceDb.Status | Should -BeLike "*Offline*"
+
+            # Set database online again to be able to remove the files on remove of database
+            $null = Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $offlineTestDb -Online
         }
     }
 

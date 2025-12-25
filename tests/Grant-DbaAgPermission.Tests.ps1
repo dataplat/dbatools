@@ -53,7 +53,6 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance3 -Login "claudio", "port", "tester"
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance3 -Login "claudio", "port", "tester"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -102,12 +102,12 @@ function Get-DbaRandomizedValue {
         Will generate a number between -2147483648 and 2147483647
 
     .EXAMPLE
-        Get-DbaRandomizedValue -RandomizerSubType Zipcode
+        Get-DbaRandomizedValue -RandomizerType Address -RandomizerSubType Zipcode
 
         Generates a random zipcode
 
     .EXAMPLE
-        Get-DbaRandomizedValue -RandomizerSubType Zipcode -Format "#### ##"
+        Get-DbaRandomizedValue -RandomizerType Address -RandomizerSubType Zipcode -Format "#### ##"
 
         Generates a random zipcode like "1234 56"
 

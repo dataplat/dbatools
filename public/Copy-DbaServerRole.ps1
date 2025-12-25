@@ -111,7 +111,7 @@ function Copy-DbaServerRole {
             return
         }
 
-        $sourceRoles = $sourceServer.Roles | Where-Object IsFixedRole -eq $false
+        $sourceRoles = $sourceServer.Roles | Where-Object { $PSItem.IsFixedRole -eq $false -and $PSItem.Name -ne "public" }
 
         if ($Force) { $ConfirmPreference = "none" }
     }

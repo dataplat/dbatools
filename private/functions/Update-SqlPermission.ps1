@@ -46,7 +46,11 @@ function Update-SqlPermission {
     if ($SourceLogin.IsDisabled -ne $DestLogin.IsDisabled) {
         if ($Pscmdlet.ShouldProcess($destination, "Setting login $newLoginName IsDisabled to $($SourceLogin.IsDisabled).")) {
             try {
-                $DestLogin.IsDisabled = $SourceLogin.IsDisabled
+                if ($SourceLogin.IsDisabled) {
+                    $DestLogin.Disable()
+                } else {
+                    $DestLogin.Enable()
+                }
                 $DestLogin.Alter()
                 Write-Message -Level Verbose -Message "Setting login $newLoginName IsDisabled to $($SourceLogin.IsDisabled) on $destination successfully performed."
             } catch {

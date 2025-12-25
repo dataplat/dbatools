@@ -90,10 +90,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE TRIGGER [create_database_$random] ON ALL SERVER FOR CREATE_DATABASE AS SELECT 1"
 
         # database restore scripts
-        $backupdir = Join-Path $server.BackupDirectory $dbName
-        if (-not (Test-Path $backupdir -PathType Container)) {
-            $null = New-Item -Path $backupdir -ItemType Container
-        }
+        $backupdir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupdir -ItemType Directory
         New-DbaDatabase -SqlInstance $testServer -Name $dbName
         Backup-DbaDatabase -SqlInstance $testServer -Database $dbName -BackupDirectory $backupdir
 
@@ -174,7 +172,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "DROP TRIGGER [create_database_$random] ON ALL SERVER"
 
         # database restore scripts
-        Remove-Item -Path $backupdir -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupdir -Recurse
 
         # database audit
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database $dbName -Query "ALTER DATABASE AUDIT SPECIFICATION [DatabaseAuditSpecification_$random] WITH (STATE = OFF); DROP DATABASE AUDIT SPECIFICATION [DatabaseAuditSpecification_$random]"
