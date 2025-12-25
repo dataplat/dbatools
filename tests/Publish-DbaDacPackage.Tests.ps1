@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
             INSERT dbo.example
             SELECT top 100 object_id
             FROM sys.objects")
-        $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database $dbname -Path C:\temp
+        $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database $dbname -Path $TestConfig.Temp
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -125,13 +125,13 @@ Describe $CommandName -Tag IntegrationTests {
                 Action   = "Publish"
                 Property = @{
                     GenerateDeploymentScript = $true
-                    DatabaseScriptPath       = "C:\Temp\testdb.sql"
+                    DatabaseScriptPath       = "$($TestConfig.Temp)\testdb.sql"
                 }
             }
             $opts = New-DbaDacOption @splatOption
             $results = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.instance2 -DacOption $opts
             $results.Result | Should -BeLike "*Reporting and scripting deployment plan (Complete)*"
-            $results.DatabaseScriptPath | Should -Be "C:\Temp\testdb.sql"
+            $results.DatabaseScriptPath | Should -Be "$($TestConfig.Temp)\testdb.sql"
             Test-Path ($results.DatabaseScriptPath) | Should -Be $true
             Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Should -BeNullOrEmpty
             Remove-Item $results.DatabaseScriptPath

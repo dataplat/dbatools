@@ -42,10 +42,19 @@ Describe $CommandName -Tag IntegrationTests {
         $tempdbDataFilePhysicalName = $server.Databases["tempdb"].Query("SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 1").PhysicalName
         $tempdbDataFilePath = Split-Path $tempdbDataFilePhysicalName
 
-        $null = New-Item -Path "$tempdbDataFilePath\DataDir0_$random" -Type Directory
-        $null = New-Item -Path "$tempdbDataFilePath\DataDir1_$random" -Type Directory
-        $null = New-Item -Path "$tempdbDataFilePath\DataDir2_$random" -Type Directory
-        $null = New-Item -Path "$tempdbDataFilePath\Log_$random" -Type Directory
+        if (([DbaInstanceParameter]($TestConfig.instance1)).IsLocalHost) {
+            $null = New-Item -Path "$tempdbDataFilePath\DataDir0_$random" -Type Directory
+            $null = New-Item -Path "$tempdbDataFilePath\DataDir1_$random" -Type Directory
+            $null = New-Item -Path "$tempdbDataFilePath\DataDir2_$random" -Type Directory
+            $null = New-Item -Path "$tempdbDataFilePath\Log_$random" -Type Directory
+        } else {
+            Invoke-Command2 -ComputerName $TestConfig.instance1 -ScriptBlock {
+                $null = New-Item -Path "$($args[0])\DataDir0_$($args[1])" -Type Directory
+                $null = New-Item -Path "$($args[0])\DataDir1_$($args[1])" -Type Directory
+                $null = New-Item -Path "$($args[0])\DataDir2_$($args[1])" -Type Directory
+                $null = New-Item -Path "$($args[0])\Log_$($args[1])" -Type Directory
+            } -ArgumentList $tempdbDataFilePath, $random
+        }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -56,10 +65,19 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created directories.
-        Remove-Item -Path "$tempdbDataFilePath\DataDir0_$random" -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path "$tempdbDataFilePath\DataDir1_$random" -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path "$tempdbDataFilePath\DataDir2_$random" -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path "$tempdbDataFilePath\Log_$random" -Force -ErrorAction SilentlyContinue
+        if (([DbaInstanceParameter]($TestConfig.instance1)).IsLocalHost) {
+            Remove-Item -Path "$tempdbDataFilePath\DataDir0_$random" -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path "$tempdbDataFilePath\DataDir1_$random" -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path "$tempdbDataFilePath\DataDir2_$random" -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path "$tempdbDataFilePath\Log_$random" -Force -ErrorAction SilentlyContinue
+        } else {
+            Invoke-Command2 -ComputerName $TestConfig.instance1 -ScriptBlock {
+                Remove-Item -Path "$($args[0])\DataDir0_$($args[1])" -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path "$($args[0])\DataDir1_$($args[1])" -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path "$($args[0])\DataDir2_$($args[1])" -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path "$($args[0])\Log_$($args[1])" -Force -ErrorAction SilentlyContinue
+            } -ArgumentList $tempdbDataFilePath, $random
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

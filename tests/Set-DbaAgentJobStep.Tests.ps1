@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
-        $null = Invoke-Command2 -ScriptBlock { net user $login $plaintext /add *>&1 } -ComputerName $instance2.ComputerName
+        $null = Invoke-Command2 -ComputerName $instance2.ComputerName -ScriptBlock { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false } -ArgumentList $login, $password
 
         $credential = New-DbaCredential -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
 
@@ -85,7 +85,7 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random"
         Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "dbatoolsci_job_1_$random"
         Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_job_1_$random"
-        $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName
+        $null = Invoke-Command2 -ComputerName $instance2.ComputerName -ScriptBlock { $null = Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue } -ArgumentList $login
         $credential.Drop()
         $agentProxyInstance2.Drop()
 

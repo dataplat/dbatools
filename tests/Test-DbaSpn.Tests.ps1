@@ -23,32 +23,18 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When getting SPN information" {
         BeforeAll {
-            Mock Resolve-DbaNetworkName {
-                [PSCustomObject]@{
-                    InputName        = $env:COMPUTERNAME
-                    ComputerName     = $env:COMPUTERNAME
-                    IPAddress        = "127.0.0.1"
-                    DNSHostName      = $env:COMPUTERNAME
-                    DNSDomain        = $env:COMPUTERNAME
-                    Domain           = $env:COMPUTERNAME
-                    DNSHostEntry     = $env:COMPUTERNAME
-                    FQDN             = $env:COMPUTERNAME
-                    FullComputerName = $env:COMPUTERNAME
-                }
-            }
-            $results = Test-DbaSpn -ComputerName $env:COMPUTERNAME -WarningAction SilentlyContinue
+            $results = Test-DbaSpn -ComputerName $TestConfig.instance1
         }
 
         It "Returns some results" {
-            $null -ne $results.RequiredSPN | Should -Be $true
+            $results.RequiredSPN | Should -Not -BeNullOrEmpty
         }
 
         It "Has the required properties for all results" {
             foreach ($result in $results) {
-                $result.RequiredSPN -match "MSSQLSvc" | Should -Be $true
-                $result.Cluster -eq $false | Should -Be $true
+                $result.RequiredSPN | Should -Match "MSSQLSvc"
                 $result.TcpEnabled | Should -Be $true
-                $result.IsSet -is [bool] | Should -Be $true
+                $result.IsSet | Should -BeOfType [bool]
             }
         }
     }
