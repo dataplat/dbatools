@@ -31,7 +31,7 @@
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
         ModuleName    = 'dbatools.library';
-        ModuleVersion = '2025.12.21'
+        ModuleVersion = '2025.12.25'
     }
 
     # Assemblies that must be loaded prior to importing this module
