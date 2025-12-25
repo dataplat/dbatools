@@ -93,6 +93,11 @@ function Copy-DbaDatabase {
         Sets source databases to read-only before migration to prevent data changes during the process.
         Use this to ensure data consistency when databases must remain accessible at the source during migration.
 
+    .PARAMETER SetSourceOffline
+        Sets source databases offline before migration to prevent any connections during the process.
+        Use this to ensure complete isolation when databases must be completely inaccessible at the source during migration.
+        When combined with -Reattach, databases are brought back online after being reattached to the source.
+
     .PARAMETER ReuseSourceFolderStructure
         Maintains the exact file path structure from the source instance on the destination.
         Use this when destination servers have identical drive layouts or when preserving specific organizational folder structures.
@@ -129,10 +134,6 @@ function Copy-DbaDatabase {
         Adds a prefix to all migrated database names and their physical file names.
         Use this to distinguish migrated databases (e.g., 'DEV_' prefix for development copies).
         Cannot be used together with -NewName parameter.
-
-    .PARAMETER SetSourceOffline
-        Sets source databases to offline status after successful migration.
-        Use this for cutover scenarios where source databases should be unavailable after migration.
 
     .PARAMETER KeepCDC
         Preserves Change Data Capture (CDC) configuration and data during migration.
@@ -258,6 +259,9 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbBackup")]
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$SetSourceReadOnly,
+        [parameter(ParameterSetName = "DbBackup")]
+        [parameter(ParameterSetName = "DbAttachDetach")]
+        [switch]$SetSourceOffline,
         [Alias("ReuseFolderStructure")]
         [parameter(ParameterSetName = "DbBackup")]
         [parameter(ParameterSetName = "DbAttachDetach")]
@@ -276,7 +280,6 @@ function Copy-DbaDatabase {
         [switch]$KeepCDC,
         [parameter(ParameterSetName = "DbBackup")]
         [switch]$KeepReplication,
-        [switch]$SetSourceOffline,
         [string]$NewName,
         [string]$Prefix,
         [switch]$Force,
@@ -1172,6 +1175,7 @@ function Copy-DbaDatabase {
                     }
 
                     $sourceDbReadOnly = $sourceServer.Databases[$dbName].ReadOnly
+                    $sourceDbOffline = $sourceServer.Databases[$dbName].Status -like "*Offline*"
 
                     if ($SetSourceReadOnly) {
                         If ($Pscmdlet.ShouldProcess($source, "Set $dbName to read-only")) {
@@ -1180,6 +1184,18 @@ function Copy-DbaDatabase {
                                 $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException -Force
                             } catch {
                                 Stop-Function -Continue -Message "Couldn't set database to read-only. Aborting routine for this database" -ErrorRecord $_
+                            }
+                        }
+                    }
+
+                    if ($SetSourceOffline -and $DetachAttach) {
+                        # For DetachAttach, set offline before detach to kill connections
+                        If ($Pscmdlet.ShouldProcess($source, "Set $dbName to offline")) {
+                            Write-Message -Level Verbose -Message "Setting database to offline."
+                            try {
+                                $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -Offline -EnableException -Force
+                            } catch {
+                                Stop-Function -Continue -Message "Couldn't set database to offline. Aborting routine for this database" -ErrorRecord $_
                             }
                         }
                     }
@@ -1235,6 +1251,17 @@ function Copy-DbaDatabase {
                                     $backupCollection += $backupTmpResult
                                 }
                             }
+
+                            # For BackupRestore, set source offline after backup completes but before restore
+                            if ($SetSourceOffline) {
+                                Write-Message -Level Verbose -Message "Setting source database $dbName to offline after backup."
+                                try {
+                                    $null = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -Offline -EnableException -Force
+                                } catch {
+                                    Stop-Function -Continue -Message "Couldn't set database to offline after backup. Aborting routine for this database" -ErrorRecord $_
+                                }
+                            }
+
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                             try {
                                 $msg = $null
@@ -1305,6 +1332,16 @@ function Copy-DbaDatabase {
                             }
                         }
 
+                        if ($SetSourceOffline) {
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $dbName to online after source was set to offline")) {
+                                try {
+                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $dbName -Online -EnableException -Force
+                                } catch {
+                                    Stop-Function -Message "Couldn't set $dbName to online on $($destserver.Name)" -ErrorRecord $_
+                                }
+                            }
+                        }
+
                         $dbFinish = Get-Date
                         if ($NoRecovery -eq $false) {
                             If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $destinationDbName")) {
@@ -1359,6 +1396,14 @@ function Copy-DbaDatabase {
                                             $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException
                                         } catch {
                                             Stop-Function -Message "Couldn't set database to read-only" -ErrorRecord $_
+                                        }
+                                    }
+
+                                    if ($SetSourceOffline -or $sourceDbOffline) {
+                                        try {
+                                            $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -Offline -EnableException -Force
+                                        } catch {
+                                            Stop-Function -Message "Couldn't set database to offline" -ErrorRecord $_
                                         }
                                     }
                                     Write-Message -Level Verbose -Message "Successfully reattached $dbName to $source."
@@ -1461,12 +1506,6 @@ function Copy-DbaDatabase {
                         }
 
                         $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-
-                    if ($SetSourceOffline -and $copyDatabaseStatus.Status -eq "Successful" -and $sourceServer.databases[$dbName].status -notlike '*offline*') {
-                        if ($Pscmdlet.ShouldProcess($source, "Setting $dbName offline")) {
-                            Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -Offline -Force
-                        }
                     }
 
                     $dbTotalTime = $dbFinish - $dbStart

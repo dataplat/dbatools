@@ -97,6 +97,11 @@ function Start-DbaMigration {
         This prevents data changes during migration and helps ensure data consistency.
         When combined with -Reattach, databases remain read-only after being reattached to the source.
 
+    .PARAMETER SetSourceOffline
+        Sets migrated databases offline on the source server before migration begins.
+        This prevents any connections to the source databases during migration, ensuring complete isolation.
+        When combined with -Reattach, databases are brought back online after being reattached to the source.
+
     .PARAMETER AzureCredential
         Specifies the name of a SQL Server credential for accessing Azure Storage when SharedPath points to an Azure Storage account.
         The credential must already exist on both source and destination servers with proper access to the Azure Storage container.
@@ -202,6 +207,11 @@ function Start-DbaMigration {
         Migrates databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.
 
     .EXAMPLE
+        PS C:\> Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -BackupRestore -SharedPath "\\fileserver\backups" -SetSourceOffline
+
+        Migrates databases using backup/restore method. Sets source databases offline before migration to prevent any connections during the process.
+
+    .EXAMPLE
         PS C:\> $PSDefaultParameters = @{
         >> "dbatools:Source" = "sqlcluster"
         >> "dbatools:Destination" = "sql2016"
@@ -225,6 +235,7 @@ function Start-DbaMigration {
         [switch]$WithReplace,
         [switch]$NoRecovery,
         [switch]$SetSourceReadOnly,
+        [switch]$SetSourceOffline,
         [switch]$ReuseSourceFolderStructure,
         [switch]$IncludeSupportDbs,
         [PSCredential]$SourceSqlCredential,
@@ -392,6 +403,7 @@ function Start-DbaMigration {
                 Destination                = $Destination
                 DestinationSqlCredential   = $DestinationSqlCredential
                 SetSourceReadOnly          = $SetSourceReadOnly
+                SetSourceOffline           = $SetSourceOffline
                 ReuseSourceFolderStructure = $ReuseSourceFolderStructure
                 AllDatabases               = $true
                 Force                      = $Force
@@ -424,7 +436,9 @@ function Start-DbaMigration {
                 }
             }
 
-            Copy-DbaDatabase @CopyDatabaseSplat
+            Copy-DbaDatabase @CopyDatabaseSplat | ForEach-Object {
+                $PSItem
+            }
         }
 
         if ($Exclude -notcontains 'Logins') {

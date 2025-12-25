@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "WithReplace",
                 "NoRecovery",
                 "SetSourceReadOnly",
+                "SetSourceOffline",
                 "ReuseSourceFolderStructure",
                 "IncludeSupportDbs",
                 "SourceSqlCredential",
@@ -192,6 +193,65 @@ Describe $CommandName -Tag IntegrationTests {
             $sourceDbs.RecoveryModel | Should -Be $destDbs.RecoveryModel
             $sourceDbs.Status | Should -Be $destDbs.Status
             $sourceDbs.Owner | Should -Be $destDbs.Owner
+        }
+    }
+
+    Context "When using SetSourceOffline parameter" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create a dedicated database for offline testing
+            $offlineTestDb = "dbatoolsci_offline$random"
+
+            # Clean up any existing test database
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $offlineTestDb -ErrorAction SilentlyContinue
+
+            # Create test database on source
+            $splatCreateOfflineDb = @{
+                SqlInstance = $TestConfig.instance2
+                Query       = "CREATE DATABASE $offlineTestDb; ALTER DATABASE $offlineTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+            }
+            Invoke-DbaQuery @splatCreateOfflineDb
+
+            # Create a backup so UseLastBackup can find it
+            $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb -BackupDirectory $backupPath
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Run migration with SetSourceOffline
+            $splatOfflineMigration = @{
+                Source           = $TestConfig.instance2
+                Destination      = $TestConfig.instance3
+                BackupRestore    = $true
+                UseLastBackup    = $true
+                SetSourceOffline = $true
+                Force            = $true
+                Exclude          = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures", "MasterCertificates"
+            }
+            $offlineResults = Start-DbaMigration @splatOfflineMigration
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Bring database back online before cleanup
+            Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $offlineTestDb -Online -Force -ErrorAction SilentlyContinue
+
+            # Clean up
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $offlineTestDb -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should set source database offline after successful migration" {
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
+            $sourceDb.Status | Should -BeLike "*Offline*"
+        }
+
+        It "Should have destination database online" {
+            $destDb = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $offlineTestDb
+            $destDb | Should -Not -BeNullOrEmpty
+            $destDb.Status | Should -Be "Normal"
         }
     }
 }
