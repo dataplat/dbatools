@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up any remaining test login
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin -ErrorAction SilentlyContinue
+        $null = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin | Remove-DbaLogin
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

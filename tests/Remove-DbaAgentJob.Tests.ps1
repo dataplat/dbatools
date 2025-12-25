@@ -147,7 +147,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not remove jobs when -Job is empty string" {
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "" -Confirm:$false
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "" -Confirm:$false -WarningAction SilentlyContinue
+            $WarnVar | Should -BeLike "*Job  doesn't exist*"
             $result | Should -BeNullOrEmpty
             (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }

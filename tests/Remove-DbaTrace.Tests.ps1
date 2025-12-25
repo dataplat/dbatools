@@ -26,13 +26,16 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $tracePath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $tracePath -ItemType Directory
+
         $sql = @"
 -- Create a Queue
 declare @rc int
 declare @TraceID int
 declare @maxfilesize bigint
 set @maxfilesize = 5
-exec @rc = sp_trace_create @TraceID output, 0, N'C:\windows\temp\temptrace', @maxfilesize, NULL
+exec @rc = sp_trace_create @TraceID output, 0, N'$tracePath\temptrace', @maxfilesize, NULL
 
 -- Set the events
 declare @on bit
@@ -112,7 +115,7 @@ select TraceID=@TraceID
     }
 
     AfterAll {
-        Remove-Item "C:\windows\temp\temptrace.trc" -ErrorAction SilentlyContinue
+        Remove-Item -Path $tracePath -Recurse
     }
 
     Context "Test Removing Trace" {

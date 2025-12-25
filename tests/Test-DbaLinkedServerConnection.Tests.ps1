@@ -24,7 +24,15 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database master
-        $server.Query("EXEC master.dbo.sp_addlinkedserver @server = N'localhost', @srvproduct=N'SQL Server'")
+        if ($server.VersionMajor -ge 17) {
+            # Starting with SQL Server 2025 (17.x), MSOLEDBSQL uses Microsoft OLE DB Driver version 19, which adds support for TDS 8.0. However, this driver introduces a breaking change. You must now specify the encrypt parameter.
+            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'localhost', @srvproduct=N'', @provider=N'MSOLEDBSQL', @provstr = N'encrypt=optional'")
+        } elseif ($server.VersionMajor -eq 16) {
+            # Starting with SQL Server 2022 (16.x), you must specify a provider name. MSOLEDBSQL is recommended. If you omit @provider, you can experience unexpected behavior.
+            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'localhost', @srvproduct=N'', @provider=N'MSOLEDBSQL'")
+        } else {
+            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'localhost', @srvproduct=N'SQL Server'")
+        }
     }
 
     AfterAll {

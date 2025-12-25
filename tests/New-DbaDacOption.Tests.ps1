@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 }
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $publishProfile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database whatever -Path C:\Temp
+        $publishProfile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database whatever -Path $TestConfig.Temp -EnableException
     }
 
     AfterAll {

@@ -91,8 +91,6 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query $dropTableQuery
         }
 
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Login 'claudio', 'port', 'tester'
-
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
