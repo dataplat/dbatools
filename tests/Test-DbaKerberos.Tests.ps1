@@ -13,6 +13,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "SqlInstance",
                 "ComputerName",
+                "SqlCredential",
                 "Credential",
                 "Detailed",
                 "EnableException"

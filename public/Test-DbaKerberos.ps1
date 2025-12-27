@@ -30,8 +30,15 @@ function Test-DbaKerberos {
         Use this when you want to test Kerberos configuration at the computer level rather than for specific SQL instances.
         Accepts computer names, IP addresses, or fully qualified domain names.
 
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
     .PARAMETER Credential
-        The credential to use for remote connections and Active Directory queries.
+        Alternative credential for connecting to Active Directory.
         Required for querying AD to verify SPN registrations and service account properties.
 
     .PARAMETER Detailed
@@ -67,10 +74,10 @@ function Test-DbaKerberos {
     .EXAMPLE
         PS C:\> Test-DbaKerberos -SqlInstance sql2016, sql2019 -Credential (Get-Credential)
 
-        Tests multiple SQL Server instances using specified credentials for AD queries and remote connections.
+        Tests multiple SQL Server instances using specified credentials for AD queries.
 
     .EXAMPLE
-        PS C:\> Test-DbaKerberos -ComputerName SERVER01 -Credential ad\sqldba
+        PS C:\> Test-DbaKerberos -ComputerName SERVER01 -SqlCredential ad\sqldba
 
         Tests Kerberos configuration for all SQL instances on SERVER01 using specified AD credentials.
 
@@ -85,6 +92,7 @@ function Test-DbaKerberos {
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Computer")]
         [DbaInstanceParameter[]]$ComputerName,
+        [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [switch]$Detailed,
         [switch]$EnableException
@@ -102,7 +110,7 @@ function Test-DbaKerberos {
                 # Resolve the target to get computer and instance information
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
-                        $server = Connect-DbaInstance -SqlInstance $target -SqlCredential $Credential
+                        $server = Connect-DbaInstance -SqlInstance $target -SqlCredential $SqlCredential
                         $computerTarget = $server.ComputerName
                         $instanceName = $server.ServiceName
                     } catch {
@@ -167,159 +175,43 @@ function Test-DbaKerberos {
                         })
                 }
 
-                # Check 2: Check for duplicate SPNs
-                try {
-                    Write-Message -Level Verbose -Message "Checking for duplicate SPNs"
-                    # Use setspn -X equivalent via ADSI to detect duplicates
-                    # This is a complex AD query that would require ADSI searcher
-                    # For now, we'll rely on Test-DbaSpn results and flag if multiple accounts have same SPN
-                    if ($spnResults) {
-                        $duplicates = $spnResults | Group-Object RequiredSPN | Where-Object Count -gt 1
-                        if ($duplicates) {
-                            $status = "Fail"
-                            $details = "Duplicate SPNs detected: $($duplicates.Name -join ', ')"
-                            $remediation = "Remove duplicate SPNs using setspn -D. Only one account should have each SPN registered."
-                        } else {
-                            $status = "Pass"
-                            $details = "No duplicate SPNs detected"
-                            $remediation = "None"
-                        }
-                    } else {
-                        $status = "Warning"
-                        $details = "Unable to determine duplicate SPN status"
-                        $remediation = "Run 'setspn -X' manually to check for duplicates"
-                    }
-
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Duplicate SPN Detection"
-                            Category     = "SPN"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
-                } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Duplicate SPN Detection"
-                            Category     = "SPN"
-                            Status       = "Warning"
-                            Details      = "Unable to check for duplicate SPNs: $($_.Exception.Message)"
-                            Remediation  = "Run 'setspn -X' manually to check for duplicates"
-                        })
-                }
-
-                # Check 3: Validate SPN format
-                try {
-                    Write-Message -Level Verbose -Message "Validating SPN format"
-                    if ($spnResults) {
-                        $invalidFormat = $spnResults | Where-Object {
-                            $_.RequiredSPN -notmatch '^MSSQLSvc/[^:]+(:[\d]+)?$'
-                        }
-                        if ($invalidFormat) {
-                            $status = "Fail"
-                            $details = "Invalid SPN format detected: $($invalidFormat.RequiredSPN -join ', ')"
-                            $remediation = "SPNs must follow format MSSQLSvc/hostname or MSSQLSvc/hostname:port"
-                        } else {
-                            $status = "Pass"
-                            $details = "All SPNs follow correct MSSQLSvc format"
-                            $remediation = "None"
-                        }
-                    } else {
-                        $status = "Warning"
-                        $details = "Unable to validate SPN format"
-                        $remediation = "Ensure SPNs follow MSSQLSvc/hostname or MSSQLSvc/hostname:port format"
-                    }
-
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "SPN Format Validation"
-                            Category     = "SPN"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
-                } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "SPN Format Validation"
-                            Category     = "SPN"
-                            Status       = "Warning"
-                            Details      = "Unable to validate SPN format: $($_.Exception.Message)"
-                            Remediation  = "Manually verify SPN format"
-                        })
-                }
-
-                # Check 4: Verify SPN ownership
-                try {
-                    Write-Message -Level Verbose -Message "Verifying SPN ownership"
-                    if ($spnResults) {
-                        $wrongOwner = $spnResults | Where-Object {
-                            $_.IsSet -eq $true -and $_.InstanceServiceAccount -ne $_.RegisteredAccountName
-                        }
-                        if ($wrongOwner) {
-                            $status = "Fail"
-                            $details = "SPNs registered to incorrect account. Expected: $($wrongOwner.InstanceServiceAccount -join ', ')"
-                            $remediation = "Remove SPNs from incorrect accounts and re-register to correct service account"
-                        } else {
-                            $status = "Pass"
-                            $details = "All SPNs are owned by correct service accounts"
-                            $remediation = "None"
-                        }
-                    } else {
-                        $status = "Warning"
-                        $details = "Unable to verify SPN ownership"
-                        $remediation = "Manually verify SPNs are registered to SQL Server service account, not computer account"
-                    }
-
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "SPN Ownership"
-                            Category     = "SPN"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
-                } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "SPN Ownership"
-                            Category     = "SPN"
-                            Status       = "Warning"
-                            Details      = "Unable to verify SPN ownership: $($_.Exception.Message)"
-                            Remediation  = "Manually verify SPN ownership"
-                        })
-                }
-
                 # Check 5: Check AG listener SPNs if applicable
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Checking for Availability Group listener SPNs"
-                        $ags = Get-DbaAgListener -SqlInstance $server -EnableException
-                        if ($ags) {
-                            foreach ($ag in $ags) {
-                                $listenerSpn = "MSSQLSvc/$($ag.Name)"
-                                # This would require Test-DbaAgSpn functionality
-                                $status = "Warning"
-                                $details = "AG listener detected: $($ag.Name). Manual SPN verification recommended."
-                                $remediation = "Use Test-DbaAgSpn to verify AG listener SPNs are correctly registered"
-
-                                $null = $checkResults.Add([PSCustomObject]@{
-                                        ComputerName = $computerTarget
-                                        InstanceName = $instanceName
-                                        Check        = "AG Listener SPN - $($ag.Name)"
-                                        Category     = "SPN"
-                                        Status       = $status
-                                        Details      = $details
-                                        Remediation  = $remediation
-                                    })
+                        $listeners = Get-DbaAgListener -SqlInstance $server -EnableException
+                        foreach ($listener in $listeners) {
+                            Write-Message -Level Verbose -Message "Running Test-DbaSpn integration check for $($listener.AvailabilityGroup)"
+                            $splatSpn = @{
+                                SqlInstance       = $listener.SqlInstance
+                                SqlCredential     = $SqlCredential
+                                Credential        = $Credential
+                                AvailabilityGroup = $listener.AvailabilityGroup
+                                Listener          = $listener.Name
+                                EnableException   = $true
                             }
+                            $spnResults = Test-DbaAgSpn @splatSpn
+
+                            $spnIssues = $spnResults | Where-Object IsSet -eq $false
+                            if ($spnIssues) {
+                                $details = "Missing SPNs: $($spnIssues.RequiredSPN -join ', ')"
+                                $remediation = "Register missing SPNs using Set-DbaSpn or setspn.exe. Ensure service account has permissions to register SPNs."
+                                $status = "Fail"
+                            } else {
+                                $details = "All required SPNs are registered correctly"
+                                $remediation = "None"
+                                $status = "Pass"
+                            }
+
+                            $null = $checkResults.Add([PSCustomObject]@{
+                                    ComputerName = $computerTarget
+                                    InstanceName = $instanceName
+                                    Check        = "AG Listener SPN - $($listener.Name)"
+                                    Category     = "SPN"
+                                    Status       = $status
+                                    Details      = $details
+                                    Remediation  = $remediation
+                                })
                         }
                     } catch {
                         # No AGs or unable to query - not an error condition
@@ -658,9 +550,15 @@ function Test-DbaKerberos {
                             # Extract just the username from DOMAIN\username
                             $username = $serviceAccount -replace '^.*\\', ''
 
+                            if ($username.EndsWith('$')) {
+                                $objectCategory = 'msDS-GroupManagedServiceAccount'
+                            } else {
+                                $objectCategory = 'User'
+                            }
+
                             # Query AD for account status
                             $searcher = New-Object System.DirectoryServices.DirectorySearcher
-                            $searcher.Filter = "(&(objectCategory=User)(sAMAccountName=$username))"
+                            $searcher.Filter = "(&(objectCategory=$objectCategory)(samAccountName=$username))"
                             $searcher.PropertiesToLoad.Add("lockoutTime") | Out-Null
                             $searcher.PropertiesToLoad.Add("userAccountControl") | Out-Null
                             $adUser = $searcher.FindOne()
@@ -723,10 +621,18 @@ function Test-DbaKerberos {
                         $serviceAccount = $server.ServiceAccount
 
                         if ($serviceAccount -notlike "NT SERVICE\*" -and $serviceAccount -ne "LocalSystem" -and $serviceAccount -ne "NetworkService") {
+                            # Extract just the username from DOMAIN\username
                             $username = $serviceAccount -replace '^.*\\', ''
 
+                            if ($username.EndsWith('$')) {
+                                $objectCategory = 'msDS-GroupManagedServiceAccount'
+                            } else {
+                                $objectCategory = 'User'
+                            }
+
+                            # Query AD for account status
                             $searcher = New-Object System.DirectoryServices.DirectorySearcher
-                            $searcher.Filter = "(&(objectCategory=User)(sAMAccountName=$username))"
+                            $searcher.Filter = "(&(objectCategory=$objectCategory)(samAccountName=$username))"
                             $searcher.PropertiesToLoad.Add("userAccountControl") | Out-Null
                             $adUser = $searcher.FindOne()
 
@@ -820,45 +726,6 @@ function Test-DbaKerberos {
                                 Status       = "Warning"
                                 Details      = "Unable to check auth scheme: $($_.Exception.Message)"
                                 Remediation  = "Manually query sys.dm_exec_connections"
-                            })
-                    }
-                }
-
-                # Check 15: Check auth_scheme in sys.dm_exec_connections
-                if ($PSCmdlet.ParameterSetName -eq "Instance") {
-                    try {
-                        Write-Message -Level Verbose -Message "Querying sys.dm_exec_connections for auth scheme"
-                        $authQuery = "SELECT auth_scheme FROM sys.dm_exec_connections WHERE session_id = @@SPID"
-                        $authScheme = $server.Query($authQuery).auth_scheme
-
-                        if ($authScheme -eq "KERBEROS") {
-                            $status = "Pass"
-                            $details = "Connection authenticated using Kerberos"
-                            $remediation = "None"
-                        } else {
-                            $status = "Fail"
-                            $details = "Connection authenticated using $authScheme instead of Kerberos"
-                            $remediation = "Review failed checks above to resolve Kerberos issues"
-                        }
-
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "DMV Authentication Scheme"
-                                Category     = "Authentication"
-                                Status       = $status
-                                Details      = $details
-                                Remediation  = $remediation
-                            })
-                    } catch {
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "DMV Authentication Scheme"
-                                Category     = "Authentication"
-                                Status       = "Warning"
-                                Details      = "Unable to query DMV: $($_.Exception.Message)"
-                                Remediation  = "Verify SQL Server connectivity"
                             })
                     }
                 }
@@ -982,49 +849,6 @@ function Test-DbaKerberos {
                             Remediation  = "Manually verify TCP/464 connectivity to DC"
                         })
                 }
-
-                # Check 19: Test SQL Server port
-                if ($PSCmdlet.ParameterSetName -eq "Instance") {
-                    try {
-                        Write-Message -Level Verbose -Message "Testing SQL Server port connectivity"
-                        $port = $server.TcpPort
-                        if (-not $port) {
-                            $port = 1433
-                        }
-
-                        $tcpTest = Test-NetConnection -ComputerName $computerTarget -Port $port -WarningAction SilentlyContinue
-                        if ($tcpTest.TcpTestSucceeded) {
-                            $status = "Pass"
-                            $details = "SQL Server port $port is accessible"
-                            $remediation = "None"
-                        } else {
-                            $status = "Fail"
-                            $details = "SQL Server port $port is not accessible"
-                            $remediation = "Open port $port in firewall or verify SQL Server is listening"
-                        }
-
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "SQL Server Port Connectivity"
-                                Category     = "Network"
-                                Status       = $status
-                                Details      = $details
-                                Remediation  = $remediation
-                            })
-                    } catch {
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "SQL Server Port Connectivity"
-                                Category     = "Network"
-                                Status       = "Warning"
-                                Details      = "Unable to test port connectivity: $($_.Exception.Message)"
-                                Remediation  = "Manually verify SQL Server port accessibility"
-                            })
-                    }
-                }
-                #endregion Network Connectivity Checks
 
                 #region Security Policy Checks
                 # Check 20: Check encryption types
@@ -1244,7 +1068,8 @@ function Test-DbaKerberos {
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Checking SQL Server network protocol configuration"
-                        $tcpEnabled = (Get-DbaNetworkConfiguration -SqlInstance $target -OutputType ServerProtocols -EnableException).TcpIpEnabled
+                        # we need to use $server.SqlInstance to get the actual instance when the target is an Availability Group Listener
+                        $tcpEnabled = (Get-DbaNetworkConfiguration -SqlInstance $server.SqlInstance -OutputType ServerProtocols -EnableException).TcpIpEnabled
 
                         if ($tcpEnabled) {
                             $status = "Pass"
