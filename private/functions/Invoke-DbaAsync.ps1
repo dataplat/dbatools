@@ -37,6 +37,10 @@ function Invoke-DbaAsync {
         .PARAMETER NoExec
             Use this switch to prepend SET NOEXEC ON and append SET NOEXEC OFF to each statement
 
+        .PARAMETER QuotedIdentifier
+            Use this switch to prepend SET QUOTED_IDENTIFIER ON to each statement.
+            Required for INSERT/UPDATE/DELETE on tables with filtered indexes, indexed views, computed columns, or XML indexes.
+
         .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -73,6 +77,9 @@ function Invoke-DbaAsync {
 
         [switch]
         $NoExec,
+
+        [switch]
+        $QuotedIdentifier,
 
         [switch]$EnableException
     )
@@ -184,8 +191,11 @@ function Invoke-DbaAsync {
         $Pieces = $Pieces | Where-Object { $_.Trim().Length -gt 0 }
         foreach ($piece in $Pieces) {
             $runningStatement = $piece
+            if ($QuotedIdentifier) {
+                $runningStatement = "SET QUOTED_IDENTIFIER ON; " + $runningStatement
+            }
             if ($NoExec) {
-                $runningStatement = "SET NOEXEC ON; " + $piece + " ;SET NOEXEC OFF;"
+                $runningStatement = "SET NOEXEC ON; " + $runningStatement + " ;SET NOEXEC OFF;"
             }
             $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand
             $cmd.CommandText = $runningStatement

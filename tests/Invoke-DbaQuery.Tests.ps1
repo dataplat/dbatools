@@ -27,6 +27,7 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException",
                 "CommandType",
                 "NoExec",
+                "QuotedIdentifier",
                 "AppendConnectionString"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -356,6 +357,29 @@ SELECT 2
         $result | Should -BeNullOrEmpty
 
         { Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "SELEC p FROM c" -NoExec -EnableException } | Should -Throw "Incorrect syntax near 'SELEC'."
+    }
+
+    It "supports QuotedIdentifier for filtered index compatibility" {
+        # Create table with filtered index that requires QUOTED_IDENTIFIER ON
+        $setupQuery = @"
+IF OBJECT_ID('tempdb..#TestFiltered') IS NOT NULL DROP TABLE #TestFiltered;
+CREATE TABLE #TestFiltered (Id INT PRIMARY KEY, Name VARCHAR(100), IsDeleted BIT DEFAULT 0);
+CREATE INDEX IX_Filtered ON #TestFiltered(Name) WHERE IsDeleted = 0;
+"@
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query $setupQuery
+
+        # Insert with QuotedIdentifier should succeed
+        $splatInsert = @{
+            SqlInstance      = $TestConfig.instance2
+            Database         = "tempdb"
+            Query            = "INSERT INTO #TestFiltered (Id, Name) VALUES (1, 'Test'); SELECT COUNT(*) as cnt FROM #TestFiltered;"
+            QuotedIdentifier = $true
+        }
+        $result = Invoke-DbaQuery @splatInsert
+        $result.cnt | Should -Be 1
+
+        # Cleanup
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "DROP TABLE #TestFiltered"
     }
 
     It "supports dropping temp objects (#8472)" {
