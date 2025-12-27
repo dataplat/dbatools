@@ -361,10 +361,11 @@ SELECT 2
 
     It "supports QuotedIdentifier for filtered index compatibility" {
         # Create table with filtered index that requires QUOTED_IDENTIFIER ON
+        $tableName = "dbatoolsci_TestFiltered_$(Get-Random)"
         $setupQuery = @"
-IF OBJECT_ID('tempdb..#TestFiltered') IS NOT NULL DROP TABLE #TestFiltered;
-CREATE TABLE #TestFiltered (Id INT PRIMARY KEY, Name VARCHAR(100), IsDeleted BIT DEFAULT 0);
-CREATE INDEX IX_Filtered ON #TestFiltered(Name) WHERE IsDeleted = 0;
+IF OBJECT_ID('tempdb.dbo.$tableName') IS NOT NULL DROP TABLE dbo.$tableName;
+CREATE TABLE dbo.$tableName (Id INT PRIMARY KEY, Name VARCHAR(100), IsDeleted BIT DEFAULT 0);
+CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
 "@
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query $setupQuery
 
@@ -372,14 +373,14 @@ CREATE INDEX IX_Filtered ON #TestFiltered(Name) WHERE IsDeleted = 0;
         $splatInsert = @{
             SqlInstance      = $TestConfig.instance2
             Database         = "tempdb"
-            Query            = "INSERT INTO #TestFiltered (Id, Name) VALUES (1, 'Test'); SELECT COUNT(*) as cnt FROM #TestFiltered;"
+            Query            = "INSERT INTO dbo.$tableName (Id, Name) VALUES (1, 'Test'); SELECT COUNT(*) as cnt FROM dbo.$tableName;"
             QuotedIdentifier = $true
         }
         $result = Invoke-DbaQuery @splatInsert
         $result.cnt | Should -Be 1
 
         # Cleanup
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "DROP TABLE #TestFiltered"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "DROP TABLE dbo.$tableName"
     }
 
     It "supports dropping temp objects (#8472)" {
