@@ -24,7 +24,8 @@ $TestsRunGroups = @{
     "appveyor_disabled" = @(
         'Backup-DbaDbCertificate',
         'Test-DbaDbLogShipStatus',
-        'Invoke-DbaDbMirroring'
+        'Invoke-DbaDbMirroring',
+        'New-DbaEndpoint'
     )
     # do not run everywhere
     "disabled"          = @()
