@@ -80,6 +80,10 @@ function Invoke-DbaQuery {
         Enables syntax and semantic validation without executing the actual statements. The SQL engine parses and compiles queries but doesn't run them.
         Use this to validate T-SQL syntax, check object references, and verify permissions before running potentially destructive scripts in production environments.
 
+    .PARAMETER QuotedIdentifier
+        Prepends SET QUOTED_IDENTIFIER ON to each batch before execution. This is required for INSERT, UPDATE, and DELETE operations on tables with filtered indexes, indexed views, computed columns, or XML indexes.
+        Use this when modifying tables with filtered indexes and experiencing silent failures, as SMO connections may have QUOTED_IDENTIFIER set to OFF depending on server/database configuration.
+
     .PARAMETER AppendConnectionString
         Adds custom connection string parameters for specialized connection requirements like MultiSubnetFailover, encryption settings, or timeout values.
         Use this for Availability Group connections, Always Encrypted scenarios, or when you need connection properties not available through standard parameters. Authentication must still be handled via SqlInstance and SqlCredential.
@@ -184,6 +188,11 @@ function Invoke-DbaQuery {
 
         Leverages your own parameters, giving you full power, mimicking Connect-DbaInstance's `-MultiSubnetFailover -ConnectTimeout 60`, to adhere to official guidelines to target FCI or AG listeners.
         See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
+
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance server1 -Database tempdb -Query "INSERT INTO dbo.TableWithFilteredIndex (Id, Name) VALUES (1, 'Test')" -QuotedIdentifier
+
+        Executes an INSERT statement with QUOTED_IDENTIFIER set to ON. This is required when modifying tables that have filtered indexes, as SQL Server requires this setting for such operations.
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
@@ -213,6 +222,7 @@ function Invoke-DbaQuery {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$ReadOnly,
         [switch]$NoExec,
+        [switch]$QuotedIdentifier,
         [string]$AppendConnectionString,
         [switch]$EnableException
     )
@@ -253,6 +263,9 @@ function Invoke-DbaQuery {
         }
         if (Test-Bound -ParameterName "NoExec") {
             $splatInvokeDbaSqlAsync["NoExec"] = $NoExec
+        }
+        if (Test-Bound -ParameterName "QuotedIdentifier") {
+            $splatInvokeDbaSqlAsync["QuotedIdentifier"] = $QuotedIdentifier
         }
 
         if (Test-Bound -ParameterName "File") {

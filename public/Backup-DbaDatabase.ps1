@@ -534,6 +534,11 @@ function Backup-DbaDatabase {
                 Stop-Function -Message "Backing up tempdb not supported" -Continue
             }
 
+            if (-not $db.IsAccessible) {
+                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
+                Stop-Function -Message "Database $dbName is not accessible. Cannot perform backup." -Continue -Target $db
+            }
+
             if ('Normal' -notin ($db.Status -split ',')) {
                 Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "Database status not Normal. $dbName skipped." -Continue
