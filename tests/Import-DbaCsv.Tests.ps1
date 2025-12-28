@@ -615,6 +615,54 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
         }
+
+        It "handles empty column headers by generating Column# names (dbatools.library fix)" {
+            # Regression test for issue where empty headers caused:
+            # "An object or column name is missing or empty" exception
+            $filePath = "$($TestConfig.Temp)\emptyheader-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $tableName = "EmptyHeaderTest$(Get-Random)"
+
+            # Create CSV with empty first header (leading comma)
+            $csvContent = @"
+,ValidHeader
+Value1,Value2
+Row2Col1,Row2Col2
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $splatImport = @{
+                Path            = $filePath
+                SqlInstance     = $server
+                Database        = "tempdb"
+                Table           = $tableName
+                AutoCreateTable = $true
+                KeepNulls       = $true
+                EnableException = $true
+            }
+            $result = Import-DbaCsv @splatImport
+
+            $result.RowsCopied | Should -Be 2
+
+            # Verify the table was created and data imported
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName" -As PSObject
+            ($data | Measure-Object).Count | Should -Be 2
+
+            # Verify the empty header column was given a generated name (Column1 pattern)
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $columnNames = $columns.Name
+
+            # Should have a generated column name for the empty header
+            $columnNames | Should -Contain "Column1"
+            $columnNames | Should -Contain "ValidHeader"
+
+            # Verify data in both columns
+            $data[0].ValidHeader | Should -Be "Value2"
+            $data[0].Column1 | Should -Be "Value1"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
     }
 
     Context "AutoCreateTable post-import optimization" {
