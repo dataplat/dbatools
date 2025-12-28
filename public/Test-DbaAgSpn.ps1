@@ -90,16 +90,15 @@ function Test-DbaAgSpn {
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -AvailabilityGroup $AvailabilityGroup -SqlCredential $SqlCredential
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -AvailabilityGroup $AvailabilityGroup -SqlCredential $SqlCredential -EnableException:$EnableException
         }
 
         foreach ($ag in $InputObject) {
             Write-Message -Level Verbose -Message "Processing $($ag.Name) on $($ag.Parent.Name)"
-            if (-not $Listener) {
-                $listeners = $ag | Get-DbaAgListener
-            } else {
-                Write-Warning poot
+            if ($Listener) {
                 $listeners = $ag | Get-DbaAgListener -Listener $Listener
+            } else {
+                $listeners = $ag | Get-DbaAgListener
             }
 
             # ([System.Net.Dns]::GetHostEntry($hostEntry)).HostName
