@@ -52,7 +52,7 @@ function Test-DbaKerberos {
 
     .NOTES
         Tags: Kerberos, SPN, Authentication, Security
-        Author: the dbatools team + Claude
+        Author: Claude + Andreas Jordan
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
