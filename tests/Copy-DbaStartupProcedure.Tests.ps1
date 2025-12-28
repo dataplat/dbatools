@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         $procName = "dbatoolsci_test_startup"
 
         # Create the objects.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1
         $server.Query("CREATE OR ALTER PROCEDURE $procName
                         AS
                         SELECT @@SERVERNAME
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup" -ErrorAction SilentlyContinue
+        Invoke-DbaQuery -SqlInstance $TestConfig.instanceCopy1, $TestConfig.instanceCopy2 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -60,8 +60,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying startup procedures" {
         BeforeAll {
             $splatCopy = @{
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Source      = $TestConfig.instanceCopy1
+                Destination = $TestConfig.instanceCopy2
             }
             $results = Copy-DbaStartupProcedure @splatCopy
         }

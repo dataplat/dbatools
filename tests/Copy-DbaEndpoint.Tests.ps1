@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the objects.
         $splatEndpoint = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.instanceCopy1
             Name            = $endpointName
             Type            = "DatabaseMirroring"
             Port            = $endpointPort
@@ -57,8 +57,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceCopy1 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceCopy2 -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -66,12 +66,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying endpoints between instances" {
         It "Successfully copies a mirroring endpoint" {
             $splatCopy = @{
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Source      = $TestConfig.instanceCopy1
+                Destination = $TestConfig.instanceCopy2
                 Endpoint    = $endpointName
             }
             $results = Copy-DbaEndpoint @splatCopy
-            $results.DestinationServer | Should -Be $TestConfig.instance3
+            $results.DestinationServer | Should -Be $TestConfig.instanceCopy2
             $results.Status | Should -Be "Successful"
             $results.Name | Should -Be $endpointName
         }

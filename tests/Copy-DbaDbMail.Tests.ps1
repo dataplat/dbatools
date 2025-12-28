@@ -29,13 +29,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # TODO: Maybe remove "-EnableException:$false -WarningAction SilentlyContinue" when we can rely on the setting beeing 0 when entering the test
-        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name "Database Mail XPs" -Value 1 -EnableException:$false -WarningAction SilentlyContinue
+        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instanceCopy1, $TestConfig.instanceCopy2 -Name "Database Mail XPs" -Value 1 -EnableException:$false -WarningAction SilentlyContinue
 
         $accountName = "dbatoolsci_test_$(Get-Random)"
         $profileName = "dbatoolsci_test_$(Get-Random)"
 
         $splatAccount = @{
-            SqlInstance    = $TestConfig.instance2
+            SqlInstance    = $TestConfig.instanceCopy1
             Name           = $accountName
             Description    = "Mail account for email alerts"
             EmailAddress   = "dbatoolssci@dbatools.io"
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaDbMailAccount @splatAccount -Force
 
         $splatProfile = @{
-            SqlInstance         = $TestConfig.instance2
+            SqlInstance         = $TestConfig.instanceCopy1
             Name                = $profileName
             Description         = "Mail profile for email alerts"
             MailAccountName     = $accountName
@@ -60,17 +60,17 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profileName';"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instanceCopy1, $TestConfig.instanceCopy2 -Query "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instanceCopy1, $TestConfig.instanceCopy2 -Query "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profileName';"
 
-        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name "Database Mail XPs" -Value 0
+        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instanceCopy1, $TestConfig.instanceCopy2 -Name "Database Mail XPs" -Value 0
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When copying DbMail" {
         BeforeAll {
-            $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3
+            $results = Copy-DbaDbMail -Source $TestConfig.instanceCopy1 -Destination $TestConfig.instanceCopy2
         }
 
         It "Should have copied database mail items" {
@@ -79,36 +79,36 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have copied Mail Configuration from source to destination" {
             $result = $results | Where-Object { $_.Type -eq "Mail Configuration" -and $_.Name -eq "Server Configuration" }
-            $result.SourceServer | Should -Be $TestConfig.instance2
-            $result.DestinationServer | Should -Be $TestConfig.instance3
+            $result.SourceServer | Should -Be $TestConfig.instanceCopy1
+            $result.DestinationServer | Should -Be $TestConfig.instanceCopy2
             $result.Status | Should -Be "Successful"
         }
 
         It "Should have copied Mail Account from source to destination" {
             $result = $results | Where-Object Type -eq "Mail Account"
-            $result.SourceServer | Should -Be $TestConfig.instance2
-            $result.DestinationServer | Should -Be $TestConfig.instance3
+            $result.SourceServer | Should -Be $TestConfig.instanceCopy1
+            $result.DestinationServer | Should -Be $TestConfig.instanceCopy2
             $result.Status | Should -Be "Successful"
         }
 
         It "Should have copied Mail Profile from source to destination" {
             $result = $results | Where-Object Type -eq "Mail Profile"
-            $result.SourceServer | Should -Be $TestConfig.instance2
-            $result.DestinationServer | Should -Be $TestConfig.instance3
+            $result.SourceServer | Should -Be $TestConfig.instanceCopy1
+            $result.DestinationServer | Should -Be $TestConfig.instanceCopy2
             $result.Status | Should -Be "Successful"
         }
 
         It "Should have copied Mail Server from source to destination" {
             $result = $results | Where-Object Type -eq "Mail Server"
-            $result.SourceServer | Should -Be $TestConfig.instance2
-            $result.DestinationServer | Should -Be $TestConfig.instance3
+            $result.SourceServer | Should -Be $TestConfig.instanceCopy1
+            $result.DestinationServer | Should -Be $TestConfig.instanceCopy2
             $result.Status | Should -Be "Successful"
         }
     }
 
     Context "When copying MailServers specifically" {
         BeforeAll {
-            $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Type MailServers
+            $results = Copy-DbaDbMail -Source $TestConfig.instanceCopy1 -Destination $TestConfig.instanceCopy2 -Type MailServers
         }
 
         It "Should have returned results" {
@@ -132,8 +132,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have skipped Mail Server" {
             $result = $results | Where-Object Type -eq "Mail Server"
-            $result.SourceServer | Should -Be $TestConfig.instance2
-            $result.DestinationServer | Should -Be $TestConfig.instance3
+            $result.SourceServer | Should -Be $TestConfig.instanceCopy1
+            $result.DestinationServer | Should -Be $TestConfig.instanceCopy2
             $result.Status | Should -Be "Skipped"
         }
     }
@@ -141,10 +141,10 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When Database Mail XPs status is reported" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance3 -Name "Database Mail XPs" -Value 0
+            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instanceCopy2 -Name "Database Mail XPs" -Value 0
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Force
+            $results = Copy-DbaDbMail -Source $TestConfig.instanceCopy1 -Destination $TestConfig.instanceCopy2 -Force
         }
 
         It "Should report Database Mail XPs status" {
@@ -160,7 +160,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should verify Database Mail XPs is enabled on destination" {
-            $destConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.instance3 -Name "Database Mail XPs"
+            $destConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.instanceCopy2 -Name "Database Mail XPs"
             $destConfig.ConfiguredValue | Should -Be 1
         }
     }

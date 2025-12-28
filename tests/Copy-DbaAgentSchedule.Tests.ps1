@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Create the schedule on the source instance
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1
         $sql = "EXEC msdb.dbo.sp_add_schedule @schedule_name = N'dbatoolsci_DailySchedule' , @freq_type = 4, @freq_interval = 1, @active_start_time = 010000"
         $server.Query($sql)
 
@@ -45,11 +45,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up the schedules from both instances
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1
         $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
         $server.Query($sql)
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy2
         $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
         $server.Query($sql)
 
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When copying agent schedule between instances" {
         BeforeAll {
-            $results = @(Copy-DbaAgentSchedule -Source $TestConfig.instance2 -Destination $TestConfig.instance3)
+            $results = @(Copy-DbaAgentSchedule -Source $TestConfig.instanceCopy1 -Destination $TestConfig.instanceCopy2)
         }
 
         It "Returns more than one result" {
@@ -70,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Creates schedule with correct start time" {
-            $schedule = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_DailySchedule
+            $schedule = Get-DbaAgentSchedule -SqlInstance $TestConfig.instanceCopy2 -Schedule dbatoolsci_DailySchedule
             $schedule.ActiveStartTimeOfDay | Should -Be "01:00:00"
         }
     }

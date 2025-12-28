@@ -47,8 +47,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
-        $destinationDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
+        $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instanceCopy1 -Database tempdb
+        $destinationDb = Get-DbaDatabase -SqlInstance $TestConfig.instanceCopy2 -Database tempdb
         $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
             INSERT dbo.dbatoolsci_example
             SELECT top 10 1
@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When copying table data within same instance" {
         It "copies the table data" {
-            $results = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
+            $results = Copy-DbaDbTableData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
             $table1count = $sourceDb.Query("select id from dbo.dbatoolsci_example")
             $table2count = $sourceDb.Query("select id from dbo.dbatoolsci_example2")
             $table1count.Count | Should -Be $table2count.Count
@@ -99,39 +99,39 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When copying table data between instances" {
         It "copies the table data to another instance" {
-            $null = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Destination $TestConfig.instance2 -Database tempdb -Table tempdb.dbo.dbatoolsci_example -DestinationTable dbatoolsci_example3
+            $null = Copy-DbaDbTableData -SqlInstance $TestConfig.instanceCopy1 -Destination $TestConfig.instanceCopy2 -Database tempdb -Table tempdb.dbo.dbatoolsci_example -DestinationTable dbatoolsci_example3
             $table1count = $sourceDb.Query("select id from dbo.dbatoolsci_example")
             $table2count = $destinationDb.Query("select id from dbo.dbatoolsci_example3")
             $table1count.Count | Should -Be $table2count.Count
         }
 
         It "Copy data using a query that relies on the default source database" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
             $result.RowsCopied | Should -Be 1
         }
 
         It "Copy data using a query that uses a 3 part query" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
             $result.RowsCopied | Should -Be 1
         }
     }
 
     Context "When testing pipeline functionality" {
         It "supports piping" {
-            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2 -Truncate
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -Table dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2 -Truncate
             $table1count = $sourceDb.Query("select id from dbo.dbatoolsci_example")
             $table2count = $sourceDb.Query("select id from dbo.dbatoolsci_example2")
             $table1count.Count | Should -Be $table2count.Count
         }
 
         It "supports piping more than one table" {
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
             $results.Count | Should -Be 2
             $results.RowsCopied | Measure-Object -Sum | Select-Object -ExpandProperty Sum | Should -Be 20
         }
 
         It "opens and closes connections properly" {
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table "dbo.dbatoolsci_example", "dbo.dbatoolsci_example4" | Copy-DbaDbTableData -Destination $TestConfig.instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -Table "dbo.dbatoolsci_example", "dbo.dbatoolsci_example4" | Copy-DbaDbTableData -Destination $TestConfig.instanceCopy2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
             $results.Count | Should -Be 2
             $table1DbCount = $sourceDb.Query("select id from dbo.dbatoolsci_example")
             $table4DbCount = $destinationDb.Query("select id from dbo.dbatoolsci_example4")
@@ -148,19 +148,19 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When handling edge cases" {
         It "Should return nothing if Source and Destination are same" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -Truncate -WarningVariable warn -WarningAction SilentlyContinue
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -Table dbatoolsci_example -Truncate -WarningVariable warn -WarningAction SilentlyContinue
             $result | Should -Be $null
             $warn | Should -Match "Cannot copy .* into itself"
         }
 
         It "Should warn if the destinaton table doesn't exist" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
             $result | Should -Be $null
             $tablewarning | Should -Match Auto
         }
 
         It "automatically creates the table" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
             $result.DestinationTable | Should -Be "dbatoolsci_willexist"
         }
     }
@@ -186,7 +186,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should copy data successfully when destination has computed columns" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Destination $TestConfig.instance2 -Database tempdb -Table dbatoolsci_computed_source -DestinationTable dbatoolsci_computed_dest
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instanceCopy1 -Destination $TestConfig.instanceCopy2 -Database tempdb -Table dbatoolsci_computed_source -DestinationTable dbatoolsci_computed_dest
             $result.RowsCopied | Should -Be 2
             $destCount = $destinationDb.Query("SELECT * FROM dbo.dbatoolsci_computed_dest")
             $destCount.Count | Should -Be 2
@@ -199,8 +199,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Use Query parameter with ForceExplicitMapping to enable name-based column mapping
             # This is needed when using Query with tables that have computed columns
             $splatCopy = @{
-                SqlInstance          = $TestConfig.instance1
-                Destination          = $TestConfig.instance2
+                SqlInstance          = $TestConfig.instanceCopy1
+                Destination          = $TestConfig.instanceCopy2
                 Database             = "tempdb"
                 Table                = "dbatoolsci_computed_source"
                 Query                = "SELECT Dt FROM dbo.dbatoolsci_computed_source"
@@ -235,8 +235,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should maintain correct row order when copying tables with varbinary fields (issue #9610)" {
             $splatCopy = @{
-                SqlInstance      = $TestConfig.instance1
-                Destination      = $TestConfig.instance2
+                SqlInstance      = $TestConfig.instanceCopy1
+                Destination      = $TestConfig.instanceCopy2
                 Database         = "tempdb"
                 Table            = "dbatoolsci_ordering_test"
                 DestinationTable = "dbatoolsci_ordering_test_dest"
