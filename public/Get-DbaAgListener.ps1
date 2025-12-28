@@ -76,7 +76,7 @@ function Get-DbaAgListener {
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup -EnableException:$EnableException
         }
 
         $agListeners = $InputObject.AvailabilityGroupListeners
