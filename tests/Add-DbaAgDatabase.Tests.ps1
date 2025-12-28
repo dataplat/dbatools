@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the objects.
         $splatAg = @{
-            Primary      = $TestConfig.instanceHadr1
+            Primary      = $TestConfig.instanceHadr
             Name         = $agName
             ClusterType  = "None"
             FailoverMode = "Manual"
@@ -61,10 +61,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = New-DbaAvailabilityGroup @splatAg
 
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instanceHadr1 -Name $existingDbWithBackup
-        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instanceHadr1 -Database $existingDbWithBackup -Path $backupPath
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Name $existingDbWithBackup
+        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $existingDbWithBackup -Path $backupPath
 
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instanceHadr1 -Name $existingDbWithoutBackup
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Name $existingDbWithoutBackup
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -75,9 +75,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created object.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr1 -AvailabilityGroup $agName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceHadr1 -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instanceHadr1 -Database $existingDbWithBackup, $existingDbWithoutBackup
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $existingDbWithBackup, $existingDbWithoutBackup
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Results are saved in $results.
         BeforeAll {
             $splatAddAgDatabase = @{
-                SqlInstance       = $TestConfig.instanceHadr1
+                SqlInstance       = $TestConfig.instanceHadr
                 AvailabilityGroup = $agName
                 Database          = $existingDbWithBackup
             }
@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding AG database that does not have a backup" {
         BeforeAll {
             $splatAddAgDb = @{
-                SqlInstance       = $TestConfig.instanceHadr1
+                SqlInstance       = $TestConfig.instanceHadr
                 AvailabilityGroup = $agName
                 Database          = $existingDbWithoutBackup
                 # As we don't want an output, we suppress the warning.
@@ -134,7 +134,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding AG database that does not exists" {
         BeforeAll {
             $splatAddAgDb = @{
-                SqlInstance       = $testConfig.instanceHadr1
+                SqlInstance       = $testConfig.instanceHadr
                 AvailabilityGroup = $agName
                 Database          = $nonexistingDb
                 WarningAction     = "SilentlyContinue"
