@@ -7,6 +7,8 @@ $TestsRunGroups = @{
     "2016"              = 'autodetect_$TestConfig.instance2'
     # run on scenario 2016_2017 - tests that need developer license
     "2016_2017"         = 'autodetect_$TestConfig.instance2,$TestConfig.instance3'
+    # run on scenario HADR - tests that need AGs, mirroring, logshipping
+    "HADR"              = 'autodetect_$TestConfig.instanceHadr'
     # do not run on appveyor
     "appveyor_disabled" = @(
         'Backup-DbaDbCertificate',
