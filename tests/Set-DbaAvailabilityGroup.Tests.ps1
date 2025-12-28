@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $agname = "dbatoolsci_agroup"
         $splatPrimary = @{
-            Primary      = $TestConfig.instance3
+            Primary      = $TestConfig.instanceHadr
             Name         = $agname
             ClusterType  = "None"
             FailoverMode = "Manual"
@@ -55,22 +55,22 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agname
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "sets ag properties" {
         It "returns modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -DtcSupportEnabled:$false
+            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agname -DtcSupportEnabled:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $false
         }
         It "returns newly modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -DtcSupportEnabled
+            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agname -DtcSupportEnabled
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $true
         }
     }
-} #$TestConfig.instance2 for appveyor
+}

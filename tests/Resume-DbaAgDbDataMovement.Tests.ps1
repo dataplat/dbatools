@@ -33,14 +33,14 @@ Describe $CommandName -Tag IntegrationTests {
         $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
         $null = New-Item -Path $backupPath -ItemType Directory
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instanceHadr
         $agname = "dbatoolsci_resumeagdb_agroup"
         $dbname = "dbatoolsci_resumeagdb_agroupdb-$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbname
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -Path $backupPath -Type Full
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -Path $backupPath -Type Log
-        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Certificate dbatoolsci_AGCert -UseLastBackup
-        $null = Get-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname | Suspend-DbaAgDbDataMovement
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Name $dbname
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbname | Backup-DbaDatabase -Path $backupPath -Type Full
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbname | Backup-DbaDatabase -Path $backupPath -Type Log
+        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instanceHadr -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Certificate dbatoolsci_AGCert -UseLastBackup
+        $null = Get-DbaAgDatabase -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agname | Suspend-DbaAgDbDataMovement
 
         # we want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -62,10 +62,10 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "resumes  data movement" {
         It "returns resumed results" {
-            $results = Resume-DbaAgDbDataMovement -SqlInstance $TestConfig.instance3 -Database $dbname
+            $results = Resume-DbaAgDbDataMovement -SqlInstance $TestConfig.instanceHadr -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
             $results.SynchronizationState | Should -Be 'Synchronized'
         }
     }
-} #$TestConfig.instance2 for appveyor
+}

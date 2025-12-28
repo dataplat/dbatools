@@ -35,14 +35,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Re-enable HADR for future tests
-        $null = Enable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force
+        $null = Enable-DbaAgHadr -SqlInstance $TestConfig.instanceHadr -Force
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When disabling HADR" {
         It "Successfully disables HADR" {
-            $disableResults = Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force
+            $disableResults = Disable-DbaAgHadr -SqlInstance $TestConfig.instanceHadr -Force
             $disableResults.IsHadrEnabled | Should -BeFalse
         }
     }

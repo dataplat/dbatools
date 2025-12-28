@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Set variables. They are available in all the It blocks.
         $agName = "dbatoolsci_agroup"
         $splatNewAg = @{
-            Primary      = $TestConfig.instance3
+            Primary      = $TestConfig.instanceHadr
             Name         = $agName
             ClusterType  = "None"
             FailoverMode = "Manual"
@@ -49,15 +49,15 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "gets ag replicas" {
         It "returns results with proper data" {
-            $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3
+            $results = Get-DbaAgReplica -SqlInstance $TestConfig.instanceHadr
             $results.AvailabilityGroup | Should -Contain $agName
             $results.Role | Should -Contain "Primary"
             $results.AvailabilityMode | Should -Contain "SynchronousCommit"
@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns just one result" {
             $splatGetReplica = @{
-                SqlInstance       = $TestConfig.instance3
+                SqlInstance       = $TestConfig.instanceHadr
                 Replica           = $replicaName
                 AvailabilityGroup = $agName
             }
@@ -83,4 +83,4 @@ Describe $CommandName -Tag IntegrationTests {
             { Get-DbaAgReplica -SqlInstance invalidSQLHostName -EnableException } | Should -Throw
         }
     }
-} #$TestConfig.instance2 for appveyor
+}
