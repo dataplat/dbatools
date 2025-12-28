@@ -439,6 +439,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaDbCompatibility',
         'Test-DbaDbCollation',
         'Test-DbaConnectionAuthScheme',
+        'Test-DbaKerberos',
         'Test-DbaInstanceName',
         'Repair-DbaInstanceName',
         'Stop-DbaProcess',
