@@ -1,4 +1,4 @@
 {
-  "version": "2025.12.26",
+  "version": "2025.12.28",
   "notes": "Version of dbatools.library to use for CI/CD and development"
 }
