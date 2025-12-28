@@ -133,10 +133,6 @@ function Test-DbaKerberos {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
-
-    begin {
-    }
-
     process {
         $targets = if ($PSCmdlet.ParameterSetName -eq "Instance") { $SqlInstance } else { $ComputerName }
 
@@ -189,25 +185,25 @@ function Test-DbaKerberos {
                         $status = "Pass"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "SPN Registration"
-                            Category     = "SPN"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "SPN Registration"
+                        Category     = "SPN"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "SPN Registration"
-                            Category     = "SPN"
-                            Status       = "Warning"
-                            Details      = "Unable to query SPNs: $($_.Exception.Message)"
-                            Remediation  = "Verify AD connectivity and credentials have permission to query Active Directory"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "SPN Registration"
+                        Category     = "SPN"
+                        Status       = "Warning"
+                        Details      = "Unable to query SPNs: $($_.Exception.Message)"
+                        Remediation  = "Verify AD connectivity and credentials have permission to query Active Directory"
+                    }
                 }
 
                 # Check 5: Check AG listener SPNs if applicable
@@ -238,15 +234,15 @@ function Test-DbaKerberos {
                                 $status = "Pass"
                             }
 
-                            $null = $checkResults.Add([PSCustomObject]@{
-                                    ComputerName = $computerTarget
-                                    InstanceName = $instanceName
-                                    Check        = "AG Listener SPN - $($listener.Name)"
-                                    Category     = "SPN"
-                                    Status       = $status
-                                    Details      = $details
-                                    Remediation  = $remediation
-                                })
+                            [PSCustomObject]@{
+                                ComputerName = $computerTarget
+                                InstanceName = $instanceName
+                                Check        = "AG Listener SPN - $($listener.Name)"
+                                Category     = "SPN"
+                                Status       = $status
+                                Details      = $details
+                                Remediation  = $remediation
+                            }
                         }
                     } catch {
                         # No AGs or unable to query - not an error condition
@@ -298,25 +294,25 @@ function Test-DbaKerberos {
                         }
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Time Synchronization (Client-Server)"
-                            Category     = "Time Sync"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Time Synchronization (Client-Server)"
+                        Category     = "Time Sync"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Time Synchronization (Client-Server)"
-                            Category     = "Time Sync"
-                            Status       = "Warning"
-                            Details      = "Unable to compare time: $($_.Exception.Message)"
-                            Remediation  = "Verify remote connectivity and ensure time service is running"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Time Synchronization (Client-Server)"
+                        Category     = "Time Sync"
+                        Status       = "Warning"
+                        Details      = "Unable to compare time: $($_.Exception.Message)"
+                        Remediation  = "Verify remote connectivity and ensure time service is running"
+                    }
                 }
 
                 # Check 7: Compare with domain controllers
@@ -360,25 +356,25 @@ function Test-DbaKerberos {
                         $remediation = "None"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Time Synchronization (Server-DC)"
-                            Category     = "Time Sync"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Time Synchronization (Server-DC)"
+                        Category     = "Time Sync"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Time Synchronization (Server-DC)"
-                            Category     = "Time Sync"
-                            Status       = "Warning"
-                            Details      = "Unable to compare time with DC: $($_.Exception.Message)"
-                            Remediation  = "Verify domain connectivity and credentials"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Time Synchronization (Server-DC)"
+                        Category     = "Time Sync"
+                        Status       = "Warning"
+                        Details      = "Unable to compare time with DC: $($_.Exception.Message)"
+                        Remediation  = "Verify domain connectivity and credentials"
+                    }
                 }
                 #endregion Time Synchronization Checks
 
@@ -399,25 +395,25 @@ function Test-DbaKerberos {
                         $remediation = "Verify DNS A record exists for this server"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "DNS Forward Lookup"
-                            Category     = "DNS"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "DNS Forward Lookup"
+                        Category     = "DNS"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "DNS Forward Lookup"
-                            Category     = "DNS"
-                            Status       = "Fail"
-                            Details      = "DNS forward lookup failed: $($_.Exception.Message)"
-                            Remediation  = "Verify DNS configuration and A record exists"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "DNS Forward Lookup"
+                        Category     = "DNS"
+                        Status       = "Fail"
+                        Details      = "DNS forward lookup failed: $($_.Exception.Message)"
+                        Remediation  = "Verify DNS configuration and A record exists"
+                    }
                 }
 
                 # Check 9: DNS reverse lookup
@@ -436,25 +432,25 @@ function Test-DbaKerberos {
                         $remediation = "Create PTR record in DNS for proper reverse lookup"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "DNS Reverse Lookup"
-                            Category     = "DNS"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "DNS Reverse Lookup"
+                        Category     = "DNS"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "DNS Reverse Lookup"
-                            Category     = "DNS"
-                            Status       = "Warning"
-                            Details      = "DNS reverse lookup failed: $($_.Exception.Message)"
-                            Remediation  = "Create PTR record in DNS for proper reverse lookup"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "DNS Reverse Lookup"
+                        Category     = "DNS"
+                        Status       = "Warning"
+                        Details      = "DNS reverse lookup failed: $($_.Exception.Message)"
+                        Remediation  = "Create PTR record in DNS for proper reverse lookup"
+                    }
                 }
 
                 # Check 10: Check for CNAME records
@@ -497,25 +493,25 @@ function Test-DbaKerberos {
                         $remediation = "Manually verify no CNAME records are in use"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "CNAME Detection"
-                            Category     = "DNS"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "CNAME Detection"
+                        Category     = "DNS"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "CNAME Detection"
-                            Category     = "DNS"
-                            Status       = "Warning"
-                            Details      = "Unable to check for CNAME: $($_.Exception.Message)"
-                            Remediation  = "Manually verify no CNAME records are in use"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "CNAME Detection"
+                        Category     = "DNS"
+                        Status       = "Warning"
+                        Details      = "Unable to check for CNAME: $($_.Exception.Message)"
+                        Remediation  = "Manually verify no CNAME records are in use"
+                    }
                 }
                 #endregion DNS Checks
 
@@ -553,25 +549,25 @@ function Test-DbaKerberos {
                             $remediation = "Change service account to gMSA (best practice), domain service account, or built-in account (LocalSystem/NetworkService/NT SERVICE)"
                         }
 
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Service Account Type"
-                                Category     = "Service Account"
-                                Status       = $status
-                                Details      = $details
-                                Remediation  = $remediation
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Service Account Type"
+                            Category     = "Service Account"
+                            Status       = $status
+                            Details      = $details
+                            Remediation  = $remediation
+                        }
                     } catch {
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Service Account Type"
-                                Category     = "Service Account"
-                                Status       = "Warning"
-                                Details      = "Unable to verify service account: $($_.Exception.Message)"
-                                Remediation  = "Manually verify SQL Server service account supports Kerberos (gMSA, domain account, or computer account)"
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Service Account Type"
+                            Category     = "Service Account"
+                            Status       = "Warning"
+                            Details      = "Unable to verify service account: $($_.Exception.Message)"
+                            Remediation  = "Manually verify SQL Server service account supports Kerberos (gMSA, domain account, or computer account)"
+                        }
                     }
                 }
 
@@ -627,25 +623,25 @@ function Test-DbaKerberos {
                             $remediation = "None"
                         }
 
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Account Lock Status"
-                                Category     = "Service Account"
-                                Status       = $status
-                                Details      = $details
-                                Remediation  = $remediation
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Account Lock Status"
+                            Category     = "Service Account"
+                            Status       = $status
+                            Details      = $details
+                            Remediation  = $remediation
+                        }
                     } catch {
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Account Lock Status"
-                                Category     = "Service Account"
-                                Status       = "Warning"
-                                Details      = "Unable to check account status: $($_.Exception.Message)"
-                                Remediation  = "Manually verify account is not locked in AD"
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Account Lock Status"
+                            Category     = "Service Account"
+                            Status       = "Warning"
+                            Details      = "Unable to check account status: $($_.Exception.Message)"
+                            Remediation  = "Manually verify account is not locked in AD"
+                        }
                     }
                 }
 
@@ -695,25 +691,25 @@ function Test-DbaKerberos {
                             $remediation = "None"
                         }
 
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Delegation Settings"
-                                Category     = "Service Account"
-                                Status       = $status
-                                Details      = $details
-                                Remediation  = $remediation
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Delegation Settings"
+                            Category     = "Service Account"
+                            Status       = $status
+                            Details      = $details
+                            Remediation  = $remediation
+                        }
                     } catch {
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Delegation Settings"
-                                Category     = "Service Account"
-                                Status       = "Warning"
-                                Details      = "Unable to check delegation: $($_.Exception.Message)"
-                                Remediation  = "Manually verify delegation settings in AD"
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Delegation Settings"
+                            Category     = "Service Account"
+                            Status       = "Warning"
+                            Details      = "Unable to check delegation: $($_.Exception.Message)"
+                            Remediation  = "Manually verify delegation settings in AD"
+                        }
                     }
                 }
                 #endregion Service Account Checks
@@ -743,25 +739,25 @@ function Test-DbaKerberos {
                             $remediation = "Verify authentication configuration"
                         }
 
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Current Authentication Scheme"
-                                Category     = "Authentication"
-                                Status       = $status
-                                Details      = $details
-                                Remediation  = $remediation
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Current Authentication Scheme"
+                            Category     = "Authentication"
+                            Status       = $status
+                            Details      = $details
+                            Remediation  = $remediation
+                        }
                     } catch {
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Current Authentication Scheme"
-                                Category     = "Authentication"
-                                Status       = "Warning"
-                                Details      = "Unable to check auth scheme: $($_.Exception.Message)"
-                                Remediation  = "Manually query sys.dm_exec_connections"
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Current Authentication Scheme"
+                            Category     = "Authentication"
+                            Status       = "Warning"
+                            Details      = "Unable to check auth scheme: $($_.Exception.Message)"
+                            Remediation  = "Manually query sys.dm_exec_connections"
+                        }
                     }
                 }
                 #endregion Authentication Validation
@@ -788,25 +784,25 @@ function Test-DbaKerberos {
                         $remediation = "Open TCP port 88 in firewall for Kerberos authentication"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Kerberos Port (TCP/88)"
-                            Category     = "Network"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Kerberos Port (TCP/88)"
+                        Category     = "Network"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Kerberos Port (TCP/88)"
-                            Category     = "Network"
-                            Status       = "Warning"
-                            Details      = "Unable to test port connectivity: $($_.Exception.Message)"
-                            Remediation  = "Manually verify TCP/88 and UDP/88 connectivity to DC"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Kerberos Port (TCP/88)"
+                        Category     = "Network"
+                        Status       = "Warning"
+                        Details      = "Unable to test port connectivity: $($_.Exception.Message)"
+                        Remediation  = "Manually verify TCP/88 and UDP/88 connectivity to DC"
+                    }
                 }
 
                 # Check 17: Test LDAP ports (tcp/389, udp/389)
@@ -826,25 +822,25 @@ function Test-DbaKerberos {
                         $remediation = "Open TCP port 389 in firewall for LDAP queries"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "LDAP Port (TCP/389)"
-                            Category     = "Network"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "LDAP Port (TCP/389)"
+                        Category     = "Network"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "LDAP Port (TCP/389)"
-                            Category     = "Network"
-                            Status       = "Warning"
-                            Details      = "Unable to test port connectivity: $($_.Exception.Message)"
-                            Remediation  = "Manually verify TCP/389 and UDP/389 connectivity to DC"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "LDAP Port (TCP/389)"
+                        Category     = "Network"
+                        Status       = "Warning"
+                        Details      = "Unable to test port connectivity: $($_.Exception.Message)"
+                        Remediation  = "Manually verify TCP/389 and UDP/389 connectivity to DC"
+                    }
                 }
 
                 # Check 18: Test Kerberos-Kdc port (tcp/464)
@@ -864,25 +860,25 @@ function Test-DbaKerberos {
                         $remediation = "Open TCP port 464 for Kerberos password changes (optional)"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Kerberos-Kdc Port (TCP/464)"
-                            Category     = "Network"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Kerberos-Kdc Port (TCP/464)"
+                        Category     = "Network"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Kerberos-Kdc Port (TCP/464)"
-                            Category     = "Network"
-                            Status       = "Warning"
-                            Details      = "Unable to test port connectivity: $($_.Exception.Message)"
-                            Remediation  = "Manually verify TCP/464 connectivity to DC"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Kerberos-Kdc Port (TCP/464)"
+                        Category     = "Network"
+                        Status       = "Warning"
+                        Details      = "Unable to test port connectivity: $($_.Exception.Message)"
+                        Remediation  = "Manually verify TCP/464 connectivity to DC"
+                    }
                 }
 
                 #region Security Policy Checks
@@ -924,25 +920,25 @@ function Test-DbaKerberos {
                         $remediation = "None"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Kerberos Encryption Types"
-                            Category     = "Security Policy"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Kerberos Encryption Types"
+                        Category     = "Security Policy"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Kerberos Encryption Types"
-                            Category     = "Security Policy"
-                            Status       = "Warning"
-                            Details      = "Unable to check encryption types: $($_.Exception.Message)"
-                            Remediation  = "Manually verify encryption types in local security policy"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Kerberos Encryption Types"
+                        Category     = "Security Policy"
+                        Status       = "Warning"
+                        Details      = "Unable to check encryption types: $($_.Exception.Message)"
+                        Remediation  = "Manually verify encryption types in local security policy"
+                    }
                 }
 
                 # Check 21: Test-ComputerSecureChannel
@@ -967,25 +963,25 @@ function Test-DbaKerberos {
                         $remediation = "Run 'Test-ComputerSecureChannel -Repair' to reset computer account password"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Computer Secure Channel"
-                            Category     = "Security Policy"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Computer Secure Channel"
+                        Category     = "Security Policy"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Computer Secure Channel"
-                            Category     = "Security Policy"
-                            Status       = "Warning"
-                            Details      = "Unable to test secure channel: $($_.Exception.Message)"
-                            Remediation  = "Manually run Test-ComputerSecureChannel"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Computer Secure Channel"
+                        Category     = "Security Policy"
+                        Status       = "Warning"
+                        Details      = "Unable to test secure channel: $($_.Exception.Message)"
+                        Remediation  = "Manually run Test-ComputerSecureChannel"
+                    }
                 }
 
                 # Check 22: Check hosts file
@@ -1015,25 +1011,25 @@ function Test-DbaKerberos {
                         $remediation = "None"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Hosts File"
-                            Category     = "Security Policy"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Hosts File"
+                        Category     = "Security Policy"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Hosts File"
-                            Category     = "Security Policy"
-                            Status       = "Warning"
-                            Details      = "Unable to check hosts file: $($_.Exception.Message)"
-                            Remediation  = "Manually check C:\Windows\System32\drivers\etc\hosts"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Hosts File"
+                        Category     = "Security Policy"
+                        Status       = "Warning"
+                        Details      = "Unable to check hosts file: $($_.Exception.Message)"
+                        Remediation  = "Manually check C:\Windows\System32\drivers\etc\hosts"
+                    }
                 }
                 #endregion Security Policy Checks
 
@@ -1077,25 +1073,25 @@ function Test-DbaKerberos {
                             $remediation = "Change service account to gMSA (best practice), domain service account, or built-in account (LocalSystem/NetworkService/NT SERVICE) using SQL Server Configuration Manager"
                         }
 
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "SQL Service Account Configuration"
-                                Category     = "SQL Configuration"
-                                Status       = $status
-                                Details      = $details
-                                Remediation  = $remediation
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "SQL Service Account Configuration"
+                            Category     = "SQL Configuration"
+                            Status       = $status
+                            Details      = $details
+                            Remediation  = $remediation
+                        }
                     } catch {
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "SQL Service Account Configuration"
-                                Category     = "SQL Configuration"
-                                Status       = "Warning"
-                                Details      = "Unable to verify service account: $($_.Exception.Message)"
-                                Remediation  = "Manually verify service account supports Kerberos in SQL Server Configuration Manager"
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "SQL Service Account Configuration"
+                            Category     = "SQL Configuration"
+                            Status       = "Warning"
+                            Details      = "Unable to verify service account: $($_.Exception.Message)"
+                            Remediation  = "Manually verify service account supports Kerberos in SQL Server Configuration Manager"
+                        }
                     }
                 }
 
@@ -1116,25 +1112,25 @@ function Test-DbaKerberos {
                             $remediation = "Enable TCP/IP in SQL Server Configuration Manager for network connectivity"
                         }
 
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Network Protocol Configuration"
-                                Category     = "SQL Configuration"
-                                Status       = $status
-                                Details      = $details
-                                Remediation  = $remediation
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Network Protocol Configuration"
+                            Category     = "SQL Configuration"
+                            Status       = $status
+                            Details      = $details
+                            Remediation  = $remediation
+                        }
                     } catch {
-                        $null = $checkResults.Add([PSCustomObject]@{
-                                ComputerName = $computerTarget
-                                InstanceName = $instanceName
-                                Check        = "Network Protocol Configuration"
-                                Category     = "SQL Configuration"
-                                Status       = "Warning"
-                                Details      = "Unable to verify network protocols: $($_.Exception.Message)"
-                                Remediation  = "Manually verify TCP/IP is enabled in SQL Server Configuration Manager"
-                            })
+                        [PSCustomObject]@{
+                            ComputerName = $computerTarget
+                            InstanceName = $instanceName
+                            Check        = "Network Protocol Configuration"
+                            Category     = "SQL Configuration"
+                            Status       = "Warning"
+                            Details      = "Unable to verify network protocols: $($_.Exception.Message)"
+                            Remediation  = "Manually verify TCP/IP is enabled in SQL Server Configuration Manager"
+                        }
                     }
                 }
                 #endregion SQL Server Configuration Checks
@@ -1161,25 +1157,25 @@ function Test-DbaKerberos {
                         $remediation = "Run 'klist' manually to inspect Kerberos tickets"
                     }
 
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Kerberos Ticket Cache"
-                            Category     = "Client"
-                            Status       = $status
-                            Details      = $details
-                            Remediation  = $remediation
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Kerberos Ticket Cache"
+                        Category     = "Client"
+                        Status       = $status
+                        Details      = $details
+                        Remediation  = $remediation
+                    }
                 } catch {
-                    $null = $checkResults.Add([PSCustomObject]@{
-                            ComputerName = $computerTarget
-                            InstanceName = $instanceName
-                            Check        = "Kerberos Ticket Cache"
-                            Category     = "Client"
-                            Status       = "Warning"
-                            Details      = "Unable to run klist: $($_.Exception.Message)"
-                            Remediation  = "Run 'klist' manually to inspect Kerberos tickets"
-                        })
+                    [PSCustomObject]@{
+                        ComputerName = $computerTarget
+                        InstanceName = $instanceName
+                        Check        = "Kerberos Ticket Cache"
+                        Category     = "Client"
+                        Status       = "Warning"
+                        Details      = "Unable to run klist: $($_.Exception.Message)"
+                        Remediation  = "Run 'klist' manually to inspect Kerberos tickets"
+                    }
                 }
                 #endregion Client-Side Checks
 
@@ -1189,8 +1185,5 @@ function Test-DbaKerberos {
                 Stop-Function -Message "Error testing Kerberos for $target" -ErrorRecord $_ -Continue
             }
         }
-    }
-
-    end {
     }
 }
