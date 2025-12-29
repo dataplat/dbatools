@@ -7,6 +7,8 @@ $TestsRunGroups = @{
     "2016"              = 'autodetect_$TestConfig.instance2'
     # run on scenario 2016_2017 - tests that need developer license
     "2016_2017"         = 'autodetect_$TestConfig.instance2,$TestConfig.instance3'
+    # run on scenario MULTI - tests that need multiple instances
+    "MULTI"             = 'autodetect_$TestConfig.instanceMulti'
     # run on scenario COPY - tests that need to copy between instances
     "COPY"              = 'autodetect_$TestConfig.instanceCopy'
     # run on scenario HADR - tests that need AGs, mirroring, logshipping

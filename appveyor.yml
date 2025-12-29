@@ -56,6 +56,9 @@ environment:
     - scenario: 2016_2017
       main_instance: localhost\SQL2017,localhost\SQL2016
       setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
+    - scenario: MULTI
+      main_instance: localhost\SQL2017,localhost\SQL2016
+      setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
     - scenario: COPY
       main_instance: localhost\SQL2017,localhost\SQL2016
       setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
