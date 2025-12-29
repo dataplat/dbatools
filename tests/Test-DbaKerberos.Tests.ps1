@@ -15,7 +15,6 @@ Describe $CommandName -Tag UnitTests {
                 "ComputerName",
                 "SqlCredential",
                 "Credential",
-                "Detailed",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
