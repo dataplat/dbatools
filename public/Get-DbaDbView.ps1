@@ -50,6 +50,32 @@ function Get-DbaDbView {
     .LINK
         https://dbatools.io/Get-DbaDbView
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.View
+
+        Returns one View object per database view found that matches the filter criteria.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the view
+        - Schema: The schema name where the view is defined
+        - CreateDate: The datetime when the view was created
+        - DateLastModified: The datetime when the view was last modified
+        - Name: The name of the view
+
+        Additional properties available (from SMO View object):
+        - IsSystemObject: Boolean indicating if this is a system view
+        - IsEncrypted: Boolean indicating if the view definition is encrypted
+        - IsBound: Boolean indicating if the view references only available objects
+        - Implementation: String indicating the view implementation (Standard or Unknown)
+        - PropertyCount: Integer count of the number of properties the view has
+        - TextHeader: String containing the header portion of the view definition
+        - TextMode: The text mode of the view
+
+        All properties from the SMO View object are accessible by using Select-Object * or by using the property names directly.
+
     .EXAMPLE
         PS C:\> Get-DbaDbView -SqlInstance sql2016
 

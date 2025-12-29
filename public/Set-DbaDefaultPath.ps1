@@ -52,6 +52,21 @@ function Set-DbaDefaultPath {
     .LINK
         https://dbatools.io/Set-DbaDefaultPath
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance where changes were committed. The object contains the current default path settings for the specified instance.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Data: The current default path for new database data files (from $server.DefaultFile)
+        - Log: The current default path for new database log files (from $server.DefaultLog)
+        - Backup: The current default path for backup operations (from $server.BackupDirectory)
+
+        Note: When changing Data or Log paths, the SQL Server service must be restarted for changes to take effect. Backup path changes are immediate.
+
     .EXAMPLE
         PS C:\> Set-DbaDefaultPath -SqlInstance sql01\sharepoint -Type Data, Backup -Path C:\mssql\sharepoint\data
 

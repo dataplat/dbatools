@@ -60,6 +60,26 @@ function Get-DbaDbRoleMember {
     .LINK
         https://dbatools.io/Get-DbaDbRoleMember
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per member (user or nested role) found in each database role.
+
+        Properties:
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName
+        - Database: The database name containing the role
+        - Role: The name of the database role
+        - UserName: The name of the user account (populated when the member is a user; $null when the member is a nested role)
+        - Login: The SQL Server login associated with the user (populated for user members; $null for nested roles)
+        - MemberRole: The name of the nested role (populated when the member is another role; $null when the member is a user)
+        - SmoRole: The SMO DatabaseRole object representing the parent role
+        - SmoUser: The SMO User object (populated for user members; $null for nested role members)
+        - SmoMemberRole: The SMO DatabaseRole object for nested role members ($null for user members)
+
+        Use Select-Object to filter properties if you only need specific information, or access SMO objects directly for advanced operations.
+
     .EXAMPLE
         PS C:\> Get-DbaDbRoleMember -SqlInstance localhost
 

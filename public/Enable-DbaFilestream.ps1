@@ -43,6 +43,27 @@ function Enable-DbaFilestream {
     .PARAMETER Confirm
         Prompts you for confirmation before running the command.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance with the current FILESTREAM configuration status after the configuration change is applied (or would be applied with -WhatIf).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance identifier (ComputerName\InstanceName)
+        - InstanceAccess: Human-readable description of the instance-level FILESTREAM access level (Disabled, T-SQL access enabled, or Full access enabled)
+        - ServiceAccess: Human-readable description of the service-level FILESTREAM access level (Disabled, FileStream enabled for T-SQL access, FileStream enabled for T-SQL and IO streaming access, or FileStream enabled for T-SQL, IO streaming, and remote clients)
+        - ServiceShareName: The Windows file share name used for FILESTREAM remote client access, if configured
+
+        Additional properties available (not displayed by default):
+        - InstanceAccessLevel: Numeric value representing instance-level access (0 = Disabled, 1 = T-SQL access enabled, 2 = Full access enabled)
+        - ServiceAccessLevel: Numeric value representing service-level access (0 = Disabled, 1 = T-SQL only, 2 = T-SQL and IO streaming, 3 = T-SQL, IO streaming, and remote clients)
+        - SqlCredential: The SQL Server credentials used for the connection
+        - Credential: The Windows credentials used for the connection
+
+        All properties are accessible via Select-Object * if needed beyond the default display.
+
     .NOTES
         Tags: Filestream
         Author: Stuart Moore (@napalmgram) | Chrissy LeMaire (@cl)

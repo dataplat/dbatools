@@ -33,6 +33,29 @@ function Get-DbaPbmCategorySubscription {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Dmf.PolicyCategorySubscription
+
+        Returns one subscription object for each database or object subscribed to a policy category. These subscriptions define which objects are subject to automatic policy evaluation for specific policy categories.
+
+        Default display properties (via Select-DefaultView, excluding Properties, Urn, and Parent):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - PolicyCategory: The name of the policy category this subscription applies to
+        - Target: The target object (database or other SQL Server object) subscribed to this category
+        - TargetType: The type of the target object being subscribed
+        - ID: Unique identifier for the subscription
+        - State: Current state of the subscription object (Existing, Creating, Pending, etc.)
+        - IdentityKey: Identity key of the subscription object
+        - Metadata: Metadata information for the subscription
+        - KeyChain: Identity path of the subscription object
+
+        Additional properties available via Select-Object *:
+        - Properties: Properties collection for the subscription
+        - Urn: Uniform Resource Name (URN) for the subscription object
+        - Parent: Reference to the parent PolicyStore object
+
     .LINK
         https://dbatools.io/Get-DbaPbmCategorySubscription
 

@@ -120,6 +120,32 @@ function New-DbaComputerCertificate {
     .LINK
         https://dbatools.io/New-DbaComputerCertificate
 
+    .OUTPUTS
+        System.Security.Cryptography.X509Certificates.X509Certificate2
+
+        Returns one or more X.509 certificate objects for the computers where certificates were successfully created and installed.
+
+        For local host (-ComputerName localhost or not specified): Returns the certificate object created or imported on the local machine after certificate generation/signing completes.
+
+        For remote hosts: Returns the certificate object after successful import on the remote computer via WinRM. When creating certificates for SQL Server failover clusters (-ClusterInstanceName specified), a single certificate is created and imported on each cluster node specified in -ComputerName.
+
+        Default display properties (via Select-DefaultView):
+        - FriendlyName: The friendly name assigned to the certificate (defaults to "SQL Server")
+        - DnsNameList: Collection of DNS names in the certificate's Subject Alternative Name (SAN) extension
+        - Thumbprint: The SHA-1 hash fingerprint of the certificate, used for certificate identification
+        - NotBefore: DateTime when the certificate becomes valid
+        - NotAfter: DateTime when the certificate expires
+        - Subject: The certificate subject Distinguished Name (DN) containing the CN (Common Name)
+        - Issuer: The issuer Distinguished Name (DN) for the certificate (either self-signed or CA name)
+
+        Additional properties available via Select-Object *:
+        - SerialNumber: The certificate's serial number
+        - Version: The X.509 version number (typically 3)
+        - SignatureAlgorithm: The signing algorithm used (e.g., sha256RSA, sha1RSA)
+        - PublicKey: The certificate's public key information
+        - PrivateKey: The private key associated with this certificate (if present and accessible)
+        - Extensions: Collection of X.509 extensions (e.g., Subject Alternative Name, Enhanced Key Usage)
+
     .EXAMPLE
         PS C:\> New-DbaComputerCertificate
 

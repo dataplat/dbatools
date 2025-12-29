@@ -25,6 +25,35 @@ function Get-DbaRgWorkloadGroup {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.WorkloadGroup
+
+        Returns one WorkloadGroup object per workload group found in the specified resource pools. Each workload group object includes configuration settings for resource consumption limits and request handling behavior.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: Unique identifier for the workload group
+        - Name: Name of the workload group
+        - ExternalResourcePoolName: Name of the associated external resource pool (if applicable)
+        - GroupMaximumRequests: Maximum number of concurrent requests allowed in the workload group (0 = unlimited)
+        - Importance: Importance level of requests in this group (Low, Medium, High)
+        - IsSystemObject: Boolean indicating if this is a system-defined workload group
+        - MaximumDegreeOfParallelism: Maximum number of processors for parallel query execution (0 = unlimited)
+        - RequestMaximumCpuTimeInSeconds: Maximum CPU time in seconds per request (0 = unlimited)
+        - RequestMaximumMemoryGrantPercentage: Maximum memory grant as percentage of resource pool memory
+        - RequestMemoryGrantTimeoutInSeconds: Timeout in seconds for memory grant requests
+
+        Additional properties available (from SMO WorkloadGroup object):
+        - ClassifierFunction: Name of the scalar classifier function (if any)
+        - CreateDate: DateTime when the workload group was created
+        - ModifyDate: DateTime when the workload group was last modified
+        - Parent: Reference to the parent ResourcePool object
+        - State: Current state of the workload group object
+
+        All properties from the base SMO object are accessible using Select-Object *.
+
     .NOTES
         Tags: ResourceGovernor
         Author: Chrissy LeMaire (@cl), netnerds.net

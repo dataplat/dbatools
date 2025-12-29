@@ -70,6 +70,37 @@ function Get-DbaAgentJobHistory {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobExecutionHistory
+
+        Returns one execution history record per job execution, with calculated fields added for easier interpretation. Each record represents either a job-level summary (StepID = 0) or individual step execution within a job.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Job: Name of the SQL Server Agent job (aliased from JobName property)
+        - StepName: Name of the job step that executed
+        - RunDate: DateTime when the execution started
+        - StartDate: DateTime when the execution started (formatted as DbaDatTime)
+        - EndDate: DateTime when the execution completed, calculated from RunDate plus duration
+        - Duration: PrettyTimeSpan formatted duration (e.g., "00:05:23") calculated from RunDuration
+        - Status: Human-readable execution status (Failed, Succeeded, Retry, or Canceled)
+        - OperatorEmailed: Boolean indicating if an operator was emailed about this execution
+        - Message: Job step execution message or failure reason
+
+        When -WithOutputFile is specified, additional properties are included:
+        - OutputFileName: Resolved output file path with SQL Agent token placeholders replaced
+        - RemoteOutputFileName: UNC path to the output file on the remote server
+
+        All additional SMO JobExecutionHistory properties are accessible (not displayed by default):
+        - JobID: Unique identifier for the job
+        - StepID: Step number (0 = job level, >0 = step level)
+        - Retries: Number of retries for this execution
+        - RunDuration: Duration in integer format (hhmmss)
+
+        Use Select-Object * to view all available properties.
+
     .LINK
         https://dbatools.io/Get-DbaAgentJobHistory
 

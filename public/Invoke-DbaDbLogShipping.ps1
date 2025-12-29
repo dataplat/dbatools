@@ -370,6 +370,19 @@ function Invoke-DbaDbLogShipping {
         Bypasses confirmations and applies default values for missing parameters like copy destination folder.
         Also removes existing schedules with the same name and sets automatic database suffix when source and destination instances are identical.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database that was configured for log shipping, containing setup results and status information.
+
+        Properties:
+        - PrimaryInstance: The full SQL Server instance name (computer\instance) of the primary/source server
+        - SecondaryInstance: The full SQL Server instance name (computer\instance) of the secondary/destination server
+        - PrimaryDatabase: Name of the database on the primary instance that was configured for log shipping
+        - SecondaryDatabase: Name of the database on the secondary instance (may have prefix/suffix applied)
+        - Result: Setup status for this database configuration - "Success" if all log shipping components were created successfully, "Failed" if any step failed
+        - Comment: Additional information about the setup result, typically populated with error details when Result is "Failed"
+
     .NOTES
         Tags: LogShipping
         Author: Sander Stad (@sqlstad), sqlstad.nl + Claude (Azure blob storage support)

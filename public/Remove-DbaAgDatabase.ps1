@@ -39,6 +39,19 @@ function Remove-DbaAgDatabase {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database successfully removed from the availability group.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance where the database was removed
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - AvailabilityGroup: The name of the availability group from which the database was removed
+        - Database: The name of the database that was removed
+        - Status: String indicating the operation result ("Removed")
+
     .NOTES
         Tags: AG, HA
         Author: Chrissy LeMaire (@cl), netnerds.net

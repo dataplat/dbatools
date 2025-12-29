@@ -60,6 +60,20 @@ function Update-DbaMaintenanceSolution {
     .LINK
          https://dbatools.io/Update-DbaMaintenanceSolution
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per maintenance solution procedure updated. The command will attempt to update all specified solution components (or all components if -Solution is not specified), returning status for each attempt.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Solution: The maintenance solution component name (CommandExecute, Backup, IntegrityCheck, or IndexOptimize)
+        - Procedure: The name of the stored procedure being updated
+        - IsUpdated: Boolean indicating if the procedure was successfully updated
+        - Results: Status or error message. Possible values: "Updated", "Procedure not installed", "File not found", or an error object if the update failed
+
     .EXAMPLE
         PS C:\> Update-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA
 

@@ -47,6 +47,18 @@ function Compare-DbaAgReplicaAgentJob {
     .LINK
         https://dbatools.io/Compare-DbaAgReplicaAgentJob
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object for each job difference detected across Availability Group replicas. Objects are only returned when differences are found (missing jobs or differing modification dates when -IncludeModifiedDate is specified).
+
+        Properties:
+        - AvailabilityGroup: The name of the Availability Group being compared
+        - Replica: The SQL Server instance name where the job status applies
+        - JobName: The name of the SQL Agent job
+        - Status: Job status on this replica (either "Present" or "Missing")
+        - DateLastModified: DateTime when the job was last modified, or $null if the job is missing on this replica (only populated when -IncludeModifiedDate is specified or job is present)
+
     .EXAMPLE
         PS C:\> Compare-DbaAgReplicaAgentJob -SqlInstance sql2016 -AvailabilityGroup AG1
 

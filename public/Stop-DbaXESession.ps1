@@ -50,6 +50,31 @@ function Stop-DbaXESession {
     .LINK
         https://dbatools.io/Stop-DbaXESession
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.XEvent.Session
+
+        Returns one Extended Events session object for each session that was stopped. The session objects reflect the stopped state after the command completes.
+
+        Default display properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the Extended Events session
+        - State: The current state of the session (Created, Started, Stopped, or Altered)
+        - IsRunning: Boolean indicating if the session is currently running (false after stopping)
+        - StartTime: DateTime when the session was started (null if not currently running)
+        - DefinitionFileLocation: Path to the XML definition file for the session
+        - MaxMemory: Maximum memory in MB allocated to the session
+        - EventRetentionMode: How events are retained (AllowSingleEventLoss, AllowMultipleEventLoss, NoEventLoss, or DropOnFullBuffer)
+
+        Additional properties available on the SMO Session object (via Select-Object *):
+        - Urn: The Uniform Resource Name for the session object
+        - Properties: Collection of session property objects
+        - TargetCount: Number of targets associated with the session
+        - EventCount: Number of events collected by the session
+        - MaxDispatchLatency: Maximum latency in seconds for event dispatch
+        - SuspendedEventCount: Number of currently suspended events
+
     .EXAMPLE
         PS C:\> Stop-DbaXESession -SqlInstance sqlserver2012 -AllSessions
 

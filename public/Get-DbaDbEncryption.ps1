@@ -33,6 +33,30 @@ function Get-DbaDbEncryption {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per encryption object found. The function searches for four types of encryption objects within each database: TDE encryption, certificates, asymmetric keys, and symmetric keys. Properties vary depending on the type of encryption object found.
+
+        Common properties in all output objects:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the encryption object
+        - Encryption: The type of encryption object (EncryptionEnabled (TDE), Certificate, Asymmetric key, or Symmetric key)
+        - Name: The name of the encryption object
+        - Owner: The owner of the encryption object
+        - Object: The underlying SMO object (Certificate, AsymmetricKey, SymmetricKey, or DatabaseEncryptionKey)
+
+        Additional properties specific to encryption type:
+        - LastBackup: DateTime of the last certificate backup (populated for TDE and Certificate types only)
+        - PrivateKeyEncryptionType: How the private key is encrypted (populated for TDE, Certificate, Asymmetric key, and Symmetric key types)
+        - EncryptionAlgorithm: The encryption algorithm used (populated for TDE and Asymmetric key types)
+        - KeyLength: The key length in bits (populated for Asymmetric key and Symmetric key types)
+        - ExpirationDate: DateTime when the certificate expires (populated for TDE and Certificate types only)
+
+        Note: When TDE encryption is enabled on a database, the returned object includes details of the server certificate protecting the database encryption key.
+
     .NOTES
         Tags: Encryption
         Author: Stephen Bennett, sqlnotesfromtheunderground.wordpress.com

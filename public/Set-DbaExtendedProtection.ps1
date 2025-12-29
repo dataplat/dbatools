@@ -43,6 +43,17 @@ function Set-DbaExtendedProtection {
     .LINK
         https://dbatools.io/Set-DbaExtendedProtection
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per target SQL Server instance containing the Extended Protection configuration that was applied.
+
+        Properties:
+        - ComputerName: The computer name where the registry change was made
+        - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER, SQL2019)
+        - SqlInstance: The full SQL Server instance name in computer\instance format
+        - ExtendedProtection: The Extended Protection setting value with human-readable description (e.g., "0 - Off", "1 - Allowed", "2 - Required")
+
     .EXAMPLE
         PS C:\> Set-DbaExtendedProtection
 

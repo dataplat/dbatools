@@ -91,6 +91,24 @@ function Invoke-DbaDbTransfer {
     .LINK
         https://dbatools.io/Invoke-DbaDbTransfer
 
+    .OUTPUTS
+        PSCustomObject (default behavior)
+
+        Returns one object with transfer summary information when the transfer completes successfully.
+
+        Properties:
+        - SourceInstance: Name of the source SQL Server instance
+        - SourceDatabase: Name of the source database
+        - DestinationInstance: Name of the destination SQL Server instance
+        - DestinationDatabase: Name of the destination database
+        - Status: Transfer status (returns "Success" when transfer completes)
+        - Elapsed: Time elapsed during the transfer operation displayed as a human-readable timespan (e.g., "00:05:30")
+        - Log: Array of event messages captured during transfer from DataTransferEvent events
+
+        System.String array (when -ScriptOnly is specified)
+
+        When -ScriptOnly is specified, returns an array of T-SQL script statements that would be executed to create the transferred objects, without actually performing the transfer.
+
     .EXAMPLE
         PS C:\> Invoke-DbaDbTransfer -SqlInstance sql1 -DestinationSqlInstance sql2 -Database mydb -CopyAll Tables -DestinationDatabase newdb
 

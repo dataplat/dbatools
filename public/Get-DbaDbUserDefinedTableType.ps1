@@ -44,6 +44,32 @@ function Get-DbaDbUserDefinedTableType {
     .LINK
         https://dbatools.io/Get-DbaDbUserDefinedTableType
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.UserDefinedTableType
+
+        Returns one UserDefinedTableType object per user-defined table type found. System objects are automatically excluded.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the user-defined table type
+        - ID: The unique identifier (ID) of the user-defined table type within the database
+        - Name: The name of the user-defined table type
+        - Columns: The collection of columns defined in the table type (ColumnCollection object)
+        - Owner: The owner (schema) of the user-defined table type
+        - CreateDate: The date and time when the user-defined table type was created
+        - IsSystemObject: Boolean indicating whether this is a system object (always False for returned results)
+        - Version: The internal version number of the user-defined table type
+
+        Additional properties available (from SMO UserDefinedTableType object):
+        - DefaultSchema: The default schema for the table type
+        - ExtendedProperties: Extended properties (key/value pairs) for the table type
+        - Urn: Unique resource name identifying the object in the SQL Server instance
+        - State: The state of the object (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbUserDefinedTableType -SqlInstance sql2016
 

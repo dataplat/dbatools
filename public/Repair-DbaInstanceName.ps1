@@ -43,6 +43,24 @@ function Repair-DbaInstanceName {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object when the server name is successfully updated. The object contains instance identification and rename confirmation details from the Test-DbaInstanceName command.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - ServerName: The configured server name after the rename operation
+        - NewServerName: The expected server name based on hostname and instance name
+        - RenameRequired: Boolean indicating whether a rename was needed (should be false after successful rename)
+        - Updatable: Boolean indicating if the instance could be renamed (true when rename completed)
+        - Warnings: Warning message about SQL Server Reporting Services needing update if found, or "N/A" if not applicable
+        - Blockers: Array of reasons that prevented rename before fix, or "N/A" if no blockers existed
+
+        No output is returned if the operation is skipped (instance already has correct name, clustered environment, or rename cancelled).
+
     .NOTES
         Tags: SPN, Instance, Utility
         Author: Chrissy LeMaire (@cl), netnerds.net

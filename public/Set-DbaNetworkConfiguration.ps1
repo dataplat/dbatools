@@ -77,6 +77,22 @@ function Set-DbaNetworkConfiguration {
     .LINK
         https://dbatools.io/Set-DbaNetworkConfiguration
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance whose network configuration was modified, containing the details of changes applied and service restart status.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Changes: Array of strings describing each configuration change made (e.g., "Changed TcpIpEnabled to True")
+        - RestartNeeded: Boolean indicating whether a SQL Server service restart is required for changes to take effect
+        - Restarted: Boolean indicating whether the SQL Server service was successfully restarted
+        - Exception: System.Exception object if an error occurred during WMI operations (may be present if changes failed)
+
+        All configuration changes require a SQL Server service restart to become active. If RestartNeeded is True and Restarted is False, you must manually restart the SQL Server service for the new settings to take effect.
+
     .EXAMPLE
         PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016 -EnableProtocol SharedMemory -RestartService
 

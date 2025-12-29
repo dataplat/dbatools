@@ -40,6 +40,20 @@ function Test-DbaDbCompatibility {
     .LINK
         https://dbatools.io/Test-DbaDbCompatibility
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed. The number of objects depends on the number of databases on the instance and any filtering applied via -Database or -ExcludeDatabase parameters.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ServerLevel: The SQL Server instance's compatibility level (CompatibilityLevel enum value like Version140, Version150, etc.)
+        - Database: The name of the database being evaluated
+        - DatabaseCompatibility: The database's current compatibility level (CompatibilityLevel enum value)
+        - IsEqual: Boolean indicating whether the database compatibility level matches the server's maximum compatibility level
+
     .EXAMPLE
         PS C:\> Test-DbaDbCompatibility -SqlInstance sqlserver2014a
 

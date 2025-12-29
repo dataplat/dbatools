@@ -55,6 +55,29 @@ function Set-DbaDbSchema {
     .LINK
         https://dbatools.io/Set-DbaDbSchema
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Schema
+
+        Returns one Schema object for each schema updated. The returned schema objects are the updated SMO objects after the owner has been changed and the Alter() method has been applied.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the schema that was updated
+        - IsSystemObject: Boolean indicating if this is a built-in system schema or custom user-defined schema
+        - Owner: The new owner of the schema (updated to the value specified by -SchemaOwner)
+
+        Additional properties available (from SMO Schema object):
+        - DatabaseName: The name of the database containing the schema
+        - DatabaseId: The unique identifier (ID) of the database
+        - CreateDate: DateTime when the schema was created
+        - DateLastModified: DateTime when the schema was last modified
+        - ID: The schema's unique object ID within the database
+        - Urn: The Urn identifier for the schema
+
+        All properties from the base SMO Schema object are accessible via Select-Object * even though only default properties are displayed. When -WhatIf is used, no output objects are returned.
+
     .EXAMPLE
         PS C:\> Set-DbaDbSchema -SqlInstance sqldev01 -Database example1 -Schema TestSchema1 -SchemaOwner dbatools
 

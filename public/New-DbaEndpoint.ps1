@@ -86,6 +86,32 @@ function New-DbaEndpoint {
     .LINK
         https://dbatools.io/New-DbaEndpoint
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.EndPoint
+
+        Returns one EndPoint object for each endpoint successfully created. The endpoint object represents the newly created SQL Server endpoint configured with the specified type, protocol, and communication settings.
+
+        Default display properties (via Select-DefaultView from Get-DbaEndpoint):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the endpoint (e.g., hadr_endpoint for DatabaseMirroring)
+        - Type: The endpoint type (DatabaseMirroring, ServiceBroker, Soap, TSql)
+        - Protocol: The communication protocol (Tcp, NamedPipes, Http, Via, SharedMemory)
+        - Owner: The SQL Server login that owns the endpoint
+        - IsAdminOnly: Boolean indicating if the endpoint is restricted to administrators only
+
+        Additional properties available (from SMO EndPoint object):
+        - EndpointType: The type of endpoint (same as Type)
+        - ProtocolType: The protocol type enumeration value
+        - Parent: Reference to the parent Server object
+        - State: The current state of the endpoint object (Existing, Creating, Pending, etc.)
+        - Urn: The Uniform Resource Name for the endpoint
+        - Protocol: The Protocol object containing TCP, HTTP, Named Pipes configuration details
+        - Payload: The Payload object containing endpoint-specific configuration (DatabaseMirroring, ServiceBroker, Soap, TSql)
+
+        All properties from the base SMO EndPoint object are accessible using Select-Object * even though only default properties are displayed without that cmdlet.
+
     .EXAMPLE
         PS C:\> New-DbaEndpoint -SqlInstance localhost\sql2017 -Type DatabaseMirroring
 

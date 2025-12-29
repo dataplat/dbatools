@@ -54,6 +54,31 @@ function New-DbaDacOption {
     .LINK
         https://dbatools.io/New-DbaDacOption
 
+    .OUTPUTS
+        Microsoft.SqlServer.Dac.DacExtractOptions (when Type=Dacpac and Action=Export)
+
+        Returns a DacExtractOptions object for extracting schema and data from a database into a DAC package.
+        Properties include ExtractAllTableData (boolean), CommandTimeout (int), and other extraction settings.
+
+        Microsoft.SqlServer.Dac.DacExportOptions (when Type=Bacpac and Action=Export)
+
+        Returns a DacExportOptions object for exporting data only (without schema) from a database into a BAC package.
+        Properties include CommandTimeout (int) and other export-specific settings.
+
+        Microsoft.SqlServer.Dac.PublishOptions (when Type=Dacpac and Action=Publish)
+
+        Returns a PublishOptions object for publishing (deploying) a DAC package to a target database.
+        Contains a DeployOptions property (Microsoft.SqlServer.Dac.DacDeployOptions) with settings like DropObjectsNotInSource (boolean) and BlockOnPossibleDataLoss (boolean).
+        When a PublishXml profile is provided, DeployOptions are loaded from the profile file; otherwise DeployOptions can be set via the Property parameter.
+        The GenerateDeploymentScript property (boolean) is initialized based on the Property parameter or defaults to false.
+
+        Microsoft.SqlServer.Dac.DacImportOptions (when Type=Bacpac and Action=Publish)
+
+        Returns a DacImportOptions object for importing (deploying) a BAC package data into a target database.
+        Properties include CommandTimeout (int) and other import-specific settings.
+
+        All returned objects can be configured by setting their properties directly or by passing a Property hashtable at creation time. When using PublishOptions with a PublishXml profile, the profile's settings override Property parameter values.
+
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export
         PS C:\> $options.ExtractAllTableData = $true

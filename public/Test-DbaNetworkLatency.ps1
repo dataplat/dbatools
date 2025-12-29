@@ -50,6 +50,26 @@ function Test-DbaNetworkLatency {
     .LINK
         https://dbatools.io/Test-DbaNetworkLatency
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance queried, with latency measurements comparing total time vs. query execution time to isolate network delays.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ExecutionCount: The number of times the query was executed (same as -Count parameter)
+        - Total: Total elapsed time for all executions (including connection and network overhead)
+        - Average: Average elapsed time per query execution
+        - ExecuteOnlyTotal: Total time spent in query execution only (excluding network overhead)
+        - ExecuteOnlyAverage: Average query execution time per iteration
+        - NetworkOnlyTotal: Time spent on network latency and connection overhead
+
+        All time properties are returned as prettytimespan objects that display in human-readable format (ms, sec, etc.).
+
+        The difference between Total and ExecuteOnlyTotal represents network latency and connection establishment time, helping DBAs identify whether performance issues originate from the network or the SQL Server instance itself.
+
     .EXAMPLE
         PS C:\> Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster
 

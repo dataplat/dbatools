@@ -62,6 +62,20 @@ function Copy-DbaAgentProxy {
     .LINK
         https://dbatools.io/Copy-DbaAgentProxy
 
+    .OUTPUTS
+        PSCustomObject (MigrationObject)
+
+        Returns one object per proxy account processed, showing the migration status and details.
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: The timestamp when the operation was performed (DbaDateTime type)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the proxy account or associated credential being migrated
+        - Type: The object type being migrated (Agent Proxy, Credential, or ProxyAccount)
+        - Status: The migration status (Successful, Skipped, Failed, or Skipping)
+        - Notes: Additional details about the operation outcome or reason for skipping
+
     .EXAMPLE
         PS C:\> Copy-DbaAgentProxy -Source sqlserver2014a -Destination sqlcluster
 

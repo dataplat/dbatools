@@ -49,6 +49,20 @@ function Get-DbaDbExtentDiff {
     .LINK
         https://dbatools.io/Get-DbaDbExtentDiff
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database analyzed, containing the extent change analysis since the last full backup.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: Name of the database analyzed
+        - ExtentsTotal: Total number of extents in the database
+        - ExtentsChanged: Number of extents that have been modified since the last full backup
+        - ChangedPerc: Percentage of the database that has changed since the last full backup (rounded to 2 decimal places)
+
     .EXAMPLE
         PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
 

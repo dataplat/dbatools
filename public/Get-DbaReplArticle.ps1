@@ -50,6 +50,33 @@ function Get-DbaReplArticle {
     .LINK
         https://dbatools.io/Get-DbaReplArticle
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.Article
+
+        Returns one Article object per article found across the specified publications and databases. Each object represents a single replicated object (table, view, or stored procedure) included in a replication publication.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: The database containing the publication
+        - PublicationName: The name of the publication containing this article
+        - Name: The name of the article as it appears in the publication
+        - Type: The type of object being replicated (Table, View, or StoredProcedure)
+        - VerticalPartition: Boolean indicating if the article uses vertical partitioning (column filtering)
+        - SourceObjectOwner: The schema name of the source object in the publisher database
+        - SourceObjectName: The object name of the source table, view, or stored procedure
+
+        Additional properties available (use Select-Object * to access all):
+        All Microsoft.SqlServer.Replication.Article object properties are accessible, including:
+        - Destination object properties (DestinationObjectOwner, DestinationObjectName)
+        - Filter properties for horizontal and vertical partitioning
+        - Resolver and conflict handling properties
+        - Subscriber-specific properties and transforms
+        - Replication-specific metadata about the article
+
+        All properties from the base SMO Article object are accessible even though only the 10 default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaReplArticle -SqlInstance mssql1
 

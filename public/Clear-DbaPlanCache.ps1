@@ -41,6 +41,17 @@ function Clear-DbaPlanCache {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per plan cache result processed. The object contains the following properties:
+
+        - ComputerName: The name of the computer running the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The fully qualified SQL Server instance name (computer\instance)
+        - Size: The size of the plan cache (displayed with appropriate units)
+        - Status: The result of the operation - either "Plan cache cleared" if the cache exceeded the threshold and was cleared, or "Plan cache size below threshold (X)" if the size was under the specified threshold
+
     .NOTES
         Tags: Diagnostic, Memory
         Author: Tracy Boggiano, databasesuperhero.com

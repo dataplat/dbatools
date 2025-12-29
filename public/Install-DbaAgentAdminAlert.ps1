@@ -94,6 +94,41 @@ function Install-DbaAgentAdminAlert {
     .LINK
         https://dbatools.io/Install-DbaAgentAdminAlert
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Alert
+
+        Returns one Alert object per severity level or message ID for which an alert was successfully created. By default, this results in 12 objects (9 severity levels 17-25 plus 3 message IDs 823-825), or fewer if specific severities or message IDs are excluded via -ExcludeSeverity or -ExcludeMessageId parameters.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - InstanceName: The SQL Server instance name
+        - Name: The alert name (e.g., "Severity 017 - Insufficient Resources", "Error Number 823 - Read/Write Error")
+        - Severity: The error severity level being monitored (0 for message ID alerts, 17-25 for severity alerts)
+        - MessageId: The error message ID being monitored (0 for severity alerts, 823-825 for message ID alerts)
+        - JobName: Name of the SQL Server Agent job executed when alert fires (if -JobId was specified)
+        - CategoryName: Name of the alert category (if -Category was specified)
+        - DelayBetweenResponses: Minimum seconds between alert notifications (if -DelayBetweenResponses was specified)
+        - ID: Unique identifier for the alert within the instance
+        - AlertType: Type of alert (Severity or Message ID based)
+        - IsEnabled: Boolean indicating if the alert is enabled
+        - LastRaised: DateTime when the alert last fired
+        - OccurrenceCount: Number of times the alert has fired
+
+        Additional properties available (from SMO Alert object):
+        - CategoryId: Numeric identifier of the alert category
+        - CreateDate: DateTime when the alert was created
+        - DateLastModified: DateTime when the alert was last modified
+        - DatabaseName: Name of specific database alert is restricted to (if -Database was specified)
+        - Urn: The Uniform Resource Name of the alert object
+        - State: SMO object state (Existing, Creating, Pending, Dropping, etc.)
+        - Notifications: DataTable containing notification settings for operators
+        - EventSource: Event source filter if specified
+        - EventDescriptionKeyword: Event description keyword filter if specified
+        - NotifyMethod: Notification method configured for the alert
+
+        All properties from the base SMO Alert object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Install-DbaAgentAdminAlert -SqlInstance sql1
 

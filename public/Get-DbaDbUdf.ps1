@@ -60,6 +60,35 @@ function Get-DbaDbUdf {
     .LINK
         https://dbatools.io/Get-DbaDbUdf
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.UserDefinedFunction, Microsoft.SqlServer.Management.Smo.UserDefinedAggregate
+
+        Returns one object per User Defined Function or User Defined Aggregate found in the specified databases. Both SMO object types are combined in a single output stream, with UserDefinedAggregates always being user-created (no system aggregates exist in SQL Server).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the function/aggregate
+        - Schema: The schema that contains the function/aggregate
+        - CreateDate: DateTime when the function/aggregate was originally created
+        - DateLastModified: DateTime of the most recent modification to the function/aggregate
+        - Name: The name of the User Defined Function or User Defined Aggregate
+        - DataType: The return data type of the function/aggregate (for example, 'int', 'varchar', 'table', etc.)
+
+        Additional properties available from SMO (UserDefinedFunction):
+        - IsSystemObject: Boolean indicating if this is a system-created object (True for system functions, False for user-created)
+        - AssemblyName: Name of the .NET assembly if this is a CLR-based function
+        - ClassName: Class name within the assembly for CLR-based functions
+        - ExecutionContext: Whether function executes in caller or owner context
+        - IsInlineTableValuedFunction: Boolean for inline table-valued functions
+        - IsSqlTabular: Boolean indicating if this is a SQL table-valued function
+        - QuotedIdentifierStatus: Boolean indicating quoted identifier setting
+        - ReturnsNullOnNullInput: Boolean indicating NULL handling behavior
+        - Text: The T-SQL source code or assembly reference of the function
+
+        Note: UserDefinedAggregate objects do not have the IsSystemObject property. The -ExcludeSystemUdf switch filters out system functions but does not affect aggregates (which are never system objects).
+
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance sql2016
 

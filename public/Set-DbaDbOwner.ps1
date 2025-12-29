@@ -58,6 +58,18 @@ function Set-DbaDbOwner {
     .LINK
         https://dbatools.io/Set-DbaDbOwner
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database where the ownership was successfully changed. If a database owner is already set to the target login, no object is returned for that database. Only databases that were actually modified produce output.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database whose owner was changed
+        - Owner: The login name that is now the database owner
+
     .EXAMPLE
         PS C:\> Set-DbaDbOwner -SqlInstance localhost
 

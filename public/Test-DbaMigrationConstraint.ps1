@@ -64,6 +64,21 @@ function Test-DbaMigrationConstraint {
     .LINK
         https://dbatools.io/Test-DbaMigrationConstraint
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database validated, providing detailed migration compatibility assessment.
+
+        Properties:
+        - SourceInstance: Name of the source SQL Server instance
+        - DestinationInstance: Name of the destination SQL Server instance
+        - SourceVersion: Source server edition, product level, and version number (e.g., "Enterprise SP1 (13.0.5850.14)")
+        - DestinationVersion: Destination server edition, product level, and version number
+        - Database: Name of the database being validated
+        - FeaturesInUse: Comma-separated list of enterprise edition features detected (e.g., "ChangeCapture,XTP"), or empty string if none
+        - IsMigratable: Boolean indicating whether the database can be successfully migrated to the destination (True/False)
+        - Notes: Human-readable message explaining the migration status, including specific reasons if the database cannot be migrated (e.g., FileStream configuration mismatch, Express edition incompatibilities, or missing features on destination)
+
     .EXAMPLE
         PS C:\> Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
 

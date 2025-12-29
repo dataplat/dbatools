@@ -51,6 +51,20 @@ function Set-DbaErrorLogConfig {
     .LINK
         https://dbatools.io/Set-DbaErrorLogConfig
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance containing the current error log configuration settings.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name in computer\instance format
+        - LogCount: The number of error log files SQL Server retains (integer between 6 and 99)
+        - LogSize: The maximum size of each error log file in kilobytes; returns as dbasize object for automatic unit formatting
+
+        The LogCount and LogSize properties reflect the values after any modifications requested by the parameters. If no parameters are specified, the command returns the current configuration values without changes.
+
     .EXAMPLE
         PS C:\> Set-DbaErrorLogConfig -SqlInstance sql2017,sql2014 -LogCount 25
 

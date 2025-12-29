@@ -159,6 +159,19 @@ function Copy-DbaDatabase {
         Breaks database mirroring, removes databases from Availability Groups, and rolls back blocking transactions.
         Use with caution as this will permanently destroy existing destination databases.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database migrated, with the following properties:
+        - DateTime: The timestamp when the migration status was recorded (DbaDateTime)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The original database name on the source instance
+        - DestinationDatabase: The database name on the destination instance (may differ if -NewName or -Prefix was used)
+        - Type: The migration method used - either "Database (BackupRestore)" or "Database (DetachAttach)"
+        - Status: The outcome of the migration operation (Successful, Failed, or Skipped)
+        - Notes: Additional details about the migration, including reasons for failure or skip conditions
+
     .NOTES
         Tags: Migration, Backup, Restore
         Author: Chrissy LeMaire (@cl), netnerds.net

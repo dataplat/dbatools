@@ -32,6 +32,19 @@ function Get-DbaDump {
     .LINK
         https://dbatools.io/Get-DbaDump
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per memory dump file found on the SQL Server instance. Each object contains information about a single .mdmp file created by SQL Server for crash diagnostics.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - FileName: The file path and name of the memory dump file (.mdmp)
+        - CreationTime: DateTime indicating when the memory dump was created
+        - Size: The size of the memory dump file (formatted as dbasize for easy human-readable display, e.g., "1.5 GB")
+
     .EXAMPLE
         PS C:\> Get-DbaDump -SqlInstance sql2016
 

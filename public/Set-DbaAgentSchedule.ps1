@@ -109,6 +109,38 @@ function Set-DbaAgentSchedule {
     .LINK
         https://dbatools.io/Set-DbaAgentSchedule
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobSchedule
+
+        Returns the updated JobSchedule object(s) for the modified schedule(s). When multiple jobs or multiple instances are modified, one object is returned per modified schedule.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the schedule
+        - Enabled/IsEnabled: Boolean indicating if the schedule is active
+        - FrequencyTypes: Schedule frequency type (Once, Daily, Weekly, Monthly, MonthlyRelative, AgentStart, OnIdle)
+        - FrequencyInterval: The interval at which the schedule runs based on frequency type
+        - FrequencySubDayTypes: Sub-daily frequency unit (Once, Seconds, Minutes, Hours)
+        - FrequencySubDayInterval: Number of sub-daily frequency units between executions
+        - ActiveStartDate: The date when the schedule becomes active
+        - ActiveEndDate: The date when the schedule stops being active
+        - ActiveStartTimeOfDay: The daily start time for job execution
+        - ActiveEndTimeOfDay: The daily end time for job execution
+
+        Additional properties available (from SMO JobSchedule object):
+        - ScheduleUid: Unique identifier for the schedule
+        - FrequencyRelativeIntervals: Relative frequency interval for monthly schedules (First, Second, Third, Fourth, Last)
+        - FrequencyRecurrenceFactor: Number of weeks or months between schedule occurrences
+        - JobCount: Number of jobs using this schedule
+        - Parent: Reference to the parent JobServer object
+        - Urn: The Uniform Resource Name of the schedule object
+        - CreateDate: DateTime when the schedule was created
+        - DateLastModified: DateTime when the schedule was last modified
+
+        All properties from the base SMO JobSchedule object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -Enabled
 

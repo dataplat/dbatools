@@ -72,6 +72,19 @@ function Install-DbaMultiTool {
     .LINK
         https://dbatools.io/Install-DbaMultiTool
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per stored procedure installed, providing installation details and status.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The target database where the stored procedures were installed
+        - Name: The name of the installed stored procedure (sp_helpme, sp_doc, sp_sizeoptimiser, sp_estindex, or sp_help_revlogin)
+        - Status: The installation status - "Installed" for newly installed procedures, "Updated" for procedures that were updated, or "Error" if the installation failed
+
     .EXAMPLE
         PS C:\> Install-DbaMultiTool -SqlInstance server1 -Database main
 

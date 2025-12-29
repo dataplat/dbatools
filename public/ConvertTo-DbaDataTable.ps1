@@ -56,7 +56,22 @@ function ConvertTo-DbaDataTable {
         https://dbatools.io/ConvertTo-DbaDataTable
 
     .OUTPUTS
-        System.Object[]
+        System.Data.DataTable
+
+        Returns a single DataTable object containing all input objects as rows. Each property from the input objects becomes a column in the DataTable with an appropriate data type.
+
+        Column data types are automatically detected based on input object properties:
+        - Numeric types (Int32, Int64, Decimal, Double, Single, etc.) are preserved as their original types
+        - TimeSpan and DbaTimeSpan objects are converted based on the -TimeSpanType parameter (default: TotalMilliseconds as Int64)
+        - DbaSize (file/database size) objects are converted based on the -SizeType parameter (default: Byte value as Int64)
+        - DateTime objects are preserved as System.DateTime
+        - Boolean, Guid, and Char types are preserved
+        - String arrays and System.Object[] are joined with comma separators
+        - Other types are converted to strings
+
+        When the -Raw parameter is specified, all columns are created as strings regardless of input type, which can be useful as a fallback when type detection fails or maximum compatibility is needed.
+
+        The DataTable is suitable for use with Write-DbaDataTable for bulk insert operations into SQL Server tables. All properties from the input objects are included as columns in the returned DataTable.
 
     .EXAMPLE
         PS C:\> Get-Service | ConvertTo-DbaDataTable

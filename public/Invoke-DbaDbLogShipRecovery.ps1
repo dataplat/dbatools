@@ -51,6 +51,19 @@ function Invoke-DbaDbLogShipRecovery {
         Sets the polling interval in seconds to check if the log shipping copy and restore jobs have completed. The function waits this long between status checks.
         Use a shorter delay for faster recovery monitoring or a longer delay to reduce system load during job execution. Default is 5 seconds, which balances responsiveness with system performance.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database recovered, containing the outcome and status of the log shipping recovery operation.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the log shipped secondary database that was recovered
+        - RecoverResult: The final result of the recovery operation - either "Success" or "Failed"
+        - Comment: Additional details about the recovery operation or error message if the recovery failed
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 

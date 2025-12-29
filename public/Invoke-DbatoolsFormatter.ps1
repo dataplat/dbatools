@@ -27,6 +27,11 @@ function Invoke-DbatoolsFormatter {
     .LINK
         https://dbatools.io/Invoke-DbatoolsFormatter
 
+    .OUTPUTS
+        None
+
+        This function performs file formatting operations and writes the formatted content back to the source files. It does not return any objects to the pipeline. Status and error messages are written using the dbatools Write-Message function.
+
     .EXAMPLE
         PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\Get-DbaDatabase.ps1
 

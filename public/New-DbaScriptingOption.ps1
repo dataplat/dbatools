@@ -8,6 +8,23 @@ function New-DbaScriptingOption {
 
         See https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.scriptingoptions.aspx for more information
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ScriptingOptions
+
+        Returns a single ScriptingOptions object that can be used to customize script generation behavior. This object contains dozens of boolean and string properties that control what gets included when scripting SQL Server objects (indexes, triggers, permissions, dependencies, batch separators, etc.). Use this object with Export-DbaScript and other scripting commands to control the generated T-SQL output.
+
+        Common properties include:
+        - ScriptDrops: Include DROP statements (Boolean)
+        - WithDependencies: Include dependent objects (Boolean)
+        - AgentAlertJob: Include SQL Agent Alert and Job information (Boolean)
+        - AgentNotify: Include SQL Agent notification (Boolean)
+        - Indexes: Include indexes (Boolean)
+        - Triggers: Include triggers (Boolean)
+        - Permissions: Include permissions (Boolean)
+        - TargetServerVersion: Target SQL Server version for compatibility
+
+        See Microsoft.SqlServer.Management.Smo.ScriptingOptions documentation for complete property list.
+
     .NOTES
         Tags: General, Script, Object
         Author: Chrissy LeMaire (@cl), netnerds.net

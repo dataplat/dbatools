@@ -114,6 +114,38 @@ function New-DbaLogin {
     .LINK
         https://dbatools.io/New-DbaLogin
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Login
+
+        Returns one Login object for each login successfully created on the specified SQL Server instance(s). The Login object contains all configuration and security properties for the newly created login.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The login account name
+        - LoginType: The type of login (SqlLogin, WindowsUser, WindowsGroup, Certificate, AsymmetricKey, or ExternalUser)
+        - CreateDate: DateTime when the login was created
+        - LastLogin: DateTime of the most recent connection (null if never connected or SQL Server 2000)
+        - HasAccess: Boolean indicating if the login has permission to connect
+        - IsLocked: Boolean indicating if the login is currently locked due to failed authentication attempts
+        - IsDisabled: Boolean indicating if the login is disabled
+        - MustChangePassword: Boolean indicating if the login must change password on next connection
+
+        Additional properties always available (from SMO Login object):
+        - SidString: Hexadecimal string representation of the login's Security Identifier (SID)
+        - Sid: Binary Security Identifier of the login
+        - DefaultDatabase: The default database for the login when connecting
+        - Language: The default language for the login's SQL Server session
+        - LoginMode: The authentication mode for the login
+        - PasswordExpirationEnabled: Boolean indicating if password expiration policy is enforced
+        - PasswordPolicyEnforced: Boolean indicating if Windows password complexity requirements are enforced
+        - DenyWindowsLogin: Boolean indicating if Windows Authentication is denied for this login
+        - IsSystemObject: Boolean indicating if the login is a system object
+        - IsExpired: Boolean indicating if the SQL Server login password has expired (SQL Server 2008+)
+
+        All properties from the base SMO Login object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin
 

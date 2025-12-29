@@ -33,6 +33,27 @@ function Get-DbaCustomError {
     .LINK
         https://dbatools.io/Get-DbaCustomError
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.UserDefinedMessage
+
+        Returns one UserDefinedMessage object per custom error message found in sys.messages on the target SQL Server instance(s). When multiple instances are specified, all custom errors from all instances are returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server host
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: The custom error message ID (50001-2147483647)
+        - Text: The text of the custom error message (max 255 characters)
+        - LanguageID: The language ID (numeric identifier from sys.syslanguages)
+        - Language: The language name (e.g., "English", "French", "Deutsch")
+
+        Additional properties available (from SMO UserDefinedMessage object):
+        - Severity: The severity level of the error (1-25 integer)
+        - IsLogged: Boolean indicating if the error is logged to the Windows Application and SQL Server error logs
+        - Parent: Reference to the parent SMO Server object
+
+        All properties from the base SMO object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaCustomError -SqlInstance localhost
 

@@ -127,6 +127,25 @@ function Copy-DbaDbTableData {
         Creates new tables using the destination database's default filegroup instead of matching the source table's filegroup name.
         Use this when the destination database has different filegroup configurations or when you want all copied tables in the PRIMARY filegroup.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per destination instance per source table copied. If copying one table to two destination instances, returns two objects. If piping multiple tables to one destination, returns one object per table.
+
+        Properties:
+        - SourceInstance: The name of the source SQL Server instance
+        - SourceDatabase: The name of the source database
+        - SourceDatabaseID: The unique identifier (ID) of the source database
+        - SourceSchema: The schema name of the source table or view
+        - SourceTable: The name of the source table or view
+        - DestinationInstance: The name of the destination SQL Server instance
+        - DestinationDatabase: The name of the destination database
+        - DestinationDatabaseID: The unique identifier (ID) of the destination database
+        - DestinationSchema: The schema name of the destination table
+        - DestinationTable: The name of the destination table
+        - RowsCopied: The total number of rows that were successfully copied (Int64). Supports values greater than 2.1 billion rows.
+        - Elapsed: The elapsed time as a TimeSpan object representing the duration of the copy operation
+
     .NOTES
         Tags: Table, Data
         Author: Simone Bizzotto (@niphlod)

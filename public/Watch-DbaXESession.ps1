@@ -35,6 +35,22 @@ function Watch-DbaXESession {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject (default)
+
+        Returns one object per Extended Event captured from the session. Each object contains dynamically generated properties based on the events, fields, and actions collected by the XE session.
+
+        Default properties include:
+        - name: The Extended Event type name (e.g., sql_statement_completed, rpc_completed)
+        - timestamp: The DateTime when the event was captured
+        - Additional dynamic properties: All event fields (with "collect_" prefix removed) and all event actions (with the last part after dot separator)
+
+        The exact properties returned depend on which events, fields, and actions are configured in the Extended Events session being monitored. For example, monitoring sql_statement_completed might include properties like statement, batch_text, duration, cpu_time, logical_reads, writes, etc.
+
+        System.Object[] (when -Raw is specified)
+
+        Returns raw XEvent enumeration objects from the SQL Server Extended Events infrastructure. These objects maintain the native Extended Events data structure and can be used for custom processing or integration with other tools.
+
     .NOTES
         Tags: ExtendedEvent, XE, XEvent
         Author: Chrissy LeMaire (@cl), netnerds.net

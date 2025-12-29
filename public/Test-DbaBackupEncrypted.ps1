@@ -37,6 +37,24 @@ function Test-DbaBackupEncrypted {
     .LINK
         https://dbatools.io/Test-DbaBackupEncrypted
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per backup file analyzed, containing encryption status and certificate information.
+
+        Properties:
+        - ComputerName (string) - The computer name of the SQL Server instance used for analysis
+        - InstanceName (string) - The SQL Server instance name used for analysis
+        - SqlInstance (string) - The full SQL Server instance name (computer\instance)
+        - FilePath (string) - The file path of the backup file that was analyzed
+        - BackupName (string) - The logical name of the backup set from RESTORE HEADERONLY output
+        - Encrypted (boolean) - Boolean indicating if the backup contains encryption from backup encryption or Transparent Data Encryption (TDE)
+        - KeyAlgorithm (string) - The encryption key algorithm (e.g., "AES128", "AES192", "AES256", null if not encrypted via backup encryption)
+        - EncryptorThumbprint (string) - The SHA-1 thumbprint of the backup encryption certificate (null if not encrypted via backup encryption)
+        - EncryptorType (string) - The type of backup encryptor (e.g., "Certificate", "Asymmetric Key", null if no backup encryption)
+        - TDEThumbprint (string) - The TDE thumbprint in hexadecimal format from FILELISTONLY (null if database was not encrypted with TDE)
+        - Compressed (boolean) - Boolean indicating if the backup was created with compression enabled
+
     .EXAMPLE
         PS C:\> Test-DbaBackupEncrypted -SqlInstance sql01 -Path /tmp/northwind.bak
 

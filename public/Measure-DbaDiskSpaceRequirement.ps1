@@ -60,6 +60,36 @@ function Measure-DbaDiskSpaceRequirement {
     .LINK
         https://dbatools.io/Measure-DbaDiskSpaceRequirement
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database file analyzed during migration planning. Multiple objects are returned for databases with multiple files (one per file). Objects are returned for three scenarios: files on both source and destination, files only on source, or files only on destination.
+
+        Default display properties (via Select-DefaultView):
+        - SourceSqlInstance: The full SQL Server instance name of the source (computer\instance)
+        - SourceDatabase: Name of the source database
+        - SourceLogicalName: Logical name of the database file on the source
+        - SourceFileName: Operating system file path of the source file
+        - SourceFileSize: DbaSize object of the source file size (bytes, converts to KB/MB/GB/TB)
+        - DestinationComputerName: The computer name of the destination SQL Server instance
+        - DestinationSqlInstance: The full SQL Server instance name of the destination (computer\instance)
+        - DestinationDatabase: Name of the destination database (may differ from source if renamed)
+        - DestinationFileName: Operating system file path of the destination file (null if file only on source)
+        - DestinationFileSize: DbaSize object of destination file size; null or 0 if file only on source (displayed as negative value when present)
+        - DifferenceSize: DbaSize object showing the difference in file size between source and destination
+        - MountPoint: The volume mount point where the destination file is or will be located
+        - FileLocation: Scenario description - "Source and Destination", "Only on Source", or "Only on Destination"
+
+        Hidden properties (available via Select-Object *):
+        - SourceComputerName: The computer name of the source SQL Server instance
+        - SourceInstance: The SQL Server instance name of the source
+        - DestinationInstance: The SQL Server instance name of the destination
+        - DestinationLogicalName: Logical name of the destination file (null if file only on source)
+        - SourceDatabaseName: Source database name (used in "Only on Destination" scenario)
+        - DestinationDatabaseName: Destination database name (used in "Only on Destination" scenario)
+
+        Use Select-Object * to access all properties including hidden ones.
+
     .EXAMPLE
         PS C:\> Measure-DbaDiskSpaceRequirement -Source INSTANCE1 -Database DB1 -Destination INSTANCE2
 

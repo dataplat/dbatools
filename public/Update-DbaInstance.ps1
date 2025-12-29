@@ -125,6 +125,22 @@ function Update-DbaInstance {
         Use this to control where temporary installation files are placed, especially on servers with limited C: drive space.
         Defaults to system temporary directory if not specified, but consider using a dedicated drive with sufficient space.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance updated, providing detailed information about the installation result and outcome.
+
+        Properties:
+        - ComputerName (string) - The computer name of the target instance
+        - InstanceName (string) - The SQL Server instance name (MSSQLSERVER for default instance)
+        - MajorVersion (int) - The SQL Server major version number (2008, 2012, 2016, 2019, 2022, etc.)
+        - TargetLevel (string) - The target patch level that was applied (e.g., "SP3CU15")
+        - KB (string) - The Knowledge Base number of the update that was installed
+        - Installer (string) - Full path to the installer executable that was executed
+        - Successful (bool) - Boolean indicating whether the patch installation completed successfully
+        - Restarted (bool) - Boolean indicating whether the server was restarted after patching
+        - Notes (object[]) - Array of messages describing the installation process, any warnings, or errors encountered
+
     .LINK
         https://dbatools.io/Update-DbaInstance
 

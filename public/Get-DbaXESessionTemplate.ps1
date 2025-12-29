@@ -49,6 +49,25 @@ function Get-DbaXESessionTemplate {
     .LINK
         https://dbatools.io/Get-DbaXESessionTemplate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Extended Event session template found in the specified template directories. Each template is represented as a custom object with metadata extracted from the XML template file and supplementary information from the metadata catalog.
+
+        Default display properties (via Select-DefaultView):
+        - Name: The session name from the template (e.g., 'system_health', 'Deadlock_Tracking')
+        - Category: The template category for organizational grouping (e.g., 'Performance', 'Security', 'Monitoring')
+        - Source: The source or author of the template (e.g., 'Microsoft', 'Jes Borland', 'Christian Grafe')
+        - Compatibility: Comma-separated list of SQL Server versions this template is compatible with (e.g., '2008, 2012, 2014, 2016, 2017, 2019')
+        - Description: Text description of what the template monitors or its intended use case
+
+        Additional properties available (use Select-Object * to view):
+        - TemplateName: The template name element from XML
+        - Path: FileInfo object representing the template file path
+        - File: The template file name with extension
+
+        Use Select-Object * to access all properties including the file path and additional metadata embedded in the template objects.
+
     .EXAMPLE
         PS C:\> Get-DbaXESessionTemplate
 

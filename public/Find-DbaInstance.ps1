@@ -150,8 +150,36 @@ function Find-DbaInstance {
         Outside resources used and modified:
         https://gallery.technet.microsoft.com/scriptcenter/List-the-IP-addresses-in-a-60c5bb6b
 
+    .OUTPUTS
+        Dataplat.Dbatools.Discovery.DbaInstanceReport
+
+        Returns one DbaInstanceReport object per SQL Server instance discovered and validated on target computers. Each object represents a potential SQL Server instance with details about how it was detected and its current availability status.
+
+        Properties:
+        - MachineName: The network name of the computer where the instance was discovered
+        - ComputerName: The computer name (same as MachineName for consistency)
+        - InstanceName: The SQL Server instance name (e.g., "SQLEXPRESS", "MSSQLSERVER"). Null if only a port was detected
+        - SqlInstance: The full SQL Server instance identifier (ComputerName\InstanceName or ComputerName:Port)
+        - Port: The TCP port number where the instance is listening (e.g., 1433). Null if InstanceName was discovered instead
+        - Confidence: Confidence level of the discovery (High, Medium, or Low). High = certain instance found, Medium = likely instance, Low = possible instance
+        - Availability: Instance availability status (Available, Unavailable, or Unknown). Set when SQL Service status is detected
+        - DnsResolution: System.Net.IPHostEntry object containing DNS resolution results if DNSResolve scan was performed. Null if not resolved
+        - Ping: Boolean indicating whether the computer responded to ping (True/False/Null)
+        - TcpConnected: Boolean indicating whether the detected TCP port is open/connected (True/False)
+        - SqlConnected: Boolean indicating whether a successful SQL connection was established (True/False). Only set if SqlConnect scan type is enabled
+        - Timestamp: DateTime when the discovery scan was performed
+        - ScanTypes: Bit-flag of scan types that were performed (Browser, SQLService, SPN, TCPPort, DNSResolve, Ping, SqlConnect, All)
+        - Services: Array of SQL Service objects detected via WMI/CIM for this instance. Objects have properties: ServiceType, State, InstanceName, DisplayName
+        - SystemServices: Array of system SQL Service objects detected (services without an InstanceName like SQL Server Agent service parent processes)
+        - SPNs: Array of Service Principal Names registered in Active Directory for this computer/instance
+        - BrowseReply: Custom object containing details from Browser service query if Browser scan was performed. Properties include InstanceName, TCPPort, Version, IsClustered
+        - PortsScanned: Array of port scan results. Each object has properties: ComputerName, Port, IsOpen
+
+        The output is filtered by MinimumConfidence parameter - only instances meeting or exceeding the specified confidence level are returned.
+
     .LINK
         https://dbatools.io/Find-DbaInstance
+
 
     .EXAMPLE
         PS C:\> Find-DbaInstance -DiscoveryType Domain, DataSourceEnumeration

@@ -34,6 +34,11 @@ function Remove-DbaDbBackupRestoreHistory {
         Accepts database objects piped from Get-DbaDatabase to remove complete backup and restore history for those specific databases.
         Use this for pipeline operations when working with filtered database collections or when combining with other dbatools database commands.
 
+    .OUTPUTS
+        None
+
+        This command performs cleanup operations on the MSDB database backup and restore history tables but does not return any objects to the pipeline. It modifies data through SMO methods (DeleteBackupHistory for server-level cleanup and DropBackupHistory for database-level cleanup).
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 

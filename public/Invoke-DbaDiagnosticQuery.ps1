@@ -94,6 +94,29 @@ function Invoke-DbaDiagnosticQuery {
     .LINK
         https://dbatools.io/Invoke-DbaDiagnosticQuery
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per diagnostic query executed from Glenn Berry's query collection. Each object contains the query execution results along with metadata about the query and target database.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Number: The query number from Glenn Berry's diagnostic query collection
+        - Name: The name or title of the diagnostic query
+        - Description: Description of what the diagnostic query analyzes and why it's useful
+        - DatabaseSpecific: Boolean indicating if the query is database-specific (true) or instance-level (false)
+        - Database: Database name if DatabaseSpecific is true; null for instance-level queries
+        - Notes: Status notes; "Empty Result for this Query" if no rows returned, "WhatIf - Bypassed Execution" when -WhatIf is used, null for successful executions
+        - Result: The query result set as an array of DataRow objects containing the diagnostic data; null if no results or on WhatIf execution
+
+        Special behaviors:
+        - When -ExportQueries is used, no output objects are returned; only SQL files are written to disk
+        - The Result property contains all columns from the diagnostic query output, formatted as DataRow objects
+        - Database-specific queries return one object per database queried, with Database property populated
+        - Instance-level queries return one object with Database set to null
+
     .EXAMPLE
         PS C:\>Invoke-DbaDiagnosticQuery -SqlInstance sql2016
 

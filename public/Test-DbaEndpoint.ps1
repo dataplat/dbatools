@@ -41,6 +41,22 @@ function Test-DbaEndpoint {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per endpoint that has a TCP listener port. Each object contains the connection test results for both TCP and SSL connections.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Endpoint: The name of the endpoint being tested
+        - Port: The TCP listener port for the endpoint
+        - Connection: TCP connection status - "Success" for successful connection, or error message/exception if connection failed
+        - SslConnection: SSL connection status - "Success" for successful SSL connection, "None" if no SSL port configured, or error message/exception if SSL connection failed
+
+        Endpoints without TCP listener ports are automatically skipped and do not produce output.
+
     .LINK
         https://dbatools.io/Test-DbaEndpoint
 

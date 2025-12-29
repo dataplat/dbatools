@@ -65,6 +65,22 @@ function Copy-DbaAgentJobStep {
     .LINK
         https://dbatools.io/Copy-DbaAgentJobStep
 
+    .OUTPUTS
+        PSCustomObject (MigrationObject)
+
+        Returns one object per job processed with the following properties:
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: The timestamp when the job step copy operation was executed
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the SQL Agent job
+        - Type: The operation type, always "Agent Job Steps"
+        - Status: The status of the operation - "Successful" if steps were copied, "Skipped" if the destination job does not exist, or "Failed" if an error occurred
+        - Notes: Additional information about the operation, such as the number of steps synchronized or reason for skipping/failure
+
+        All properties are always available on the returned object even though Select-DefaultView limits the display.
+
     .EXAMPLE
         PS C:\> Copy-DbaAgentJobStep -Source PrimaryAG -Destination SecondaryAG1, SecondaryAG2 -Job "MaintenanceJob"
 

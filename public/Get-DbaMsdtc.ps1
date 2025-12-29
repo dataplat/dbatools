@@ -33,6 +33,31 @@ function Get-DbaMsdtc {
     .LINK
         https://dbatools.io/Get-DbaMsdtc
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per target computer containing the MSDTC service status and configuration details. If MSDTC service information cannot be retrieved, nothing is returned for that computer.
+
+        Properties:
+        - ComputerName: The name of the target computer
+        - DTCServiceName: The display name of the MSDTC service (Microsoft Distributed Transaction Coordinator)
+        - DTCServiceState: The current state of the MSDTC service (Running, Stopped, Paused, etc.)
+        - DTCServiceStatus: The operational status of the MSDTC service (OK, Degraded, etc.)
+        - DTCServiceStartMode: The start mode configuration of the service (Auto, Manual, Disabled)
+        - DTCServiceAccount: The Windows account under which the MSDTC service runs
+        - DTCCID_MSDTC: Component identifier (CID) for the MSDTC component (null if not available)
+        - DTCCID_MSDTCUIS: Component identifier for the MSDTC User Interface Service component (null if not available)
+        - DTCCID_MSDTCTIPGW: Component identifier for the MSDTC TIP Gateway component (null if not available)
+        - DTCCID_MSDTCXATM: Component identifier for the MSDTC XA Transaction Manager component (null if not available)
+        - networkDTCAccess: Boolean indicating if network DTC access is enabled
+        - networkDTCAccessAdmin: Boolean indicating if network DTC admin access is enabled
+        - networkDTCAccessClients: Boolean indicating if DTC network access is enabled for clients
+        - networkDTCAccessInbound: Boolean indicating if inbound network DTC transactions are enabled
+        - networkDTCAccessOutBound: Boolean indicating if outbound network DTC transactions are enabled
+        - networkDTCAccessTip: Boolean indicating if TIP (Transaction Internet Protocol) access is enabled
+        - networkDTCAccessTransactions: Boolean indicating if network DTC transactions are enabled
+        - XATransactions: Boolean indicating if XA (eXtended Architecture) transactions are enabled
+
     .EXAMPLE
         PS C:\> Get-DbaMsdtc -ComputerName srv0042
 

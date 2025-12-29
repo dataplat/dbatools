@@ -33,6 +33,32 @@ function Get-DbaDbMailProfile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.MailProfile
+
+        Returns one or more Database Mail profile objects from the target SQL Server instance(s). Each profile object includes configuration details for organizing mail accounts used for notifications and alerts.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: The unique identifier (int) for the Database Mail profile within the instance
+        - Name: The name of the Database Mail profile
+        - Description: Text description of the profile's purpose or intended use
+        - ForceDeleteForActiveProfiles: Boolean indicating if the profile will be forcefully deleted even if actively used
+        - IsBusyProfile: Boolean indicating if the profile is currently busy processing mail messages
+
+        Additional properties available (from SMO MailProfile object):
+        - Parent: Reference to the parent SqlMail object
+        - Properties: Collection of property objects for the profile
+        - State: Current state of the profile object (Existing, Creating, Deleting)
+        - Urn: The unified resource name (URN) for the object
+        - Uid: Unique identifier for the profile
+        - MailAccountMemberships: Collection of mail accounts associated with this profile
+        - LastModificationTime: DateTime when the profile was last modified (if available)
+
+        Use Select-Object * to access all available properties if needed.
+
     .NOTES
         Tags: Mail, DbMail, Email
         Author: Chrissy LeMaire (@cl), netnerds.net

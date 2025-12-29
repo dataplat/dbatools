@@ -70,6 +70,25 @@ function New-DbaConnectionStringBuilder {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.Data.SqlClient.SqlConnectionStringBuilder (default) or System.Data.SqlClient.SqlConnectionStringBuilder (when -Legacy is specified)
+
+        Returns one SqlConnectionStringBuilder object for each connection string provided via the pipeline or -ConnectionString parameter. The builder object allows programmatic access and modification of all SQL Server connection string properties.
+
+        The returned object exposes all connection string settings as accessible properties including:
+        - Application Name: The application name for connection identification
+        - Data Source: The SQL Server instance name and port
+        - Initial Catalog: The default database for the connection
+        - Integrated Security: Boolean indicating Windows Authentication usage
+        - User ID: SQL Server login name (if using SQL Authentication)
+        - Password: SQL Server login password (if using SQL Authentication)
+        - Workstation ID: The workstation identifier for connection tracking
+        - MultipleActiveResultSets: Boolean indicating if MARS is enabled
+        - Column Encryption Setting: Setting for Always Encrypted support (Enabled or null)
+        - Pooling: Boolean indicating if connection pooling is enabled
+
+        All properties from the base SqlConnectionStringBuilder are accessible through normal PowerShell property access or by converting the builder to a connection string using the ToString() method.
+
     .LINK
         https://dbatools.io/New-DbaConnectionStringBuilder
 

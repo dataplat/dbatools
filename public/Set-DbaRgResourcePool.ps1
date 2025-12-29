@@ -96,6 +96,29 @@ function Set-DbaRgResourcePool {
     .LINK
         https://dbatools.io/Set-DbaRgResourcePool
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ResourcePool or Microsoft.SqlServer.Management.Smo.ExternalResourcePool
+
+        Returns the modified resource pool object with added connection context properties.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: Unique identifier for the resource pool
+        - Name: Name of the resource pool
+        - CapCpuPercentage: CPU percentage cap for the pool (SQL Server 2012+)
+        - IsSystemObject: Boolean indicating if this is a system resource pool
+        - MaximumCpuPercentage: Maximum CPU percentage the pool can consume
+        - MaximumIopsPerVolume: Maximum IOPS per disk volume for the pool
+        - MaximumMemoryPercentage: Maximum memory percentage the pool can consume
+        - MinimumCpuPercentage: Guaranteed minimum CPU percentage for the pool
+        - MinimumIopsPerVolume: Guaranteed minimum IOPS per disk volume for the pool
+        - MinimumMemoryPercentage: Guaranteed minimum memory percentage for the pool
+        - WorkloadGroups: Collection of workload groups associated with this pool
+
+        All properties from the base SMO ResourcePool or ExternalResourcePool objects are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Set-DbaRgResourcePool-SqlInstance sql2016 -ResourcePool "poolAdmin" -MaximumCpuPercentage 5
 

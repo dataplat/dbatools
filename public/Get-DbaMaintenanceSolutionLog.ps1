@@ -55,6 +55,40 @@ function Get-DbaMaintenanceSolutionLog {
     .LINK
         https://dbatools.io/Get-DbaMaintenanceSolutionLog
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per index or statistics operation parsed from the IndexOptimize log files. When no log files are found or contain parseable operations, nothing is returned.
+
+        Properties include:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name
+        - Database: The database name where the index or statistics operation was performed
+        - StartTime: DateTime when the operation started (converted from "Date and time" field as dbadatetime)
+        - Duration: The total duration of the operation (converted from "Duration" field as timespan)
+        - Index: The index name for ALTER INDEX operations (null for UPDATE STATISTICS operations)
+        - Statistics: The statistics name for UPDATE STATISTICS operations (null for ALTER INDEX operations)
+        - Schema: The schema name containing the table
+        - Table: The table name
+        - Action: The action performed (REBUILD or REORGANIZE for indexes, null for statistics)
+        - Options: The index operation options (FILLFACTOR, PAD_INDEX, etc.)
+        - Timeout: The lock timeout value in milliseconds (if specified)
+        - Partition: The partition number for partitioned indexes (null for non-partitioned)
+        - ObjectType: The type of object being optimized
+        - IndexType: The type of index (Heap, ClusteredIndex, NonClusteredIndex)
+        - ImageText: Image text information from the log
+        - NewLOB: New LOB information
+        - FileStream: FileStream information
+        - ColumnStore: ColumnStore information
+        - AllowPageLocks: Page lock settings
+        - PageCount: Number of pages in the index
+        - Fragmentation: Index fragmentation percentage before optimization
+        - Error: Any errors encountered during the operation (multiline string with newlines joining multiple error lines)
+
+        All properties from the parsed log file are accessible via Select-Object *.
+
+
     .EXAMPLE
         PS C:\> Get-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a
 

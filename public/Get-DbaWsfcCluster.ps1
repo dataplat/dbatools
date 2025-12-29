@@ -31,6 +31,60 @@ function Get-DbaWsfcCluster {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_Cluster
+
+        Returns one cluster object per target cluster specified via ComputerName parameter. Each object contains cluster-wide configuration and status information.
+
+        Default display properties (via Select-DefaultView):
+        - Name: The name of the cluster
+        - Fqdn: Fully qualified domain name of the cluster
+        - State: Current operational state of the cluster (added via NoteProperty)
+        - DrainOnShutdown: Boolean indicating if nodes drain resources during service shutdown (uint32)
+        - DynamicQuorumEnabled: Boolean indicating if dynamic quorum adjustment is enabled (uint32)
+        - EnableSharedVolumes: Boolean indicating if Cluster Shared Volumes feature is enabled (uint32)
+        - SharedVolumesRoot: The root directory path for Cluster Shared Volumes
+        - QuorumPath: File system path where quorum files are maintained
+        - QuorumType: Current quorum type as a string (Majority Node Majority, Node and Disk Majority, No Majority - Disk Only, Node Majority, or Witness)
+        - QuorumTypeValue: Numeric identifier representing the quorum type (uint32)
+        - RequestReplyTimeout: Timeout period in milliseconds for request-reply operations (uint32)
+
+        Additional properties from MSCluster_Cluster WMI class (accessible via Select-Object *):
+        - Caption: Short text description of the cluster
+        - Description: Detailed cluster description
+        - InstallDate: DateTime when the cluster was installed
+        - Status: Cluster operational status string
+        - AddEvictDelay: Seconds between node eviction and new node admission
+        - AdminAccessPoint: Type of cluster administrative access point
+        - BackupInProgress: Indicates if cluster backup is running
+        - ClusterEnforcedAntiAffinity: Hard enforcement status of group anti-affinity
+        - ClusterFunctionalLevel: Current cluster functional level
+        - ClusterLogLevel: Cluster logging verbosity level
+        - ClusterLogSize: Maximum log file size per node
+        - ClusSvcHangTimeout: Heartbeat timeout before node considered hung
+        - CrossSiteDelay: Heartbeat delay between sites in milliseconds
+        - CrossSiteThreshold: Missed heartbeats before cross-site failure detected
+        - CrossSubnetDelay: Heartbeat delay between subnets in milliseconds
+        - CrossSubnetThreshold: Missed heartbeats before cross-subnet failure detected
+        - CsvBalancer: Automatic CSV balancing enabled status
+        - GracePeriodEnabled: Node grace period feature status
+        - GracePeriodTimeout: Grace period timeout in milliseconds
+        - IgnorePersistentStateOnStartup: Whether cluster brings online previously running groups
+        - MaxNumberOfNodes: Maximum nodes allowed in cluster
+        - NetftIPSecEnabled: IPSec security for internal cluster traffic
+        - PrimaryOwnerName: Primary cluster owner name
+        - PrimaryOwnerContact: Primary owner contact information
+        - S2DEnabled: Storage Spaces Direct feature enablement
+        - SameSubnetDelay: Heartbeat delay on same subnet in milliseconds
+        - SameSubnetThreshold: Missed heartbeats on same subnet before failure detected
+        - SharedVolumeCompatibleFilters: Filters compatible with direct I/O
+        - SharedVolumeIncompatibleFilters: Filters that prevent direct I/O usage
+        - S2DCacheBehavior, S2DCacheDeviceModel, S2DIOLatencyThreshold: Storage Spaces Direct configuration options
+        - WitnessDynamicWeight: Configured witness weight for quorum calculations
+        - All other properties defined in the MSCluster_Cluster WMI class
+
+        All properties from the base WMI object are accessible using Select-Object *. Use Select-Object * to see properties not shown in the default view, as noted in the second example.
+
     .LINK
         https://dbatools.io/Get-DbaWsfcCluster
 

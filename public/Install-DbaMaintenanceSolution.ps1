@@ -124,6 +124,19 @@ function Install-DbaMaintenanceSolution {
     .LINK
         https://dbatools.io/Install-DbaMaintenanceSolution
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance where the maintenance solution was installed. Each object contains installation result information.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Results: Status of the installation ("Success" or "Failed")
+
+        Only returns output when installation actually executes (not during WhatIf). When using -WhatIf, no output is generated.
+
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallJobs -CleanupTime 72
 

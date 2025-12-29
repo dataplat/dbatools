@@ -33,6 +33,34 @@ function Get-DbaStartupProcedure {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.StoredProcedure
+
+        Returns one StoredProcedure object for each stored procedure configured as a startup procedure in the master database. Connection context properties are added via NoteProperty.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Database name containing the stored procedure (always "master" for startup procedures)
+        - Schema: The schema name containing the stored procedure
+        - ObjectId: The object ID of the stored procedure within SQL Server
+        - CreateDate: DateTime when the stored procedure was created
+        - DateLastModified: DateTime when the stored procedure was last modified
+        - Name: The name of the stored procedure
+        - ImplementationType: The implementation type of the procedure (T-SQL or CLR)
+        - Startup: Boolean indicating if the procedure is configured as a startup procedure
+
+        Additional properties available from the SMO StoredProcedure object (use Select-Object *):
+        - Parent: Reference to the parent database object
+        - Owner: The principal that owns the stored procedure
+        - ExecutionContext: Execution context (Caller or Owner)
+        - IsEncrypted: Boolean indicating if the procedure is encrypted
+        - IsRecompiled: Boolean indicating if the procedure is recompiled on execution
+        - IsSystemObject: Boolean indicating if this is a system object
+        - Urn: The Unified Resource Name for the object
+        - State: The current state of the SMO object (Existing, Creating, Pending, etc.)
+
     .LINK
         https://dbatools.io/Get-DbaStartupProcedure
 

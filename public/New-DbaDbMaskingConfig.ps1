@@ -95,6 +95,35 @@ function New-DbaDbMaskingConfig {
     .LINK
         https://dbatools.io/New-DbaDbMaskingConfig
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one file information object per generated JSON configuration file. The JSON file contains the masking configuration for all detected sensitive columns in the specified database and tables. If no sensitive data is detected, nothing is returned.
+
+        File naming convention:
+        - Default: "servername.databasename.DataMaskingConfig.json"
+        - With table filter (1-4 tables): "servername.databasename.table1-table2.DataMaskingConfig.json"
+        - With table filter (5+ tables): "servername.databasename.Tables_yyyyMMddHHmmss.DataMaskingConfig.json"
+
+        The returned FileInfo object includes standard properties:
+        - Name: The generated filename
+        - FullName: The complete file path
+        - Length: File size in bytes
+        - CreationTime: When the configuration file was created
+        - LastWriteTime: When the configuration file was last modified
+
+        The JSON file structure contains:
+        - Name: Database name
+        - Type: "DataMaskingConfiguration"
+        - Tables: Array of table objects, each containing:
+          - Name: Table name
+          - Schema: Table schema
+          - Columns: Array of column masking specifications
+          - HasUniqueIndex: Boolean indicating if table has unique indexes
+          - FilterQuery: Optional query to filter which rows get masked
+
+        This configuration file is consumed by Invoke-DbaDbDataMasking to perform the actual data masking operations.
+
     .EXAMPLE
         New-DbaDbMaskingConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone
 

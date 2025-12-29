@@ -70,6 +70,36 @@ function New-DbaDbCertificate {
     .LINK
         https://dbatools.io/New-DbaDbCertificate
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Certificate
+
+        Returns one Certificate object for each certificate created in the specified database. The certificate object contains all the configuration properties defined during creation including expiration dates, encryption settings, and Service Broker dialog status.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the certificate
+        - Name: The name of the certificate
+        - Subject: The subject field of the certificate for identification purposes
+        - StartDate: The date and time when the certificate becomes valid
+        - ActiveForServiceBrokerDialog: Boolean indicating if the certificate is active for Service Broker dialog security
+        - ExpirationDate: The date and time when the certificate expires
+        - Issuer: The issuer of the certificate
+        - LastBackupDate: The date and time of the most recent backup of the certificate
+        - Owner: The owner or principal that owns the certificate
+        - PrivateKeyEncryptionType: The encryption type used for the private key (None, Password, or MasterKey)
+        - Serial: The serial number of the certificate
+
+        Additional properties available (from SMO Certificate object):
+        - ID: The unique identifier for the certificate
+        - Thumbprint: The SHA-1 hash of the certificate
+        - CreateDate: The date and time when the certificate was created
+        - Sid: The security identifier (SID) of the certificate owner
+        - State: The current state of the SMO object (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO Certificate object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> New-DbaDbCertificate -SqlInstance Server1
 

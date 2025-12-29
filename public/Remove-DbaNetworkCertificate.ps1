@@ -19,6 +19,18 @@ function Remove-DbaNetworkCertificate {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance where the network certificate configuration was removed.
+
+        Properties:
+        - ComputerName: The name of the computer where the certificate was removed
+        - InstanceName: The SQL Server instance name (extracted from DisplayName)
+        - SqlInstance: The full SQL Server instance identifier (VSNAME)
+        - ServiceAccount: The service account used by the SQL Server instance
+        - RemovedThumbprint: The certificate thumbprint that was removed (or $null if none was configured)
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 

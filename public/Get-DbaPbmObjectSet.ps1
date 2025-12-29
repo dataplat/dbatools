@@ -44,6 +44,30 @@ function Get-DbaPbmObjectSet {
     .LINK
         https://dbatools.io/Get-DbaPbmObjectSet
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Dmf.ObjectSet
+
+        Returns one ObjectSet object per object set found on the specified SQL Server instance(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: Unique identifier for the object set
+        - Name: Name of the object set
+        - Facet: The facet that this object set targets (e.g., Server, Database, Table)
+        - TargetSets: Collection of target sets that define the objects included in this set
+        - IsSystemObject: Boolean indicating if this is a Microsoft system object set
+
+        Additional properties available (from SMO ObjectSet object):
+        - Parent: Reference to the parent PolicyStore object
+        - IdentityKey: The identity key for the object
+        - Urn: The Uniform Resource Name
+        - State: The current state of the SMO object (Existing, Creating, Pending, Dropping, etc.)
+        - Metadata: The object metadata
+
+        All properties from the base SMO ObjectSet object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Get-DbaPbmObjectSet -SqlInstance sql2016
 

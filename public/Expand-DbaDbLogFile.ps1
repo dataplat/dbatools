@@ -110,6 +110,29 @@ function Expand-DbaDbLogFile {
         Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
         This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed containing the results of the log file expansion operation.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Database: The name of the database whose log file was expanded
+        - DatabaseID: The unique identifier of the database
+        - ID: The file ID of the transaction log file
+        - Name: The logical name of the transaction log file
+        - InitialSize: The size of the log file at the start of the operation (displayed as formatted size)
+        - CurrentSize: The size of the log file after expansion to target size (displayed as formatted size)
+        - InitialVLFCount: The number of Virtual Log Files (VLFs) before the expansion operation
+        - CurrentVLFCount: The number of Virtual Log Files (VLFs) after the expansion operation
+
+        Additional properties available:
+        - LogFileCount: The total number of log files for the database (available with Select-Object *)
+
+        All properties are accessible via Select-Object * or by accessing individual properties on the returned object.
+
     .LINK
         https://dbatools.io/Expand-DbaDbLogFile
 

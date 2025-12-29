@@ -45,6 +45,11 @@ function Remove-DbaDbRoleMember {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This command does not return any output objects. It removes specified users from database roles and returns no information about the operation.
+
     .NOTES
         Tags: Role, User
         Author: Ben Miller (@DBAduck)

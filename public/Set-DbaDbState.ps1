@@ -105,6 +105,21 @@ function Set-DbaDbState {
     .LINK
         https://dbatools.io/Set-DbaDbState
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database modified, with the following properties:
+
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - DatabaseName: The name of the database that was modified
+        - RW: The read/write access mode (READ_ONLY or READ_WRITE)
+        - Status: The database status (ONLINE, OFFLINE, EMERGENCY, or DETACHED)
+        - Access: The user access mode (SINGLE_USER, RESTRICTED_USER, or MULTI_USER)
+        - Notes: Error details if the state change failed; null if successful (semicolon-separated list if multiple errors)
+        - Database: The SMO Database object (not displayed by default but accessible)
+
     .EXAMPLE
         PS C:\> Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -Offline
 

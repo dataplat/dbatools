@@ -48,6 +48,14 @@ function Show-DbaDbList {
     .LINK
         https://dbatools.io/Show-DbaDbList
 
+    .OUTPUTS
+        System.String
+
+        Returns the name of the selected database when the user selects a database and clicks OK.
+        For example: "master", "msdb", "model", "tempdb", or any user-created database name.
+
+        Returns $null if the user cancels the dialog, closes the window without selecting a database, or if the OK button is not explicitly clicked.
+
     .EXAMPLE
         PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a
 

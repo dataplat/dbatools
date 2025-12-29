@@ -40,6 +40,19 @@ function Invoke-DbaCycleErrorLog {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per instance processed with error log cycling results.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - LogType: String array of log types that were cycled (contains 'instance', 'agent', or both)
+        - IsSuccessful: Boolean indicating if the error log cycling was successful
+        - Notes: Exception object if operation failed, null if successful
+
     .LINK
         https://dbatools.io/Invoke-DbaCycleErrorLog
 

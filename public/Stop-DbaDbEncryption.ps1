@@ -47,6 +47,22 @@ function Stop-DbaDbEncryption {
     .LINK
         https://dbatools.io/Stop-DbaDbEncryption
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed, with output varying based on encryption status and processing mode.
+
+        Default properties (sequential mode without -Parallel):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: The name of the database
+        - EncryptionEnabled: Boolean indicating whether encryption is enabled after the operation
+
+        When -Parallel is specified, additional properties are included:
+        - Status: The operation result (Success, NotEncrypted, or Failed)
+        - Error: Error message if the operation failed; null on success
+
     .EXAMPLE
         PS C:\> Stop-DbaDbEncryption -SqlInstance sql01
 

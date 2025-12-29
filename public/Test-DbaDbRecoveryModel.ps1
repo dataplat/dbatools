@@ -51,6 +51,21 @@ function Test-DbaDbRecoveryModel {
     .LINK
         https://dbatools.io/Test-DbaDbRecoveryModel
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database evaluated, providing recovery model configuration and current operational status comparison.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database being validated
+        - ConfiguredRecoveryModel: The recovery model configured on the database (FULL, SIMPLE, or BULK_LOGGED)
+        - ActualRecoveryModel: The actual operational recovery model (may differ from configured; FULL databases without a log backup chain report as SIMPLE)
+
+        For FULL recovery databases, the ActualRecoveryModel will be "SIMPLE" if no log backup chain has been established (no backup has been taken since switching to FULL recovery). All other recovery models report their configured value as the actual value.
+
     .EXAMPLE
         PS C:\> Test-DbaDbRecoveryModel -SqlInstance sql2005
 

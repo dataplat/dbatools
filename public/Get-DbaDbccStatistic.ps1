@@ -52,6 +52,50 @@ function Get-DbaDbccStatistic {
     .LINK
         https://dbatools.io/Get-DbaDbccStatistic
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per row returned from the DBCC SHOW_STATISTICS command. The properties included vary based on the Option parameter.
+
+        Common properties (all outputs):
+        - ComputerName: The name of the SQL Server instance's computer
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the statistics
+        - Object: The schema-qualified name of the table or indexed view (e.g., 'dbo.Orders')
+        - Target: The name of the statistics object, index, or column being analyzed
+        - Cmd: The full DBCC SHOW_STATISTICS command that was executed
+
+        When Option is 'StatHeader' (default):
+        - Name: The name of the statistics object
+        - Updated: DateTime when statistics were last updated
+        - Rows: Total number of rows in the table or indexed view
+        - RowsSampled: Number of rows sampled when statistics were created
+        - Steps: Number of steps in the histogram
+        - Density: Overall density value for the statistics
+        - AverageKeyLength: Average length of the index key in bytes
+        - StringIndex: Indicates if the statistics are on a string column (Yes/No)
+        - FilterExpression: Filter expression if statistics are filtered
+        - UnfilteredRows: Number of rows if different from Rows due to filtering
+        - PersistedSamplePercent: Sample percent used when creating statistics
+
+        When Option is 'DensityVector':
+        - AllDensity: String representation of density value for all leading columns
+        - AverageLength: Average length of the column in bytes
+        - Columns: Names of the columns included in the density vector
+
+        When Option is 'Histogram':
+        - RangeHiKey: Upper boundary value of the histogram step
+        - RangeRows: Number of rows with values within the histogram step range
+        - EqualRows: Number of rows with values equal to RangeHiKey
+        - DistinctRangeRows: Number of distinct values within the histogram step
+        - AverageRangeRows: Average number of rows per distinct value
+
+        When Option is 'StatsStream':
+        - StatsStream: Raw binary statistics data as a binary object (for advanced analysis)
+        - Rows: Total number of rows in the table
+        - DataPages: Number of data pages used by the table
+
     .EXAMPLE
         PS C:\> Get-DbaDbccStatistic -SqlInstance SQLServer2017
 

@@ -87,6 +87,23 @@ function Invoke-DbaDbDataGenerator {
     .LINK
         https://dbatools.io/Invoke-DbaDbDataGenerator
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per table that had data generated, providing a summary of the data generation operation.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database where data was generated
+        - Schema: The schema name containing the table
+        - Table: The name of the table that was populated with generated data
+        - Columns: Array of column names that received generated data
+        - Rows: Integer count of rows generated and inserted into the table
+        - Elapsed: TimeSpan of the time taken to generate and insert data (formatted as prettytimespan for display)
+        - Status: String indicating the result of the operation - "Done" for successful completion
+
     .EXAMPLE
         Invoke-DbaDbDataGenerator -SqlInstance sqldb2 -Database DB1 -FilePath C:\temp\sqldb1.db1.tables.json
 

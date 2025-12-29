@@ -43,6 +43,11 @@ function Remove-DbaServerRoleMember {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This command does not produce any output. It performs role membership modifications via SMO methods ($ServerRole.DropMember() and $ServerRole.DropMembershipFromRole()) without returning objects to the pipeline.
+
     .NOTES
         Tags: Role, Login
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

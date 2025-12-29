@@ -29,6 +29,20 @@ function Get-DbatoolsConfig {
         Use this when troubleshooting dbatools behavior or when you need to see internal configuration settings that control advanced module functionality.
         Hidden settings often include debugging flags and internal module state information.
 
+    .OUTPUTS
+        Dataplat.Dbatools.Configuration.ConfigurationValue
+
+        Returns one configuration value object per setting found in the dbatools configuration system that matches the specified filter criteria. Results are sorted alphabetically by module name, then by configuration name.
+
+        Properties:
+        - Module: The module name component (e.g., "sql", "mail", "path", "logging")
+        - Name: The configuration setting name within the module (e.g., "timeout", "smtpserver")
+        - Value: The current value stored in the configuration setting (can be any object type)
+        - Description: Human-readable description of what the configuration controls
+        - Hidden: Boolean indicating if this is a hidden configuration setting
+
+        When multiple settings match the filter criteria, each returns a separate object. The full configuration key is in "Module.Name" format (e.g., "sql.connection.timeout"). Hidden settings are excluded by default unless -Force is specified.
+
     .NOTES
         Tags: Module
         Author: Friedrich Weinmann (@FredWeinmann)

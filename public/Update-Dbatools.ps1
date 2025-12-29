@@ -34,6 +34,11 @@ function Update-Dbatools {
     .LINK
         https://dbatools.io/Update-Dbatools
 
+    .OUTPUTS
+        None
+
+        This command is deprecated and returns no output. It displays a warning message to console directing users to use PowerShell's built-in Install-Module and Update-Module commands instead. No pipeline objects are generated.
+
     .EXAMPLE
         PS C:\> Update-Dbatools
 

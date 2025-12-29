@@ -51,6 +51,20 @@ function Stop-DbaPfDataCollectorSet {
     .LINK
         https://dbatools.io/Stop-DbaPfDataCollectorSet
 
+    .OUTPUTS
+        Objects from Get-DbaPfDataCollectorSet
+
+        Returns Data Collector Set objects from Get-DbaPfDataCollectorSet after successfully stopping each collector set. The output includes the refreshed state of each collector set with updated status information showing it is no longer running.
+
+        Properties returned match those from Get-DbaPfDataCollectorSet, including:
+        - ComputerName: The computer where the Data Collector Set is configured
+        - Name: The name of the Data Collector Set that was stopped
+        - State: The current state (should be "Stopped" after successful termination)
+        - Enabled: Boolean indicating if the collector set is enabled
+        - DataCollectorSetObject: Reference to the underlying Windows COM object
+
+        Note: If a collector set is not in "Running" state, Stop-Function prevents output and returns no objects for that set. Only successfully stopped collectors generate output.
+
     .EXAMPLE
         PS C:\> Stop-DbaPfDataCollectorSet
 

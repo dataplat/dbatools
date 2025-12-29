@@ -32,6 +32,20 @@ function Test-DbaLinkedServerConnection {
     .LINK
         https://dbatools.io/Test-DbaLinkedServerConnection
 
+    .OUTPUTS
+        Dataplat.Dbatools.Validation.LinkedServerResult
+
+        Returns one object per linked server on each target instance, containing the connection test result and status information.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Name: The name of the linked server
+        - DataSource: The data source or connection string of the linked server
+        - Connectivity: Boolean indicating if the linked server connection was successful (true = connected, false = failed)
+        - Result: Connection test result message - either "Success" or the specific error message explaining the connection failure
+
     .EXAMPLE
         PS C:\> Test-DbaLinkedServerConnection -SqlInstance DEV01
 

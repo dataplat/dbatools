@@ -44,6 +44,11 @@ function Remove-DbaBackup {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.i
 
+    .OUTPUTS
+        None
+
+        This function does not return any objects to the pipeline. It performs file and folder deletion operations based on the specified retention period and parameters. Use -WhatIf to see what would be deleted without actually removing files.
+
     .NOTES
         Tags: Backup, DisasterRecovery
         Author: Chris Sommer (@cjsommer), www.cjsommer.com

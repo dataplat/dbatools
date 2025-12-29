@@ -60,6 +60,23 @@ function Invoke-DbaDbDecryptObject {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per encrypted database object that is successfully decrypted. If no encrypted objects are found, nothing is returned.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database containing the encrypted object
+        - Type: The type of database object (StoredProcedure, UserDefinedFunction, View, or Trigger)
+        - Schema: The schema name containing the object
+        - Name: The object name
+        - FullName: The fully qualified name in schema.name format
+        - Script: The decrypted T-SQL source code of the object
+        - OutputFile: The file path where the script was exported; null if -ExportDestination was not specified and results were displayed in console only
+
     .LINK
         https://dbatools.io/Invoke-DbaDbDecryptObject
 

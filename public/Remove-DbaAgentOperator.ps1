@@ -54,6 +54,17 @@ function Remove-DbaAgentOperator {
     .LINK
         https://dbatools.io/Remove-DbaAgentOperator
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per operator removal attempt with the following properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Name: The name of the operator that was removed
+        - Status: Status message indicating "Dropped" on success or error message on failure
+        - IsRemoved: Boolean indicating whether the operator was successfully removed (true) or removal failed (false)
+
     .EXAMPLE
         PS C:\> Remove-DbaAgentOperator -SqlInstance sql01 -Operator DBA
 

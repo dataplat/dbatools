@@ -29,6 +29,17 @@ function Clear-DbaLatchStatistics {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance specified. The object contains the result of clearing latch statistics for that instance.
+
+        Properties:
+        - ComputerName: The computer name of the target SQL Server instance
+        - InstanceName: The SQL Server service/instance name
+        - SqlInstance: The full SQL Server instance name in domain\instance format
+        - Status: "Success" if the DBCC SQLPERF command executed successfully, or an exception object if an error occurred
+
     .NOTES
         Tags: Diagnostic, LatchStatistic, Waits
         Author: Patrick Flynn (@sqllensman)

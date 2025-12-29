@@ -47,6 +47,22 @@ function Get-DbaLatchStatistic {
     .LINK
         https://dbatools.io/Get-DbaLatchStatistic
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per latch class that meets the specified cumulative wait time percentage threshold. When using the default 95% threshold, this typically includes 3-10 of the most significant latch classes; using 100% threshold returns all non-BUFFER latch classes.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - WaitType: The latch class name from sys.dm_os_latch_stats (e.g., ACCESS_METHODS_LATCH_EX, BUFFER_LATCH_EX)
+        - WaitSeconds: Total wait time for this latch class in seconds (decimal with 2 decimal places)
+        - WaitCount: Number of waiting requests for this latch class (bigint)
+        - Percentage: Percentage of total latch wait time contributed by this latch class (0-100, decimal with 2 decimal places)
+        - AverageWaitSeconds: Average wait time per request for this latch class in seconds (decimal with 4 decimal places, calculated as WaitSeconds/WaitCount)
+        - URL: Direct hyperlink to SQLSkills documentation for this latch class (format: https://www.sqlskills.com/help/latches/{LatchClass})
+
     .EXAMPLE
         PS C:\> Get-DbaLatchStatistic -SqlInstance sql2008, sqlserver2012
 

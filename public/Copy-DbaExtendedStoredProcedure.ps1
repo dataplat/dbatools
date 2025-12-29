@@ -55,6 +55,21 @@ function Copy-DbaExtendedStoredProcedure {
         Overwrites existing Extended Stored Procedures on the destination server instead of skipping them when name conflicts occur.
         Use this when updating existing procedures with newer versions or when you need to ensure destination procedures match the source exactly.
 
+    .OUTPUTS
+        PSCustomObject (MigrationObject)
+
+        Returns one object per Extended Stored Procedure processed. The object contains information about the success or failure of the copy operation.
+
+        Properties:
+        - DateTime: The date and time when the copy operation was processed (DbaDateTime)
+        - SourceServer: The name of the source SQL Server instance (string)
+        - DestinationServer: The name of the destination SQL Server instance (string)
+        - Name: The name of the Extended Stored Procedure (string)
+        - Type: Always "Extended Stored Procedure" (string)
+        - Status: The result of the operation - Successful, Skipped, Failed, or "Successful (DLL not copied)" (string)
+        - Notes: Additional information about the operation result, such as reason for skip, error message, or DLL copy status (string)
+        - Schema: The schema in which the Extended Stored Procedure was created (string)
+
     .NOTES
         Tags: Migration, ExtendedStoredProcedure, XP
         Author: the dbatools team + Claude

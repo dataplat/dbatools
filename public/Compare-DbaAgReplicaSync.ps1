@@ -50,6 +50,19 @@ function Compare-DbaAgReplicaSync {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per difference detected across the Availability Group replicas. Each object represents a synchronization discrepancy that would impact failover readiness.
+
+        Properties:
+        - AvailabilityGroup: Name of the Availability Group being compared
+        - Replica: Name of the replica where the discrepancy was detected
+        - ObjectType: Type of object with the difference (Login, AgentJob, Credential, LinkedServer, AgentOperator, AgentAlert, AgentProxy, CustomError)
+        - ObjectName: Name of the specific object that differs
+        - Status: Current state of the object ("Missing" when object exists on another replica but not this one, "Different" when object exists but has different configuration)
+        - PropertyDifferences: String containing details of property differences (populated only for Login objects when Status is "Different"; null for other object types or when Status is "Missing")
+
     .NOTES
         Tags: AvailabilityGroup, AG, Sync, Compare
         Author: the dbatools team + Claude

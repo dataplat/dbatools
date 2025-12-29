@@ -36,6 +36,11 @@ function Clear-DbaConnectionPool {
     .LINK
         https://dbatools.io/Clear-DbaConnectionPool
 
+    .OUTPUTS
+        None
+
+        This command does not return any output. It performs an action to clear connection pools on the specified computer(s) and completes silently on success.
+
     .EXAMPLE
         PS C:\> Clear-DbaConnectionPool
 

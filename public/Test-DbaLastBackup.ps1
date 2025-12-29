@@ -176,6 +176,30 @@ function Test-DbaLastBackup {
     .LINK
         https://dbatools.io/Test-DbaLastBackup
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database tested with the following properties:
+
+        - SourceServer (string) - Name of the source SQL Server instance where the backup originated
+        - TestServer (string) - Name of the destination SQL Server instance where the restore was tested
+        - Database (string) - Name of the database being tested
+        - FileExists (boolean) - Whether the backup files were found and accessible ($true, $false, or $null)
+        - Size (dbasize) - Total size of the backup files; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - RestoreResult (string) - Result of the restore operation: "Success", "Failure", "Skipped", or error message
+        - DbccResult (string) - Result of the DBCC CHECKDB operation: "Success", "Failure", "Skipped", or detailed error
+        - RestoreStart (datetime) - Date and time when the restore operation started
+        - RestoreEnd (datetime) - Date and time when the restore operation ended
+        - RestoreElapsed (timespan as string) - Formatted duration of the restore operation (HH:mm:ss format)
+        - DbccMaxDop (int) - Maximum degree of parallelism used for DBCC CHECKDB
+        - DbccStart (datetime) - Date and time when the DBCC CHECKDB operation started
+        - DbccEnd (datetime) - Date and time when the DBCC CHECKDB operation ended
+        - DbccElapsed (timespan as string) - Formatted duration of the DBCC CHECKDB operation (HH:mm:ss format)
+        - BackupDates (datetime array) - Array of backup start times for all backup files in the restore chain
+        - BackupFiles (string array) - Array of backup file paths used for the restore operation
+
+        Output is returned immediately for each database processed, enabling real-time progress monitoring of multi-database restore tests.
+
     .EXAMPLE
         PS C:\> Test-DbaLastBackup -SqlInstance sql2016
 

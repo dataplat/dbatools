@@ -58,6 +58,15 @@ function Select-DbaDbSequenceNextValue {
     .LINK
         https://dbatools.io/Select-DbaDbSequenceNextValue
 
+    .OUTPUTS
+        System.Int64
+
+        Returns the next value from the specified sequence object as a 64-bit integer. Each call to this function increments the sequence's internal counter and returns the next value in the sequence series.
+
+        When multiple sequences are specified via the -Sequence parameter, one integer value is returned per sequence in the order specified. The returned value is the SQL Server sequence value (typically a bigint data type).
+
+        Example values: 1, 2, 3, 100, 1000, etc., depending on the sequence's start value, increment, and current state.
+
     .EXAMPLE
         PS C:\> Select-DbaDbSequenceNextValue -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence
 

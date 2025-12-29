@@ -52,6 +52,36 @@ function Get-DbaDbCertificate {
     .LINK
         https://dbatools.io/Get-DbaDbCertificate
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Certificate
+
+        Returns one Certificate object per certificate found in the specified databases. Each certificate object is augmented with additional context properties to identify the containing database and SQL Server instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the certificate
+        - Name: The name of the certificate
+        - Subject: The subject field of the certificate for identification
+        - StartDate: The date and time when the certificate becomes valid
+        - ActiveForServiceBrokerDialog: Boolean indicating if the certificate is active for Service Broker dialog security
+        - ExpirationDate: The date and time when the certificate expires
+        - Issuer: The issuer of the certificate
+        - LastBackupDate: The date and time of the most recent backup of the certificate
+        - Owner: The owner or principal that owns the certificate
+        - PrivateKeyEncryptionType: The encryption type used for the private key (None, Password, MasterKey)
+        - Serial: The serial number of the certificate
+
+        Additional properties available from the SMO Certificate object:
+        - DatabaseId: The unique identifier of the database containing the certificate
+        - Thumbprint: The SHA-1 hash of the certificate
+        - CreateDate: The date and time when the certificate was created
+        - SignedByCertificate: Name of the certificate that signed this certificate (if applicable)
+        - PrivateKeyExists: Boolean indicating if the certificate has a private key
+
+        All properties from the base SMO Certificate object are accessible via Select-Object * even though only default properties are displayed without explicit selection.
+
     .EXAMPLE
         PS C:\> Get-DbaDbCertificate -SqlInstance sql2016
 

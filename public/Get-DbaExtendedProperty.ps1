@@ -50,6 +50,28 @@ function Get-DbaExtendedProperty {
     .LINK
         https://dbatools.io/Get-DbaExtendedProperty
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ExtendedProperty
+
+        Returns one extended property object per extended property found on the specified SQL Server objects. When querying by SqlInstance and Database, this includes extended properties at the database level. When piping objects from other dbatools commands, extended properties from those specific objects are returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ParentName: Name of the SQL Server object that owns this extended property
+        - Type: The type name of the parent object (e.g., Database, Table, StoredProcedure, Column)
+        - Name: The name of the extended property
+        - Value: The value or content of the extended property (can be any string data)
+
+        Additional properties available (from SMO ExtendedProperty object):
+        - Parent: Reference to the parent SQL Server object
+        - Urn: The Uniform Resource Name of the extended property
+        - Properties: Collection of property objects
+        - State: The current state of the SMO object (Existing, Creating, Pending, etc.)
+
+        The Server property added by this command contains the connection object for programmatic access to the parent SQL Server instance.
+
     .EXAMPLE
         PS C:\> Get-DbaExtendedProperty -SqlInstance sql2016
 

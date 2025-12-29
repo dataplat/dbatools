@@ -52,6 +52,23 @@ function Save-DbaKbUpdate {
     .LINK
         https://dbatools.io/Save-DbaKbUpdate
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one FileInfo object for each successfully downloaded KB file. The objects represent the downloaded files saved to the local file system.
+
+        Properties:
+        - Name: The filename of the downloaded KB file
+        - FullName: The complete file path where the file was saved
+        - Length: The file size in bytes
+        - Directory: The directory where the file was saved
+        - CreationTime: DateTime when the file was created
+        - LastWriteTime: DateTime when the file was last modified
+        - Attributes: File attributes (Archive, ReadOnly, Hidden, etc.)
+        - Mode: File permissions string (e.g., -a--- for archive)
+
+        Only files that successfully download and exist on disk are returned. If download fails or the file is not found after download, no object is returned for that file.
+
     .EXAMPLE
         PS C:\> Save-DbaKbUpdate -Name KB4057119
 

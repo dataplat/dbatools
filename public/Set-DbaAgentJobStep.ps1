@@ -117,6 +117,33 @@ function Set-DbaAgentJobStep {
     .LINK
         https://dbatools.io/Set-DbaAgentJobStep
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobStep
+
+        Returns one modified JobStep object for each job step updated or created. The object is returned after all changes have been committed to the SQL Server instance.
+
+        When using -Force, creates new job steps if they don't exist. When updating existing steps, returns the modified JobStep with all changes applied.
+
+        All SMO JobStep object properties are accessible and reflect the modifications made by this function, including:
+        - Name: Job step name
+        - ID: Job step ID within the job
+        - Subsystem: Type of subsystem used (TransactSql, CmdExec, PowerShell, Ssis, etc.)
+        - Command: Command or script to execute
+        - DatabaseName: Database context for T-SQL steps
+        - DatabaseUserName: User account for T-SQL step execution
+        - CommandExecutionSuccessCode: Expected return code for success (CmdExec subsystem)
+        - OnSuccessAction: Action to perform if step succeeds (QuitWithSuccess, QuitWithFailure, GoToNextStep, GoToStep)
+        - OnSuccessStep: Target step ID for GoToStep success action
+        - OnFailAction: Action to perform if step fails (QuitWithFailure, QuitWithSuccess, GoToNextStep, GoToStep)
+        - OnFailStep: Target step ID for GoToStep failure action
+        - RetryAttempts: Number of retry attempts on failure
+        - RetryInterval: Minutes between retry attempts
+        - OutputFileName: File path for step output
+        - ProxyName: SQL Agent proxy account name
+        - JobStepFlags: Output flags (AppendToJobHistory, AppendToLogFile, etc.)
+        - CreateDate: DateTime when step was created
+        - LastModifiedDate: DateTime when step was last modified
+
     .EXAMPLE
         PS C:\> Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -NewName Step2
 

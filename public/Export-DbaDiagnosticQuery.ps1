@@ -55,6 +55,25 @@ function Export-DbaDiagnosticQuery {
     .LINK
         https://dbatools.io/Export-DbaDiagnosticQuery
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one or more file objects representing the exported files. The specific files returned depend on the parameters used and the content of the diagnostic query results.
+
+        For each diagnostic query result processed, the function may return:
+        - CSV file: When ConvertTo is "Csv" (one file per diagnostic query or one per database if DatabaseSpecific)
+        - Excel file: When ConvertTo is "Excel" (one workbook per instance or per database if DatabaseSpecific)
+        - .sqlplan file: Query execution plan files extracted from result columns (unless NoPlanExport is specified)
+        - .sql file: Query text files extracted from result columns (unless NoQueryExport is specified)
+
+        Each System.IO.FileInfo object contains standard file properties including:
+        - Name: The filename (e.g., "SERVERNAME-DQ-20231215120530ms.xlsx")
+        - FullName: The complete path to the file
+        - Directory: The directory where the file is located
+        - Length: File size in bytes
+        - CreationTime: When the file was created
+        - LastWriteTime: When the file was last modified
+
     .EXAMPLE
         PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance sql2016 | Export-DbaDiagnosticQuery -Path c:\temp
 

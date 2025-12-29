@@ -29,6 +29,50 @@ function Get-DbaOperatingSystem {
     .LINK
         https://dbatools.io/Get-DbaOperatingSystem
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per computer containing comprehensive Windows operating system details.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer
+        - Manufacturer: The manufacturer of the computer hardware (e.g., Dell, HP, VMware)
+        - Organization: The organization assigned to the computer
+        - Architecture: The processor architecture (x64 or x86)
+        - Version: The Windows version identifier
+        - OSVersion: The friendly operating system version name (e.g., Windows Server 2019 Standard)
+        - LastBootTime: DateTime of the most recent system boot
+        - LocalDateTime: Current DateTime on the system
+        - PowerShellVersion: The installed PowerShell version (e.g., 5.1)
+        - TimeZone: The current time zone of the system
+        - TotalVisibleMemory: Total physical RAM available (dbasize object with unit conversion)
+        - ActivePowerPlan: The active Windows power plan (e.g., High Performance)
+        - LanguageNative: The native name of the configured OS language
+
+        Additional properties available (use Select-Object *):
+        - Build: The Windows build number
+        - SPVersion: Service Pack version number
+        - InstallDate: DateTime when the operating system was installed
+        - BootDevice: The device from which the system boots
+        - SystemDevice: The device containing the operating system files
+        - SystemDrive: The drive letter of the system drive
+        - WindowsDirectory: The full path to the Windows directory
+        - PagingFileSize: Current paging file size in KB
+        - FreePhysicalMemory: Currently available physical RAM (dbasize object)
+        - TotalVirtualMemory: Total virtual memory available (dbasize object)
+        - FreeVirtualMemory: Currently available virtual memory (dbasize object)
+        - Status: Current system status
+        - Language: The Display name of the configured OS language
+        - LanguageId: The LCID (Locale ID) of the OS language
+        - LanguageKeyboardLayoutId: The keyboard layout ID
+        - LanguageTwoLetter: Two-letter ISO language code
+        - LanguageThreeLetter: Three-letter ISO language code
+        - LanguageAlias: Language alias name
+        - CodeSet: The code set character encoding
+        - CountryCode: The country code
+        - Locale: The locale identifier
+        - IsWsfc: Boolean indicating if Windows Server Failover Clustering service is installed
+
     .EXAMPLE
         PS C:\> Get-DbaOperatingSystem
 

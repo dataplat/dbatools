@@ -82,6 +82,25 @@ function Invoke-DbaDbUpgrade {
     .LINK
         https://dbatools.io/Invoke-DbaDbUpgrade
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed with detailed information about each upgrade operation performed.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: Name of the database that was upgraded
+        - OriginalCompatibility: Original database compatibility level before upgrade (e.g., "100", "110", "140")
+        - CurrentCompatibility: New database compatibility level after upgrade (e.g., "100", "110", "140")
+        - Compatibility: Result status of compatibility level update; values: version number if updated, "No change" if already correct, "Fail" if update failed
+        - TargetRecoveryTime: Result of target recovery time update; values: 60 if set to 60 seconds, "No change" if already 60 or SQL Server version < 2016, "Fail" if update failed
+        - DataPurity: Result of DBCC CHECKDB DATA_PURITY; values: "Success" if completed, "Fail" if failed, omitted if -NoCheckDb is specified
+        - UpdateUsage: Result of DBCC UPDATEUSAGE; values: "Success" if completed, "Fail" if failed, "Skipped" if -NoUpdateUsage is specified
+        - UpdateStats: Result of sp_updatestats; values: "Success" if completed, "Fail" if failed, "Skipped" if -NoUpdateStats is specified
+        - RefreshViews: Result of sp_refreshview on all user views; values: "Success" if all refreshed, "Fail" if any failed, "Skipped" if -NoRefreshView is specified
+
     .EXAMPLE
         PS C:\> Invoke-DbaDbUpgrade -SqlInstance PRD-SQL-MSD01 -Database Test
 

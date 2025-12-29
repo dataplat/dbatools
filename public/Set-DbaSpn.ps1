@@ -48,6 +48,32 @@ function Set-DbaSpn {
     .LINK
         https://dbatools.io/Set-DbaSpn
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one or two objects per service account processed, depending on delegation configuration:
+
+        SPN Registration Result Object (always returned):
+        - Name (string) - The Service Principal Name that was added
+        - ServiceAccount (string) - The Active Directory account that owns the SPN
+        - Property (string) - Always "servicePrincipalName" indicating the AD property that was modified
+        - IsSet (boolean) - True if the SPN was successfully added, False if the operation failed
+        - Notes (string) - Status message: "Successfully added SPN" or "Failed to add SPN"
+
+        Delegation Configuration Result Object (conditionally returned):
+        - Name (string) - The Service Principal Name for which delegation was configured
+        - ServiceAccount (string) - The Active Directory account for which delegation was configured
+        - Property (string) - Always "msDS-AllowedToDelegateTo" indicating the AD property that was modified
+        - IsSet (boolean) - True if constrained delegation was successfully enabled, False if the operation failed
+        - Notes (string) - Status message: "Successfully added constrained delegation" or "Failed to add constrained delegation"
+
+        The delegation object is only returned when:
+        - The SPN was successfully added (IsSet = $true for the first object)
+        - AND the -NoDelegation parameter was NOT specified
+        - AND the ShouldProcess check passed (when -WhatIf is not used)
+
+        When -NoDelegation is specified, only the SPN registration object is returned.
+
     .EXAMPLE
         PS C:\> Set-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\account
         PS C:\> Set-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\account -EnableException

@@ -62,6 +62,29 @@ function Get-DbaEstimatedCompletionTime {
     .LINK
         https://dbatools.io/Get-DbaEstimatedCompletionTime
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per long-running operation that SQL Server can provide completion estimates for. Only operations with an estimated_completion_time greater than zero are returned.
+
+        Default display properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database where the operation is running
+        - Login: The login/user who initiated the operation
+        - Command: The command being executed (BACKUP, RESTORE, DBCC CHECKDB, ALTER INDEX, etc.)
+        - PercentComplete: The percentage of completion (0-100)
+        - StartTime: DateTime when the operation started
+        - RunningTime: Elapsed time formatted as HH:MM:SS
+        - EstimatedTimeToGo: Estimated remaining time formatted as HH:MM:SS
+        - EstimatedCompletionTime: Projected completion DateTime
+
+        Additional properties available:
+        - Text: The T-SQL query text (excluded from default view, use Select-Object * to display)
+
+        Only operations supporting progress tracking show completion estimates. Quick queries and standard SELECT statements won't appear in results.
+
     .EXAMPLE
         PS C:\> Get-DbaEstimatedCompletionTime -SqlInstance sql2016
 

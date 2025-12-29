@@ -56,6 +56,42 @@ function Test-DbaDbLogShipStatus {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per log-shipped database configured on the monitoring instance. Output structure varies based on the -Simple parameter.
+
+        Default output (without -Simple) includes all properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the log-shipped database
+        - InstanceType: The role of the instance - either "Primary Instance" (backup/copy operations) or "Secondary Instance" (restore operations)
+        - TimeSinceLastBackup: DateTime of the most recent backup operation (or "N/A" if never executed)
+        - LastBackupFile: The name of the file involved in the last backup operation
+        - BackupThreshold: The configured threshold in minutes for maximum acceptable time between backups
+        - IsBackupAlertEnabled: Boolean indicating whether alerting is enabled for backup operation failures
+        - TimeSinceLastCopy: DateTime of the most recent copy operation (or "N/A" if never executed); only relevant on secondary instances
+        - LastCopiedFile: The name of the file involved in the last copy operation
+        - TimeSinceLastRestore: DateTime of the most recent restore operation (or "N/A" if never executed); only relevant on secondary instances
+        - LastRestoredFile: The name of the file involved in the last restore operation
+        - LastRestoredLatency: The delay in seconds between the backup and restore operations (latency between primary and secondary)
+        - RestoreThreshold: The configured threshold in minutes for maximum acceptable time between restore operations
+        - IsRestoreAlertEnabled: Boolean indicating whether alerting is enabled for restore operation failures
+        - Status: String containing operational status - "All OK" for healthy operations or detailed error message(s) describing any issues (e.g., "The backup has not been executed in the last 60 minutes")
+
+        When -Simple is specified:
+        - Only four properties are returned: SqlInstance, Database, InstanceType, and Status
+        - This provides a quick health overview without detailed timing information
+
+        When -Primary is specified:
+        - Only databases acting as primary instances are returned; backup-related properties are populated
+        - Copy and restore properties may be empty or N/A since those operations occur on secondaries
+
+        When -Secondary is specified:
+        - Only databases acting as secondary instances are returned; copy and restore properties are populated
+        - Backup properties may be empty or N/A since backup operations occur on primaries
+
     .LINK
         https://dbatools.io/Test-DbaDbLogShipStatus
 

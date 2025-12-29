@@ -74,6 +74,28 @@ function Backup-DbaDbCertificate {
     .LINK
         https://dbatools.io/Backup-DbaDbCertificate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per certificate that was successfully exported.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the certificate
+        - DatabaseID: The unique identifier of the database
+        - Certificate: The name of the certificate that was backed up
+        - Path: The file path where the certificate (.cer file) was saved
+        - Key: The file path where the private key (.pvk file) was saved, or a message if not exported
+        - Status: Result status of the export operation (Success or error message)
+
+        Additional properties available:
+        - ExportPath: Same as Path property
+        - ExportKey: Same as Key property
+        - exportPathCert: Internal property - same as Path
+        - exportPathKey: Internal property - same as Key
+
     .EXAMPLE
         PS C:\> Backup-DbaDbCertificate -SqlInstance Server1
 

@@ -121,6 +121,45 @@ function Export-DbaInstance {
     .LINK
         https://dbatools.io/Export-DbaInstance
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one or more FileInfo objects representing the exported SQL script files and configuration files created during the instance export. Each file represents a different component type being exported (logins, jobs, credentials, etc.).
+
+        The command returns file objects for successfully created export files, such as:
+        - sp_configure.sql: SQL Server configuration settings
+        - customererrors.sql: User-defined error messages
+        - serverroles.sql: Server role definitions
+        - credentials.sql: SQL credentials
+        - logins.sql: SQL Server logins
+        - dbmail.sql: Database Mail configuration
+        - regserver.xml: Central Management Server registration settings
+        - backupdevices.sql: Backup device definitions
+        - linkedservers.sql: Linked server configurations
+        - servertriggers.sql: Server-level triggers
+        - databases.sql: Database restore scripts
+        - audits.sql: Server audits
+        - auditspecs.sql: Server audit specifications
+        - endpoints.sql: Server endpoints
+        - policymanagement.sql: Policy-Based Management policies and conditions
+        - resourcegov.sql: Resource Governor configuration
+        - extendedevents.sql: Extended Events sessions
+        - sqlagent.sql: SQL Agent jobs, schedules, operators, alerts, and proxies
+        - replication.sql: Replication settings
+        - userobjectsinsysdbs.sql: User-created objects in system databases
+        - AvailabilityGroups.sql: Availability Groups configuration
+        - OleDbProvider.sql: OLEDB provider configuration
+
+        Files are returned only if they were successfully created and are not excluded via the -Exclude parameter.
+        The -ErrorAction Ignore used in Get-ChildItem means that if a file is not created, no error object is returned for that file.
+
+        All FileInfo properties are accessible, including:
+        - FullName: Complete path to the exported file
+        - Name: File name
+        - Length: File size in bytes
+        - CreationTime: When the file was created
+        - LastWriteTime: When the file was last written
+
     .EXAMPLE
         PS C:\> Export-DbaInstance -SqlInstance sqlserver\instance
 

@@ -62,6 +62,31 @@ function Get-DbaUserPermission {
     .LINK
         https://dbatools.io/Get-DbaUserPermission
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per permission grant/denial or role membership discovered during the security audit. Separate objects are returned for server-level and database-level permissions, with each object containing contextual information about the grantor, grantee, and permission state.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Object: The scope of the permission - 'SERVER' for server-level permissions, or the database name for database-level permissions
+        - Type: The type of audit row - 'SERVER LOGINS', 'SERVER SECURABLES', 'DB ROLE MEMBERS', or 'DB SECURABLES'
+        - Member: The login or principal name (populated for role membership rows only)
+        - RoleSecurableClass: The role name for membership records, securable class for permission records, or 'None'
+        - SchemaOwner: The schema/owner name for object permissions (empty for role memberships)
+        - Securable: The name of the securable object being granted permissions (table, procedure, etc.) - empty for role memberships
+        - GranteeType: The type of grantee (USER, ROLE, APPLICATION ROLE) - empty for role memberships
+        - Grantee: The principal name that was granted the permission - empty for role memberships
+        - Permission: The permission name (SELECT, INSERT, EXECUTE, etc.) - empty for role memberships
+        - State: The permission state (GRANT or DENY) - empty for role memberships
+        - Grantor: The principal that granted the permission - empty for role memberships
+        - GrantorType: The type of grantor (USER, ROLE) - empty for role memberships
+        - SourceView: The STIG schema view the data came from - empty for role memberships
+
+        Note: Records with empty property values indicate that property does not apply to that audit row type. Role membership records populate only Member, RoleSecurableClass, and connection properties. Object permission records populate all securable-related properties.
+
     .EXAMPLE
         PS C:\> Get-DbaUserPermission -SqlInstance sql2008, sqlserver2012
 

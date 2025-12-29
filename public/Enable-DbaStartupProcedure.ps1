@@ -46,6 +46,32 @@ function Enable-DbaStartupProcedure {
     .LINK
         https://dbatools.io/Enable-DbaStartupProcedure
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.StoredProcedure
+
+        Returns one StoredProcedure object per procedure that was processed, with the Startup property updated and additional status properties added.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database containing the stored procedure (always 'master')
+        - Schema: The schema containing the stored procedure
+        - Name: The name of the stored procedure
+        - Startup: Boolean indicating if the procedure will run at SQL Server startup (always $true after successful enable)
+        - Action: The action performed ('Enable')
+        - Status: Boolean indicating if the enable operation succeeded ($true for success, $false for skipped or failed)
+        - Note: A string message describing the result ('Action Enable already performed', 'Enable succeeded', 'Enable skipped', or 'Enable failed')
+
+        Additional properties available (from SMO StoredProcedure object):
+        - IsSystemObject: Boolean indicating if this is a system object
+        - CreateDate: DateTime when the procedure was created
+        - DateLastModified: DateTime when the procedure was last modified
+        - Text: The T-SQL source code of the stored procedure
+        - Parent: The Database object containing the procedure
+
+        All properties from the base SMO StoredProcedure object are accessible via Select-Object *.
+
     .EXAMPLE
         PS C:\> Enable-DbaStartupProcedure -SqlInstance SqlBox1\Instance2 -StartupProcedure '[dbo].[StartUpProc1]'
 
