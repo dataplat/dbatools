@@ -341,15 +341,7 @@ function Test-DbaKerberos {
                     $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
                     $dc = $domain.PdcRoleOwner.Name
 
-                    $splatDcTime = @{
-                        ComputerName = $dc
-                        ScriptBlock  = { Get-Date }
-                    }
-                    if ($Credential) {
-                        $splatDcTime.Credential = $Credential
-                    }
-                    $dcTime = Invoke-Command @splatDcTime
-
+                    # Get server time
                     if ($PSCmdlet.ParameterSetName -eq "Instance") {
                         $serverTime = $server.Query("SELECT GETDATE() AS ServerTime").ServerTime
                     } else {
@@ -363,16 +355,77 @@ function Test-DbaKerberos {
                         $serverTime = Invoke-Command @splatServerTime
                     }
 
-                    $timeDiff = [Math]::Abs(($serverTime - $dcTime).TotalMinutes)
+                    # Try w32tm first (works without admin access), fall back to Invoke-Command if needed
+                    $dcTime = $null
+                    $timeDiff = $null
 
-                    if ($timeDiff -gt 5) {
-                        $status = "Fail"
-                        $details = "Time difference of $([Math]::Round($timeDiff, 2)) minutes between server and DC exceeds threshold"
-                        $remediation = "Configure server to sync with domain controller. Use 'w32tm /config /syncfromflags:domhier /update'"
+                    try {
+                        Write-Message -Level Verbose -Message "Attempting to query DC time using w32tm"
+                        # Use w32tm /stripchart to get time difference from DC without requiring PSRemoting
+                        $splatW32tm = @{
+                            ComputerName = $computerTarget
+                            ScriptBlock  = {
+                                param($dcName)
+                                # Run w32tm /stripchart for 1 sample to get time offset
+                                $w32tmOutput = & w32tm /stripchart /computer:$dcName /samples:1 /dataonly 2>&1 | Out-String
+                                # Parse output like: "23:59:59, +00.0012345s" or "23:59:59, -00.0012345s"
+                                if ($w32tmOutput -match '([+-]?\d+\.\d+)s') {
+                                    return [double]$matches[1]
+                                }
+                                return $null
+                            }
+                            ArgumentList = $dc
+                        }
+                        if ($Credential) {
+                            $splatW32tm.Credential = $Credential
+                        }
+                        $timeOffset = Invoke-Command @splatW32tm
+
+                        if ($null -ne $timeOffset) {
+                            # Convert offset from seconds to minutes
+                            $timeDiff = [Math]::Abs($timeOffset / 60)
+                            Write-Message -Level Verbose -Message "Successfully obtained time offset using w32tm: $timeOffset seconds"
+                        }
+                    } catch {
+                        Write-Message -Level Verbose -Message "w32tm method failed: $($_.Exception.Message)"
+                    }
+
+                    # Fall back to direct time query via Invoke-Command if w32tm failed
+                    if ($null -eq $timeDiff) {
+                        try {
+                            Write-Message -Level Verbose -Message "Falling back to Invoke-Command for DC time"
+                            $splatDcTime = @{
+                                ComputerName = $dc
+                                ScriptBlock  = { Get-Date }
+                            }
+                            if ($Credential) {
+                                $splatDcTime.Credential = $Credential
+                            }
+                            $dcTime = Invoke-Command @splatDcTime
+
+                            if ($dcTime) {
+                                $timeDiff = [Math]::Abs(($serverTime - $dcTime).TotalMinutes)
+                            }
+                        } catch {
+                            Write-Message -Level Verbose -Message "Invoke-Command method also failed: $($_.Exception.Message)"
+                        }
+                    }
+
+                    # Only proceed if we successfully got a time difference
+                    if ($null -ne $timeDiff) {
+                        if ($timeDiff -gt 5) {
+                            $status = "Fail"
+                            $details = "Time difference of $([Math]::Round($timeDiff, 2)) minutes between server and DC exceeds threshold"
+                            $remediation = "Configure server to sync with domain controller. Use 'w32tm /config /syncfromflags:domhier /update'"
+                        } else {
+                            $status = "Pass"
+                            $details = "Server time synchronized with DC within $([Math]::Round($timeDiff, 2)) minutes"
+                            $remediation = "None"
+                        }
                     } else {
-                        $status = "Pass"
-                        $details = "Server time synchronized with DC within $([Math]::Round($timeDiff, 2)) minutes"
-                        $remediation = "None"
+                        $status = "Warning"
+                        $details = "Unable to query time difference from DC. Both w32tm and PSRemoting methods failed."
+                        $remediation = "Verify domain connectivity. For w32tm: ensure Windows Time service is running. For PSRemoting: verify credentials have remote access."
                     }
 
                     [PSCustomObject]@{
