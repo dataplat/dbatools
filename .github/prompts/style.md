@@ -291,6 +291,78 @@ Describe $CommandName -Tag IntegrationTests {
 - Plain `$splat` without purpose suffix for 3+ parameters
 - **FORBIDDEN**: Misaligned hashtable assignments
 
+## TEST MANAGEMENT GUIDELINES
+
+The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality.
+
+### When to Add or Update Tests
+
+- **ALWAYS update parameter validation tests** when parameters are added or removed from a command
+- **ALWAYS add reasonable tests for your changes** - When adding new parameters, features, or fixing bugs, include tests that verify the changes work correctly
+- **BE REASONABLE** - Add 1-3 focused tests for your changes, not 100 tests
+- **For new commands, ALWAYS create tests** - Follow this style guide and migration.md
+
+### Parameter Validation Updates
+
+When you add or remove parameters from a command, you MUST update the parameter validation test:
+
+```powershell
+Context "Parameter validation" {
+    It "Should have the expected parameters" {
+        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        $expectedParameters = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "NewParameter",  # ADD new parameters here
+            "EnableException"
+            # REMOVE deleted parameters from this list
+        )
+        Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+    }
+}
+```
+
+### What Makes a Good Test
+
+Good tests are:
+- **Focused** - Test one specific behavior or feature
+- **Practical** - Test real-world usage scenarios
+- **Reasonable** - 1-3 tests per feature, not exhaustive edge cases
+- **Relevant** - Test your changes, not unrelated functionality
+
+### Balance is Key
+
+When making changes:
+- Fixing a bug? Add a regression test
+- Adding a parameter? Add a test that uses it
+- Creating a new command? Add parameter validation and 1-3 integration tests
+- Refactoring without behavior changes? Existing tests may be sufficient
+
+### Local Testing Setup
+
+To test commands locally during development:
+
+```powershell
+# 1. Import the module directly from the psm1 file
+Import-Module .\dbatools.psm1
+# 1a. ONLY IF any errors about dbatools.library
+Import-Module C:\gallery\dbatools.library
+
+# 2. Get the test configuration (private command)
+$TestConfig = Get-TestConfig
+
+# 3. Now you can use $TestConfig properties in your tests
+$TestConfig.instance1    # First test SQL instance
+$TestConfig.instance2    # Second test SQL instance
+$TestConfig.instance3    # Third test SQL instance
+$TestConfig.SqlCred      # Test credentials, all connections need this
+$TestConfig.Temp         # Temp directory for test files
+
+# 4. Set the default params for sqlcred
+$PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
+```
+
 ## MODULE VERIFICATION CHECKLIST
 
 **Comment and Parameter Preservation:**
@@ -303,6 +375,12 @@ Describe $CommandName -Tag IntegrationTests {
 - [ ] Splat variables use descriptive `$splat<Purpose>` format
 - [ ] Variable names are unique across scopes
 - [ ] OTBS formatting applied throughout
+
+**Test Management:**
+- [ ] Parameter validation test updated if parameters were added/removed
+- [ ] Reasonable tests (1-3) added for new functionality
+- [ ] Regression tests added for bug fixes
+- [ ] Tests are focused, practical, and relevant
 
 **MODULE Patterns:**
 - [ ] EnableException handling correctly implemented
