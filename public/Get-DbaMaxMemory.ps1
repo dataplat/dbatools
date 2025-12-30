@@ -36,6 +36,23 @@ function Get-DbaMaxMemory {
     .LINK
         https://dbatools.io/Get-DbaMaxMemory
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance specified, containing memory configuration and physical memory information for comparison.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: Name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - Total: Total physical memory on the server in megabytes (MB)
+        - MaxValue: Configured max server memory setting in megabytes (MB)
+
+        Additional available property:
+        - Server: The SMO Server object representing the connected SQL Server instance; accessible for piping or further operations
+
+        Use Select-Object * to access the Server property, or pipe the output to other commands for advanced scenarios.
+
     .EXAMPLE
         PS C:\> Get-DbaMaxMemory -SqlInstance sqlcluster, sqlserver2012
 

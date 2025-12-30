@@ -56,6 +56,22 @@ function Set-DbaDbIdentity {
     .LINK
         https://dbatools.io/Set-DbaDbIdentity
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per table checked or reseeded, containing the DBCC CHECKIDENT results and execution context.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the table
+        - Table: The table name in schema.table format
+        - Cmd: The complete DBCC CHECKIDENT command that was executed
+        - IdentityValue: The current identity value from DBCC output (the next value to be assigned)
+        - ColumnValue: The maximum value found in the identity column (empty string when ReSeedValue is used)
+        - Output: The complete raw output text from the DBCC CHECKIDENT command
+
     .EXAMPLE
         PS C:\> Set-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table 'Production.ScrapReason'
 

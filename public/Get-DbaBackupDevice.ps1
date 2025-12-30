@@ -22,6 +22,27 @@ function Get-DbaBackupDevice {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.BackupDevice
+
+        Returns one BackupDevice object per configured backup device on each SQL Server instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The logical name of the backup device
+        - BackupDeviceType: The type of backup device (Disk, Tape, or Url)
+        - PhysicalLocation: The physical path or location of the backup device (file path, tape device, or URL)
+        - SkipTapeLabel: Boolean indicating whether to skip tape label validation
+
+        Additional properties available (from SMO BackupDevice object):
+        - Urn: The Uniform Resource Name identifying the backup device
+        - State: The state of the SMO object (Existing, Creating, Pending, etc.)
+        - Parent: Reference to the parent Server object
+
+        All properties from the SMO BackupDevice object are accessible using Select-Object *.
+
     .NOTES
         Tags: Backup, General
         Author: Garry Bargsley (@gbargsley), blog.garrybargsley.com

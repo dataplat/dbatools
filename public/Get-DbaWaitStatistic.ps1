@@ -55,6 +55,33 @@ function Get-DbaWaitStatistic {
     .LINK
         https://dbatools.io/Get-DbaWaitStatistic
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per wait type found in sys.dm_os_wait_stats matching the specified threshold criteria. Each object contains detailed wait statistics and diagnostic information for a specific SQL Server wait type.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - WaitType: The name of the SQL Server wait type (e.g., PAGEIOLATCH_EX, LCK_M_IX)
+        - Category: The wait category classification (e.g., Buffer IO, Lock, Network IO, CPU, Idle, Memory, etc.)
+        - WaitSeconds: Total time in seconds the system has waited on this wait type (decimal)
+        - ResourceSeconds: Time in seconds spent waiting for a resource to become available (decimal)
+        - SignalSeconds: Time in seconds spent waiting for a signal after acquiring the resource (decimal)
+        - WaitCount: Total number of times this wait type has occurred (bigint)
+        - Percentage: Percentage of total system wait time consumed by this wait type (0-100, decimal)
+        - AverageWaitSeconds: Average time per wait occurrence in seconds (decimal)
+        - AverageResourceSeconds: Average resource wait time per occurrence in seconds (decimal)
+        - AverageSignalSeconds: Average signal wait time per occurrence in seconds (decimal)
+        - URL: Hyperlink to sqlskills.com detailed documentation for this wait type (XML/string)
+
+        Additional properties available (use Select-Object *):
+        - Notes: Detailed diagnostic explanation of the wait type and troubleshooting guidance from Paul Randal's methodology (when using Select-Object *)
+        - Ignorable: Boolean indicating whether this wait type is typically safe to ignore during troubleshooting (only shown when -IncludeIgnorable is specified)
+
+        When -IncludeIgnorable is not specified, the Notes and Ignorable properties are excluded from output. Use Select-Object * to access all properties including detailed diagnostic notes for each wait type.
+
     .EXAMPLE
         PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012
 

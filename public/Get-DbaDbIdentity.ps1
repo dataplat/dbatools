@@ -53,6 +53,22 @@ function Get-DbaDbIdentity {
     .LINK
         https://dbatools.io/Get-DbaDbIdentity
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per table checked. Each object contains the current identity seed value and the actual highest value in the identity column.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the table
+        - Table: The name of the table that was checked (schema-qualified)
+        - Cmd: The T-SQL DBCC CHECKIDENT command that was executed
+        - IdentityValue: The current seed value of the identity column (integer or null if unable to determine)
+        - ColumnValue: The highest value currently in the identity column (integer or null if unable to determine)
+        - Output: The raw DBCC output message from SQL Server
+
     .EXAMPLE
         PS C:\> Get-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table 'Production.ScrapReason'
 

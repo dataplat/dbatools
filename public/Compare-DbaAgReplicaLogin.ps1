@@ -47,6 +47,21 @@ function Compare-DbaAgReplicaLogin {
     .LINK
         https://dbatools.io/Compare-DbaAgReplicaLogin
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object for each login that differs across replicas in the Availability Group. Logins that are present and identical on all replicas are not returned.
+
+        Properties:
+        - AvailabilityGroup: The name of the Availability Group being compared
+        - Replica: The name of the SQL Server replica instance
+        - LoginName: The name of the login account
+        - Status: Current status of the login on this replica ("Present" or "Missing")
+        - ModifyDate: The datetime when the login was last modified on this replica (null if Status is "Missing"; only populated with accurate data when -IncludeModifiedDate is specified)
+        - CreateDate: The datetime when the login was created on this replica (null if Status is "Missing")
+
+        When -IncludeModifiedDate is specified, ModifyDate contains the exact modification timestamp from sys.server_principals. Without this switch, ModifyDate may be null in output objects.
+
     .EXAMPLE
         PS C:\> Compare-DbaAgReplicaLogin -SqlInstance sql2016 -AvailabilityGroup AG1
 

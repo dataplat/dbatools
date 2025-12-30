@@ -71,6 +71,36 @@ function New-DbaDbUser {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.User
+
+        Returns one User object for each user created, with one object per database when creating users in multiple databases.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name where the user was created
+        - Name: The name of the created database user
+        - LoginType: Type of login this user is based on (WindowsLogin, SqlLogin, Certificate, AsymmetricKey, etc.)
+        - Login: The login name the user is mapped to (null for contained users or external provider users)
+        - AuthenticationType: Authentication type used (SqlLogin for SQL authenticated, WindowsLogin, Certificate, AsymmetricKey, ExternalUser for AAD, None for NoLogin users)
+        - DefaultSchema: The default schema for this user (configured via -DefaultSchema parameter, defaults to 'dbo')
+
+        Additional properties available from SMO User object (via Select-Object *):
+        - ID: Object ID of the user
+        - Owner: Principal that owns this user
+        - State: Current object state (Existing, Creating, Pending, Dropping)
+        - Urn: Unified Resource Name for the object
+        - Properties: Collection of object properties
+
+        Conditional properties based on user type:
+        - When created with -Login parameter: User has a login property set to the mapped login
+        - When created with -SecurePassword parameter: User is a contained database user with no login mapping
+        - When created with -ExternalProvider switch: User is an Azure AD external provider user with AuthenticationType = ExternalUser
+
+        Output quantity: One object per user per database. When creating the same user in multiple databases (via -Database parameter accepting multiple values), one object is returned per database with the same user name but different Database property values.
+
     .LINK
         https://dbatools.io/New-DbaDbUser
 

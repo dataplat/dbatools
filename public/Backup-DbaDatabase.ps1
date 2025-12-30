@@ -184,6 +184,56 @@ function Backup-DbaDatabase {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .OUTPUTS
+        Dataplat.Dbatools.Database.BackupHistory
+
+        Returns one backup history object per database backed up. When -OutputScriptOnly is specified, returns the T-SQL BACKUP command string(s) instead.
+
+        Default display properties (via Select-DefaultView):
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Database name
+        - Type: Backup type (Full, Differential, or Log)
+        - TotalSize: Total backup size in bytes
+        - DeviceType: Backup destination device type (Disk, Tape, URL, Virtual Device, etc.)
+        - Duration: Time span of the backup operation
+
+        Additional properties available on all BackupHistory objects:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - DatabaseId: System object ID of the database
+        - UserName: SQL login that performed the backup
+        - Start: DateTime when backup started
+        - End: DateTime when backup completed
+        - Path: Array of physical file paths where backup files were written
+        - CompressedBackupSize: Size of compressed backup in bytes (if compression was used)
+        - CompressionRatio: Ratio of uncompressed to compressed size
+        - BackupSetId: Unique identifier for the backup set
+        - MediaSetId: Unique identifier for the media set
+        - Position: Backup set position on the media
+        - FirstLsn: First Log Sequence Number in the backup
+        - DatabaseBackupLsn: Database backup LSN
+        - CheckpointLsn: Checkpoint LSN
+        - LastLsn: Last Log Sequence Number in the backup
+        - SoftwareVersionMajor: SQL Server major version that created the backup
+        - Software: Software name and version (e.g., "Microsoft SQL Server 2019")
+        - IsCopyOnly: Boolean indicating if this is a copy-only backup
+        - LastRecoveryForkGuid: GUID of the recovery fork at backup time
+        - RecoveryModel: Database recovery model at backup time (Simple, Full, or BulkLogged)
+        - EncryptorType: Type of encryption used (ServerCertificate, ServerAsymmetricKey, or None)
+        - EncryptorThumbprint: Certificate or key thumbprint if encrypted
+        - KeyAlgorithm: Encryption algorithm used (AES128, AES192, AES256, or TRIPLEDES)
+        - BackupComplete: Boolean indicating if the backup operation completed successfully
+        - BackupFile: The filename(s) of the backup file(s) created
+        - BackupFilesCount: Number of striped backup files created
+        - BackupFolder: Parent directory path where backup files were created
+        - BackupPath: Full path(s) to the backup file(s) created
+        - Script: T-SQL BACKUP command that was executed
+        - FileList: Array of data and log files that were backed up (only when Verify is used)
+        - Verified: Boolean indicating if backup verification passed (only when Verify is used)
+        - Notes: Warning or error messages from the backup operation
+
+        When -OutputScriptOnly is specified, the command returns a System.String containing the T-SQL BACKUP statement without performing the backup operation.
+
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
         Author: Stuart Moore (@napalmgram), stuart-moore.com

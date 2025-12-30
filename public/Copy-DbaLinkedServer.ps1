@@ -66,6 +66,19 @@ function Copy-DbaLinkedServer {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+     .OUTPUTS
+         PSCustomObject
+
+         Returns one object per linked server processed. The object contains migration status information for each linked server and its logins that were copied from source to destination.
+
+         Default display properties (via Select-DefaultView):
+         - DateTime: Timestamp when the linked server was processed (DbaDateTime object)
+         - SourceServer: Name of the source SQL Server instance
+         - DestinationServer: Name of the destination SQL Server instance
+         - Name: Name of the linked server being migrated
+         - Type: Initially "Linked Server", then set to the remote login identity being configured
+         - Status: Status of the operation (Successful, Skipped, or Failed)
+         - Notes: Provider name, or reason for skip/failure (e.g., "Missing provider", "Already exists on destination", or error message)
     .NOTES
         Tags: WSMan, Migration, LinkedServer
         Author: Chrissy LeMaire (@cl), netnerds.net

@@ -33,6 +33,28 @@ function Get-DbaAgListener {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener
+
+        Returns one listener object per availability group listener found on the specified instance(s) or availability group(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance hosting the Availability Group
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the Availability Group that owns this listener
+        - Name: Network name of the listener that clients use for connections
+        - PortNumber: TCP port number for client connections (default 1433)
+        - ClusterIPConfiguration: WSFC cluster IP resource configuration details
+
+        Additional properties available (from SMO AvailabilityGroupListener object):
+        - AvailabilityGroupListenerIPAddresses: Collection of IP address configurations for this listener (one per subnet in multi-subnet scenarios)
+        - Urn: Unique resource name for programmatic identification
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - Properties: Collection of object properties and their values
+
+        All properties from the base SMO AvailabilityGroupListener object are accessible via Select-Object * even though only default properties are displayed by default.
+
     .NOTES
         Tags: AG, HA
         Author: Viorel Ciucu (@viorelciucu)

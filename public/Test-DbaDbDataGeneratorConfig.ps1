@@ -36,6 +36,27 @@ function Test-DbaDbDataGeneratorConfig {
     .LINK
         https://dbatools.io/Test-DbaDbDataGeneratorConfig
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns validation error objects for any configuration issues found. If the configuration file is valid with no errors, no output is returned.
+
+        Each error object contains the following properties:
+
+        - Table (string): Name of the table in the configuration where the error was found
+        - Column (string): Name of the column in the table where the error was found
+        - Value (string): The problematic value or comma-separated list of property names causing the error
+        - Error (string): Description of the validation error encountered
+
+        Common validation errors include:
+        - Missing required column properties (CharacterString, ColumnType, Composite, ForeignKey, Identity, MaskingType, MaxValue, MinValue, Name, Nullable, SubType)
+        - Additional properties in columns that are not in the required properties list
+        - Invalid column data types (unsupported by SQL Server or the Bogus data generation library)
+        - Invalid masking types (not available in the Bogus randomization library)
+        - Invalid masking subtypes (not available for the specified masking type)
+
+        The validation errors help identify configuration issues before attempting to generate test data with Invoke-DbaDbDataGenerator, preventing runtime failures.
+
     .EXAMPLE
         Test-DbaDbDataGeneratorConfig -FilePath C:\temp\_datamasking\db1.json
 

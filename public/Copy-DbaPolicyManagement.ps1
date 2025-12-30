@@ -68,6 +68,20 @@ function Copy-DbaPolicyManagement {
     .LINK
         https://dbatools.io/Copy-DbaPolicyManagement
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per policy category, condition, and policy successfully copied or skipped. All objects use a common schema with the following properties:
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: Timestamp of when the copy operation was attempted (DbaDateTime)
+        - SourceServer: The source SQL Server instance name where the object was copied from
+        - DestinationServer: The destination SQL Server instance name where the object was copied to
+        - Name: The name of the policy category, condition, or policy that was processed
+        - Type: The type of object being copied - one of "Policy Category", "Policy Condition", or "Policy"
+        - Status: The result of the operation - "Successful", "Skipped", or "Failed"
+        - Notes: Additional information about the operation result, such as "Already exists on destination" or error details
+
     .EXAMPLE
         PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster
 

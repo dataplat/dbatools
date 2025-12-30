@@ -65,6 +65,34 @@ function Invoke-DbaDbDbccCheckConstraint {
     .LINK
         https://dbatools.io/Invoke-DbaDbDbccCheckConstraint
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database when no constraint violations are found, or one object per violating row when violations are detected.
+
+        When no violations exist (Path 1):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: Name of the database that was checked
+        - Cmd: The DBCC CHECKCONSTRAINTS command that was executed
+        - Output: DBCC informational or status messages, or null if no messages
+        - Table: Always null when no violations found
+        - Constraint: Always null when no violations found
+        - Where: Always null when no violations found
+
+        When constraint violations are found (Path 2):
+        Returns one object per violating row with the following properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: Name of the database containing the violation
+        - Cmd: The DBCC CHECKCONSTRAINTS command that was executed
+        - Output: String containing previous output information
+        - Table: Name of the table containing the violating row
+        - Constraint: Name of the constraint that was violated
+        - Where: The WHERE clause or criteria identifying the violating row
+
     .EXAMPLE
         PS C:\> Invoke-DbaDbDbccCheckConstraint -SqlInstance SqlServer2017
 

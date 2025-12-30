@@ -88,6 +88,25 @@ function Test-DbaKerberos {
     .LINK
         https://dbatools.io/Test-DbaKerberos
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per diagnostic check performed (typically 20-25+ checks depending on configuration) with the following properties:
+
+        - ComputerName (string) - The name of the computer or SQL Server host that was tested
+        - InstanceName (string) - The SQL Server instance name if testing an instance; $null if testing at the computer level
+        - Check (string) - Name of the specific diagnostic check (e.g., "SPN Registration", "Time Synchronization (Client-Server)", "DNS Forward Lookup")
+        - Category (string) - Category grouping the check: SPN, Time Sync, DNS, Service Account, Authentication, Network, Security Policy, SQL Configuration, or Client
+        - Status (string) - Result of the check: "Pass" (configuration is correct), "Fail" (configuration error or problem detected), or "Warning" (potential issue or unable to verify)
+        - Details (string) - Specific details about the check result, including measurements (e.g., time differences in minutes, missing SPNs, port status)
+        - Remediation (string) - Recommended action to resolve the issue (or "None" if the check passed)
+
+        Each check returns a separate PSCustomObject, enabling filtering by Category, Status, or other properties to focus on specific diagnostic areas.
+
+        Output is returned immediately for each check, enabling real-time monitoring of diagnostic progress.
+
+        The function may return additional checks for Availability Group listeners if any exist on the instance, each with a check name like "AG Listener SPN - <listener-name>".
+
     .EXAMPLE
         PS C:\> Test-DbaKerberos -SqlInstance sql2016
 

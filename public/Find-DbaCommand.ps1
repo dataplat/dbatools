@@ -86,6 +86,31 @@ function Find-DbaCommand {
         PS C:\> Find-DbaCommand -Pattern snapshot -Rebuild
 
         Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per dbatools command matching the specified filters.
+
+        Default display properties (via Select-DefaultView):
+        - CommandName: The name of the dbatools command
+        - Synopsis: A brief one-line description of what the command does
+
+        Additional properties available (use Select-Object * to see all):
+        - Name: The full name of the command function
+        - Availability: Platform availability (Windows, Linux, macOS or Windows only)
+        - Alias: Comma-separated list of command aliases
+        - Description: Detailed description of the command's functionality
+        - Examples: Full examples section from the command's help text
+        - Links: Related documentation links
+        - Syntax: Complete syntax information for the command
+        - Tags: Array of tags categorizing the command by feature area (Backup, AG, Job, Security, etc.)
+        - Author: Name(s) of the command author(s)
+        - MinimumVersion: Minimum dbatools version required to use this command
+        - MaximumVersion: Maximum dbatools version supported by this command
+        - Params: Array of parameter information (name, description, aliases, required status, pipeline support, default values, accepted values)
+
+        All properties from the full command help index are accessible. Use Select-Object * to display all available properties for further analysis.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (

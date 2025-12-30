@@ -66,6 +66,26 @@ function Remove-DbaDbOrphanUser {
     .LINK
         https://dbatools.io/Remove-DbaDbOrphanUser
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object for each schema operation (ownership change or drop) that occurs during orphaned user removal. No output is generated if:
+        - An orphaned user owns no schemas
+        - A user is skipped due to schema complexity without the -Force parameter
+        - A matching login exists and -Force is not specified
+
+        When schema operations occur, returns objects with the following properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: The database containing the schema being modified
+        - SchemaName: The name of the schema being modified
+        - Action: The operation performed - either "DROP" or "ALTER OWNER"
+        - SchemaOwnerBefore: The original owner of the schema before the operation
+        - SchemaOwnerAfter: The new owner of the schema after the operation (either "dbo" for ALTER OWNER or "N/A" for DROP)
+
+        Note: User removal is performed silently without output objects. Output objects track only schema ownership changes and drops, not the user removal itself.
+
     .EXAMPLE
         PS C:\> Remove-DbaDbOrphanUser -SqlInstance sql2005
 

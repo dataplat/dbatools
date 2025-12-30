@@ -111,6 +111,13 @@ function Sync-DbaAvailabilityGroup {
     .LINK
         https://dbatools.io/Sync-DbaAvailabilityGroup
 
+    .OUTPUTS
+        None
+
+        This function does not return output objects to the user. It performs synchronization operations by calling underlying Copy-Dba* and Sync-Dba* commands to synchronize server-level objects from the primary to secondary replicas.
+
+        The underlying sync commands (Copy-DbaSpConfigure, Copy-DbaLogin, Copy-DbaCustomError, Copy-DbaCredential, Copy-DbaDbMail, Copy-DbaLinkedServer, Copy-DbaInstanceTrigger, Copy-DbaAgentJobCategory, Copy-DbaAgentOperator, Copy-DbaAgentAlert, Copy-DbaAgentProxy, Copy-DbaAgentSchedule, Copy-DbaAgentJob, and Sync-DbaLoginPermission) may produce output when called directly with the underlying Copy-Dba* and Sync-Dba* commands.
+
     .EXAMPLE
         PS C:\> Sync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3
 

@@ -52,6 +52,28 @@ function Find-DbaStoredProcedure {
     .LINK
         https://dbatools.io/Find-DbaStoredProcedure
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per stored procedure that matches the search pattern. Each object represents a matching stored procedure with details about where the pattern was found.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - SqlInstance: The SQL Server instance name
+        - Database: The database containing the stored procedure
+        - DatabaseId: The database ID (system assigned identifier)
+        - Schema: The schema that owns the stored procedure
+        - Name: The name of the stored procedure
+        - Owner: The owner of the stored procedure
+        - IsSystemObject: Boolean indicating if this is a system stored procedure
+        - CreateDate: DateTime when the stored procedure was created
+        - LastModified: DateTime when the stored procedure was last modified
+        - StoredProcedureTextFound: Formatted string containing matching line numbers and the matched text lines (formatted as "(LineNumber: #) matched text")
+
+        Additional properties available via Select-Object * (excluded from default view):
+        - StoredProcedure: The full Microsoft.SqlServer.Management.Smo.StoredProcedure object with all SMO properties
+        - StoredProcedureFullText: The complete T-SQL source code of the stored procedure as a string
+
     .EXAMPLE
         PS C:\> Find-DbaStoredProcedure -SqlInstance DEV01 -Pattern whatever
 

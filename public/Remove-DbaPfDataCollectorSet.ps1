@@ -45,6 +45,16 @@ function Remove-DbaPfDataCollectorSet {
     .LINK
         https://dbatools.io/Remove-DbaPfDataCollectorSet
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Performance Monitor Data Collector Set removed.
+
+        Properties:
+        - ComputerName: The name of the computer from which the collector set was removed
+        - Name: The name of the Data Collector Set that was removed
+        - Status: The operation status (Removed)
+
     .EXAMPLE
         PS C:\> Remove-DbaPfDataCollectorSet
 

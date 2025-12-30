@@ -82,6 +82,28 @@ function New-DbaRgWorkloadGroup {
     .LINK
         https://dbatools.io/New-DbaRgWorkloadGroup
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.WorkloadGroup
+
+        Returns one workload group object per workload group created within the specified resource pool(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: The unique identifier for the workload group
+        - Name: The name of the workload group
+        - ExternalResourcePoolName: Name of the external resource pool (for External pools only)
+        - GroupMaximumRequests: Maximum number of concurrent requests allowed in this group (0 = unlimited)
+        - Importance: Relative priority when competing for CPU resources (LOW, MEDIUM, or HIGH)
+        - IsSystemObject: Boolean indicating if the workload group is a system-defined group
+        - MaximumDegreeOfParallelism: Maximum number of processors for parallel execution (0 = server default)
+        - RequestMaximumCpuTimeInSeconds: Maximum CPU time in seconds per request (0 = unlimited)
+        - RequestMaximumMemoryGrantPercentage: Maximum memory grant percentage from the pool (1-100)
+        - RequestMemoryGrantTimeoutInSeconds: Maximum wait time in seconds for memory grants (0 = unlimited)
+
+        All properties from the base SMO WorkloadGroup object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup "groupAdmin" -ResourcePool "poolAdmin"
 

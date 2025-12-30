@@ -78,6 +78,20 @@ function Export-DbaLinkedServer {
 
         Returns the T-SQL script for linked servers to the console instead of writing to a file
 
+    .OUTPUTS
+        System.String (when -Passthru is specified or when no -Path/-FilePath is provided)
+
+        Returns the generated T-SQL script as a string or array of strings. The script contains the necessary T-SQL commands to recreate the linked server configuration on another SQL Server instance.
+
+        System.IO.FileInfo (when -Path or -FilePath is specified)
+
+        Returns file information for the exported T-SQL script file. Properties include:
+        - FullName: Complete file path including filename
+        - Name: The filename (e.g., "sql2017_linkedservers.sql")
+        - Directory: The directory where the file is located
+        - Length: File size in bytes
+        - LastWriteTime: Timestamp of when the file was created or last modified
+
     #>
     [CmdletBinding()]
     param (

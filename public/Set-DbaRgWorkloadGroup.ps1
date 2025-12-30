@@ -81,6 +81,23 @@ function Set-DbaRgWorkloadGroup {
     .LINK
         https://dbatools.io/Set-DbaRgWorkloadGroup
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.WorkloadGroup
+
+        Returns the modified WorkloadGroup object(s) after configuration changes are applied. One object is returned per workload group that was modified, containing the updated workload group properties and resource constraints.
+
+        The output is obtained by retrieving the updated workload group from the Resource Governor configuration after the Alter() operation completes, ensuring that the returned object reflects all applied changes.
+
+        Properties available on the returned WorkloadGroup objects include:
+        - Name: Name of the workload group
+        - Importance: Relative priority level (LOW, MEDIUM, or HIGH)
+        - RequestMaximumMemoryGrantPercentage: Maximum memory percentage per query request
+        - RequestMaximumCpuTimeInSeconds: Maximum CPU time per request
+        - RequestMemoryGrantTimeoutInSeconds: Memory grant timeout setting
+        - MaximumDegreeOfParallelism: Maximum parallel processors for queries
+        - GroupMaximumRequests: Maximum concurrent requests limit
+        - Parent: Reference to the parent ResourcePool or ExternalResourcePool object
+
     .EXAMPLE
         PS C:\> Set-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup "groupAdmin" -ResourcePool "poolAdmin"
 

@@ -70,6 +70,22 @@ function Copy-DbaInstanceAudit {
     .LINK
         https://dbatools.io/Copy-DbaInstanceAudit
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per audit copied or encountered (regardless of success or failure status). The object represents the result of the copy operation for a single audit.
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: The timestamp when the copy operation was attempted
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the server audit being copied
+        - Type: Always "Server Audit" indicating the type of object being copied
+        - Status: The result status of the copy operation (Successful, Skipped, or Failed)
+        - Notes: Additional information about the copy operation (reason for skip, error details, etc.)
+
+        The object type is set to "MigrationObject" for proper display formatting. All properties are always available using Select-Object *.
+
     .EXAMPLE
         PS C:\> Copy-DbaInstanceAudit -Source sqlserver2014a -Destination sqlcluster
 

@@ -29,6 +29,26 @@ function Get-DbaWsfcNetwork {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per cluster network found on the Windows Server Failover Cluster.
+
+        Properties:
+        - ClusterName: The name of the Windows Server Failover Cluster
+        - ClusterFqdn: The fully qualified domain name of the cluster
+        - Name: The network name within the cluster configuration
+        - Address: The network address (IP address or network identifier)
+        - AddressMask: The subnet mask or network address mask
+        - IPv4Addresses: Array of IPv4 addresses assigned to this cluster network
+        - IPv4PrefixLengths: Array of IPv4 prefix lengths corresponding to IPv4Addresses
+        - IPv6Addresses: Array of IPv6 addresses assigned to this cluster network
+        - IPv6PrefixLengths: Array of IPv6 prefix lengths corresponding to IPv6Addresses
+        - QuorumType: The quorum type indicator (numeric value)
+        - QuorumTypeValue: The quorum type value representation
+        - RequestReplyTimeout: The request/reply timeout value in milliseconds
+        - Role: The role of the network in the cluster (cluster, client, etc.)
+
     .LINK
         https://dbatools.io/Get-DbaWsfcNetwork
 

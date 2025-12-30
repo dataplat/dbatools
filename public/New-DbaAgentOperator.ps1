@@ -98,6 +98,38 @@ function New-DbaAgentOperator {
     .LINK
         https://dbatools.io/New-DbaAgentOperator
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Operator
+
+        Returns one Operator object for the newly created SQL Server Agent operator.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the operator
+        - EmailAddress: Email address for alert notifications
+        - NetSendAddress: Network send address for notifications
+        - PagerAddress: Pager email address for urgent alerts
+        - Enabled: Boolean indicating if the operator is active
+        - LastEmailDate: DateTime of the most recent email sent to this operator
+        - LastNetSendDate: DateTime of the most recent net send notification
+        - LastPagerDate: DateTime of the most recent pager notification
+
+        Additional properties available (from SMO Operator object):
+        - ID: Unique identifier for the operator
+        - CategoryName: Alert category classification
+        - PagerDays: Bitmask indicating which days pager notifications are active
+        - WeekdayPagerStartTime: Start time for weekday pager notifications (HH:MM:SS format)
+        - WeekdayPagerEndTime: End time for weekday pager notifications (HH:MM:SS format)
+        - SaturdayPagerStartTime: Start time for Saturday pager notifications (HH:MM:SS format)
+        - SaturdayPagerEndTime: End time for Saturday pager notifications (HH:MM:SS format)
+        - SundayPagerStartTime: Start time for Sunday pager notifications (HH:MM:SS format)
+        - SundayPagerEndTime: End time for Sunday pager notifications (HH:MM:SS format)
+        - Parent: Reference to the parent JobServer object
+
+        All properties from the base SMO Operator object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday -Force
 

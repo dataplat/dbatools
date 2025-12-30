@@ -54,6 +54,13 @@ function Add-DbaDbRoleMember {
     .LINK
         https://dbatools.io/Add-DbaDbRoleMember
 
+    .OUTPUTS
+        None
+
+        This function does not return any output objects. It performs the action of adding database users or roles as members to database roles on the target SQL Server instances.
+
+        When -WhatIf is specified, the command will display what changes would be made without performing them.
+
     .EXAMPLE
         PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -Member user1
 

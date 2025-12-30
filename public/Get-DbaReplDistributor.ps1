@@ -22,6 +22,31 @@ function Get-DbaReplDistributor {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.ReplicationServer
+
+        Returns one ReplicationServer object per SQL Server instance with replication configuration and status information.
+
+        Default display properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - IsPublisher: Boolean indicating if the instance is configured as a replication publisher
+        - IsDistributor: Boolean indicating if the instance is configured as a replication distributor
+        - DistributionServer: The name of the server hosting the distribution database (null if not a distributor)
+        - DistributionDatabase: The name of the distribution database (null if not a distributor)
+        - DistributorInstalled: Boolean indicating if distributor components are installed on the instance
+        - DistributorAvailable: Boolean indicating if the distributor is currently available and functional
+        - HasRemotePublisher: Boolean indicating if the distributor has remote publishers configured
+
+        Additional properties available from the ReplicationServer object:
+        - ReplicationDatabases: Collection of databases enabled for replication (not necessarily actively replicated)
+        - DistributionDatabaseAvailable: Boolean indicating if the distribution database is accessible
+        - HardwareBoundary: Indicates hardware boundary for replication
+        - PublisherList: Collection of publishers using this distributor
+
+        Use Select-Object * to access all available properties from the ReplicationServer object.
+
     .NOTES
         Tags: Replication
         Author: William Durkin (@sql_williamd)

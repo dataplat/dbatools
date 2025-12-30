@@ -36,6 +36,18 @@ function Enable-DbaForceNetworkEncryption {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance where Force Encryption was enabled.
+
+        Properties:
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The SQL Server instance name (e.g., SQL2008R2SP2)
+        - SqlInstance: The full SQL Server instance identifier (computer\instance format)
+        - ForceEncryption: Boolean indicating whether Force Encryption was successfully enabled (will be $true on successful execution)
+        - CertificateThumbprint: The thumbprint of the SSL certificate configured for the instance, or $null if no certificate is configured
+
     .LINK
         https://dbatools.io/Enable-DbaForceNetworkEncryption
 

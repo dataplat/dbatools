@@ -59,6 +59,20 @@ function Mount-DbaDatabase {
     .LINK
         https://dbatools.io/Mount-DbaDatabase
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database successfully attached to the SQL Server instance.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database that was attached
+        - AttachResult: Status of the attach operation (always "Success" when returned)
+        - AttachOption: The attach option that was used (None, RebuildLog, EnableBroker, NewBroker, or ErrorBrokerConversations)
+        - FileStructure: System.Collections.Specialized.StringCollection containing the file paths that were attached
+
     .EXAMPLE
         PS C:\> $fileStructure = New-Object System.Collections.Specialized.StringCollection
         PS C:\> $fileStructure.Add("E:\archive\example.mdf")

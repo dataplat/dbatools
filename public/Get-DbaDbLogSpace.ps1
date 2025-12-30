@@ -35,6 +35,22 @@ Function Get-DbaDbLogSpace {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database containing transaction log space usage metrics.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database
+        - LogSize: The total size of the transaction log file(s) for the database, formatted as a dbasize object (e.g., "10 MB", "1 GB")
+        - LogSpaceUsedPercent: The percentage of the transaction log that is currently in use (0-100)
+        - LogSpaceUsed: The amount of space currently used in the transaction log file(s), formatted as a dbasize object
+
+        The command uses sys.dm_db_log_space_usage DMV on SQL Server 2012+ or DBCC SQLPERF(logspace) on earlier versions, but returns identical output structure for both.
+
     .NOTES
         Tags: Storage, Space, Log, File
         Author: Jess Pomfret, JessPomfret.com

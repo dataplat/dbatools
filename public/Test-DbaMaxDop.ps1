@@ -46,6 +46,26 @@ function Test-DbaMaxDop {
     .LINK
         https://dbatools.io/Test-DbaMaxDop
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance. For SQL Server 2016 and higher, also returns one object per user database with database-level MAXDOP settings.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The database name (N/A for instance-level results, database name for SQL 2016+ database-level results)
+        - DatabaseMaxDop: The database-level MAXDOP setting (N/A for instance-level results, numeric for SQL 2016+)
+        - CurrentInstanceMaxDop: The current instance-level MAXDOP configuration value (0 = unlimited, or specific number)
+        - RecommendedMaxDop: The Microsoft-recommended MAXDOP value based on CPU cores and NUMA topology
+        - Notes: Configuration guidance notes indicating whether the current setting matches recommendations
+
+        Additional properties available (via Select-Object *):
+        - InstanceVersion: The full version of SQL Server (e.g., "11.0.1234.56")
+        - NumaNodes: The number of NUMA nodes detected on the instance
+        - NumberOfCores: The total number of logical processor cores visible to SQL Server
+
     .EXAMPLE
         PS C:\> Test-DbaMaxDop -SqlInstance sql2008, sqlserver2012
 

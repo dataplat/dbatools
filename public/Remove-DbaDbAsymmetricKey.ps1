@@ -39,6 +39,21 @@ function Remove-DbaDbAsymmetricKey {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per asymmetric key successfully removed.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER, SQLEXPRESS)
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName or ComputerName for default instance)
+        - Database: The name of the database from which the asymmetric key was removed
+        - Name: The name of the asymmetric key that was removed
+        - Status: String indicating the removal result (typically "Success" for successful operations)
+
+        No output is returned if the operation is skipped (WhatIf) or fails (with EnableException disabled).
+
     .NOTES
         Tags: Security, Key
         Author: Stuart Moore (@napalmgram), stuart-moore.com

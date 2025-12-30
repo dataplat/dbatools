@@ -69,6 +69,25 @@ function Copy-DbaDbQueryStoreOption {
     .LINK
         https://dbatools.io/Copy-DbaDbQueryStoreOption
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per destination database processed, representing the status of copying Query Store configuration to that database.
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: Timestamp of the operation (Dataplat.Dbatools.Utility.DbaDateTime)
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: Name of the destination database receiving the configuration
+        - Type: Always "QueryStore Configuration"
+        - Status: Result of the operation ("Skipped", "Successful", or "Failed")
+        - Notes: Error message if Status is "Failed", otherwise null
+
+        Additional properties available via Select-Object *:
+        - SourceDatabase: Name of the source database containing the Query Store configuration to copy
+        - SourceDatabaseID: Database ID of the source database
+        - DestinationDatabaseID: Database ID of the destination database
+
     .EXAMPLE
         PS C:\> Copy-DbaDbQueryStoreOption -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases
 

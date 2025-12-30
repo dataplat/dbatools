@@ -32,6 +32,20 @@ function Remove-DbaFirewallRule {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per firewall rule that was removed from the target computer.
+
+        Properties:
+        - ComputerName: The name of the target computer where the firewall rule was removed
+        - InstanceName: The SQL Server instance name associated with the firewall rule
+        - SqlInstance: The full SQL Server instance identifier (ComputerName\InstanceName)
+        - DisplayName: The display name of the firewall rule that was removed
+        - Type: The type of firewall rule removed (Engine, Browser, DAC, DatabaseMirroring, or AllInstance)
+        - IsRemoved: Boolean indicating whether the firewall rule was successfully removed
+        - Status: A descriptive status message indicating success or details about any warnings, errors, or exceptions encountered during removal
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 

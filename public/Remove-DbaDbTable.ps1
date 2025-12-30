@@ -40,6 +40,21 @@ function Remove-DbaDbTable {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per table removed, containing the following properties:
+
+        - ComputerName: The name of the computer where the SQL Server instance resides
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the table
+        - Table: The full table name in schema.name format
+        - TableName: The name of the table without schema prefix
+        - TableSchema: The schema name containing the table
+        - Status: The result of the removal operation ("Dropped" on success, or the error message on failure)
+        - IsRemoved: Boolean indicating whether the table was successfully removed (true for success, false for failure)
+
     .NOTES
         Tags: Table, Database
         Author: Andreas Jordan (@JordanOrdix), ordix.de

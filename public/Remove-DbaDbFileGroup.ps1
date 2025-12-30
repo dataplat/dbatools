@@ -40,6 +40,11 @@ function Remove-DbaDbFileGroup {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This command removes filegroups and does not return output objects on success. All information about the operation is conveyed through the ShouldProcess mechanism (WhatIf/Confirm prompts) and error messages if failures occur.
+
     .NOTES
         Tags: Storage, Data, File, FileGroup
         Author: Adam Lancaster, github.com/lancasteradam

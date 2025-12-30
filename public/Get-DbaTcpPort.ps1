@@ -45,6 +45,37 @@ function Get-DbaTcpPort {
     .LINK
         https://dbatools.io/Get-DbaTcpPort
 
+    .OUTPUTS
+        PSCustomObject
+
+        Default output (without -All parameter):
+        Returns one object per instance with basic connection information.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - IPAddress: The IP address that SQL Server is listening on (IPv4 or IPv6)
+        - Port: The TCP port number that SQL Server is using (integer)
+
+        When -All parameter is specified:
+        Returns one object per TCP/IP address configuration on the instance, with detailed network settings including both IPv4 and IPv6 addresses (unless -ExcludeIpv6 is used).
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Name: The configuration name (IPAll, IP1, IP2, IP3, IP4, etc.)
+        - Active: Boolean indicating if this IP address is currently active
+        - Enabled: Boolean indicating if this IP address is enabled in the configuration
+        - IpAddress: The IP address value (IPv4 or IPv6 notation)
+        - TcpDynamicPorts: The dynamic port range if dynamic port assignment is configured
+        - TcpPort: The static TCP port number if static port assignment is configured
+        - IsUsed: Boolean indicating whether this IP/port combination is actually in use (based on ListenAll property and Enabled status)
+
+        When -ExcludeIpv6 is specified with -All:
+        Returns only IPv4 addresses, filtering out any IPv6 entries from the results.
+
     .EXAMPLE
         PS C:\> Get-DbaTcpPort -SqlInstance sqlserver2014a
 

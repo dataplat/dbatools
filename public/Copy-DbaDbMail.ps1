@@ -61,6 +61,20 @@ function Copy-DbaDbMail {
 
         Requires: sysadmin access on SQL Servers
 
+    .OUTPUTS
+        PSCustomObject (MigrationObject)
+
+        Returns one object per Database Mail component migrated (configuration, profile, account, or mail server). Each object tracks the migration status of a single component.
+
+        Properties:
+        - DateTime: Timestamp when the migration operation was performed (Dataplat.Dbatools.Utility.DbaDateTime)
+        - SourceServer: The source SQL Server instance name
+        - DestinationServer: The destination SQL Server instance name
+        - Name: The name of the Database Mail component being migrated (profile name, account name, server name, or "Server Configuration")
+        - Type: Category of the component migrated - "Mail Configuration", "Mail Profile", "Mail Account", or "Mail Server"
+        - Status: Migration result status - "Successful", "Skipped", or "Failed"
+        - Notes: Additional details about the migration outcome (reason for skip, error message, etc.). Null if no additional notes.
+
     .LINK
         https://dbatools.io/Copy-DbaDbMail
 

@@ -46,6 +46,73 @@ function Get-DbaNetworkConfiguration {
     .LINK
         https://dbatools.io/Get-DbaNetworkConfiguration
 
+    .OUTPUTS
+        PSCustomObject
+
+        Default (-OutputType Full) returns a PSCustomObject with the following properties:
+        - ComputerName: Computer name of the SQL Server instance
+        - InstanceName: SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - SharedMemoryEnabled: Boolean indicating if Shared Memory protocol is enabled
+        - NamedPipesEnabled: Boolean indicating if Named Pipes protocol is enabled
+        - TcpIpEnabled: Boolean indicating if TCP/IP protocol is enabled
+        - TcpIpProperties: Nested object containing Enabled, KeepAlive, and ListenAll properties for TCP/IP configuration
+        - TcpIpAddresses: Array of objects representing IP address configurations with properties like Name, Active, Enabled, IpAddress, TcpDynamicPorts, and TcpPort
+        - Certificate: Nested object containing SSL certificate information (FriendlyName, DnsNameList, Thumbprint, Generated, Expires, IssuedTo, IssuedBy, Certificate object)
+        - Advanced: Nested object containing advanced settings (ForceEncryption, HideInstance, AcceptedSPNs, ExtendedProtection)
+
+        When -OutputType ServerProtocols is specified:
+        - ComputerName: Computer name of the SQL Server instance
+        - InstanceName: SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - SharedMemoryEnabled: Boolean indicating if Shared Memory protocol is enabled
+        - NamedPipesEnabled: Boolean indicating if Named Pipes protocol is enabled
+        - TcpIpEnabled: Boolean indicating if TCP/IP protocol is enabled
+
+        When -OutputType TcpIpProperties is specified:
+        - ComputerName: Computer name of the SQL Server instance
+        - InstanceName: SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - Enabled: Value indicating if TCP/IP protocol is enabled
+        - KeepAlive: TCP KeepAlive timeout setting value
+        - ListenAll: Value indicating if instance listens on all IP addresses
+
+        When -OutputType TcpIpAddresses is specified:
+        If ListenAll is True, returns one object for IPAll:
+        - ComputerName: Computer name of the SQL Server instance
+        - InstanceName: SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - Name: IP configuration name (IPAll)
+        - TcpDynamicPorts: Dynamic port configuration (empty or port number)
+        - TcpPort: Static port number configuration
+
+        If ListenAll is False, returns one object per configured IP address:
+        - ComputerName: Computer name of the SQL Server instance
+        - InstanceName: SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - Name: IP configuration name (e.g., IP1, IP2, IPV6)
+        - Active: Value indicating if this IP configuration is active
+        - Enabled: Value indicating if this IP configuration is enabled
+        - IpAddress: The IP address (IPv4 or IPv6)
+        - TcpDynamicPorts: Dynamic port configuration (empty or port number)
+        - TcpPort: Static port number configuration
+
+        When -OutputType Certificate is specified:
+        - ComputerName: Computer name of the SQL Server instance
+        - InstanceName: SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - VSName: Virtual Server Name (if applicable; omitted if not present)
+        - ServiceAccount: Service account running SQL Server
+        - ForceEncryption: Boolean indicating if encryption is forced for all connections
+        - FriendlyName: Human-readable certificate name
+        - DnsNameList: Array of DNS names in the certificate's Subject Alternative Names
+        - Thumbprint: SHA-1 hash thumbprint of the certificate
+        - Generated: DateTime when the certificate becomes valid (NotBefore)
+        - Expires: DateTime when the certificate expires (NotAfter)
+        - IssuedTo: Certificate subject (who it was issued to)
+        - IssuedBy: Certificate issuer name
+        - Certificate: The full X509Certificate2 object with complete certificate information
+
     .EXAMPLE
         PS C:\> Get-DbaNetworkConfiguration -SqlInstance sqlserver2014a
 

@@ -72,6 +72,28 @@ function Backup-DbaDbMasterKey {
     .LINK
         https://dbatools.io/Backup-DbaDbMasterKey
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.MasterKey
+
+        Returns one MasterKey object per database that was successfully backed up. Each object is enhanced with additional properties describing the backup operation result.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database containing the master key
+        - Path: The full file path where the master key backup was saved
+        - Status: Result of the backup operation ("Success" or "Failure")
+
+        Additional properties available (added by this function):
+        - DatabaseID: The ID (GUID) of the database containing the master key
+        - Filename: The complete file path where the master key backup was exported
+
+        All properties from the base SMO MasterKey object are also accessible:
+        - CreateDate: DateTime when the master key was created
+        - DateLastModified: DateTime when the master key was last modified
+        - IsEncryptedByServer: Boolean indicating if the master key is encrypted by the server master key
+
     .EXAMPLE
         PS C:\> Backup-DbaDbMasterKey -SqlInstance server1\sql2016
         >> ComputerName : SERVER1

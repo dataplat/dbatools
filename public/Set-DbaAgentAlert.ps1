@@ -62,6 +62,35 @@ function Set-DbaAgentAlert {
     .LINK
         https://dbatools.io/Set-DbaAgentAlert
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Alert
+
+        Returns one Alert object for each alert that was modified. The returned objects include all properties from the Alert object with added connection context properties.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the alert
+        - IsEnabled: Boolean indicating if the alert is currently enabled
+        - NotificationMessage: The message sent when the alert fires
+        - AlertType: Type of alert (EventAlert, PerformanceConditionAlert, or TransactionLogAlert)
+        - Severity: The severity level that triggers this alert (if alert type is EventAlert)
+        - DatabaseName: The database name the alert applies to (if applicable)
+        - EventDescriptionKeyword: Keywords in the error message that trigger the alert
+        - LastOccurrenceDate: DateTime of the last time this alert was triggered
+        - OccurrenceCount: Number of times this alert has been triggered
+
+        Additional properties available (from SMO Alert object):
+        - ID: Unique identifier for the alert
+        - CreateDate: DateTime when the alert was created
+        - DateLastModified: DateTime when the alert was last modified
+        - JobName: The SQL Agent job to execute when the alert fires
+        - PerformanceCondition: The performance condition that triggers the alert
+        - HasNotification: Boolean indicating if notification methods are configured
+
+        All properties from the base SMO Alert object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error' -Disabled
 

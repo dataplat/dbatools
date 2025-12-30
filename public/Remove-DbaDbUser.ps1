@@ -62,6 +62,19 @@ function Remove-DbaDbUser {
     .LINK
         https://dbatools.io/Remove-DbaDbUser
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per user successfully removed, with the following properties:
+        - ComputerName: The computer name of the SQL Server instance where the user was removed
+        - InstanceName: The SQL Server instance name where the user was removed
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name from which the user was removed
+        - User: The Microsoft.SqlServer.Management.Smo.User object that was removed
+        - Status: Result of the removal operation - "Dropped" on success or "Not Dropped" on failure
+
+        When a user owns database objects or schemas that cannot be handled (without -Force), no output is generated for that user. Use -Force to override schema ownership restrictions and ensure user removal succeeds.
+
     .EXAMPLE
         PS C:\> Remove-DbaDbUser -SqlInstance sqlserver2014 -User user1
 

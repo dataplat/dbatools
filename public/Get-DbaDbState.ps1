@@ -47,6 +47,23 @@ function Get-DbaDbState {
     .LINK
         https://dbatools.io/Get-DbaDbState
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database queried. Each object contains the database state information for a specific database on the target instance.
+
+        Default display properties (via Select-DefaultView):
+        - SqlInstance: The SQL Server instance name (computer\instance or just computer)
+        - InstanceName: The SQL Server service name (instance name only)
+        - ComputerName: The computer name where the SQL Server instance is running
+        - DatabaseName: The name of the database
+        - RW: The read/write status (READ_WRITE or READ_ONLY)
+        - Status: The database availability state (ONLINE, OFFLINE, EMERGENCY, or RESTORING)
+        - Access: The user connection restriction level (SINGLE_USER, RESTRICTED_USER, or MULTI_USER)
+
+        Additional properties available:
+        - Database: The SMO Database object for this database (hidden from default display)
+
     .EXAMPLE
         PS C:\> Get-DbaDbState -SqlInstance sqlserver2014a
 

@@ -98,6 +98,15 @@ function Export-DbaUser {
     .LINK
         https://dbatools.io/Export-DbaUser
 
+    .OUTPUTS
+        System.String (when -Passthru is specified)
+
+        Returns the generated T-SQL script containing CREATE USER statements, role memberships, database permissions, and object-level permissions as raw text.
+
+        System.IO.FileInfo (default)
+
+        Returns file system object(s) for the created T-SQL script file(s). When generating one file per user (using -Path without -FilePath), returns one FileInfo object per user file. When consolidating to a single file (using -FilePath), returns one FileInfo object for that file.
+
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sql2005 -FilePath C:\temp\sql2005-users.sql
 

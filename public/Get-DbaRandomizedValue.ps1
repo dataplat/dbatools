@@ -88,6 +88,53 @@ function Get-DbaRandomizedValue {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Scalar values with type determined by parameters (when using -DataType)
+
+        System.Int64, System.Int32 (bigint, int, smallint, tinyint data types)
+        - Returns a single integer value within the appropriate range for the specified data type
+
+        System.Decimal, System.Single, System.Double (decimal, float, money, numeric, real data types)
+        - Returns a single numeric value with optional symbol ($, %, etc.) and specified precision
+
+        System.String (varchar, char, nvarchar, nchar, text, ntext data types)
+        - Returns a string value with random characters from the specified CharacterString
+        - Length controlled by Min and Max parameters (default 1-255 characters)
+
+        System.String in date/time formats (date, datetime, datetime2, smalldatetime, time data types)
+        - date: "yyyy-MM-dd" format
+        - datetime: "yyyy-MM-dd HH:mm:ss.fff" format
+        - datetime2: "yyyy-MM-dd HH:mm:ss.fffffff" format
+        - smalldatetime: "yyyy-MM-dd HH:mm:ss" format
+        - time: "HH:mm:ss.fffffff" format
+        - uniqueidentifier/guid: GUID in standard format
+
+        System.Int32 (bit, bool, userdefineddatatype)
+        - Returns 0 or 1 for bit/bool types
+        - Returns 0, 1, or $null for userdefineddatatype depending on Max parameter
+
+        Specialized Randomizer Types (when using -RandomizerType/-RandomizerSubType)
+
+        Variable return types from the Bogus library:
+        - Address types (Address, ZipCode, City, State, Country, BuildingNumber, StreetName, Latitude, Longitude): System.String or System.Double
+        - Commerce types (Product, Department, ProductName, Price): System.String or numeric
+        - Company types (CompanyName, CatchPhrase, Bs): System.String
+        - Database types (Engine, Column, CollationName, Type): System.String
+        - Date types (formatted dates or timestamps based on subtype specification): System.String
+        - Finance types (Account, Amount, CreditCardNumber, Iban, Bic): System.String or numeric
+        - Hacker types (Phrase, Abbreviation, Adjective, Noun, Verb): System.String
+        - Image types (URLs or image data): System.String
+        - Internet types (Email, UserName, Password, Url, IpAddress, Mac, DomainName): System.String
+        - Lorem types (Word, Words, Sentence, Sentences, Paragraph, Paragraphs, Slug, Letter, Lines): System.String or array
+        - Name types (FirstName, LastName, FullName, Prefix, Suffix): System.String
+        - Person types (various personal information): System.String or other types
+        - Phone types (PhoneNumber with optional formatting): System.String
+        - Random types (Int, Long, Double, Float, Decimal, Guid, String, Bytes): System.Int32, System.Int64, System.Double, System.Single, System.Decimal, System.String, or byte array
+        - Rant types (Review, Reviews): System.String
+        - System types (FileName, DirectoryPath, CommonFileName, CommonFileExt, CommonUserAgent): System.String
+
+        All returned values are generated using the Bogus library which ensures realistic, contextually appropriate fake data rather than purely random values. The specific data type and format depends on the selected RandomizerType and RandomizerSubType combination, as well as format and pattern parameters applied.
+
     .LINK
         https://dbatools.io/Get-DbaRandomizedValue
 

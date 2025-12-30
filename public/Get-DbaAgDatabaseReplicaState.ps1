@@ -48,6 +48,52 @@ function Get-DbaAgDatabaseReplicaState {
     .LINK
         https://dbatools.io/Get-DbaAgDatabaseReplicaState
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database on each replica in the availability group. For example, a database on an AG with two replicas returns two objects - one for the primary and one for the secondary.
+
+        Properties returned:
+        - ComputerName: The computer name of the SQL Server instance (string)
+        - InstanceName: The SQL Server instance name (string)
+        - SqlInstance: The full SQL Server instance name (computer\instance format) (string)
+        - AvailabilityGroup: Name of the availability group (string)
+        - PrimaryReplica: Server name of the primary replica (string)
+        - ReplicaServerName: Server name of this replica (string)
+        - ReplicaRole: Role of this replica - Primary or Secondary (AvailabilityReplicaRole enum)
+        - ReplicaAvailabilityMode: Availability mode of this replica - Asynchronous or Synchronous (AvailabilityReplicaAvailabilityMode enum)
+        - ReplicaFailoverMode: Failover mode of this replica - Automatic or Manual (AvailabilityReplicaFailoverMode enum)
+        - ReplicaConnectionState: Connection state of this replica - Connected, Disconnected, or Failed (ReplicaConnectionState enum)
+        - ReplicaJoinState: Join state of this replica - Joined or NotJoined (ReplicaJoinState enum)
+        - ReplicaSynchronizationState: Rollup synchronization state for all databases on this replica (SynchronizationState enum)
+        - DatabaseName: Name of the database (string)
+        - SynchronizationState: Database synchronization state on this replica - Synchronized, Synchronizing, NotSynchronizing, Reverting, or Initializing (SynchronizationState enum)
+        - IsFailoverReady: Boolean indicating if the database is ready for failover (bool)
+        - IsJoined: Boolean indicating if the database has joined the availability group (bool)
+        - IsSuspended: Boolean indicating if data movement is suspended for this database (bool)
+        - SuspendReason: Reason why data movement was suspended - None, UserAction, PartnerSuspended, etc. (SuspendReason enum)
+        - EstimatedRecoveryTime: Estimated time to recover the database (TimeSpan)
+        - EstimatedDataLoss: Estimated amount of data loss in case of failover (TimeSpan)
+        - SynchronizationPerformance: Synchronization performance level - NotApplicable, High, Medium, Low (SynchronizationPerformance enum)
+        - LogSendQueueSize: Size of the unsent log queue in KB (long)
+        - LogSendRate: Rate at which log records are being sent in KB/sec (long)
+        - RedoQueueSize: Size of the redo queue in KB (long)
+        - RedoRate: Rate at which redo records are being applied in KB/sec (long)
+        - FileStreamSendRate: Rate at which FILESTREAM records are being sent in KB/sec (long)
+        - EndOfLogLSN: Log sequence number (LSN) of the end of the log (string)
+        - RecoveryLSN: LSN for recovery point (string)
+        - TruncationLSN: LSN for truncation point (string)
+        - LastCommitLSN: LSN of the last committed transaction (string)
+        - LastCommitTime: Timestamp when the last transaction was committed (DateTime)
+        - LastHardenedLSN: LSN that was last hardened to disk (string)
+        - LastHardenedTime: Timestamp when the last record was hardened to disk (DateTime)
+        - LastReceivedLSN: LSN of the last received log record (string)
+        - LastReceivedTime: Timestamp when the last log record was received (DateTime)
+        - LastRedoneLSN: LSN of the last redo operation (string)
+        - LastRedoneTime: Timestamp when the last redo operation completed (DateTime)
+        - LastSentLSN: LSN of the last sent log record (string)
+        - LastSentTime: Timestamp when the last log record was sent (DateTime)
+
     .EXAMPLE
         PS C:\> Get-DbaAgDatabaseReplicaState -SqlInstance sql2017a
 

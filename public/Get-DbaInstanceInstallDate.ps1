@@ -40,6 +40,22 @@ function Get-DbaInstanceInstallDate {
     .LINK
         https://dbatools.io/Get-DbaInstanceInstallDate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance with installation date information.
+
+        Default properties (without -IncludeWindows):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - SqlInstallDate: DateTime when SQL Server was originally installed (DbaDateTime type)
+
+        When -IncludeWindows is specified, an additional property is included:
+        - WindowsInstallDate: DateTime when the Windows operating system was installed (DbaDateTime type)
+
+        The SqlInstallDate and WindowsInstallDate properties are DbaDateTime objects that provide formatted date/time display and can be manipulated as standard datetime values. Queries sys.server_principals (SQL Server 2005+) or dbo.sysservers (SQL Server 2000) to determine installation dates.
+
     .EXAMPLE
         PS C:\> Get-DbaInstanceInstallDate -SqlInstance SqlBox1\Instance2
 

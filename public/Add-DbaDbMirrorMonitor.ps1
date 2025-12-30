@@ -40,6 +40,17 @@ function Add-DbaDbMirrorMonitor {
     .LINK
         https://dbatools.io/Add-DbaDbMirrorMonitor
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance where the mirroring monitor was successfully added.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - MonitorStatus: Status of the operation - displays "Added" when the mirror monitoring job is successfully created
+
     .EXAMPLE
         PS C:\> Add-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012
 

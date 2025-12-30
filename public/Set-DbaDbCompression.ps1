@@ -70,6 +70,36 @@ function Set-DbaDbCompression {
     .LINK
         https://dbatools.io/Set-DbaDbCompression
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per partition for each table or index that was compressed. When using Recommended compression mode, returns the original compression analysis object with an additional AlreadyProcessed property indicating whether the recommendation was applied.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name
+        - Schema: The schema name containing the table
+        - TableName: The name of the table
+        - IndexName: The name of the index; null for heap partitions, contains index name for indexed partitions
+        - Partition: The partition number (1-based, or 1 for non-partitioned objects)
+        - IndexID: The index ID number - 0 for heaps, greater than 0 for indexes
+        - IndexType: The type of index structure (Heap, ClusteredIndex, or other SMO index type values)
+        - CompressionTypeRecommendation: The compression type that was applied (ROW, PAGE, or NONE in uppercase)
+        - AlreadyProcessed: A flag indicating if the object was successfully processed (True or False as string)
+        - PercentScan: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - PercentUpdate: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - RowEstimatePercentOriginal: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - PageEstimatePercentOriginal: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - SizeCurrent: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - SizeRequested: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - PercentCompression: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+
+        When using CompressionType parameter (Row, Page, or None), returns objects for each partition that was compressed.
+        When using CompressionType Recommended (default), returns objects from Test-DbaDbCompression with the AlreadyProcessed property added.
+        In Recommended mode, only objects with CompressionTypeRecommendation that is not 'NO_GAIN' or '?' and meets the PercentCompression threshold are output.
+
     .EXAMPLE
         PS C:\> Set-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
 

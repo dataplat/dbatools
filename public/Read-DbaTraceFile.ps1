@@ -152,6 +152,83 @@ function Read-DbaTraceFile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        System.Data.DataRow
+
+        Returns one object per trace event from the SQL Server trace file, with the following properties added by the command:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+
+        All other properties come from fn_trace_gettable function, including:
+        - TextData: SQL statement or command text associated with the event
+        - BinaryData: Binary data captured for the event
+        - DatabaseID: Numeric identifier of the database
+        - DatabaseName: Name of the database affected by the event
+        - LoginName: SQL Server login that performed the event
+        - SPID: Session Process ID of the connection
+        - StartTime: DateTime when the event started
+        - EndTime: DateTime when the event ended
+        - Duration: Duration of the event in milliseconds
+        - Reads: Number of logical disk reads
+        - Writes: Number of logical disk writes
+        - CPU: CPU time consumed in milliseconds
+        - EventClass: Event class number (e.g., 10 for SQL:StmtCompleted, 14 for Login)
+        - EventSequence: Sequential number of the event
+        - ApplicationName: Name of the client application
+        - HostName: Name of the client computer
+        - ObjectName: Name of the database object being accessed
+        - ObjectType: Type of object being accessed
+        - Error: SQL Server error number if an error occurred
+        - Severity: Severity level of the error
+        - Success: Whether the operation succeeded (0 or 1)
+        - NestLevel: Nesting level of the stored procedure
+        - LineNumber: Line number within the batch or procedure
+        - TransactionID: Transaction identifier
+        - NTUserName: Windows domain and user name
+        - NTDomainName: Windows domain name
+        - ColumnPermissions: Column-level permissions being checked
+        - Permissions: Object permissions being checked
+        - State: Object state
+        - Mode: Lock mode (if applicable)
+        - Handle: Handle reference
+        - OwnerName: Name of the object owner
+        - RoleName: Database role name
+        - TargetUserName: Target user for impersonation operations
+        - DBUserName: Database user name
+        - LoginSid: SQL Server login SID
+        - TargetLoginName: Target login for security operations
+        - TargetLoginSid: Target login SID
+        - LinkedServerName: Name of linked server being accessed
+        - ProviderName: OLE DB provider name
+        - MethodName: OLE DB method name
+        - RowCounts: Number of rows affected
+        - RequestID: Batch request ID
+        - XactSequence: Transaction sequence number
+        - BigintData1: First 64-bit integer data
+        - BigintData2: Second 64-bit integer data
+        - GUID: Globally unique identifier
+        - IntegerData: Integer data value
+        - IntegerData2: Second integer data value
+        - ObjectID: Object ID number
+        - ObjectID2: Second object ID number
+        - EventSubClass: Event subclass number
+        - IndexID: Index ID
+        - ClientProcessID: Process ID of the client application
+        - ServerName: Name of the SQL Server instance
+        - Type: Type identifier
+        - OwnerID: Owner object ID
+        - ParentName: Parent object name
+        - IsSystem: Whether the object is a system object (0 or 1)
+        - Offset: Offset value for the event
+        - SourceDatabaseID: Source database ID
+        - SqlHandle: SQL handle reference
+        - SessionLoginName: Session login name
+        - PlanHandle: Query plan handle
+        - GroupID: Group ID for the event
+
+        All properties are accessible using Select-Object * or standard pipeline operations.
+
     .NOTES
         Tags: Trace
         Author: Chrissy LeMaire (@cl), netnerds.net

@@ -41,6 +41,34 @@ function Get-DbaLastBackup {
     .LINK
         https://dbatools.io/Get-DbaLastBackup
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed, containing backup status information and compliance metrics.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database
+        - LastFullBackup: DateTime of the most recent full backup (DbaDateTime object with Date subproperty)
+        - LastDiffBackup: DateTime of the most recent differential backup (DbaDateTime object with Date subproperty)
+        - LastLogBackup: DateTime of the most recent transaction log backup (DbaDateTime object with Date subproperty)
+
+        Additional properties available (use Select-Object * to display):
+        - RecoveryModel: Database recovery model (Simple, Full, or BulkLogged)
+        - SinceFull: DbaTimeSpan representing time elapsed since last full backup; null if never backed up
+        - SinceDiff: DbaTimeSpan representing time elapsed since last differential backup; null if never backed up
+        - SinceLog: DbaTimeSpan representing time elapsed since last transaction log backup; null if never backed up
+        - LastFullBackupIsCopyOnly: Boolean indicating if the last full backup was copy-only
+        - LastDiffBackupIsCopyOnly: Boolean indicating if the last differential backup was copy-only (always false per SQL Server rules)
+        - LastLogBackupIsCopyOnly: Boolean indicating if the last transaction log backup was copy-only
+        - DatabaseCreated: DateTime when the database was created
+        - DaysSinceDbCreated: Integer number of days since database creation
+        - Status: String status indicator - "OK", "New database, not backed up yet", "No Full or Diff Back Up in the last day", or "No Log Back Up in the last hour"
+
+        The LastFullBackup, LastDiffBackup, and LastLogBackup properties are DbaDateTime objects that can be compared with .Date subproperty.
+
     .EXAMPLE
         PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987
 

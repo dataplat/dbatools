@@ -39,6 +39,18 @@ function Compare-DbaAgReplicaOperator {
     .LINK
         https://dbatools.io/Compare-DbaAgReplicaOperator
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per detected operator configuration difference across replicas. Objects are returned only when an operator configuration differs between replicas (either present on some replicas but missing on others, or present with different email addresses).
+
+        Properties:
+        - AvailabilityGroup: Name of the Availability Group being compared
+        - Replica: The SQL Server instance name of the replica
+        - OperatorName: Name of the SQL Agent operator
+        - Status: Configuration status of the operator on this replica ("Present" or "Missing")
+        - EmailAddress: Email address of the operator (null if Status is "Missing")
+
     .EXAMPLE
         PS C:\> Compare-DbaAgReplicaOperator -SqlInstance sql2016 -AvailabilityGroup AG1
 

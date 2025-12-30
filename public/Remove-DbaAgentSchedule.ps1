@@ -52,6 +52,21 @@ function Remove-DbaAgentSchedule {
         Without this parameter, schedules in use by jobs are protected and will not be removed.
         Use this when you need to clean up schedules and automatically remove their job associations first.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per schedule processed, containing removal status and details.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Schedule: The name of the schedule that was removed
+        - ScheduleId: The numeric ID of the schedule
+        - ScheduleUid: The unique GUID identifier of the schedule
+        - Status: Result of the removal operation ("Dropped" for success, or error message for failures)
+        - IsRemoved: Boolean indicating if the schedule was successfully removed ($true for success, $false for failures)
+
     .NOTES
         Tags: Agent, Job, Schedule
         Author: Sander Stad (@sqlstad), sqlstad.nl

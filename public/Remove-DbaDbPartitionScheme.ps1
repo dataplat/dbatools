@@ -52,6 +52,19 @@ function Remove-DbaDbPartitionScheme {
         Copyright: (c) 2022 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per partition scheme removal operation with the following properties:
+
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the partition scheme
+        - PartitionSchemeName: The name of the partition scheme that was processed
+        - Status: The result of the removal operation ("Dropped" on success, or error message on failure)
+        - IsRemoved: Boolean indicating whether the partition scheme was successfully dropped (true) or failed (false)
+
     .LINK
         https://dbatools.io/Remove-DbaDbPartitionScheme
 

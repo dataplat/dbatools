@@ -45,6 +45,25 @@ function Get-DbaFeature {
     .LINK
         https://dbatools.io/Get-DbaFeature
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server feature component discovered. Multiple objects are returned when multiple SQL Server versions or instances with different installed features are found on the target server(s).
+
+        Properties:
+        - ComputerName: The name of the Windows server where SQL Server is installed
+        - Product: The SQL Server product name (e.g., "SQL Server 2019 Enterprise Edition")
+        - Instance: The SQL Server instance name, or "MSSQLSERVER" for the default instance
+        - InstanceID: The SQL Server instance ID identifier from the registry
+        - Feature: The specific SQL Server component that is installed (e.g., Database Engine, Analysis Services, Reporting Services, Integration Services, Replication, Full-Text Search)
+        - Language: The language/locale of the SQL Server installation (e.g., "English")
+        - Edition: The SQL Server edition (Enterprise, Standard, Express, Developer, Evaluation, Web)
+        - Version: The version number of SQL Server in format (e.g., "15.0.2000.5")
+        - Clustered: Boolean indicating if this SQL Server instance is part of a failover cluster (True/False)
+        - Configured: Boolean indicating if the SQL Server component is fully configured and operational (True/False)
+
+        Each row represents one installed feature. A single SQL Server instance with multiple installed features will generate multiple objects.
+
     .EXAMPLE
         PS C:\> Get-DbaFeature -ComputerName sql2017, sql2016, sql2005
 

@@ -70,6 +70,25 @@ function New-DbaDbAsymmetricKey {
     .LINK
         https://dbatools.io/New-DbaDbAsymmetricKey
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AsymmetricKey
+
+        Returns one AsymmetricKey object for each asymmetric key successfully created in the target database(s).
+
+        Display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database containing the asymmetric key
+        - Name: The name of the asymmetric key
+        - Owner: The database user who owns the key
+        - KeyEncryptionAlgorithm: The RSA algorithm used (Rsa512, Rsa1024, Rsa2048, Rsa3072, or Rsa4096)
+        - KeyLength: The key length in bits (512, 1024, 2048, 3072, or 4096)
+        - PrivateKeyEncryptionType: How the private key is encrypted (Password, MasterKey, or None)
+        - Thumbprint: The SHA-1 hash of the public key for identification
+
+        Additional properties available via Select-Object * from the SMO AsymmetricKey object include standard SMO object properties such as Parent (reference to the parent Database), Urn (Uniform Resource Name), and State (current SMO object state).
+
     .EXAMPLE
         PS C:\> New-DbaDbAsymmetricKey -SqlInstance Server1
 

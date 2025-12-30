@@ -50,6 +50,22 @@ function Stop-DbaEndpoint {
     .LINK
         https://dbatools.io/Stop-DbaEndpoint
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Endpoint
+
+        Returns the endpoint object(s) after they have been successfully stopped. One object is returned per endpoint that was stopped.
+
+        Properties include:
+        - Name: The name of the endpoint
+        - EndpointType: Type of endpoint (ServiceBroker, DatabaseMirroring, TSQL_DEFAULT_TCP, TSQL_DEFAULT_HTTP, or custom application)
+        - ProtocolType: The protocol used by the endpoint
+        - State: Current state of the endpoint (Stopped, Started, or Disabled)
+        - Parent: Reference to the parent server or database object
+        - Protocol: Detailed protocol configuration object
+        - Payload: Endpoint payload and payload type configuration
+
+        All properties from the base SMO Endpoint object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Stop-DbaEndpoint -SqlInstance sql2017a -AllEndpoints
 

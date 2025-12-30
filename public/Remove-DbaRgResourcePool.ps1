@@ -54,6 +54,11 @@ function Remove-DbaRgResourcePool {
     .LINK
         https://dbatools.io/Remove-DbaRgResourcePool
 
+    .OUTPUTS
+        None
+
+        This command does not return any output objects. It only performs removal and reconfiguration operations on the Resource Governor.
+
     .EXAMPLE
         PS C:\> Remove-DbaRgResourcePool -SqlInstance sql2016 -ResourcePool "poolAdmin" -Type Internal
 

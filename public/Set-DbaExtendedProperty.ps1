@@ -38,6 +38,23 @@ function Set-DbaExtendedProperty {
     .LINK
         https://dbatools.io/Set-DbaExtendedProperty
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ExtendedProperty
+
+        Returns the updated ExtendedProperty object for each extended property modified. The returned object reflects all changes made by the Alter() method.
+
+        Default properties returned:
+        - Name: The name of the extended property
+        - Value: The updated value that was set
+
+        Additional properties available (from SMO ExtendedProperty object):
+        - ID: The identifier of the extended property
+        - Parent: The parent object that this extended property is attached to
+        - State: The current state of the SMO object (Existing, Creating, Pending, etc.)
+        - Urn: The Uniform Resource Name (URN) of the extended property
+        - Properties: Collection of SQL Server object properties
+
+        All properties from the base SMO ExtendedProperty object are accessible using Select-Object *.
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance localhost -Database mydb | Get-DbaExtendedProperty -Name appversion | Set-DbaExtendedProperty -Value "1.1.0"

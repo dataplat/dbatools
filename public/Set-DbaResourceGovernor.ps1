@@ -50,6 +50,22 @@ function Set-DbaResourceGovernor {
     .LINK
         https://dbatools.io/Set-DbaResourceGovernor
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ResourceGovernor
+
+        Returns the modified Resource Governor object reflecting the new enabled/disabled state and classifier function assignment. Output is piped from Get-DbaResourceGovernor which provides detailed configuration details.
+
+        Default display properties (via Get-DbaResourceGovernor):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Enabled: Boolean indicating if Resource Governor is currently enabled
+        - ClassifierFunction: Name of the classifier function currently assigned (NULL if none)
+        - RecoveryPriority: Recovery priority setting for resource allocation
+        - State: Current state of the Resource Governor (Existing, Creating, etc.)
+
+        All properties from the base SMO ResourceGovernor object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Set-DbaResourceGovernor -SqlInstance sql2016 -Enabled
 

@@ -35,6 +35,23 @@ function Test-DbaMaxMemory {
     .LINK
         https://dbatools.io/Test-DbaMaxMemory
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance analyzed, providing memory configuration analysis.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - InstanceCount: The number of running SQL Engine instances detected on the server
+        - Total: Total system memory in megabytes (MB)
+        - MaxValue: Current max server memory setting in megabytes (MB)
+        - RecommendedValue: Calculated recommended max server memory in megabytes (MB) based on Jonathan Kehayias's algorithm, accounting for OS reserve and instance count
+
+        Additional properties available:
+        - Server: Reference to the SMO Server object for the instance, allowing further server-specific queries or operations
+
     .EXAMPLE
         PS C:\> Test-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
 

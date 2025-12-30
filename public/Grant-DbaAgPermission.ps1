@@ -56,6 +56,20 @@ function Grant-DbaAgPermission {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per permission grant operation when granting permissions on database mirroring endpoints or availability groups. When performing GrantAvailabilityGroupCreateDatabasePrivilege operations, no output is returned.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Name: The login name that was granted the permission
+        - Permission: The permission type that was granted (Connect, Alter, Control, TakeOwnership, ViewDefinition)
+        - Type: Always "Grant" indicating this is a permission grant operation
+        - Status: Status of the grant operation ("Success" if completed without error)
+
     .LINK
         https://dbatools.io/Grant-DbaAgPermission
 

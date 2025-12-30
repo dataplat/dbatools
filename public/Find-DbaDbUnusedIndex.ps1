@@ -53,6 +53,45 @@ function Find-DbaDbUnusedIndex {
         Sets the threshold for user lookups below which an index is considered unused. Default is 1.
         User lookups occur when a nonclustered index is used to locate rows that are then retrieved from the clustered index. This typically indicates bookmark lookup operations.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per unused index found. Each object contains comprehensive index usage statistics and metadata.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the index
+        - DatabaseId: Numeric ID of the database
+        - Schema: The schema name containing the table
+        - Table: The name of the table containing the index
+        - ObjectId: Numeric ID of the table object
+        - IndexName: The name of the index
+        - IndexId: Numeric ID of the index within the table
+        - TypeDesc: Type description of the index (CLUSTERED, NONCLUSTERED, etc.)
+        - UserSeeks: Number of seek operations by user queries since last SQL Server restart
+        - UserScans: Number of scan operations by user queries since last SQL Server restart
+        - UserLookups: Number of lookup operations by user queries since last SQL Server restart
+        - UserUpdates: Number of update operations on the index by user queries since last SQL Server restart
+        - LastUserSeek: Timestamp of the last seek operation by user queries
+        - LastUserScan: Timestamp of the last scan operation by user queries
+        - LastUserLookup: Timestamp of the last lookup operation by user queries
+        - LastUserUpdate: Timestamp of the last update operation by user queries
+        - SystemSeeks: Number of seek operations by system queries since last SQL Server restart
+        - SystemScans: Number of scan operations by system queries since last SQL Server restart
+        - SystemLookup: Number of lookup operations by system queries since last SQL Server restart
+        - SystemUpdates: Number of update operations on the index by system queries since last SQL Server restart
+        - LastSystemSeek: Timestamp of the last seek operation by system queries
+        - LastSystemScan: Timestamp of the last scan operation by system queries
+        - LastSystemLookup: Timestamp of the last lookup operation by system queries
+        - LastSystemUpdate: Timestamp of the last update operation by system queries
+        - IndexSizeMB: Size of the index in megabytes
+        - RowCount: Number of rows in the index
+        - CompressionDescription: Data compression type (SQL Server 2008+ only). Values include None, Row, Page, ColumnStore, or ColumnStoreArchive
+
+        Indexes are identified as "unused" when their usage statistics fall below the specified thresholds (default: UserSeeks < 1, UserScans < 1, UserLookups < 1).
+
     .NOTES
         Tags: Index, Lookup
         Author: Aaron Nelson (@SQLvariant), SQLvariant.com

@@ -32,6 +32,33 @@ function Get-DbaReplServer {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.ReplicationServer
+
+        Returns one ReplicationServer object per SQL Server instance, providing information about the instance's role in the replication topology.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - IsDistributor: Boolean indicating if the instance is configured as a Distributor
+        - IsPublisher: Boolean indicating if the instance is configured as a Publisher
+        - DistributionServer: The name of the Distributor server (if configured)
+        - DistributionDatabase: The name of the distribution database (if configured)
+
+        Additional properties available (from SMO ReplicationServer object):
+        - DistributorInstalled: Boolean indicating if a Distributor is installed
+        - DistributorAvailable: Boolean indicating if the Distributor is accessible
+        - WorkingDirectory: The Publisher's working directory location
+        - DistributionDatabases: Collection of configured distribution databases
+        - DistributionPublishers: Collection of Publishers using this Distributor
+        - ReplicationDatabases: Collection of databases enabled for replication
+        - RegisteredSubscribers: Collection of registered Subscriber instances
+        - AgentCheckupInterval: The Distribution Agent checkup frequency setting
+        - ConnectionContext: The SQL Server connection context object
+
+        All properties from the base SMO ReplicationServer object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaReplServer
 

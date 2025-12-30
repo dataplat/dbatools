@@ -39,6 +39,17 @@ function Get-DbaExtendedProtection {
     .LINK
         https://dbatools.io/Get-DbaExtendedProtection
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per instance containing the current Extended Protection setting and its interpretation.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ExtendedProtection: The current Extended Protection setting as a string combining the numeric value (0, 1, or 2) and its text description (Off, Allowed, or Required), formatted as "numeric - text" (e.g., "1 - Allowed")
+
     .EXAMPLE
         PS C:\> Get-DbaExtendedProtection
 

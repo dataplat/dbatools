@@ -66,6 +66,40 @@ function Get-DbaRegServer {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer
+
+        Returns one RegisteredServer object per registered SQL Server instance, sourced from Central Management Server, SSMS local registered servers, or Azure Data Studio. Server objects can be sourced from one or more locations:
+        - Central Management Server (CMS): When SqlInstance parameter is provided
+        - Local SSMS Registered Servers: When no SqlInstance provided or -IncludeLocal is specified
+        - Azure Data Studio connections: When no SqlInstance provided or -IncludeLocal is specified
+        - CMS instance itself: When -IncludeSelf is specified with a CMS query
+
+        Default display properties (via Select-DefaultView):
+        - Name: The display name of the registered server as shown in SSMS Registered Servers or Azure Data Studio
+        - ServerName: The actual SQL Server connection string (computer name, IP address, or instance name)
+        - Group: The CMS group path (hierarchical, using backslash separators) or null for root-level servers
+        - Description: Text description of the registered server
+        - Source: Source location of the registration - "Central Management Servers", "Local Server Groups", or "Azure Data Studio"
+
+        When -ResolveNetworkName is specified, additional properties are included in default display:
+        - ComputerName: NetBIOS computer name resolved via DNS
+        - FQDN: Fully qualified domain name resolved via DNS
+        - IPAddress: IP address resolved via DNS
+
+        Additional available properties from the RegisteredServer object:
+        - ComputerName: NetBIOS computer name of the CMS instance (for CMS-sourced servers)
+        - InstanceName: The SQL Server instance name of the CMS (for CMS-sourced servers)
+        - SqlInstance: The full SQL Server instance name of the CMS (for CMS-sourced servers)
+        - ParentServer: The parent CMS instance name (for CMS-sourced servers)
+        - ConnectionString: The connection string with decrypted password if available
+        - SecureConnectionString: The connection string as a SecureString object if password was decrypted
+        - Id: Internal identifier for the registered server
+        - ServerType: Type of server (DatabaseEngine, AnalysisServices, ReportingServices, etc.)
+        - CredentialPersistenceType: Whether credentials are stored (mainly for Azure Data Studio sources)
+
+        All properties from the base RegisteredServer SMO object are accessible using Select-Object *.
+
     .NOTES
         Tags: RegisteredServer, CMS
         Author: Bryan Hamby (@galador) | Chrissy LeMaire (@cl)

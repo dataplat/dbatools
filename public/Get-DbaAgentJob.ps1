@@ -64,6 +64,38 @@ function Get-DbaAgentJob {
     .LINK
         https://dbatools.io/Get-DbaAgentJob
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Job
+
+        Returns one SQL Agent Job object per job matching the specified criteria. Each object represents a SQL Server Agent job with its configuration and execution status.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the SQL Server computer
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the SQL Agent job
+        - Category: The category assigned to the job
+        - OwnerLoginName: The login that owns the job
+        - CurrentRunStatus: Current execution status (Idle, Running, etc.)
+        - CurrentRunRetryAttempt: Number of retry attempts for the current execution
+        - Enabled: Boolean indicating if the job is enabled (True/False)
+        - LastRunDate: DateTime of the last job execution
+        - LastRunOutcome: Outcome of the last execution (Succeeded, Failed, Cancelled, Retried, etc.)
+        - HasSchedule: Boolean indicating if the job has an associated schedule
+        - OperatorToEmail: Email address of the operator to notify on completion
+        - CreateDate: DateTime when the job was created
+        - StartDate: DateTime when the job started executing (only when -IncludeExecution is specified)
+
+        Additional properties available from the SMO Job object (accessible via Select-Object *):
+        - JobId: Unique identifier (GUID) for the job
+        - JobType: Type of job (Local or MultiServer)
+        - JobSteps: Collection of job steps belonging to this job
+        - CategoryID: Internal ID of the job category
+        - Description: Job description/notes
+        - IsSystemObject: Boolean indicating if this is a system object
+
+        Note: When -IncludeExecution is specified, the StartDate property is added to the default display properties showing when the currently executing job started.
+
     .EXAMPLE
         PS C:\> Get-DbaAgentJob -SqlInstance localhost
 

@@ -81,6 +81,42 @@ function Get-DbaBackupInformation {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Dataplat.Dbatools.Database.BackupHistory
+
+        Returns one BackupHistory object per backup set (group of files from the same backup operation). This object contains all necessary information to restore databases using Restore-DbaDatabase and supports being piped directly into that command.
+
+        The object includes the following properties:
+
+        - ComputerName: The computer name where the backup originated from (SQL Server host)
+        - InstanceName: The SQL Server instance name where the backup was taken
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Database: The name of the database that was backed up
+        - UserName: The Windows/SQL login that performed the backup
+        - Start: DateTime of when the backup started
+        - End: DateTime of when the backup finished
+        - Duration: TimeSpan representing the duration of the backup operation
+        - Type: String indicating the backup type (Full, Differential, or Log)
+        - Path: String array of file paths containing the backup files
+        - FullName: Array of backup file paths (same as Path)
+        - FileList: Array of PSCustomObjects containing backup file details with properties: Type (MDF/LDF/NDF), LogicalName, PhysicalName, Size
+        - TotalSize: Total size of the backup in bytes
+        - CompressedBackupSize: Size of the compressed backup in bytes
+        - BackupSetId: GUID uniquely identifying this backup set
+        - Position: Position of the backup within the device
+        - DeviceType: The type of backup device (typically 'Disk')
+        - FirstLsn: BigInt representing the first log sequence number in the backup
+        - DatabaseBackupLsn: BigInt representing the database backup LSN for log backups
+        - CheckpointLSN: BigInt representing the checkpoint LSN
+        - LastLsn: BigInt representing the last log sequence number in the backup
+        - SoftwareVersionMajor: Major version of SQL Server that created the backup
+        - RecoveryModel: The recovery model of the database (Simple, Full, or BulkLogged)
+        - IsCopyOnly: Boolean indicating if this is a copy-only backup
+
+        When -Anonymise is specified, the following properties are hashed: ComputerName, InstanceName, SqlInstance, Database, UserName, Path, FullName, and file logical/physical names in FileList.
+
+        When -Import is specified, the BackupHistory object is deserialized from the exported CliXml file, preserving all properties for later use with Restore-DbaDatabase.
+
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
         Author: Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram)

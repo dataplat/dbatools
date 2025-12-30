@@ -52,6 +52,26 @@ function Test-DbaDiskAllocation {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per NTFS volume found on the target server.
+
+        Default properties (when -NoSqlCheck is not specified):
+        - Server: Computer name of the target server
+        - Name: Drive letter or volume name (e.g., "C:", "D:")
+        - Label: Volume label or name assigned to the drive
+        - BlockSize: Allocation unit size in bytes (65536 = 64KB is best practice)
+        - IsSqlDisk: Boolean indicating if the volume contains SQL Server database or log files
+        - IsBestPractice: Boolean indicating if BlockSize equals 65536 (64KB) - false for system drives
+
+        When -NoSqlCheck is specified, the IsSqlDisk property is omitted:
+        - Server: Computer name of the target server
+        - Name: Drive letter or volume name
+        - Label: Volume label
+        - BlockSize: Allocation unit size in bytes
+        - IsBestPractice: Boolean indicating if BlockSize equals 65536 (64KB)
+
     .LINK
         https://dbatools.io/Test-DbaDiskAllocation
 

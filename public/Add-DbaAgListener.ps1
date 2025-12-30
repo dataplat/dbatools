@@ -79,6 +79,28 @@ function Add-DbaAgListener {
     .LINK
         https://dbatools.io/Add-DbaAgListener
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener
+
+        Returns the created or configured Availability Group listener. By default, the listener object is returned after creation. When using -Passthru, the listener object is returned before creation for additional configuration.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance hosting the Availability Group
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the Availability Group that owns this listener
+        - Name: Network name of the listener that clients use for connections
+        - PortNumber: TCP port number for client connections (default 1433)
+        - ClusterIPConfiguration: WSFC cluster IP resource configuration details
+
+        Additional properties available (from SMO AvailabilityGroupListener object):
+        - AvailabilityGroupListenerIPAddresses: Collection of IP address configurations for this listener (one per subnet in multi-subnet scenarios)
+        - Urn: Unique resource name for programmatic identification
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - Properties: Collection of object properties and their values
+
+        All properties from the base SMO AvailabilityGroupListener object are accessible via Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Add-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20
 

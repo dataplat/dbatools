@@ -22,6 +22,38 @@ function Get-DbaConnection {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per connection on each SQL Server instance. Each object contains detailed information about the connection and its statistics.
+
+        Properties:
+        - ComputerName: The name of the computer where SQL Server is running
+        - InstanceName: The SQL Server instance name (MSSQLSERVER for default instance)
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName format)
+        - SessionId: The session ID of the connection (integer)
+        - MostRecentSessionId: The most recent session ID associated with this connection (integer)
+        - ConnectTime: DateTime when the connection was established
+        - Transport: The network transport protocol used (e.g., "Named pipes", "TCP/IP", "Shared memory")
+        - ProtocolType: The protocol type used for the connection (e.g., "TSQL")
+        - ProtocolVersion: The version of the protocol being used (integer)
+        - EndpointId: The ID of the database mirroring endpoint (integer)
+        - EncryptOption: Encryption status of the connection (e.g., "ENCRYPT_ON", "ENCRYPT_OFF")
+        - AuthScheme: The authentication scheme used (e.g., "WINDOWS", "SQL")
+        - NodeAffinity: The node affinity of the connection for non-uniform memory access (NUMA) systems (integer)
+        - Reads: The number of read operations performed on this connection (integer)
+        - Writes: The number of write operations performed on this connection (integer)
+        - LastRead: DateTime of the most recent read operation on this connection
+        - LastWrite: DateTime of the most recent write operation on this connection
+        - PacketSize: The network packet size in bytes used for this connection (integer)
+        - ClientNetworkAddress: The IP address or network address of the client connecting to SQL Server
+        - ClientTcpPort: The TCP port used by the client to connect to SQL Server (integer)
+        - ServerNetworkAddress: The IP address or network address of the server's network interface
+        - ServerTcpPort: The TCP port on which SQL Server is listening (integer)
+        - ConnectionId: The unique identifier for this connection (integer, GUID-based)
+        - ParentConnectionId: The parent connection ID for connections that are part of a hierarchy (integer)
+        - MostRecentSqlHandle: The SQL handle of the most recently executed statement (binary)
+
     .NOTES
         Tags: Connection
         Author: Chrissy LeMaire (@cl), netnerds.net

@@ -51,6 +51,22 @@ function Export-DbaXESessionTemplate {
     .LINK
         https://dbatools.io/Export-DbaXESessionTemplate
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one FileInfo object per Extended Events session exported. Each object represents the XML template file that was created.
+
+        Properties:
+        - Name: The filename of the exported XE session template (e.g., "system_health.xml")
+        - FullName: The complete path to the exported template file
+        - DirectoryName: The directory path where the template file was saved
+        - Extension: The file extension (".xml")
+        - Length: The size of the template file in bytes
+        - CreationTime: When the template file was created
+        - LastWriteTime: When the template file was last modified
+        - LastAccessTime: When the template file was last accessed
+        - Mode: File attributes and permissions (e.g., "-a----")
+
     .EXAMPLE
         PS C:\> Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
 

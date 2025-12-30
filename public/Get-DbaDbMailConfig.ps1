@@ -34,6 +34,27 @@ function Get-DbaDbMailConfig {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.ConfigurationValue
+
+        Returns one Database Mail configuration setting per object with added properties from the parent SqlMail object.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The configuration setting name (e.g., MaxFileSize, ProhibitedExtensions, DatabaseMailExeMinLifeTime, LoggingLevel)
+        - Value: The current value of the configuration setting
+        - Description: Human-readable description of what the configuration setting controls
+
+        Additional properties available (from SMO ConfigurationValue object):
+        - Parent: Reference to the parent SqlMail object
+        - Urn: The uniform resource name for the configuration value object
+        - Properties: Collection of SQL Server object properties
+        - State: The current state of the object (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO ConfigurationValue object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .NOTES
         Tags: Mail, DbMail, Email
         Author: Chrissy LeMaire (@cl), netnerds.net

@@ -99,6 +99,26 @@ function New-DbaCmConnection {
     .LINK
         https://dbatools.io/New-DbaCmConnection
 
+    .OUTPUTS
+        Dataplat.Dbatools.Connection.ManagementConnection
+
+        Returns one management connection object per computer name provided. The connection object caches authentication credentials and CIM/WMI session settings for reuse across multiple dbatools commands.
+
+        Unless connection caching is disabled globally (via dbatools configuration), the returned object is automatically stored in the connection cache and used transparently for subsequent operations. The returned object itself is primarily informational but can be used to verify connection settings or to bypass the cache if needed.
+
+        Key properties include:
+        - ComputerName: The target computer name for the connection
+        - Credentials: The PSCredential object for authentication, or null if using Windows credentials
+        - UseWindowsCredentials: Boolean indicating if current Windows credentials are used
+        - OverrideExplicitCredential: Boolean forcing use of cached credentials instead of explicit ones
+        - DisabledConnectionTypes: ManagementConnectionType flags specifying which protocols to disable (CimRM, CimDCOM, etc.)
+        - DisableBadCredentialCache: Boolean preventing storage of failed credentials
+        - DisableCimPersistence: Boolean forcing new CIM sessions instead of reusing existing ones
+        - DisableCredentialAutoRegister: Boolean preventing auto-storage of successful credentials
+        - WindowsCredentialsAreBad: Boolean marking Windows credentials as invalid for this connection
+        - CimWinRMOptions: WSManSessionOptions for configuring CIM over WinRM protocol settings
+        - CimDCOMOptions: DComSessionOptions for configuring DCOM protocol settings
+
     .EXAMPLE
         PS C:\> New-DbaCmConnection -ComputerName sql2014 -UseWindowsCredentials -OverrideExplicitCredential -DisabledConnectionTypes CimRM
 

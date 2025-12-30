@@ -37,6 +37,17 @@ function Remove-DbaServerRole {
         Use this when you need to remove multiple roles or want to filter roles before removal.
         Allows for more complex scenarios like removing all custom roles that match specific criteria.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per server role removed, with the following properties:
+
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ServerRole: The name of the server role that was dropped
+        - Status: The result of the removal operation ("Success" or "Failed")
+
     .NOTES
         Tags: Role, Login
         Author: Claudio Silva (@ClaudioESSilva), claudioessilva.com

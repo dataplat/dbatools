@@ -32,6 +32,27 @@ function Get-DbaPbmStore {
     .LINK
         https://dbatools.io/Get-DbaPbmStore
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.DMF.PolicyStore
+
+        Returns one PolicyStore object per instance, which serves as the root container for managing Policy-Based Management (PBM) policies, conditions, and facets.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+
+        All other SMO PolicyStore properties are available and can be accessed using Select-Object *. The following properties are excluded from the default view and should be accessed via Select-Object if needed:
+        - SqlStoreConnection: The underlying SQL Store connection object
+        - ConnectionContext: The SQL connection context
+        - Properties: The SMO object properties collection
+        - Urn: The Uniform Resource Name of the store
+        - Parent: The parent object reference
+        - DomainInstanceName: The domain instance name
+        - Metadata: Metadata information
+        - IdentityKey: The identity key for the object
+        - Name: The name property of the store object
+
     .EXAMPLE
         PS C:\> Get-DbaPbmStore -SqlInstance sql2016
 

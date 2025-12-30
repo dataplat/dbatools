@@ -68,6 +68,20 @@ function Copy-DbaServerRole {
     .LINK
         https://dbatools.io/Copy-DbaServerRole
 
+    .OUTPUTS
+        PSCustomObject (MigrationObject)
+
+        Returns one object per server role processed. The object contains the result of attempting to copy each role from the source to the destination server.
+
+        Properties:
+        - DateTime: Timestamp when the role copy operation was executed (DbaDateTime)
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: Name of the server role being copied
+        - Type: Always "Server Role"
+        - Status: Result of the copy operation (Successful, Skipped, or Failed)
+        - Notes: Additional details about the operation or error message if the status is Failed
+
     .EXAMPLE
         PS C:\> Copy-DbaServerRole -Source sqlserver2014a -Destination sqlcluster
 

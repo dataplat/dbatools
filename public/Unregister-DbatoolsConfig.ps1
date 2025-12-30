@@ -38,6 +38,11 @@ function Unregister-DbatoolsConfig {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        None
+
+        This command does not return any output objects. It removes persisted configuration settings from registry and configuration files based on the specified parameters.
+
     .LINK
         https://dbatools.io/Unregister-DbatoolsConfig
 

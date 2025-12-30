@@ -73,6 +73,53 @@ function Find-DbaAgentJob {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Job
+
+        Returns one Job object for each job that matches the specified search criteria. Multiple jobs can be returned per instance depending on filter parameters.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Job name
+        - Category: Job category classification
+        - OwnerLoginName: Login name of the job owner
+        - CurrentRunStatus: Current execution status (Idle, Running, etc.)
+        - CurrentRunRetryAttempt: Number of retry attempts for current execution
+        - Enabled: Boolean indicating if the job is enabled (aliased from IsEnabled)
+        - LastRunDate: DateTime of the most recent job execution
+        - LastRunOutcome: Outcome of the last execution (Succeeded, Failed, Cancelled, etc.)
+        - DateCreated: DateTime when the job was created
+        - HasSchedule: Boolean indicating if the job has a schedule assigned
+        - OperatorToEmail: Email operator name for notifications
+        - CreateDate: DateTime when the job was created (aliased from DateCreated)
+
+        Additional properties available (from SMO Job object):
+        - JobId: Unique identifier for the job (GUID)
+        - IsEnabled: Boolean indicating if the job is enabled and can be scheduled
+        - JobType: Type of job (Local or MultiServer)
+        - Category: Job category name
+        - CategoryID: Numeric category identifier
+        - Owner: Job owner name
+        - OwnerLoginName: Login name of the job owner
+        - Description: Job description text
+        - StartStepID: ID of the first step to execute
+        - EventLogLevel: Event log level for job events (OnSuccess, OnFailure, Always, Never)
+        - EmailLevel: Email notification level (OnSuccess, OnFailure, OnCompletion, Never)
+        - NetsendLevel: NetSend notification level (OnSuccess, OnFailure, OnCompletion, Never)
+        - PageLevel: Pager notification level (OnSuccess, OnFailure, OnCompletion, Never)
+        - OperatorToNetSend: Operator name for NetSend notifications
+        - OperatorToPage: Operator name for pager notifications
+        - LastRunDuration: Duration of last run in seconds
+        - NextRunDate: DateTime when the job is scheduled to run next
+        - DateModified: DateTime when the job was last modified
+        - HasSchedule: Boolean indicating if the job has a schedule
+        - IsRunnable: Boolean indicating if the job can be executed
+        - Parent: Reference to parent JobServer SMO object
+
+        All properties from the base SMO Job object are accessible even though only default properties are displayed without using Select-Object *.
+
     .NOTES
         Tags: Agent, Job, Lookup
         Author: Stephen Bennett, sqlnotesfromtheunderground.wordpress.com

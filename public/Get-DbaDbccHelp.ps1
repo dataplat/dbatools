@@ -34,6 +34,16 @@ function Get-DbaDbccHelp {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance containing the DBCC help information.
+
+        Properties:
+        - Operation: The DBCC command name specified in the Statement parameter (e.g., "CHECKDB", "SHRINKFILE")
+        - Cmd: The complete DBCC command executed against SQL Server (e.g., "DBCC HELP(CHECKDB)")
+        - Output: The raw output from the DBCC HELP command, containing the syntax help and parameter information. This is typically a DataTable or collection of results rows with parameter details.
+
     .NOTES
         Tags: DBCC
         Author: Patrick Flynn (@sqllensman)

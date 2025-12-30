@@ -69,6 +69,31 @@ function Find-DbaDbGrowthEvent {
     .LINK
         https://dbatools.io/Find-DbaDbGrowthEvent
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database auto-growth or auto-shrink event found in the SQL Server Default Trace. The specific events returned depend on the -EventType and -FileType parameters.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name where the SQL Server instance is running
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - EventClass: The trace event class (92 = Data File Auto Grow, 93 = Log File Auto Grow, 94 = Data File Auto Shrink, 95 = Log File Auto Shrink)
+        - DatabaseName: The name of the database that experienced the growth/shrink event
+        - Filename: The path and name of the database file that was resized
+        - Duration: The duration of the event in seconds (milliseconds converted to seconds)
+        - StartTime: The date and time when the event started (UTC by default, local time if -UseLocalTime is specified)
+        - EndTime: The date and time when the event ended (UTC by default, local time if -UseLocalTime is specified)
+        - ChangeInSize: The size change during the event in megabytes (MB)
+        - ApplicationName: The application that triggered the growth event
+        - HostName: The host name of the client that triggered the event
+
+        Additional properties available (accessible with Select-Object *):
+        - DatabaseId: The numeric database identifier from sys.databases
+        - SessionLoginName: The SQL login name of the session that triggered the event
+        - SPID: The SQL Server session ID (SPID) of the process that caused the event
+        - OrderRank: Internal ranking value used for trace file rotation ordering
+
     .EXAMPLE
         PS C:\> Find-DbaDbGrowthEvent -SqlInstance localhost
 

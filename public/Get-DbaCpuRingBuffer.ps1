@@ -34,6 +34,21 @@ function Get-DbaCpuRingBuffer {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per minute of CPU ring buffer data retrieved from the SQL Server instance.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - RecordId: The unique record identifier from the ring buffer entry
+        - EventTime: DateTime of the CPU sample (in local server time)
+        - SQLProcessUtilization: Percentage of CPU used by the SQL Server process (0-100)
+        - SystemIdle: Percentage of CPU that is idle (0-100)
+        - OtherProcessUtilization: Percentage of CPU used by other processes (0-100), calculated as 100 - SystemIdle - SQLProcessUtilization
+
     .NOTES
         Tags: Diagnostic, Buffer, CPU
         Author: Patrick Flynn (@sqllensman)

@@ -48,6 +48,38 @@ function Get-DbaCpuUsage {
     .LINK
         https://dbatools.io/Get-DbaCpuUsage
 
+    .OUTPUTS
+        Win32_PerfFormattedData_PerfProc_Thread (with added properties)
+
+        Returns one object per Windows thread of SQL Server processes with CPU usage at or above the specified threshold.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The thread identifier in format 'ProcessName_ProcessID_ThreadID'
+        - ContextSwitchesPersec: Number of context switches per second for this thread
+        - ElapsedTime: Time in seconds since the thread was created
+        - IDProcess: Windows process ID (PID) of the SQL Server process
+        - Spid: SQL Server session ID (SPID) associated with this thread
+        - PercentPrivilegedTime: Percentage of time thread spent in privileged mode
+        - PercentProcessorTime: Percentage of total processor time consumed by this thread
+        - PercentUserTime: Percentage of time thread spent in user mode
+        - PriorityBase: The base priority of the thread
+        - PriorityCurrent: The current priority of the thread
+        - StartAddress: Memory address where the thread code begins execution
+        - ThreadStateValue: Human-readable description of the thread state (e.g., 'Running', 'Waiting')
+        - ThreadWaitReasonValue: Human-readable description of the wait reason if thread is waiting
+        - Process: Associated SQL Server process object from Get-DbaProcess
+        - Query: The last T-SQL query executed by the process
+
+        Additional properties available (from Win32_PerfFormattedData_PerfProc_Thread):
+        - IDThread: Windows thread ID
+        - ThreadState: Numeric value representing thread state (0=Initialized, 1=Ready, 2=Running, 3=Standby, 4=Terminated, 5=Waiting, 6=Transition, 7=Unknown)
+        - ThreadWaitReason: Numeric value representing the reason the thread is waiting
+
+        All properties from the Win32_PerfFormattedData_PerfProc_Thread WMI class are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaCpuUsage -SqlInstance sql2017
 

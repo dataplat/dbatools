@@ -66,6 +66,31 @@ function New-DbaDbMailAccount {
     .LINK
         https://dbatools.io/New-DbaDbMailAccount
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.MailAccount
+
+        Returns a newly created MailAccount object from the specified SQL Server instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: Unique identifier for the mail account
+        - Name: Name of the mail account
+        - DisplayName: Friendly name that appears in the 'From' field of emails
+        - Description: Description of the account's purpose
+        - EmailAddress: Sender email address for outgoing messages
+        - ReplyToAddress: Alternate email address for replies
+        - IsBusyAccount: Boolean indicating if the account is currently processing emails
+        - MailServers: Collection of mail servers associated with this account
+
+        Additional properties available (from SMO MailAccount object):
+        - Parent: Reference to the parent SqlMail object
+        - State: Current state of the object (Existing, Creating, Pending, Dropping, etc.)
+        - Urn: The Uniform Resource Name of the mail account object
+
+        All properties from the base SMO object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Account 'The DBA Team' -EmailAddress admin@ad.local -MailServer smtp.ad.local
 

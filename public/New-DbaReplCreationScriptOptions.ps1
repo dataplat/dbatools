@@ -22,6 +22,31 @@ function New-DbaReplCreationScriptOptions {
         Use this when you need precise control over which schema elements are replicated and want to avoid the default behavior.
         Without this switch, includes PrimaryObject, CustomProcedures, Identity, KeepTimestamp, ClusteredIndexes, DriPrimaryKey, Collation, DriUniqueKeys, and constraint replication settings.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.CreationScriptOptions
+
+        Returns a CreationScriptOptions enum instance that encapsulates the selected replication schema options.
+        This object can be passed to Add-DbaReplArticle's CreationScriptOptions parameter to control which schema elements are replicated to subscribers.
+
+        The object represents a combination of zero or more schema option flags, including:
+        - PrimaryObject: The table structure
+        - CustomProcedures: Custom stored procedures
+        - Identity: Identity column properties
+        - KeepTimestamp: Timestamp columns
+        - ClusteredIndexes: Clustered indexes
+        - NonClusteredIndexes: Non-clustered indexes
+        - DriPrimaryKey: Primary key constraints
+        - DriForeignKeys: Foreign key constraints
+        - DriUniqueKeys: Unique key constraints
+        - CheckConstraints: Check constraints
+        - Collation: Column-level collation
+        - MarkReplicatedCheckConstraintsAsNotForReplication: Check constraints marked as not for replication
+        - MarkReplicatedForeignKeyConstraintsAsNotForReplication: Foreign key constraints marked as not for replication
+        - Schema: Database schema association
+        - And 27+ additional replication schema options
+
+        See https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.replication.creationscriptoptions for the complete list of available options.
+
     .NOTES
         Tags: repl, Replication, Script
         Author: Jess Pomfret (@jpomfret), jesspomfret.com

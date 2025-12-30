@@ -53,6 +53,11 @@ function Remove-DbaReplSubscription {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .OUTPUTS
+        None
+
+        This command does not return any objects to the pipeline. It performs the subscription removal operation and displays informational messages via Write-Message and Write-Warning.
+
     .NOTES
         Tags: repl, Replication
         Author: Jess Pomfret (@jpomfret), jesspomfret.com

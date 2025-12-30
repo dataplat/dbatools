@@ -34,6 +34,22 @@ function Get-DbaDbDetachedFileInfo {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per detached MDF file analyzed.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance used to read the file
+        - InstanceName: The SQL Server instance name used to read the file
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The original database name stored in the detached MDF file
+        - Version: Human-readable SQL Server version name (e.g., "SQL Server 2019", "SQL Server 2016")
+        - ExactVersion: The raw internal version number from the MDF file header
+        - Collation: The database collation name, or the collation ID if the name cannot be resolved
+        - DataFiles: System.Collections.Specialized.StringCollection containing the paths of all data files that belonged to this database
+        - LogFiles: System.Collections.Specialized.StringCollection containing the paths of all transaction log files that belonged to this database
+
     .NOTES
         Tags: Database, Detach
         Author: Chrissy LeMaire (@cl), netnerds.net

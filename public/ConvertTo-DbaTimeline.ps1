@@ -35,6 +35,19 @@ function ConvertTo-DbaTimeline {
 
         Dependency: ConvertTo-JsDate, Convert-DbaTimelineStatusColor
 
+    .OUTPUTS
+        System.String
+
+        Returns HTML code as an array of three string objects that together form a complete, self-contained HTML document with an interactive Google Charts timeline visualization. The three strings are: header/scripts (HTML head section), body rows (timeline data), and footer (HTML closing tags and chart rendering code).
+
+        The output can be piped directly to Out-File to create an HTML file, or to Out-String to view as text, or captured in a variable for further processing. When saved to a file with Out-File and opened in a web browser, renders an interactive timeline with:
+        - Horizontal timeline bars showing execution duration
+        - Color-coded status indicators (Success, Failure, etc. based on input data)
+        - Hover tooltips displaying item name, status, start time, end time, and duration
+        - Configurable row labels (disabled with -ExcludeRowLabel parameter)
+        - Responsive sizing that adjusts to content
+        - Multi-instance support with automatic instance labeling
+
     .LINK
         https://dbatools.io/ConvertTo-DbaTimeline
 

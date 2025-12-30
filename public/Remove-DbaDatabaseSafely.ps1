@@ -80,6 +80,22 @@ function Remove-DbaDatabaseSafely {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database that completes the removal workflow (backup, restore job creation, drop, verify restore, and cleanup).
+
+        Properties:
+        - SqlInstance: The source SQL Server instance name where the original database was located
+        - DatabaseName: The name of the database that was removed
+        - JobName: The name of the SQL Agent restore job that was created for backup verification testing
+        - TestingInstance: The SQL Server instance where the restore testing job was created and executed
+        - BackupFolder: The file path where the final backup of the database was stored before deletion
+
+        No output is returned if the operation encounters errors during validation, backup, or restore phases (unless -EnableException is used), or if the command is run in WhatIf mode.
+
+        Each database processed generates one output object, containing information about the location of its verified backup and the testing job details for future reference or restore operations.
+
     .NOTES
         Tags: Database, Delete
         Author: Rob Sewell (@SQLDBAWithBeard), sqldbawithabeard.com

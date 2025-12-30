@@ -40,6 +40,17 @@ function Get-DbaRandomizedType {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per unique Type-SubType combination from the available randomizer types and subtypes.
+
+        Properties:
+        - Type: The main data category for generating test data (e.g., Address, Commerce, Person, Finance, Internet)
+        - SubType: The specific data pattern within the main category (e.g., FirstName, LastName, ZipCode, CreditCardNumber)
+
+        Results are always sorted by Type and SubType, with duplicate combinations removed using -Unique. Filters specified by -RandomizedType, -RandomizedSubType, or -Pattern parameters only affect which combinations are returned, not the structure of the output objects.
+
     .LINK
         https://dbatools.io/Get-DbaRandomizedType
 

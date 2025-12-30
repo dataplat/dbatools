@@ -33,6 +33,36 @@ function Get-DbaMemoryCondition {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per memory pressure notification record found in the SQL Server resource monitor ring buffers. Each object represents a single memory condition event with complete memory utilization metrics at that point in time.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Runtime: DateTime when the query was executed in the instance
+        - NotificationTime: Calculated DateTime of when the memory pressure event occurred
+        - NotificationType: Type of memory notification (e.g., Low Physical Memory, Low Page File, Low Virtual Address Space)
+        - MemoryUtilizationPercent: Current memory utilization as a percentage (0-100)
+        - TotalPhysicalMemory: Total physical RAM in bytes; dbasize object convertible to KB, MB, GB, TB
+        - AvailablePhysicalMemory: Free physical RAM in bytes; dbasize object convertible to KB, MB, GB, TB
+        - TotalPageFile: Total page file size in bytes; dbasize object convertible to KB, MB, GB, TB
+        - AvailablePageFile: Free page file size in bytes; dbasize object convertible to KB, MB, GB, TB
+        - TotalVirtualAddressSpace: Total virtual address space in bytes; dbasize object convertible to KB, MB, GB, TB
+        - AvailableVirtualAddressSpace: Free virtual address space in bytes; dbasize object convertible to KB, MB, GB, TB
+        - NodeId: NUMA node identifier (for systems with multiple memory nodes)
+        - SQLReservedMemory: SQL Server reserved memory in bytes; dbasize object convertible to KB, MB, GB, TB
+        - SQLCommittedMemory: SQL Server committed memory in bytes; dbasize object convertible to KB, MB, GB, TB
+        - RecordId: Unique identifier for this record in the ring buffer
+        - Type: Record type from the resource monitor ring buffer
+        - Indicators: Memory pressure indicators value (bit flags representing specific pressure conditions)
+        - RecordTime: Ring buffer record timestamp in milliseconds (raw tick count)
+        - CurrentTime: Current system time in milliseconds (sys.ms_ticks, for reference and time-based calculations)
+
+        Size properties return dbasize objects that automatically format as human-readable units (Bytes, KB, MB, GB, TB) when displayed or accessed via properties like .Kilobytes, .Megabytes, .Gigabytes, .Terabytes.
+
     .LINK
         https://dbatools.io/Get-DbaMemoryCondition
 

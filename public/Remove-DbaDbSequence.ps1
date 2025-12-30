@@ -48,6 +48,21 @@ function Remove-DbaDbSequence {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per sequence removed, with the following properties:
+
+        - ComputerName: The name of the computer where the sequence was dropped
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the sequence
+        - Sequence: The fully qualified sequence name in format schema.name
+        - SequenceName: The name of the sequence without schema qualification
+        - SequenceSchema: The schema name containing the sequence
+        - Status: The result of the drop operation (either "Dropped" on success or the error message on failure)
+        - IsRemoved: Boolean indicating if the sequence was successfully dropped ($true) or failed ($false)
+
     .NOTES
         Tags: Data, Sequence, Table
         Author: Adam Lancaster, github.com/lancasteradam

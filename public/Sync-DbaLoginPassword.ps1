@@ -69,6 +69,18 @@ function Sync-DbaLoginPassword {
     .LINK
         https://dbatools.io/Sync-DbaLoginPassword
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per login password synchronized, whether successful or failed.
+
+        Properties:
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Login: The name of the login whose password was synced
+        - Status: The result of the operation - either "Success" or "Failed"
+        - Notes: Additional details about the operation; null for successful syncs, error message for failures
+
     .EXAMPLE
         PS C:\> Sync-DbaLoginPassword -Source sql2016 -Destination sql2016ag1, sql2016ag2
 

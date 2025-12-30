@@ -53,6 +53,23 @@ function Add-DbaPfDataCollectorCounter {
     .LINK
         https://dbatools.io/Add-DbaPfDataCollectorCounter
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per counter added to the Data Collector Set.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the Data Collector Set is configured
+        - DataCollectorSet: The name of the parent Data Collector Set containing the collector
+        - DataCollector: The name of the specific Data Collector within the Collector Set
+        - Name: The full path of the performance counter that was added
+        - FileName: The output file name where performance counter data will be stored
+
+        Additional properties available:
+        - DataCollectorSetXml: The XML configuration of the Data Collector Set (typically excluded from default view)
+        - Credential: The credentials used to connect to the target computer (typically excluded from default view)
+        - CounterObject: Internal flag indicating this is a counter object (typically excluded from default view)
+
     .EXAMPLE
         PS C:\> Add-DbaPfDataCollectorCounter -ComputerName sql2017 -CollectorSet 'System Correlation' -Collector DataCollector01  -Counter '\LogicalDisk(*)\Avg. Disk Queue Length'
 

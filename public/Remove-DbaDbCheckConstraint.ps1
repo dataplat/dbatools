@@ -48,6 +48,20 @@ function Remove-DbaDbCheckConstraint {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per check constraint processed, with details about the removal operation result.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database where the check constraint was located
+        - Name: The name of the check constraint
+        - Status: The result of the removal operation - either "Dropped" if successful, or an error message if the operation failed
+        - IsRemoved: Boolean indicating whether the check constraint was successfully removed (true) or failed (false)
+
     .NOTES
         Tags: Check, Constraint, Database
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

@@ -94,6 +94,11 @@ function Write-DbaDbTableData {
         Creates string columns with lengths based on source data MaxLength property instead of defaulting to NVARCHAR(MAX).
         Improves storage efficiency and query performance when AutoCreateTable is used, but requires source data to provide accurate length information.
 
+    .OUTPUTS
+        None
+
+        This command does not return any objects to the pipeline. It is an action command that performs bulk insert operations to load data into SQL Server tables. Progress information is displayed via Write-Progress during the import operation, and verbose messages are written to the verbose stream for troubleshooting.
+
     .NOTES
         Tags: Table, Data, Insert
         Author: Chrissy LeMaire (@cl), netnerds.net

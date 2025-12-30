@@ -54,6 +54,32 @@ function Select-DbaBackupInformation {
     .LINK
         https://dbatools.io/Select-DbaBackupInformation
 
+    .OUTPUTS
+        Backup objects from Get-DbaBackupInformation
+
+        Returns the filtered backup history objects from the input BackupHistory parameter that represent the minimum backup chain needed to restore the database to the specified RestoreTime. Each object includes the original properties from Get-DbaBackupInformation plus an added RestoreTime property.
+
+        The returned objects represent:
+        - One full or differential backup (the most recent full backup before RestoreTime, or the most recent differential backup)
+        - Zero or more transaction log backups (the sequence of log backups from the most recent full/diff to the RestoreTime)
+
+        Output properties vary based on the input backup history objects, but typically include:
+        - Database: The database name
+        - Type: Backup type (Full, Differential, Log, Transaction Log, etc.)
+        - BackupSetID: Unique identifier for the backup set
+        - Start: DateTime when the backup started
+        - End: DateTime when the backup completed
+        - FirstLsn: First log sequence number in the backup
+        - LastLsn: Last log sequence number in the backup
+        - CheckpointLsn: Checkpoint LSN (for full backups)
+        - DatabaseBackupLsn: LSN of the most recent full backup (for diff/log backups)
+        - FullName: File path(s) to the backup file(s)
+        - RestoreTime: The target restore time (added by this function)
+
+        When -IgnoreLogs is specified, transaction log backups are excluded from the output.
+        When -IgnoreDiffs is specified, differential backups are excluded from the output.
+        When -ContinuePoints is specified with an interrupted restore, LSN-based filtering ensures continuity.
+
     .EXAMPLE
         PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\server1\backups$
         PS C:\> $FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1)

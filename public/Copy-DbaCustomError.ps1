@@ -66,6 +66,20 @@ function Copy-DbaCustomError {
     .LINK
         https://dbatools.io/Copy-DbaCustomError
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per custom error processed (whether skipped, failed, or successfully copied). Each object represents the migration status of a single custom error ID and language combination.
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: Timestamp when the operation occurred
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The custom error ID being migrated
+        - Type: The type of object migrated (always "Custom error")
+        - Status: The outcome of the operation (Successful, Skipped, or Failed)
+        - Notes: Additional details about the operation (error message if failed, reason if skipped)
+
     .EXAMPLE
         PS C:\> Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
 

@@ -51,6 +51,18 @@ function Remove-DbaDbSnapshot {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per snapshot dropped, with the following properties:
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the snapshot was dropped
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the snapshot that was dropped (displayed as Name, stored as Database)
+        - Status: The result of the drop operation (either "Dropped" on success or the error message on failure)
+
     .NOTES
         Tags: Snapshot, Database
         Author: Simone Bizzotto (@niphold)

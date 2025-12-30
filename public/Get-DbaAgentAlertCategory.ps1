@@ -25,6 +25,26 @@ function Get-DbaAgentAlertCategory {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.AlertCategory
+
+        Returns one AlertCategory object per alert category on the SQL Server instance. Custom properties are added to provide connection context and alert count information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the alert category
+        - ID: The unique identifier of the alert category
+        - AlertCount: The number of alerts currently assigned to this category (integer)
+
+        Additional properties available (from SMO AlertCategory object):
+        - Parent: Reference to the parent JobServer object
+        - Urn: The Unified Resource Name that uniquely identifies the alert category
+        - State: The state of the object (Existing, Creating, Dropping, Pending)
+
+        All properties from the base SMO AlertCategory object are accessible by using Select-Object *.
+
     .NOTES
         Tags: Agent, Alert, AlertCategory
         Author: Patrick Flynn (@sqllensman)

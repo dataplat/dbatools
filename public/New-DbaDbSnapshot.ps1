@@ -80,6 +80,33 @@ function New-DbaDbSnapshot {
     .LINK
         https://dbatools.io/New-DbaDbSnapshot
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one Database object for each snapshot successfully created. The returned object represents the newly created database snapshot with its configuration and usage properties.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the database snapshot
+        - SnapshotOf: The name of the base database from which this snapshot was created (alias for DatabaseSnapshotBaseName)
+        - CreateDate: DateTime when the snapshot was created
+        - DiskUsage: The amount of disk space consumed by the snapshot (formatted as dbasize object: KB, MB, GB, TB, etc.)
+
+        Additional properties available (from SMO Database object):
+        - DatabaseSnapshotBaseName: The name of the source database
+        - IsDatabaseSnapshot: Boolean indicating if the database is a snapshot (always $true for snapshots)
+        - SnapshotIsolationState: Snapshot isolation setting
+        - DatabaseGuid: Unique identifier for the database
+        - Owner: Database owner login name
+        - Compatibility: Database compatibility level
+        - IsAccessible: Boolean indicating if the snapshot is accessible
+        - Status: Current status of the snapshot database
+        - Collation: The database collation
+
+        All properties from the base SMO Database object are accessible via Select-Object * even though only default properties are displayed without using the -Property parameter.
+
     .EXAMPLE
         PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 

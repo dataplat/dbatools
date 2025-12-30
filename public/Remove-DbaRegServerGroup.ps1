@@ -43,6 +43,24 @@ function Remove-DbaRegServerGroup {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per server group removed.
+
+        For server groups on Central Management Server (CMS), default display properties are:
+        - ComputerName: The computer name of the CMS instance
+        - InstanceName: The instance name of the CMS
+        - SqlInstance: The full instance name of the CMS (computer\instance)
+        - Name: The name of the server group that was removed
+        - Status: "Dropped" if successful
+
+        For local registered server groups, default display properties are:
+        - Name: The name of the server group that was removed
+        - Status: "Dropped" if successful
+
+        Note: The PSCustomObject includes all properties listed above regardless of display mode. Use Select-Object * to see all properties when needed.
+
     .LINK
         https://dbatools.io/Remove-DbaRegServerGroup
 

@@ -51,6 +51,20 @@ function Remove-DbaDbView {
     .LINK
         https://dbatools.io/Remove-DbaDbView
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per view removed, with the following properties:
+        - ComputerName: The computer name of the SQL Server instance where the view was removed
+        - InstanceName: The SQL Server instance name where the view was removed
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name from which the view was removed
+        - View: The schema-qualified view name in the format 'schema.viewname' (e.g., 'dbo.MyView')
+        - ViewName: The view name only (without schema prefix)
+        - ViewSchema: The schema name containing the view
+        - Status: Result of the removal operation - "Dropped" on success or the error message on failure
+        - IsRemoved: Boolean indicating whether the view was successfully removed ($true) or failed ($false)
+
     .EXAMPLE
         PS C:\> Remove-DbaDbView -SqlInstance localhost, sql2016 -Database db1, db2 -View view1, view2, view3
 

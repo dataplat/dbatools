@@ -76,6 +76,40 @@ function Get-DbaLogin {
     .LINK
         https://dbatools.io/Get-DbaLogin
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Login
+
+        Returns one Login object per login account found on the specified SQL Server instance(s). Each login object includes connection context properties and security status information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The login account name
+        - LoginType: The type of login (SqlLogin, WindowsUser, or WindowsGroup)
+        - CreateDate: DateTime when the login was created
+        - LastLogin: DateTime of the most recent connection (null if never connected or SQL Server 2000)
+        - HasAccess: Boolean indicating if the login has permission to connect
+        - IsLocked: Boolean indicating if the login is currently locked due to failed authentication attempts
+        - IsDisabled: Boolean indicating if the login is disabled
+        - MustChangePassword: Boolean indicating if the login must change password on next connection
+
+        When -Detailed switch is specified, additional properties are included:
+        - BadPasswordCount: Number of failed login attempts since last successful login
+        - BadPasswordTime: DateTime of the most recent failed login attempt
+        - DaysUntilExpiration: Number of days until the login password expires (SQL Server only)
+        - HistoryLength: Number of previous passwords tracked in history (SQL Server only)
+        - IsMustChange: Boolean from LOGINPROPERTY indicating password change requirement
+        - LockoutTime: DateTime when the login was locked due to authentication failures
+        - PasswordHash: Hexadecimal hash of the password (SQL Server only, sensitive data)
+        - PasswordLastSetTime: DateTime when the password was last set (SQL Server only)
+
+        Additional properties always available:
+        - SidString: Hexadecimal string representation of the login's Security Identifier (SID)
+
+        All properties from the base SMO Login object are accessible using Select-Object *.
+
+
     .EXAMPLE
         PS C:\> Get-DbaLogin -SqlInstance sql2016
 

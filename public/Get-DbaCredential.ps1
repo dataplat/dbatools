@@ -51,6 +51,31 @@ function Get-DbaCredential {
     .LINK
         https://dbatools.io/Get-DbaCredential
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Credential
+
+        Returns one Credential object per credential found on the target SQL Server instance(s). This object represents SQL Server credentials stored in the database that are used for external resource access and authentication.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: Unique identifier for the credential within SQL Server
+        - Name: The name of the SQL Server credential
+        - Identity: The Windows identity, login, or external identity the credential uses (e.g., domain\account or Azure URI)
+        - MappedClassType: The credential class type (None or CryptographicProvider for EKM)
+        - ProviderName: The name of the cryptographic provider (if MappedClassType is CryptographicProvider)
+
+        Additional properties available (from SMO Credential object):
+        - CreateDate: DateTime when the credential was created
+        - DateLastModified: DateTime when the credential was last modified
+        - Parent: The Server object containing this credential
+        - Properties: Collection of extended properties assigned to the credential
+        - Urn: Uniform Resource Name identifier for the credential
+        - State: The current state of the SMO object
+
+        All properties from the base SMO Credential object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaCredential -SqlInstance localhost
 

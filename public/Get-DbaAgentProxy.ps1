@@ -45,6 +45,30 @@ function Get-DbaAgentProxy {
     .LINK
         https://dbatools.io/Get-DbaAgentProxy
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount
+
+        Returns one ProxyAccount object per proxy account found on the target instance(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - InstanceName: The SQL Server instance name (service name)
+        - Name: The name of the proxy account
+        - ID: Unique identifier for the proxy account
+        - CredentialID: ID of the credential associated with this proxy
+        - CredentialIdentity: The Windows account identity of the associated credential
+        - CredentialName: The name of the credential used by this proxy
+        - Description: Description text for the proxy account
+        - IsEnabled: Boolean indicating if the proxy is enabled and available for use
+
+        Additional properties available (from SMO ProxyAccount object):
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - Urn: Uniform Resource Name for the SQL Server object
+        - Parent: Reference to the parent JobServer object
+
+        All properties from the base SMO object are accessible via Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaAgentProxy -SqlInstance ServerA,ServerB\instanceB
 

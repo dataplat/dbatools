@@ -76,6 +76,45 @@ function Format-DbaBackupInformation {
     .LINK
         https://dbatools.io/Format-DbaBackupInformation
 
+    .OUTPUTS
+        Dataplat.Dbatools.Database.BackupHistory
+
+        Returns the modified backup history objects with updated metadata for restore operations. The same number of objects that were passed in are returned, with any requested modifications applied.
+
+        Default properties (from input backup history object):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name (modified if -ReplaceDatabaseName or -DatabaseNamePrefix was used)
+        - UserName: The user who performed the backup
+        - Start: DateTime when the backup started
+        - End: DateTime when the backup completed
+        - Duration: TimeSpan of the backup operation
+        - Path: Array of backup file paths (modified if -RebaseBackupFolder was used)
+        - FileList: Array of file objects containing Type, LogicalName, PhysicalName, and Size (modified if -DataFileDirectory, -LogFileDirectory, -DestinationFileStreamDirectory, -DatabaseFilePrefix, -DatabaseFileSuffix, -ReplaceDbNameInFile, or -FileMapping was used)
+        - TotalSize: Total size of the backup in bytes
+        - CompressedBackupSize: Size of compressed backup in bytes
+        - Type: Backup type (Database, Database Differential, or Transaction Log)
+        - BackupSetId: Unique identifier for the backup set (GUID)
+        - DeviceType: Type of backup device (typically Disk)
+        - FullName: Array of full paths to backup files (modified if -RebaseBackupFolder was used)
+        - Position: Position of the backup within the device
+        - FirstLsn: First Log Sequence Number in this backup
+        - DatabaseBackupLsn: Log Sequence Number of the database backup
+        - CheckpointLSN: Checkpoint Log Sequence Number
+        - LastLsn: Last Log Sequence Number in this backup
+        - SoftwareVersionMajor: Major version of SQL Server that created the backup
+        - RecoveryModel: Database recovery model at time of backup
+        - IsCopyOnly: Boolean indicating if this is a copy-only backup
+
+        Additional properties added by this function:
+        - OriginalDatabase: String containing the original database name before any replacements or prefixes
+        - OriginalFileList: Object array containing the original FileList before any path modifications
+        - OriginalFullName: String array containing the original backup file paths before rebasing
+        - IsVerified: Boolean indicating if the backup has been verified (initialized to $False)
+
+        All properties from the input backup history objects are preserved and accessible, with selective properties modified based on the parameters specified.
+
     .EXAMPLE
         PS C:\> $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb -ReplaceDbNameInFile
 

@@ -74,6 +74,31 @@ function New-DbaDbSynonym {
     .LINK
         https://dbatools.io/New-DbaDbSynonym
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Synonym
+
+        Returns one Synonym object for each synonym created. The object includes added properties from the parent SQL Server and database objects for connection context.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the synonym (ParentName)
+        - Name: The name of the synonym
+        - Schema: The schema where the synonym is created (default: dbo)
+        - BaseServer: The linked server name for cross-server synonyms, or null for same-server synonyms
+        - BaseDatabase: The target database for the synonym reference, or null if referencing same database
+        - BaseSchema: The target schema for the synonym reference
+        - BaseObject: The name of the database object the synonym references
+
+        Additional properties available (from SMO Synonym object):
+        - CreateDate: DateTime when the synonym was created
+        - Urn: The Uniform Resource Name of the synonym object
+        - State: The current state of the SMO object (Existing, Creating, etc.)
+        - Parent: Reference to the parent database object
+
+        All properties from the base SMO Synonym object are accessible using Select-Object * even though only the default properties are displayed by default.
+
         .EXAMPLE
         PS C:\> New-DbaDbSynonym -SqlInstance sql2017a -Database db1 -Synonym synObj1 -BaseObject Obj1
 

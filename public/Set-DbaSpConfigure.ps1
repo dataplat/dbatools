@@ -52,6 +52,21 @@ function Set-DbaSpConfigure {
     .LINK
         https://dbatools.io/Set-DbaSpConfigure
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per configuration setting successfully modified. Each object contains the change details including the configuration name and before/after values.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ConfigName: Name of the configuration setting that was modified
+        - PreviousValue: The previous configured value before the change (integer)
+        - NewValue: The new value that was set (integer)
+
+        If a configuration change is not dynamic, a warning message is issued indicating that SQL Server must be restarted for the new value to take effect.
+
     .EXAMPLE
         PS C:\> Set-DbaSpConfigure -SqlInstance localhost -Name ScanForStartupProcedures -Value 1
 

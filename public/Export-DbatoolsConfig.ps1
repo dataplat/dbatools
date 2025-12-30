@@ -47,6 +47,11 @@ function Export-DbatoolsConfig {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This function does not output any objects to the pipeline. It writes configuration data to JSON files specified by the OutPath parameter or to predefined system locations when using the ModuleName parameter. File write operations are performed silently without pipeline output.
+
     .NOTES
         Tags: Module
         Author: Friedrich Weinmann (@FredWeinmann)

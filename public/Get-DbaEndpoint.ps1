@@ -40,6 +40,35 @@ function Get-DbaEndpoint {
     .LINK
         https://dbatools.io/Get-DbaEndpoint
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Endpoint
+
+        Returns one Endpoint object per endpoint found on the SQL Server instance, with custom properties added for connection details and network information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The fully qualified SQL Server instance name (Computer\Instance)
+        - ID: The unique identifier of the endpoint
+        - Name: The name of the endpoint
+        - IPAddress: The IP address the endpoint listens on (when TCP is configured; otherwise null)
+        - Port: The TCP port the endpoint listens on (when TCP is configured; otherwise null)
+        - EndpointState: The current state of the endpoint (Started or Stopped)
+        - EndpointType: The type of endpoint (DatabaseMirroring, ServiceBroker, Soap, or TSql)
+        - Owner: The SQL Server login that owns the endpoint
+        - IsAdminEndpoint: Boolean indicating if this is an administrative endpoint
+        - Fqdn: Fully qualified domain name and port in connection string format (TCP://hostname:port) for endpoints with TCP listeners; null for endpoints without TCP configuration
+        - IsSystemObject: Boolean indicating if this is a system-created endpoint
+
+        Additional properties available (from SMO Endpoint object):
+        - CreateDate: The date and time when the endpoint was created
+        - DateLastModified: The date and time when the endpoint was last modified
+        - Payload: Protocol-specific configuration details for the endpoint
+        - Protocol: Protocol configuration details (includes Tcp, NamedPipes, SharedMemory configuration objects)
+        - ProtocolName: The name of the protocol used
+
+        Note: The IPAddress, Port, and Fqdn properties are custom-added by this function to enhance output. When an endpoint has TCP listeners configured, these properties are populated; otherwise, they are null or empty. The Fqdn property is automatically resolved with DNS lookups to provide a fully qualified domain name for connectivity testing.
+
     .EXAMPLE
         PS C:\> Get-DbaEndpoint -SqlInstance localhost
 

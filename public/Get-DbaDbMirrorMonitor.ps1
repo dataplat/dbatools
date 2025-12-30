@@ -53,6 +53,31 @@ function Get-DbaDbMirrorMonitor {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per monitoring record retrieved from the database mirroring monitor table. Multiple records may be returned depending on the -LimitResults parameter value.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: Name of the mirrored database
+        - Role: The role of the server instance - Principal or Mirror
+        - MirroringState: Current mirroring state (Synchronizing, Synchronized, Suspended, Disconnected, etc.)
+        - WitnessStatus: Status of the witness server (Connected, Disconnected, Quorum Lost, etc.)
+        - LogGenerationRate: Rate at which transaction log is being generated on the principal (KB/sec)
+        - UnsentLog: Amount of log not yet sent to the mirror (KB)
+        - SendRate: Rate at which log is being sent to the mirror (KB/sec)
+        - UnrestoredLog: Amount of log not yet restored on the mirror (KB)
+        - RecoveryRate: Rate at which log is being restored on the mirror (KB/sec)
+        - TransactionDelay: Delay caused by database mirroring for committed transactions (milliseconds)
+        - TransactionsPerSecond: Number of transactions per second being processed
+        - AverageDelay: Average transaction delay (milliseconds)
+        - TimeRecorded: DateTime when this monitoring record was recorded
+        - TimeBehind: Amount the mirror lags behind the principal (milliseconds)
+        - LocalTime: Local time on the server when the record was generated
+
     .NOTES
         Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net

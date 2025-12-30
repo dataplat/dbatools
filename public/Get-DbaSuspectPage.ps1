@@ -36,6 +36,22 @@ function Get-DbaSuspectPage {
     .LINK
         https://dbatools.io/Get-DbaSuspectPage
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per suspect page record found in the msdb.dbo.suspect_pages table. If no suspect pages exist, nothing is returned.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database containing the suspect page
+        - FileId: The file ID where the corrupt page is located (integer)
+        - PageId: The page ID of the suspect page (integer)
+        - EventType: The type of corruption event (823 or 824 I/O error, Bad Checksum, Torn Page, Restored, Repaired (DBCC), or Deallocated (DBCC))
+        - ErrorCount: The number of times this page has been encountered as suspect (integer)
+        - LastUpdateDate: The date and time when the page was last detected as suspect (datetime)
+
     .EXAMPLE
         PS C:\> Get-DbaSuspectPage -SqlInstance sql2016
 

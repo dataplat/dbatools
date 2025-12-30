@@ -46,6 +46,19 @@ function Start-DbaPfDataCollectorSet {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one Performance Monitor Data Collector Set object for each collector set that was successfully started.
+
+        Properties:
+        - ComputerName: The name of the computer where the Data Collector Set is located
+        - State: The current state of the Data Collector Set (Running, Stopped, etc.)
+        - Name: The name of the Data Collector Set
+        - DataCollectorSetObject: The underlying Windows Performance Monitor Data Collector Set COM object
+
+        Returns nothing if no collector sets are found matching the specified parameters, if they are already running, if they are disabled, or if the -WhatIf parameter is used.
+
     .LINK
         https://dbatools.io/Start-DbaPfDataCollectorSet
 

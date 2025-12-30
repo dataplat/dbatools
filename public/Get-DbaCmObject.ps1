@@ -57,6 +57,21 @@ function Get-DbaCmObject {
     .LINK
         https://dbatools.io/Get-DbaCmObject
 
+    .OUTPUTS
+        System.Management.ManagementObject or Microsoft.Management.Infrastructure.CimInstance
+
+        Returns WMI or CIM objects matching the specified class or query. The exact type and properties depend on the WMI/CIM class being queried (e.g., Win32_OperatingSystem, Win32_ComputerSystem, Win32_Service, etc.).
+
+        The function automatically uses the most efficient connection method available on the target system (CIM over WinRM, CIM over DCOM, WMI, or PowerShell Remoting with WMI fallback) and returns the native WMI/CIM object with all properties exposed by that class.
+
+        Common examples of returned object properties (varies by class):
+        - For Win32_OperatingSystem: Name, Caption, Version, BuildNumber, OSArchitecture, FreePhysicalMemory, TotalVisibleMemorySize, SystemDrive, WindowsDirectory
+        - For Win32_ComputerSystem: Name, DNSHostName, Domain, Manufacturer, Model, SystemType, NumberOfProcessors, NumberOfLogicalProcessors, TotalPhysicalMemory
+        - For Win32_Service: Name, DisplayName, State, StartMode, Status, PathName, StartName, Description
+        - For Win32_LogicalDisk: Name, FileSystem, FreeSpace, Size, Description, VolumeSerialNumber
+
+        Use Select-Object * to display all available properties for the queried class. Properties available on the returned object depend on what the target WMI/CIM class exposes.
+
     .EXAMPLE
         PS C:\> Get-DbaCmObject win32_OperatingSystem
 

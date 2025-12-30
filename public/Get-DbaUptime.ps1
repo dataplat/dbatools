@@ -36,6 +36,22 @@ function Get-DbaUptime {
     .LINK
         https://dbatools.io/Get-DbaUptime
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance containing uptime information for both SQL Server and its hosting Windows server.
+
+        Properties:
+        - ComputerName: The Windows server computer name (from DNS resolution)
+        - InstanceName: The SQL Server instance name
+        - SqlServer: The full SQL Server instance name
+        - SqlStartTime: DateTime when SQL Server was started (based on tempdb creation date)
+        - SqlUptime: TimeSpan object showing SQL Server uptime duration
+        - SinceSqlStart: Formatted string of SQL Server uptime as "X days Y hours Z minutes A seconds"
+        - WindowsBootTime: DateTime when the Windows server was last booted
+        - WindowsUptime: TimeSpan object showing Windows server uptime duration
+        - SinceWindowsBoot: Formatted string of Windows uptime as "X days Y hours Z minutes A seconds"
+
     .EXAMPLE
         PS C:\> Get-DbaUptime -SqlInstance SqlBox1\Instance2
 

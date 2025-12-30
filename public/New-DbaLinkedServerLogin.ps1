@@ -52,6 +52,20 @@ function New-DbaLinkedServerLogin {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.LinkedServerLogin
+
+        Returns one LinkedServerLogin object for each newly created linked server login mapping.
+        The returned object represents the login mapping that was created, retrieved from Get-DbaLinkedServerLogin after creation.
+
+        Properties include:
+        - Name: The local SQL Server login name that was mapped
+        - RemoteUser: The remote login name on the linked server (if credential mapping was used)
+        - Impersonate: Boolean indicating whether impersonation is enabled (pass-through authentication)
+        - Parent: Reference to the parent LinkedServer object
+        - DateLastModified: Timestamp of when the login mapping was last modified
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+
     .NOTES
         Tags: LinkedServer, Server
         Author: Adam Lancaster, github.com/lancasteradam

@@ -69,6 +69,20 @@ function Export-DbaReplServerSetting {
     .LINK
         https://dbatools.io/Export-DbaReplServerSetting
 
+    .OUTPUTS
+        System.String (when -Passthru is specified)
+
+        Returns the generated T-SQL replication script as a string. The script includes:
+        - An 'exec sp_dropdistributor' statement with @no_checks = 1 and @ignore_distributor = 1
+        - T-SQL commands to recreate the distributor configuration
+        - T-SQL commands to recreate all publications and their settings
+        - T-SQL commands to recreate all subscriptions
+        - All related replication objects and configurations based on the specified -ScriptOption flags
+
+        None (when -Passthru is not specified)
+
+        No output is returned to the pipeline when saving to a file. The T-SQL script is written to the specified file path containing the complete replication configuration needed to recreate the replication setup on another server.
+
     .EXAMPLE
         PS C:\> Export-DbaReplServerSetting -SqlInstance sql2017 -Path C:\temp\replication.sql
 

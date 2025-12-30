@@ -58,6 +58,20 @@ function Copy-DbaRegServer {
     .LINK
         https://dbatools.io/Copy-DbaRegServer
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per migration action (group creation, instance addition, etc.). The command returns multiple objects representing the status of different CMS components being migrated.
+
+        Properties:
+        - DateTime: The timestamp when the migration action occurred (DbaDateTime object)
+        - SourceServer: Name of the source SQL Server instance from which items are being copied
+        - DestinationServer: Name of the destination SQL Server instance to which items are being copied
+        - Name: The name of the CMS group or registered server instance that was migrated
+        - Type: The type of object migrated - one of "CMS Destination Group", "CMS Group", or "CMS Instance"
+        - Status: Result of the migration action ("Successful", "Skipped", or "Failed")
+        - Notes: Additional information about the migration result, typically explains why an action was skipped or the error message if failed
+
     .EXAMPLE
         PS C:\> Copy-DbaRegServer -Source sqlserver2014a -Destination sqlcluster
 

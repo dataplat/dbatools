@@ -54,6 +54,27 @@ function Add-DbaRegServerGroup {
     .LINK
         https://dbatools.io/Add-DbaRegServerGroup
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.RegisteredServers.ServerGroup
+
+        Returns one ServerGroup object for each newly created server group (or for each parent group in the hierarchy if multiple nested groups were created with backslash notation).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance hosting the Central Management Server
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the server group
+        - DisplayName: The display name of the server group
+        - Description: Description of the server group (if provided)
+        - ServerGroups: Collection of subgroups within this group
+        - RegisteredServers: Collection of registered servers in this group
+
+        Additional properties available from the SMO ServerGroup object:
+        - Id: Unique identifier for the group within the CMS
+        - Parent: The parent ServerGroup object
+        - Urn: Uniform Resource Name identifying the group in the SMO object hierarchy
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+
     .EXAMPLE
         PS C:\> Add-DbaRegServerGroup -SqlInstance sql2012 -Name HR
 

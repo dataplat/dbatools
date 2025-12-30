@@ -35,6 +35,26 @@ function Get-DbaPowerPlan {
     .LINK
         https://dbatools.io/Get-DbaPowerPlan
 
+    .OUTPUTS
+        PSCustomObject
+
+        Default output (when -List is not specified):
+
+        Returns one object per computer queried, showing the currently active power plan.
+
+        Properties:
+        - ComputerName: The SQL Server host computer name
+        - PowerPlan: Name of the currently active power plan (e.g., "High Performance", "Balanced", "Power saver"); shows "Unknown" if detection fails
+
+        When -List is specified:
+
+        Returns one object per available power plan on each computer, showing all power plans and which one is active.
+
+        Properties:
+        - ComputerName: The SQL Server host computer name
+        - PowerPlan: Name of the power plan
+        - IsActive: Boolean indicating if this power plan is currently active (True or False)
+
     .EXAMPLE
         PS C:\> Get-DbaPowerPlan -ComputerName sql2017
 
