@@ -38,8 +38,8 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
-        Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin | Remove-DbaLogin
+        Get-DbaProcess -SqlInstance $TestConfig.InstanceRestart -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaLogin -SqlInstance $TestConfig.InstanceRestart -Login dbatoolsci_resetadmin | Remove-DbaLogin
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         It "Should add the login as sysadmin" {
             $password = ConvertTo-SecureString -Force -AsPlainText resetadmin1
             $cred = New-Object System.Management.Automation.PSCredential ("dbatoolsci_resetadmin", $password)
-            $results = Reset-DbaAdmin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin -SecurePassword $password
+            $results = Reset-DbaAdmin -SqlInstance $TestConfig.InstanceRestart -Login dbatoolsci_resetadmin -SecurePassword $password
             $results.Name | Should -Be dbatoolsci_resetadmin
             $results.IsMember("sysadmin") | Should -Be $true
         }

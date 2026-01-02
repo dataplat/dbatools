@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel 1 -Force
+        $null = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When changing FileStream Level" {
         It "Should change the FileStream Level" {
-            $results = Disable-DbaFilestream -SqlInstance $TestConfig.instance1 -Force
+            $results = Disable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -Force
 
             $results.InstanceAccessLevel | Should -Be 0
             $results.ServiceAccessLevel | Should -Be 0
