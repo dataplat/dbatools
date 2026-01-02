@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         # To test copying resource governor settings, we need to create resource pools, workload groups, and a classifier function on the source instance.
 
         $splatQuery = @{
-            SqlInstance   = $TestConfig.instanceCopy1
+            SqlInstance   = $TestConfig.InstanceCopy1
             WarningAction = "SilentlyContinue"
         }
 
@@ -61,11 +61,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatCleanup = @{
-            SqlInstance   = $TestConfig.instanceCopy1, $TestConfig.instanceCopy2
+            SqlInstance   = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
             WarningAction = "SilentlyContinue"
         }
 
-        Get-DbaProcess -SqlInstance $TestConfig.instanceCopy1, $TestConfig.instanceCopy2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
 
         # Cleanup all created objects.
         Invoke-DbaQuery @splatCleanup -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
@@ -81,8 +81,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying resource governor settings" {
         It "Copies the resource governor successfully" {
             $splatCopyRG = @{
-                Source        = $TestConfig.instanceCopy1
-                Destination   = $TestConfig.instanceCopy2
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 Force         = $true
                 WarningAction = "SilentlyContinue"
             }
@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns the proper classifier function" {
-            $results = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.instanceCopy2
+            $results = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.InstanceCopy2
             $results.Name | Should -BeExactly "dbatoolsci_fnRG"
         }
     }

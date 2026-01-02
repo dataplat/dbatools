@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up test category for the integration tests
-        $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instanceCopy1 -Category "dbatoolsci test category"
+        $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceCopy1 -Category "dbatoolsci test category"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -44,8 +44,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created categories
-        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instanceCopy1 -Category "dbatoolsci test category"
-        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instanceCopy2 -Category "dbatoolsci test category"
+        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceCopy1 -Category "dbatoolsci test category"
+        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceCopy2 -Category "dbatoolsci test category"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -74,8 +74,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying job categories" {
         It "Returns successful results" {
             $splatCopyCategory = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 JobCategory = "dbatoolsci test category"
             }
 
@@ -86,8 +86,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Does not overwrite existing categories" {
             $splatSecondCopy = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 JobCategory = "dbatoolsci test category"
             }
 

@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         $operatorEmail = "levitan@dbatools.io"
 
         # Connect to instance and create test objects
-        $serverInstance2 = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1 -Database master
+        $serverInstance2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
 
         $serverInstance2.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert1)',
         @message_id=0,
@@ -75,12 +75,12 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up test objects
-        $serverCleanup2 = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1 -Database master
+        $serverCleanup2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
         $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
         $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert2)'")
         $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_operator @name = '$($operatorName)'")
 
-        $serverCleanup3 = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy2 -Database master
+        $serverCleanup3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -Database master
         $serverCleanup3.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -89,8 +89,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying alerts" {
         It "Copies the sample alert" {
             $splatCopyAlert = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 Alert       = $alert1
             }
             $results = Copy-DbaAgentAlert @splatCopyAlert
@@ -101,8 +101,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Skips alerts where destination is missing the operator" {
             $splatCopySkip = @{
-                Source        = $TestConfig.instanceCopy1
-                Destination   = $TestConfig.instanceCopy2
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 Alert         = $alert2
                 WarningAction = "SilentlyContinue"
             }
@@ -113,8 +113,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Doesn't overwrite existing alerts" {
             $splatCopyExisting = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 Alert       = $alert1
             }
             $results = Copy-DbaAgentAlert @splatCopyExisting
@@ -123,7 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "The newly copied alert exists" {
-            $results = Get-DbaAgentAlert -SqlInstance $TestConfig.instanceCopy1
+            $results = Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceCopy1
             $results.Name | Should -Contain "dbatoolsci test alert"
         }
     }

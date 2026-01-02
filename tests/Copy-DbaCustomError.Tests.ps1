@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1 -Database master
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
         $sourceServer.Query("IF EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'")
         $sourceServer.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16, @msgtext = N'The item named %s already exists in %s.', @lang = 'us_english'")
         $sourceServer.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16, @msgtext = N'L''élément nommé %1! existe déjà dans %2!', @lang = 'French'")
@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $serversToClean = @($TestConfig.instanceCopy1, $TestConfig.instanceCopy2)
+        $serversToClean = @($TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2)
         foreach ($serverInstance in $serversToClean) {
             $cleanupServer = Connect-DbaInstance -SqlInstance $serverInstance -Database master
             $cleanupServer.Query("IF EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'") | Out-Null
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeEach {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy2 -Database master
+            $destServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -Database master
             $destServer.Query("IF EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'")
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -61,8 +61,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should successfully copy custom error messages" {
             $splatCopyError = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 CustomError = 60000
             }
             $copyResults = Copy-DbaCustomError @splatCopyError
@@ -73,15 +73,15 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should skip existing custom errors" {
             $splatFirstCopy = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 CustomError = 60000
             }
             Copy-DbaCustomError @splatFirstCopy
 
             $splatSecondCopy = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 CustomError = 60000
             }
             $skipResults = Copy-DbaCustomError @splatSecondCopy
@@ -91,7 +91,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should verify custom error exists" {
-            $errorResults = Get-DbaCustomError -SqlInstance $TestConfig.instanceCopy1
+            $errorResults = Get-DbaCustomError -SqlInstance $TestConfig.InstanceCopy1
             $errorResults.ID | Should -Contain 60000
         }
     }

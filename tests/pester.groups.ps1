@@ -12,7 +12,7 @@ $TestsRunGroups = @{
     # run on scenario COPY - tests that need to copy between instances
     "COPY"              = 'autodetect_$TestConfig.instanceCopy'
     # run on scenario HADR - tests that need AGs, mirroring, logshipping
-    "HADR"              = 'autodetect_$TestConfig.instanceHadr'
+    "HADR"              = 'autodetect_$TestConfig.InstanceHadr'
     # do not run on appveyor
     "appveyor_disabled" = @(
         'Backup-DbaDbCertificate',

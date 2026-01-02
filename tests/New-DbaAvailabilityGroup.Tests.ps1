@@ -71,11 +71,11 @@ Describe $CommandName -Tag IntegrationTests {
         $backupFilePath = "$backupPath\$dbName.bak"
 
         # Clean up any existing processes that might interfere
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instanceHadr -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $TestConfig.InstanceHadr -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
 
         # Create the database and backup for testing
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName
-        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName -FilePath $backupFilePath
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName
+        $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName -FilePath $backupFilePath
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -84,8 +84,8 @@ Describe $CommandName -Tag IntegrationTests {
     AfterEach {
         # Clean up availability group and endpoints after each test
         # Use SilentlyContinue to prevent SQL Server clustering errors from failing tests
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName -ErrorAction SilentlyContinue
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint -ErrorAction SilentlyContinue
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -ErrorAction SilentlyContinue
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint -ErrorAction SilentlyContinue
     }
 
     AfterAll {
@@ -93,7 +93,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -104,7 +104,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When creating availability groups" {
         It "returns an ag with a db named" {
             $splatAg = @{
-                Primary      = $TestConfig.instanceHadr
+                Primary      = $TestConfig.InstanceHadr
                 Name         = $agName
                 ClusterType  = "None"
                 FailoverMode = "Manual"
@@ -118,7 +118,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns an ag with no database if one was not named" {
             $splatAgNoDb = @{
-                Primary      = $TestConfig.instanceHadr
+                Primary      = $TestConfig.InstanceHadr
                 Name         = $agName
                 ClusterType  = "None"
                 FailoverMode = "Manual"

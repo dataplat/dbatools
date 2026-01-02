@@ -43,12 +43,12 @@ Describe $CommandName -Tag IntegrationTests {
             $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
 
             # Create test databases
-            $testDatabases = New-DbaDatabase -SqlInstance $TestConfig.instanceCopy1, $TestConfig.instanceCopy2 -Name dbatoolscopycred
+            $testDatabases = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Name dbatoolscopycred
 
             # Create master key and certificate on source
-            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instanceCopy1 -Database dbatoolscopycred -SecurePassword $securePassword
+            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceCopy1 -Database dbatoolscopycred -SecurePassword $securePassword
             $certificateName = "Cert_$(Get-Random)"
-            $null = New-DbaDbCertificate -SqlInstance $TestConfig.instanceCopy1 -Name $certificateName -Database dbatoolscopycred
+            $null = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceCopy1 -Name $certificateName -Database dbatoolscopycred
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -68,8 +68,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Successfully copies a certificate" {
             $splatCopyCert = @{
-                Source             = $TestConfig.instanceCopy1
-                Destination        = $TestConfig.instanceCopy2
+                Source             = $TestConfig.InstanceCopy1
+                Destination        = $TestConfig.InstanceCopy2
                 EncryptionPassword = $securePassword
                 MasterKeyPassword  = $securePassword
                 Database           = "dbatoolscopycred"
@@ -80,13 +80,13 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Notes | Should -BeNullOrEmpty
             $results.Status | Should -Be "Successful"
 
-            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instanceCopy1 -Database dbatoolscopycred
-            $destDb = Get-DbaDatabase -SqlInstance $TestConfig.instanceCopy2 -Database dbatoolscopycred
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database dbatoolscopycred
+            $destDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database dbatoolscopycred
 
             $results.SourceDatabaseID | Should -Be $sourceDb.ID
             $results.DestinationDatabaseID | Should -Be $destDb.ID
 
-            Get-DbaDbCertificate -SqlInstance $TestConfig.instanceCopy2 -Database dbatoolscopycred -Certificate $certificateName | Should -Not -BeNullOrEmpty
+            Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceCopy2 -Database dbatoolscopycred -Certificate $certificateName | Should -Not -BeNullOrEmpty
         }
     }
 }

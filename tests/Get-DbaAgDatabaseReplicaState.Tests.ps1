@@ -41,13 +41,13 @@ Describe $CommandName -Tag IntegrationTests {
         $dbName = "dbatoolsci_getagdbrepstate_agroupdb-$(Get-Random)"
 
         # Create the objects.
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instanceHadr -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Name $dbName
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName | Backup-DbaDatabase -Path $backupPath
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName | Backup-DbaDatabase -Path $backupPath -Type Log
+        $null = Get-DbaProcess -SqlInstance $TestConfig.InstanceHadr -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Name $dbName
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName | Backup-DbaDatabase -Path $backupPath
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName | Backup-DbaDatabase -Path $backupPath -Type Log
 
         $splatAg = @{
-            Primary       = $TestConfig.instanceHadr
+            Primary       = $TestConfig.InstanceHadr
             Name          = $agName
             ClusterType   = "None"
             FailoverMode  = "Manual"
@@ -65,9 +65,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -76,30 +76,30 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "When getting AG database replica state" {
         It "Returns database replica state information" {
-            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName
+            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
             $results.AvailabilityGroup | Should -Be $agName
             $results.DatabaseName | Should -Contain $dbName
             $results.SynchronizationState | Should -Not -BeNullOrEmpty
         }
 
         It "Filters by database name" {
-            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName -Database $dbName
+            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Database $dbName
             $results.DatabaseName | Should -Be $dbName
         }
 
         It "Accepts pipeline input from Get-DbaAvailabilityGroup" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName | Get-DbaAgDatabaseReplicaState
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName | Get-DbaAgDatabaseReplicaState
             $results.AvailabilityGroup | Should -Be $agName
             $results.DatabaseName | Should -Contain $dbName
         }
 
         It "Filters by database when piped" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName | Get-DbaAgDatabaseReplicaState -Database $dbName
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName | Get-DbaAgDatabaseReplicaState -Database $dbName
             $results.DatabaseName | Should -Be $dbName
         }
 
         It "Returns expected properties" {
-            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName -Database $dbName
+            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Database $dbName
             $results.ComputerName | Should -Not -BeNullOrEmpty
             $results.InstanceName | Should -Not -BeNullOrEmpty
             $results.SqlInstance | Should -Not -BeNullOrEmpty

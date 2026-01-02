@@ -41,13 +41,13 @@ Describe $CommandName -Tag IntegrationTests {
         $dbName = "dbatoolsci_getagdb_agroupdb-$(Get-Random)"
 
         # Create the objects.
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instanceHadr -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Name $dbName
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName | Backup-DbaDatabase -Path $backupPath
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName | Backup-DbaDatabase -Path $backupPath -Type Log
+        $null = Get-DbaProcess -SqlInstance $TestConfig.InstanceHadr -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Name $dbName
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName | Backup-DbaDatabase -Path $backupPath
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName | Backup-DbaDatabase -Path $backupPath -Type Log
 
         $splatAg = @{
-            Primary       = $TestConfig.instanceHadr
+            Primary       = $TestConfig.InstanceHadr
             Name          = $agName
             ClusterType   = "None"
             FailoverMode  = "Manual"
@@ -65,9 +65,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $agName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "When getting AG database" {
         It "Returns correct database information" {
-            $results = Get-DbaAgDatabase -SqlInstance $TestConfig.instanceHadr -Database $dbName
+            $results = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName
             $results.AvailabilityGroup | Should -Be $agName
             $results.Name | Should -Be $dbName
             $results.LocalReplicaRole | Should -Not -BeNullOrEmpty

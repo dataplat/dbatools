@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $testRoleName = "dbatoolsci_ServerRole_$(Get-Random)"
-        $sourceServerConn = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1
+        $sourceServerConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
         $sourceServerConn.Query("IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$testRoleName' AND type = 'R') DROP SERVER ROLE [$testRoleName]")
         $sourceServerConn.Query("CREATE SERVER ROLE [$testRoleName]")
         $sourceServerConn.Query("GRANT CONNECT ANY DATABASE TO [$testRoleName]")
@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $serversToCleanup = @($TestConfig.instanceCopy1, $TestConfig.instanceCopy2)
+        $serversToCleanup = @($TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2)
         foreach ($serverInstance in $serversToCleanup) {
             $cleanupServerConn = Connect-DbaInstance -SqlInstance $serverInstance
             $cleanupServerConn.Query("IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$testRoleName' AND type = 'R') DROP SERVER ROLE [$testRoleName]") | Out-Null
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeEach {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $destServerConn = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy2
+            $destServerConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
             $destServerConn.Query("IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$testRoleName' AND type = 'R') DROP SERVER ROLE [$testRoleName]")
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -62,8 +62,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should successfully copy custom server roles" {
             $splatCopyRole = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 ServerRole  = $testRoleName
             }
             $copyResults = Copy-DbaServerRole @splatCopyRole
@@ -73,15 +73,15 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should skip existing server roles" {
             $splatFirstCopy = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 ServerRole  = $testRoleName
             }
             Copy-DbaServerRole @splatFirstCopy
 
             $splatSecondCopy = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 ServerRole  = $testRoleName
             }
             $skipResults = Copy-DbaServerRole @splatSecondCopy
@@ -91,14 +91,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should verify server role exists on destination" {
             $splatCopy = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 ServerRole  = $testRoleName
             }
             Copy-DbaServerRole @splatCopy
 
             $splatGetRole = @{
-                SqlInstance = $TestConfig.instanceCopy2
+                SqlInstance = $TestConfig.InstanceCopy2
                 ServerRole  = $testRoleName
             }
             $roleResults = Get-DbaServerRole @splatGetRole

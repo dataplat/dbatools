@@ -22,7 +22,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $results = Get-DbaAgHadr -SqlInstance $TestConfig.instanceHadr
+        $results = Get-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr
     }
 
     Context "Validate output" {

@@ -31,14 +31,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up test proxy on source instance
-        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
         $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
         $sourceServer.Query($sql)
         $sql = "EXEC msdb.dbo.sp_add_proxy  @proxy_name = 'dbatoolsci_agentproxy', @enabled = 1, @credential_name = 'dbatoolsci_credential'"
         $sourceServer.Query($sql)
 
         # Set up credential on destination instance
-        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy2
+        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
         $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
         $destServer.Query($sql)
 
@@ -51,14 +51,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up source instance
-        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
         $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
         $sourceServer.Query($sql)
         $sql = "DROP CREDENTIAL dbatoolsci_credential"
         $sourceServer.Query($sql)
 
         # Clean up destination instance
-        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy2
+        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
         $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
         $destServer.Query($sql)
         $sql = "DROP CREDENTIAL dbatoolsci_credential"
@@ -70,8 +70,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying agent proxy between instances" {
         BeforeAll {
             $splatCopyProxy = @{
-                Source       = $TestConfig.instanceCopy1
-                Destination  = $TestConfig.instanceCopy2
+                Source       = $TestConfig.InstanceCopy1
+                Destination  = $TestConfig.InstanceCopy2
                 ProxyAccount = "dbatoolsci_agentproxy"
             }
             $copyResults = Copy-DbaAgentProxy @splatCopyProxy
@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should create the proxy on the destination" {
-            $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.instanceCopy2 -Proxy "dbatoolsci_agentproxy"
+            $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceCopy2 -Proxy "dbatoolsci_agentproxy"
             $proxyResults.Name | Should -Be "dbatoolsci_agentproxy"
         }
     }

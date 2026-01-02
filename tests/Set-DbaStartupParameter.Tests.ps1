@@ -43,17 +43,17 @@ Describe $CommandName -Tag IntegrationTests {
         # See https://github.com/dataplat/dbatools/issues/7035
         It "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
             $splatSetStartup = @{
-                SqlInstance = $TestConfig.instanceMulti1, $TestConfig.instanceMulti2
+                SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
                 TraceFlag   = 3226
             }
             $result = Set-DbaStartupParameter @splatSetStartup
 
-            $result1 = Get-DbaStartupParameter -SqlInstance $TestConfig.instanceMulti1
+            $result1 = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceMulti1
             $result1.TraceFlags.Count | Should -Be 1
             $result1.TraceFlags[0] | Should -Be 3226
 
             # The duplication occurs after the first server is processed.
-            $result2 = Get-DbaStartupParameter -SqlInstance $TestConfig.instanceMulti2
+            $result2 = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceMulti2
             # Using the defaults to test locally
             $result2.MasterData.Count | Should -Be 1
             $result2.MasterLog.Count | Should -Be 1
@@ -66,12 +66,12 @@ Describe $CommandName -Tag IntegrationTests {
         # See https://github.com/dataplat/dbatools/issues/7035
         It "Ensure the correct instance name is returned" {
             $splatSetInstance = @{
-                SqlInstance = $TestConfig.instanceMulti1
+                SqlInstance = $TestConfig.InstanceMulti1
                 TraceFlag   = 3226
             }
             $result = Set-DbaStartupParameter @splatSetInstance
 
-            $result.SqlInstance | Should -Be $TestConfig.instanceMulti1
+            $result.SqlInstance | Should -Be $TestConfig.InstanceMulti1
             $result.TraceFlags.Count | Should -Be 1
             $result.TraceFlags[0] | Should -Be 3226
         }

@@ -37,12 +37,12 @@ Describe $CommandName -Tag IntegrationTests {
         $plaintext = "BigOlPassword!"
         $credPassword = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy1
-        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instanceCopy2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
 
         # Add user
         foreach ($login in $credLogins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.instanceCopy1
+            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.InstanceCopy1
         }
 
         <#
@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
         Get-DbaCredential -SqlInstance $server2, $server3 -Identity thor, thorsmomma, thor_crypto | Remove-DbaCredential
 
         foreach ($login in $credLogins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instanceCopy1
+            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.InstanceCopy1
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         $regServerDesc = "dbatoolsci-server123"
 
         # Create the objects.
-        $sourceServer = Connect-DbaInstance $TestConfig.instanceCopy2
+        $sourceServer = Connect-DbaInstance $TestConfig.InstanceCopy2
         $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceServer.ConnectionContext.SqlConnectionObject)
         $dbStore = $regStore.DatabaseEngineServerGroup
 
@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         $newGroup.Drop()
-        $destServer = Connect-DbaInstance $TestConfig.instanceCopy1
+        $destServer = Connect-DbaInstance $TestConfig.InstanceCopy1
         $destRegStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destServer.ConnectionContext.SqlConnectionObject)
         $destDbStore = $destRegStore.DatabaseEngineServerGroup
         $destGroupStore = $destDbStore.ServerGroups[$groupName]
@@ -73,8 +73,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying registered servers" {
         It "Should complete successfully" {
             $splatCopy = @{
-                Source      = $TestConfig.instanceCopy2
-                Destination = $TestConfig.instanceCopy1
+                Source      = $TestConfig.InstanceCopy2
+                Destination = $TestConfig.InstanceCopy1
                 CMSGroup    = $groupName
             }
             $results = Copy-DbaRegServer @splatCopy

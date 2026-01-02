@@ -36,9 +36,9 @@ Describe $CommandName -Tag IntegrationTests {
         $pipelineJobName = "dbatoolsci_copyjobstep_pipeline_$(Get-Random)"
 
         # Create source job with one step
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.instanceCopy1 -Job $sourceJobName
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceJobName
         $splatStep1 = @{
-            SqlInstance = $TestConfig.instanceCopy1
+            SqlInstance = $TestConfig.InstanceCopy1
             Job         = $sourceJobName
             StepName    = "Step1"
             Subsystem   = "TransactSql"
@@ -47,9 +47,9 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentJobStep @splatStep1
 
         # Create pipeline test job separately
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.instanceCopy1 -Job $pipelineJobName
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $pipelineJobName
         $splatPipelineStep = @{
-            SqlInstance = $TestConfig.instanceCopy1
+            SqlInstance = $TestConfig.InstanceCopy1
             Job         = $pipelineJobName
             StepName    = "PipelineStep1"
             Subsystem   = "TransactSql"
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentJobStep @splatPipelineStep
 
         # Copy jobs to destination so they exist there for step synchronization tests
-        $null = Copy-DbaAgentJob -Source $TestConfig.instanceCopy1 -Destination $TestConfig.instanceCopy2 -Job $sourceJobName, $pipelineJobName
+        $null = Copy-DbaAgentJob -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Job $sourceJobName, $pipelineJobName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -69,8 +69,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created jobs
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instanceCopy1 -Job $sourceJobName, $pipelineJobName -Confirm:$false -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instanceCopy2 -Job $sourceJobName, $pipelineJobName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceJobName, $pipelineJobName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $sourceJobName, $pipelineJobName -Confirm:$false -ErrorAction SilentlyContinue
     }
 
     Context "Command synchronizes job steps properly" {
@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Add a second step to source job to test synchronization
             $splatNewStep = @{
-                SqlInstance = $TestConfig.instanceCopy1
+                SqlInstance = $TestConfig.InstanceCopy1
                 Job         = $sourceJobName
                 StepName    = "Step2"
                 Subsystem   = "TransactSql"
@@ -88,8 +88,8 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaAgentJobStep @splatNewStep
 
             $splatCopyStep = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 Job         = $sourceJobName
             }
             $results = Copy-DbaAgentJobStep @splatCopyStep
@@ -104,14 +104,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Synchronizes all steps to destination" {
-            $destSteps = Get-DbaAgentJobStep -SqlInstance $TestConfig.instanceCopy2 -Job $sourceJobName
+            $destSteps = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceCopy2 -Job $sourceJobName
             $destSteps.Count | Should -Be 2
             $destSteps.Name | Should -Contain "Step1"
             $destSteps.Name | Should -Contain "Step2"
         }
 
         It "Preserves step commands" {
-            $destSteps = Get-DbaAgentJobStep -SqlInstance $TestConfig.instanceCopy2 -Job $sourceJobName
+            $destSteps = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceCopy2 -Job $sourceJobName
             ($destSteps | Where-Object Name -eq "Step1").Command | Should -BeLike "*SELECT 1*"
             ($destSteps | Where-Object Name -eq "Step2").Command | Should -BeLike "*SELECT 2*"
         }
@@ -120,8 +120,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Non-existent job handling" {
         It "Skips jobs that do not exist on destination" {
             $splatNonExistent = @{
-                Source      = $TestConfig.instanceCopy1
-                Destination = $TestConfig.instanceCopy2
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 Job         = "NonExistentJob_$(Get-Random)"
             }
             $results = Copy-DbaAgentJobStep @splatNonExistent
@@ -133,8 +133,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Accepts job objects from Get-DbaAgentJob" {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $job = Get-DbaAgentJob -SqlInstance $TestConfig.instanceCopy1 -Job $pipelineJobName
-            $results = $job | Copy-DbaAgentJobStep -Destination $TestConfig.instanceCopy2
+            $job = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $pipelineJobName
+            $results = $job | Copy-DbaAgentJobStep -Destination $TestConfig.InstanceCopy2
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 

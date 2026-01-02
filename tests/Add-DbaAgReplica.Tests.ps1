@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the objects.
         $splatPrimary = @{
-            Primary      = $TestConfig.instanceHadr
+            Primary      = $TestConfig.InstanceHadr
             Name         = $primaryAgName
             ClusterType  = "None"
             FailoverMode = "Manual"
@@ -68,8 +68,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $primaryAgName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $primaryAgName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $replicaAgName = "dbatoolsci_add_replicagroup"
             $splatRepAg = @{
-                Primary      = $TestConfig.instanceHadr
+                Primary      = $TestConfig.InstanceHadr
                 Name         = $replicaAgName
                 ClusterType  = "None"
                 FailoverMode = "Manual"
@@ -98,13 +98,13 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup all created objects.
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instanceHadr -AvailabilityGroup $replicaAgName
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $replicaAgName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Returns results with proper data" {
-            $results = Get-DbaAgReplica -SqlInstance $TestConfig.instanceHadr
+            $results = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr
             $results.AvailabilityGroup | Should -Contain $replicaAgName
             $results.Role | Should -Contain "Primary"
             $results.AvailabilityMode | Should -Contain "SynchronousCommit"
@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns just one result for a specific replica" {
-            $results = Get-DbaAgReplica -SqlInstance $TestConfig.instanceHadr -Replica $replicaName -AvailabilityGroup $replicaAgName
+            $results = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -Replica $replicaName -AvailabilityGroup $replicaAgName
             $results.AvailabilityGroup | Should -Be $replicaAgName
             $results.Role | Should -Be "Primary"
             $results.AvailabilityMode | Should -Be "SynchronousCommit"

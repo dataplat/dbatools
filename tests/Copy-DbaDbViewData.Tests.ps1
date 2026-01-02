@@ -70,8 +70,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instanceCopy1 -Database tempdb
-        $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instanceCopy2 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb
+        $db2 = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb
         Remove-TempObjects $db, $db2
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
             INSERT dbo.dbatoolsci_example
@@ -108,35 +108,35 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "copies the view data" {
-        $null = Copy-DbaDbViewData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2
+        $null = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Status.Count | Should -Be $table2count.Status.Count
     }
 
     It "copies the view data to another instance" {
-        $null = Copy-DbaDbViewData -SqlInstance $TestConfig.instanceCopy1 -Destination $TestConfig.instanceCopy2 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_example3
+        $null = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_example3
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db2.Query("select id from dbo.dbatoolsci_view_example3")
         $table1count.Status.Count | Should -Be $table2count.Status.Count
     }
 
     It "supports piping" {
-        $null = Get-DbaDbView -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example2 -Truncate
+        $null = Get-DbaDbView -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example2 -Truncate
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Status.Count | Should -Be $table2count.Status.Count
     }
 
     It "supports piping more than one view" {
-        $results = Get-DbaDbView -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example3
+        $results = Get-DbaDbView -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example3
         $results.Status.Count | Should -Be 2
         $results.RowsCopied | Measure-Object -Sum | Select-Object -ExpandProperty Sum | Should -Be 20
     }
 
     It "opens and closes connections properly" {
         #regression test, see #3468
-        $results = Get-DbaDbView -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View "dbo.dbatoolsci_view_example", "dbo.dbatoolsci_view_example4" | Copy-DbaDbViewData -Destination $TestConfig.instanceCopy2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
+        $results = Get-DbaDbView -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View "dbo.dbatoolsci_view_example", "dbo.dbatoolsci_view_example4" | Copy-DbaDbViewData -Destination $TestConfig.InstanceCopy2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
         $results.Status.Count | Should -Be 2
         $table1dbcount = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table4dbcount = $db2.Query("select id from dbo.dbatoolsci_view_example4")
@@ -151,35 +151,35 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "Should warn and return nothing if Source and Destination are same" {
-        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning 3> $null
+        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning 3> $null
         $result | Should -Be $null
         $tablewarning | Should -Match "Cannot copy dbatoolsci_view_example into itself"
     }
 
     It "Should warn if the destination table doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning 3> $null
+        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning 3> $null
         $result | Should -Be $null
         $tablewarning | Should -Match Auto
     }
 
     It "automatically creates the table" {
-        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_will_exist -AutoCreateTable
+        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_will_exist -AutoCreateTable
         $result.DestinationTable | Should -Be "dbatoolsci_view_will_exist"
     }
 
     It "Should warn if the source database doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instanceCopy2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
+        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
         $result | Should -Be $null
         $tablewarning | Should -Match "Failure"
     }
 
     It "Copy data using a query that relies on the default source database" {
-        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
         $result.RowsCopied | Should -Be 1
     }
 
     It "Copy data using a query that uses a 3 part query" {
-        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.instanceCopy1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+        $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
         $result.RowsCopied | Should -Be 1
     }
 }
