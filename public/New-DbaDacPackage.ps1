@@ -335,7 +335,8 @@ function New-DbaDacPackage {
             foreach ($msg in $validationMessages) {
                 $msgText = "$($msg.MessageType): $($msg.Message)"
 
-                if ($msg.MessageType -eq [Microsoft.SqlServer.Dac.Model.DacMessageType]::Error) {
+                # DacMessageType is in Microsoft.SqlServer.Dac namespace, not Microsoft.SqlServer.Dac.Model
+                if ($msg.MessageType -eq [Microsoft.SqlServer.Dac.DacMessageType]::Error) {
                     $null = $buildErrors.Add($msgText)
                     Write-Message -Level Warning -Message $msgText
                 } else {
