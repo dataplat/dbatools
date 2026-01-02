@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 11, 2025
+-- Last Modified: January 1, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -25,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2025 Glenn Berry
+--*   Copyright (C) 2026 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -412,6 +412,8 @@ SELECT host_platform, host_distribution, host_release,
 	   host_architecture
 FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE); 
 ------
+
+-- Note: Windows 11 is incorrectly identified as Windows 10. This is a Windows OS issue.
 
 -- host_release codes (only valid for Windows)
 -- 10.0 is either Windows 10, Windows Server 2016 or Windows Server 2019
