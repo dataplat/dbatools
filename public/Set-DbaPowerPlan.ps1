@@ -51,6 +51,21 @@ function Set-DbaPowerPlan {
     .LINK
         https://dbatools.io/Set-DbaPowerPlan
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per computer processed, containing the power plan configuration result. The object shows the power plan before and after the operation, allowing you to verify which computers had their power plan changed.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The target computer name
+        - PreviousPowerPlan: The name of the power plan that was active before the operation
+        - ActivePowerPlan: The name of the current active power plan (same as PreviousPowerPlan if no change, updated if changed)
+        - IsChanged: Boolean indicating whether the power plan was changed (True if changed, False if already set to the target plan)
+
+        Additional properties available using Select-Object *:
+        - PreviousInstanceId: The unique GUID identifier of the power plan that was active before the operation
+        - ActiveInstanceId: The unique GUID identifier of the current active power plan
+
     .EXAMPLE
         PS C:\> Set-DbaPowerPlan -ComputerName sql2017
 

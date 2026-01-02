@@ -79,6 +79,22 @@ function Export-DbaDacPackage {
     .LINK
         https://dbatools.io/Export-DbaDacPackage
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database exported as a DACPAC or BACPAC package.
+
+        Default display properties (via Select-DefaultView):
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database that was exported
+        - Path: The full file path where the package file was saved
+        - Elapsed: The elapsed time for the export operation (formatted timespan)
+        - Result: The output from the extraction/export operation, typically containing status messages from DacServices or SqlPackage.exe
+
+        Additional properties available:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+
     .EXAMPLE
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -FilePath C:\SharePoint_Config.dacpac
 

@@ -57,6 +57,42 @@ function Get-DbaDbTable {
     .LINK
         https://dbatools.io/Get-DbaDbTable
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Table
+
+        Returns one Table object per table found in the specified databases. Each object is enhanced with dbatools-specific properties for server connection context.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the table
+        - Schema: The schema name that contains the table
+        - Name: The table name
+        - IndexSpaceUsed: Total space used by indexes for the table (in KB)
+        - DataSpaceUsed: Space used by data for the table (in KB)
+        - RowCount: Number of rows in the table
+        - HasClusteredIndex: Boolean indicating if table has a clustered index
+
+        Version-specific properties (included in output when available):
+        - IsPartitioned: Boolean indicating if table is partitioned (SQL Server 2005+)
+        - ChangeTrackingEnabled: Boolean indicating if change tracking is enabled (SQL Server 2008+)
+        - IsFileTable: Boolean indicating if table is a FileTable (SQL Server 2012+)
+        - IsMemoryOptimized: Boolean indicating if table is memory-optimized (SQL Server 2014+)
+        - IsNode: Boolean indicating if table is a node table for graph database (SQL Server 2017+)
+        - IsEdge: Boolean indicating if table is an edge table for graph database (SQL Server 2017+)
+
+        Additional properties available from the SMO Table object:
+        - FullTextIndex: FullTextIndex object for accessing full-text search configuration (if configured)
+        - CreateDate: DateTime when the table was created
+        - DateLastModified: DateTime when the table was last modified
+        - IsSystemObject: Boolean indicating if this is a system table
+        - FileStreamPartitionColumn: Name of the column used for FileStream partitioning
+        - AnsiNullsStatus: Boolean indicating ANSI NULLs setting
+        - QuotedIdentifierStatus: Boolean indicating QUOTED_IDENTIFIER setting
+
+        All properties from the base SMO Table object are accessible via Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Database Test1
 

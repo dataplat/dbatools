@@ -33,6 +33,52 @@ function Get-DbaWsfcResource {
     .LINK
         https://dbatools.io/Get-DbaWsfcResource
 
+    .OUTPUTS
+        MSCluster_Resource (with added NoteProperties)
+
+        Returns one resource object per cluster resource found in the specified Windows Server Failover Cluster. Each resource represents a clustered component such as a physical disk, IP address, SQL Server instance, or network name.
+
+        Default display properties (via Select-DefaultView):
+        - ClusterName: The name of the Windows Server Failover Cluster
+        - ClusterFqdn: The fully qualified domain name of the cluster
+        - Name: The resource name
+        - State: Current operational status of the resource (Online, Offline, Failed, Initializing, Pending, Unknown, etc.)
+        - Type: The resource type (e.g., "Physical Disk", "IP Address", "Network Name")
+        - OwnerGroup: The resource group this resource belongs to
+        - OwnerNode: The cluster node currently hosting this resource
+        - PendingTimeout: Timeout in milliseconds for bringing resource online/offline (typically 180000 ms / 3 minutes)
+        - PersistentState: Boolean indicating whether resource should be online when Cluster Service starts
+        - QuorumCapable: Boolean indicating if the resource can be selected as quorum resource
+        - RequiredDependencyClasses: Array of resource classes this resource depends on
+        - RequiredDependencyTypes: Array of resource types that are required dependencies
+        - RestartAction: Action on failure - Do Not Restart (0), Restart Without Failover (1), Restart With Failover (2)
+        - RestartDelay: Time delay in milliseconds before restart attempt
+        - RestartPeriod: Interval in milliseconds for restart attempt tracking
+        - RestartThreshold: Maximum number of restart attempts within RestartPeriod
+        - RetryPeriodOnFailure: Interval in milliseconds before retrying a failed resource
+        - SeparateMonitor: Boolean indicating if resource requires isolated Resource Monitor process
+
+        Additional properties available (WMI MSCluster_Resource object):
+        - Id: Unique identifier for the resource
+        - CoreResource: Boolean indicating if resource is essential to cluster
+        - IsAlivePollInterval: Polling interval in milliseconds for operational checks
+        - LooksAlivePollInterval: Polling interval in milliseconds for appearance checks
+        - DeadlockTimeout: Timeout in milliseconds for deadlock detection
+        - Status: Status message string (e.g., "OK", "Error", "Degraded")
+        - ResourceSpecificStatus: Resource-specific status information
+        - IsClusterSharedVolume: Boolean indicating if resource is a cluster shared volume
+        - MonitorProcessId: Process ID of resource monitor managing this resource
+        - Characteristics: Resource characteristics flags
+        - Flags: Resource configuration flags
+        - InstallDate: DateTime when resource was installed
+        - Caption: Short description of the resource
+        - CryptoCheckpoints: Array of encrypted checkpoints for resource backup/restore
+        - RegistryCheckpoints: Array of registry checkpoints for resource backup/restore
+        - LocalQuorumCapable: Boolean indicating if usable as quorum in local quorum clusters
+        - ResourceClass: Classification (Storage, Network, User)
+
+        All properties from the WMI MSCluster_Resource class are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaWsfcResource -ComputerName cluster01
 

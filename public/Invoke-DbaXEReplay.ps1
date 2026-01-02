@@ -52,6 +52,17 @@ function Invoke-DbaXEReplay {
     .LINK
         https://dbatools.io/Invoke-DbaXEReplay
 
+    .OUTPUTS
+        System.String
+
+        Returns the output from sqlcmd execution. The exact content depends on the SQL queries being replayed.
+
+        When -Raw is specified, all sqlcmd output is returned unmodified, including headers and formatting lines.
+
+        When -Raw is not specified, output is filtered to remove sqlcmd formatting lines and column headers (lines containing only dashes), but query results and messages remain intact.
+
+        If an error occurs during replay, the error message from sqlcmd is returned as a string. If no output is produced by the queries, nothing is returned.
+
     .EXAMPLE
         PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017
 

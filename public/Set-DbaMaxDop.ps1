@@ -63,6 +63,28 @@ function Set-DbaMaxDop {
     .LINK
         https://dbatools.io/Set-DbaMaxDop
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per configuration change applied (either instance-level or database-level). The object structure and properties vary based on whether database-scoped or instance-level configuration is being modified.
+
+        Instance-level MaxDOP configuration (default):
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - PreviousInstanceMaxDopValue: The MaxDOP value before this change
+        - CurrentInstanceMaxDop: The newly configured MaxDOP value (number of processors)
+
+        Database-level MaxDOP configuration (SQL Server 2016+, with -Database, -AllDatabases, or -ExcludeDatabase):
+
+        Properties:
+        - InstanceName: The SQL Server instance name
+        - Database: The name of the database with the new MaxDOP setting
+        - PreviousDatabaseMaxDopValue: The MaxDOP value for this database before this change
+        - CurrentDatabaseMaxDopValue: The newly configured MaxDOP value for this database
+
     .EXAMPLE
         PS C:\> Set-DbaMaxDop -SqlInstance sql2008, sql2012
 

@@ -24,6 +24,21 @@ function Get-DbaDbccProcCache {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per result row from DBCC PROCCACHE with the following properties:
+
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Count: Number of plan cache entries in use
+        - Used: Memory allocated for plan cache (in pages)
+        - Active: Number of active plan cache entries
+        - CacheSize: Total plan cache size (in pages)
+        - CacheUsed: Amount of plan cache currently used (in pages)
+        - CacheActive: Number of active cache entries (may differ from Active)
+
     .NOTES
         Tags: DBCC
         Author: Patrick Flynn (@sqllensman)

@@ -43,6 +43,18 @@ function Remove-DbaDbMasterKey {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per master key removed from the database.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName
+        - Database: The name of the database from which the master key was removed
+        - Status: A string indicating the operation result ("Master key removed" on success, or error message on failure)
+
     .NOTES
         Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net

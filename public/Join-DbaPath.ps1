@@ -25,6 +25,15 @@ function Join-DbaPath {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.String
+
+        Returns a single string containing the constructed file path with the appropriate path separators for the target system.
+
+        When no -SqlInstance is specified, the path uses the local computer's separator convention.
+        When -SqlInstance targets a Linux SQL Server, forward slashes (/) are used as separators.
+        When -SqlInstance targets a Windows SQL Server, backslashes (\) are used as separators.
+
     .LINK
         https://dbatools.io/Join-DbaPath
 

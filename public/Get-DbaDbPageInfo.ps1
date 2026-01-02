@@ -51,6 +51,23 @@ function Get-DbaDbPageInfo {
     .LINK
         https://dbatools.io/Get-DbaDbPageInfo
 
+    .OUTPUTS
+        System.Data.DataRow
+
+        Returns one object per page allocation record from the sys.dm_db_database_page_allocations dynamic management view. Each row contains detailed page allocation information for tables in the specified databases.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name
+        - Database: The name of the database containing the table
+        - Schema: The schema name containing the table
+        - Table: The table name
+        - PageType: Type of the page (e.g., 'DATA_PAGE', 'INDEX_PAGE', 'LOB_DATA_PAGE')
+        - PageFreePercent: Percentage of free space available on the page (0-100)
+        - IsAllocated: String value ('True' or 'False') indicating if the page is allocated
+        - IsMixedPage: String value ('True' or 'False') indicating if this is a mixed page allocation
+
     .EXAMPLE
         PS C:\> Get-DbaDbPageInfo -SqlInstance sql2017
 

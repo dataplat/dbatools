@@ -63,6 +63,25 @@ function Get-DbaSsisEnvironmentVariable {
     .LINK
         https://dbatools.io/Get-DbaSsisEnvironmentVariable
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SSIS environment variable found in the filtered environments and folders. Sensitive variable values are automatically decrypted and returned in plaintext.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Folder: The SSISDB catalog folder name containing the environment
+        - Environment: The name of the SSIS environment containing the variable
+        - Id: Unique identifier for the variable within the environment
+        - Name: The logical name of the environment variable
+        - Description: Text description of the variable's purpose
+        - Type: The type of variable (typically 'String', 'Int32', etc.)
+        - IsSensitive: Boolean indicating if the variable value is sensitive (encrypted in SSISDB)
+        - BaseDataType: The base data type used for the variable value storage
+        - Value: The actual variable value; automatically decrypted if sensitive, plaintext if not
+
     .EXAMPLE
         PS C:\> Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL
 

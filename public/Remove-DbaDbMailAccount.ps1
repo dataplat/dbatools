@@ -44,6 +44,17 @@ function Remove-DbaDbMailAccount {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Database Mail account removed. Each object contains the following properties:
+        - ComputerName: The computer name of the SQL Server instance where the account was removed
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The fully qualified SQL Server instance name (ComputerName\InstanceName)
+        - Name: The Database Mail account name that was removed
+        - Status: The result status ("Dropped" for successful removal, or error message if removal failed)
+        - IsRemoved: Boolean indicating whether the account was successfully removed (true) or failed (false)
+
     .NOTES
         Tags: DatabaseMail, DbMail, Mail
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

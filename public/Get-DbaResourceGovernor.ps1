@@ -32,6 +32,29 @@ function Get-DbaResourceGovernor {
     .LINK
         https://dbatools.io/Get-DbaResourceGovernor
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ResourceGovernor
+
+        Returns one ResourceGovernor object per instance. The object represents the Resource Governor configuration and includes properties for enabled status, classifier function configuration, and resource pool management.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ClassifierFunction: The fully qualified name of the Resource Governor classifier function (e.g., [dbo].[fn_classifier])
+        - Enabled: Boolean indicating if Resource Governor is enabled on the instance
+        - MaxOutstandingIOPerVolume: Maximum number of outstanding I/O operations allowed per disk volume
+        - ReconfigurePending: Boolean indicating if a Resource Governor configuration change is pending and requires ALTER RESOURCE GOVERNOR RECONFIGURE
+        - ResourcePools: Collection of ResourcePool objects defined on the instance
+        - ExternalResourcePools: Collection of ExternalResourcePool objects for machine learning workloads (SQL Server 2016+)
+
+        Additional properties available (from SMO ResourceGovernor object):
+        - Parent: Reference to the parent Server object
+        - State: Current state of the SMO object (Existing, Creating, Pending, etc.)
+        - Urn: The unified resource name for the ResourceGovernor object
+
+        All properties from the base SMO ResourceGovernor object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaResourceGovernor -SqlInstance sql2016
 

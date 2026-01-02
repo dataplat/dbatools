@@ -38,6 +38,45 @@ function Get-DbaTempdbUsage {
     .LINK
         https://dbatools.io/Get-DbaTempdbUsage
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per running session that has allocated or deallocated tempdb space. For sessions with no tempdb allocation activity, no object is returned.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Spid: Session ID of the running query (int)
+        - StatementCommand: The SQL command being executed (SELECT, INSERT, UPDATE, DELETE, etc.)
+        - QueryText: The actual T-SQL statement text being executed
+        - ProcedureName: Schema-qualified name of the stored procedure if applicable
+        - StartTime: DateTime when the request started executing
+        - CurrentUserAllocatedKB: Current user object allocation in KB for this session (int)
+        - TotalUserAllocatedKB: Total user object allocation in KB (int)
+        - UserDeallocatedKB: User object deallocation in KB (int)
+        - TotalUserDeallocatedKB: Total user object deallocation in KB (int)
+        - InternalAllocatedKB: Internal object allocation in KB (int)
+        - TotalInternalAllocatedKB: Total internal object allocation in KB (int)
+        - InternalDeallocatedKB: Internal object deallocation in KB (int)
+        - TotalInternalDeallocatedKB: Total internal object deallocation in KB (int)
+        - RequestedReads: Number of physical read operations performed by the request (int)
+        - RequestedWrites: Number of write operations performed by the request (int)
+        - RequestedLogicalReads: Number of logical read operations performed by the request (int)
+        - RequestedCPUTime: CPU time in milliseconds used by the request (int)
+        - IsUserProcess: Boolean indicating if the session is a user process (true) or system process (false)
+        - Status: Current status of the session (running, sleeping, dormant, etc.)
+        - Database: Name of the database being accessed
+        - LoginName: SQL Server login name
+        - OriginalLoginName: Original login name before impersonation if applicable
+        - NTDomain: Windows domain name if Windows authentication is used
+        - NTUserName: Windows username if Windows authentication is used
+        - HostName: Client computer hostname
+        - ProgramName: Name of the client application (e.g., SQL Server Management Studio, SSMS)
+        - LoginTime: DateTime when the session logged in
+        - LastRequestedStartTime: DateTime when the last request started
+        - LastRequestedEndTime: DateTime when the last request ended
+
     .EXAMPLE
         PS C:\> Get-DbaTempdbUsage -SqlInstance localhost\SQLDEV2K14
 

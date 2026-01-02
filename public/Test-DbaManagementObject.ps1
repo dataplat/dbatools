@@ -33,6 +33,16 @@ function Test-DbaManagementObject {
     .LINK
         https://dbatools.io/Test-DbaManagementObject
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per queried SMO version on each target computer.
+
+        Properties:
+        - ComputerName: The name of the computer where the SMO assembly check was performed
+        - Version: The major version number of SQL Server SMO assembly being checked (e.g., 13 for SQL 2016, 15 for SQL 2019)
+        - Exists: Boolean indicating whether the specified SMO assembly version is installed in the Global Assembly Cache (True if found, False if not found)
+
     .EXAMPLE
         PS C:\> Test-DbaManagementObject -VersionNumber 13
 

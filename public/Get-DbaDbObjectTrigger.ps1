@@ -48,6 +48,42 @@ function Get-DbaDbObjectTrigger {
     .LINK
         https://dbatools.io/Get-DbaDbObjectTrigger
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Trigger
+
+        Returns one Trigger object for each DML trigger found on the specified tables and views.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the trigger
+        - Parent: Reference to the parent table or view object that the trigger is attached to
+        - IsEnabled: Boolean indicating if the trigger is currently enabled
+        - DateLastModified: DateTime when the trigger was last modified
+
+        Additional properties available (from SMO Trigger object):
+        - ID: The unique identifier for the trigger
+        - AnsiNullsStatus: Boolean indicating if ANSI_NULLS was set when trigger was created
+        - AssemblyName: Name of the .NET assembly for CLR triggers
+        - BodyStartIndex: Index position where trigger body starts in the text
+        - ClassName: The CLR class name for CLR-based triggers
+        - CreateDate: DateTime when the trigger was created
+        - DdlTriggerEvents: List of DDL events that trigger this trigger (if database-level)
+        - ExecutionContext: Execution context setting for the trigger
+        - ExecutionContextLogin: Login used for execution context
+        - ImplementationType: Type of trigger implementation (T-SQL or CLR)
+        - IsDesignMode: Boolean indicating design mode status
+        - IsEncrypted: Boolean indicating if trigger definition is encrypted
+        - IsSystemObject: Boolean indicating if this is a system object
+        - MethodName: Method name for CLR-based triggers
+        - QuotedIdentifierStatus: Boolean indicating QUOTED_IDENTIFIER setting
+        - State: Current state of the trigger object
+        - TextHeader: Header text of the trigger definition
+        - TextMode: Text mode setting of the trigger
+
+        All properties from the SMO Trigger object are accessible via Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbObjectTrigger -SqlInstance sql2017
 

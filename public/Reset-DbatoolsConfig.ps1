@@ -39,6 +39,11 @@ function Reset-DbatoolsConfig {
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
+    .OUTPUTS
+        None
+
+        This command does not return any objects to the pipeline. It performs configuration resets as a side effect. Use -WhatIf to preview what settings would be reset without making changes.
+
     .NOTES
         Tags: Module
         Author: Friedrich Weinmann (@FredWeinmann)

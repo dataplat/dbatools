@@ -129,6 +129,33 @@ function New-DbaAgentJobStep {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobStep
+
+        Returns the newly created JobStep object with all properties configured according to the specified parameters.
+
+        Returned properties (includes all standard SMO JobStep properties plus configured settings):
+        - Name: The descriptive name of the job step
+        - ID: The execution sequence number for this step within the job (starting at 1)
+        - Parent: Reference to the parent Job object containing this step
+        - Subsystem: The execution engine type (TransactSql, PowerShell, CmdExec, Ssis, etc.)
+        - Command: The actual code or command to be executed
+        - DatabaseName: The database context for T-SQL steps
+        - DatabaseUserName: The database user context for T-SQL execution
+        - OnSuccessAction: Action to take when step completes successfully (QuitWithSuccess, GoToNextStep, GoToStep, QuitWithFailure)
+        - OnSuccessStep: Step ID to jump to on success when using GoToStep
+        - OnFailAction: Action to take when step fails (QuitWithFailure, GoToNextStep, GoToStep, QuitWithSuccess)
+        - OnFailStep: Step ID to jump to on failure when using GoToStep
+        - RetryAttempts: Number of times to retry the step on failure
+        - RetryInterval: Minutes to wait between retry attempts
+        - OutputFileName: File path where step output will be logged
+        - ProxyName: SQL Server Agent proxy account used for step execution
+        - JobStepFlags: Logging and output flags (AppendToJobHistory, AppendToLogFile, etc.)
+        - Server: Analysis Services server for SSAS job steps
+        - CommandExecutionSuccessCode: Exit code indicating success for CmdExec steps
+
+        All properties from the base SMO JobStep object are accessible even though only the configured properties above are set during creation.
+
     .LINK
         https://dbatools.io/New-DbaAgentJobStep
 

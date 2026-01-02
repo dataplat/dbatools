@@ -30,6 +30,42 @@ function Get-DbaWsfcRole {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_ResourceGroup
+
+        Returns one resource group (role) object per cluster role found in the Windows Server Failover Cluster. Resource groups bundle together related cluster resources and manage their failover behavior as a single unit.
+
+        Default display properties (via Select-DefaultView):
+        - ClusterName: Name of the cluster containing this role
+        - ClusterFqdn: Fully qualified domain name of the cluster
+        - Name: Name of the resource group (key property), typically the cluster role name (e.g., SQL Server instance name)
+        - OwnerNode: Name of the node currently hosting this resource group
+        - State: Current state of the resource group translated to readable format (Online, Offline, Failed, Partial Online, Pending, or Unknown)
+
+        Additional properties available (from WMI MSCluster_ResourceGroup object):
+        - Caption: Short textual description of the resource group
+        - Description: Detailed comments about the resource group
+        - Id: Network identifier for the group
+        - Status: Current status string (OK, Error, Degraded, Unknown, etc.)
+        - InstallDate: DateTime when the group was created
+        - Characteristics: Bit flags defining group characteristics
+        - Flags: Flags set for the group
+        - DefaultOwner: Node number where group was last activated or moved (node preferences)
+        - AutoFailbackType: Whether automatic failback to preferred owner is enabled (0=Prevent, 1=Allow)
+        - FailbackWindowStart: Earliest hour (local cluster time) group can move back to preferred node (-1 to 23)
+        - FailbackWindowEnd: Latest hour group can move back to preferred node (-1 to 23)
+        - FailoverPeriod: Hours during which failover threshold applies (1-1193 hours)
+        - FailoverThreshold: Maximum number of failover attempts allowed within FailoverPeriod
+        - PersistentState: Whether group stays offline or comes online when Cluster service starts
+        - Priority: Priority value for the resource group (0-4999)
+        - AntiAffinityClassNames: Groups that should not be hosted on the same cluster node
+        - GroupType: Type of resource group (cluster, SQL Server instance, file server, virtual machine, etc.)
+        - IsCore: Boolean indicating if group is essential cluster group that cannot be deleted
+        - CCFEpoch: Current CCF (Cluster Configuration Fence) of the resource group (Windows Server 2016+)
+        - ResiliencyPeriod: Resiliency period in seconds (Windows Server 2016+)
+
+        All properties from the WMI MSCluster_ResourceGroup object are accessible using Select-Object *. Use Select-Object * to view all available properties including dynamically populated values based on current cluster state.
+
     .LINK
         https://dbatools.io/Get-DbaWsfcRole
 

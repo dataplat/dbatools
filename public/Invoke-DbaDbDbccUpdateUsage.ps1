@@ -66,6 +66,19 @@ function Invoke-DbaDbDbccUpdateUsage {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per result row returned by the DBCC UPDATEUSAGE command executed against each database.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The database name where DBCC UPDATEUSAGE was executed
+        - Cmd: The complete DBCC UPDATEUSAGE command that was executed
+        - Output: The raw output message(s) from the DBCC command; usually informational messages about pages and rows updated
+
     .LINK
         https://dbatools.io/Invoke-DbaDbDbccUpdateUsage
 

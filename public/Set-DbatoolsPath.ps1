@@ -28,6 +28,12 @@ function Set-DbatoolsPath {
         UserDefault stores the setting for the current user only, while other scopes affect system-wide or module-level settings.
         Choose the appropriate scope based on whether the path should be available to all users or just the current user.
 
+    .OUTPUTS
+        None
+
+        This command configures internal dbatools path settings but does not output any objects to the pipeline.
+        Use Get-DbatoolsPath to retrieve the configured path values.
+
     .LINK
         https://dbatools.io/Set-DbatoolsPath
 

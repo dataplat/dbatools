@@ -300,6 +300,27 @@ function Import-DbaCsv {
     .LINK
         https://dbatools.io/Import-DbaCsv
 
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per CSV file imported. Each object contains comprehensive metrics about the import operation.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance where the CSV was imported
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The database name where data was imported
+        - Table: The table name where CSV data was loaded
+        - Schema: The schema name containing the target table
+        - RowsCopied: The total number of rows successfully copied from the CSV file (int64)
+        - Elapsed: The elapsed time for the import operation in elapsed time format (automatically formatted as HH:mm:ss.fff)
+        - RowsPerSecond: The average import rate calculated as total rows divided by elapsed time in seconds (decimal)
+        - Path: The full file system path of the imported CSV file
+
+        All size and rate metrics are calculated based on the actual import duration, which for type detection operations does not include
+        the time spent scanning the file for column type inference.
+
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\housing.csv -SqlInstance sql001 -Database markets
 

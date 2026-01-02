@@ -99,6 +99,33 @@ function Invoke-DbaQuery {
     .LINK
         https://dbatools.io/Invoke-DbaQuery
 
+    .OUTPUTS
+        System.Data.DataSet (when -As DataSet is specified)
+
+        Returns a DataSet object containing all result tables from the query. This format preserves table relationships and metadata.
+
+        System.Data.DataTable[] (when -As DataTable is specified)
+
+        Returns an array of DataTable objects, one for each result set returned by the query. Use this when you need access to individual result sets with full DataTable methods and properties.
+
+        System.Data.DataRow[] (when -As DataRow is specified - default)
+
+        Returns an array of DataRow objects representing the rows from the first result set. This is the most common format for typical SELECT queries. When -MessagesToOutput is specified, T-SQL PRINT and RAISERROR messages are also included in the output stream alongside the data rows.
+
+        PSObject (when -As PSObject is specified)
+
+        Returns individual PSObject objects, one per row from each result set in the query results. DBNull values are converted to $null for easier comparison and PowerShell integration. Use this when you need to pipe results to other PowerShell commands that expect objects.
+
+        PSObject[] (when -As PSObjectArray is specified)
+
+        Returns an array of PSObject objects per result set. When multiple result sets are returned, each result set is returned as a separate array. DBNull values are converted to $null.
+
+        System.Object (when -As SingleValue is specified)
+
+        Returns a single scalar value (the first column of the first row). Use this for queries returning a count, sum, or other single value like SELECT COUNT(*) or SELECT @@SERVERNAME.
+
+        When -AppendServerInstance is specified, an additional ServerInstance column is added to DataRow and PSObject output, containing the source SQL Server instance name.
+
     .EXAMPLE
         PS C:\> Invoke-DbaQuery -SqlInstance server\instance -Query 'SELECT foo FROM bar'
 

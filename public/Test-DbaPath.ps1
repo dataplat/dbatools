@@ -37,6 +37,23 @@ function Test-DbaPath {
     .LINK
         https://dbatools.io/Test-DbaPath
 
+    .OUTPUTS
+        System.Boolean (when testing a single path on a single instance)
+
+        Returns $true if the file or directory is accessible to the SQL Server service account, $false otherwise.
+
+        PSCustomObject (when testing multiple paths, multiple instances, or array input)
+
+        Returns one object per file or directory path tested, with the following properties:
+        - SqlInstance: Full instance name (computer\instance format)
+        - InstanceName: The SQL Server instance name
+        - ComputerName: The computer name hosting the SQL Server instance
+        - FilePath: The file or directory path that was tested
+        - FileExists: Boolean indicating if the file or directory exists and is accessible
+        - IsContainer: Boolean indicating if the path is a directory (container) rather than a file
+
+        Note: FileExists is true if either the file exists OR the path is a container (directory). IsContainer specifically identifies if it's a directory.
+
     .EXAMPLE
         PS C:\> Test-DbaPath -SqlInstance sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
 

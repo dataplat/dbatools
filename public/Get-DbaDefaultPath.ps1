@@ -34,6 +34,20 @@ function Get-DbaDefaultPath {
     .LINK
         https://dbatools.io/Get-DbaDefaultPath
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance with the default file paths configured for that server.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (ServiceName)
+        - SqlInstance: The full SQL Server instance name in computer\instance format (DomainInstanceName)
+        - Data: The default directory path for new database data files
+        - Log: The default directory path for new transaction log files
+        - Backup: The default directory path for database backups
+        - ErrorLog: The directory path where SQL Server stores error log files
+
     .EXAMPLE
         PS C:\> Get-DbaDefaultPath -SqlInstance sql01\sharepoint
 

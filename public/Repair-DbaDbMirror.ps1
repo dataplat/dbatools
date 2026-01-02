@@ -40,6 +40,27 @@ function Repair-DbaDbMirror {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns the repaired database object for each database where mirroring was successfully resumed. One object is returned per database processed.
+
+        All properties from the SMO Database object are available, including:
+        - Name: Database name
+        - Owner: Database owner login
+        - CreateDate: DateTime when the database was created
+        - LastBackupDate: DateTime of the most recent full backup
+        - LastDifferentialBackupDate: DateTime of the most recent differential backup
+        - LastLogBackupDate: DateTime of the most recent transaction log backup
+        - RecoveryModel: The recovery model (Simple, Full, BulkLogged)
+        - Status: Current database status (Normal, Restoring, RecoveryPending, Suspect, etc.)
+        - MirroringStatus: State of database mirroring (Disabled, Suspended, Synchronizing, Synchronized, Disconnected)
+        - Size: Total size of the database in megabytes
+        - SpaceAvailable: Available space in the database in megabytes
+        - Tables: Collection of tables in the database
+        - Views: Collection of views in the database
+        - StoredProcedures: Collection of stored procedures in the database
+
     .NOTES
         Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net

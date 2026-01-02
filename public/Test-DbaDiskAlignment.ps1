@@ -68,6 +68,28 @@ function Test-DbaDiskAlignment {
         - Get WMI Disk Information - http://powershell.com/cs/media/p/7937.aspx
         Thanks to jbruns2010!
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns multiple objects per partition (one object per stripe unit tested) for each disk partition on the target server(s).
+
+        Properties:
+        - ComputerName: Computer name of the target server
+        - Name: Partition name or drive letter (e.g., "C:", "D:")
+        - PartitionSize: Total size of the partition in bytes (DbaSize object providing automatic unit conversion)
+        - PartitionType: Type of partition (e.g., "Basic", "Logical Disk Manager" for dynamic disks)
+        - TestingStripeSize: Stripe unit size being tested in this result (64KB, 128KB, 256KB, 512KB, or 1024KB; DbaSize object)
+        - OffsetModuluCalculation: Result of (partition offset modulo stripe size) for alignment verification (DbaSize object)
+        - StartingOffset: Partition starting offset in bytes (DbaSize object; best practice is 1MB/1048576 bytes)
+        - IsOffsetBestPractice: Boolean indicating if the offset matches a best practice value (64, 128, 256, 512, or 1024 KB)
+        - IsBestPractice: Boolean indicating if this partition aligns with the tested stripe size (offset % stripe size == 0)
+        - NumberOfBlocks: Number of blocks in the partition (from Win32_DiskPartition)
+        - BootPartition: Boolean indicating if this is the system boot partition
+        - PartitionBlockSize: Block size of the partition in bytes
+        - IsDynamicDisk: Boolean indicating if disk is managed by Windows Logical Disk Manager; results may be unreliable for dynamic disks
+
+        Note: Multiple objects are returned per partition because the command tests 5 common stripe unit sizes (64KB, 128KB, 256KB, 512KB, 1024KB) for each partition. A single partition returns 5 objects. The IsBestPractice property will be true for each stripe size that the partition aligns with.
+
     .LINK
         https://dbatools.io/Test-DbaDiskAlignment
 

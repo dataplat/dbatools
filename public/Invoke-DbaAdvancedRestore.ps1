@@ -148,6 +148,53 @@ function Invoke-DbaAdvancedRestore {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject (default operation)
+
+        Returns one object per backup file processed in the restore sequence, containing comprehensive restore operation details and status.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance where the restore occurred
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - BackupFile: Comma-separated list of backup file paths processed in this restore operation
+        - BackupFilesCount: Number of backup files included in the restore operation (int)
+        - BackupSize: Total size of backup files; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - CompressedBackupSize: Compressed size of backup files if available in backup metadata
+        - Database: The name of the database being restored
+        - Owner: The database owner, typically the login that performed the restore
+        - DatabaseRestoreTime: Total elapsed time for the complete database restore operation (TimeSpan)
+        - FileRestoreTime: Elapsed time for the current backup file restore (TimeSpan)
+        - NoRecovery: Boolean indicating if the database was left in RESTORING state for log restore sequences
+        - RestoreComplete: Boolean indicating if the restore operation completed successfully
+        - RestoredFile: Comma-separated list of logical file names restored to the database
+        - RestoredFilesCount: Number of files restored in the database (int)
+        - Script: The T-SQL RESTORE script executed or generated (populated when actual T-SQL is run or when OutputScriptOnly is used)
+        - RestoreDirectory: Directory path(s) where the restored database files are located on the target server
+        - WithReplace: Boolean indicating if the restore was performed with the REPLACE option to overwrite existing database
+
+        Additional properties available:
+        - DatabaseName: Alternate property containing the database name (duplicate of Database)
+        - DatabaseOwner: Alternate property containing the database owner (duplicate of Owner)
+        - BackupSizeMB: Backup size expressed in megabytes (double)
+        - CompressedBackupSizeMB: Compressed backup size expressed in megabytes (double)
+        - RestoredFileFull: Full physical paths of all restored files separated by commas
+        - BackupStartTime: DateTime when the backup operation started
+        - BackupEndTime: DateTime when the backup operation completed
+        - RestoreTargetTime: Target point-in-time for log recovery operations, or string "Latest" if restoring to current time
+        - BackupFileRaw: Raw array of all backup file paths without string conversion
+        - ExitError: Any exception object that occurred during restoration
+        - KeepReplication: Boolean indicating if replication settings were preserved during restore
+        - SACredential: The SA credential passed (if applicable)
+
+        System.String (when -VerifyOnly is specified)
+
+        Returns verification result strings: "Verify successful" or "Verify failed"
+
+        System.String (when -OutputScriptOnly is specified)
+
+        Returns the generated T-SQL RESTORE script as a string without executing the restore operation. Script can include EXECUTE AS LOGIN clause if ExecuteAs parameter was specified.
+
     .LINK
         https://dbatools.io/Invoke-DbaAdvancedRestore
 

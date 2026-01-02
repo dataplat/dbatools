@@ -39,6 +39,22 @@ function Get-DbaDbMasterKey {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.MasterKey
+
+        Returns one MasterKey object per database that contains a master key. If a database does not have a master key, it is skipped (no output for that database).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database containing the master key
+        - CreateDate: DateTime when the master key was created
+        - DateLastModified: DateTime when the master key was last modified
+        - IsEncryptedByServer: Boolean indicating if the master key is encrypted by the server master key
+
+        All properties from the base SMO MasterKey object are accessible via Select-Object *.
+
     .NOTES
         Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net

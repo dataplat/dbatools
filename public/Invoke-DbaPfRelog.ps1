@@ -94,6 +94,37 @@ function Invoke-DbaPfRelog {
     .LINK
         https://dbatools.io/Invoke-DbaPfRelog
 
+    .OUTPUTS
+        System.IO.FileInfo (default)
+
+        Returns file objects for each successfully converted performance log file. Each file object includes all standard System.IO.FileInfo properties plus an added RelogFile property.
+
+        Properties:
+        - FullName: The complete path to the converted output file
+        - Name: The file name with extension (.tsv, .csv, .bin, etc.)
+        - Directory: The directory containing the file
+        - DirectoryName: The full path of the directory
+        - Extension: The file extension (.tsv, .csv, .bin, .sql)
+        - Length: The size of the file in bytes
+        - Attributes: File attributes (Archive, ReadOnly, etc.)
+        - CreationTime: The date and time the file was created
+        - LastAccessTime: The date and time the file was last accessed
+        - LastWriteTime: The date and time the file was last modified
+        - RelogFile: Boolean NoteProperty set to true, indicating this file was created by relog conversion
+
+        String (when -Raw is specified)
+
+        Returns the raw output from the relog command including:
+        - Input file information (file path, format, begin/end times, sample count)
+        - Output file information (file path, format, begin/end times, sample count)
+        - Completion status message
+        - Processing progress percentage
+
+        No output (when -Summary or -ExportQueries is specified)
+
+        When -Summary is used, summary information is displayed as text output but no objects are returned.
+        When relog output is written directly to SQL via ODBC, no file objects are available for return.
+
     .EXAMPLE
         PS C:\> Invoke-DbaPfRelog -Path C:\temp\perfmon.blg
 

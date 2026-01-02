@@ -48,6 +48,41 @@ function Get-DbaAgentJobStep {
     .LINK
         https://dbatools.io/Get-DbaAgentJobStep
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobStep
+
+        Returns one SQL Agent Job Step object per step within each specified job. Each object represents a discrete step within a SQL Server Agent job with its configuration and execution details.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the SQL Server computer where the step is located
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AgentJob: The name of the parent SQL Agent job containing this step
+        - Name: The name of the job step
+        - SubSystem: The subsystem type for the step (TransactSql, PowerShell, CmdExec, AnalysisCommand, AnalysisQuery, Ssis, etc.)
+        - LastRunDate: DateTime of the last execution of this step
+        - LastRunOutcome: Outcome of the last execution (Succeeded, Failed, Retry, Cancelled, Unknown, etc.)
+        - State: Current state of the step (Enabled, Disabled, etc.)
+
+        Additional properties available from the SMO JobStep object (accessible via Select-Object *):
+        - ID: Internal step ID number
+        - CreateDate: DateTime when the step was created
+        - DateLastModified: DateTime when the step was last modified
+        - Command: The command or script to execute for this step
+        - CommandExecutionSuccessCode: Exit code indicating success (0 for success by default)
+        - DatabaseName: Database context for the step execution
+        - DatabaseUserName: User context for step execution
+        - Description: Step description/notes
+        - IncludeStepOutput: Boolean indicating if step output is included in job history
+        - IsLastStep: Boolean indicating if this is the last step in the job
+        - LogToTable: Boolean indicating if output is logged to a table
+        - OutputFileName: File path for step output logging
+        - ProxyID: ID of the proxy account used for this step
+        - RetryAttempts: Number of retry attempts if the step fails
+        - RetryInterval: Interval in minutes between retry attempts
+
+        Note: The ComputerName, InstanceName, SqlInstance, and AgentJob properties are added by the function and are not native SMO properties.
+
     .EXAMPLE
         PS C:\> Get-DbaAgentJobStep -SqlInstance localhost
 

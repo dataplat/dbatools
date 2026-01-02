@@ -60,6 +60,35 @@ function Import-DbaXESessionTemplate {
     .LINK
         https://dbatools.io/Import-DbaXESessionTemplate
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.XEvent.Session
+
+        Returns one Extended Events session object for each template successfully imported and created. When -StartUpState On is specified, the session is also started and configured to autostart on server restart.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the Extended Events session
+        - Status: Current session status (Running, Stopped, or other state values)
+        - StartTime: DateTime when the session was started (null if stopped)
+        - AutoStart: Boolean indicating if the session starts automatically on SQL Server restart
+        - State: SMO object state (Existing, Creating, Pending, Dropping, etc.)
+        - Targets: Target collection for the session (event file, ring buffer, etc.)
+        - TargetFile: File path(s) where XE trace data is being written
+        - Events: Events configured in the session
+        - MaxMemory: Maximum memory in MB allocated to the session
+        - MaxEventSize: Maximum size in MB for individual events
+
+        Additional properties available (from SMO Session object):
+        - Parent: Reference to the parent XEStore object
+        - Store: Reference to the parent XEStore object
+        - Session: Copy of the session name property
+        - RemoteTargetFile: UNC paths for remote target files
+        - All other standard SMO Session properties accessible via Select-Object *
+
+        All properties from the base SMO XEvent.Session object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template "15 Second IO Error"
 

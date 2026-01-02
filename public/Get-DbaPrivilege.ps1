@@ -33,6 +33,20 @@ function Get-DbaPrivilege {
     .LINK
         https://dbatools.io/Get-DbaPrivilege
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per unique user or group found across the five Windows security privileges being audited.
+
+        Properties:
+        - ComputerName: The name of the computer where the privilege audit was performed
+        - User: The user or group account name; converted from SID to account name if applicable
+        - LogonAsBatch: Boolean indicating if the user has SeBatchLogonRight privilege
+        - InstantFileInitialization: Boolean indicating if the user has SeManageVolumePrivilege (Instant File Initialization)
+        - LockPagesInMemory: Boolean indicating if the user has SeLockMemoryPrivilege
+        - GenerateSecurityAudit: Boolean indicating if the user has SeAuditPrivilege
+        - LogonAsAService: Boolean indicating if the user has SeServiceLogonRight privilege
+
     .EXAMPLE
         PS C:\> Get-DbaPrivilege -ComputerName sqlserver2014a
 

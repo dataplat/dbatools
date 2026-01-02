@@ -57,6 +57,28 @@ function Find-DbaView {
     .LINK
         https://dbatools.io/Find-DbaView
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per view matching the specified pattern. Each object represents a single matching view with the matching text lines highlighted.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the server where the view is located
+        - SqlInstance: The SQL Server instance name
+        - Database: The database name containing the view
+        - DatabaseId: The internal database ID
+        - Schema: The schema of the view
+        - Name: The name of the view
+        - Owner: The owner of the view
+        - IsSystemObject: Boolean indicating if this is a system view (affected by -IncludeSystemObjects parameter)
+        - CreateDate: DateTime when the view was created
+        - LastModified: DateTime when the view was last modified
+        - ViewTextFound: String containing the matching lines with line numbers in format "(LineNumber: N) matched text"
+
+        Additional properties available (via Select-Object *):
+        - View: The SMO View object itself
+        - ViewFullText: The complete text body of the view definition
+
     .EXAMPLE
         PS C:\> Find-DbaView -SqlInstance DEV01 -Pattern whatever
 

@@ -48,6 +48,26 @@ function Find-DbaDatabase {
     .LINK
         https://dbatools.io/Find-DbaDatabase
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database matching the search criteria.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The database name
+        - Id: The database ID
+        - Size: The database size in megabytes (dbasize object for formatting)
+        - Owner: The database owner login
+        - CreateDate: DateTime when the database was created
+        - ServiceBrokerGuid: The Service Broker GUID for the database (useful for identifying mismatched GUIDs after restore operations)
+        - Tables: Count of user-defined tables in the database
+        - StoredProcedures: Count of user-defined stored procedures in the database
+        - Views: Count of user-defined views in the database
+        - ExtendedProperties: Array of PSCustomObjects containing extended properties (each with Name and Value properties), or 0 if no extended properties exist
+
     .EXAMPLE
         PS C:\> Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
 

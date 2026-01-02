@@ -62,6 +62,19 @@ function Install-DbaSqlWatch {
     .LINK
         https://dbatools.io/Install-DbaSqlWatch
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance where SqlWatch is installed or updated.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name in computer\instance format
+        - Database: The target database where SqlWatch was installed or updated
+        - Status: The deployment status extracted from DACPAC publication results
+        - DashboardPath: The full local file system path to the SqlWatch Dashboard directory for web UI access
+
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance server1
 

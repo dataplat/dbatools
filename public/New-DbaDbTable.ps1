@@ -257,6 +257,37 @@ function New-DbaDbTable {
     .LINK
        https://dbatools.io/New-DbaDbTable
 
+    .OUTPUTS
+       System.String (when -Passthru is specified)
+
+       Returns the T-SQL CREATE TABLE script as a string for review or version control before deployment.
+
+       Microsoft.SqlServer.Management.Smo.Table (default)
+
+       Returns one Table object for each table successfully created. The table object includes all configured columns, constraints, indexes, and table properties.
+
+       Default display properties (via Select-DefaultView):
+       - ComputerName: The computer name of the SQL Server instance
+       - InstanceName: The SQL Server instance name
+       - SqlInstance: The full SQL Server instance name (computer\instance)
+       - Database: Database containing the table
+       - Schema: Schema containing the table
+       - Name: Name of the table
+       - Rows: Number of rows in the table (0 for newly created tables)
+       - Created: DateTime when the table was created
+       - LastModified: DateTime when the table was last modified
+
+       Additional properties available (from SMO Table object):
+       - FileGroup: Filegroup where the table data is stored
+       - AnsiNullsStatus: Boolean indicating if ANSI_NULLS is enabled
+       - QuotedIdentifierStatus: Boolean indicating if QUOTED_IDENTIFIER is enabled
+       - ChangeTrackingEnabled: Boolean indicating if change tracking is enabled
+       - IsMemoryOptimized: Boolean indicating if table is memory-optimized
+       - IsSystemVersioned: Boolean indicating if table is system-versioned temporal table
+       - IsFileTable: Boolean indicating if table is a FileTable
+       - IsExternal: Boolean indicating if table is an external table
+       - TrackColumnsUpdatedEnabled: Boolean indicating if column-level change tracking is enabled
+
     .EXAMPLE
        PS C:\> $col = @{
        >> Name      = 'test'

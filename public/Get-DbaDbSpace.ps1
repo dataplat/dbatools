@@ -39,6 +39,33 @@ function Get-DbaDbSpace {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database file (data and log files).
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the file
+        - FileName: The logical name of the database file
+        - FileGroup: The name of the filegroup the file belongs to (null for log files)
+        - PhysicalName: The full physical file path on disk
+        - FileType: The type of file (ROWS for data files, LOG for transaction log files)
+        - UsedSpace: Amount of space currently in use (dbasize object, convertible to Bytes, KB, MB, GB, TB)
+        - FreeSpace: Amount of free space available within the file (dbasize object)
+        - FileSize: Total size of the file (dbasize object)
+        - PercentUsed: Percentage of the file currently in use (0-100 integer)
+        - AutoGrowth: The autogrowth increment amount (dbasize object)
+        - AutoGrowType: Type of autogrowth setting (MB for fixed size, pct for percentage, Unknown if error)
+        - SpaceUntilMaxSize: Amount of space remaining before reaching max file size limit (dbasize object)
+        - AutoGrowthPossible: Maximum additional space available through autogrowth (dbasize object)
+        - UnusableSpace: Space that remains after all possible autogrowth operations (dbasize object)
+
+        Note: All size-related properties use the dbasize object which supports conversion to multiple units
+        (.Bytes, .Kilobytes, .Megabytes, .Gigabytes, .Terabytes properties are available).
+
     .NOTES
         Tags: Database, Space
         Author: Michael Fal (@Mike_Fal), mikefal.net

@@ -97,6 +97,15 @@ function Export-DbaDbRole {
     .LINK
         https://dbatools.io/Export-DbaDbRole
 
+    .OUTPUTS
+        System.String (when -Passthru is specified or no -Path/-FilePath is provided)
+
+        Returns the generated T-SQL script as a string containing all role definitions, permission statements, and optionally role membership commands.
+
+        System.IO.FileInfo (when -Path or -FilePath is specified)
+
+        Returns file information objects for each created script file. Multiple databases result in multiple FileInfo objects.
+
     .EXAMPLE
         PS C:\> Export-DbaDbRole -SqlInstance sql2005 -Path C:\temp
 

@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 11, 2025
+-- Last Modified: January 1, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -25,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2025 Glenn Berry
+--*   Copyright (C) 2026 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -370,6 +370,8 @@ SELECT host_platform, host_distribution, host_release,
 FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE); 
 ------
 
+-- Note: Windows 11 is incorrectly identified as Windows 10. This is a Windows OS issue.
+
 -- host_release codes (only valid for Windows)
 -- 10.0 is either Windows 10, Windows Server 2016 or Windows Server 2019
 -- 6.3 is either Windows 8.1 or Windows Server 2012 R2 
@@ -582,8 +584,7 @@ SELECT cpu_count AS [Logical CPU Count], scheduler_count,
 	   DATEDIFF(hour, sqlserver_start_time, GETDATE()) AS [SQL Server Up Time (hrs)],
 	   virtual_machine_type_desc AS [Virtual Machine Type], 
        softnuma_configuration_desc AS [Soft NUMA Configuration], 
-	   sql_memory_model_desc, 
-	   container_type_desc
+	   sql_memory_model_desc, container_type_desc
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -645,7 +646,7 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\DESCRIPTION\Syste
 
 
 -- Get CPU vectorization level from SQL Server Error log (Query 22) (CPU Vectorization Level) 
-IF EXISTS (SELECT * WHERE CONVERT(VARCHAR(2), SERVERPROPERTY('ProductMajorVersion')) = '16')
+IF EXISTS (SELECT * WHERE CONVERT(VARCHAR(2), SERVERPROPERTY('ProductMajorVersion')) = '17')
 	BEGIN		
 		-- Get CPU Description from Registry (only works on Windows)
 		DROP TABLE IF EXISTS #ProcessorDesc;

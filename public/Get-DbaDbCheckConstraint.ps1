@@ -44,6 +44,35 @@ function Get-DbaDbCheckConstraint {
     .LINK
         https://dbatools.io/Get-DbaDbCheckConstraint
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Check
+
+        Returns one Check object per check constraint found in the specified databases. Each object represents a single check constraint defined on a database table.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the check constraint
+        - Parent: The table object that contains this check constraint
+        - ID: Unique identifier of the check constraint
+        - CreateDate: DateTime when the check constraint was created
+        - DateLastModified: DateTime when the check constraint was last modified
+        - Name: The name of the check constraint
+        - IsEnabled: Boolean indicating if the check constraint is currently enabled
+        - IsChecked: Boolean indicating if the constraint is checked during INSERT/UPDATE operations
+        - NotForReplication: Boolean indicating if the constraint applies to replication operations
+        - Text: The actual check constraint definition/expression (the logic that validates the data)
+        - State: SMO object state (Existing, Creating, Dropping, etc.)
+
+        Additional properties available (from SMO Check object):
+        - DatabaseEngineEdition: The SQL Server edition where the check constraint exists
+        - DatabaseEngineType: The type of database engine
+        - Urn: Unique Resource Name for the constraint
+        - ExtendedProperties: Extended properties attached to the constraint
+
+        All properties from the base SMO Check object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbCheckConstraint -SqlInstance sql2016
 

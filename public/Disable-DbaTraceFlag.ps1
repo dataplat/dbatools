@@ -43,6 +43,20 @@ function Disable-DbaTraceFlag {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per trace flag that was processed. The object contains the status and result of the disable operation.
+
+        Properties:
+        - SourceServer: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - TraceFlag: The trace flag number that was disabled or skipped
+        - Status: The result of the operation (Successful, Skipped, or Failed)
+        - Notes: Additional details about the operation result or error message
+        - DateTime: Timestamp of when the operation was executed
+
     .LINK
         https://dbatools.io/Disable-DbaTraceFlag
 

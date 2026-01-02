@@ -64,6 +64,20 @@ function Revoke-DbaAgPermission {
     .LINK
         https://dbatools.io/Revoke-DbaAgPermission
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per permission successfully revoked from each login. When revoking multiple permissions on multiple logins, the total objects returned equals the product of successful operations.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The login name from which the permission was revoked
+        - Permission: The permission that was revoked (Connect, Alter, Control, etc.)
+        - Type: Always "Revoke" indicating the operation type
+        - Status: "Success" when the revocation completes successfully
+
     .EXAMPLE
         PS C:\> Revoke-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup SharePoint -Login ad\spservice -Permission CreateAnyDatabase
 

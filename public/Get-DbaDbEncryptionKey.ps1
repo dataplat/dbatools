@@ -41,6 +41,29 @@ function Get-DbaDbEncryptionKey {
         Copyright: (c) 2022 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey
+
+        Returns one DatabaseEncryptionKey object per database that has Transparent Data Encryption (TDE) enabled. If a database has no encryption key, no object is returned for that database.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the encryption key
+        - CreateDate: DateTime when the encryption key was created
+        - EncryptionAlgorithm: The encryption algorithm used (Aes128, Aes192, Aes256, or TripleDes)
+        - EncryptionState: Current encryption state (Encrypted, EncryptionInProgress, DecryptionInProgress, or EncryptionUnsupported)
+        - EncryptionType: Type of encryptor used (ServerCertificate or ServerAsymmetricKey)
+        - EncryptorName: Name of the certificate or asymmetric key protecting this encryption key
+        - ModifyDate: DateTime when the encryption key was last modified
+        - OpenedDate: DateTime when the encryption key was last opened
+        - RegenerateDate: DateTime when the encryption key was last regenerated
+        - SetDate: DateTime when the encryption key was last set
+        - Thumbprint: Thumbprint hash of the certificate protecting this encryption key
+
+        All properties from the base SMO DatabaseEncryptionKey object are accessible even though only default properties are displayed without using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaDbEncryptionKey
 

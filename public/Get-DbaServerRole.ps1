@@ -41,6 +41,30 @@ function Get-DbaServerRole {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ServerRole
+
+        Returns one ServerRole object per server-level role on the specified SQL Server instance. For example, querying a standard SQL Server instance returns multiple objects - one for each fixed role (sysadmin, serveradmin, dbcreator, etc.) plus any custom user-defined server roles.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Role: The name of the server role (same as Name property)
+        - Login: Array of login names that are members of this role
+        - Owner: The principal that owns the server role
+        - IsFixedRole: Boolean indicating if this is a built-in fixed role (sysadmin, serveradmin, etc.) or a custom user-defined role
+        - DateCreated: DateTime when the role was created
+        - DateModified: DateTime when the role was last modified
+
+        Additional properties available (from SMO ServerRole object):
+        - Name: The name of the server role
+        - Urn: The Uniform Resource Name of the server role object
+        - Properties: Collection of property objects for the role
+        - State: Current state of the SMO object (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO ServerRole object are accessible using Select-Object * even though only default properties are displayed without using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaServerRole
 

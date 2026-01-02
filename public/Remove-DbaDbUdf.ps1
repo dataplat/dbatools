@@ -60,6 +60,22 @@ function Remove-DbaDbUdf {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per user-defined function or user-defined aggregate that was processed for removal.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The fully qualified SQL Server instance name (computer\instance format)
+        - Database: The name of the database containing the UDF or UDA
+        - Udf: The fully qualified name of the function (schema.name format)
+        - UdfName: The unqualified function name
+        - UdfSchema: The schema name containing the function
+        - Status: The result of the removal operation ("Dropped" for successful removals, or error message for failures)
+        - IsRemoved: Boolean indicating whether the UDF or UDA was successfully removed (True if dropped, False if failed)
+
     .NOTES
         Tags: Udf, Database
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

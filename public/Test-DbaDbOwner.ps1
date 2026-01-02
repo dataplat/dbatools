@@ -51,6 +51,21 @@ function Test-DbaDbOwner {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database that does not match the target owner. Each object contains the following properties:
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database being checked
+        - DBState: The current database state (Online, Offline, Restoring, etc.)
+        - CurrentOwner: The login name of the current database owner
+        - TargetOwner: The login name of the expected database owner (the compliance target)
+        - OwnerMatch: Boolean indicating whether the current owner matches the target owner (False for all returned objects, since only non-matching databases are returned)
+
     .LINK
         https://dbatools.io/Test-DbaDbOwner
 

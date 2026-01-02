@@ -22,6 +22,17 @@ function Update-DbaBuildReference {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This function does not return pipeline objects. It updates the local build reference database file and provides informational messages via Write-Message at the Output level to indicate successful updates.
+
+        The function modifies files on disk:
+        - If the reference file needs updating, it writes the new version to the writable location (typically in the dbatools data directory)
+        - Messages are written to indicate the update timestamp comparison and result
+
+        To track the update result, capture Write-Message output or monitor the exit status of the command.
+
     .NOTES
         Tags: Utility, SqlBuild
         Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)

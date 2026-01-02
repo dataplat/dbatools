@@ -102,6 +102,31 @@ function New-DbaDatabase {
     .LINK
         https://dbatools.io/New-DbaDatabase
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one Database object for each database successfully created on the target SQL Server instance(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Name of the newly created database
+        - Status: Current database status (Normal for a new database)
+        - IsAccessible: Boolean indicating if the database is currently accessible
+        - RecoveryModel: Database recovery model (Simple, Full, or BulkLogged as specified)
+        - LogReuseWaitStatus: Status of transaction log reuse
+        - Size: Database size in megabytes (MB)
+        - Compatibility: Database compatibility level
+        - Collation: Database collation setting (as specified)
+        - Owner: Database owner login name (as specified)
+        - Encrypted: Boolean indicating if Transparent Data Encryption is enabled
+        - LastFullBackup: DateTime of last full backup (null for new database)
+        - LastDiffBackup: DateTime of last differential backup (null for new database)
+        - LastLogBackup: DateTime of last transaction log backup (null for new database)
+
+        Additional properties available via Select-Object * from the SMO Database object include all standard database properties such as MirroringPartner, MirroringRole, PrimaryFilePath, and others documented in the SQL Server Management Objects (SMO) reference.
+
     .EXAMPLE
         New-DbaDatabase -SqlInstance sql1
 

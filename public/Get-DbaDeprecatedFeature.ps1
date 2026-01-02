@@ -25,6 +25,18 @@ function Get-DbaDeprecatedFeature {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per deprecated SQL Server feature that has been used on the instance (with usage count > 0).
+
+        Properties:
+        - ComputerName: The name of the computer running the SQL Server instance
+        - InstanceName: The name of the SQL Server instance (from SQL Server's perspective)
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName format)
+        - DeprecatedFeature: The name of the deprecated SQL Server feature
+        - UsageCount: Integer count of how many times this deprecated feature has been used
+
     .NOTES
         Tags: Deprecated, General
         Author: Chrissy LeMaire (@cl), netnerds.net

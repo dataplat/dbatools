@@ -65,6 +65,20 @@ function Invoke-DbaDbDbccCleanTable {
     .LINK
         https://dbatools.io/Invoke-DbaDbDbccCleanTable
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per table or indexed view being cleaned across all specified databases.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: Name of the database containing the object being cleaned
+        - Object: The table or indexed view name or object ID specified for cleaning
+        - Cmd: The DBCC CLEANTABLE command that was executed
+        - Output: DBCC output messages, informational status, or null if operation completed silently
+
     .EXAMPLE
         PS C:\> Invoke-DbaDbDbccCleanTable -SqlInstance SqlServer2017 -Database CurrentDB -Object 'dbo.SomeTable'
 

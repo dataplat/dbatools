@@ -53,6 +53,12 @@ function Set-DbaTcpPort {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.Void
+
+        This command does not return any output to the pipeline. It modifies SQL Server network configuration and optionally restarts services.
+        When -Force is used, the Database Engine service is restarted to apply the port configuration changes immediately.
+
     .LINK
         https://dbatools.io/Set-DbaTcpPort
 

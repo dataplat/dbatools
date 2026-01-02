@@ -57,6 +57,21 @@ function Import-DbatoolsConfig {
     .LINK
         https://dbatools.io/Import-DbatoolsConfig
 
+    .OUTPUTS
+        System.Object[] (when -Peek is specified)
+
+        Returns an array of configuration element objects that would be imported without applying them. Each element has the following properties:
+        - FullName (string) - The fully qualified configuration name (e.g., 'sql.connection.timeout')
+        - Value (object) - The configuration value to be applied
+        - Type (string) - The data type of the configuration value
+        - KeepPersisted (boolean) - Boolean indicating if the value should remain persisted across sessions
+
+        Returns nothing (when -Peek is not specified)
+
+        When not using -Peek, the command imports configuration settings into the current session without returning output. Configuration is applied via Set-DbatoolsConfig and persists in the dbatools module's internal configuration storage.
+
+        Note: The function writes status messages to the information stream during import, but these are not part of the formal output.
+
     .EXAMPLE
         PS C:\> Import-DbatoolsConfig -Path '.\config.json'
 

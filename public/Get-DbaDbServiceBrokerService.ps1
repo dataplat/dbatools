@@ -44,6 +44,31 @@ function Get-DbaDbServiceBrokerService {
     .LINK
         https://dbatools.io/Get-DbaDbServiceBrokerService
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ServiceBrokerService
+
+        Returns one ServiceBrokerService object per Service Broker service found across the specified databases. System services are included by default but can be excluded using the -ExcludeSystemService parameter.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the service
+        - Owner: The principal that owns the Service Broker service
+        - ServiceID: The unique object ID of the service within the database
+        - Name: The name of the Service Broker service
+        - QueueSchema: The schema containing the associated queue
+        - QueueName: The name of the queue associated with this service
+
+        Additional properties available (from SMO ServiceBrokerService object):
+        - IsSystemObject: Boolean indicating if this is a system service created by SQL Server
+        - CreateDate: DateTime when the service was created
+        - DateLastModified: DateTime when the service was last modified
+        - State: Service state (Existing, Creating, Pending, etc.)
+        - Urn: The Urn identifier for the service
+
+        All properties from the base SMO ServiceBrokerService object are accessible via Select-Object * even though only default properties are displayed.
+
     .EXAMPLE
         PS C:\> Get-DbaDbServiceBrokerService -SqlInstance sql2016
 

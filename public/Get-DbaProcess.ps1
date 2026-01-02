@@ -69,6 +69,45 @@ function Get-DbaProcess {
     .LINK
         https://dbatools.io/Get-DbaProcess
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Job (SMO Process object)
+
+        Returns one object per active SQL Server process/session matching the specified filter criteria.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Spid: Session ID number of the process
+        - Login: SQL Server login or Windows authentication account name
+        - LoginTime: DateTime when the session logged in
+        - Host: Client machine name/hostname
+        - Database: Database currently connected to the session
+        - BlockingSpid: Session ID of the process blocking this session (if blocked)
+        - Program: Client application name that initiated the session
+        - Status: Current status of the session (sleeping, running, etc.)
+        - Command: T-SQL command currently being executed
+        - Cpu: CPU time consumed in milliseconds
+        - MemUsage: Memory usage in pages (8 KB per page)
+        - LastRequestStartTime: DateTime when the last request started
+        - LastRequestEndTime: DateTime when the last request completed
+        - MinutesAsleep: Minutes elapsed since last request ended
+        - ClientNetAddress: Client IP address
+        - NetTransport: Network transport protocol (Named Pipes, TCP, Shared Memory)
+        - EncryptOption: Encryption setting (Off, On, Required, Login)
+        - AuthScheme: Authentication scheme used (NTLM, Kerberos, SQL, etc.)
+        - NetPacketSize: Network packet size in bytes
+        - ClientVersion: Client library version number
+        - HostProcessId: Operating system process ID on the client machine
+        - IsSystem: Boolean indicating if this is a system session
+        - EndpointName: Name of the endpoint the connection is using
+        - IsDac: Boolean indicating if this is a Dedicated Admin Connection (DAC)
+        - LastQuery: The last T-SQL statement executed in this session
+
+        Additional properties available (from SMO Process object):
+        - Parent: Reference to the parent Server object
+        - All other SMO process properties are accessible using Select-Object *
+
     .EXAMPLE
         PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
 

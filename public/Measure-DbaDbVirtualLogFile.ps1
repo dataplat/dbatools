@@ -54,6 +54,28 @@ function Measure-DbaDbVirtualLogFile {
     .LINK
         https://dbatools.io/Measure-DbaDbVirtualLogFile
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database containing virtual log file (VLF) statistics and transaction log growth configuration.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database
+        - Total: Total count of VLFs in the transaction log
+
+        Additional properties available:
+        - TotalCount: Duplicate of Total (total count of VLFs)
+        - Inactive: Count of inactive VLFs (status = 0)
+        - Active: Count of active VLFs (status = 2)
+        - LogFileName: Comma-separated list of logical names of the transaction log files
+        - LogFileGrowth: Comma-separated list of growth increment values for each log file
+        - LogFileGrowthType: Comma-separated list of growth types (Percent or kb) for each log file
+
+        Use Select-Object * to access all properties.
+
     .EXAMPLE
         PS C:\> Measure-DbaDbVirtualLogFile -SqlInstance sqlcluster
 

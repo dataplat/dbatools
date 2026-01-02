@@ -54,6 +54,17 @@ function Dismount-DbaDatabase {
     .LINK
         https://dbatools.io/Dismount-DbaDatabase
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per successfully detached database with the following properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database that was detached
+        - DatabaseID: The unique identifier of the detached database
+        - DetachResult: Status of the detach operation (Success)
+
     .EXAMPLE
         PS C:\> Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging
 

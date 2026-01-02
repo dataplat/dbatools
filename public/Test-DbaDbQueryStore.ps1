@@ -58,6 +58,34 @@ function Test-DbaDbQueryStore {
     .LINK
         https://dbatools.io/Test-DbaDbQueryStore
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Query Store configuration property per database, plus one object per enabled trace flag per instance (on non-Azure servers only).
+
+        Query Store Configuration Properties (returned for each evaluated database):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database being evaluated
+        - Name: The configuration property name (e.g., ActualState, MaxStorageSizeInMB, StaleQueryThresholdInDays)
+        - Value: The current value of the configuration property
+        - RecommendedValue: The recommended value for this property based on best practices
+        - IsBestPractice: Boolean indicating if the current value matches the recommended value (true = best practice compliant)
+        - Justification: Explanation of why the recommended value is best practice
+
+        Trace Flag Status (returned only on SQL Server instances that are not Azure SQL Database):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name
+        - Name: The trace flag name (e.g., "Trace Flag 7745 Enabled", "Trace Flag 7752 Enabled")
+        - Value: The status of the trace flag (Enabled or Disabled)
+        - RecommendedValue: The trace flag number (7745 or 7752)
+        - IsBestPractice: Boolean indicating if the trace flag is enabled as recommended
+        - Justification: Explanation of why the trace flag should be enabled
+
+        Output volume: One object per configuration property per database, typically resulting in 9-10 objects per database evaluated (Query Store configuration + trace flags on non-Azure instances).
+
     .EXAMPLE
         PS C:\> Test-DbaDbQueryStore -SqlInstance localhost
 

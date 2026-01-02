@@ -37,6 +37,29 @@ function Find-DbaDbDuplicateIndex {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per duplicate or overlapping index found. When exact duplicates are found, one object is returned for each matching index (e.g., if three indexes have identical structure, three objects are returned).
+
+        Properties:
+        - DatabaseName: Name of the database containing the index
+        - TableName: Name of the table containing the index (schema.table format)
+        - IndexName: Name of the index
+        - KeyColumns: Comma-separated list of key columns with sort direction (ASC/DESC)
+        - IncludedColumns: Comma-separated list of included columns with sort direction (empty if none)
+        - IndexType: Type of index (CLUSTERED or NONCLUSTERED)
+        - IndexSizeMB: Size of the index in megabytes (Decimal)
+        - RowCount: Number of rows in the table (Integer)
+        - IsDisabled: Boolean indicating if the index is disabled
+        - IsUnique: Boolean indicating if the index is unique
+        - IsFiltered: Boolean indicating if the index has a filter condition (SQL Server 2008+)
+        - CompressionDescription: Data compression type applied to the index - NONE, ROW, or PAGE (SQL Server 2008+)
+
+        The function returns different property sets based on the target SQL Server version:
+        - SQL Server 2005: Excludes IsFiltered and CompressionDescription properties
+        - SQL Server 2008+: Includes all properties including IsFiltered and CompressionDescription
+
     .NOTES
         Tags: Index, Lookup
         Author: Claudio Silva (@ClaudioESSilva)

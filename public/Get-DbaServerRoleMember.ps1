@@ -45,6 +45,23 @@ function Get-DbaServerRoleMember {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per login that is a member of server-level roles on the specified SQL Server instance(s). For example, if the sysadmin role has three member logins and the dbcreator role has two member logins, four objects are returned total (one for each unique role-login combination when filtering by -Login parameter, or multiple objects per member if they belong to multiple roles).
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Role: The name of the server role (sysadmin, dbcreator, securityadmin, or custom role name)
+        - Name: The login name that is a member of the role
+        - SmoRole: The SMO ServerRole object representing the role - allows access to all ServerRole properties and methods for further analysis
+        - SmoLogin: The SMO Login object representing the login - allows access to all Login properties and methods for further analysis
+
+        Output quantity note:
+        When a login is a member of multiple roles, one object is returned per role-login combination. For example, if 'sa' is a member of both sysadmin and securityadmin roles, two objects are returned - one for each role membership.
+
     .LINK
         https://dbatools.io/Get-DbaServerRoleMember
 

@@ -47,6 +47,21 @@ function New-DbaAgentJobCategory {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobCategory
+
+        Returns one JobCategory object for each category created. The output is returned via Get-DbaAgentJobCategory after creation completes.
+
+        Default display properties (via Get-DbaAgentJobCategory):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Name of the job category
+        - ID: Unique identifier for the category
+        - CategoryType: Type of category (LocalJob, MultiServerJob, or None)
+
+        All properties from the base SMO JobCategory object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/New-DbaAgentJobCategory
 

@@ -106,6 +106,38 @@ function Set-DbaLogin {
     .LINK
         https://dbatools.io/Set-DbaLogin
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Login
+
+        Returns one modified Login object for each login that was modified. The object includes information about the changes made and the current state of the login account.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Login name
+        - DenyLogin: Boolean indicating if login is denied access to the instance
+        - IsDisabled: Boolean indicating if the login is disabled
+        - IsLocked: Boolean indicating if the login is locked due to failed authentication attempts
+        - PasswordPolicyEnforced: Boolean indicating if Windows password policy is enforced for the login
+        - PasswordExpirationEnabled: Boolean indicating if password expiration is enforced for the login
+        - MustChangePassword: Boolean indicating if the password must be changed at next login
+        - PasswordChanged: Boolean indicating if the password was changed in this operation
+        - ServerRole: Comma-separated list of server roles assigned to the login
+        - Notes: String containing any notes or errors encountered during the operation
+
+        Additional properties available (from SMO Login object):
+        - LoginType: Type of login (SqlLogin, WindowsUser, WindowsGroup, Certificate, AsymmetricKey)
+        - DefaultDatabase: Default database the login connects to
+        - CreateDate: DateTime when the login was created
+        - DateLastModified: DateTime of the last modification
+        - PasswordExpirationEnabled: Password expiration setting
+        - PasswordPolicyEnforced: Password policy enforcement setting
+        - DaysSinceLastLogin: Number of days since the login last authenticated
+        - Sid: Security identifier for the login
+
+        All properties from the base SMO Login object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> $SecurePassword = (Get-Credential NoUsernameNeeded).Password
         PS C:\> $cred = New-Object System.Management.Automation.PSCredential ("username", $SecurePassword)

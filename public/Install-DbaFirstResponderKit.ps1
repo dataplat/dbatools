@@ -65,6 +65,19 @@ function Install-DbaFirstResponderKit {
 
         https://www.brentozar.com/responder
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per script file processed. By default, returns one object per .sql file matching the sp_*.sql pattern plus SqlServerVersions.sql. When using the -OnlyScript parameter, only specified scripts are processed and returned.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The target database where scripts are installed
+        - Name: The base name of the script file (without extension)
+        - Status: Installation status - 'Installed' (newly created), 'Updated' (already existed and was overwritten), 'Skipped' (version incompatible like sp_BlitzQueryStore on SQL Server < 2016 or sp_BlitzInMemoryOLTP on SQL Server < 2014), or 'Error' (script execution failed)
+
     .LINK
         https://dbatools.io/Install-DbaFirstResponderKit
 

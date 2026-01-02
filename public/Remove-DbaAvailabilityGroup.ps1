@@ -49,6 +49,18 @@ function Remove-DbaAvailabilityGroup {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per availability group that is successfully removed.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance (e.g., "MSSQLSERVER" for default instance)
+        - SqlInstance: The full SQL Server instance name in format ComputerName\InstanceName
+        - AvailabilityGroup: The name of the availability group that was removed
+        - Status: Always "Removed" when the availability group is successfully dropped
+
     .NOTES
         Tags: AG, HA
         Author: Chrissy LeMaire (@cl), netnerds.net

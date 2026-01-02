@@ -52,6 +52,27 @@ function Get-DbaLinkedServerLogin {
         Copyright: (c) 2021 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.LinkedServerLogin
+
+        Returns one LinkedServerLogin object per local login mapping configured on the linked server.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the local SQL Server login
+        - RemoteUser: The remote user account on the linked server
+        - Impersonate: Boolean indicating if the remote user credentials are impersonated
+
+        Additional properties available (from SMO LinkedServerLogin object):
+        - DateLastModified: DateTime when the login mapping was last modified
+        - Parent: Reference to the parent LinkedServer object
+        - State: Current state of the SMO object (Existing, Creating, Pending, etc.)
+        - Urn: The Uniform Resource Name for the object
+
+        All properties from the base SMO object are accessible even though only default properties are displayed without using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaLinkedServerLogin
 

@@ -74,6 +74,23 @@ function Export-DbaDbTableData {
     .LINK
         https://dbatools.io/Export-DbaDbTableData
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        When used without -Passthru, returns file information objects for the created SQL script files.
+
+        Properties:
+        - Name: The filename of the generated SQL script
+        - FullName: The complete file path to the generated script
+        - Directory: The directory containing the script file
+        - Length: The size of the file in bytes
+        - LastWriteTime: When the file was last modified
+        - CreationTime: When the file was created
+
+        System.String (when -Passthru is specified)
+
+        Returns the generated INSERT statements as string output. Multiple strings are returned for table data scripts, one per INSERT statement or batch. Use -BatchSeparator parameter to control statement separation with GO or other batch terminators.
+
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData
 

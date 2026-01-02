@@ -57,6 +57,32 @@ function New-DbaReplPublication {
         Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.TransPublication or Microsoft.SqlServer.Replication.MergePublication
+
+        Returns one publication object for each newly created publication. The returned object type depends on the publication type specified:
+        - TransPublication for Transactional or Snapshot publications
+        - MergePublication for Merge publications
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance where the publication was created
+        - InstanceName: The SQL Server instance name
+        - SQLInstance: The full SQL Server instance object
+        - DatabaseName: The name of the database containing the publication
+        - Name: The name of the publication
+        - Type: The publication type (Transactional, Snapshot, or Merge)
+        - Articles: Collection of articles defined in the publication
+        - Subscriptions: Collection of subscriptions to this publication
+
+        Additional properties available from SMO publication objects:
+        - Status: Current status of the publication (normal, inactive, etc.)
+        - HasSubscriptions: Boolean indicating if the publication has active subscriptions
+        - CreationDate: DateTime when the publication was created
+        - SnapshotAgentExists: Boolean indicating if a Snapshot Agent job exists
+        - LogReaderAgentExists: Boolean indicating if a Log Reader Agent job exists (transactional/snapshot only)
+
+        Access all properties using Select-Object * to view complete publication configuration details from the SMO object.
+
     .LINK
         https://dbatools.io/New-DbaReplPublication
 

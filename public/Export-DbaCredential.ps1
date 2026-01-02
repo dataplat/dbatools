@@ -63,6 +63,18 @@ function Export-DbaCredential {
     .LINK
         https://dbatools.io/Export-DbaCredential
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns a file object representing the exported T-SQL script file(s) containing the CREATE CREDENTIAL statements. One file is returned for each SQL Server instance from which credentials were exported.
+
+        Properties:
+        - FullName: The complete path to the exported script file
+        - Name: The name of the exported script file
+        - Length: The size of the exported file in bytes
+        - LastWriteTime: The date and time the file was created or last modified
+        - Directory: The directory containing the exported file
+
     .EXAMPLE
         PS C:\> Export-DbaCredential -SqlInstance sql2017 -Path C:\temp\cred.sql
 

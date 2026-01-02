@@ -91,6 +91,34 @@ function New-DbaAgentProxy {
     .LINK
         https://dbatools.io/New-DbaAgentProxy
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount
+
+        Returns one ProxyAccount object for the newly created SQL Server Agent proxy account.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: Unique identifier for the proxy account
+        - Name: The name of the proxy account
+        - CredentialName: Name of the SQL Server credential used by this proxy
+        - CredentialIdentity: The Windows account or identity associated with the credential
+        - Description: Text description of the proxy's purpose or usage
+        - Logins: Array of SQL Server logins that have permission to use this proxy
+        - ServerRoles: Array of server roles that have permission to use this proxy
+        - MsdbRoles: Array of msdb database roles that have permission to use this proxy
+        - SubSystems: Array of SQL Agent subsystems this proxy can execute (CmdExec, PowerShell, SSIS, etc.)
+        - IsEnabled: Boolean indicating if the proxy is currently enabled and usable
+
+        Additional properties available (from SMO ProxyAccount object):
+        - CredentialID: Internal identifier for the associated credential
+        - Parent: Reference to the parent JobServer object
+        - Urn: The Uniform Resource Name for the proxy account object
+        - State: Current state of the object (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO ProxyAccount object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaAgentProxy -SqlInstance sql2016 -Name STIG -ProxyCredential 'PowerShell Proxy'
 

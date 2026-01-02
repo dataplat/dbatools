@@ -49,6 +49,23 @@ function Test-DbaLoginPassword {
     .LINK
         https://dbatools.io/Test-DbaLoginPassword
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL login with a weak password identified during testing. If no logins have weak passwords, nothing is returned.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (defaults to 'MSSQLSERVER' for default instance)
+        - SqlInstance: The full SQL Server instance name
+        - SqlLogin: The name of the SQL login with weak password
+        - WeakPassword: String value 'True' indicating weak password was found
+        - Password: The weak password that matched (with @@Name placeholder replaced by actual login name for username-based matches)
+        - Disabled: Boolean indicating if the login is currently disabled
+        - CreatedDate: DateTime when the login was created
+        - ModifiedDate: DateTime when the login was last modified
+        - DefaultDatabase: The default database for the login
+
     .EXAMPLE
         PS C:\> Test-DbaLoginPassword -SqlInstance Dev01
 

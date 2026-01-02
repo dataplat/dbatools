@@ -13,6 +13,11 @@ function Get-DbatoolsPath {
         Use this when you need to determine where dbatools will write files for export operations, temporary processing, or when configuring custom paths for specific workflows like backup staging directories or report output locations.
         Custom path names can be defined using Set-DbatoolsPath and referenced here for consistent file management across your SQL Server administration scripts.
 
+    .OUTPUTS
+        System.String
+
+        Returns the configured file path as a string. The returned path represents the location where dbatools will store files for the specified path name (Temp, LocalAppData, AppData, ProgramData, or custom-defined path). Returns $null if the specified path name is not configured.
+
     .NOTES
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

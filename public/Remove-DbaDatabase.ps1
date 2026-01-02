@@ -46,6 +46,20 @@ function Remove-DbaDatabase {
     .LINK
         https://dbatools.io/Remove-DbaDatabase
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database that was processed, regardless of success or failure.
+
+        Properties:
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database that was processed
+        - Status: Either "Dropped" when the database was successfully removed, or the error message if removal failed
+
+        The command returns results for each database processed even if some fail. Failed databases will have the error message in the Status property instead of "Dropped".
+
     .EXAMPLE
         PS C:\> Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb
 

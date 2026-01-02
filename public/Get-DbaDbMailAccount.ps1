@@ -44,6 +44,36 @@ function Get-DbaDbMailAccount {
     .LINK
         https://dbatools.io/Get-DbaDbMailAccount
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.SqlMailAccount
+
+        Returns one or more Database Mail account objects from the target SQL Server instance(s). Each account object includes configuration details for sending emails through Database Mail.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: The unique identifier (int) for the Database Mail account within the instance
+        - Name: The name of the Database Mail account
+        - DisplayName: The display name used in the "From" field of emails sent by this account
+        - Description: Text description of the account
+        - EmailAddress: The email address used as the sender (from address) for this account
+        - ReplyToAddress: The reply-to email address for emails sent from this account
+        - IsBusyAccount: Boolean indicating if the account is currently busy sending messages
+        - MailServers: Collection of SMTP servers configured for this account
+
+        Additional properties available (from SMO SqlMailAccount object):
+        - Account: The account owner or associated account information
+        - AccountType: Type of the account
+        - CreateDate: DateTime when the account was created
+        - Urn: The unified resource name (URN) for the object
+        - Parent: Reference to the parent SqlMail object
+        - Properties: Collection of property objects for the account
+        - State: Current state of the account object (Existing, Creating, Deleting)
+        - Uid: Unique identifier for the account
+
+        Use Select-Object * to access all available properties if needed.
+
     .EXAMPLE
         PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint
 

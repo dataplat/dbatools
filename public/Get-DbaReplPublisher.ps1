@@ -32,6 +32,34 @@ function Get-DbaReplPublisher {
     .LINK
         https://dbatools.io/Get-DbaReplPublisher
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.DistributionPublisher
+
+        Returns one DistributionPublisher object for each Publisher configured on the distribution server instance. If no publishers are configured, nothing is returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Status: The current status of the Publisher (e.g., Healthy, Unhealthy)
+        - WorkingDirectory: Directory path where publication data and schema files are stored
+        - DistributionDatabase: The name of the distribution database used for this Publisher
+        - DistributionPublications: Number of transactional publications at the Publisher
+        - PublisherType: The type of Publisher (e.g., MSSQLSERVER for SQL Server, or third-party identifier)
+        - Name: The instance name of the Publisher
+
+        Additional properties available (from SMO DistributionPublisher object):
+        - PublisherSecurity: Security context for replication agents connecting to the Publisher
+        - RegisteredSubscribers: Collection of Subscribers registered for this Publisher's publications
+        - TransPublications: Collection of transactional publications at the Publisher
+        - ThirdParty: Boolean indicating if this is a non-SQL Server Publisher
+        - TrustedDistributorConnection: Boolean indicating if the distributor connection is trusted
+        - HeterogeneousLogReaderAgentExists: Boolean indicating if a Log Reader Agent job exists
+        - ConnectionContext: The connection context to the SQL Server instance
+        - IsExistingObject: Boolean indicating if the object exists on the server
+
+        All properties from the base SMO DistributionPublisher object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Get-DbaReplPublisher -SqlInstance mssql1
 

@@ -80,6 +80,34 @@ function Add-DbaComputerCertificate {
     .LINK
         https://dbatools.io/Add-DbaComputerCertificate
 
+    .OUTPUTS
+        System.Security.Cryptography.X509Certificates.X509Certificate2
+
+        Returns one certificate object per imported certificate. When importing a PFX file containing a certificate chain, returns multiple objects - one for each certificate in the chain (root, intermediate, and leaf certificates).
+
+        Default display properties (via Select-DefaultView):
+        - FriendlyName: The friendly name of the certificate (as configured in the certificate store)
+        - DnsNameList: Collection of DNS names the certificate is valid for (Subject Alternative Names)
+        - Thumbprint: The SHA-1 hash of the certificate, used as a unique identifier
+        - NotBefore: DateTime when the certificate becomes valid
+        - NotAfter: DateTime when the certificate expires
+        - Subject: The distinguished name of the certificate subject (organization, common name, etc.)
+        - Issuer: The distinguished name of the certificate issuer (certification authority)
+
+        Additional properties available on the X509Certificate2 object:
+        - Archived: Boolean indicating if the certificate is marked as archived in the store
+        - Extensions: Collection of X.509 extensions (key usage, extended key usage, etc.)
+        - HasPrivateKey: Boolean indicating if the private key is available
+        - IssuerName: X500DistinguishedName object for the issuer
+        - PrivateKey: Cryptographic private key object (if HasPrivateKey is true)
+        - PublicKey: Cryptographic public key object
+        - SerialNumber: Serial number of the certificate
+        - SignatureAlgorithm: Algorithm used to sign the certificate
+        - SubjectName: X500DistinguishedName object for the subject
+        - Version: X.509 version number
+
+        Use Select-Object * to access all properties of the imported certificate objects.
+
     .EXAMPLE
         PS C:\> Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
 

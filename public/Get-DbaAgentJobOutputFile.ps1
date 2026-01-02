@@ -40,6 +40,23 @@ function Get-DbaAgentJobOutputFile {
     .LINK
         https://dbatools.io/Get-DbaAgentJobOutputFile
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per job step that has an output file configured. When a job step has no output file configured, it is not returned (though a verbose message is logged when -Verbose is used).
+
+        Default display properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName format)
+        - Job: The name of the SQL Agent job containing this step
+        - JobStep: The name of the job step
+        - OutputFileName: The local file path where this job step writes its output
+        - RemoteOutputFileName: The UNC (Universal Naming Convention) path for accessing the output file from remote systems
+
+        Additional properties available:
+        - StepId: The numeric identifier of this job step within the job (hidden from default display)
+
     .EXAMPLE
         PS C:\> Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job 'The Agent Job'
 

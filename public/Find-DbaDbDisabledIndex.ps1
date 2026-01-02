@@ -54,6 +54,21 @@ function Find-DbaDbDisabledIndex {
     .LINK
         https://dbatools.io/Find-DbaDbDisabledIndex
 
+    .OUTPUTS
+        System.Data.DataRow
+
+        Returns one data row per disabled index found in the scanned databases.
+
+        Properties:
+        - DatabaseName: The name of the database containing the disabled index
+        - DatabaseId: The numeric ID of the database in SQL Server
+        - SchemaName: The schema name where the table containing the index resides
+        - TableName: The name of the table that contains the disabled index
+        - ObjectId: The numeric ID of the table object in SQL Server
+        - IndexName: The name of the disabled index
+        - IndexId: The numeric ID of the index within the table (0 = clustered index, 1+ = nonclustered indexes)
+        - TypeDesc: The type of index (e.g., CLUSTERED, NONCLUSTERED, HEAP, SPATIAL, etc.)
+
     .EXAMPLE
         PS C:\> Find-DbaDbDisabledIndex -SqlInstance sql2005
 

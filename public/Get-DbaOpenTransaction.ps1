@@ -34,6 +34,24 @@ function Get-DbaOpenTransaction {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        Returns one object per open transaction found on the specified instance(s). If no open transactions exist, nothing is returned.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name (defaults to 'MSSQLSERVER' for default instances)
+        - SqlInstance: The full SQL Server instance name as registered on the server
+        - Spid: The session ID (process ID) of the session holding the open transaction
+        - Login: The login name associated with the session
+        - Database: The name of the database in which the transaction is open
+        - BeginTime: DateTime when the transaction began
+        - LogBytesUsed: Number of bytes of transaction log space currently used by this transaction
+        - LogBytesReserved: Number of bytes of transaction log space reserved by this transaction
+        - LastQuery: The text of the most recently executed SQL command in the session
+        - LastPlan: The execution plan XML for the most recently executed query (can be NULL if not available)
+
     .LINK
         https://dbatools.io/Get-DbaOpenTransaction
 

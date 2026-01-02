@@ -62,6 +62,20 @@ function Copy-DbaSpConfigure {
     .LINK
         https://dbatools.io/Copy-DbaSpConfigure
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per sp_configure setting processed, regardless of whether the setting was updated, skipped, or failed.
+
+        Properties:
+        - DateTime: Timestamp when the operation was performed (DbaDateTime object)
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: The name of the sp_configure setting that was copied
+        - Type: Always "Configuration Value"
+        - Status: The result of the operation - either "Skipped", "Successful", or "Failed"
+        - Notes: Additional details about the operation (e.g., "Configuration does not exist on destination", "Requires restart", or error message if failed)
+
     .EXAMPLE
         PS C:\> Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster
 

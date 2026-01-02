@@ -41,6 +41,21 @@ function Remove-DbaReplPublication {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per publication removed, containing details about the removal operation.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the publication
+        - Name: The publication name that was removed
+        - Type: The publication type (Transactional, Snapshot, or Merge)
+        - Status: The result of the removal operation ("Removed" on success, or error message on failure)
+        - IsRemoved: Boolean indicating whether the publication was successfully removed (True if successful, False if failed or not found)
+
     .NOTES
         Tags: repl, Replication
         Author: Jess Pomfret (@jpomfret), jesspomfret.com

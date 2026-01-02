@@ -41,6 +41,34 @@ function Get-DbaInstanceAudit {
     .LINK
         https://dbatools.io/Get-DbaInstanceAudit
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Audit
+
+        Returns one Audit object for each SQL Server audit configured at the instance level.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the SQL Server audit
+        - IsEnabled: Boolean indicating if the audit is currently enabled
+        - OnFailure: Action to take when an audit event cannot be written (Continue, Shutdown, FailOperation)
+        - MaximumFiles: Maximum number of audit files to retain
+        - MaximumFileSize: Maximum size for each audit file
+        - MaximumFileSizeUnit: Unit of measurement for MaximumFileSize (Megabyte, Gigabyte, Terabyte)
+        - MaximumRolloverFiles: Number of files to rollover before recycling the oldest file
+        - QueueDelay: Delay in milliseconds before flushing audit records to the audit target
+        - ReserveDiskSpace: Boolean indicating if disk space equal to MaximumFileSize is pre-allocated
+        - FullName: Full local file path where audit events are stored
+
+        Additional properties available:
+        - RemoteFullName: Remote UNC path to the audit file location (\\computername\c$\path\filename)
+        - FilePath: Directory path where audit files are stored
+        - FileName: Name of the audit file
+        - Enabled: Same as IsEnabled property
+
+        All properties from the base SMO Audit object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaInstanceAudit -SqlInstance localhost
 

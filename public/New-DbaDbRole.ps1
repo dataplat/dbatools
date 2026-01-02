@@ -62,6 +62,26 @@ function New-DbaDbRole {
     .LINK
         https://dbatools.io/New-DbaDbRole
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.DatabaseRole
+
+        Returns one DatabaseRole object for each role created. One role is created per Role parameter value in each target database.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the newly created database role
+        - Parent: The name of the database containing the role
+        - Owner: The database principal that owns the role (dbo by default, or custom owner if specified)
+
+        Additional properties available (from SMO DatabaseRole object):
+        - ID: Unique identifier for the role
+        - CreateDate: DateTime when the role was created
+        - DateLastModified: DateTime when the role was last modified
+
+        All properties from the base SMO DatabaseRole object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaDbRole -SqlInstance sql2017a -Database db1 -Role 'dbExecuter'
 

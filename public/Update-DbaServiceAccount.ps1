@@ -56,6 +56,27 @@ function Update-DbaServiceAccount {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Wmi.SqlService
+
+        Returns one service object per service that was updated, with additional properties added to indicate the result of the operation.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server service
+        - ServiceName: The Windows service name (e.g., MSSQLSERVER, SQLSERVERAGENT, MSSQL$INSTANCENAME)
+        - State: The current state of the service after the update operation (Running, Stopped, Start Pending, Stop Pending)
+        - StartName: The user account under which the service runs after the update
+        - Status: Result of the operation (Successful, Failed, or "No changes made - running in -WhatIf mode.")
+        - Message: Detailed message describing the outcome (e.g., "The login account for the service has been successfully set." or error message)
+
+        Additional properties available on the service object (from SMO SqlService):
+        - ServiceType: The type of SQL Server service (Engine, Agent, etc.)
+        - InstanceName: The SQL Server instance name associated with the service
+        - DisplayName: The friendly display name of the service
+        - StartMode: The startup mode of the service (Automatic, Manual, Disabled)
+
+        All properties from the base SMO SqlService object are accessible using Select-Object * even though only the 6 default properties are displayed by default.
+
     .LINK
         https://dbatools.io/Update-DbaServiceAccount
 

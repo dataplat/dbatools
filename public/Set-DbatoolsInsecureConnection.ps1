@@ -24,6 +24,12 @@ function Set-DbatoolsInsecureConnection {
         This parameter is deprecated and will be removed in a future release.
         The function now automatically handles registration of settings when SessionOnly is not specified.
 
+    .OUTPUTS
+        None
+
+        This command configures dbatools connection security settings but does not output any objects to the pipeline.
+        The internal configuration values are applied silently to enable insecure connections (disabled encryption, trusted certificates).
+
     .LINK
         https://dbatools.io/Set-DbatoolsInsecureConnection
         https://blog.netnerds.net/2023/03/new-defaults-for-sql-server-connections-encryption-trust-certificate/

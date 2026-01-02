@@ -29,6 +29,36 @@ function Get-DbaWsfcAvailableDisk {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_AvailableDisk
+
+        Returns one object per available disk that can be added to the cluster. The disk must be visible to all cluster nodes to be considered available.
+
+        All properties from the MSCluster_AvailableDisk WMI class are returned, including:
+
+        Properties added via Add-Member:
+        - State: Current operational state of the disk
+        - ClusterName: Name of the cluster
+        - ClusterFqdn: Fully qualified domain name of the cluster
+
+        Standard WMI properties from MSCluster_AvailableDisk:
+        - Name: Label or designation of the disk
+        - Id: Unique disk identifier (GUID for virtual disks, GptGuid or Signature for physical disks)
+        - Size: Physical disk capacity in bytes
+        - Number: Disk number as seen on the host node
+        - Status: Operational status (OK, Degraded, Error, etc.)
+        - ConnectedNodes: Array of cluster node names that can access the disk
+        - Signature: MBR disk signature value
+        - GptGuid: GUID for GPT-partitioned disks
+        - ScsiPort: SCSI port number
+        - ScsiBus: SCSI bus identifier
+        - ScsiTargetID: SCSI target identification number
+        - ScsiLUN: SCSI logical unit number
+        - Node: Name of the node providing the disk information
+        - ResourceName: Resource name when adding disk to cluster
+
+        All properties from the base WMI object are accessible; the function returns the complete object without filtering.
+
     .LINK
         https://dbatools.io/Get-DbaWsfcAvailableDisk
 

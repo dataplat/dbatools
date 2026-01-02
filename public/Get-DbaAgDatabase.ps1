@@ -46,6 +46,58 @@ function Get-DbaAgDatabase {
     .LINK
         https://dbatools.io/Get-DbaAgDatabase
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityDatabase
+
+        Returns one AvailabilityDatabase object for each database found in the availability groups on the specified instances.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the availability group
+        - LocalReplicaRole: Role of this replica (Primary or Secondary)
+        - Name: Database name
+        - SynchronizationState: Current synchronization state (NotSynchronizing, Synchronizing, Synchronized, Reverting, Initializing)
+        - IsFailoverReady: Boolean indicating if the database is ready for failover
+        - IsJoined: Boolean indicating if the database has joined the availability group
+        - IsSuspended: Boolean indicating if data movement is suspended
+
+        Additional properties available (from SMO AvailabilityDatabase object):
+        - DatabaseGuid: Unique identifier for the database
+        - EstimatedDataLoss: Estimated data loss in seconds
+        - EstimatedRecoveryTime: Estimated recovery time in seconds
+        - FileStreamSendRate: Rate of FILESTREAM data being sent (bytes/sec)
+        - GroupDatabaseId: Unique identifier for the database within the AG
+        - ID: Internal object ID
+        - IsAvailabilityDatabaseSuspended: Boolean indicating suspension state
+        - IsDatabaseDiskHealthy: Boolean indicating if database disk health is good
+        - IsDatabaseJoined: Boolean indicating database join state
+        - IsInstanceDiskHealthy: Boolean indicating if instance disk health is good
+        - IsInstanceHealthy: Boolean indicating overall instance health
+        - IsPendingSecondarySuspend: Boolean indicating if secondary suspend is pending
+        - LastCommitLsn: Last commit log sequence number
+        - LastCommitTime: Timestamp of last committed transaction
+        - LastHardenedLsn: Last hardened log sequence number
+        - LastHardenedTime: Timestamp when last LSN was hardened
+        - LastReceivedLsn: Last received log sequence number
+        - LastReceivedTime: Timestamp when last LSN was received
+        - LastRedoneLsn: Last redone log sequence number
+        - LastRedoneTime: Timestamp when last LSN was redone
+        - LastSentLsn: Last sent log sequence number
+        - LastSentTime: Timestamp when last LSN was sent
+        - LogSendQueue: Size of log send queue in KB
+        - LogSendRate: Rate of log sending (bytes/sec)
+        - LowWaterMarkForGhostCleanup: Low water mark LSN for ghost cleanup
+        - Parent: Reference to parent AvailabilityGroup SMO object
+        - RecoveryLsn: Recovery log sequence number
+        - RedoQueue: Size of redo queue in KB
+        - RedoRate: Rate of redo operations (bytes/sec)
+        - SecondaryLagSeconds: Lag in seconds for secondary replica
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - SuspendReason: Reason for suspension if database is suspended
+        - Urn: Uniform Resource Name for the SMO object
+
     .EXAMPLE
         PS C:\> Get-DbaAgDatabase -SqlInstance sql2017a
 

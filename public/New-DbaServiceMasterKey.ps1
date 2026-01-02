@@ -35,6 +35,25 @@ function New-DbaServiceMasterKey {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.MasterKey
+
+        Returns one MasterKey object for each instance where the service master key was created in the master database.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Always "master" for service master keys
+        - CreateDate: DateTime when the service master key was created
+        - DateLastModified: DateTime when the service master key was last modified
+        - IsEncryptedByServer: Boolean indicating if the master key is encrypted by the server
+
+        Additional properties available (from SMO MasterKey object):
+        - Urn: The Uniform Resource Name of the master key
+        - State: Current state of the object (Existing, Creating, etc.)
+        - Parent: Reference to parent database object
+
     .NOTES
         Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net

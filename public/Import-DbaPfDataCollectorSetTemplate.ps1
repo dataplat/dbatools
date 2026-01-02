@@ -111,6 +111,48 @@ function Import-DbaPfDataCollectorSetTemplate {
     .LINK
         https://dbatools.io/Import-DbaPfDataCollectorSetTemplate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one Data Collector Set object for each template successfully imported or modified. When collector sets are created or updated, counters are automatically duplicated for each SQL Server instance detected on the target machine.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the Data Collector Set is configured
+        - Name: The name of the Data Collector Set
+        - DisplayName: The user-friendly display name of the collector set
+        - Description: Text description of what the collector set monitors
+        - State: Current state (Unknown, Disabled, Queued, Ready, Running)
+        - Duration: Duration in seconds for which the collector set will run
+        - OutputLocation: File system path where collected data is stored
+        - LatestOutputLocation: Path to the most recently collected output files
+        - RootPath: Root directory path for the collector set configuration
+        - SchedulesEnabled: Boolean indicating if schedules are enabled
+        - Segment: Segment configuration value for data collection
+        - SegmentMaxDuration: Maximum duration in seconds for a collection segment
+        - SegmentMaxSize: Maximum size in MB for a collection segment
+        - SerialNumber: Serial number or identifier for the collector set
+        - Server: Name of the server hosting the collector set
+        - StopOnCompletion: Boolean indicating if the collector set stops automatically when complete
+        - Subdirectory: Subdirectory path for organizing collector set output
+        - SubdirectoryFormat: Format pattern for subdirectory naming
+        - SubdirectoryFormatPattern: Detailed format pattern specification
+        - Task: Name of the Windows Task Scheduler task associated with the collector set
+        - TaskArguments: Command-line arguments passed to the collector set task
+        - TaskRunAsSelf: Boolean indicating if the task runs under the specified user account
+        - TaskUserTextArguments: User-specified text arguments for the task
+        - UserAccount: Windows user account under which the collector set runs
+
+        Additional properties available (via Select-Object *):
+        - Keywords: Keywords associated with the collector set for searching/categorizing
+        - DescriptionUnresolved: Raw description text before localization/resolution
+        - DisplayNameUnresolved: Raw display name before localization/resolution
+        - Schedules: Collection of schedule objects for the collector set
+        - Xml: Raw XML configuration of the collector set
+        - Security: Security descriptor for the collector set
+        - DataCollectorSetObject: Boolean indicating the object came from a Data Collector Set COM object
+        - TaskObject: Reference to the underlying Task Scheduler COM object
+        - Credential: The credentials used to retrieve this collector set
+
     .EXAMPLE
         PS C:\> Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template 'Long Running Query'
 

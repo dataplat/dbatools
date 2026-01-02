@@ -48,6 +48,25 @@ function Get-DbaRegServerGroup {
     .LINK
         https://dbatools.io/Get-DbaRegServerGroup
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.RegisteredServers.ServerGroup
+
+        Returns one ServerGroup object for each server group retrieved from the Central Management Server. When querying multiple instances via -SqlInstance, returns one object per matching group per instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the CMS host (when CMS is database-based)
+        - InstanceName: The SQL Server instance name of the CMS
+        - SqlInstance: The full SQL Server instance name in computer\instance format (when CMS is database-based)
+        - Name: The name of the server group
+        - DisplayName: Display name of the server group for UI presentation
+        - Description: Text description of the group's purpose or contents
+        - ServerGroups: Collection of child server groups nested under this group
+        - RegisteredServers: Collection of registered servers that belong to this group
+
+        When querying the local file store (no -SqlInstance specified), ComputerName, InstanceName, and SqlInstance properties are not included in the default display, showing only Name, DisplayName, Description, ServerGroups, and RegisteredServers.
+
+        All properties from the base SMO ServerGroup object are accessible using Select-Object *, including Urn, Parent, and other internal properties.
+
     .EXAMPLE
         PS C:\> Get-DbaRegServerGroup -SqlInstance sqlserver2014a
 

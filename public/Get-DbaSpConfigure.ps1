@@ -48,7 +48,31 @@ function Get-DbaSpConfigure {
         A DbaInstanceParameter representing an array of SQL Server instances.
 
     .OUTPUTS
-        Returns PSCustomObject with properties ServerName, ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue
+        PSCustomObject
+
+        Returns one object per sp_configure setting, providing comprehensive configuration details and comparison against SQL Server defaults.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Name: The SMO property name of the configuration setting (e.g., MaxServerMemory, CostThresholdForParallelism)
+        - DisplayName: The sp_configure display name of the setting (e.g., "max server memory (MB)")
+        - Description: Human-readable description of what the configuration setting controls
+        - IsAdvanced: Boolean indicating if this is an advanced configuration setting (requires ShowAdvancedOptions enabled)
+        - IsDynamic: Boolean indicating if the setting takes effect immediately (true) or requires restart (false)
+        - MinValue: The minimum allowed value for this setting (int/numeric)
+        - MaxValue: The maximum allowed value for this setting (int/numeric)
+        - ConfiguredValue: The current configured value stored in sys.configurations (may require restart to take effect)
+        - RunningValue: The currently running/active value in memory on the SQL Server instance
+        - DefaultValue: The out-of-the-box default value for this setting from SQL Server
+        - IsRunningDefaultValue: Boolean indicating if the running value matches the default value (true = using default, false = customized)
+
+        Hidden properties (accessible with Select-Object *):
+        - ServerName: The server name (same as SqlInstance)
+        - Parent: Reference to the SMO Server object
+        - ConfigName: Alias for Name property
+        - Property: Reference to the underlying SMO ConfigurationProperty object
 
     .EXAMPLE
         PS C:\> Get-DbaSpConfigure -SqlInstance localhost

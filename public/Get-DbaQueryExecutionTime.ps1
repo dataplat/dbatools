@@ -66,6 +66,31 @@ function Get-DbaQueryExecutionTime {
     .LINK
         https://dbatools.io/Get-DbaQueryExecutionTime
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per stored procedure or SQL statement matching the specified execution time filters. Results are limited to the top N results per database based on average CPU worker time (highest first), where N is controlled by -MaxResultsPerDb (default 100).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database containing the query
+        - ProcName: The procedure or object name; empty string for ad hoc statements
+        - ObjectID: The object ID from sys.dm_exec_procedure_stats or sys.dm_exec_query_stats
+        - TypeDesc: The type description - "PROCEDURE" for stored procedures or "STATEMENT" for ad hoc queries
+        - Executions: The execution_count - total number of times the query has been executed
+        - AvgExecMs: Average execution time in milliseconds (total_worker_time / execution_count / 1000)
+        - MaxExecMs: Maximum execution time in milliseconds (max_worker_time / 1000)
+        - CachedTime: DateTime when the query plan was cached (1901-01-01 for ad hoc statements)
+        - LastExecTime: DateTime when the query last executed
+        - TotalWorkerTimeMs: Total CPU worker time in milliseconds across all executions
+        - TotalElapsedTimeMs: Total elapsed time in milliseconds across all executions
+        - SQLText: Truncated SQL text (first 50 characters for ad hoc statements, procedure name for stored procedures)
+
+        Additional properties (available with Select-Object *):
+        - FullStatementText: Complete SQL statement text (full T-SQL for ad hoc statements, procedure name for stored procedures)
+
     .EXAMPLE
         PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008, sqlserver2012
 

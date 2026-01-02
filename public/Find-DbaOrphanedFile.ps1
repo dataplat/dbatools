@@ -55,6 +55,26 @@ function Find-DbaOrphanedFile {
     .LINK
         https://dbatools.io/Find-DbaOrphanedFile
 
+    .OUTPUTS
+        System.String (when -LocalOnly is specified)
+
+        Returns the local file path to each orphaned file.
+
+        System.String (when -RemoteOnly is specified)
+
+        Returns the UNC path to each orphaned file.
+
+        PSCustomObject (default)
+
+        Returns one object per orphaned file found with the following properties:
+
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName
+        - Server: The server name (same as ComputerName for most instances)
+        - Filename: The local file path to the orphaned file
+        - RemoteFilename: The UNC network path to the orphaned file (\\ComputerName\share\path format)
+
     .EXAMPLE
         PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a
 

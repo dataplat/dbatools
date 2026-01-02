@@ -36,6 +36,21 @@ function Get-DbaPfDataCollectorSetTemplate {
     .LINK
         https://dbatools.io/Get-DbaPfDataCollectorSetTemplate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per template found in the specified template directory (default: dbatools built-in repository).
+
+        Default display properties (via Select-DefaultView):
+        - Name: The name of the Performance Monitor template
+        - Source: The source or origin of the template (from the metadata XML file)
+        - UserAccount: The user account under which the template will run when deployed
+        - Description: Description of what performance counters and scenarios the template monitors
+
+        Additional properties available (via Select-Object *):
+        - Path: Full file system path to the template XML file
+        - File: The template XML file name
+
     .EXAMPLE
         PS C:\> Get-DbaPfDataCollectorSetTemplate
 

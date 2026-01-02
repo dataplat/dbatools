@@ -50,6 +50,11 @@
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This command does not produce any output. It performs configuration changes on the SQL Server instances (removing log shipping setup from msdb and optionally dropping the secondary database) but does not return any objects to the pipeline.
+
     .NOTES
         Tags: LogShipping
         Author: Sander Stad (@sqlstad), sqlstad.nl

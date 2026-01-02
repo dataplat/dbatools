@@ -43,6 +43,31 @@ function Get-DbaWaitingTask {
     .LINK
         https://dbatools.io/Get-DbaWaitingTask
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per waiting session found on the SQL Server instance, with the following default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Spid: The session ID (SPID) of the waiting session
+        - Thread: The execution context ID (thread number within the session)
+        - Scheduler: The scheduler ID managing this task
+        - WaitMs: The duration of the wait in milliseconds
+        - WaitType: The type of wait (e.g., CXPACKET, LCK_M_IX, PAGEIOLATCH_SH, etc.)
+        - BlockingSpid: The session ID (SPID) blocking this session, or 0 if no blocking
+
+        Additional properties available with Select-Object *:
+        - ResourceDesc: Detailed resource description from the wait (e.g., database:file:page IDs for page waits)
+        - NodeId: For CXPACKET waits, the parallel exchange node ID from ResourceDesc
+        - Dop: Degree of Parallelism for parallel execution waits; null for serial execution
+        - DbId: Database ID where the wait is occurring
+        - SqlText: The SQL text being executed in the waiting session (excluded from default display)
+        - QueryPlan: The query execution plan as XML (excluded from default display)
+        - InfoUrl: URL to SQLSkills wait type documentation for this specific wait type (excluded from default display)
+
+        When -Spid is specified, only waiting tasks for those session IDs are returned. When -IncludeSystemSpid is specified, system sessions are included in results along with user sessions.
+
     .EXAMPLE
         PS C:\> Get-DbaWaitingTask -SqlInstance sqlserver2014a
 

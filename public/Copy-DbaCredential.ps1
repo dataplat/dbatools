@@ -85,6 +85,20 @@ function Copy-DbaCredential {
         - sysadmin access on SQL Server.
         - DAC access enabled for local (default)
 
+    .OUTPUTS
+        PSCustomObject (MigrationObject type)
+
+        Returns one object per credential copy operation (successful, skipped, or failed).
+
+        Properties:
+        - DateTime: Timestamp of when the operation was executed (DbaDateTime)
+        - SourceServer: The name of the source SQL Server instance where the credential was copied from
+        - DestinationServer: The name of the destination SQL Server instance where the credential was copied to
+        - Name: The name of the credential that was migrated
+        - Type: The type of object migrated (always "Credential" for this command)
+        - Status: The result of the operation (Successful, Skipping, or Failed)
+        - Notes: Additional details about the operation result, such as why a credential was skipped or the reason for failure
+
     .LINK
         https://dbatools.io/Copy-DbaCredential
 

@@ -51,6 +51,21 @@ function Get-DbaDbFeatureUsage {
     .LINK
         https://dbatools.io/Get-DbaDbFeatureUsage
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Enterprise-edition feature found in the queried database(s).
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance (MSSQLSERVER for default instance)
+        - SqlInstance: The full SQL Server instance name (computer\instance or just computer for default)
+        - Id: The feature ID from sys.dm_db_persisted_sku_features
+        - Feature: The name of the Enterprise-edition feature that is currently in use
+        - Database: The database where this Enterprise feature was detected
+
+        No properties are returned if no Enterprise features are found in the queried database(s).
+
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Get-DbaDbFeatureUsage
 

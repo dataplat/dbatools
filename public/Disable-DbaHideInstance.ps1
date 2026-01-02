@@ -42,6 +42,17 @@ function Disable-DbaHideInstance {
     .LINK
         https://dbatools.io/Disable-DbaHideInstance
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per instance successfully modified. The object contains the results of disabling the Hide Instance setting.
+
+        Properties:
+        - ComputerName: The name of the computer where the HideInstance setting was modified
+        - InstanceName: The SQL Server instance name (e.g., 'PROD', 'SQL2008R2SP2')
+        - SqlInstance: The full SQL Server instance identifier (computer\instancename format)
+        - HideInstance: Boolean indicating if the instance is now hidden ($true) or visible ($false)
+
     .EXAMPLE
         PS C:\> Disable-DbaHideInstance
 

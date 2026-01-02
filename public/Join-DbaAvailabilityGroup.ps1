@@ -52,6 +52,13 @@ function Join-DbaAvailabilityGroup {
     .LINK
         https://dbatools.io/Join-DbaAvailabilityGroup
 
+    .OUTPUTS
+        None
+
+        This command does not return any objects. It modifies the SQL Server instance configuration by joining an existing availability group on the secondary replica.
+
+        The command succeeds silently when the availability group is successfully joined. If any errors occur during the join operation, they are caught and reported via Stop-Function.
+
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02
 

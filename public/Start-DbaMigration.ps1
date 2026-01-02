@@ -180,6 +180,21 @@ function Start-DbaMigration {
     .LINK
         https://dbatools.io/Start-DbaMigration
 
+    .OUTPUTS
+        Object (output from Copy-DbaDatabase command when -Exclude Databases is not specified)
+
+        When databases are migrated (default behavior unless -Exclude Databases is used), this function returns the output from Copy-DbaDatabase. The specific object type and properties depend on the migration method selected:
+
+        When using -BackupRestore method:
+        Returns database migration status objects showing which databases were successfully restored on destination servers.
+
+        When using -DetachAttach method:
+        Returns database reattachment status objects showing which databases were successfully attached on destination servers.
+
+        No output is returned when -Exclude Databases is specified, as the function then only migrates server-level objects without providing pipeline output.
+
+        All other migration operations (logins, SQL Agent jobs, configuration, etc.) perform their tasks without returning objects to the pipeline. Use -Verbose to see detailed progress messages for all migration steps.
+
     .EXAMPLE
         PS C:\> Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach
 

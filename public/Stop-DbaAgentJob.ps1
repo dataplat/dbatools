@@ -57,6 +57,24 @@ function Stop-DbaAgentJob {
     .LINK
         https://dbatools.io/Stop-DbaAgentJob
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Job
+
+        Returns one SMO Job object for each job that was stopped. The object represents the job after the stop operation has been initiated (or completed if -Wait is specified).
+
+        Default display properties (via SMO Agent.Job):
+        - Name: The name of the SQL Server Agent job
+        - Enabled: Boolean indicating if the job is enabled
+        - CurrentRunStatus: The current execution status of the job (Idle, Executing, etc.)
+        - LastRunOutcome: The outcome of the last job execution (Succeeded, Failed, Retry, Canceled, etc.)
+        - LastRunDate: DateTime of the most recent job execution
+        - NextRunDate: DateTime of the next scheduled job execution
+        - OwnerLoginName: The login name of the job owner
+
+        All SMO Job object properties are accessible using Select-Object *. See Microsoft SQL Server Management Objects (SMO) documentation for the complete property list.
+
+        Note: When -Wait is specified, the function waits until CurrentRunStatus becomes Idle before returning. Without -Wait, the function returns immediately after initiating the stop operation, and CurrentRunStatus may still show Executing.
+
     .EXAMPLE
         PS C:\> Stop-DbaAgentJob -SqlInstance localhost
 

@@ -61,6 +61,28 @@ function Measure-DbaBackupThroughput {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database analyzed, containing aggregated backup throughput statistics across the backup history.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database being analyzed
+        - AvgThroughput: Average backup throughput in megabytes per second; DbaSize object with unit conversion properties (.Megabyte, .Gigabyte, etc.)
+        - AvgSize: Average backup size; DbaSize object with unit conversion properties
+        - AvgDuration: Average time required for backups; DbaTimeSpan object representing time span
+        - MinThroughput: Minimum backup throughput observed; DbaSize object
+        - MaxThroughput: Maximum backup throughput observed; DbaSize object
+        - MinBackupDate: DateTime of the earliest backup in the analyzed time period; DbaDateTime object
+        - MaxBackupDate: DateTime of the most recent backup in the analyzed time period; DbaDateTime object
+        - BackupCount: Total number of backups analyzed for this database (int)
+
+        All size and throughput values use dbasize objects that automatically format to appropriate units (Bytes, KB, MB, GB, TB) when displayed.
+        The DbaTimeSpan and DbaDateTime objects provide specialized handling for time values with automatic formatting.
+
     .NOTES
         Tags: Backup, Database
         Author: Chrissy LeMaire (@cl), netnerds.net

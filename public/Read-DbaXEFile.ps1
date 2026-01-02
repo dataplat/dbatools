@@ -23,6 +23,27 @@ function Read-DbaXEFile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.XEvent.XELite.XEvent[] (when -Raw is specified)
+
+        Returns the native XEvent objects from the XELite reader with full access to XEvent properties and methods for advanced programmatic processing.
+
+        PSCustomObject[] (default)
+
+        Returns one object per event in the trace file with dynamic properties based on the captured fields and actions. All objects include standard properties plus event-specific fields:
+
+        Standard properties:
+        - name: The name of the Extended Event
+        - timestamp: The timestamp when the event was captured
+
+        Dynamic properties vary based on the Extended Events session configuration and captured actions:
+        - All unique field names from the XEvent.Fields collection appear as individual properties
+        - All unique action names from the XEvent.Actions collection appear as individual properties (action names are normalized to remove the leading package.action prefix)
+
+        For example, a deadlock trace might include properties like: database_id, duration, cpu_time, physical_reads, logical_reads, writes, priority, transaction_id, client_app_name, etc. A security audit trace might include: client_principal_name, server_principal_name, statement, etc.
+
+        Use Select-Object * to see all properties returned in the results.
+
     .NOTES
         Tags: ExtendedEvent, XE, XEvent
         Author: Chrissy LeMaire (@cl), netnerds.net

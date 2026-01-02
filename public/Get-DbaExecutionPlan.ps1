@@ -70,6 +70,51 @@ function Get-DbaExecutionPlan {
     .LINK
         https://dbatools.io/Get-DbaExecutionPlan
 
+    .OUTPUTS
+        PSCustomObject (default)
+
+        Returns one object per execution plan found in the SQL Server plan cache. Each object contains parsed execution plan information with query metadata and cost/performance details.
+
+        Default display properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: The database name where the query executes
+        - ObjectName: The object name (procedure, function, or NULL for ad-hoc queries)
+        - QueryPosition: Row number ordering statements within a batch
+        - SqlHandle: Hexadecimal representation of the SQL handle for the query
+        - PlanHandle: Hexadecimal representation of the plan handle
+        - CreationTime: DateTime when the execution plan was created
+        - LastExecutionTime: DateTime when the plan was last executed
+        - StatementCondition: XML node containing statement conditions
+        - StatementSimple: XML node for simple statements
+        - StatementId: Statement identifier within the batch
+        - StatementCompId: Statement compilation ID
+        - StatementType: Type of statement (SELECT, INSERT, UPDATE, DELETE, etc.)
+        - RetrievedFromCache: Boolean indicating if plan was retrieved from cache
+        - StatementSubTreeCost: Estimated subtree cost (decimal)
+        - StatementEstRows: Estimated number of rows returned (int/decimal)
+        - SecurityPolicyApplied: Boolean indicating if Row-Level Security policy was applied
+        - StatementOptmLevel: Optimization level (int)
+        - QueryHash: Hashed identifier for the query text
+        - QueryPlanHash: Hashed identifier for the query plan
+        - StatementOptmEarlyAbortReason: Reason for early optimization abort if applicable
+        - CardinalityEstimationModelVersion: Cardinality estimation version used (int)
+        - ParameterizedText: Parameterized version of the query text
+        - StatementSetOptions: SET options active during statement compilation
+        - QueryPlan: XML node containing the execution plan tree structure
+        - BatchConditionXml: XML node for batch-level conditions
+        - BatchSimpleXml: XML node for batch-level simple statements
+
+        Additional properties available (excluded from default view):
+        - BatchQueryPlanRaw: Complete batch-level query plan as XML object
+        - SingleStatementPlanRaw: Single statement plan as XML object
+        - PlanWarnings: Plan warnings and advice if applicable
+
+        System.Data.DataTable (when -Force is specified)
+
+        Returns all columns from the Dynamic Management Views (sys.dm_exec_query_stats, sys.dm_exec_query_plan, sys.dm_exec_text_query_plan) without parsing or transformation. Provides raw access to all available execution statistics, compilation details, and metadata for advanced analysis.
+
     .EXAMPLE
         PS C:\> Get-DbaExecutionPlan -SqlInstance sqlserver2014a
 

@@ -51,6 +51,28 @@ function Test-DbaAgSpn {
     .LINK
         https://dbatools.io/Test-DbaAgSpn
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SPN validation result. For each listener, two objects are returned - one for the SPN without port (e.g., MSSQLSvc/listener.domain.com) and one with port (e.g., MSSQLSvc/listener.domain.com:1433). The function queries Active Directory to verify SPN registration and reports the validation status.
+
+        Properties:
+        - ComputerName: The fully qualified network name of the computer hosting the SQL Server instance
+        - SqlInstance: The SQL Server instance name
+        - InstanceName: The instance name (defaults to MSSQLSERVER for default instance)
+        - SqlProduct: The SQL Server product version string including edition and platform information
+        - InstanceServiceAccount: The service account running SQL Server (may be modified if virtual or managed service account is detected)
+        - RequiredSPN: The Service Principal Name that should be registered in Active Directory
+        - IsSet: Boolean indicating whether the required SPN is currently registered in Active Directory (true if found, false if missing)
+        - Cluster: Boolean indicating whether SQL Server is running in a clustered configuration
+        - TcpEnabled: Boolean indicating whether TCP protocol is enabled (always true for AG listeners)
+        - Port: The TCP port number the listener uses
+        - DynamicPort: Boolean indicating whether dynamic port allocation is enabled (always false for AG listeners)
+        - Warning: Reserved for warning messages; contains "None" unless a warning condition is detected
+        - Error: Contains "SPN missing" if the SPN is not found in Active Directory, or "None" if the SPN is properly registered
+
+        Note: The Credential and DomainName properties are excluded from the default display but remain accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Test-DbaAgSpn
 

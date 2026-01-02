@@ -43,6 +43,35 @@ function Disable-DbaReplDistributor {
     .LINK
         https://dbatools.io/Disable-DbaReplDistributor
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.ReplicationServer
+
+        Returns one ReplicationServer object showing the final state of the distributor after removal is complete. Output is only returned when the target instance is currently configured as a distributor; if it is not, a terminating error is raised instead.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer running the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The fully qualified SQL Server instance name (ComputerName\InstanceName)
+        - IsDistributor: Boolean indicating whether the instance is configured as a distributor (False after successful removal)
+        - IsPublisher: Boolean indicating whether the instance is configured as a publisher
+        - DistributionServer: The name of the distribution server (if configured)
+        - DistributionDatabase: The name of the distribution database (if configured)
+
+        Additional properties available (from SMO ReplicationServer object):
+        - AgentCheckupInterval: Interval in seconds for replication agent health checks
+        - DisruptiveAdministrativeAction: Indicates if a disruptive administrative action was performed
+        - DistributionDatabases: Collection of distribution databases
+        - DistributionServerName: Name of the distribution server
+        - DistributionTables: Collection of distribution tables
+        - EnabledReplicationAgentProfile: Name of the enabled replication agent profile
+        - DistributionRetention: Number of days distribution data is retained
+        - MaxDistributionRetention: Maximum distribution retention in days
+        - MinDistributionRetention: Minimum distribution retention in days
+        - PublisherName: Name of the publisher
+        - SubscriptionCleanupInterval: Interval in seconds for subscription cleanup
+
+        All properties from the base ReplicationServer object are accessible via Select-Object *.
+
     .EXAMPLE
         PS C:\> Disable-DbaReplDistributor -SqlInstance mssql1
 

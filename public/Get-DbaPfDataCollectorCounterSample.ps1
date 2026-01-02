@@ -62,6 +62,37 @@ function Get-DbaPfDataCollectorCounterSample {
     .LINK
         https://dbatools.io/Get-DbaPfDataCollectorCounterSample
 
+    .OUTPUTS
+        PSCustomObject (when -Continuous is not specified)
+
+        Returns one object per counter sample collected from Performance Monitor.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - DataCollectorSet: The name of the parent Data Collector Set
+        - DataCollector: The name of the Data Collector
+        - Name: The counter name/path
+        - Timestamp: DateTime of the counter collection
+        - Path: The counter path in standard Performance Monitor format
+        - InstanceName: The instance name from the counter sample
+        - CookedValue: The processed/calculated counter value (double)
+        - RawValue: The raw counter value before processing (long)
+        - SecondValue: The secondary value for certain counter types (long)
+        - MultipleCount: Multiple count value for the sample (int)
+        - CounterType: The type of performance counter (PerformanceCounterType)
+        - SampleTimestamp: The timestamp of the individual sample (datetime)
+        - SampleTimestamp100NSec: Timestamp in 100-nanosecond intervals (long)
+        - Status: Status of the sample (PerformanceCounterSampleStatus)
+        - DefaultScale: Default scaling factor for the counter (int)
+        - TimeBase: Time base value for the counter (long)
+
+        Additional properties available:
+        - Sample: Collection of counter samples (excluded from default view)
+
+        System.Diagnostics.PerformanceCounterSampleData (when -Continuous is specified)
+
+        When -Continuous is specified, returns raw output from PowerShell's Get-Counter cmdlet providing continuous real-time counter samples until interrupted with CTRL+C.
+
     .EXAMPLE
         PS C:\> Get-DbaPfDataCollectorCounterSample
 

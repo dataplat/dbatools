@@ -23,6 +23,17 @@ function Get-DbaInstalledPatch {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server patch found on the target computer(s). Patches are filtered from the Windows Registry to include only those with "Hotfix" or "Service Pack" in their display name and "SQL" anywhere in the name.
+
+        Properties:
+        - ComputerName: The name of the computer where the patch was found
+        - Name: The display name of the patch as shown in Windows Registry (e.g., "Hotfix for SQL Server 2019 (KB5012345)")
+        - Version: The version number of the patch as stored in Registry
+        - InstallDate: The installation date converted to DbaDate type; use .Date property for date-only access or .DateTime for full datetime
+
     .NOTES
         Tags: Deployment, Updates, Patches
         Author: Hiram Fleitas, @hiramfleitas, fleitasarts.com

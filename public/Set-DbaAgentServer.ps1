@@ -142,6 +142,40 @@ function Set-DbaAgentServer {
     .LINK
         https://dbatools.io/Set-DbaAgentServer
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobServer
+
+        Returns the updated JobServer object for the modified instance(s). Properties include all SQL Server Agent configuration settings that were modified, plus any existing settings.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The SQL Server Agent service name
+        - AgentLogLevel: Current logging level (Errors, Warnings, etc.)
+        - DatabaseMailProfile: Active Database Mail profile for notifications
+        - SqlAgentAutoStart: Boolean indicating if Agent auto-starts
+        - SqlAgentRestart: Boolean indicating if Agent auto-restarts on failure
+
+        Additional properties available (from SMO JobServer object):
+        - AgentMailType: Mail system type (DatabaseMail or SqlAgentMail)
+        - AgentShutdownWaitTime: Seconds to wait for Agent shutdown
+        - CpuPolling/IsCpuPollingEnabled: CPU idle monitoring enabled status
+        - ErrorLogFile: Path to Agent error log
+        - IdleCpuDuration: Seconds before considering CPU idle
+        - IdleCpuPercentage: CPU percentage threshold for idle
+        - LoginTimeout: Connection timeout in seconds
+        - MaximumHistoryRows: Maximum job history rows retained
+        - MaximumJobHistoryRows: Maximum history rows per job
+        - NetSendRecipient: Legacy net send notification recipient
+        - ReplaceAlertTokensEnabled: Token replacement in alerts enabled status
+        - SaveInSentFolder: Save notification copies to mail sent items
+        - SqlAgentMailProfile: Legacy SQL Agent Mail profile
+        - SqlServerRestart: Agent can restart SQL Server
+        - WriteOemErrorLog: Write errors to Windows Event Log
+
+        All properties from the base SMO JobServer object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Set-DbaAgentServer -SqlInstance sql1 -MaximumHistoryRows 10000 -MaximumJobHistoryRows 100
 

@@ -40,6 +40,18 @@ function Get-DbaDbFileMapping {
     .LINK
         https://dbatools.io/Get-DbaDbFileMapping
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per accessible database provided as input. Each object contains the file mapping information needed for restore operations.
+
+        Properties:
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The instance name of the SQL Server (e.g., "MSSQLSERVER" or "SQLEXPRESS")
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database from which file mappings were extracted
+        - FileMapping: A hashtable mapping logical file names (keys) to their physical file paths (values), compatible with Restore-DbaDatabase
+
     .EXAMPLE
         PS C:\> $filemap = Get-DbaDbFileMapping -SqlInstance sql2016 -Database test
         PS C:\> Get-ChildItem \\nas\db\backups\test | Restore-DbaDatabase -SqlInstance sql2019 -Database test -FileMapping $filemap.FileMapping

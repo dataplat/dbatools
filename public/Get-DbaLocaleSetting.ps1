@@ -30,6 +30,52 @@ function Get-DbaLocaleSetting {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per computer with Windows locale settings from the HKEY_CURRENT_USER\Control Panel\International registry key.
+
+        Standard properties (always included):
+        - ComputerName: The name of the computer where locale settings were retrieved
+
+        Additional properties (dynamically retrieved from registry):
+        The command dynamically reads all values from the HKEY_CURRENT_USER\Control Panel\International registry key and adds them as properties. Common properties include:
+
+        Locale and Language Settings:
+        - Locale: The locale code (e.g., "00000410" for Italian)
+        - LocaleName: The locale name in standard format (e.g., "it-IT")
+        - sLanguage: The language abbreviation (e.g., "ITA")
+        - sCurrency: The currency symbol (e.g., "€")
+
+        Date and Time Formatting:
+        - sLongDate: Format string for long date display
+        - sShortDate: Format string for short date display
+        - sTimeFormat: Format string for time display
+        - sShortTime: Format string for short time display
+
+        Numeric Formatting:
+        - sDecimal: Decimal separator character (e.g., ".")
+        - sList: List separator character (e.g., "," or ";")
+        - iDigits: Number of digits after decimal separator
+
+        Additional Integer Settings (prefixed with 'i'):
+        - iCountry: Country/region identifier
+        - iCurrDigits: Number of digits for currency
+        - iCurrency: Currency format (0=prefix, 1=suffix)
+        - iDate: Date format (0=M/D/Y, 1=D/M/Y, 2=Y/M/D)
+        - iFirstDayOfWeek: First day of week (0=Sunday, 1=Monday, etc.)
+        - iFirstWeekOfYear: First week of year definition
+        - iLZero: Leading zero display (0=none, 1=display)
+        - iTime: Time format (0=12-hour, 1=24-hour)
+        - iTLZero: Time leading zero for hours (0=none, 1=display)
+
+        Additional String Settings (prefixed with 's'):
+        - sAM: AM symbol for 12-hour format
+        - sPM: PM symbol for 12-hour format
+        - sThousand: Thousands separator character
+
+        Note: The actual properties returned depend on what is configured in the registry. Not all standard properties may be present on all systems. Use Select-Object * to see all properties available for a specific computer.
+
     .LINK
         https://dbatools.io/Get-DbaLocaleSetting
 
