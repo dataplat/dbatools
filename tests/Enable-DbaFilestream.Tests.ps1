@@ -42,7 +42,8 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ServiceAccessLevel | Should -Be 1
         }
 
-        It "Should change the FileStream Level to 2" {
+        It "Should change the FileStream Level to 2" -Skip:$env:APPVEYOR {
+            # Skip this test on AppVeyor because the instance does not support FileStream Level 2.
             $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 2 -ShareName TestShare -Force
 
             $results.InstanceAccessLevel | Should -Be 2
