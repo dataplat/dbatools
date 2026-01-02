@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2 -ErrorAction SilentlyContinue
+        Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -ExcludeSystem | Remove-DbaDatabase
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
