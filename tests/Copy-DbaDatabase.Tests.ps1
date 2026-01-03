@@ -63,15 +63,15 @@ Describe $CommandName -Tag IntegrationTests {
         $supportDbs = @("ReportServer", "ReportServerTempDB", "distribution", "SSISDB")
 
         $splatRemoveInitial = @{
-            SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+            SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
             Database    = $backuprestoredb, $detachattachdb
         }
         Remove-DbaDatabase @splatRemoveInitial
 
-        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
         $server3.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
 
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
         $server2.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server2.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server2.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         $splatSetOwner = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceCopy1
             Database    = $backuprestoredb, $detachattachdb
             TargetLogin = "sa"
         }
@@ -95,13 +95,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatRemoveFinal = @{
-            SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+            SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
             Database    = $backuprestoredb, $detachattachdb, $backuprestoredb2
         }
         Remove-DbaDatabase @splatRemoveFinal -ErrorAction SilentlyContinue
 
         $splatRemoveSupport = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceCopy1
             Database    = $supportDbs
         }
         Remove-DbaDatabase @splatRemoveSupport -ErrorAction SilentlyContinue
@@ -113,8 +113,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Support databases should not be migrated" {
             $SupportDbs = @("ReportServer", "ReportServerTempDB", "distribution", "SSISDB")
             $splatCopyAll = @{
-                Source        = $TestConfig.instance2
-                Destination   = $TestConfig.instance3
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 AllDatabase   = $true
                 BackupRestore = $true
                 UseLastBackup = $true
@@ -128,8 +128,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Detach Attach" {
         BeforeAll {
             $splatDetachAttach = @{
-                Source       = $TestConfig.instance2
-                Destination  = $TestConfig.instance3
+                Source       = $TestConfig.InstanceCopy1
+                Destination  = $TestConfig.InstanceCopy2
                 Database     = $detachattachdb
                 DetachAttach = $true
                 Reattach     = $true
@@ -143,16 +143,16 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should not be null" {
-            $db1 = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $detachattachdb
-            $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $detachattachdb
+            $db1 = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $detachattachdb
+            $db2 = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $detachattachdb
 
             $db1.Name | Should -Be $detachattachdb
             $db2.Name | Should -Be $detachattachdb
         }
 
         It "Name, recovery model, and status should match" {
-            $db1 = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $detachattachdb
-            $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $detachattachdb
+            $db1 = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $detachattachdb
+            $db2 = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $detachattachdb
 
             # Compare its variable
             $db1.Name | Should -Be $db2.Name
@@ -163,8 +163,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should say skipped" {
             $splatDetachAgain = @{
-                Source       = $TestConfig.instance2
-                Destination  = $TestConfig.instance3
+                Source       = $TestConfig.InstanceCopy1
+                Destination  = $TestConfig.InstanceCopy2
                 Database     = $detachattachdb
                 DetachAttach = $true
                 Reattach     = $true
@@ -178,14 +178,14 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Backup restore" {
         BeforeAll {
             $splatStopProcess = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
 
             $splatBackupRestore = @{
-                Source        = $TestConfig.instance2
-                Destination   = $TestConfig.instance3
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 Database      = $backuprestoredb
                 BackupRestore = $true
                 SharedPath    = $NetworkPath
@@ -200,7 +200,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "retains its name, recovery model, and status." {
             $splatGetDbs = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Database    = $backuprestoredb
             }
             $dbs = Get-DbaDatabase @splatGetDbs
@@ -214,8 +214,8 @@ Describe $CommandName -Tag IntegrationTests {
         # needs regr test that uses $backuprestoredb once #3377 is fixed
         It "Should say skipped" {
             $splatBackupRestore2 = @{
-                Source        = $TestConfig.instance2
-                Destination   = $TestConfig.instance3
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 Database      = $backuprestoredb2
                 BackupRestore = $true
                 SharedPath    = $NetworkPath
@@ -230,8 +230,8 @@ Describe $CommandName -Tag IntegrationTests {
             It "Should overwrite when forced to" {
                 #regr test for #3358
                 $splatBackupRestoreForce = @{
-                    Source        = $TestConfig.instance2
-                    Destination   = $TestConfig.instance3
+                    Source        = $TestConfig.InstanceCopy1
+                    Destination   = $TestConfig.InstanceCopy2
                     Database      = $backuprestoredb2
                     BackupRestore = $true
                     SharedPath    = $NetworkPath
@@ -246,13 +246,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "UseLastBackup - read backup history" {
         BeforeAll {
             $splatStopProcess = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
 
             $splatRemoveDb = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy2
                 Database    = $backuprestoredb
             }
             Remove-DbaDatabase @splatRemoveDb
@@ -260,7 +260,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "copies a database successfully using backup history" {
             $splatBackup = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceCopy1
                 Database        = $backuprestoredb
                 BackupDirectory = $NetworkPath
             }
@@ -268,8 +268,8 @@ Describe $CommandName -Tag IntegrationTests {
             $backupFile = $backupResults.FullName
 
             $splatCopyLastBackup = @{
-                Source        = $TestConfig.instance2
-                Destination   = $TestConfig.instance3
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 Database      = $backuprestoredb
                 BackupRestore = $true
                 UseLastBackup = $true
@@ -282,7 +282,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "retains its name, recovery model, and status." {
             $splatGetDbs = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Database    = $backuprestoredb
             }
             $dbs = Get-DbaDatabase @splatGetDbs
@@ -297,13 +297,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "UseLastBackup with -Continue" {
         BeforeAll {
             $splatStopProcess = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
 
             $splatRemoveDb = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy2
                 Database    = $backuprestoredb
             }
             Remove-DbaDatabase @splatRemoveDb
@@ -311,7 +311,7 @@ Describe $CommandName -Tag IntegrationTests {
             #Pre-stage the restore
             $backupPaths = @()
             $splatBackupFull = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceCopy1
                 Database        = $backuprestoredb
                 BackupDirectory = $NetworkPath
             }
@@ -319,7 +319,7 @@ Describe $CommandName -Tag IntegrationTests {
             $backupPaths += $fullBackupResults.FullName
 
             $splatRestore = @{
-                SqlInstance  = $TestConfig.instance3
+                SqlInstance  = $TestConfig.InstanceCopy2
                 DatabaseName = $backuprestoredb
                 NoRecovery   = $true
             }
@@ -327,7 +327,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             #Run log now
             $splatBackupDiff = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceCopy1
                 Database        = $backuprestoredb
                 BackupDirectory = $NetworkPath
                 Type            = "Log"
@@ -343,8 +343,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "continues the restore over existing database using backup history" {
             # It should already have a backup history (full+diff) by this time
             $splatCopyContinue = @{
-                Source        = $TestConfig.instance2
-                Destination   = $TestConfig.instance3
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 Database      = $backuprestoredb
                 BackupRestore = $true
                 UseLastBackup = $true
@@ -357,7 +357,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "retains its name, recovery model, and status." {
             $splatGetDbs = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Database    = $backuprestoredb
             }
             $dbs = Get-DbaDatabase @splatGetDbs
@@ -372,27 +372,27 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Copying with renames using backup/restore" {
         BeforeAll {
             $splatStopProcess = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $TestConfig.instance3 -ExcludeSystem | Remove-DbaDatabase
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -ExcludeSystem | Remove-DbaDatabase
         }
 
         AfterAll {
             $splatStopProcess = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $TestConfig.instance3 -ExcludeSystem | Remove-DbaDatabase
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -ExcludeSystem | Remove-DbaDatabase
         }
 
         It "Should have renamed a single db" {
             $newname = "copy$(Get-Random)"
             $splatCopyRename = @{
-                Source        = $TestConfig.instance2
-                Destination   = $TestConfig.instance3
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 Database      = $backuprestoredb
                 BackupRestore = $true
                 SharedPath    = $NetworkPath
@@ -400,14 +400,14 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Copy-DbaDatabase @splatCopyRename
             $results[0].DestinationDatabase | Should -Be $newname
-            $files = Get-DbaDbFile -Sqlinstance $TestConfig.instance3 -Database $newname
+            $files = Get-DbaDbFile -Sqlinstance $TestConfig.InstanceCopy2 -Database $newname
             ($files.PhysicalName -like "*$newname*").Count | Should -Be $files.Count
         }
 
         It "Should warn if trying to rename and prefix" {
             $splatCopyRenamePrefix = @{
-                Source          = $TestConfig.instance2
-                Destination     = $TestConfig.instance3
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
                 Database        = $backuprestoredb
                 BackupRestore   = $true
                 SharedPath      = $NetworkPath
@@ -423,8 +423,8 @@ Describe $CommandName -Tag IntegrationTests {
             $prefix = "da$(Get-Random)"
             # Writes warning: "Failed to update BrokerEnabled to True" - This is a bug in Copy-DbaDatabase
             $splatCopyPrefix = @{
-                Source          = $TestConfig.instance2
-                Destination     = $TestConfig.instance3
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
                 Database        = $backuprestoredb
                 BackupRestore   = $true
                 SharedPath      = $NetworkPath
@@ -434,7 +434,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Copy-DbaDatabase @splatCopyPrefix
             # $warn | Should -BeNullOrEmpty
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb"
-            $files = Get-DbaDbFile -Sqlinstance $TestConfig.instance3 -Database "$prefix$backuprestoredb"
+            $files = Get-DbaDbFile -Sqlinstance $TestConfig.InstanceCopy2 -Database "$prefix$backuprestoredb"
             ($files.PhysicalName -like "*$prefix$backuprestoredb*").Count | Should -Be $files.Count
         }
     }
@@ -442,13 +442,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Copying with renames using detachattach" {
         BeforeAll {
             $splatStopProcess = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
 
             $splatRemoveDb = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy2
                 Database    = $backuprestoredb
             }
             Remove-DbaDatabase @splatRemoveDb
@@ -457,8 +457,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have renamed a single db" {
             $newname = "copy$(Get-Random)"
             $splatDetachRename = @{
-                Source       = $TestConfig.instance2
-                Destination  = $TestConfig.instance3
+                Source       = $TestConfig.InstanceCopy1
+                Destination  = $TestConfig.InstanceCopy2
                 Database     = $backuprestoredb
                 DetachAttach = $true
                 NewName      = $newname
@@ -466,16 +466,16 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Copy-DbaDatabase @splatDetachRename
             $results[0].DestinationDatabase | Should -Be $newname
-            $files = Get-DbaDbFile -Sqlinstance $TestConfig.instance3 -Database $newname
+            $files = Get-DbaDbFile -Sqlinstance $TestConfig.InstanceCopy2 -Database $newname
             ($files.PhysicalName -like "*$newname*").Count | Should -Be $files.Count
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newname
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $newname
         }
 
         It "Should prefix databasename and files" {
             $prefix = "copy$(Get-Random)"
             $splatDetachPrefix = @{
-                Source       = $TestConfig.instance2
-                Destination  = $TestConfig.instance3
+                Source       = $TestConfig.InstanceCopy1
+                Destination  = $TestConfig.InstanceCopy2
                 Database     = $backuprestoredb
                 DetachAttach = $true
                 Reattach     = $true
@@ -483,22 +483,22 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Copy-DbaDatabase @splatDetachPrefix
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb"
-            $files = Get-DbaDbFile -Sqlinstance $TestConfig.instance3 -Database "$prefix$backuprestoredb"
+            $files = Get-DbaDbFile -Sqlinstance $TestConfig.InstanceCopy2 -Database "$prefix$backuprestoredb"
             ($files.PhysicalName -like "*$prefix$backuprestoredb*").Count | Should -Be $files.Count
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database "$prefix$backuprestoredb"
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database "$prefix$backuprestoredb"
         }
 
         It "Should warn and exit if newname and >1 db specified" {
             $splatRestore = @{
-                SqlInstance                      = $TestConfig.instance2
+                SqlInstance                      = $TestConfig.InstanceCopy1
                 Path                             = "$($TestConfig.appveyorlabrepo)\RestoreTimeClean2016"
                 UseDestinationDefaultDirectories = $true
             }
             $null = Restore-DbaDatabase @splatRestore
 
             $splatDetachMultiple = @{
-                Source          = $TestConfig.instance2
-                Destination     = $TestConfig.instance3
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
                 Database        = $backuprestoredb, "RestoreTimeClean"
                 DetachAttach    = $true
                 Reattach        = $true
@@ -507,7 +507,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = Copy-DbaDatabase @splatDetachMultiple 3> $null
             $warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "RestoreTimeClean"
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database "RestoreTimeClean"
         }
     }
 
@@ -516,7 +516,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatStopProcess = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
@@ -524,10 +524,10 @@ Describe $CommandName -Tag IntegrationTests {
             $random = Get-Random
             $offlineTestDb = "dbatoolsci_offline_test$random"
 
-            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
             $server2.Query("CREATE DATABASE $offlineTestDb; ALTER DATABASE $offlineTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
 
-            $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            $server3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
             $server3.Query("CREATE DATABASE $offlineTestDb; ALTER DATABASE $offlineTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -537,7 +537,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatRemoveDbs = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Database    = $offlineTestDb
             }
             Remove-DbaDatabase @splatRemoveDbs -ErrorAction SilentlyContinue
@@ -547,8 +547,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should not set source database offline when copy operation fails" {
             $splatCopyOffline = @{
-                Source           = $TestConfig.instance2
-                Destination      = $TestConfig.instance3
+                Source           = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
                 Database         = $offlineTestDb
                 BackupRestore    = $true
                 UseLastBackup    = $true
@@ -560,27 +560,27 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Skipped"
             $results.Notes | Should -Be "Already exists on destination"
 
-            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $offlineTestDb
             $sourceDb.Status | Should -Not -BeLike "*Offline*"
         }
 
         It "Should set source database offline when copy operation succeeds" {
             $splatRemoveDestDb = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceCopy2
                 Database    = $offlineTestDb
             }
             Remove-DbaDatabase @splatRemoveDestDb
 
             $splatBackup = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceCopy1
                 Database        = $offlineTestDb
                 BackupDirectory = $NetworkPath
             }
             $null = Backup-DbaDatabase @splatBackup
 
             $splatCopySuccess = @{
-                Source           = $TestConfig.instance2
-                Destination      = $TestConfig.instance3
+                Source           = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
                 Database         = $offlineTestDb
                 BackupRestore    = $true
                 UseLastBackup    = $true
@@ -590,11 +590,11 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results[0].Status | Should -Be "Successful"
 
-            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $offlineTestDb
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $offlineTestDb
             $sourceDb.Status | Should -BeLike "*Offline*"
 
             # Set database online again to be able to remove the files on remove of database
-            $null = Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $offlineTestDb -Online
+            $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceCopy1 -Database $offlineTestDb -Online
         }
     }
 
@@ -602,24 +602,24 @@ Describe $CommandName -Tag IntegrationTests {
         Context "Copying via Azure storage" {
             BeforeAll {
                 $splatStopProcess = @{
-                    SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                    SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                     Program     = "dbatools PowerShell module - dbatools.io"
                 }
                 Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
 
                 $splatRemoveDb = @{
-                    SqlInstance = $TestConfig.instance3
+                    SqlInstance = $TestConfig.InstanceCopy2
                     Database    = $backuprestoredb
                 }
                 Remove-DbaDatabase @splatRemoveDb
 
-                $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+                $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
                 $sql = "CREATE CREDENTIAL [$TestConfig.azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
                 $server2.Query($sql)
                 $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$TestConfig.azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
                 $server2.Query($sql)
 
-                $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+                $server3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
                 $sql = "CREATE CREDENTIAL [$TestConfig.azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
                 $server3.Query($sql)
                 $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$TestConfig.azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
@@ -627,19 +627,19 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             AfterAll {
-                Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $backuprestoredb | Remove-DbaDatabase
-                $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+                Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $backuprestoredb | Remove-DbaDatabase
+                $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
                 $server2.Query("DROP CREDENTIAL [$TestConfig.azureblob]")
                 $server2.Query("DROP CREDENTIAL dbatools_ci")
-                $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+                $server3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
                 $server3.Query("DROP CREDENTIAL [$TestConfig.azureblob]")
                 $server3.Query("DROP CREDENTIAL dbatools_ci")
             }
 
             It "Should Copy $backuprestoredb via Azure legacy credentials" {
                 $splatAzureLegacy = @{
-                    Source          = $TestConfig.instance2
-                    Destination     = $TestConfig.instance3
+                    Source          = $TestConfig.InstanceCopy1
+                    Destination     = $TestConfig.InstanceCopy2
                     Database        = $backuprestoredb
                     BackupRestore   = $true
                     SharedPath      = $TestConfig.azureblob
@@ -655,8 +655,8 @@ Describe $CommandName -Tag IntegrationTests {
                 Start-Sleep -Seconds 60
 
                 $splatAzureNew = @{
-                    Source        = $TestConfig.instance2
-                    Destination   = $TestConfig.instance3
+                    Source        = $TestConfig.InstanceCopy1
+                    Destination   = $TestConfig.InstanceCopy2
                     Database      = $backuprestoredb
                     NewName       = "djkhgfkjghfdjgd"
                     BackupRestore = $true

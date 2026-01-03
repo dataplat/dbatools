@@ -29,40 +29,40 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $user1 = "dbatoolssci_user1_$(Get-Random)"
         $user2 = "dbatoolssci_user2_$(Get-Random)"
         $role = "dbatoolssci_role_$(Get-Random)"
         $splatLoginUser1 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Login       = $user1
             Password    = ("Password1234!" | ConvertTo-SecureString -asPlainText -Force)
         }
         $null = New-DbaLogin @splatLoginUser1
         $splatLoginUser2 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Login       = $user2
             Password    = ("Password1234!" | ConvertTo-SecureString -asPlainText -Force)
         }
         $null = New-DbaLogin @splatLoginUser2
         $dbname = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname -Owner sa
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname -Owner sa
         $splatDbUser1 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = $dbname
             Login       = $user1
             Username    = $user1
         }
         $null = New-DbaDbUser @splatDbUser1
         $splatDbUser2 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = $dbname
             Login       = $user2
             Username    = $user2
         }
         $null = New-DbaDbUser @splatDbUser2
         $splatDbUser1Msdb = @{
-            SqlInstance   = $TestConfig.instance2
+            SqlInstance   = $TestConfig.InstanceSingle
             Database      = "msdb"
             Login         = $user1
             Username      = $user1
@@ -70,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = New-DbaDbUser @splatDbUser1Msdb
         $splatDbUser2Msdb = @{
-            SqlInstance   = $TestConfig.instance2
+            SqlInstance   = $TestConfig.InstanceSingle
             Database      = "msdb"
             Login         = $user2
             Username      = $user2
@@ -87,11 +87,11 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("DROP USER $user1", "msdb")
         $null = $server.Query("DROP USER $user2", "msdb")
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $user1, $user2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding a user to a role" {
         BeforeAll {
             $splatAddRoleMember = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Role        = $role
                 Member      = $user1
                 Database    = $dbname
@@ -129,7 +129,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $roleDB = Get-DbaDbRoleMember @splatGetRoleMemberBefore
             $splatAddMultipleRoles = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Role        = @("db_datareader", "SQLAgentReaderRole")
                 Member      = $user1
                 Database    = "msdb"
@@ -182,7 +182,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding a user to a role they are already a member of" {
         BeforeAll {
             $splatAddExistingMember = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Role        = $role
                 Member      = $user1
                 Database    = $dbname
@@ -199,7 +199,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding a role to another role" {
         BeforeAll {
             $splatAddRoleToRole = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Role        = "db_datawriter"
                 Member      = $role
                 Database    = $dbname

@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $agname = "dbatoolsci_removewholegroup"
-        $null = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert
+        $null = New-DbaAvailabilityGroup -Primary $TestConfig.InstanceHadr -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -41,22 +41,22 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "removes the newly created ag" {
         It "removes the ag" {
-            $results = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
+            $results = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname
             $WarnVar | Should -BeNullorEmpty
             $results.Status | Should -Be 'Removed'
             $results.AvailabilityGroup | Should -Be $agname
         }
 
         It "really removed the ag" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname
             $results | Should -BeNullorEmpty
         }
     }
-} #$TestConfig.instance2 for appveyor
+}
