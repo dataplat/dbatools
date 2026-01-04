@@ -111,7 +111,7 @@ if (-not $script:libraryroot) {
 
 try {
     # if core add core to the path, otherwise add desktop
-    $dll = [System.IO.Path]::Combine($script:libraryroot, 'lib',  'dbatools.dll')
+    $dll = [System.IO.Path]::Combine($script:libraryroot, 'lib', 'dbatools.dll')
     Import-Module $dll
 } catch {
     throw "Couldn't import dbatools library | $PSItem"
@@ -138,7 +138,6 @@ if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion -lt [ver
     throw "dbatools requires at least PowerShell 7.4.0 when running on Core. Please update your PowerShell."
 }
 
-
 if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $PSVersionTable.Platform -eq 'Win32NT')) {
     $script:isWindows = $true
 } else {
@@ -159,8 +158,8 @@ Write-ImportTime -Text "Setting some OS variables"
 # if core then run this
 if ($PSVersionTable.PSEdition -eq 'Core') {
     Add-Type -AssemblyName System.Security
+    Write-ImportTime -Text "Loading System.Security"
 }
-#Write-ImportTime -Text "Loading System.Security"
 
 # SQLSERVER:\ path not supported
 if ($ExecutionContext.SessionState.Path.CurrentLocation.Drive.Name -eq 'SqlServer') {
@@ -207,7 +206,6 @@ $dbatoolsSystemSystemNode.SerialImport -or
 $dbatoolsSystemUserNode.SerialImport -or
 $option.SerialImport
 
-
 $gitDir = $script:PSModuleRoot, '.git' -join [IO.Path]::DirectorySeparatorChar
 $pubDir = $script:PSModuleRoot, 'public' -join [IO.Path]::DirectorySeparatorChar
 
@@ -251,7 +249,9 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
 } else {
     try {
         Import-Command -Path "$script:PSModuleRoot/dbatools.dat" -ErrorAction Stop
+        Write-ImportTime -Text "Loading dbatools.dat"
     } catch {
+        Write-ImportTime -Text "Loading dbatools.dat failed, retrying after waiting"
         # sometimes the file is in use by another process
         # not sure why, bc it's opened like this: using (FileStream fs = File.Open(Path, FileMode.Open, FileAccess.Read))
         function Test-FileInuse {
@@ -273,8 +273,10 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
             Start-Sleep -Seconds 2
             $waitsec++
         } while ((Test-FileInuse -FilePath "$script:PSModuleRoot/dbatools.dat") -and $waitsec -lt 10)
+        Write-ImportTime -Text "Finished waiting"
 
         Import-Command -Path "$script:PSModuleRoot/dbatools.dat"
+        Write-ImportTime -Text "Loading dbatools.dat"
     }
 }
 
@@ -1149,6 +1151,8 @@ if ($option.LoadTypes -or
         ))) {
     Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
     Write-ImportTime -Text "Updating type data"
+    Update-FormatData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Format.ps1xml")
+    Write-ImportTime -Text "Updating format data"
 }
 
 $loadedModuleNames = (Get-Module sqlserver, sqlps -ErrorAction Ignore).Name
