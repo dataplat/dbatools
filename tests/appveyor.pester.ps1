@@ -58,7 +58,6 @@ param (
 Set-Location $ModuleBase
 # required to calculate coverage
 $global:dbatools_dotsourcemodule = $true
-$dbatools_serialimport = $true
 
 #imports the module making sure DLL is loaded ok
 Import-Module "$ModuleBase\dbatools.psd1"
