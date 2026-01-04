@@ -125,7 +125,7 @@ function Start-DbaDbEncryption {
 
         Note: Sequential processing (default, without -Parallel) does not output to the pipeline. Use -Parallel to receive result objects for each encrypted database.
 
-        .EXAMPLE
+    .EXAMPLE
         PS C:\> $masterkeypass = (Get-Credential justneedpassword).Password
         PS C:\> $certbackuppass = (Get-Credential justneedpassword).Password
         PS C:\> $params = @{
@@ -485,7 +485,7 @@ function Start-DbaDbEncryption {
                     Stop-Function -Message "Failed to create shared resources on $servername" -ErrorRecord $_ -Continue
                 }
 
-                # Step 4: Create a database encryption key in the target database if needed
+                # Step 3: Create a database encryption key in the target database if needed
                 # This has to be done before parallel processing as New-DbaDbEncryptionKey uses Get-DbaDatabase internally
                 # which uses the custom method .Query() that is not present in runspaces due to the way dbatools is loaded there.
                 foreach ($db in $InputObject) {
