@@ -58,6 +58,36 @@ function Get-DbaService {
     .LINK
         https://dbatools.io/Get-DbaService
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Wmi.SqlService
+
+        Returns one service object per SQL Server-related Windows service found on the target computer(s). Each service object includes properties for service name, status, startup mode, and service account information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the service
+        - ServiceName: The Windows service name (e.g., MSSQLSERVER, SQLSERVERAGENT)
+        - ServiceType: The type of SQL Server service (Engine, Agent, FullText, SSIS, SSAS, SSRS, Browser, PolyBase, Launchpad, Unknown)
+        - InstanceName: The SQL Server instance name associated with the service
+        - DisplayName: The friendly display name of the service
+        - StartName: The user account under which the service runs
+        - State: The current state of the service (Stopped, Start Pending, Stop Pending, Running)
+        - StartMode: The startup mode of the service (Unknown, Automatic, Manual, Disabled)
+
+        When -AdvancedProperties is specified, additional properties are included:
+        - Version: The SQL Server version number of the service
+        - SPLevel: The service pack level installed on the service
+        - SkuName: The SQL Server edition/SKU name (e.g., Enterprise, Standard)
+        - Clustered: Boolean (as numeric or empty) indicating if the service is part of a cluster
+        - VSName: The virtual server name if the service is clustered
+
+        ScriptMethods (callable on returned objects):
+        - Stop([bool]$Force): Stops the service, with optional force parameter
+        - Start(): Starts the service
+        - Restart([bool]$Force): Restarts the service, with optional force parameter
+        - ChangeStartMode([string]$Mode): Changes the startup mode (Automatic, Manual, Disabled)
+
+        All service objects support Get-Member to view additional properties from the underlying WMI SqlService class.
+
     .EXAMPLE
         PS C:\> Get-DbaService -ComputerName sqlserver2014a
 
