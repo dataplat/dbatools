@@ -30,11 +30,11 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql" -ErrorAction SilentlyContinue
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceHadr -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql" -ErrorAction SilentlyContinue
         $agname = "dbatoolsci_ag_revoke"
 
         $splatAvailabilityGroup = @{
-            Primary      = $TestConfig.instance3
+            Primary      = $TestConfig.InstanceHadr
             Name         = $agname
             ClusterType  = "None"
             FailoverMode = "Manual"
@@ -49,16 +49,16 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance3 -Login "claudio", "port", "tester"
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login "claudio", "port", "tester"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "revokes big perms" {
         It "returns results with proper data" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance3 -Login tester | Revoke-DbaAgPermission -Type EndPoint
+            $results = Get-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login tester | Revoke-DbaAgPermission -Type EndPoint
             $results.Status | Should -Be "Success"
         }
     }
-} #$TestConfig.instance2 for appveyor
+}

@@ -1,5 +1,5 @@
 function Get-TestsForScenario {
-    param($Scenario, $AllTest, [switch]$Silent)
+    param($Scenario, $AllTests, [switch]$Silent)
 
     # does this scenario run an 'autodetect' ?
     if ($TestsRunGroups[$Scenario].StartsWith('autodetect_')[0]) {
@@ -83,7 +83,7 @@ function Get-TestsForBuildScenario {
             # Get the list of changed files in this PR compared to the base branch
             $targetBranch = if ($env:APPVEYOR_REPO_BRANCH) { "origin/$env:APPVEYOR_REPO_BRANCH" } else { "origin/development" }
             $ChangedFiles = git diff --name-only "$targetBranch...HEAD" 2>$null
-            
+
             if (-not($Silent)) {
                 Write-Host -ForegroundColor DarkGreen "...Changed files are: "
                 foreach($cmd in $ChangedFiles)
@@ -91,8 +91,8 @@ function Get-TestsForBuildScenario {
                     Write-Host -ForegroundColor DarkGreen "...  - $cmd"
                 }
             }
-            
-            
+
+
             if ($ChangedFiles) {
                 # Track what types of files changed
                 $changedCommands = @()
@@ -115,7 +115,7 @@ function Get-TestsForBuildScenario {
                         $changedTests += $testName
                     }
                 }
-                
+
                 # Build list of tests to run based on changed commands
                 $testsForChangedFiles = @()
 

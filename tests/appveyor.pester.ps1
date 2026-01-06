@@ -400,7 +400,7 @@ if (-not $Finalize) {
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
 
     # invoking a single invoke-pester consumes too much memory, let's go file by file
-    $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
+    $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests | Sort-Object Name
 
     # Create a summary file for all test runs
     $allTestsSummary = @{

@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Note: Extended Stored Procedures require DLL files which may not be available in test environment
         # This test focuses on the command structure and will skip if no custom XPs exist
-        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
 
         # Check if any custom Extended Stored Procedures exist
         $xpCheckSql = @"
@@ -49,16 +49,16 @@ WHERE p.type = 'X'
     Context "When copying Extended Stored Procedures" {
         It "Should connect to source and destination servers" {
             $splatConnection = @{
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
             }
             { Copy-DbaExtendedStoredProcedure @splatConnection } | Should -Not -Throw
         }
 
         It "Should handle missing custom XPs gracefully" {
             $splatCopy = @{
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
             }
             $results = Copy-DbaExtendedStoredProcedure @splatCopy
             # Results may be null if no custom XPs exist
@@ -67,8 +67,8 @@ WHERE p.type = 'X'
 
         It "Should support WhatIf parameter" {
             $splatWhatIf = @{
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 WhatIf      = $true
             }
             { Copy-DbaExtendedStoredProcedure @splatWhatIf } | Should -Not -Throw

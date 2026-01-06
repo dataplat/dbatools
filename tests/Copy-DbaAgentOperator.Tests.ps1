@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
         $operatorName2 = "dbatoolsci_operator2"
 
         # Create the operators on the source server.
-        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
         $sqlAddOperator1 = "EXEC msdb.dbo.sp_add_operator @name=N'$operatorName1', @enabled=1, @pager_days=0"
         $null = $sourceServer.Query($sqlAddOperator1)
         $sqlAddOperator2 = "EXEC msdb.dbo.sp_add_operator @name=N'$operatorName2', @enabled=1, @pager_days=0"
@@ -50,13 +50,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $sourceCleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -ErrorAction SilentlyContinue
+        $sourceCleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -ErrorAction SilentlyContinue
         $sqlDeleteOp1Source = "EXEC msdb.dbo.sp_delete_operator @name=N'$operatorName1'"
         $null = $sourceCleanupServer.Query($sqlDeleteOp1Source)
         $sqlDeleteOp2Source = "EXEC msdb.dbo.sp_delete_operator @name=N'$operatorName2'"
         $null = $sourceCleanupServer.Query($sqlDeleteOp2Source)
 
-        $destCleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -ErrorAction SilentlyContinue
+        $destCleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -ErrorAction SilentlyContinue
         $sqlDeleteOp1Dest = "EXEC msdb.dbo.sp_delete_operator @name=N'$operatorName1'"
         $null = $destCleanupServer.Query($sqlDeleteOp1Dest)
         $sqlDeleteOp2Dest = "EXEC msdb.dbo.sp_delete_operator @name=N'$operatorName2'"
@@ -68,8 +68,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying operators" {
         It "Returns two copied operators" {
             $splatCopyOperators = @{
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 Operator    = @($operatorName1, $operatorName2)
             }
             $results = Copy-DbaAgentOperator @splatCopyOperators
@@ -79,8 +79,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Returns one result that's skipped when copying an existing operator" {
             $splatCopyExisting = @{
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
                 Operator    = $operatorName1
             }
             $copyResult = Copy-DbaAgentOperator @splatCopyExisting

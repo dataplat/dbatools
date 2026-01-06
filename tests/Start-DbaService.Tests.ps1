@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart
             $instanceName = $server.ServiceName
             $computerName = $server.NetName
 
@@ -39,11 +39,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Single service restart" {
             BeforeAll {
-                $null = Stop-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
+                $null = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
             }
 
             It "starts the services back" {
-                $services = Start-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
+                $services = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
                 $services | Should -Not -BeNullOrEmpty
                 foreach ($service in $services) {
                     $service.State | Should -Be 'Running'
@@ -54,11 +54,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Multiple services through pipeline" {
             BeforeAll {
-                $null = Stop-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine -Force
+                $null = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine -Force
             }
 
             It "starts the services back through pipeline" {
-                $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
+                $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
                 $services | Should -Not -BeNullOrEmpty
                 foreach ($service in $services) {
                     $service.State | Should -Be 'Running'
@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Error handling" {
             It "errors when passing an invalid InstanceName" {
-                { Start-DbaService -ComputerName $TestConfig.instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
+                { Start-DbaService -ComputerName $TestConfig.InstanceRestart -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
             }
         }
     }

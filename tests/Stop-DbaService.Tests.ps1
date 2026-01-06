@@ -29,31 +29,31 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command execution and functionality" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart
             $instanceName = $server.ServiceName
             $computerName = $server.NetName
         }
 
         It "stops some services" {
-            $services = Stop-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
+            $services = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Stopped'
                 $service.Status | Should -Be 'Successful'
             }
 
-            $null = Start-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
+            $null = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
         }
 
         It "stops specific services based on instance name through pipeline" {
-            $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService -Force
+            $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService -Force
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Stopped'
                 $service.Status | Should -Be 'Successful'
             }
 
-            $null = Start-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Engine, Agent
+            $null = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Engine, Agent
         }
     }
 }
