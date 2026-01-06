@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
             $backupFile = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Path $tmpBackupPath -Type Full
             $backupFile2 = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname2 -Path $tmpBackupPath2 -Type Full
 
-            $tmpBackupPath3 = Join-Path (Get-DbaDefaultPath -SqlInstance $TestConfig.instance2).Data "dbatoolsci_$(Get-Random)"
+            $tmpBackupPath3 = [IO.Path]::Combine((Get-DbaDefaultPath -SqlInstance $TestConfig.instance2).Data, "dbatoolsci_$(Get-Random)")
             Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { $null = New-Item -Path $args -ItemType Directory } -ArgumentList $tmpBackupPath3
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
