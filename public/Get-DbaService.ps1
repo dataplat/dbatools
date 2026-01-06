@@ -79,6 +79,7 @@ function Get-DbaService {
         - SkuName: The SQL Server edition/SKU name (e.g., Enterprise, Standard)
         - Clustered: Boolean (as numeric or empty) indicating if the service is part of a cluster
         - VSName: The virtual server name if the service is clustered
+        - SqlInstance: The full SQL instance name (including virtual server name if clustered) for engine services
 
         ScriptMethods (callable on returned objects):
         - Stop([bool]$Force): Stops the service, with optional force parameter
