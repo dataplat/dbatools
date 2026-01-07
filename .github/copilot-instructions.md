@@ -23,8 +23,8 @@
    - Install: `Install-Module PSScriptAnalyzer -RequiredVersion 1.18.2`
    - Used by: `Invoke-DbatoolsFormatter` command and CI builds
 
-3. **Pester v5.6.1** - Required for running tests
-   - Install: `Install-Module Pester -RequiredVersion 5.6.1`
+3. **Pester v5.7.1** - Required for running tests
+   - Install: `Install-Module Pester -RequiredVersion 5.7.1`
    - Tests MUST use Pester v5 syntax (no `-ForEach` parameter, strict scoping)
 
 ## PR Summary Guidelines
@@ -151,7 +151,7 @@ When generating PR summaries:
 Install-Module PSScriptAnalyzer -RequiredVersion 1.18.2 -Force
 
 # 3. Install Pester (for testing)
-Install-Module Pester -RequiredVersion 5.6.1 -Force
+Install-Module Pester -RequiredVersion 5.7.1 -Force
 
 # 4. Import the module to verify setup
 Import-Module .\dbatools.psd1
