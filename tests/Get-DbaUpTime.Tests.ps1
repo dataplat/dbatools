@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "Should have correct properties" {
-            $results = Get-DbaUptime -SqlInstance $TestConfig.instance1
+            $results = Get-DbaUptime -SqlInstance $TestConfig.InstanceMulti1
             $ExpectedProps = "ComputerName", "InstanceName", "SqlServer", "SqlUptime", "WindowsUptime", "SqlStartTime", "WindowsBootTime", "SinceSqlStart", "SinceWindowsBoot"
             ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command can handle multiple SqlInstances" {
         BeforeAll {
-            $results = Get-DbaUptime -SqlInstance $TestConfig.instance1, $TestConfig.instance2
+            $results = Get-DbaUptime -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
         }
 
         It "Command resultset could contain 2 results" {
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Properties should return expected types" {
         BeforeAll {
-            $results = Get-DbaUptime -SqlInstance $TestConfig.instance1
+            $results = Get-DbaUptime -SqlInstance $TestConfig.InstanceMulti1
         }
 
         It "SqlStartTime should be a DbaDateTime for $($result.SqlServer)" {

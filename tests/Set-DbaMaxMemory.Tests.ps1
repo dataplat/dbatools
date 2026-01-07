@@ -24,18 +24,18 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $inst1CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $TestConfig.instance1).MaxValue
-        $inst2CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $TestConfig.instance2).MaxValue
+        $inst1CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1).MaxValue
+        $inst2CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti2).MaxValue
     }
 
     AfterAll {
-        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1 -Max $inst1CurrentMaxValue -WarningAction SilentlyContinue
-        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance2 -Max $inst2CurrentMaxValue -WarningAction SilentlyContinue
+        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1 -Max $inst1CurrentMaxValue -WarningAction SilentlyContinue
+        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti2 -Max $inst2CurrentMaxValue -WarningAction SilentlyContinue
     }
 
     Context "Connects to multiple instances" {
         BeforeAll {
-            $multiInstanceResults = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Max 1024 -WarningAction SilentlyContinue
+            $multiInstanceResults = Set-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Max 1024 -WarningAction SilentlyContinue
         }
 
         It "Returns 1024 for each instance" {
