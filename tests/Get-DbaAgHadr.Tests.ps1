@@ -20,11 +20,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-# $TestConfig.instance3 is used for Availability Group tests and needs Hadr service setting enabled
-
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $results = Get-DbaAgHadr -SqlInstance $TestConfig.instance3
+        $results = Get-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr
     }
 
     Context "Validate output" {
@@ -32,4 +30,4 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IsHadrEnabled | Should -Be $true
         }
     }
-} #$TestConfig.instance2 for appveyor
+}

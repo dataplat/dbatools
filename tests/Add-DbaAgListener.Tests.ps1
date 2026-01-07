@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the objects.
         $splatAg = @{
-            Primary      = $TestConfig.instance3
+            Primary      = $TestConfig.InstanceHadr
             Name         = $agName
             ClusterType  = "None"
             FailoverMode = "Manual"
@@ -68,8 +68,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -95,4 +95,4 @@ Describe $CommandName -Tag IntegrationTests {
             $results.PortNumber | Should -Be $listenerPort
         }
     }
-} #$TestConfig.instance2 for appveyor
+}

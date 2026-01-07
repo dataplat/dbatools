@@ -41,8 +41,13 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaDatabase -SqlInstance $server -Name $dbname -Owner sa
 
         $loginWindows = "db$random"
-        $computerName = ([DbaInstanceParameter]$TestConfig.instance2).ComputerName
-        $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $loginWindows, $plaintext -ComputerName $TestConfig.instance2
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.Instance2 -Property ComputerName
+        $splatInvoke = @{
+            ComputerName = $computerName
+            ScriptBlock  = { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false }
+            ArgumentList = $loginWindows, $securePassword
+        }
+        Invoke-Command2 @splatInvoke
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -75,7 +80,12 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -ErrorAction SilentlyContinue
-        $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $loginWindows -ComputerName $TestConfig.instance2 -ErrorAction SilentlyContinue
+        $splatInvoke = @{
+            ComputerName = $computerName
+            ScriptBlock  = { Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue }
+            ArgumentList = $loginWindows
+        }
+        Invoke-Command2 @splatInvoke
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -39,51 +39,39 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        $defaultInstance = $TestConfig.instance1
-        $namedInstance = $TestConfig.instance2
-        $SkipLocalTest = $true # Change to $false to run the tests on a local instance.
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
     Context "Validate command functionality" {
         # See https://github.com/dataplat/dbatools/issues/7035
-        It -Skip:$SkipLocalTest "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
+        It "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
             $splatSetStartup = @{
-                SqlInstance = $defaultInstance, $namedInstance
+                SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
                 TraceFlag   = 3226
             }
             $result = Set-DbaStartupParameter @splatSetStartup
 
-            $resultDefaultInstance = Get-DbaStartupParameter -SqlInstance $defaultInstance
-            $resultDefaultInstance.TraceFlags.Count | Should -Be 1
-            $resultDefaultInstance.TraceFlags[0] | Should -Be 3226
+            $result1 = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceMulti1
+            $result1.TraceFlags.Count | Should -Be 1
+            $result1.TraceFlags[0] | Should -Be 3226
 
             # The duplication occurs after the first server is processed.
-            $resultNamedInstance = Get-DbaStartupParameter -SqlInstance $namedInstance
+            $result2 = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceMulti2
             # Using the defaults to test locally
-            $resultNamedInstance.MasterData.Count | Should -Be 1
-            $resultNamedInstance.MasterLog.Count | Should -Be 1
-            $resultNamedInstance.ErrorLog.Count | Should -Be 1
+            $result2.MasterData.Count | Should -Be 1
+            $result2.MasterLog.Count | Should -Be 1
+            $result2.ErrorLog.Count | Should -Be 1
 
-            $resultNamedInstance.TraceFlags.Count | Should -Be 1
-            $resultNamedInstance.TraceFlags[0] | Should -Be 3226
+            $result2.TraceFlags.Count | Should -Be 1
+            $result2.TraceFlags[0] | Should -Be 3226
         }
 
         # See https://github.com/dataplat/dbatools/issues/7035
-        It -Skip:$SkipLocalTest "Ensure the correct instance name is returned" {
+        It "Ensure the correct instance name is returned" {
             $splatSetInstance = @{
-                SqlInstance = $namedInstance
+                SqlInstance = $TestConfig.InstanceMulti1
                 TraceFlag   = 3226
             }
             $result = Set-DbaStartupParameter @splatSetInstance
 
-            $result.SqlInstance | Should -Be $namedInstance
+            $result.SqlInstance | Should -Be $TestConfig.InstanceMulti1
             $result.TraceFlags.Count | Should -Be 1
             $result.TraceFlags[0] | Should -Be 3226
         }

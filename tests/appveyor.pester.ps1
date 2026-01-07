@@ -387,11 +387,11 @@ if (-not $Finalize) {
     # Remove any previously loaded pester module
     Remove-Module -Name Pester -ErrorAction SilentlyContinue
     # Import pester 5
-    Import-Module -Name Pester -RequiredVersion 5.6.1
+    Import-Module -Name Pester -RequiredVersion 5.7.1
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
 
     # invoking a single invoke-pester consumes too much memory, let's go file by file
-    $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
+    $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests | Sort-Object Name
 
     # Create a summary file for all test runs
     $allTestsSummary = @{
