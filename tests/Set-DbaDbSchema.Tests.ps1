@@ -32,10 +32,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         $random = Get-Random
         $splatConnection1 = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceMulti1
         }
         $splatConnection2 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceMulti2
         }
         $server1 = Connect-DbaInstance @splatConnection1
         $server2 = Connect-DbaInstance @splatConnection2

@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
         $group = "dbatoolsci-group1"
         $regSrvName = "dbatoolsci-server12"
         $regSrvDesc = "dbatoolsci-server123"
-        $groupobject = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group
+        $groupobject = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $group
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -49,15 +49,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaRegServer -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup
+        Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle | Remove-DbaRegServer
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle | Remove-DbaRegServerGroup
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When adding a registered server" {
         BeforeAll {
-            $results1 = Add-DbaRegServer -SqlInstance $TestConfig.instance1 -ServerName $srvName
+            $results1 = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName $srvName
         }
 
         It "Adds a registered server with correct name" {
@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding a registered server with extended properties" {
         BeforeAll {
             $splatRegServer = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 ServerName  = $regSrvName
                 Name        = $srvName
                 Group       = $groupobject

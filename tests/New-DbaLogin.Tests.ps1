@@ -46,13 +46,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         $credLogin = "credologino"
         $certificateName = "dbatoolsPesterlogincertificate"
-        $password = 'MyV3ry$ecur3P@ssw0rd'
-        $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+        $securePassword = ConvertTo-SecureString 'MyV3ry$ecur3P@ssw0rd' -AsPlainText -Force
         $sid = "0xDBA700131337C0D30123456789ABCDEF"
-        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
         $servers = @($server1, $server2)
-        $computerName = $server1.NetName
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceMulti1 -Property ComputerName
         $winLogin = "$computerName\$credLogin"
         $logins = "claudio", "port", "tester", "certifico", $winLogin, "withMustChange", "mustChange"
 
@@ -75,18 +74,12 @@ Describe $CommandName -Tag IntegrationTests {
         } catch { <#nbd #> }
 
         if ($IsWindows -ne $false) {
-            #create Windows login
-            $computer = [ADSI]"WinNT://$computerName"
-            try {
-                $user = [ADSI]"WinNT://$computerName/$credLogin,user"
-                if ($user.Name -eq $credLogin) {
-                    $computer.Delete("User", $credLogin)
-                }
-            } catch { <#User does not exist#> }
-
-            $user = $computer.Create("user", $credLogin)
-            $user.SetPassword($password)
-            $user.SetInfo()
+            $splatInvoke = @{
+                ComputerName = $computerName
+                ScriptBlock  = { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false }
+                ArgumentList = $credLogin, $securePassword
+            }
+            Invoke-Command2 @splatInvoke
         }
 
         #create credential
@@ -124,10 +117,16 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
 
-            $computer.Delete("User", $credLogin)
             $server1.Credentials[$credLogin].Drop()
             $server1.Databases["master"].Certificates[$certificateName].Drop()
         } catch { <#nbd #> }
+
+        $splatInvoke = @{
+            ComputerName = $computerName
+            ScriptBlock  = { Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue }
+            ArgumentList = $credLogin
+        }
+        Invoke-Command2 @splatInvoke
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -241,8 +240,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should retain its same properties" {
-            $login1 = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester
-            $login2 = Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login tester
+            $login1 = Get-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login tester
+            $login2 = Get-DbaLogin -SqlInstance $TestConfig.InstanceMulti2 -Login tester
 
             $login2 | Should -Not -BeNullOrEmpty
 
@@ -259,8 +258,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not have same properties because of the overrides" {
-            $login1 = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login claudio
-            $login2 = Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login claudio
+            $login1 = Get-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login claudio
+            $login2 = Get-DbaLogin -SqlInstance $TestConfig.InstanceMulti2 -Login claudio
 
             $login2 | Should -Not -BeNullOrEmpty
 
@@ -285,13 +284,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    if ((Connect-DbaInstance -SqlInstance $TestConfig.instance1).LoginMode -eq "Mixed") {
+    if ((Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1).LoginMode -eq "Mixed") {
         Context "Connect with a new login" {
             It "Should login with newly created Sql Login, get instance name and kill the process" {
                 $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
-                $s = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -SqlCredential $cred
-                $s.Name | Should -Be $TestConfig.instance1
-                Stop-DbaProcess -SqlInstance $TestConfig.instance1 -Login tester
+                $s = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -SqlCredential $cred
+                $s.Name | Should -Be $TestConfig.InstanceMulti1
+                Stop-DbaProcess -SqlInstance $TestConfig.InstanceMulti1 -Login tester
             }
         }
     }

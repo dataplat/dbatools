@@ -67,8 +67,8 @@ function Get-TestConfig {
         $config['InstanceHadr'] = "$(hostname)\sql2017"
         $config['InstanceRestart'] = "$(hostname)\sql2017"
 
-        $config['Instance2SQLUserName'] = $null  # placeholders for -SqlCredential testing
-        $config['Instance2SQLPassword'] = $null
+        $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
+        $config['SQLPassword'] = $null
         $config['Instance2_Detailed'] = "$(hostname),14333\sql2016"  # Just to make sure things parse a port properly
 
         $config['AppveyorLabRepo'] = "C:\github\appveyor-lab"

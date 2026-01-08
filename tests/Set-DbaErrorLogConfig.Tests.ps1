@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Store original values for cleanup
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
         $originalLogFiles2 = $server2.NumberOfLogFiles
         $originalLogSize2 = $server2.ErrorLogSizeKb
 
@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server2.ErrorLogSizeKb = 1024
         $server2.Alter()
 
-        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         $originalLogFiles1 = $server1.NumberOfLogFiles
         $originalLogSize1 = $server1.ErrorLogSizeKb
 
@@ -51,12 +51,12 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Restore original settings
-        $cleanupServer1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $cleanupServer1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         $cleanupServer1.NumberOfLogFiles = $originalLogFiles1
         $cleanupServer1.ErrorLogSizeKb = $originalLogSize1
         $cleanupServer1.Alter()
 
-        $cleanupServer2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $cleanupServer2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
         $cleanupServer2.NumberOfLogFiles = $originalLogFiles2
         $cleanupServer2.ErrorLogSizeKb = $originalLogSize2
         $cleanupServer2.Alter()
@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Apply LogCount to multiple instances" {
         BeforeAll {
-            $logCountResults = Set-DbaErrorLogConfig -SqlInstance $TestConfig.instance2, $TestConfig.instance1 -LogCount 8
+            $logCountResults = Set-DbaErrorLogConfig -SqlInstance $TestConfig.InstanceMulti2, $TestConfig.InstanceMulti1 -LogCount 8
         }
 
         It "Returns LogCount set to 8 for each instance" {
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Apply LogSize to multiple instances" {
         BeforeAll {
-            $logSizeResults = Set-DbaErrorLogConfig -SqlInstance $TestConfig.instance2, $TestConfig.instance1 -LogSize 100 -WarningAction SilentlyContinue -WarningVariable warn2
+            $logSizeResults = Set-DbaErrorLogConfig -SqlInstance $TestConfig.InstanceMulti2, $TestConfig.InstanceMulti1 -LogSize 100 -WarningAction SilentlyContinue -WarningVariable warn2
         }
 
         It "Returns LogSize set to 100 for each instance" {

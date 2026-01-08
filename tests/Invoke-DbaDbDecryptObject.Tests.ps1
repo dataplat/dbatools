@@ -38,23 +38,19 @@ Describe $CommandName -Tag IntegrationTests {
         # Setup the database name
         $dbname = "dbatoolsci_decrypt_$random"
 
-        # Remove the database if it exists
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
-
         # Create the database
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
+        $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $dbname
 
-        if ($null -ne $TestConfig.instance2SQLUserName) {
-            $instance2SecurePassword = ConvertTo-SecureString -String $TestConfig.instance2SQLPassword -AsPlainText -Force
-            $instance2SqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.instance2SQLUserName, $instance2SecurePassword
+        if ($null -ne $TestConfig.SQLUserName) {
+            $securePassword = ConvertTo-SecureString -String $TestConfig.SQLPassword -AsPlainText -Force
+            $sqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.SQLUserName, $securePassword
         }
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname
-        $instance2Db = New-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Name $dbname
+        $InstanceMulti2Db = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -SqlCredential $sqlCredential -Name $dbname
 
         # test object for usage with sql credential
         $remoteDacSampleEncryptedView = "CREATE VIEW dbo.dbatoolsci_test_remote_dac_vw WITH ENCRYPTION AS SELECT 'remoteDac' as TestFeature;"
-        $instance2Db.Query($remoteDacSampleEncryptedView)
+        $InstanceMulti2Db.Query($remoteDacSampleEncryptedView)
 
         # Setup the code for the encrypted function
         $queryScalarFunction = "
@@ -200,14 +196,14 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         $db.Query($setupViewWithUTF8)
 
         # Check if DAC is enabled
-        $config = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteDacConnectionsEnabled
+        $config = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -ConfigName RemoteDacConnectionsEnabled
         if ($config.ConfiguredValue -ne 1) {
-            Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteDacConnectionsEnabled -Value $true
+            Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -ConfigName RemoteDacConnectionsEnabled -Value $true
         }
 
-        $instance2Config = Get-DbaSpConfigure -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -ConfigName RemoteDacConnectionsEnabled
-        if ($instance2Config.ConfiguredValue -ne 1) {
-            Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -ConfigName RemoteDacConnectionsEnabled -Value $true
+        $InstanceMulti2Config = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti2 -SqlCredential $sqlCredential -ConfigName RemoteDacConnectionsEnabled
+        if ($InstanceMulti2Config.ConfiguredValue -ne 1) {
+            Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti2 -SqlCredential $sqlCredential -ConfigName RemoteDacConnectionsEnabled -Value $true
         }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -219,95 +215,95 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Remove the database if it exists
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -SqlCredential $sqlCredential -Database $dbname
 
         Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
         # Set the original configuration
         if ($config.ConfiguredValue -ne 1) {
-            Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteDacConnectionsEnabled -Value $false
+            Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -ConfigName RemoteDacConnectionsEnabled -Value $false
         }
-        if ($instance2Config.ConfiguredValue -ne 1) {
-            Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -ConfigName RemoteDacConnectionsEnabled -Value $false
+        if ($InstanceMulti2Config.ConfiguredValue -ne 1) {
+            Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti2 -SqlCredential $sqlCredential -ConfigName RemoteDacConnectionsEnabled -Value $false
         }
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "DAC enabled" {
         It "Should throw error" {
-            Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -Name RemoteDacConnectionsEnabled -Value $false
-            Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -WarningVariable warn -WarningAction SilentlyContinue
+            Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -Name RemoteDacConnectionsEnabled -Value $false
+            Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -WarningVariable warn -WarningAction SilentlyContinue
             $error[0].Exception | Should -BeLike "*DAC is not enabled for instance*"
-            Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -Name RemoteDacConnectionsEnabled -Value $true -WarningAction SilentlyContinue
+            Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -Name RemoteDacConnectionsEnabled -Value $true -WarningAction SilentlyContinue
         }
     }
 
     Context "Decrypt Scalar Function" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName DummyEncryptedScalarFunction
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedScalarFunction
             $result.Script | Should -Be $queryScalarFunction
         }
     }
 
     Context "Decrypt Inline TVF" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName DummyEncryptedInlineTVF
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedInlineTVF
             $result.Script | Should -Be $queryInlineTVF
         }
     }
 
     Context "Decrypt TVF" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName DummyEncryptedTableValuedFunction
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedTableValuedFunction
             $result.Script | Should -Be $queryTableValuedFunction
         }
     }
 
     Context "Decrypt Stored Procedure" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure
             $result.Script | Should -Be $queryStoredProcedure
         }
     }
 
     Context "Decrypt view" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName dbatoolsci_test_vw
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_vw
             $result.Script | Should -Be $setupView
         }
     }
 
     Context "Decrypt trigger in a schema other than dbo" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName dbatoolsci_test_trigger
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_trigger
             $result.Script | Should -Be $setupTrigger
         }
     }
 
     Context "Decrypt objects with the same name but in different schemas" {
         It "Should be successful" {
-            @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName dbatoolsci_test_schema_vw).Count | Should -Be 2
+            @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_schema_vw).Count | Should -Be 2
         }
     }
 
     Context "Decrypt view with UTF8" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName dbatoolsci_test_UTF8_vw -EncodingType UTF8
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_UTF8_vw -EncodingType UTF8
             $result.Script | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Decrypt view and use a destination folder" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ObjectName dbatoolsci_test_vw -ExportDestination $tempDir
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_vw -ExportDestination $tempDir
             (Get-Content $result.OutputFile -Raw).Trim() | Should -Be $setupView.Trim()
         }
     }
 
     Context "Decrypt all encrypted objects and use a destination folder" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ExportDestination $tempDir
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ExportDestination $tempDir
             @($result | Where-Object { $_.Type -eq 'StoredProcedure' }).Count | Should -Be 1
             @($result | Where-Object { $_.Type -eq 'Trigger' }).Count | Should -Be 1
             @($result | Where-Object { $_.Type -eq 'UserDefinedFunction' }).Count | Should -Be 3
@@ -317,7 +313,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
 
     Context "Connect to an instance (ideally a remote instance) using a SqlCredential and decrypt an object" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance2 -SqlCredential $instance2SqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination $tempDir
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti2 -SqlCredential $sqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination $tempDir
             (Get-Content $result.OutputFile -Raw).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
         }
     }

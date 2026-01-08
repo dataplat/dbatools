@@ -114,11 +114,11 @@ Describe $CommandName -Tag IntegrationTests {
                 StatementTimeout         = 0
                 ApplicationIntent        = "ReadOnly"
             }
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 @params
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 @params
         }
 
         It "returns the proper name" {
-            $server.Name | Should -Be $TestConfig.instance1
+            $server.Name | Should -Be $TestConfig.InstanceMulti1
         }
 
         It "sets connectioncontext parameters that are provided" {
@@ -152,11 +152,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "connection is properly made using a connection string" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$($TestConfig.instance1);Initial Catalog=tempdb;Integrated Security=True"
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$($TestConfig.InstanceMulti1);Initial Catalog=tempdb;Integrated Security=True"
         }
 
         It "returns the proper name" {
-            $server.Name | Should -Be $TestConfig.instance1
+            $server.Name | Should -Be $TestConfig.InstanceMulti1
         }
 
         It "returns more than one database" {
@@ -170,10 +170,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    if ($TestConfig.instance1 -match "localhost") {
+    if ($TestConfig.InstanceMulti1 -match "localhost") {
         Context "connection is properly made using a dot" {
             BeforeAll {
-                $newinstance = $TestConfig.instance1.Replace("localhost", ".")
+                $newinstance = $TestConfig.InstanceMulti1.Replace("localhost", ".")
                 $server = Connect-DbaInstance -SqlInstance $newinstance
             }
 
@@ -196,13 +196,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "connection is properly made using a connection object" {
         BeforeAll {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value "instance.ComputerName"
-            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$($TestConfig.instance1);Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$($TestConfig.InstanceMulti1);Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
 
         It "returns the proper name" {
-            $server.Name | Should -Be $TestConfig.instance1
+            $server.Name | Should -Be $TestConfig.InstanceMulti1
         }
 
         It "returns more than one database" {
@@ -218,7 +218,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "connection is properly cloned from an existing connection" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         }
 
         AfterAll {
@@ -257,7 +257,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "clones when using Backup-DabInstace" {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
             $results = Backup-DbaDatabase -SqlInstance $server -Database msdb
             if ($results.FullName) {
                 Remove-Item -Path $results.FullName -ErrorAction SilentlyContinue
@@ -274,22 +274,22 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "multiple connections are properly made using strings" {
         It "returns the proper names" {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2
-            $server[0].Name | Should -Be $TestConfig.instance1
-            $server[1].Name | Should -Be $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+            $server[0].Name | Should -Be $TestConfig.InstanceMulti1
+            $server[1].Name | Should -Be $TestConfig.InstanceMulti2
         }
     }
 
     Context "multiple dedicated admin connections are properly made using strings" {
         # This might fail if a parallel test uses DAC - how can we ensure that this is the only test that is run?
         It "opens and closes the connections" {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
-            $server[0].Name | Should -Be "ADMIN:$($TestConfig.instance1)"
-            $server[1].Name | Should -Be "ADMIN:$($TestConfig.instance2)"
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -DedicatedAdminConnection
+            $server[0].Name | Should -Be "ADMIN:$($TestConfig.InstanceMulti1)"
+            $server[1].Name | Should -Be "ADMIN:$($TestConfig.InstanceMulti2)"
             $null = $server | Disconnect-DbaInstance
             # DAC is not reopened in the background
             Start-Sleep -Seconds 10
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -DedicatedAdminConnection
             $server.Count | Should -Be 2
             $null = $server | Disconnect-DbaInstance
         }

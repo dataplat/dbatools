@@ -34,11 +34,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command actually works" {
         It "should have info for model" {
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1
             $results.FileName -contains "modellog.ldf" | Should -Be $true
         }
         It "returns only for master" {
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 -Database master
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -Database master
             $results.Count | Should -Be 2
             (($results.FileName -contains "master.mdf") -and ($results.FileName -contains "mastlog.ldf")) | Should -Be $true
 
@@ -47,32 +47,31 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        # note: if testing the Linux scenarios with instance2 this test should be skipped or change it to a different instance.
         It "sample pipeline" {
-            $results = @($TestConfig.instance1, $TestConfig.instance2) | Test-DbaDiskSpeed -Database master
+            $results = @($TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) | Test-DbaDiskSpeed -Database master
             $results.Count | Should -Be 4
 
-            # for some reason this doesn't work on AppVeyor, perhaps due to the way the instances are started up the instance names do not match the values in Get-TestConfig
-            #(($results.SqlInstance -contains $TestConfig.instance1) -and ($results.SqlInstance -contains $TestConfig.instance2)) | Should -Be $true
+            $results.SqlInstance | Should -Contain $TestConfig.InstanceMulti1
+            $results.SqlInstance | Should -Contain $TestConfig.InstanceMulti2
         }
 
         It "multiple databases included" {
             $databases = @("master", "model")
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 -Database $databases
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -Database $databases
             $results.Count | Should -Be 4
             (($results.Database -contains "master") -and ($results.Database -contains "model")) | Should -Be $true
         }
 
         It "multiple databases excluded" {
             $excludedDatabases = @("master", "model")
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 -ExcludeDatabase $excludedDatabases
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -ExcludeDatabase $excludedDatabases
             $results.Count | Should -BeGreaterOrEqual 1
             (($results.Database -notcontains "master") -and ($results.Database -notcontains "model")) | Should -Be $true
         }
 
         It "default aggregate by file" {
-            $resultsWithParam = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 -AggregateBy "File"
-            $resultsWithoutParam = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1
+            $resultsWithParam = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -AggregateBy "File"
+            $resultsWithoutParam = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1
 
             $resultsWithParam.count | Should -Be $resultsWithoutParam.count
             $resultsWithParam.FileName -contains "modellog.ldf" | Should -Be $true
@@ -80,17 +79,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "aggregate by database" {
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 -AggregateBy "Database"
-            #$databases = Get-DbaDatabase -SqlInstance $TestConfig.instance1
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -AggregateBy "Database"
+            #$databases = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1
 
             $results.Database -contains "model" | Should -Be $true
             #$results.count                      | Should -Be $databases.count # not working on AppVeyor but works fine locally
         }
 
         It "aggregate by disk" {
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 -AggregateBy "Disk"
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -AggregateBy "Disk"
             (($results -is [System.Data.DataRow]) -or ($results.count -ge 1)) | Should -Be $true
-            #($results.SqlInstance -contains $TestConfig.instance1)                  | Should -Be $true
+            #($results.SqlInstance -contains $TestConfig.InstanceMulti1)                  | Should -Be $true
         }
 
         It "aggregate by file and check column names returned" {
@@ -99,7 +98,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $validColumns = $false
 
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 # default usage of command with no params is equivalent to AggregateBy = "File"
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 # default usage of command with no params is equivalent to AggregateBy = "File"
 
             if (($null -ne $results)) {
                 $row = $null
@@ -109,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.instance1): $($results)"
+                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.InstanceMulti1): $($results)"
                     $validColumns = $false
                 }
 
@@ -117,10 +116,10 @@ Describe $CommandName -Tag IntegrationTests {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $PSItem.Name })
 
                     if (@(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0) {
-                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.instance1)"
+                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.InstanceMulti1)"
                         $validColumns = $true
                     } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.instance1): $($columnNamesReturned)"
+                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.InstanceMulti1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -134,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $validColumns = $false
 
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 -AggregateBy "Database"
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -AggregateBy "Database"
 
             if (($null -ne $results)) {
                 $row = $null
@@ -144,7 +143,7 @@ Describe $CommandName -Tag IntegrationTests {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.instance1): $($results)"
+                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.InstanceMulti1): $($results)"
                     $validColumns = $false
                 }
 
@@ -152,10 +151,10 @@ Describe $CommandName -Tag IntegrationTests {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $PSItem.Name })
 
                     if (@(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0) {
-                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.instance1)"
+                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.InstanceMulti1)"
                         $validColumns = $true
                     } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.instance1): $($columnNamesReturned)"
+                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.InstanceMulti1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -169,7 +168,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $validColumns = $false
 
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance1 -AggregateBy "Disk"
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -AggregateBy "Disk"
 
             if (($null -ne $results)) {
                 $row = $null
@@ -179,7 +178,7 @@ Describe $CommandName -Tag IntegrationTests {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.instance1): $($results)"
+                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.InstanceMulti1): $($results)"
                     $validColumns = $false
                 }
 
@@ -187,10 +186,10 @@ Describe $CommandName -Tag IntegrationTests {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $PSItem.Name })
 
                     if (@(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0) {
-                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.instance1)"
+                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.InstanceMulti1)"
                         $validColumns = $true
                     } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.instance1): $($columnNamesReturned)"
+                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.InstanceMulti1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -199,25 +198,25 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # Separate test to run against a Linux-hosted SQL instance.
-        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the Get-TestConfig
-        It "test commands on a Linux instance" -Skip {
+        # To run this test ensure you have specified the InstanceLinux values for a Linux-hosted SQL instance in the Get-TestConfig
+        It "test commands on a Linux instance" -Skip:(-not $TestConfig.InstanceLinux) {
             # use instance with credential info and run through the 3 variations
             # -Skip to be added when checking in the code
-            $linuxSecurePassword = ConvertTo-SecureString -String $TestConfig.instance2SQLPassword -AsPlainText -Force
-            $linuxSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.instance2SQLUserName, $linuxSecurePassword
+            $linuxSecurePassword = ConvertTo-SecureString -String $TestConfig.SQLPassword -AsPlainText -Force
+            $linuxSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.SQLUserName, $linuxSecurePassword
 
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance2 -SqlCredential $linuxSqlCredential -AggregateBy "Database"
-            $databases = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $linuxSqlCredential
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceLinux -SqlCredential $linuxSqlCredential -AggregateBy "Database"
+            $databases = Get-DbaDatabase -SqlInstance $TestConfig.InstanceLinux -SqlCredential $linuxSqlCredential
 
             $results.Database -contains "model" | Should -Be $true
             $results.count | Should -Be $databases.count
 
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance2 -SqlCredential $linuxSqlCredential -AggregateBy "Disk"
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceLinux -SqlCredential $linuxSqlCredential -AggregateBy "Disk"
 
             (($results -is [System.Data.DataRow]) -or ($results.count -ge 1)) | Should -Be $true
 
-            $resultsWithParam = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance2 -SqlCredential $linuxSqlCredential -AggregateBy "File"
-            $resultsWithoutParam = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance2 -SqlCredential $linuxSqlCredential
+            $resultsWithParam = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceLinux -SqlCredential $linuxSqlCredential -AggregateBy "File"
+            $resultsWithoutParam = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceLinux -SqlCredential $linuxSqlCredential
 
             $resultsWithParam.count | Should -Be $resultsWithoutParam.count
             $resultsWithParam.FileName -contains "modellog.ldf" | Should -Be $true
@@ -225,17 +224,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # Separate test to run against a Linux-hosted SQL instance.
-        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the Get-TestConfig
+        # To run this test ensure you have specified the InstanceLinux values for a Linux-hosted SQL instance in the Get-TestConfig
         It "aggregate by file and check column names returned on a Linux instance" -Skip {
             # check returned columns
             [object[]]$expectedColumnArray = "ComputerName", "InstanceName", "SqlInstance", "Database", "SizeGB", "FileName", "FileID", "FileType", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer"
 
             $validColumns = $false
 
-            $linuxSecurePassword = ConvertTo-SecureString -String $TestConfig.instance2SQLPassword -AsPlainText -Force
-            $linuxSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.instance2SQLUserName, $linuxSecurePassword
+            $linuxSecurePassword = ConvertTo-SecureString -String $TestConfig.SQLPassword -AsPlainText -Force
+            $linuxSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.SQLUserName, $linuxSecurePassword
 
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance2 -SqlCredential $linuxSqlCredential # default usage of command with no params is equivalent to AggregateBy = "File"
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceLinux -SqlCredential $linuxSqlCredential # default usage of command with no params is equivalent to AggregateBy = "File"
 
             if (($null -ne $results)) {
                 $row = $null
@@ -245,7 +244,7 @@ Describe $CommandName -Tag IntegrationTests {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.instance1): $($results)"
+                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.InstanceLinux): $($results)"
                     $validColumns = $false
                 }
 
@@ -253,10 +252,10 @@ Describe $CommandName -Tag IntegrationTests {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $PSItem.Name })
 
                     if (@(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0) {
-                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.instance1)"
+                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.InstanceLinux)"
                         $validColumns = $true
                     } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.instance1): $($columnNamesReturned)"
+                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.InstanceMulti1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -265,17 +264,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # Separate test to run against a Linux-hosted SQL instance.
-        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the Get-TestConfig
+        # To run this test ensure you have specified the InstanceLinux values for a Linux-hosted SQL instance in the Get-TestConfig
         It "aggregate by database and check column names returned on a Linux instance" -Skip {
             # check returned columns
             [object[]]$expectedColumnArray = "ComputerName", "InstanceName", "SqlInstance", "Database", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer"
 
             $validColumns = $false
 
-            $linuxSecurePassword = ConvertTo-SecureString -String $TestConfig.instance2SQLPassword -AsPlainText -Force
-            $linuxSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.instance2SQLUserName, $linuxSecurePassword
+            $linuxSecurePassword = ConvertTo-SecureString -String $TestConfig.SQLPassword -AsPlainText -Force
+            $linuxSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.SQLUserName, $linuxSecurePassword
 
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance2 -SqlCredential $linuxSqlCredential -AggregateBy "Database"
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceLinux -SqlCredential $linuxSqlCredential -AggregateBy "Database"
 
             if (($null -ne $results)) {
                 $row = $null
@@ -285,7 +284,7 @@ Describe $CommandName -Tag IntegrationTests {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.instance1): $($results)"
+                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.InstanceLinux): $($results)"
                     $validColumns = $false
                 }
 
@@ -293,10 +292,10 @@ Describe $CommandName -Tag IntegrationTests {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $PSItem.Name })
 
                     if (@(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0) {
-                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.instance1)"
+                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.InstanceLinux)"
                         $validColumns = $true
                     } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.instance1): $($columnNamesReturned)"
+                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.InstanceMulti1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -305,17 +304,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # Separate test to run against a Linux-hosted SQL instance.
-        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the Get-TestConfig
+        # To run this test ensure you have specified the InstanceLinux values for a Linux-hosted SQL instance in the Get-TestConfig
         It "aggregate by disk and check column names returned on a Linux instance" -Skip {
             # check returned columns
             [object[]]$expectedColumnArray = "ComputerName", "InstanceName", "SqlInstance", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer"
 
             $validColumns = $false
 
-            $linuxSecurePassword = ConvertTo-SecureString -String $TestConfig.instance2SQLPassword -AsPlainText -Force
-            $linuxSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.instance2SQLUserName, $linuxSecurePassword
+            $linuxSecurePassword = ConvertTo-SecureString -String $TestConfig.SQLPassword -AsPlainText -Force
+            $linuxSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $TestConfig.SQLUserName, $linuxSecurePassword
 
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.instance2 -SqlCredential $linuxSqlCredential -AggregateBy "Disk"
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceLinux -SqlCredential $linuxSqlCredential -AggregateBy "Disk"
 
             if (($null -ne $results)) {
                 $row = $null
@@ -325,7 +324,7 @@ Describe $CommandName -Tag IntegrationTests {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.instance1): $($results)"
+                    Write-Message -Level Warning -Message "Unexpected results returned from $($TestConfig.InstanceLinux): $($results)"
                     $validColumns = $false
                 }
 
@@ -333,10 +332,10 @@ Describe $CommandName -Tag IntegrationTests {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $PSItem.Name })
 
                     if (@(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0) {
-                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.instance1)"
+                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.InstanceLinux)"
                         $validColumns = $true
                     } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.instance1): $($columnNamesReturned)"
+                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($TestConfig.InstanceMulti1): $($columnNamesReturned)"
                     }
                 }
             }

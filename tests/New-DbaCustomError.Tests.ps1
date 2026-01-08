@@ -29,8 +29,8 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

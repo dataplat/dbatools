@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatConnection = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceMulti1
             Database    = "master"
         }
         $server = Connect-DbaInstance @splatConnection
@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname = "dbatoolsci_]_$(Get-Random)"
 
         $splatDatabase = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceMulti1
             Name        = $dbname
             Owner       = "sa"
         }
@@ -52,16 +52,16 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $masterResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -Database master
-            $allResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
-            $dbResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -Database $dbname
+            $masterResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.InstanceMulti1 -Database master
+            $allResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.InstanceMulti1 -WarningAction SilentlyContinue
+            $dbResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname
         }
 
         It "LastGoodCheckDb is a valid date" {
@@ -81,10 +81,10 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Piping works" {
         BeforeAll {
-            $serverConnection = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $serverConnection = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
             $serverPipeResults = $serverConnection | Get-DbaLastGoodCheckDb -Database $dbname, master
 
-            $databases = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, master
+            $databases = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname, master
             $databasePipeResults = $databases | Get-DbaLastGoodCheckDb
         }
 
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Doesn't return duplicate results" {
         BeforeAll {
-            $duplicateResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database $dbname
+            $duplicateResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $dbname
         }
 
         It "LastGoodCheckDb doesn't return duplicates when multiple servers are passed in" {
