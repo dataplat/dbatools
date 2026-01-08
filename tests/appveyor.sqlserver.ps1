@@ -4,8 +4,8 @@ $sw = [system.diagnostics.stopwatch]::startNew()
 Write-Host -Object "appveyor.sqlserver: Creating temp directory" -ForegroundColor DarkGreen
 New-Item -Path C:\temp -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
-Write-Host -Object "appveyor.sqlserver: Configuring WinRM (see #9782)" -ForegroundColor DarkGreen
-'y' | winrm quickconfig
+Write-Host -Object "appveyor.sqlserver: Configuring WSMan (see #9782)" -ForegroundColor DarkGreen
+$null = Set-WSManQuickConfig -Force
 
 Write-Host -Object "appveyor.sqlserver: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
 Import-Module dbatools.library

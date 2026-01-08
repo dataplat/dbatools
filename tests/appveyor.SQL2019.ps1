@@ -11,8 +11,8 @@ Write-Host -Object "$indent Changing the port on $instance to $port" -Foreground
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
 
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service -Name "MSSQL`$$instance" -Force
-Restart-Service -Name "SQLAgent`$$instance" -Force
+Restart-Service -Name "MSSQL`$$instance" -Force -WarningAction SilentlyContinue
+Restart-Service -Name "SQLAgent`$$instance" -Force -WarningAction SilentlyContinue
 
 Write-Host -Object "$indent Configuring $instance" -ForegroundColor DarkGreen
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true -EnableException
