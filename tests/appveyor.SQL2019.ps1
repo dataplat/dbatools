@@ -7,13 +7,12 @@ $sqlinstance = "localhost\SQL2019"
 $instance = "SQL2019"
 $port = "1433"
 
-Write-Host -Object "$indent Setting up AppVeyor Services" -ForegroundColor DarkGreen
-Set-Service -Name SQLBrowser -StartupType Automatic
-Start-Service -Name SQLBrowser
-
 Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
-Restart-Service -Name "MSSQL`$SQL2019" -Force
+
+Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
+Restart-Service -Name "MSSQL`$$instance" -Force
+Restart-Service -Name "SQLAgent`$$instance" -Force
 
 Write-Host -Object "$indent Configuring $instance" -ForegroundColor DarkGreen
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true -EnableException

@@ -72,7 +72,7 @@ clone_folder: c:\github\dbatools
 before_test:
   # turn tests directory (at least) to CRLF, as it's faster to do this on the zipball rather than checking out the repo
   - cmd: pushd C:\github\dbatools\tests & unix2dos -q  *.ps1 & popd
-  # don't clown -- for some reason it's just not installing the library
+  # don't clone -- for some reason it's just not installing the library
   # dbatools.library is now installed via centralized method in appveyor.prep.ps1
   # grab appveyor lab files and needed requirements for tests in CI
   - ps: .\Tests\appveyor.prep.ps1

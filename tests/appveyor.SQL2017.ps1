@@ -7,17 +7,12 @@ $sqlinstance = "localhost\SQL2017"
 $instance = "SQL2017"
 $port = "14334"
 
-Write-Host -Object "$indent Setting up SQL Server services" -ForegroundColor DarkGreen
-Set-Service -Name SQLBrowser -StartupType Automatic
-Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
-Start-Service -Name SQLBrowser -ErrorAction SilentlyContinue
-
 Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
 
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service "MSSQL`$$instance" -Force
-Restart-Service "SQLAgent`$$instance" -Force
+Restart-Service -Name "MSSQL`$$instance" -Force
+Restart-Service -Name "SQLAgent`$$instance" -Force
 
 Write-Host -Object "$indent Configuring $instance" -ForegroundColor DarkGreen
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true -EnableException
