@@ -55,17 +55,17 @@ function Get-TestConfig {
         # This configuration is used for the automated test on AppVeyor
         $config['DbaToolsCi_Computer'] = "$(hostname)"
 
-        $config['Instance1'] = "$(hostname)\sql2008r2sp2"
-        $config['Instance2'] = "$(hostname)\sql2016"
-        $config['Instance3'] = "$(hostname)\sql2017"
+        $config['Instance1'] = "$(hostname)\sql2019"
+        $config['Instance2'] = "$(hostname)\sql2017"
+        $config['Instance3'] = "$(hostname)\sql2019"
         $config['Instances'] = @($config['Instance1'], $config['Instance2'])
-        $config['InstanceSingle'] = "$(hostname)\sql2017"
-        $config['InstanceMulti1'] = "$(hostname)\sql2016"
+        $config['InstanceSingle'] = "$(hostname)\sql2019"
+        $config['InstanceMulti1'] = "$(hostname)\sql2019"
         $config['InstanceMulti2'] = "$(hostname)\sql2017"
-        $config['InstanceCopy1'] = "$(hostname)\sql2016"
-        $config['InstanceCopy2'] = "$(hostname)\sql2017"
-        $config['InstanceHadr'] = "$(hostname)\sql2017"
-        $config['InstanceRestart'] = "$(hostname)\sql2017"
+        $config['InstanceCopy1'] = "$(hostname)\sql2017"
+        $config['InstanceCopy2'] = "$(hostname)\sql2019"
+        $config['InstanceHadr'] = "$(hostname)\sql2019"
+        $config['InstanceRestart'] = "$(hostname)\sql2019"
 
         $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
         $config['SQLPassword'] = $null
