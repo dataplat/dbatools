@@ -35,15 +35,14 @@ if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer\
 # Get dbatools.library
 Write-Host -Object "appveyor.prep: Install dbatools.library" -ForegroundColor DarkGreen
 # Use centralized version management for dbatools.library installation
-& "$PSScriptRoot\..\.github\scripts\install-dbatools-library.ps1"
-# Validate that the correct version was installed
-$expectedVersion = (Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json).version
-$installedModule = Get-Module dbatools.library -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1
+& "$PSScriptRoot\..\.github\scripts\install-dbatools-library.ps1" -Silent
 
+# Validate that the correct version was installed
+$expectedVersion = (Get-Content "$PSScriptRoot\..\.github\dbatools-library-version.json" | ConvertFrom-Json).Version
+$installedModule = Get-Module dbatools.library -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1
 if (-not $installedModule) {
     throw "dbatools.library module was not installed successfully"
 }
-
 Write-Host -Object "appveyor.prep: Expected version: $expectedVersion" -ForegroundColor Green
 Write-Host -Object "appveyor.prep: Installed version: $($installedModule.Version)" -ForegroundColor Green
 

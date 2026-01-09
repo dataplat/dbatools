@@ -20,6 +20,9 @@
     Installation scope for PowerShell Gallery installation (CurrentUser or AllUsers).
     Defaults to CurrentUser.
 
+.PARAMETER Silent
+    Suppresses informational output, only errors and warnings will be shown.
+
 .EXAMPLE
     .\install-dbatools-library.ps1
     Installs the version specified in the JSON config file
@@ -42,7 +45,8 @@ param(
     [string]$ConfigPath = (Join-Path $PSScriptRoot "../dbatools-library-version.json"),
     [switch]$Force,
     [ValidateSet('CurrentUser', 'AllUsers')]
-    [string]$Scope = 'CurrentUser'
+    [string]$Scope = 'CurrentUser',
+    [switch]$Silent
 )
 
 function Write-Log {
@@ -53,6 +57,9 @@ function Write-Log {
         'Warning' { 'Yellow' }
         'Success' { 'Green' }
         default { 'White' }
+    }
+    if ($Silent -and $Level -in 'Success', 'Info') {
+        return
     }
     Write-Host "[$timestamp] [$Level] $Message" -ForegroundColor $color
 }
@@ -343,49 +350,49 @@ try {
     Write-Log "Verifying installation..."
 
     # Diagnostic: Check PSModulePath before verification
-    Write-Log "Current PSModulePath before verification:" -Level 'Warning'
+    Write-Log "Current PSModulePath before verification:"
     $env:PSModulePath -split [System.IO.Path]::PathSeparator | ForEach-Object {
-        Write-Log "  $_" -Level 'Warning'
+        Write-Log "  $_"
     }
 
     # Diagnostic: Force refresh module cache
-    Write-Log "Refreshing module cache..." -Level 'Warning'
+    Write-Log "Refreshing module cache..."
     Get-Module -Refresh -ListAvailable | Out-Null
 
     # Diagnostic: Check for any dbatools.library modules first
-    Write-Log "Searching for any dbatools.library modules..." -Level 'Warning'
+    Write-Log "Searching for any dbatools.library modules..."
     $allDbaModules = Get-Module -ListAvailable | Where-Object { $_.Name -like "*dbatools*" }
     if ($allDbaModules) {
-        Write-Log "Found dbatools-related modules:" -Level 'Warning'
+        Write-Log "Found dbatools-related modules:"
         $allDbaModules | ForEach-Object {
-            Write-Log "  $($_.Name) v$($_.Version) at $($_.ModuleBase)" -Level 'Warning'
+            Write-Log "  $($_.Name) v$($_.Version) at $($_.ModuleBase)"
         }
     } else {
         Write-Log "No dbatools-related modules found at all!" -Level 'Warning'
     }
 
     # Diagnostic: Try multiple module discovery approaches
-    Write-Log "Attempting multiple discovery methods..." -Level 'Warning'
+    Write-Log "Attempting multiple discovery methods..."
 
     # Method 1: Standard Get-Module
     $installedModules = Get-Module -ListAvailable -Name 'dbatools.library'
-    Write-Log "Method 1 (Get-Module -Name): Found $($installedModules.Count) modules" -Level 'Warning'
+    Write-Log "Method 1 (Get-Module -Name): Found $($installedModules.Count) modules"
 
     # Method 2: Wildcard search
     $wildcardModules = Get-Module -ListAvailable -Name '*dbatools.library*'
-    Write-Log "Method 2 (Wildcard search): Found $($wildcardModules.Count) modules" -Level 'Warning'
+    Write-Log "Method 2 (Wildcard search): Found $($wildcardModules.Count) modules"
 
     # Method 3: Direct path check if we have the installation path
     if ($finalInstallPath -and (Test-Path $finalInstallPath)) {
-        Write-Log "Method 3: Checking direct installation path: $finalInstallPath" -Level 'Warning'
+        Write-Log "Method 3: Checking direct installation path: $finalInstallPath"
         $manifestPath = Join-Path $finalInstallPath "dbatools.library.psd1"
         if (Test-Path $manifestPath) {
             try {
                 $directModule = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
-                Write-Log "Method 3 (Direct path): Found module version $($directModule.Version)" -Level 'Warning'
+                Write-Log "Method 3 (Direct path): Found module version $($directModule.Version)"
                 # Try to import it directly to see if it works
                 $importedModule = Import-Module $manifestPath -PassThru -Force -ErrorAction Stop
-                Write-Log "Method 3 (Direct import): Successfully imported version $($importedModule.Version)" -Level 'Warning'
+                Write-Log "Method 3 (Direct import): Successfully imported version $($importedModule.Version)"
                 Remove-Module $importedModule -Force -ErrorAction SilentlyContinue
             } catch {
                 Write-Log "Method 3 (Direct path): Failed - $($_.Exception.Message)" -Level 'Warning'

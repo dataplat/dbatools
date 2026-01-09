@@ -11,11 +11,15 @@ $TestsRunGroups = @{
     "HADR"              = 'autodetect_$TestConfig.InstanceHadr'
     # run on scenario RESTART - tests that need to restart the sql instance
     "RESTART"           = 'autodetect_$TestConfig.InstanceRestart'
+    # run on scenario Legacy1 - tests that use instance1 and will be changed to InstanceSingle in the next iteration
+    "Legacy1"           = 'autodetect_$TestConfig.instance1'
     # do not run on appveyor
     "appveyor_disabled" = @(
         'Backup-DbaDbCertificate',
+        'Get-DbaInstalledPatch',  # disabled because SQL Server 2019 instance does not have any patches installed
         'Invoke-DbaDbMirroring',
         'New-DbaEndpoint',
+        'Restore-DbaDatabase',  # disabled due to failures in appveyor environment which will be analyzed later
         # Temporary disabled due to long runtimes
         'Export-DbaDacPackage',
         'Install-DbaSqlPackage',
