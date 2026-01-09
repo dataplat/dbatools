@@ -188,7 +188,7 @@ function Test-DbaDiskAllocation {
                     }
 
                     if ($NoSqlCheck -eq $false) {
-                        [PSCustomObject]@{
+                        $output = [PSCustomObject]@{
                             ComputerName   = $computer
                             DiskName       = $diskname
                             DiskLabel      = $disk.Label
@@ -196,15 +196,22 @@ function Test-DbaDiskAllocation {
                             IsSqlDisk      = $sqldisk
                             IsBestPractice = $IsBestPractice
                         }
+                        $defaults = 'ComputerName', 'DiskName', 'DiskLabel', 'BlockSize', 'IsSqlDisk', 'IsBestPractice'
                     } else {
-                        [PSCustomObject]@{
+                        $output = [PSCustomObject]@{
                             ComputerName   = $computer
                             DiskName       = $diskname
                             DiskLabel      = $disk.Label
                             BlockSize      = $disk.BlockSize
                             IsBestPractice = $IsBestPractice
                         }
+                        $defaults = 'ComputerName', 'DiskName', 'DiskLabel', 'BlockSize', 'IsBestPractice'
                     }
+                    # Add aliases for backwards compatibility
+                    Add-Member -InputObject $output -MemberType AliasProperty -Name Server -Value ComputerName
+                    Add-Member -InputObject $output -MemberType AliasProperty -Name Name -Value DiskName
+                    Add-Member -InputObject $output -MemberType AliasProperty -Name Label -Value DiskLabel
+                    Select-DefaultView -InputObject $output -Property $defaults
                 }
             }
         }
