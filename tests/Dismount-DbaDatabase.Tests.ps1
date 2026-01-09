@@ -114,4 +114,3 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
-#$TestConfig.instance2 - to make it show up in appveyor, long story

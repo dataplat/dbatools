@@ -159,4 +159,4 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
     }
-} # $TestConfig.instance2 for appveyor
+}
