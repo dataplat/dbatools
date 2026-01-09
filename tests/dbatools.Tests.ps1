@@ -1,10 +1,8 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName = "dbatools"
-)
-
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModulePath = (Get-Item $Path).Parent.FullName
+$ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
 #$ManifestPath = "$ModulePath\$ModuleName.psd1"
 
 Describe "$ModuleName Aliases" -Tag Aliases, Build {
