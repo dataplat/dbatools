@@ -11,10 +11,17 @@ Write-Host -Object "$indent Changing the port on $instance to $port" -Foreground
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
 
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service -Name "MSSQL`$$instance" -Force -WarningAction SilentlyContinue
-Restart-Service -Name "SQLAgent`$$instance" -Force -WarningAction SilentlyContinue
+Start-Service -Name "MSSQL`$$instance" -Force -WarningAction SilentlyContinue
+Start-Service -Name "SQLAgent`$$instance" -Force -WarningAction SilentlyContinue
 
 Write-Host -Object "$indent Configuring $instance" -ForegroundColor DarkGreen
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true -EnableException
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'" -EnableException
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'" -EnableException
+
+$loginName = "$env:COMPUTERNAME\$env:USERNAME"
+$login = Get-DbaLogin -SqlInstance $sqlinstance -Login $loginName
+if (-not $login) {
+    Write-Host -Object "$indent Creating login $env:COMPUTERNAME\$env:USERNAME on $instance" -ForegroundColor DarkGreen
+    $null = New-DbaLogin -SqlInstance $sqlinstance -Name $loginName -EnableException
+}
