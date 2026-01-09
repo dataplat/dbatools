@@ -39,18 +39,18 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     BeforeEach {
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert
+        Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Remove-DbaAgentAlert
     }
 
     AfterAll {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
+        Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
     }
 
     Context "Creating a new SQL Server Agent alert" {
         It "Should create a bunch of new alerts with specified parameters" {
             $splatAlert1 = @{
-                SqlInstance           = $TestConfig.instance2
+                SqlInstance           = $TestConfig.InstanceMulti1
                 DelayBetweenResponses = 60
                 Disabled              = $false
                 NotifyMethod          = "NotifyEmail"
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should create alerts excluding specified severity level" {
             $splatAlert2 = @{
-                SqlInstance           = $TestConfig.instance3
+                SqlInstance           = $TestConfig.InstanceMulti2
                 DelayBetweenResponses = 60
                 Disabled              = $false
                 NotifyMethod          = "NotifyEmail"
@@ -87,7 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Assert
             $alerts.Severity | Should -Not -Contain 17
 
-            Get-DbaAgentAlert -SqlInstance $TestConfig.instance3 | Should -Not -BeNullOrEmpty
+            Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti2 | Should -Not -BeNullOrEmpty
         }
     }
 }

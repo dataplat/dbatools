@@ -28,14 +28,14 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $splatDuration = @{
-            SqlInstance = $TestConfig.Instances
+            SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
             Type        = "Duration"
             Database    = "master"
         }
         $results = Get-DbaTopResourceUsage @splatDuration
 
         $splatExcluded = @{
-            SqlInstance     = $TestConfig.Instances
+            SqlInstance     = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
             Type            = "Duration"
             ExcludeDatabase = "master"
         }

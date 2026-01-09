@@ -30,7 +30,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command finds SQL Server instances" {
         BeforeAll {
-            $results = Find-DbaInstance -ComputerName $TestConfig.instance3 -ScanType Browser, SqlConnect | Select-Object -First 1
+            $results = Find-DbaInstance -ComputerName $TestConfig.InstanceSingle -ScanType Browser, SqlConnect | Select-Object -First 1
         }
 
         It "Returns an object type of [Dataplat.Dbatools.Discovery.DbaInstanceReport]" {
@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.FullName | Should -Not -BeNullOrEmpty
         }
 
-        if (([DbaInstanceParameter]$TestConfig.instance3).IsLocalHost -eq $false) {
+        if (([DbaInstanceParameter]$TestConfig.InstanceSingle).IsLocalHost -eq $false) {
             It "TcpConnected is true" {
                 $results.TcpConnected | Should -Be $true
             }

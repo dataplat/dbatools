@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaInstanceProperty -SqlInstance $TestConfig.instance2
+            $results = Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti2
         }
 
         It "Should have correct properties" {
@@ -42,15 +42,15 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should get the correct DefaultFile location" {
-            $defaultFiles = Get-DbaDefaultPath -SqlInstance $TestConfig.instance2
+            $defaultFiles = Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceMulti2
             ($results | Where-Object Name -eq "DefaultFile").Value | Should -BeLike "$($defaultFiles.Data)*"
         }
     }
 
     Context "Property filters work" {
         BeforeAll {
-            $resultInclude = Get-DbaInstanceProperty -SqlInstance $TestConfig.instance2 -InstanceProperty DefaultFile
-            $resultExclude = Get-DbaInstanceProperty -SqlInstance $TestConfig.instance2 -ExcludeInstanceProperty DefaultFile
+            $resultInclude = Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti2 -InstanceProperty DefaultFile
+            $resultExclude = Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti2 -ExcludeInstanceProperty DefaultFile
         }
 
         It "Should only return DefaultFile property" {
@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command can handle multiple instances" {
         It "Should have results for 2 instances" {
-            $(Get-DbaInstanceProperty -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Select-Object -Unique SqlInstance).count | Should -Be 2
+            $(Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Select-Object -Unique SqlInstance).count | Should -Be 2
         }
     }
 }

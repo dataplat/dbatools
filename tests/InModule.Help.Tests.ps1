@@ -1,24 +1,8 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
-    $CommandName = "InModule.Help",
-    $PSDefaultParameterValues = $TestConfig.Defaults
+    $ModuleName = "dbatools"
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-<#
-    .NOTES
-        ===========================================================================
-        Created with:    SAPIEN Technologies, Inc., PowerShell Studio 2016 v5.2.119
-        Created on:      4/12/2016 1:11 PM
-        Created by:      June Blender
-        Organization:    SAPIEN Technologies, Inc
-        Filename:        *.Help.Tests.ps1
-        ===========================================================================
-    .DESCRIPTION
-    To test help for the commands in a module, place this file in the module folder.
-    To test any module from any path, use https://github.com/juneb/PesterTDD/Module.Help.Tests.ps1
-#>
 # quit failing appveyor
 if ($env:appveyor) {
     $names = @(

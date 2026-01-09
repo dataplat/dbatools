@@ -46,13 +46,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
-        $job1instance3 = New-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "dbatoolsci_job_1_$random"
-        $job1Instance2 = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_job_1_$random"
-        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance3 -Job $job1instance3 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
-        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $job1Instance2 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
+        $job1instance3 = New-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 -Job "dbatoolsci_job_1_$random"
+        $job1Instance2 = New-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job "dbatoolsci_job_1_$random"
+        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti2 -Job $job1instance3 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
+        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
 
-        $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
 
         $login = "db$random"
         $plaintext = "BigOlPassword!"
@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Invoke-Command2 -ComputerName $instance2.ComputerName -ScriptBlock { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false } -ArgumentList $login, $password
 
-        $credential = New-DbaCredential -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
+        $credential = New-DbaCredential -SqlInstance $TestConfig.InstanceMulti1 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
 
         $agentProxyInstance2 = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_1_$random" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell
 
@@ -83,8 +83,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         Remove-DbaDatabase -SqlInstance $instance2 -Database "dbatoolsci_newdb_$random"
         Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random"
-        Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "dbatoolsci_job_1_$random"
-        Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_job_1_$random"
+        Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 -Job "dbatoolsci_job_1_$random"
+        Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job "dbatoolsci_job_1_$random"
         $null = Invoke-Command2 -ComputerName $instance2.ComputerName -ScriptBlock { $null = Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue } -ArgumentList $login
         $credential.Drop()
         $agentProxyInstance2.Drop()
@@ -93,14 +93,14 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "command works" {
         It "Change the job step name" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1"
 
-            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $job1Instance2 -StepName "Step 1" -NewName "Step 1 updated"
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2 -StepName "Step 1" -NewName "Step 1 updated"
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
 
-            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $job1Instance2 -StepName "Step 1 updated" -NewName "Step 1"
+            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2 -StepName "Step 1 updated" -NewName "Step 1"
         }
 
         It "pipeline input of pre-connected servers" {
@@ -113,8 +113,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "use the -Force to add a new step" {
-            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $job1Instance2 -StepName "Step 2" -Force
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2 -StepName "Step 2" -Force
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1"
             $results.JobSteps | Where-Object Id -eq 2 | Select-Object -ExpandProperty Name | Should -Be "Step 2"
         }
@@ -125,7 +125,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=PowerShell" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 3"
                 Subsystem          = "PowerShell"
@@ -146,7 +146,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 3
             $newJobStep.Name | Should -Be "Step 3"
@@ -167,7 +167,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=TransactSql" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 4"
                 Subsystem          = "TransactSql"
@@ -188,7 +188,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 4
             $newJobStep.Name | Should -Be "Step 4"
@@ -209,7 +209,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=AnalysisCommand" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 5"
                 Subsystem          = "AnalysisCommand"
@@ -230,7 +230,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 5
             $newJobStep.Name | Should -Be "Step 5"
@@ -251,7 +251,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=AnalysisQuery" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 6"
                 Subsystem          = "AnalysisQuery"
@@ -272,7 +272,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 6
             $newJobStep.Name | Should -Be "Step 6"
@@ -293,7 +293,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=CmdExec" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 7"
                 Subsystem          = "CmdExec"
@@ -313,7 +313,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 7
             $newJobStep.Name | Should -Be "Step 7"
@@ -333,7 +333,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=Distribution" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 8"
                 Subsystem          = "Distribution"
@@ -352,7 +352,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 8
             $newJobStep.Name | Should -Be "Step 8"
@@ -371,7 +371,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=LogReader" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 9"
                 Subsystem          = "LogReader"
@@ -390,7 +390,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 9
             $newJobStep.Name | Should -Be "Step 9"
@@ -409,7 +409,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=Merge" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 10"
                 Subsystem          = "Merge"
@@ -428,7 +428,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 10
             $newJobStep.Name | Should -Be "Step 10"
@@ -447,7 +447,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=QueueReader" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 11"
                 Subsystem          = "QueueReader"
@@ -466,7 +466,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 11
             $newJobStep.Name | Should -Be "Step 11"
@@ -485,7 +485,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=Snapshot" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 12"
                 Subsystem          = "Snapshot"
@@ -504,7 +504,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 12
             $newJobStep.Name | Should -Be "Step 12"
@@ -523,7 +523,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=SSIS" {
             $splatJobStep = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceMulti1
                 Job                = $job1Instance2
                 StepName           = "Step 13"
                 Subsystem          = "SSIS"
@@ -541,7 +541,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Set-DbaAgentJobStep @splatJobStep
 
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $job1Instance2
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1Instance2
 
             $newJobStep = $results.JobSteps | Where-Object Id -eq 13
             $newJobStep.Name | Should -Be "Step 13"

@@ -6,10 +6,6 @@
 # Define your local SQL Server instances
 $config['instance1'] = "localhost\SQLInstance1"    # Replace with your first SQL Server instance
 $config['instance2'] = "localhost\SQLInstance2"    # Replace with your second SQL Server instance
-$config['instance3'] = "localhost\SQLInstance3"    # Replace with your third SQL Server instance
-
-# Array of SQL Server instances
-$config['instances'] = @($config['instance1'], $config['instance2'])
 
 # SQL Server credentials
 # Replace 'YourPassword' with your actual password and 'sa' with your username if different
@@ -25,17 +21,11 @@ $config['Defaults'] = [System.Management.Automation.DefaultParameterDictionary]@
 $config['dbatoolsci_computer'] = "localhost"    # Replace if your CI computer is different
 
 # If using SQL authentication for Instance2, specify the username and password
-$config['instance2SQLUserName'] = $null        # Replace with username if applicable
-$config['instance2SQLPassword'] = $null        # Replace with password if applicable
-
-# Detailed instance name for Instance2 (if needed)
-$config['instance2_detailed'] = "localhost,1433\SQLInstance2"  # Adjust port and instance name as necessary
+$config['SQLUserName'] = $null        # Replace with username if applicable
+$config['SQLPassword'] = $null        # Replace with password if applicable
 
 # Path to your local AppVeyor lab repository (if applicable)
 $config['appveyorlabrepo'] = "C:\path\to\appveyor-lab"        # Replace with the correct path
-
-# SSIS Server instance
-$config['ssisserver'] = "localhost\SQLInstance2"              # Replace if using a different SSIS server
 
 # Azure Blob storage configurations (if applicable)
 $config['azureblob'] = "https://yourstorageaccount.blob.core.windows.net/sql"

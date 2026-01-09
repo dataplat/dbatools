@@ -30,10 +30,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         $random = Get-Random
         $splatInstance2 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceMulti1
         }
         $splatInstance3 = @{
-            SqlInstance = $TestConfig.instance3
+            SqlInstance = $TestConfig.InstanceMulti2
         }
         $instance2 = Connect-DbaInstance @splatInstance2
         $instance3 = Connect-DbaInstance @splatInstance3
@@ -115,14 +115,14 @@ Describe $CommandName -Tag IntegrationTests {
     Context "ensure command works" {
         It "Removes a linked server" {
             $splatGetLinkedServer1 = @{
-                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.InstanceMulti1
                 LinkedServer = $linkedServerName1
             }
             $results = Get-DbaLinkedServer @splatGetLinkedServer1
             $results.Length | Should -Be 1
 
             $splatRemoveLinkedServer1 = @{
-                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.InstanceMulti1
                 LinkedServer = $linkedServerName1
             }
             Remove-DbaLinkedServer @splatRemoveLinkedServer1
@@ -133,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Tries to remove a non-existent linked server" {
             $splatRemoveNonExistent = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceMulti1
                 LinkedServer    = $linkedServerName1
                 WarningVariable = "warnings"
                 WarningAction   = "SilentlyContinue"
@@ -144,7 +144,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes a linked server passed in via pipeline" {
             $splatGetLinkedServer2 = @{
-                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.InstanceMulti1
                 LinkedServer = $linkedServerName2
             }
             $results = Get-DbaLinkedServer @splatGetLinkedServer2
@@ -166,7 +166,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes a linked server using a server passed in via pipeline" {
             $splatGetLinkedServer3 = @{
-                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.InstanceMulti1
                 LinkedServer = $linkedServerName3
             }
             $results = Get-DbaLinkedServer @splatGetLinkedServer3

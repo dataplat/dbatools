@@ -49,8 +49,6 @@ Describe $CommandName -Tag IntegrationTests {
         # Create the objects.
         $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceJobName
         $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceJobDisabledName
-        $sourcejobs = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1
-        $destjobs = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -61,36 +59,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
-    Context "Parameter validation" {
-        It "Should have the expected parameters" {
-            $command = Get-Command $CommandName
-            $hasParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Job",
-                "ExcludeJob",
-                "DisableOnSource",
-                "DisableOnDestination",
-                "Force",
-                "UseLastModified",
-                "InputObject",
-                "EnableException"
-            )
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
-        }
     }
 
     Context "Command copies jobs properly" {
