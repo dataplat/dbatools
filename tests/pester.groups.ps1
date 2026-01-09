@@ -19,7 +19,11 @@ $TestsRunGroups = @{
         'Get-DbaInstalledPatch',  # disabled because SQL Server 2019 instance does not have any patches installed
         'Invoke-DbaDbMirroring',
         'New-DbaEndpoint',
-        'Restore-DbaDatabase',  # disabled due to failures in appveyor environment which will be analyzed later
+        # disabled due to failures in appveyor environment because test uses more instances than expected
+        'Restore-DbaDatabase',
+        'Find-DbaDatabase',
+        'Get-DbaInstanceProperty',
+        'Set-DbaDbQueryStoreOption'
         # Temporary disabled due to long runtimes
         'Export-DbaDacPackage',
         'Install-DbaSqlPackage',

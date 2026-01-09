@@ -43,14 +43,14 @@ $installedModule = Get-Module dbatools.library -ListAvailable | Sort-Object Vers
 if (-not $installedModule) {
     throw "dbatools.library module was not installed successfully"
 }
-Write-Host -Object "appveyor.prep: Expected version: $expectedVersion" -ForegroundColor Green
-Write-Host -Object "appveyor.prep: Installed version: $($installedModule.Version)" -ForegroundColor Green
+Write-Host -Object "appveyor.prep: Expected version: $expectedVersion" -ForegroundColor DarkGreen
+Write-Host -Object "appveyor.prep: Installed version: $($installedModule.Version)" -ForegroundColor DarkGreen
 
 # Verify the version matches (allowing for version format differences)
 if ($installedModule.Version.ToString() -notmatch [regex]::Escape($expectedVersion.Split('-')[0])) {
     Write-Warning "Installed version $($installedModule.Version) may not match expected version $expectedVersion"
 } else {
-    Write-Host -Object "appveyor.prep: Version validation successful" -ForegroundColor Green
+    Write-Host -Object "appveyor.prep: Version validation successful" -ForegroundColor DarkGreen
 }
 
 $sw.Stop()
