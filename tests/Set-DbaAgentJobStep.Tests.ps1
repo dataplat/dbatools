@@ -58,7 +58,13 @@ Describe $CommandName -Tag IntegrationTests {
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
-        $null = Invoke-Command2 -ComputerName $instance2.ComputerName -ScriptBlock { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false } -ArgumentList $login, $password
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceMulti1 -Property ComputerName
+        $splatInvoke = @{
+            ComputerName = $computerName
+            ScriptBlock  = { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false }
+            ArgumentList = $login, $password
+        }
+        Invoke-Command2 @splatInvoke
 
         $credential = New-DbaCredential -SqlInstance $TestConfig.InstanceMulti1 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
 
@@ -85,7 +91,13 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random"
         Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 -Job "dbatoolsci_job_1_$random"
         Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job "dbatoolsci_job_1_$random"
-        $null = Invoke-Command2 -ComputerName $instance2.ComputerName -ScriptBlock { $null = Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue } -ArgumentList $login
+
+        $splatInvoke = @{
+            ComputerName = $computerName
+            ScriptBlock  = { Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue }
+            ArgumentList = $login
+        }
+        Invoke-Command2 @splatInvoke
         $credential.Drop()
         $agentProxyInstance2.Drop()
 
