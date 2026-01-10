@@ -89,7 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "$tempDir\SQL-Server-First-Responder-Kit-main.zip"
-            Invoke-WebRequest -Uri "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/main.zip" -OutFile $outfile
+            Invoke-TlsWebRequest -Uri "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/main.zip" -OutFile $outfile
             $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database -Branch main -LocalFile $outfile -Force
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
