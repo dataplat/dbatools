@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Invoke-Command2 @splatInvoke
 
-        $credential = New-DbaCredential -SqlInstance $TestConfig.InstanceMulti1 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
+        $credential = New-DbaCredential -SqlInstance $TestConfig.InstanceMulti1 -Name "dbatoolsci_$random" -Identity "$computerName\$login" -Password $password
 
         $agentProxyInstance2 = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_1_$random" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell
 
