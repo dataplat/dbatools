@@ -83,8 +83,8 @@ Describe $CommandName -Tag IntegrationTests {
                 BackupSecurePassword    = $passwd
                 BackupPath              = $backupPath
             }
-            $results = Start-DbaDbEncryption @splatEncryption -WarningVariable warn
-            $warn | Should -BeNullOrEmpty
+            $results = Start-DbaDbEncryption @splatEncryption
+            $WarnVar | Should -BeNullOrEmpty
             $results.Count | Should -Be 5
             $results | Select-Object -First 1 -ExpandProperty EncryptionEnabled | Should -Be $true
             $results | Select-Object -First 1 -ExpandProperty DatabaseName | Should -Match "random"
@@ -128,8 +128,9 @@ Describe $CommandName -Tag IntegrationTests {
                 BackupPath              = $parallelBackupPath
                 Parallel                = $true
             }
-            $results = Start-DbaDbEncryption @splatParallelEncryption -WarningVariable warn
-            $warn | Should -BeNullOrEmpty
+            # Warnings during parallel execution are not catched in $WarnVar as they are in different runspaces
+            $results = Start-DbaDbEncryption @splatParallelEncryption
+            $WarnVar | Should -BeNullOrEmpty
             $results.Count | Should -Be 3
             foreach ($result in $results) {
                 $result.EncryptionEnabled | Should -Be $true
