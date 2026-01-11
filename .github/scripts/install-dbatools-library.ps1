@@ -124,7 +124,11 @@ function Install-FromGitHubRelease {
 
         # Download the release
         Write-Log "Downloading to: $downloadPath"
+        # IWR is crazy slow for large downloads
+        $currentProgressPref = $ProgressPreference
+        $ProgressPreference = "SilentlyContinue"
         Invoke-WebRequest -Uri $releaseUrl -OutFile $downloadPath -ErrorAction Stop
+        $ProgressPreference = $currentProgressPref
 
         # Extract the archive
         Write-Log "Extracting to: $extractPath"
