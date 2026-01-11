@@ -91,7 +91,7 @@ function Test-DbaDiskAllocation {
         Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -104,14 +104,43 @@ function Test-DbaDiskAllocation {
 
     begin {
         $sessionoptions = New-CimSessionOption -Protocol DCOM
+    }
 
-        function Get-AllDiskAllocation {
-            $alldisks = @()
-            $SqlInstances = @()
+    process {
+        foreach ($computer in $ComputerName) {
+            $fullComputerName = Resolve-DbaComputerName -ComputerName $computer -Credential $Credential
+
+            if (!$fullComputerName) {
+                Stop-Function -Message "Couldn't resolve hostname $computer. Skipping." -Continue
+            }
+
+            Write-Message -Level Verbose -Message "Creating CimSession on $fullComputerName over WSMan."
+
+            if (!$Credential) {
+                $cimSession = New-CimSession -ComputerName $fullComputerName -ErrorAction SilentlyContinue
+            } else {
+                $cimSession = New-CimSession -ComputerName $fullComputerName -ErrorAction SilentlyContinue -Credential $Credential
+            }
+
+            if ($null -eq $cimSession.id) {
+                Write-Message -Level Verbose -Message "Creating CimSession on $fullComputerName over WSMan failed. Creating CimSession on $fullComputerName over DCOM."
+
+                if (!$Credential) {
+                    $cimSession = New-CimSession -ComputerName $fullComputerName -SessionOption $sessionoptions -ErrorAction SilentlyContinue
+                } else {
+                    $cimSession = New-CimSession -ComputerName $fullComputerName -SessionOption $sessionoptions -ErrorAction SilentlyContinue -Credential $Credential
+                }
+            }
+
+            if ($null -eq $cimSession.id) {
+                Stop-Function -Message "Can't create CimSession on $fullComputerName" -Target $computer
+            }
+
+            Write-Message -Level Verbose -Message "Getting Disk Allocation from $computer"
 
             try {
                 Write-Message -Level Verbose -Message "Getting disk information from $computer."
-                $disks = Get-CimInstance -CimSession $CIMsession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
+                $disks = Get-CimInstance -CimSession $cimSession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
             } catch {
                 Stop-Function -Message "Can't connect to WMI on $computer."
                 return
@@ -119,24 +148,8 @@ function Test-DbaDiskAllocation {
 
             if ($NoSqlCheck -eq $false) {
                 Write-Message -Level Verbose -Message "Checking for SQL Services"
-                $ClassFilter = "DisplayName like 'SQL Server (%'"
-                $sqlservices = Get-CimInstance -CimSession $CIMsession -ClassName win32_service -Filter $ClassFilter -ErrorAction Stop | Sort-Object -Property Name
-                foreach ($service in $sqlservices) {
-                    $instance = $service.DisplayName.Replace('SQL Server (', '')
-                    $instance = $instance.TrimEnd(')')
-
-                    $instanceName = $instance.Replace("MSSQLSERVER", "Default")
-                    Write-Message -Level Verbose -Message "Found instance $instanceName."
-
-                    if ($instance -eq 'MSSQLSERVER') {
-                        $SqlInstances += $computer
-                    } else {
-                        $SqlInstances += "$computer\$instance"
-                    }
-                }
-                $sqlcount = $SqlInstances.Count
-
-                Write-Message -Level Verbose -Message "$sqlcount instance(s) found."
+                $sqlInstances = (Get-DbaService -ComputerName $fullComputerName -Type Engine -AdvancedProperties | Where-Object State -eq Running | Sort-Object -Property Name).SqlInstance
+                Write-Message -Level Verbose -Message "$($sqlInstances.Count) instance(s) found."
             }
 
             foreach ($disk in $disks) {
@@ -146,7 +159,7 @@ function Test-DbaDiskAllocation {
                     if ($NoSqlCheck -eq $false) {
                         $sqldisk = $false
 
-                        foreach ($instance in $SqlInstances) {
+                        foreach ($instance in $sqlInstances) {
                             try {
                                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
                             } catch {
@@ -175,73 +188,30 @@ function Test-DbaDiskAllocation {
                     }
 
                     if ($NoSqlCheck -eq $false) {
-                        $alldisks += [PSCustomObject]@{
-                            Server         = $computer
-                            Name           = $diskname
-                            Label          = $disk.Label
+                        $output = [PSCustomObject]@{
+                            ComputerName   = $computer
+                            DiskName       = $diskname
+                            DiskLabel      = $disk.Label
                             BlockSize      = $disk.BlockSize
                             IsSqlDisk      = $sqldisk
                             IsBestPractice = $IsBestPractice
                         }
+                        $defaults = 'ComputerName', 'DiskName', 'DiskLabel', 'BlockSize', 'IsSqlDisk', 'IsBestPractice'
                     } else {
-                        $alldisks += [PSCustomObject]@{
-                            Server         = $computer
-                            Name           = $diskname
-                            Label          = $disk.Label
+                        $output = [PSCustomObject]@{
+                            ComputerName   = $computer
+                            DiskName       = $diskname
+                            DiskLabel      = $disk.Label
                             BlockSize      = $disk.BlockSize
                             IsBestPractice = $IsBestPractice
                         }
+                        $defaults = 'ComputerName', 'DiskName', 'DiskLabel', 'BlockSize', 'IsBestPractice'
                     }
-                }
-            }
-            return $alldisks
-        }
-    }
-
-    process {
-        # uses cim commands
-
-
-        foreach ($computer in $ComputerName) {
-
-            $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
-            $Computer = $computer.FullComputerName
-
-            if (!$Computer) {
-                Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
-            }
-
-            Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan."
-
-            if (!$Credential) {
-                $cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
-            } else {
-                $cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
-            }
-
-            if ($null -eq $cimsession.id) {
-                Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
-
-                if (!$Credential) {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoptions -ErrorAction SilentlyContinue
-                } else {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoptions -ErrorAction SilentlyContinue -Credential $Credential
-                }
-            }
-
-            if ($null -eq $cimsession.id) {
-                Stop-Function -Message "Can't create CimSession on $computer" -Target $Computer
-            }
-
-            Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer"
-
-            if ($PScmdlet.ShouldProcess("$computer", "Getting Disk Allocation")) {
-                $data = Get-AllDiskAllocation $computer
-
-                if ($data.Count -gt 1) {
-                    $data.GetEnumerator()
-                } else {
-                    $data
+                    # Add aliases for backwards compatibility
+                    Add-Member -InputObject $output -MemberType AliasProperty -Name Server -Value ComputerName
+                    Add-Member -InputObject $output -MemberType AliasProperty -Name Name -Value DiskName
+                    Add-Member -InputObject $output -MemberType AliasProperty -Name Label -Value DiskLabel
+                    Select-DefaultView -InputObject $output -Property $defaults
                 }
             }
         }
