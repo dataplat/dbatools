@@ -33,6 +33,3 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-
-#$TestConfig.instance2
-#$TestConfig.instance3

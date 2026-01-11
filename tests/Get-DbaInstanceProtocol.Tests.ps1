@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $allResults = Get-DbaInstanceProtocol -ComputerName $TestConfig.instance1, $TestConfig.instance2
+            $allResults = Get-DbaInstanceProtocol -ComputerName $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
             $tcpResults = $allResults | Where-Object Name -eq "Tcp"
         }
 

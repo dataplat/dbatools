@@ -29,36 +29,36 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = New-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily -FrequencyType Daily -FrequencyInterval Everyday -Force
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob -Schedule dbatoolsci_daily
-            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command "select 1"
-            $null = Start-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob
+            $null = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_daily -FrequencyType Daily -FrequencyInterval Everyday -Force
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob -Schedule dbatoolsci_daily
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command "select 1"
+            $null = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            if (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily) {
-                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily
+            if (Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_daily) {
+                Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_daily
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have deleted job: dbatoolsci_testjob" {
-            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob) | Should -BeNullOrEmpty
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob) | Should -BeNullOrEmpty
         }
 
         It "Should have deleted schedule: dbatoolsci_daily" {
-            (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_daily) | Should -BeNullOrEmpty
+            (Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_daily) | Should -BeNullOrEmpty
         }
 
         It "Should have deleted history: dbatoolsci_daily" {
-            (Get-DbaAgentJobHistory -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob) | Should -BeNullOrEmpty
+            (Get-DbaAgentJobHistory -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob) | Should -BeNullOrEmpty
         }
     }
 
@@ -66,31 +66,31 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = New-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly -FrequencyType Weekly -FrequencyInterval Everyday -Force
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_schedule -Schedule dbatoolsci_weekly
-            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_schedule -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command "select 1"
+            $null = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_weekly -FrequencyType Weekly -FrequencyInterval Everyday -Force
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_schedule -Schedule dbatoolsci_weekly
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_schedule -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command "select 1"
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            if (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly) {
-                Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly
+            if (Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_weekly) {
+                Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_weekly
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have deleted job: dbatoolsci_testjob_schedule" {
-            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_schedule) | Should -BeNullOrEmpty
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_schedule) | Should -BeNullOrEmpty
         }
 
         It "Should not have deleted schedule: dbatoolsci_weekly" {
-            (Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_weekly) | Should -Not -BeNullOrEmpty
+            (Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_weekly) | Should -Not -BeNullOrEmpty
         }
     }
 
@@ -98,10 +98,10 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $jobId = New-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history | Select-Object -ExpandProperty JobId
-            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command "select 1"
-            $null = Start-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            $jobId = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_history | Select-Object -ExpandProperty JobId
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_history -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command "select 1"
+            $null = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_history
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -115,8 +115,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have deleted job: dbatoolsci_testjob_history" {
-            $null = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory
-            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_history) | Should -BeNullOrEmpty
+            $null = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_history) | Should -BeNullOrEmpty
         }
 
         It -Skip:$true "Should not have deleted history: dbatoolsci_testjob_history" {
@@ -127,36 +127,36 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command validates null/empty Job parameter" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            if (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) {
-                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation -Confirm:$false
+            if (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) {
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation -Confirm:$false
             }
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should not remove jobs when -Job is null" {
             $nullVariable = $null
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $nullVariable -Confirm:$false
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $nullVariable -Confirm:$false
             $result | Should -BeNullOrEmpty
-            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
 
         It "Should not remove jobs when -Job is empty string" {
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "" -Confirm:$false -WarningAction SilentlyContinue
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "" -Confirm:$false -WarningAction SilentlyContinue
             $WarnVar | Should -BeLike "*Job  doesn't exist*"
             $result | Should -BeNullOrEmpty
-            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
 
         It "Should not remove jobs when -Job is whitespace" {
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "   " -Confirm:$false
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "   " -Confirm:$false
             $result | Should -BeNullOrEmpty
-            (Get-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
     }
-} # $TestConfig.instance2 for appveyor
+}

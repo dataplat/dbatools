@@ -32,8 +32,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
         $securePassword = ConvertTo-SecureString -String "securePassword" -AsPlainText -Force
         $localLogin1Name = "dbatoolscli_localLogin1_$random"

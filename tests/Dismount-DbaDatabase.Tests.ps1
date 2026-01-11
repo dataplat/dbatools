@@ -29,14 +29,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
 
         $dbName = "dbatoolsci_detachattach"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Remove-DbaDatabase
-        $database = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName | Remove-DbaDatabase
+        $database = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
 
         $fileStructure = New-Object System.Collections.Specialized.StringCollection
-        foreach ($file in (Get-DbaDbFile -SqlInstance $TestConfig.instance3 -Database $dbName).PhysicalName) {
+        foreach ($file in (Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $dbName).PhysicalName) {
             $null = $fileStructure.Add($file)
         }
 
@@ -48,15 +48,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Mount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -FileStructure $fileStructure
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Remove-DbaDatabase
+        $null = Mount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -FileStructure $fileStructure
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When detaching a single database" {
         BeforeAll {
-            $results = Dismount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Force
+            $results = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Force
         }
 
         It "Should complete successfully" {
@@ -71,47 +71,46 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When detaching databases with snapshots" {
         BeforeAll {
-            Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+            Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
 
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $dbDetached = "dbatoolsci_dbsetstate_detached"
             $dbWithSnapshot = "dbatoolsci_dbsetstate_detached_withSnap"
 
             $server.Query("CREATE DATABASE $dbDetached")
             $server.Query("CREATE DATABASE $dbWithSnapshot")
 
-            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot
+            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $dbWithSnapshot
 
             $splatFileStructure = New-Object System.Collections.Specialized.StringCollection
-            foreach ($file in (Get-DbaDbFile -SqlInstance $TestConfig.instance3 -Database $dbDetached).PhysicalName) {
+            foreach ($file in (Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached).PhysicalName) {
                 $null = $splatFileStructure.Add($file)
             }
 
-            Stop-DbaProcess -SqlInstance $TestConfig.instance3 -Database $dbDetached
+            Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached
         }
 
         AfterAll {
-            $null = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot -Force -ErrorAction SilentlyContinue
-            $null = Mount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached -FileStructure $splatFileStructure -ErrorAction SilentlyContinue
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached, $dbWithSnapshot | Remove-DbaDatabase -ErrorAction SilentlyContinue
+            $null = Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $dbWithSnapshot -Force -ErrorAction SilentlyContinue
+            $null = Mount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached -FileStructure $splatFileStructure -ErrorAction SilentlyContinue
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached, $dbWithSnapshot | Remove-DbaDatabase -ErrorAction SilentlyContinue
         }
 
         It "Should skip detachment if database has snapshots" {
-            $result = Dismount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot -Force -WarningAction SilentlyContinue -WarningVariable warn 3> $null
+            $result = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbWithSnapshot -Force -WarningAction SilentlyContinue -WarningVariable warn 3> $null
             $result | Should -BeNullOrEmpty
             $warn | Should -Match "snapshot"
 
-            $database = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot
+            $database = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbWithSnapshot
             $database | Should -Not -BeNullOrEmpty
         }
 
         It "Should detach database without snapshots" {
             Start-Sleep 3
-            $null = Stop-DbaProcess -SqlInstance $TestConfig.instance3 -Database $dbDetached
-            $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
-            $result = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
+            $null = Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached
+            $null = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached
             $result | Should -BeNullOrEmpty
         }
     }
 }
-#$TestConfig.instance2 - to make it show up in appveyor, long story

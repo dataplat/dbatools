@@ -32,9 +32,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $database
 
-            $resultsDownload = Install-DbaMultiTool -SqlInstance $TestConfig.instance2 -Database $database -Branch $branch -Force -Verbose:$false
+            $resultsDownload = Install-DbaMultiTool -SqlInstance $TestConfig.InstanceMulti1 -Database $database -Branch $branch -Force -Verbose:$false
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $database -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -63,14 +63,14 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsDownload = Install-DbaMultiTool -SqlInstance $TestConfig.instance2 -Database $database -Verbose:$false
+            $resultsDownload = Install-DbaMultiTool -SqlInstance $TestConfig.InstanceMulti1 -Database $database -Verbose:$false
             $resultsDownload[0].Status -eq "Updated" | Should -Be $true
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
             $sqlScript = Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1
             Add-Content $sqlScript.FullName (New-Guid).ToString()
-            $result = Install-DbaMultiTool -SqlInstance $TestConfig.instance2 -Database $database -Verbose:$false -WarningAction SilentlyContinue
+            $result = Install-DbaMultiTool -SqlInstance $TestConfig.InstanceMulti1 -Database $database -Verbose:$false -WarningAction SilentlyContinue
             $result = $result | Where-Object Name -eq $sqlScript.BaseName
             $result.Status -eq "Error" | Should -Be $true
         }
@@ -82,15 +82,15 @@ Describe $CommandName -Tag IntegrationTests {
 
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
             $server.Query("CREATE DATABASE $database")
 
             $tempDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
             $null = New-Item -Type Container -Path $tempDir
 
             $outfile = "$tempDir\dba-multitool-$branch.zip"
-            Invoke-TlsWebRequest -Uri "https://github.com/LowlyDBA/dba-multitool/archive/$branch.zip" -OutFile $outfile
-            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database -Branch $branch -LocalFile $outfile -Force
+            Invoke-WebRequest -Uri "https://github.com/LowlyDBA/dba-multitool/archive/$branch.zip" -OutFile $outfile
+            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $TestConfig.InstanceMulti2 -Database $database -Branch $branch -LocalFile $outfile -Force
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $database -ErrorAction SilentlyContinue
 
             Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
@@ -121,14 +121,14 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database
+            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $TestConfig.InstanceMulti2 -Database $database
             $resultsLocalFile[0].Status -eq "Updated" | Should -Be $true
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
             $sqlScript = Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1
             Add-Content $sqlScript.FullName (New-Guid).ToString()
-            $result = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database -Verbose:$false -WarningAction SilentlyContinue
+            $result = Install-DbaMultiTool -SqlInstance $TestConfig.InstanceMulti2 -Database $database -Verbose:$false -WarningAction SilentlyContinue
             $result = $result | Where-Object Name -eq $sqlScript.BaseName
             $result.Status -eq "Error" | Should -Be $true
         }

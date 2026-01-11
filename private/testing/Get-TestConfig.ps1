@@ -26,8 +26,6 @@ function Get-TestConfig {
 
         $config['Instance1'] = "dbatools1"
         $config['Instance2'] = "dbatools2"
-        $config['Instance3'] = "dbatools3"
-        $config['Instances'] = @($config['Instance1'], $config['Instance2'])
 
         $config['SqlCred'] = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
         $config['Defaults']['*:SqlCredential'] = $config['SqlCred']
@@ -38,15 +36,12 @@ function Get-TestConfig {
 
         $config['Instance1'] = "localhost"
         $config['Instance2'] = "localhost:14333"
-        $config['Instance3'] = "localhost"
-        $config['Instances'] = @($config['Instance1'], $config['Instance2'])
 
-        $config['Instance2SQLUserName'] = $null  # placeholders for -SqlCredential testing
-        $config['Instance2SQLPassword'] = $null
-        $config['Instance2_Detailed'] = "localhost,14333"  # Just to make sure things parse a port properly
+        $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
+        $config['SQLPassword'] = $null
 
         $config['AppveyorLabRepo'] = "/tmp/appveyor-lab"
-        $config['SsisServer'] = "localhost\sql2016"
+
         $config['AzureBlob'] = "https://dbatools.blob.core.windows.net/sql"
         $config['AzureBlobAccount'] = "dbatools"
         $config['AzureServer'] = 'psdbatools.database.windows.net'
@@ -57,8 +52,6 @@ function Get-TestConfig {
 
         $config['Instance1'] = "$(hostname)\sql2008r2sp2"
         $config['Instance2'] = "$(hostname)\sql2016"
-        $config['Instance3'] = "$(hostname)\sql2017"
-        $config['Instances'] = @($config['Instance1'], $config['Instance2'])
         $config['InstanceSingle'] = "$(hostname)\sql2017"
         $config['InstanceMulti1'] = "$(hostname)\sql2016"
         $config['InstanceMulti2'] = "$(hostname)\sql2017"
@@ -69,10 +62,9 @@ function Get-TestConfig {
 
         $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
         $config['SQLPassword'] = $null
-        $config['Instance2_Detailed'] = "$(hostname),14333\sql2016"  # Just to make sure things parse a port properly
 
         $config['AppveyorLabRepo'] = "C:\github\appveyor-lab"
-        $config['SsisServer'] = "$(hostname)\sql2016"
+
         $config['AzureBlob'] = "https://dbatools.blob.core.windows.net/sql"
         $config['AzureBlobAccount'] = "dbatools"
         $config['AzureServer'] = 'psdbatools.database.windows.net'
