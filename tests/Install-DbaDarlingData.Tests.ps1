@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $server.Query("CREATE DATABASE $darlingDbLocalFile")
 
             $outfile = "$tempDir\DarlingData-main.zip"
-            Invoke-WebRequest -Uri "https://github.com/erikdarlingdata/DarlingData/archive/main.zip" -OutFile $outfile
+            Invoke-TlsWebRequest -Uri "https://github.com/erikdarlingdata/DarlingData/archive/main.zip" -OutFile $outfile
             $resultsLocalFile = Install-DbaDarlingData -SqlInstance $TestConfig.instance3 -Database $darlingDbLocalFile -Branch main -LocalFile $outfile -Force
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

@@ -89,7 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-Item -Type Container -Path $tempDir
 
             $outfile = "$tempDir\dba-multitool-$branch.zip"
-            Invoke-WebRequest -Uri "https://github.com/LowlyDBA/dba-multitool/archive/$branch.zip" -OutFile $outfile
+            Invoke-TlsWebRequest -Uri "https://github.com/LowlyDBA/dba-multitool/archive/$branch.zip" -OutFile $outfile
             $resultsLocalFile = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database -Branch $branch -LocalFile $outfile -Force
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
