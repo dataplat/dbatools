@@ -34,13 +34,13 @@ Describe $CommandName -Tag IntegrationTests -Skip {
         $db2 = "dbatoolsci_mirroring_db2"
 
         # Clean up any existing processes and databases
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Where-Object Program -Match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Where-Object Program -Match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
 
-        Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 | Remove-DbaDatabase
+        Remove-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $db1, $db2
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $db1, $db2 | Remove-DbaDatabase
 
         # Create test databases
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         $null = $server.Query("CREATE DATABASE $db1")
         $null = $server.Query("CREATE DATABASE $db2")
 
@@ -53,23 +53,23 @@ Describe $CommandName -Tag IntegrationTests -Skip {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 | Remove-DbaDbMirror
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 -ErrorAction SilentlyContinue
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $db1, $db2 | Remove-DbaDbMirror
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $db1, $db2 -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "returns more than one database" {
-        $null = Invoke-DbaDbMirroring -Primary $TestConfig.instance2 -Mirror $TestConfig.instance3 -Database $db1, $db2 -Force -SharedPath $TestConfig.Temp -WarningAction Continue
-        @(Get-DbaDbMirror -SqlInstance $TestConfig.instance3).Count | Should -Be 2
+        $null = Invoke-DbaDbMirroring -Primary $TestConfig.InstanceMulti1 -Mirror $TestConfig.InstanceMulti2 -Database $db1, $db2 -Force -SharedPath $TestConfig.Temp -WarningAction Continue
+        @(Get-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti2).Count | Should -Be 2
     }
 
 
     It "returns just one database" {
-        @(Get-DbaDbMirror -SqlInstance $TestConfig.instance3 -Database $db2).Count | Should -Be 1
+        @(Get-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti2 -Database $db2).Count | Should -Be 1
     }
 
     It "returns 2x1 database" {
-        @(Get-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db2).Count | Should -Be 2
+        @(Get-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $db2).Count | Should -Be 2
     }
 }

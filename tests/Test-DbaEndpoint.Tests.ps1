@@ -45,4 +45,4 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Test-DbaEndpoint -SqlInstance $TestConfig.instance2
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
     }
-} #$TestConfig.instance2 for appveyor
+}

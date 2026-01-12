@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         if (-not (Test-Path -Path $TestConfig.BigDatabaseBackup) -and $TestConfig.BigDatabaseBackupSourceUrl) {
-            Invoke-WebRequest -Uri $TestConfig.BigDatabaseBackupSourceUrl -OutFile $TestConfig.BigDatabaseBackup -ErrorAction Stop
+            Invoke-TlsWebRequest -Uri $TestConfig.BigDatabaseBackupSourceUrl -OutFile $TestConfig.BigDatabaseBackup -ErrorAction Stop
         }
         $splatRestore = @{
             SqlInstance         = $TestConfig.instance2

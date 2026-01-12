@@ -41,8 +41,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
         $PSDefaultParameterValues["*-Dba*:WarningAction"] = "SilentlyContinue"
 
-        $primaryInstance = $TestConfig.instance2
-        $secondaryInstance = $TestConfig.instance3
+        $primaryInstance = $TestConfig.InstanceMulti1
+        $secondaryInstance = $TestConfig.InstanceMulti2
 
         $loginName1 = "dbatoolsci_syncpwd1_$(Get-Random)"
         $loginName2 = "dbatoolsci_syncpwd2_$(Get-Random)"

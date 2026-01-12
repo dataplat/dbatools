@@ -15,7 +15,7 @@ function Install-DbaSqlPackage {
         By default, SqlPackage is installed as a portable ZIP file to the dbatools directory for CurrentUser scope, making it immediately available for database deployment tasks without requiring system-wide installation.
         For AllUsers (LocalMachine) scope on Windows, you can use the MSI installer which requires administrative privileges and provides system-wide access.
 
-        Writes to $script:PSModuleRoot\bin\sqlpackage by default for CurrentUser scope.
+        Writes to dbatools data directory by default for CurrentUser scope.
 
     .PARAMETER Path
         Specifies the custom directory path where SqlPackage will be extracted or installed.
@@ -79,7 +79,7 @@ function Install-DbaSqlPackage {
     .EXAMPLE
         PS C:\> Install-DbaSqlPackage
 
-        Downloads SqlPackage ZIP to the dbatools directory for the current user
+        Downloads SqlPackage ZIP and extracts it to the dbatools directory for the current user
 
     .EXAMPLE
         PS C:\> Install-DbaSqlPackage -Scope AllUsers -Type Msi
@@ -89,7 +89,7 @@ function Install-DbaSqlPackage {
     .EXAMPLE
         PS C:\> Install-DbaSqlPackage -Path C:\SqlPackage
 
-        Downloads SqlPackage ZIP to C:\SqlPackage
+        Downloads SqlPackage ZIP and extracts it to C:\SqlPackage
 
     .EXAMPLE
         PS C:\> Install-DbaSqlPackage -LocalFile C:\temp\sqlpackage.zip
@@ -109,10 +109,66 @@ function Install-DbaSqlPackage {
         [switch]$EnableException
     )
 
-    begin {
-        Write-Progress -Activity "Installing SqlPackage" -Status "Initializing..." -PercentComplete 0
-
+    process {
         if ($Force) { $ConfirmPreference = 'none' }
+
+        if ($LocalFile.StartsWith("http")) {
+            Stop-Function -Message "LocalFile cannot be a URL. It must be a local file path."
+            return
+        }
+
+        Write-Progress -Activity "Installing SqlPackage" -Status "Checking for existing installation..." -PercentComplete 0
+
+        $installedPath = Get-DbaSqlPackagePath
+        if ($installedPath -and -not $Force) {
+            Write-Progress -Activity "Installing SqlPackage" -Completed
+            $notes = "SqlPackage already exists at $installedPath. Skipped installation. Use -Force to overwrite."
+            Write-Message -Level Verbose -Message $notes
+            # Return the installation information
+            [PSCustomObject]@{
+                Name      = if ($PSVersionTable.Platform -eq "Unix") { "sqlpackage" } else { "SqlPackage.exe" }
+                Path      = $installedPath
+                Installed = $true
+                Notes     = $notes
+            }
+            return
+        }
+
+        Write-Progress -Activity "Installing SqlPackage" -Status "Validating platform and permissions..." -PercentComplete 10
+
+        # Platform-specific validations
+        if ($PSVersionTable.Platform -eq "Unix") {
+            # Unix platforms only support Zip type and CurrentUser scope
+            if ($Type -eq "Msi") {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "MSI installation is only supported on Windows. Use Zip type on Unix platforms."
+                return
+            }
+            if ($Scope -eq "AllUsers") {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "AllUsers scope is only supported on Windows. Use CurrentUser scope on Unix platforms."
+                return
+            }
+        } else {
+            # Windows-specific validations
+            # Validate scope and type combination
+            if ($Type -eq "Msi" -and $Scope -eq "CurrentUser") {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "MSI installation is only supported for AllUsers scope. Use Zip type for CurrentUser scope."
+                return
+            }
+
+            # Check for admin privileges when using MSI or AllUsers scope
+            if ($Type -eq "Msi" -or $Scope -eq "AllUsers") {
+                try {
+                    $null = Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
+                } catch {
+                    Write-Progress -Activity "Installing SqlPackage" -Completed
+                    Stop-Function -Message "MSI installation and AllUsers scope require administrative privileges. Please run as administrator or use CurrentUser scope with Zip type."
+                    return
+                }
+            }
+        }
 
         # Set default path based on scope and platform if not specified
         if (-not $Path) {
@@ -153,88 +209,23 @@ function Install-DbaSqlPackage {
             $fileName = "dacfx.msi"
         }
 
-        $temp = ([System.IO.Path]::GetTempPath())
-        $localCachedCopy = Join-Path -Path $temp -ChildPath $fileName
-
         if (-not $LocalFile) {
-            $LocalFile = $localCachedCopy
-        }
-
-        Write-Progress -Activity "Installing SqlPackage" -Status "Validating platform and permissions..." -PercentComplete 10
-
-        # Platform-specific validations
-        if ($PSVersionTable.Platform -eq "Unix") {
-            # Unix platforms only support Zip type and CurrentUser scope
-            if ($Type -eq "Msi") {
-                Write-Progress -Activity "Installing SqlPackage" -Completed
-                Stop-Function -Message "MSI installation is only supported on Windows. Use Zip type on Unix platforms."
-                return
-            }
-            if ($Scope -eq "AllUsers") {
-                Write-Progress -Activity "Installing SqlPackage" -Completed
-                Stop-Function -Message "AllUsers scope is only supported on Windows. Use CurrentUser scope on Unix platforms."
-                return
-            }
-        } else {
-            # Windows-specific validations
-            # Validate scope and type combination
-            if ($Type -eq "Msi" -and $Scope -eq "CurrentUser") {
-                Write-Progress -Activity "Installing SqlPackage" -Completed
-                Stop-Function -Message "MSI installation is only supported for AllUsers scope. Use Zip type for CurrentUser scope."
-                return
-            }
-
-            # Check for admin privileges when using MSI or AllUsers scope
-            if ($Type -eq "Msi" -or $Scope -eq "AllUsers") {
-                try {
-                    $null = Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
-                } catch {
-                    Write-Progress -Activity "Installing SqlPackage" -Completed
-                    Stop-Function -Message "MSI installation and AllUsers scope require administrative privileges. Please run as administrator or use CurrentUser scope with Zip type."
-                    return
-                }
-            }
-        }
-    }
-
-    process {
-        if (Test-FunctionInterrupt) { return }
-
-        Write-Progress -Activity "Installing SqlPackage" -Status "Checking for existing installation..." -PercentComplete 15
-
-        # Check if SqlPackage already exists
-        if (-not $LocalFile.StartsWith("http") -and -not (Test-Path -Path $LocalFile) -and -not $Force) {
-            if (-not (Test-Path -Path $localCachedCopy)) {
-                Write-Message -Level Verbose -Message "No local file exists. Downloading now."
-                if ((Test-Path -Path $localCachedCopy) -and (Test-Path -Path $Path) -and -not $Force) {
-                    Write-Message -Level Warning -Message "SqlPackage already exists at $Path. Skipping download. Use -Force to overwrite."
-                    Write-Progress -Activity "Installing SqlPackage" -Completed
-                    return
-                }
-            }
-        }
-
-        if (-not $LocalFile.StartsWith("http") -and (Test-Path -Path $localCachedCopy) -and (Test-Path -Path $Path) -and -not $Force) {
-            Write-Message -Level Verbose -Message "SqlPackage already exists at $Path. Skipping download."
-            Write-Message -Level Verbose -Message "Use -Force to overwrite."
-            Write-Progress -Activity "Installing SqlPackage" -Completed
-            return
+            $temp = ([System.IO.Path]::GetTempPath())
+            $LocalFile = Join-Path -Path $temp -ChildPath $fileName
         }
 
         # Download if needed
-        if ($LocalFile.StartsWith("http") -or -not (Test-Path -Path $LocalFile) -or $Force) {
-            Write-Progress -Activity "Installing SqlPackage" -Status "Starting download from Microsoft..." -PercentComplete 20
-            Write-Message -Level Verbose -Message "Downloading SqlPackage from $url"
-
+        if (-not (Test-Path -Path $LocalFile) -or $Force) {
             try {
-                Write-Progress -Activity "Installing SqlPackage" -Status "Downloading SqlPackage package..." -PercentComplete 25
+                Write-Progress -Activity "Installing SqlPackage" -Status "Starting download from Microsoft..." -PercentComplete 20
+                Write-Message -Level Verbose -Message "Downloading SqlPackage from $url"
                 try {
-                    Invoke-TlsWebRequest -Uri $url -OutFile $LocalFile -UseBasicParsing
+                    Invoke-TlsWebRequest -Uri $url -OutFile $LocalFile -UseBasicParsing -ErrorAction Stop
                 } catch {
+                    Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
                     Write-Progress -Activity "Installing SqlPackage" -Status "Retrying download with proxy settings..." -PercentComplete 28
-                    # Try with default proxy and usersettings
                     (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                    Invoke-TlsWebRequest -Uri $url -OutFile $LocalFile -UseBasicParsing
+                    Invoke-TlsWebRequest -Uri $url -OutFile $LocalFile -UseBasicParsing -ErrorAction Stop
                 }
                 Write-Progress -Activity "Installing SqlPackage" -Status "Download completed successfully" -PercentComplete 45
             } catch {
@@ -248,12 +239,6 @@ function Install-DbaSqlPackage {
 
         # Install SqlPackage
         if ($Pscmdlet.ShouldProcess("$LocalFile", "Install SqlPackage")) {
-            if ($LocalFile.StartsWith("http")) {
-                Write-Progress -Activity "Installing SqlPackage" -Completed
-                Stop-Function -Message "LocalFile cannot be a URL. It must be a local file path."
-                return
-            }
-
             if (-not (Test-Path -Path $LocalFile)) {
                 Write-Progress -Activity "Installing SqlPackage" -Completed
                 Stop-Function -Message "LocalFile $LocalFile does not exist."

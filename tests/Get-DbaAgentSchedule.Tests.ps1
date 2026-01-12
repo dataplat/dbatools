@@ -28,18 +28,12 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-
-        $sqlAgentServer3 = Get-DbaService -ComputerName $server3.ComputerName -InstanceName $server3.DbaInstanceName -Type Agent
-        $sqlAgentServer2 = Get-DbaService -ComputerName $server2.ComputerName -InstanceName $server2.DbaInstanceName -Type Agent
-
-        $null = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
-        $null = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_WeeklyTest -FrequencyType Weekly -FrequencyInterval 2 -FrequencyRecurrenceFactor 1 -StartTime 020000 -Force
-        $null = New-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
+        $null = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
+        $null = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_WeeklyTest -FrequencyType Weekly -FrequencyInterval 2 -FrequencyRecurrenceFactor 1 -StartTime 020000 -Force
+        $null = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti2 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
 
         $splatScheduleOnce = @{
-            SqlInstance               = $TestConfig.instance2
+            SqlInstance               = $TestConfig.InstanceMulti1
             Schedule                  = "Issue_6636_Once"
             FrequencyInterval         = 1
             FrequencyRecurrenceFactor = 0
@@ -52,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentSchedule @splatScheduleOnce -Force
 
         $splatScheduleHour = @{
-            SqlInstance               = $TestConfig.instance2
+            SqlInstance               = $TestConfig.InstanceMulti1
             Schedule                  = "Issue_6636_Hour"
             FrequencyInterval         = 1
             FrequencyRecurrenceFactor = 0
@@ -65,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentSchedule @splatScheduleHour -Force
 
         $splatScheduleMinute = @{
-            SqlInstance               = $TestConfig.instance2
+            SqlInstance               = $TestConfig.InstanceMulti1
             Schedule                  = "Issue_6636_Minute"
             FrequencyInterval         = 1
             FrequencyRecurrenceFactor = 0
@@ -78,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentSchedule @splatScheduleMinute -Force
 
         $splatScheduleSecond = @{
-            SqlInstance               = $TestConfig.instance2
+            SqlInstance               = $TestConfig.InstanceMulti1
             Schedule                  = "Issue_6636_Second"
             FrequencyInterval         = 1
             FrequencyRecurrenceFactor = 0
@@ -92,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # frequency type additions for issue 6636
         $splatScheduleOneTime = @{
-            SqlInstance   = $TestConfig.instance2
+            SqlInstance   = $TestConfig.InstanceMulti1
             Schedule      = "Issue_6636_OneTime"
             FrequencyType = "OneTime"
         }
@@ -100,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentSchedule @splatScheduleOneTime -Force
 
         $splatScheduleAutoStart = @{
-            SqlInstance   = $TestConfig.instance2
+            SqlInstance   = $TestConfig.InstanceMulti1
             Schedule      = "Issue_6636_AutoStart"
             FrequencyType = "AutoStart"
         }
@@ -108,7 +102,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentSchedule @splatScheduleAutoStart -Force
 
         $splatScheduleOnIdle = @{
-            SqlInstance   = $TestConfig.instance2
+            SqlInstance   = $TestConfig.InstanceMulti1
             Schedule      = "Issue_6636_OnIdle"
             FrequencyType = "OnIdle"
         }
@@ -142,13 +136,13 @@ Describe $CommandName -Tag IntegrationTests {
             "Issue_6636_OnIdle_Copy"
         )
 
-        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule $schedulesToRemove
+        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule $schedulesToRemove
 
         if ($null -ne $schedules) {
             $schedules.DROP()
         }
 
-        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_MonthlyTest
+        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti2 -Schedule dbatoolsci_MonthlyTest
 
         if ($null -ne $schedules) {
             $schedules.DROP()
@@ -159,21 +153,21 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets the list of Schedules" {
         It "Results are not empty" {
-            $results = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_WeeklyTest, dbatoolsci_MonthlyTest)
+            $results = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_WeeklyTest, dbatoolsci_MonthlyTest)
             $results.Count | Should -Be 2
         }
     }
 
     Context "Handles multiple instances" {
         It "Results contain two instances" {
-            $results = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2, $TestConfig.instance3)
+            $results = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2)
             ($results | Select-Object SqlInstance -Unique).Count | Should -Be 2
         }
     }
 
     Context "Monthly schedule is correct" {
         It "verify schedule components" {
-            $results = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_MonthlyTest)
+            $results = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_MonthlyTest)
 
             $results.Count | Should -Be 1
             $results | Should -Not -BeNullOrEmpty
@@ -190,10 +184,10 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Issue 6636 - provide flexibility in the FrequencySubdayType and FrequencyType input params based on the return values from the SMO object JobServer.SharedSchedules" {
         It "Ensure frequency subday type of 'Once' is usable" {
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_Once
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_Once
 
             $splatCopyOnce = @{
-                SqlInstance               = $TestConfig.instance2
+                SqlInstance               = $TestConfig.InstanceMulti1
                 Schedule                  = "Issue_6636_Once_Copy"
                 FrequencyInterval         = $result.FrequencyInterval
                 FrequencyRecurrenceFactor = $result.FrequencyRecurrenceFactor
@@ -205,17 +199,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             $newSchedule = New-DbaAgentSchedule @splatCopyOnce -Force
 
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_Once_Copy
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_Once_Copy
 
             $result.ScheduleName | Should -Be "Issue_6636_Once_Copy"
             $result.FrequencySubdayTypes | Should -Be "Once"
         }
 
         It "Ensure frequency subday type of 'Hour' is usable" {
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_Hour
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_Hour
 
             $splatCopyHour = @{
-                SqlInstance               = $TestConfig.instance2
+                SqlInstance               = $TestConfig.InstanceMulti1
                 Schedule                  = "Issue_6636_Hour_Copy"
                 FrequencyInterval         = $result.FrequencyInterval
                 FrequencyRecurrenceFactor = $result.FrequencyRecurrenceFactor
@@ -227,17 +221,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             $newSchedule = New-DbaAgentSchedule @splatCopyHour -Force
 
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_Hour_Copy
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_Hour_Copy
 
             $result.ScheduleName | Should -Be "Issue_6636_Hour_Copy"
             $result.FrequencySubdayTypes | Should -Be "Hour"
         }
 
         It "Ensure frequency subday type of 'Minute' is usable" {
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_Minute
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_Minute
 
             $splatCopyMinute = @{
-                SqlInstance               = $TestConfig.instance2
+                SqlInstance               = $TestConfig.InstanceMulti1
                 Schedule                  = "Issue_6636_Minute_Copy"
                 FrequencyInterval         = $result.FrequencyInterval
                 FrequencyRecurrenceFactor = $result.FrequencyRecurrenceFactor
@@ -249,17 +243,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             $newSchedule = New-DbaAgentSchedule @splatCopyMinute -Force
 
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_Minute_Copy
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_Minute_Copy
 
             $result.ScheduleName | Should -Be "Issue_6636_Minute_Copy"
             $result.FrequencySubdayTypes | Should -Be "Minute"
         }
 
         It "Ensure frequency subday type of 'Second' is usable" {
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_Second
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_Second
 
             $splatCopySecond = @{
-                SqlInstance               = $TestConfig.instance2
+                SqlInstance               = $TestConfig.InstanceMulti1
                 Schedule                  = "Issue_6636_Second_Copy"
                 FrequencyInterval         = $result.FrequencyInterval
                 FrequencyRecurrenceFactor = $result.FrequencyRecurrenceFactor
@@ -271,17 +265,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             $newSchedule = New-DbaAgentSchedule @splatCopySecond -Force
 
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_Second_Copy
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_Second_Copy
 
             $result.ScheduleName | Should -Be "Issue_6636_Second_Copy"
             $result.FrequencySubdayTypes | Should -Be "Second"
         }
 
         It "Ensure frequency type of 'OneTime' is usable" {
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_OneTime
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_OneTime
 
             $splatCopyOneTime = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceMulti1
                 Schedule      = "Issue_6636_OneTime_Copy"
                 FrequencyType = $result.FrequencyTypes # OneTime
                 StartTime     = $result.ActiveStartTimeOfDay.ToString().Replace(":", "")
@@ -289,17 +283,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             $newSchedule = New-DbaAgentSchedule @splatCopyOneTime -Force
 
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_OneTime_Copy
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_OneTime_Copy
 
             $result.ScheduleName | Should -Be "Issue_6636_OneTime_Copy"
             $result.FrequencyTypes | Should -Be "OneTime"
         }
 
         It "Ensure frequency type of 'AutoStart' is usable" {
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_AutoStart
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_AutoStart
 
             $splatCopyAutoStart = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceMulti1
                 Schedule      = "Issue_6636_AutoStart_Copy"
                 FrequencyType = $result.FrequencyTypes # AutoStart
                 StartTime     = $result.ActiveStartTimeOfDay.ToString().Replace(":", "")
@@ -307,24 +301,24 @@ Describe $CommandName -Tag IntegrationTests {
 
             $newSchedule = New-DbaAgentSchedule @splatCopyAutoStart -Force
 
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_AutoStart_Copy
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_AutoStart_Copy
 
             $result.ScheduleName | Should -Be "Issue_6636_AutoStart_Copy"
             $result.FrequencyTypes | Should -Be "AutoStart"
         }
 
         It "Ensure frequency type of 'OnIdle' is usable" {
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_OnIdle
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_OnIdle
 
             $splatCopyOnIdle = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceMulti1
                 Schedule      = "Issue_6636_OnIdle_Copy"
                 FrequencyType = $result.FrequencyTypes # OnIdle
             }
 
             $newSchedule = New-DbaAgentSchedule @splatCopyOnIdle -Force
 
-            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule Issue_6636_OnIdle_Copy
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule Issue_6636_OnIdle_Copy
 
             $result.ScheduleName | Should -Be "Issue_6636_OnIdle_Copy"
             $result.FrequencyTypes | Should -Be "OnIdle"

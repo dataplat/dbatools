@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Find-DbaDatabase -SqlInstance $TestConfig.instance2 -Pattern Master
+            $results = Find-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Pattern Master
         }
 
         It "Should return correct properties" {
@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return true if Database Master is Found" {
             ($results | Where-Object Name -match "Master") | Should -Be $true
-            $results.Id | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Master).Id
+            $results.Id | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database Master).Id
         }
 
         It "Should return true if Creation Date of Master is '4/8/2003 9:13:36 AM'" {
@@ -60,17 +60,17 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Multiple instances" {
         BeforeAll {
-            $results = Find-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Pattern Master
+            $results = Find-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Pattern Master
         }
 
-        It "Should return true if Executed Against 2 instances: $TestConfig.instance1 and $($TestConfig.instance2)" {
+        It "Should return true if Executed Against 2 instances: $TestConfig.InstanceMulti1 and $($TestConfig.InstanceMulti2)" {
             ($results.InstanceName | Select-Object -Unique).Count -eq 2 | Should -Be $true
         }
     }
 
     Context "Property filtering" {
         BeforeAll {
-            $results = Find-DbaDatabase -SqlInstance $TestConfig.instance2 -Property ServiceBrokerGuid -Pattern -0000-0000-000000000000
+            $results = Find-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Property ServiceBrokerGuid -Pattern -0000-0000-000000000000
         }
 
         It "Should return true if Database Found via Property Filter" {

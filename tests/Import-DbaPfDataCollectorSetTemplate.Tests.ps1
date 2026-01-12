@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $collectorSetName = "Long Running Queries"
 
-        $computerName = ([DbaInstanceParameter]($TestConfig.instance1)).ComputerName
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.instance1 -Property ComputerName
         # Clean up any existing collector sets before starting
         $null = Get-DbaPfDataCollectorSet -ComputerName $computerName -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet
 

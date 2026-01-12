@@ -31,10 +31,10 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $database = "dbatoolsci_frk_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance2 -Database $database -Branch main -Force
+            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -Database $database -Branch main -Force
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $database
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -64,14 +64,14 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance2 -Database $database
+            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -Database $database
             $resultsDownload[0].Status -eq "Updated" | Should -Be $true
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
             $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
-            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance2 -Database $database -WarningAction SilentlyContinue
+            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -Database $database -WarningAction SilentlyContinue
             $result[0].Status -eq "Error" | Should -Be $true
         }
     }
@@ -85,12 +85,12 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-Item -Type Container -Path $tempDir
 
             $database = "dbatoolsci_frk_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "$tempDir\SQL-Server-First-Responder-Kit-main.zip"
             Invoke-WebRequest -Uri "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/main.zip" -OutFile $outfile
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database -Branch main -LocalFile $outfile -Force
+            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti2 -Database $database -Branch main -LocalFile $outfile -Force
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $database
 
             Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
@@ -121,14 +121,14 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database
+            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti2 -Database $database
             $resultsLocalFile[0].Status -eq "Updated" | Should -Be $true
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
             $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
-            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database -WarningAction SilentlyContinue
+            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti2 -Database $database -WarningAction SilentlyContinue
             $result[0].Status -eq "Error" | Should -Be $true
         }
     }
