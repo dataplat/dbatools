@@ -22,7 +22,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     It "returns a value" {
-        $results = Get-DbaExtendedProtection $TestConfig.instance1 -EnableException
+        $results = Get-DbaExtendedProtection $TestConfig.InstanceSingle -EnableException
         $results.ExtendedProtection | Should -Not -BeNullOrEmpty
     }
 }

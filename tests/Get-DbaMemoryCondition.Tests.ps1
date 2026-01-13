@@ -28,7 +28,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.instance1
+            $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "returns results" {

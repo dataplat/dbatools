@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeEach {
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $alertName = "dbatoolsci_test_$(Get-Random)"
         $alertName2 = "dbatoolsci_test_$(Get-Random)"
 

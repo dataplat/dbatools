@@ -55,7 +55,7 @@ INSERT INTO $tableName VALUES (1, 'Alice', 100.50, '2024-01-15 10:30:00');
 INSERT INTO $tableName VALUES (2, 'Bob', 200.75, '2024-02-20 14:45:00');
 INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
 "@
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query $createTableSql
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query $createTableSql
 
         # Create temp directory for test files
         $testExportPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
@@ -70,7 +70,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup test table
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "IF OBJECT_ID('$tableName', 'U') IS NOT NULL DROP TABLE $tableName" -ErrorAction SilentlyContinue
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "IF OBJECT_ID('$tableName', 'U') IS NOT NULL DROP TABLE $tableName" -ErrorAction SilentlyContinue
 
         # Cleanup test files
         Remove-Item -Path $testExportPath -Recurse -ErrorAction SilentlyContinue
@@ -83,7 +83,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\basic-export.csv"
 
             $splatExport = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
                 Path        = $filePath
@@ -103,7 +103,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\query-export.csv"
 
             $splatExport = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Query       = "SELECT id, name FROM $tableName WHERE id <= 2"
                 Path        = $filePath
@@ -122,7 +122,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\compressed.csv.gz"
 
             $splatExport = @{
-                SqlInstance     = $TestConfig.instance1
+                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = "tempdb"
                 Table           = $tableName
                 Path            = $filePath
@@ -137,7 +137,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             # Verify it's actually compressed (smaller than uncompressed)
             $uncompressedPath = "$testExportPath\uncompressed.csv"
             $splatUncompressed = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
                 Path        = $uncompressedPath
@@ -154,7 +154,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\auto-compressed.csv.gz"
 
             $splatExport = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
                 Path        = $filePath
@@ -169,7 +169,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\tab-delimited.csv"
 
             $splatExport = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
                 Path        = $filePath
@@ -187,7 +187,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\no-header.csv"
 
             $splatExport = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
                 Path        = $filePath
@@ -206,7 +206,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\custom-date.csv"
 
             $splatExport = @{
-                SqlInstance    = $TestConfig.instance1
+                SqlInstance    = $TestConfig.InstanceSingle
                 Database       = "tempdb"
                 Table          = $tableName
                 Path           = $filePath
@@ -225,7 +225,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\always-quoted.csv"
 
             $splatExport = @{
-                SqlInstance     = $TestConfig.instance1
+                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = "tempdb"
                 Table           = $tableName
                 Path            = $filePath
@@ -244,7 +244,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
 
             # Create file first
             $splatExport = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
                 Path        = $filePath
@@ -253,7 +253,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
 
             # Try to overwrite with NoClobber
             $splatNoClobber = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
                 Path        = $filePath
@@ -268,7 +268,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\deflate.csv.deflate"
 
             $splatExport = @{
-                SqlInstance     = $TestConfig.instance1
+                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = "tempdb"
                 Table           = $tableName
                 Path            = $filePath
@@ -285,7 +285,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\smallest.csv.gz"
 
             $splatExport = @{
-                SqlInstance      = $TestConfig.instance1
+                SqlInstance      = $TestConfig.InstanceSingle
                 Database         = "tempdb"
                 Table            = $tableName
                 Path             = $filePath
@@ -301,7 +301,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
         It "exports piped objects from Invoke-DbaQuery" {
             $filePath = "$testExportPath\piped.csv"
 
-            $data = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "SELECT id, name FROM $tableName"
+            $data = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "SELECT id, name FROM $tableName"
             $result = $data | Export-DbaCsv -Path $filePath
 
             $result.RowsExported | Should -Be 3
@@ -315,7 +315,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $filePath = "$testExportPath\metrics.csv"
 
             $splatExport = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
                 Path        = $filePath
@@ -342,7 +342,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
                 if ($compressionType -eq "Deflate") { $filePath += ".deflate" }
 
                 $splatExport = @{
-                    SqlInstance     = $TestConfig.instance1
+                    SqlInstance     = $TestConfig.InstanceSingle
                     Database        = "tempdb"
                     Table           = $tableName
                     Path            = $filePath
@@ -367,7 +367,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
                 $filePath = "$testExportPath\level-$compressionLevel.csv.gz"
 
                 $splatExport = @{
-                    SqlInstance      = $TestConfig.instance1
+                    SqlInstance      = $TestConfig.InstanceSingle
                     Database         = "tempdb"
                     Table            = $tableName
                     Path             = $filePath

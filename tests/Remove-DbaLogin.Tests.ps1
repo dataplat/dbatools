@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create test login for removal testing
         $splatLogin = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceSingle
             Login       = $testLogin
             Password    = $securePassword
         }
@@ -50,32 +50,32 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up any remaining test login
-        $null = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin | Remove-DbaLogin
+        $null = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin | Remove-DbaLogin
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing a login" {
         It "Should successfully remove the login" {
-            $results = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin
+            $results = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin
             $results.Status | Should -Be "Dropped"
 
             # Verify the login was actually removed
-            $verifyLogin = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin
+            $verifyLogin = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin
             $verifyLogin | Should -BeNullOrEmpty
         }
     }
 
     Context "Regression test for issue #9163 - Warn when login not found" {
         It "Should warn when specified login does not exist" {
-            $result = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "nonexistentlogin" -WarningVariable warn -WarningAction SilentlyContinue
+            $result = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "nonexistentlogin" -WarningVariable warn -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
             $warn | Should -Not -BeNullOrEmpty
             $warn | Should -BeLike "*nonexistentlogin*not found*"
         }
 
         It "Should warn for each non-existent login when multiple are specified" {
-            $result = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "nonexistent1", "nonexistent2" -WarningVariable warn -WarningAction SilentlyContinue
+            $result = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "nonexistent1", "nonexistent2" -WarningVariable warn -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
             $warn.Count | Should -Be 2
             $warn[0] | Should -BeLike "*nonexistent1*not found*"
@@ -87,11 +87,11 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             $tempLogin = "dbatoolsci_temptest"
             $tempPassword = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
-            $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $tempLogin -Password $tempPassword
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $tempLogin -Password $tempPassword
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             # Now try to remove it and check for warnings
-            $result = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $tempLogin -WarningVariable warn -WarningAction SilentlyContinue
+            $result = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $tempLogin -WarningVariable warn -WarningAction SilentlyContinue
             $result.Status | Should -Be "Dropped"
             $warn | Should -BeNullOrEmpty
         }

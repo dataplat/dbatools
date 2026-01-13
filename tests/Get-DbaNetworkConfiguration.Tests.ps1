@@ -24,8 +24,8 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
-            $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -OutputType TcpIpProperties
+            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
+            $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType TcpIpProperties
         }
 
         It "Should Return a Result" {

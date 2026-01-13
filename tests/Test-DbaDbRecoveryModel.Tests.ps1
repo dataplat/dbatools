@@ -28,75 +28,75 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $bulkLoggedRecovery = "dbatoolsci_RecoveryModelBulk"
         $simpleRecovery = "dbatoolsci_RecoveryModelSimple"
         $psudoSimpleRecovery = "dbatoolsci_RecoveryModelPsudoSimple"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
-        Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
+        Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database model
         $server.Query("CREATE DATABASE $fullRecovery")
-        Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
+        Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database model
         $server.Query("CREATE DATABASE $bulkLoggedRecovery")
-        Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
+        Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database model
         $server.Query("CREATE DATABASE $simpleRecovery")
-        Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
+        Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database model
         $server.Query("CREATE DATABASE $psudoSimpleRecovery")
 
-        Set-DbaDbRecoveryModel -sqlInstance $TestConfig.instance2 -RecoveryModel BulkLogged -Database $bulkLoggedRecovery
-        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $simpleRecovery
-        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $psudoSimpleRecovery
-        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full -Database $psudoSimpleRecovery
+        Set-DbaDbRecoveryModel -sqlInstance $TestConfig.InstanceSingle -RecoveryModel BulkLogged -Database $bulkLoggedRecovery
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Simple -Database $simpleRecovery
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Simple -Database $psudoSimpleRecovery
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Full -Database $psudoSimpleRecovery
 
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $fullRecovery, $bulkLoggedRecovery, $simpleRecovery, $psudoSimpleRecovery
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $fullRecovery, $bulkLoggedRecovery, $simpleRecovery, $psudoSimpleRecovery
     }
 
     Context "Default Execution" {
         It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
-            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
             $results.Database | Should -BeIn ($fullRecovery, $psudoSimpleRecovery, 'Model')
         }
     }
 
     Context "Full Recovery" {
         It "Should return $fullRecovery and $psudoSimpleRecovery" {
-            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full -Database $fullRecovery, $psudoSimpleRecovery -ExcludeDatabase 'Model'
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Full -Database $fullRecovery, $psudoSimpleRecovery -ExcludeDatabase 'Model'
             $results.Database | Should -BeIn ($fullRecovery, $psudoSimpleRecovery)
         }
     }
 
     Context "Bulk Logged Recovery" {
         It "Should return $bulkLoggedRecovery" {
-            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Bulk_Logged -Database $bulkLoggedRecovery
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Bulk_Logged -Database $bulkLoggedRecovery
             $results.Database | Should -Be "$bulkLoggedRecovery"
         }
     }
 
     Context "Simple Recovery" {
         It "Should return $simpleRecovery" {
-            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $simpleRecovery
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Simple -Database $simpleRecovery
             $results.Database | Should -Be "$simpleRecovery"
         }
     }
 
     Context "Psudo Simple Recovery" {
         It "Should return $psudoSimpleRecovery" {
-            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full | Where-Object { $_.database -eq "$psudoSimpleRecovery" }
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Full | Where-Object { $_.database -eq "$psudoSimpleRecovery" }
             $results.Database | Should -Be "$psudoSimpleRecovery"
         }
     }
 
     Context "Error Check" {
         It "Should Throw Error for Incorrect Recovery Model" {
-            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | Should -Throw
+            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Awesome -EnableException -Database 'dontexist' } | Should -Throw
         }
 
         It "Should Throw Error for a DB Connection Error" {
             Mock Connect-DbaInstance { Throw } -ModuleName dbatools
-            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw
+            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -EnableException } | Should -Throw
         }
 
         It "Should Throw Error for Output Error" {
             Mock Select-DefaultView { Throw } -ModuleName dbatools
-            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw
+            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -EnableException } | Should -Throw
         }
     }
 

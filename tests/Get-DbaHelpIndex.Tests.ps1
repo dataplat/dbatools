@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $dbname = "dbatoolsci_$random"
         $server.Query("CREATE DATABASE $dbname")
@@ -52,13 +52,13 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Command works for indexes" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test
         }
 
         It "Results should be returned" {
@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command works when including statistics" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $PSItem.Statistics }
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $PSItem.Statistics }
         }
 
         It "Results should be returned" {
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command output includes data types" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeDataTypes
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -IncludeDataTypes
         }
 
         It "Results should be returned" {
@@ -105,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Formatting is correct" {
         It "Formatted as strings" {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -IncludeFragmentation
             $results.IndexReads | Should -BeOfType "String"
             $results.IndexUpdates | Should -BeOfType "String"
             $results.Size | Should -BeOfType "String"
@@ -117,7 +117,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Formatting is correct for raw" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -raw -IncludeFragmentation
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -raw -IncludeFragmentation
         }
 
         It "Formatted as Long" {
@@ -134,7 +134,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Result is correct for tables having the indexes with the same names" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         }
 
         It "Table t1 has correct index key columns and included columns" {

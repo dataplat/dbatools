@@ -840,7 +840,7 @@ use master
     Context "Test restoring a Backup encrypted with Certificate" {
         BeforeAll {
             $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name EncRestTest
-            $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
+            $securePass = ConvertTo-SecureString "estBackupDir\master\script:InstanceSingle).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
             $cert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master -Name RestoreTestCert -Subject RestoreTestCert
 
             $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database EncRestTest -EncryptionAlgorithm AES128 -EncryptionCertificate RestoreTestCert -FilePath "$backupPath\EncRestTest.bak"

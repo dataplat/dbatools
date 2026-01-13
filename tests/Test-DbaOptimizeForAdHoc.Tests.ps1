@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Test-DbaOptimizeForAdHoc -SqlInstance $TestConfig.instance2
+            $results = Test-DbaOptimizeForAdHoc -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should return result for the server" {

@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When enabling force network encryption" {
         BeforeAll {
-            $results = Enable-DbaForceNetworkEncryption -SqlInstance $TestConfig.instance1 -EnableException
+            $results = Enable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
         }
 
         It "Should enable force encryption" {

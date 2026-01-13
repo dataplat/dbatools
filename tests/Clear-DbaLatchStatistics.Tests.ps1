@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command executes properly and returns proper info" {
         BeforeAll {
             $splatClearLatch = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
             }
             $results = Clear-DbaLatchStatistics @splatClearLatch
         }

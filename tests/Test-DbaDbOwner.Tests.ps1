@@ -285,19 +285,19 @@ Describe $CommandName -Tag IntegrationTests {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_testdbowner"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("Create Database [$dbname]")
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
     }
 
     Context "Command actually works" {
         It "Should return the correct information including database, currentowner and targetowner" {
             $whoami = whoami
-            $results = Test-DbaDbOwner -SqlInstance $TestConfig.instance1 -Database $dbname
+            $results = Test-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbname
             $results.Database | Should -Be $dbname
             $results.CurrentOwner | Should -Be $whoami
             $results.TargetOwner | Should -Be 'sa'

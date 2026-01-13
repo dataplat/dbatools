@@ -21,9 +21,9 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Command actually works on $($TestConfig.instance2)" {
+    Context "Command actually works on $($TestConfig.InstanceSingle)" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $results = Test-DbaTempDbConfig -SqlInstance $server
         }
 

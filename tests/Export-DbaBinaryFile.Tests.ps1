@@ -58,18 +58,18 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Set up test table and data for each test
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $null = $db.Query("CREATE TABLE [dbo].[BunchOFilezz]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
 
             $splatImportMain = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = "BunchOFilezz"
                 FilePath    = "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
             }
             $null = Import-DbaBinaryFile @splatImportMain
 
-            $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilezz
+            $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table BunchOFilezz
 
             # We want to run all commands outside of the BeforeEach block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Clean up test table
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $null = $db.Query("DROP TABLE dbo.BunchOFilezz")
 
             # Clean up exported files for this specific test
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exports the table data to file using SqlInstance" {
             $splatExport = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Path        = $exportPath
             }
@@ -103,7 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Exports the table data to file using pipeline from Get-DbaBinaryFileTable" {
-            $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb | Export-DbaBinaryFile -Path $exportPath
+            $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Export-DbaBinaryFile -Path $exportPath
 
             $results.Name.Count | Should -BeExactly 3
             $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")

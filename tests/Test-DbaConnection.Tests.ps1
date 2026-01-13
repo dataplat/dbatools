@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Testing if command works" {
         It "returns the correct results" {
-            $results = Test-DbaConnection -SqlInstance $TestConfig.instance1
+            $results = Test-DbaConnection -SqlInstance $TestConfig.InstanceSingle
             $whoami = whoami
 
             $results.TcpPort | Should -Be 1433

@@ -29,22 +29,22 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
 
             # Create firewall rules with default RuleType (Program)
-            $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.instance2
-            $resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
+            $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
+            $resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
             $resultsRemoveBrowser = $resultsGet | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule
-            $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Type AllInstance
+            $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Type AllInstance
 
-            $instanceName = ([DbaInstanceParameter]$TestConfig.instance2).InstanceName
+            $instanceName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).InstanceName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -106,21 +106,21 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
 
             # Create firewall rules with RuleType Port
-            $resultsNewPort = New-DbaFirewallRule -SqlInstance $TestConfig.instance2 -RuleType Port
-            $resultsGetPort = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
-            $resultsRemovePort = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Type AllInstance
+            $resultsNewPort = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -RuleType Port
+            $resultsGetPort = Get-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
+            $resultsRemovePort = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Type AllInstance
 
-            $instanceName = ([DbaInstanceParameter]$TestConfig.instance2).InstanceName
+            $instanceName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).InstanceName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 

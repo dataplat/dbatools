@@ -40,22 +40,22 @@ Describe $CommandName -Tag IntegrationTests {
             $masterKeyPassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
             $certificatePassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -Force
 
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
 
-            $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $dbName -Password $masterKeyPassword
-            $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $dbName
-            $backup = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database $dbName -EncryptionPassword $certificatePassword -Path $backupPath
+            $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Password $masterKeyPassword
+            $cert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $backup = Backup-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Certificate $cert.Name -Database $dbName -EncryptionPassword $certificatePassword -Path $backupPath
             $cert | Remove-DbaDbCertificate
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterEach {
-            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database $dbName -ErrorAction SilentlyContinue
+            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Certificate $cert.Name -Database $dbName -ErrorAction SilentlyContinue
         }
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
 
             # Remove the backup directory.
             Remove-Item -Path $backupPath -Recurse
@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "restores the db cert when passing in a .cer file" {
-            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $backup.ExportPath -Password $certificatePassword -Database $dbName -EncryptionPassword $certificatePassword
+            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Path $backup.ExportPath -Password $certificatePassword -Database $dbName -EncryptionPassword $certificatePassword
             $results.Parent.Name | Should -Be $dbName
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "Password"
@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "restores the db cert when passing in a folder" {
             $folder = Split-Path $backup.ExportPath -Parent
-            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $folder -Password $certificatePassword -Database $dbName -EncryptionPassword $certificatePassword
+            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Path $folder -Password $certificatePassword -Database $dbName -EncryptionPassword $certificatePassword
             $results.Parent.Name | Should -Be $dbName
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "Password"
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "restores the db cert and encrypts with master key" {
             $folder = Split-Path $backup.ExportPath -Parent
-            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Path $folder -Password $certificatePassword -Database $dbName
+            $results = Restore-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Path $folder -Password $certificatePassword -Database $dbName
             $results.Parent.Name | Should -Be $dbName
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "MasterKey"

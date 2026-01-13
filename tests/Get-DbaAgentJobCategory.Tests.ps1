@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
+            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -38,23 +38,23 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
+            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should get at least 2 categories" {
-            $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 | Where-Object Name -match "dbatoolsci"
+            $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -match "dbatoolsci"
             $results.Count | Should -BeGreaterThan 1
         }
 
         It "Should get the dbatoolsci_testcategory category" {
-            $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory | Where-Object Name -match "dbatoolsci"
+            $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category dbatoolsci_testcategory | Where-Object Name -match "dbatoolsci"
             $results.Count | Should -BeExactly 1
         }
 
         It "Should get at least 1 LocalJob" {
-            $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -CategoryType LocalJob | Where-Object Name -match "dbatoolsci"
+            $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -CategoryType LocalJob | Where-Object Name -match "dbatoolsci"
             $results.Count | Should -BeGreaterThan 1
         }
     }

@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (Id int NOT NULL IDENTITY (125, 1), Value varchar(5));
         INSERT INTO dbo.dbatoolsci_example(Value) Select 1;
         CREATE TABLE dbo.dbatoolsci_example2 (Id int NOT NULL IDENTITY (5, 1), Value varchar(5));
@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "ColumnValue",
                 "Output"
             )
-            $result = Get-DbaDbIdentity -SqlInstance $TestConfig.instance1 -Database tempdb -Table "dbo.dbatoolsci_example", "dbo.dbatoolsci_example2"
+            $result = Get-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table "dbo.dbatoolsci_example", "dbo.dbatoolsci_example2"
         }
 
         It "Should return all expected properties" {

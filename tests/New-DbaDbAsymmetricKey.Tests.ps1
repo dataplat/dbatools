@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database enctest -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database enctest -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -52,8 +52,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
         It "Should create new key in master called test1" {
             $keyname1 = "test1"
-            $key1 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname1
-            $results1 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname1 -Database master -WarningVariable warnvar1
+            $key1 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname1
+            $results1 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname1 -Database master -WarningVariable warnvar1
             $warnvar1 | Should -BeNullOrEmpty
             $results1.database | Should -Be "master"
             $results1.name | Should -Be $keyname1
@@ -63,26 +63,26 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Handles pre-existing key" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database master -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname2 -Database master -ErrorAction SilentlyContinue
         }
 
         It "Should Warn that they key test1 already exists" {
             $keyname2 = "test1"
-            $key2 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database master -WarningVariable warnvar2 3> $null
+            $key2 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname2 -Database master -WarningVariable warnvar2 3> $null
             $warnvar2 | Should -BeLike "*already exists in master on*"
         }
     }
 
     Context "Handles Algorithm changes" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname3 -Database master -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname3 -Database master -ErrorAction SilentlyContinue
         }
 
         It "Should Create new key in master called test2" {
             $keyname3 = "test2"
             $algorithm3 = "Rsa4096"
-            $key3 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname3 -Algorithm $algorithm3 -WarningVariable warnvar3
-            $results3 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname3 -Database master
+            $key3 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname3 -Algorithm $algorithm3 -WarningVariable warnvar3
+            $results3 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname3 -Database master
             $warnvar3 | Should -BeNullOrEmpty
             $results3.database | Should -Be "master"
             $results3.name | Should -Be $keyname3
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Non master database" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname4 -Database $database4 -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname4 -Database $database4 -ErrorAction SilentlyContinue
         }
 
         It "Should Create new key in enctest called test4" {
@@ -103,14 +103,14 @@ Describe $CommandName -Tag IntegrationTests {
             $dbuser4 = "keyowner"
             $database4 = "enctest"
 
-            New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database4
-            New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database4 -SecurePassword $tPassword
-            New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $database4 -UserName $dbuser4
+            New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $database4
+            New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $database4 -SecurePassword $tPassword
+            New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $database4 -UserName $dbuser4
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $key4 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database4 -Name $keyname4 -Owner keyowner -Algorithm $algorithm4 -WarningVariable warnvar4
-            $results4 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname4 -Database $database4
+            $key4 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database $database4 -Name $keyname4 -Owner keyowner -Algorithm $algorithm4 -WarningVariable warnvar4
+            $results4 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname4 -Database $database4
             $warnvar4 | Should -BeNullOrEmpty
             $results4.database | Should -Be $database4
             $results4.name | Should -Be $keyname4
@@ -121,7 +121,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Sets owner correctly" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname5 -Database $database5 -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname5 -Database $database5 -ErrorAction SilentlyContinue
         }
 
         It "Should Create new key in enctest called test3" {
@@ -129,8 +129,8 @@ Describe $CommandName -Tag IntegrationTests {
             $algorithm5 = "Rsa4096"
             $dbuser5 = "keyowner"
             $database5 = "enctest"
-            $key5 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname5 -Owner keyowner -Database $database5 -Algorithm $algorithm5 -WarningVariable warnvar5
-            $results5 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname5 -Database $database5
+            $key5 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname5 -Owner keyowner -Database $database5 -Algorithm $algorithm5 -WarningVariable warnvar5
+            $results5 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname5 -Database $database5
             $warnvar5 | Should -BeNullOrEmpty
             $results5.database | Should -Be $database5
             $results5.name | Should -Be $keyname5
@@ -141,7 +141,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Create new key loaded from a keyfile" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname6 -Database $database6 -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname6 -Database $database6 -ErrorAction SilentlyContinue
         }
 
         It "Should Create new key in enctest called filekey" {
@@ -151,8 +151,8 @@ Describe $CommandName -Tag IntegrationTests {
             $path6 = "$($($TestConfig.appveyorlabrepo))\keytests\keypair.snk"
 
             if (Test-Path -Path $path6) {
-                $key6 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database6 -Name $keyname6 -Owner keyowner -WarningVariable warnvar6 -KeySourceType File -KeySource $path6
-                $results6 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname6 -Database $database6
+                $key6 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database $database6 -Name $keyname6 -Owner keyowner -WarningVariable warnvar6 -KeySourceType File -KeySource $path6
+                $results6 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname6 -Database $database6
                 $warnvar6 | Should -BeNullOrEmpty
                 $results6.database | Should -Be $database6
                 $results6.name | Should -Be $keyname6
@@ -166,7 +166,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Failed key creation from a missing keyfile" {
         AfterAll {
-            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname7 -Database $database7 -ErrorAction SilentlyContinue
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname7 -Database $database7 -ErrorAction SilentlyContinue
         }
 
         It "Should not Create new key in enctest called filekeybad" {
@@ -174,8 +174,8 @@ Describe $CommandName -Tag IntegrationTests {
             $dbuser7 = "keyowner"
             $database7 = "enctest"
             $path7 = "$($($TestConfig.appveyorlabrepo))\keytests\keypair.bad"
-            $key7 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database7 -Name $keyname7 -Owner keyowner -WarningVariable warnvar7 -KeySourceType File -KeySource $path7 3> $null
-            $results7 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname7 -Database $database7
+            $key7 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database $database7 -Name $keyname7 -Owner keyowner -WarningVariable warnvar7 -KeySourceType File -KeySource $path7 3> $null
+            $results7 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname7 -Database $database7
             $warnvar7 | Should -Not -BeNullOrEmpty
             $results7 | Should -BeNullOrEmpty
         }

@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             Follow these steps to configure the local machine to run the crypto provider tests.
 
-            1. Run these SQL commands on the instance2 and instance3 servers:
+            1. Run these SQL commands on the InstanceSingle and instance3 servers:
 
             -- Enable advanced options.
             USE master;
@@ -66,18 +66,18 @@ Describe $CommandName -Tag IntegrationTests {
             GO
             RECONFIGURE;
 
-            2. Install https://www.microsoft.com/en-us/download/details.aspx?id=45344 on the instance2 and instance3 servers.
+            2. Install https://www.microsoft.com/en-us/download/details.aspx?id=45344 on the InstanceSingle and instance3 servers.
 
-            3. Run these SQL commands on the instance2 and instance3 servers:
+            3. Run these SQL commands on the InstanceSingle and instance3 servers:
 
             CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'
         #>
 
         # check to see if a crypto provider is present on the instances
-        $instance2CryptoProviders = $server2.Query("SELECT name FROM sys.cryptographic_providers WHERE is_enabled = 1 ORDER BY name")
+        $InstanceSingleCryptoProviders = $server2.Query("SELECT name FROM sys.cryptographic_providers WHERE is_enabled = 1 ORDER BY name")
         $instance3CryptoProviders = $server3.Query("SELECT name FROM sys.cryptographic_providers WHERE is_enabled = 1 ORDER BY name")
 
-        $cryptoProvider = ($instance2CryptoProviders | Where-Object { $PSItem.name -eq $instance3CryptoProviders.name } | Select-Object -First 1).name
+        $cryptoProvider = ($InstanceSingleCryptoProviders | Where-Object { $PSItem.name -eq $instance3CryptoProviders.name } | Select-Object -First 1).name
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

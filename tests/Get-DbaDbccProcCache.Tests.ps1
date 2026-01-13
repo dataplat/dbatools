@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
             "CacheUsed",
             "CacheActive"
         )
-        $result = Get-DbaDbccProcCache -SqlInstance $TestConfig.instance2
+        $result = Get-DbaDbccProcCache -SqlInstance $TestConfig.InstanceSingle
     }
 
     Context "Validate standard output" {

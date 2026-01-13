@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $dbname = "dbatoolsci_adddb_newrole"
         $instance.Query("create database $dbname")
         $roleExecutor = "dbExecuter"

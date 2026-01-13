@@ -40,8 +40,8 @@ Describe $CommandName -Tag IntegrationTests -Skip {
             "SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0"
         )
 
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
         foreach ($db in $spdb) {
             try {
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests -Skip {
             # On PowerShell 7.4.2 on Windows Server 2022, the following line throws:
             # Unhandled Exception: System.IO.FileNotFoundException: Could not load file or assembly 'System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51' or one of its dependencies. The system cannot find the file specified.
             # So we don't run the following line but skip the tests
-            # . $sqlpackage /Action:Import /tsn:$TestConfig.instance2 /tdn:Sharepoint_Config /sf:$bacpac /p:Storage=File
+            # . $sqlpackage /Action:Import /tsn:$TestConfig.InstanceSingle /tdn:Sharepoint_Config /sf:$bacpac /p:Storage=File
             $skip = $true
         } else {
             Write-Warning -Message "No bacpac found in path [$bacpac], skipping tests."
@@ -86,14 +86,14 @@ Describe $CommandName -Tag IntegrationTests -Skip {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $spdb -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $spdb -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command gets SharePoint Databases" {
         BeforeAll {
-            $results = Get-DbaDbSharePoint -SqlInstance $TestConfig.instance2
+            $results = Get-DbaDbSharePoint -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "returns $db from in the SharePoint database list" {

@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
         $server.Query($sql)
         $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
@@ -51,12 +51,12 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Get back some operators" {
         It "return at least two results" {
-            $results = Get-DbaAgentOperator -SqlInstance $TestConfig.instance2
+            $results = Get-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle
             $results.Count -ge 2 | Should -Be $true
         }
 
         It "return one result" {
-            $results = Get-DbaAgentOperator -SqlInstance $TestConfig.instance2 -Operator dbatoolsci_operator
+            $results = Get-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle -Operator dbatoolsci_operator
             $results.Count | Should -BeExactly 1
         }
     }

@@ -37,18 +37,18 @@ Describe $CommandName -Tag IntegrationTests {
 
         $random = Get-Random
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
         $tempdbDataFilePhysicalName = $server.Databases["tempdb"].Query("SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 1").PhysicalName
         $tempdbDataFilePath = Split-Path $tempdbDataFilePhysicalName
 
-        if (([DbaInstanceParameter]($TestConfig.instance1)).IsLocalHost) {
+        if (([DbaInstanceParameter]($TestConfig.InstanceSingle)).IsLocalHost) {
             $null = New-Item -Path "$tempdbDataFilePath\DataDir0_$random" -Type Directory
             $null = New-Item -Path "$tempdbDataFilePath\DataDir1_$random" -Type Directory
             $null = New-Item -Path "$tempdbDataFilePath\DataDir2_$random" -Type Directory
             $null = New-Item -Path "$tempdbDataFilePath\Log_$random" -Type Directory
         } else {
-            Invoke-Command2 -ComputerName $TestConfig.instance1 -ScriptBlock {
+            Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock {
                 $null = New-Item -Path "$($args[0])\DataDir0_$($args[1])" -Type Directory
                 $null = New-Item -Path "$($args[0])\DataDir1_$($args[1])" -Type Directory
                 $null = New-Item -Path "$($args[0])\DataDir2_$($args[1])" -Type Directory
@@ -65,13 +65,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created directories.
-        if (([DbaInstanceParameter]($TestConfig.instance1)).IsLocalHost) {
+        if (([DbaInstanceParameter]($TestConfig.InstanceSingle)).IsLocalHost) {
             Remove-Item -Path "$tempdbDataFilePath\DataDir0_$random" -Force -ErrorAction SilentlyContinue
             Remove-Item -Path "$tempdbDataFilePath\DataDir1_$random" -Force -ErrorAction SilentlyContinue
             Remove-Item -Path "$tempdbDataFilePath\DataDir2_$random" -Force -ErrorAction SilentlyContinue
             Remove-Item -Path "$tempdbDataFilePath\Log_$random" -Force -ErrorAction SilentlyContinue
         } else {
-            Invoke-Command2 -ComputerName $TestConfig.instance1 -ScriptBlock {
+            Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock {
                 Remove-Item -Path "$($args[0])\DataDir0_$($args[1])" -Force -ErrorAction SilentlyContinue
                 Remove-Item -Path "$($args[0])\DataDir1_$($args[1])" -Force -ErrorAction SilentlyContinue
                 Remove-Item -Path "$($args[0])\DataDir2_$($args[1])" -Force -ErrorAction SilentlyContinue
@@ -84,13 +84,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
 
         It "test with an invalid data dir" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "does not exist"
             $result | Should -BeNullOrEmpty
         }
 
         It "valid sql is produced with nearly all options set and a single data directory" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 2048 -LogFileSize 512 -DataFileGrowth 1024 -LogFileGrowth 512 -DataPath "$tempdbDataFilePath\DataDir0_$random" -LogPath "$tempdbDataFilePath\Log_$random" -OutputScriptOnly -WarningAction SilentlyContinue
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileCount 8 -DataFileSize 2048 -LogFileSize 512 -DataFileGrowth 1024 -LogFileGrowth 512 -DataPath "$tempdbDataFilePath\DataDir0_$random" -LogPath "$tempdbDataFilePath\Log_$random" -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $PSItem -ne "" }
 
             $sqlStatements.Count | Should -Be 9
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "valid sql is produced with -DisableGrowth" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 1024 -LogFileSize 512 -DisableGrowth -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly -WarningAction SilentlyContinue
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileCount 8 -DataFileSize 1024 -LogFileSize 512 -DisableGrowth -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $PSItem -ne "" }
 
             $sqlStatements.Count | Should -Be 9
@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "multiple data directories are supported" {
             $dataDirLocations = "$tempdbDataFilePath\DataDir0_$random", "$tempdbDataFilePath\DataDir1_$random", "$tempdbDataFilePath\DataDir2_$random"
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 1024 -DataPath $dataDirLocations -OutputScriptOnly -WarningAction SilentlyContinue
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileCount 8 -DataFileSize 1024 -DataPath $dataDirLocations -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $PSItem -ne "" }
 
             # check the round robin assignment of files to data dir locations

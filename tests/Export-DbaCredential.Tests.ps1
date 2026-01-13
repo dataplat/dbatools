@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the objects.
         $splatCaptain = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.InstanceSingle
             Name            = $captainCredName
             Identity        = $captainCredIdentity
             Password        = $password
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaCredential @splatCaptain
 
         $splatHulk = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.InstanceSingle
             Identity        = $hulkCredIdentity
             Password        = $password
             EnableException = $true
@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         $splatCleanup = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.InstanceSingle
             Identity        = $captainCredIdentity, $hulkCredIdentity
             EnableException = $true
             WarningAction   = "SilentlyContinue"
@@ -93,7 +93,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should export all credentials" {
         BeforeAll {
-            $exportFile = Export-DbaCredential -SqlInstance $TestConfig.instance2
+            $exportFile = Export-DbaCredential -SqlInstance $TestConfig.InstanceSingle
             $exportResults = Get-Content -Path $exportFile -Raw
         }
 
@@ -114,7 +114,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $specificFilePath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
             $splatExportSpecific = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Identity    = $captainCredIdentity
                 FilePath    = $specificFilePath
             }
@@ -139,7 +139,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $appendFilePath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
             $splatExportAppend = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Identity    = $hulkCredIdentity
                 FilePath    = $appendFilePath
                 Append      = $true
@@ -165,7 +165,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $excludePasswordFilePath = "$env:USERPROFILE\Documents\temp-credential.sql"
             $splatExportNoPassword = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceSingle
                 Identity        = $captainCredIdentity
                 FilePath        = $excludePasswordFilePath
                 ExcludePassword = $true

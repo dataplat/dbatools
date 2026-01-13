@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sessionName = "Profiler TSQL Duration"
 
         # Clean up any existing session
-        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session $sessionName | Remove-DbaXESession
+        $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $sessionName | Remove-DbaXESession
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session $sessionName | Remove-DbaXESession
+        $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $sessionName | Remove-DbaXESession
 
         # Remove the temporary directory and any exported files.
         Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Test Importing Session Template" {
         It "session exports to disk" {
-            $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template "Profiler TSQL Duration"
+            $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.InstanceSingle -Template "Profiler TSQL Duration"
             $results = $session | Export-DbaXESessionTemplate -Path $tempPath
             $results.Name | Should -Be "$sessionName.xml"
         }

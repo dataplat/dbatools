@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $profilename = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $description = "Mail account for email alerts"
         $mailaccountname = "dbatoolssci@dbatools.io"
         $mailaccountpriority = 1
@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
         $server.query($mailAccountSettings)
         $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Sets DbMail Profile" {
         BeforeAll {
             $splatProfile = @{
-                SqlInstance         = $TestConfig.instance2
+                SqlInstance         = $TestConfig.InstanceSingle
                 Profile             = $profilename
                 Description         = $description
                 MailAccountName     = $mailaccountname

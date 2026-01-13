@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         $trigger1Name = "dbatoolsci_trigger1_$random"
         $trigger2Name = "dbatoolsci_trigger2_$random"
 
-        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
         $sql1 = "CREATE TRIGGER [$trigger1Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT 'Database Created.'"
         $sql2 = "CREATE TRIGGER [$trigger2Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT 'Database Created.'"
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When retrieving instance triggers" {
         BeforeAll {
-            $results = Get-DbaInstanceTrigger -SqlInstance $TestConfig.instance2
+            $results = Get-DbaInstanceTrigger -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should return the expected number of triggers" {

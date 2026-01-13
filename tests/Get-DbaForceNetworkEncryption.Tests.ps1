@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When connecting to SQL Server" {
         It "returns true or false" {
-            $results = Get-DbaForceNetworkEncryption -SqlInstance $TestConfig.instance1 -EnableException
+            $results = Get-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
             $results.ForceEncryption | Should -Not -BeNullOrEmpty
         }
     }

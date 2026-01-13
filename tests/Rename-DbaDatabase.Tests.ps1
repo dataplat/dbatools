@@ -38,15 +38,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_rename1"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_filemove"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_logicname"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_filegroupname"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci_rename1"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci_filemove"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci_logicname"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci_filegroupname"
         $fileGroupQuery = @"
         ALTER DATABASE dbatoolsci_filegroupname
         ADD FILEGROUP Dbatoolsci_filegroupname
 "@
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $fileGroupQuery
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $fileGroupQuery
         $testDate = (Get-Date).ToString("yyyyMMdd")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should preview a rename of a database" {
         BeforeAll {
             $splatPreview = @{
-                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.InstanceSingle
                 Database     = "dbatoolsci_rename1"
                 DatabaseName = "dbatoolsci_rename2"
                 Preview      = $true
@@ -85,7 +85,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename a database" {
         BeforeAll {
             $splatRename = @{
-                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.InstanceSingle
                 Database     = "dbatoolsci_rename1"
                 DatabaseName = "dbatoolsci_rename2"
             }
@@ -110,7 +110,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename a database with a prefix" {
         BeforeAll {
             $splatPrefix = @{
-                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.InstanceSingle
                 Database     = "dbatoolsci_rename2"
                 DatabaseName = "test_<DBN>"
             }
@@ -135,7 +135,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename a database with a date" {
         BeforeAll {
             $splatDate = @{
-                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.InstanceSingle
                 Database     = "test_dbatoolsci_rename2"
                 DatabaseName = "<DBN>_<DATE>"
             }
@@ -160,7 +160,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should preview renaming database files" {
         BeforeAll {
             $splatFilePreview = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "dbatoolsci_filemove"
                 FileName    = "<DBN>_<FGN>_<FNN>"
                 Preview     = $true
@@ -186,7 +186,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename database files and move them" {
         BeforeAll {
             $splatFileMove = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "dbatoolsci_filemove"
                 FileName    = "<DBN>_<FGN>_<FNN>"
                 Move        = $true
@@ -212,7 +212,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename database files and forces the move" {
         BeforeAll {
             $splatFileForce = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceSingle
                 Database      = "dbatoolsci_filemove"
                 FileName      = "<FNN>_<FT>"
                 ReplaceBefore = $true
@@ -239,7 +239,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename database files and set the database offline" {
         BeforeAll {
             $splatFileOffline = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "dbatoolsci_filemove"
                 FileName    = "<FNN>_<LGN>_<DATE>"
                 SetOffline  = $true
@@ -268,7 +268,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename the logical name" {
         BeforeAll {
             $splatLogical = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "dbatoolsci_logicname"
                 LogicalName = "<LGN>_<DATE>_<DBN>"
             }
@@ -294,7 +294,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename the filegroupname name" {
         BeforeAll {
             $splatFileGroup = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceSingle
                 Database      = "dbatoolsci_filegroupname"
                 FileGroupName = "<FGN>_<DATE>_<DBN>"
             }
@@ -318,10 +318,10 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $testDbName = "dbatoolsci_replaceBefore_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDbName
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDbName
 
             $splatReplaceBefore = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceSingle
                 Database      = $testDbName
                 DatabaseName  = "$($testDbName)_renamed"
                 LogicalName   = "<DBN><LGN>"
@@ -332,7 +332,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             { $result = Rename-DbaDatabase @splatReplaceBefore } | Should -Not -Throw
 
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }

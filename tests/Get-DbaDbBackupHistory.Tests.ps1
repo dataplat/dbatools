@@ -50,16 +50,16 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $dbname = "dbatoolsci_history_$random"
         $dbnameForked = "dbatoolsci_history_forked_$random"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $dbname -DestinationFilePrefix $dbname
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname, $dbnameForked | Remove-DbaDatabase
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $dbname -DestinationFilePrefix $dbname
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Databases["master"].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir -BackupFileName CopyOnly.bak -CopyOnly
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -70,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname, $dbnameForked | Remove-DbaDatabase
         Remove-Item -Path $DestBackupDir -Recurse -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -78,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Get last history for single database" {
         BeforeAll {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -Last
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Last
         }
 
         It "Should be 4 backups returned" {
@@ -105,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Get last history for all databases" {
         BeforeAll {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should be more than one database" {
@@ -115,24 +115,24 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "ExcludeDatabase is honored" {
         It "Should not report about excluded database master" {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase "master"
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase "master"
             ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
 
         It "Should not report about excluded database master with Type Full" {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase "master" -Type Full
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase "master" -Type Full
             ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
 
         It "Should not report about excluded database master with LastFull" {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -ExcludeDatabase "master" -LastFull
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase "master" -LastFull
             ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
     }
 
     Context "LastFull should work with multiple databases" {
         BeforeAll {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname, master -lastfull
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname, master -lastfull
         }
 
         It "Should return 2 records" {
@@ -142,8 +142,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Testing IncludeCopyOnly with LastFull" {
         BeforeAll {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -LastFull -Database $dbname
-            $resultsCo = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -LastFull -IncludeCopyOnly -Database $dbname
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -LastFull -Database $dbname
+            $resultsCo = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -LastFull -IncludeCopyOnly -Database $dbname
         }
 
         It "Should return the CopyOnly Backup" {
@@ -153,7 +153,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Testing IncludeCopyOnly with Last" {
         BeforeAll {
-            $resultsCo = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Last -IncludeCopyOnly -Database $dbname
+            $resultsCo = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Last -IncludeCopyOnly -Database $dbname
         }
 
         It "Should return just the CopyOnly Full Backup" {
@@ -164,7 +164,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Testing TotalSize regression test for #3517" {
         It "supports large numbers" {
             $historyObject = New-Object Dataplat.Dbatools.Database.BackupHistory
-            $server = Connect-DbaInstance $TestConfig.instance1
+            $server = Connect-DbaInstance $TestConfig.InstanceSingle
             $cast = $server.Query("select cast(1000000000000000 as numeric(20,0)) AS TotalSize")
             $historyObject.TotalSize = $cast.TotalSize
             ($historyObject.TotalSize.Byte) | Should -Be 1000000000000000
@@ -209,8 +209,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Testing IgnoreDiff parameter for #6914" {
         BeforeAll {
-            $noIgnore = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname
-            $Ignore = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -IgnoreDiffBackup
+            $noIgnore = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+            $Ignore = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -IgnoreDiffBackup
         }
 
         It "Should return one less backup" {
@@ -224,17 +224,17 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Testing the Since parameter" {
         It "DateTime for -Since" {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -Since (Get-Date).AddMinutes(-5)
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Since (Get-Date).AddMinutes(-5)
             $results.count | Should -BeGreaterThan 0
         }
 
         It "TimeSpan for -Since" {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -Since (New-TimeSpan -Minutes -5)
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Since (New-TimeSpan -Minutes -5)
             $results.count | Should -BeGreaterThan 0
         }
 
         It "Invalid type for -Since" {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.instance1 -Database $dbname -Since "-" -WarningVariable warning 3> $null
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Since "-" -WarningVariable warning 3> $null
             $results | Should -BeNullOrEmpty
             $warning | Should -BeLike "*-Since must be either a DateTime or TimeSpan object*"
         }

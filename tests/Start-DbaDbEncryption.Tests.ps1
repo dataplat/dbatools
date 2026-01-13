@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Set variables. They are available in all the It blocks.
         $testDatabases = @()
         1..5 | ForEach-Object {
-            $testDatabases += New-DbaDatabase -SqlInstance $TestConfig.instance2
+            $testDatabases += New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "should mass enable encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splatEncryption = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 Database                = $testDatabases.Name
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd
@@ -100,7 +100,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $parallelTestDatabases = @()
             1..3 | ForEach-Object {
-                $parallelTestDatabases += New-DbaDatabase -SqlInstance $TestConfig.instance2
+                $parallelTestDatabases += New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -121,7 +121,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "should enable encryption with -Parallel switch" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splatParallelEncryption = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 Database                = $parallelTestDatabases.Name
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd

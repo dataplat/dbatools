@@ -39,10 +39,10 @@ Describe $CommandName -Tag IntegrationTests {
         $fileGroup5Name = "FG5"
         $fileGroup6Name = "FG6"
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $newDb1 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1name
-        $newDb2 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db2name
-        $newDb3 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db3name
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $newDb1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db1name
+        $newDb2 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db2name
+        $newDb3 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db3name
 
         $server.Query("ALTER DATABASE $db1name ADD FILEGROUP $fileGroup1Name;")
         $server.Query("ALTER DATABASE $db2name ADD FILEGROUP $fileGroup1Name;")
@@ -69,41 +69,41 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When removing filegroups" {
         It "Removes filegroups" {
-            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name)
+            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name)
             $results.Count | Should -Be 3
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name -WarningAction SilentlyContinue -WarningVariable WarnVar
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "Filegroup FG3 does not exist in the database $db3name"
-            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name)
+            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name)
             $results | Should -BeNullOrEmpty
         }
 
         It "Tries to remove a non-existent filegroup" {
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -WarningVariable warnings -WarningAction SilentlyContinue
-            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.instance2)"
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup invalidFileGroupName -WarningVariable warnings -WarningAction SilentlyContinue
+            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.InstanceSingle)"
         }
 
         It "Tries to remove a filegroup that still has files" {
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -WarningVariable warnings -WarningAction SilentlyContinue
-            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is not empty. Before the filegroup can be dropped the files must be removed in $fileGroup2Name on $db1name on $($TestConfig.instance2)"
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup2Name -WarningVariable warnings -WarningAction SilentlyContinue
+            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is not empty. Before the filegroup can be dropped the files must be removed in $fileGroup2Name on $db1name on $($TestConfig.InstanceSingle)"
         }
 
         It "Removes a filegroup using a database from a pipeline and a filegroup from a pipeline" {
-            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db2name -FileGroup $fileGroup1Name)
+            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db2name -FileGroup $fileGroup1Name)
             $results.Count | Should -Be 1
             $newDb2 | Remove-DbaDbFileGroup -FileGroup $fileGroup1Name
-            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db2name -FileGroup $fileGroup1Name)
+            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db2name -FileGroup $fileGroup1Name)
             $results | Should -BeNullOrEmpty
 
-            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name)
+            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name)
             $results.Count | Should -Be 2
             $results[0], $newDb1 | Remove-DbaDbFileGroup -FileGroup $fileGroup5Name
-            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name)
+            $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name)
             $results | Should -BeNullOrEmpty
 
-            $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup6Name
+            $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup6Name
             $fileGroup6 | Should -Not -BeNullOrEmpty
             $fileGroup6 | Remove-DbaDbFileGroup
-            $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup6Name
+            $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup6Name
             $fileGroup6 | Should -BeNullOrEmpty
         }
     }

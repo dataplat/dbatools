@@ -33,9 +33,9 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-Item -Type Container -Path $tempDir
 
         # Setup removes, restores and backups on the local drive for Mount-DbaDatabase
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\detachattach\detachattach.bak"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Backup-DbaDatabase -BackupFileName $tempDir\detachattach.bak
-        $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach -Force
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\detachattach\detachattach.bak"
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database detachattach | Backup-DbaDatabase -BackupFileName $tempDir\detachattach.bak
+        $null = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database detachattach -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database detachattach | Remove-DbaDatabase
         Remove-Item -Path $tempDir -Force -Recurse -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Attaches a single database and tests to ensure the alias still exists" {
         BeforeAll {
-            $results = Mount-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach
+            $results = Mount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database detachattach
         }
 
         It "Should return success" {

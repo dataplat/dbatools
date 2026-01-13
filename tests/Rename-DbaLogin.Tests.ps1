@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the test login
         $splatNewLogin = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceSingle
             Login       = $loginName
             Password    = $securePassword
         }
@@ -51,8 +51,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects
-        $null = Stop-DbaProcess -SqlInstance $TestConfig.instance1 -Login $renamedLogin
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $renamedLogin
+        $null = Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Login $renamedLogin
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $renamedLogin
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When renaming a login" {
         BeforeAll {
             $splatRename = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Login       = $loginName
                 NewLogin    = $renamedLogin
             }
@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should create the renamed login in the database" {
-            Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login $renamedLogin | Should -Not -BeNullOrEmpty
+            Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $renamedLogin | Should -Not -BeNullOrEmpty
         }
     }
 }

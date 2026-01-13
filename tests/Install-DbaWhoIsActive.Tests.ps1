@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $dbName = "WhoIsActive-$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -41,14 +41,14 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Should install sp_WhoIsActive" {
         It "Should output correct results" {
-            $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
+            $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $installResults.Database | Should -Be $dbName
             $installResults.Name | Should -Be "sp_WhoisActive"
             $installResults.Status | Should -Be "Installed"
@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Should update sp_WhoIsActive" {
         It "Should output correct results" {
-            $updateResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
+            $updateResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $updateResults.Database | Should -Be $dbName
             $updateResults.Name | Should -Be "sp_WhoisActive"
             $updateResults.Status | Should -Be "Updated"

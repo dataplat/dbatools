@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $dbname = "dbatoolsscidb_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname
 
         $createTableScript = "IF OBJECT_ID('dbo.dbatoolsci_nodependencies') IS NOT NULL
                             BEGIN
@@ -108,33 +108,33 @@ Describe $CommandName -Tag IntegrationTests {
                             "
 
 
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $createTableScript
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Query $createTableScript
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ErrorAction SilentlyContinue
     }
 
     It "Test with a table that has no dependencies" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci_nodependencies | Get-DbaDependency -Parents
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci_nodependencies | Get-DbaDependency -Parents
         $results.Count | Should -Be 0
     }
 
     It "Test with a table that has parent dependencies" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -Parents
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -Parents
         $results.Count | Should -Be 1
         $results[0].Dependent | Should -Be "dbatoolsci1"
         $results[0].Tier | Should -Be -1
     }
 
     It "Test with a table that has child dependencies" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -IncludeSelf
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -IncludeSelf
         $results.Count | Should -Be 2
         $results[1].Dependent | Should -Be "dbatoolsci3"
         $results[1].Tier | Should -Be 1
     }
 
     It "Test with a table that has multiple levels of dependencies and use -IncludeSelf" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci3 | Get-DbaDependency -IncludeSelf -Parents
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci3 | Get-DbaDependency -IncludeSelf -Parents
         $results.Count | Should -Be 3
         $results[0].Dependent | Should -Be "dbatoolsci1"
         $results[0].Tier | Should -Be -2
@@ -142,7 +142,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "Test with a tables that have circular dependencies" {
         # this causes infinite loop when circular dependencies exist in dependency tree.
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -WarningAction SilentlyContinue
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -WarningAction SilentlyContinue
         # TODO: Test for "Circular Reference detected
         $results.Count | Should -Be 2
         $results[0].Dependent | Should -Be "dbatoolsci_circrefB"
@@ -153,7 +153,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "Test with a tables that have circular dependencies and use -IncludeSelf" {
         # this causes infinite loop when circular dependencies exist in dependency tree.
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -IncludeSelf -WarningAction SilentlyContinue
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -IncludeSelf -WarningAction SilentlyContinue
         # TODO: Test for "Circular Reference detected
         $results.Count | Should -Be 3
         $results[0].Dependent | Should -Be "dbatoolsci_circrefA"

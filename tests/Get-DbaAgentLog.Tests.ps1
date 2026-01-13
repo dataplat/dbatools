@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command gets agent log" {
         It "Returns results" {
-            $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2
+            $results = Get-DbaAgentLog -SqlInstance $TestConfig.InstanceSingle
 
             $results | Should -Not -BeNullOrEmpty
             ($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command gets current agent log using LogNumber parameter" {
         BeforeAll {
-            $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2 -LogNumber 0
+            $results = Get-DbaAgentLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0
         }
 
         It "Results are not empty" {

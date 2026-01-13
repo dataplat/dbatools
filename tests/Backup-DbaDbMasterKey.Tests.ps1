@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $random = Get-Random
-        $testInstance = $TestConfig.instance1
+        $testInstance = $TestConfig.InstanceSingle
         $testDatabase = "dbatoolscli_db_$random"
         $masterKeyPass = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
 

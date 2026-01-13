@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $props = @("Operation", "Cmd", "Output")
-        $result = Get-DbaDbccHelp -SqlInstance $TestConfig.instance2 -Statement FREESYSTEMCACHE
+        $result = Get-DbaDbccHelp -SqlInstance $TestConfig.InstanceSingle -Statement FREESYSTEMCACHE
     }
 
     Context "Validate standard output" {
@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns the right results for PAGE" {
-            $pageResult = Get-DbaDbccHelp -SqlInstance $TestConfig.instance2 -Statement PAGE -IncludeUndocumented
+            $pageResult = Get-DbaDbccHelp -SqlInstance $TestConfig.InstanceSingle -Statement PAGE -IncludeUndocumented
             $pageResult.Operation | Should -Be "PAGE"
             $pageResult.Cmd | Should -Be "DBCC HELP(PAGE)"
             $pageResult.Output | Should -Not -BeNullOrEmpty

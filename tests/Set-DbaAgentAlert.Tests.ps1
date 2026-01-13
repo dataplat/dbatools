@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatConnection = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = "master"
         }
         $server = Connect-DbaInstance @splatConnection
@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatConnection = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = "master"
         }
         $server = Connect-DbaInstance @splatConnection
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When modifying agent alerts" {
         It "Changes alert to disabled" {
             $splatDisable = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Alert       = "dbatoolsci test alert"
                 Disabled    = $true
             }
@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Changes alert name to new name" {
             $splatRename = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Alert       = "dbatoolsci test alert"
                 NewName     = "dbatoolsci test alert NEW"
             }

@@ -48,29 +48,29 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $random = Get-Random
         $dbname = "dbatoolsci_Backuphistory_$random"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase
         $splatRestore1 = @{
-            SqlInstance           = $TestConfig.instance1
+            SqlInstance           = $TestConfig.InstanceSingle
             Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
             DatabaseName          = $dbname
             DestinationFilePrefix = $dbname
         }
         $null = Restore-DbaDatabase @splatRestore1
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
 
         $dbname2 = "dbatoolsci_Backuphistory2_$random"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 | Remove-DbaDatabase
         $splatRestore2 = @{
-            SqlInstance           = $TestConfig.instance1
+            SqlInstance           = $TestConfig.InstanceSingle
             Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
             DatabaseName          = $dbname2
             DestinationFilePrefix = $dbname2
         }
         $null = Restore-DbaDatabase @splatRestore2
-        $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2
+        $db2 = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname2
         $db2 | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
@@ -88,15 +88,15 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         $dbname3 = "dbatoolsci_BackuphistoryOla_$random"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3 | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname3 | Remove-DbaDatabase
         $splatRestore3 = @{
-            SqlInstance           = $TestConfig.instance1
+            SqlInstance           = $TestConfig.InstanceSingle
             Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
             DatabaseName          = $dbname3
             DestinationFilePrefix = $dbname3
         }
         $null = Restore-DbaDatabase @splatRestore3
-        $db3 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3
+        $db3 = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname3
         $db3 | Backup-DbaDatabase -Type Full -BackupDirectory "$DestBackupDirOla\FULL"
         $db3 | Backup-DbaDatabase -Type Differential -BackupDirectory "$DestBackupDirOla\Diff"
         $db3 | Backup-DbaDatabase -Type Log -BackupDirectory "$DestBackupDirOla\LOG"
@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase
         Remove-Item -Path $DestBackupDir, $DestBackupDirOla -Recurse -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -118,7 +118,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Get history for all database" {
         BeforeAll {
             $splatAllBackups = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Path        = $DestBackupDir
             }
             $results = Get-DbaBackupInformation @splatAllBackups
@@ -140,7 +140,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Get history for one database" {
         BeforeAll {
             $splatOneDatabase = @{
-                SqlInstance  = $TestConfig.instance1
+                SqlInstance  = $TestConfig.InstanceSingle
                 Path         = $DestBackupDir
                 DatabaseName = $dbname2
             }
@@ -168,7 +168,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # This one used to cause all sorts of red
             $splatExport = @{
-                SqlInstance  = $TestConfig.instance1
+                SqlInstance  = $TestConfig.InstanceSingle
                 Path         = $DestBackupDir
                 DatabaseName = $dbname2
                 ExportPath   = "$DestBackupDir\history.xml"
@@ -176,7 +176,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaBackupInformation @splatExport
 
             # the command below returns just a warning
-            # Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -DestinationFilePrefix hist -RestoredDatabaseNamePrefix hist -TrustDbBackupHistory
+            # Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DestinationFilePrefix hist -RestoredDatabaseNamePrefix hist -TrustDbBackupHistory
         }
 
         It "Should restore cleanly" {
@@ -187,7 +187,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Test Maintenance solution options" {
         BeforeAll {
             $splatMaintenance = @{
-                SqlInstance         = $TestConfig.instance1
+                SqlInstance         = $TestConfig.InstanceSingle
                 Path                = $DestBackupDirOla
                 MaintenanceSolution = $true
             }
@@ -212,7 +212,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should be 2 backups returned when ignoring log backups" {
             $splatMaintenanceNoLog = @{
-                SqlInstance         = $TestConfig.instance1
+                SqlInstance         = $TestConfig.InstanceSingle
                 Path                = $DestBackupDirOla
                 MaintenanceSolution = $true
                 IgnoreLogBackup     = $true
@@ -223,7 +223,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should Be 1 full backup when ignoring log backups" {
             $splatMaintenanceNoLog = @{
-                SqlInstance         = $TestConfig.instance1
+                SqlInstance         = $TestConfig.InstanceSingle
                 Path                = $DestBackupDirOla
                 MaintenanceSolution = $true
                 IgnoreLogBackup     = $true
@@ -234,7 +234,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should be 0 log backups when ignoring log backups" {
             $splatMaintenanceNoLog = @{
-                SqlInstance         = $TestConfig.instance1
+                SqlInstance         = $TestConfig.InstanceSingle
                 Path                = $DestBackupDirOla
                 MaintenanceSolution = $true
                 IgnoreLogBackup     = $true
@@ -245,7 +245,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should Warn if IgnoreLogBackup without MaintenanceSolution" {
             $splatNoMaintenanceWithIgnore = @{
-                SqlInstance     = $TestConfig.instance1
+                SqlInstance     = $TestConfig.InstanceSingle
                 Path            = $DestBackupDirOla
                 IgnoreLogBackup = $true
                 WarningVariable = "warnvar"
@@ -257,7 +257,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should ignore IgnoreLogBackup and return 3 backups" {
             $splatNoMaintenanceWithIgnore = @{
-                SqlInstance     = $TestConfig.instance1
+                SqlInstance     = $TestConfig.InstanceSingle
                 Path            = $DestBackupDirOla
                 IgnoreLogBackup = $true
                 WarningVariable = "warnvar"

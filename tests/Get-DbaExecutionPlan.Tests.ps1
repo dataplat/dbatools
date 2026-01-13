@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Gets Execution Plan" {
         BeforeAll {
-            $allResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 | Where-Object statementtype -eq "SELECT" | Select-Object -First 1)
+            $allResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle | Where-Object statementtype -eq "SELECT" | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Gets Execution Plan when using -Database" {
         BeforeAll {
-            $databaseResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -Database Master | Select-Object -First 1)
+            $databaseResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database Master | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Gets no Execution Plan when using -ExcludeDatabase" {
         BeforeAll {
-            $excludeResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -ExcludeDatabase Master | Select-Object -First 1)
+            $excludeResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase Master | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Gets Execution Plan when using -SinceCreation" {
         BeforeAll {
-            $creationResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -Database Master -SinceCreation "01-01-2000" | Select-Object -First 1)
+            $creationResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database Master -SinceCreation "01-01-2000" | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -87,7 +87,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Gets Execution Plan when using -SinceLastExecution" {
         BeforeAll {
-            $executionResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -Database Master -SinceLastExecution "01-01-2000" | Select-Object -First 1)
+            $executionResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database Master -SinceLastExecution "01-01-2000" | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -105,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Gets Execution Plan when using -ExcludeEmptyQueryPlan" {
         BeforeAll {
-            $emptyPlanResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -ExcludeEmptyQueryPlan)
+            $emptyPlanResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -ExcludeEmptyQueryPlan)
         }
 
         It "Gets no results" {

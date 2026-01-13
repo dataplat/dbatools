@@ -42,13 +42,13 @@ Describe $CommandName -Tag IntegrationTests {
         $shouldDeleteMasterCert = $false
         $testDbName = "dbatoolsci_encryptiontest_$(Get-Random)"
 
-        $masterCert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $masterCert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $masterCert) {
             $shouldDeleteMasterCert = $true
-            $masterCert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
+            $masterCert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
         }
 
-        $testDb = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDbName
+        $testDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDbName
         $testDb | New-DbaDbMasterKey -SecurePassword $encryptionPassword
         $testDb | New-DbaDbCertificate
         $testDb | New-DbaDbEncryptionKey -Force
@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should get an encryption key on a database" {
-            $encryptionKeyResults = Get-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $testDbName
+            $encryptionKeyResults = Get-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $encryptionKeyResults.EncryptionType | Should -Be "ServerCertificate"
         }
     }

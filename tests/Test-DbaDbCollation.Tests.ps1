@@ -29,7 +29,7 @@ Describe $CommandName -Tags IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $dbName = "dbatoolsci_collation"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.Instance1 -Database $dbName
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -39,13 +39,13 @@ Describe $CommandName -Tags IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.Instance1 -Name $dbName
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "confirms the db is the same collation as the server" {
-            $result = Test-DbaDbCollation -SqlInstance $TestConfig.Instance1 -Database $dbName
+            $result = Test-DbaDbCollation -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $result.IsEqual | Should -BeTrue
         }
     }
