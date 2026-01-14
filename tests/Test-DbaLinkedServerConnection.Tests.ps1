@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Function works" {
         BeforeAll {
-            $results = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.instance1 | Where-Object LinkedServerName -eq "localhost"
+            $results = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.instance1 | Where-Object LinkedServerName -eq $target
         }
 
         It "function returns results" {
