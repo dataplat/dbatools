@@ -25,7 +25,7 @@ Describe $CommandName -Tag IntegrationTests {
         if ($env:AppVeyor) {
             # On appVeyor we need named pipes to connect to localhost
             # As we don't want enable named pipes for all tests, we enable it just for this test
-            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceRestart -EnableProtocol NamedPipes -RestartService
+            #$null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceRestart -EnableProtocol NamedPipes -RestartService
         }
 
         $target = $TestConfig.InstanceRestart
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server.Query("EXEC master.dbo.sp_dropserver @server=N'$target'")
 
         if ($env:AppVeyor) {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceRestart -DisableProtocol NamedPipes -RestartService
+            #$null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceRestart -DisableProtocol NamedPipes -RestartService
         }
 
     }
