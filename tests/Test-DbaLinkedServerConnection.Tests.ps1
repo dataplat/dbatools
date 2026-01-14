@@ -28,8 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceRestart -EnableProtocol NamedPipes -RestartService
         }
 
-        $port = (Get-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart).Port
-        $target = "localhost:$port"
+        $target = $TestConfig.InstanceRestart
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart
         if ($server.VersionMajor -ge 17) {
