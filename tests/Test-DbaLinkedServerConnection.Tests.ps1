@@ -30,10 +30,10 @@ Describe $CommandName -Tag IntegrationTests {
             # Starting with SQL Server 2025 (17.x), MSOLEDBSQL uses Microsoft OLE DB Driver version 19, which adds support for TDS 8.0. However, this driver introduces a breaking change. You must now specify the encrypt parameter.
             $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'$target', @srvproduct=N'', @provider=N'MSOLEDBSQL', @provstr = N'encrypt=optional;TrustServerCertificate=yes'")
         } elseif (-not $env:AppVeyor) {
-            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'localhost', @srvproduct=N'', @provider=N'MSOLEDBSQL'")
+            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'$target', @srvproduct=N'', @provider=N'MSOLEDBSQL'")
         } else {
             # AppVeyor images do not have the MSOLEDBSQL provider installed, so we use SQLNCLI11 instead
-            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'$target', @srvproduct=N'', @provider=N'MSOLEDBSQL'")
+            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'$target', @srvproduct=N'SQL Server'")
         }
     }
 
