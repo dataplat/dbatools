@@ -25,10 +25,12 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Testing if command works" {
         It "returns the correct results" {
-            $results = Test-DbaConnection -SqlInstance $TestConfig.instance1
+            $port = (Get-DbaTcpPort -SqlInstance $TestConfig.instance1).Port
             $whoami = whoami
 
-            $results.TcpPort | Should -Be 1433
+            $results = Test-DbaConnection -SqlInstance $TestConfig.instance1
+
+            $results.TcpPort | Should -Be $port
             $results.AuthType | Should -Be 'Windows Authentication'
             $results.ConnectingAsUser | Should -Be $whoami
         }
