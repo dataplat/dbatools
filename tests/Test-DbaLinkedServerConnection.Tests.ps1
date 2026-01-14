@@ -52,6 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "connectivity is true" {
+            $results.Result | Should -Be 'Success'
             $results.Connectivity | Should -BeTrue
         }
     }
@@ -70,6 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "connectivity is true" {
+            $pipeResults.Result | Should -Be 'Success'
             $pipeResults.Connectivity | Should -BeTrue
         }
     }
