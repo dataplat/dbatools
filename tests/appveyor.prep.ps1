@@ -49,18 +49,22 @@ if ($installedModule.Version.ToString() -notmatch [regex]::Escape($expectedVersi
     Write-Host -Object "appveyor.prep: Version validation successful" -ForegroundColor Green
 }
 
-##Get Pester (to run tests)
-Write-Host -Object "appveyor.prep: Install Pester5" -ForegroundColor DarkGreen
+# Get Pester (to run tests)
 if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\5.7.1')) {
+    Write-Host -Object "appveyor.prep: Install Pester5" -ForegroundColor DarkGreen
     Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 5.7.1 | Out-Null
 }
 
-#Setup DbatoolsConfig Path.DbatoolsExport path
-Write-Host -Object "appveyor.prep: Create Path.DbatoolsExport" -ForegroundColor DarkGreen
+# Setup DbatoolsConfig Path.DbatoolsExport path
 if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
+    Write-Host -Object "appveyor.prep: Create Path.DbatoolsExport" -ForegroundColor DarkGreen
     New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory | Out-Null
 }
 
+if (-not (Test-Path -Path C:\Temp)) {
+    Write-Host -Object "Creating temp directory" -ForegroundColor DarkGreen
+    $null = New-Item -Path C:\Temp -ItemType Directory
+}
 
 Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
 Import-Module dbatools.library
