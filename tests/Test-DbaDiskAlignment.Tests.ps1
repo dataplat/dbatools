@@ -24,12 +24,12 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "Should return a result" {
-            $results = Test-DbaDiskAlignment -ComputerName $TestConfig.instance1
+            $results = Test-DbaDiskAlignment -ComputerName $TestConfig.InstanceSingle
             $results | Should -Not -Be $null
         }
 
         It "Should return a result not using sql" {
-            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $TestConfig.instance1
+            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $TestConfig.InstanceSingle
             $results | Should -Not -Be $null
         }
     }
