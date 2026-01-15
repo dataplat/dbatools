@@ -12,15 +12,7 @@ $TestsRunGroups = @{
     # run on scenario RESTART - tests that need to restart the sql instance
     "RESTART"           = 'autodetect_$TestConfig.InstanceRestart'
     # do not run on appveyor
-    "appveyor_disabled" = @(
-        #'Backup-DbaDbCertificate',
-        #'Invoke-DbaDbMirroring',
-        #'New-DbaEndpoint',
-        # Temporary disabled due to long runtimes
-        #'Export-DbaDacPackage',
-        #'Install-DbaSqlPackage',
-        #'Install-DbaDarlingData'
-    )
+    "appveyor_disabled" = @()
     # do not run everywhere
     "disabled"          = @()
 }

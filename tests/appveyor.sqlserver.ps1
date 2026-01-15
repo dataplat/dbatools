@@ -1,8 +1,3 @@
-if (-not (Test-Path -Path C:\Temp)) {
-    Write-Host -Object "Creating temp directory" -ForegroundColor DarkGreen
-    $null = New-Item -Path C:\Temp -ItemType Directory
-}
-
 if ($env:SETUP_SCRIPTS) {
     Write-Host -Object "Scenario $($env:SCENARIO)" -ForegroundColor DarkGreen
     $Setup_Scripts = $env:SETUP_SCRIPTS.split(',').Trim()
