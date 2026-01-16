@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $dbName = "dbatoolsci_writedbadaatable$random"
         $server.Query("CREATE DATABASE $dbName")
@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     # calling random function to throw data into a table
     It "defaults to dbo if no schema is specified" {
-        Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $dbName -Table "childitem" -AutoCreateTable
+        Get-ChildItem | Select-Object -First 5 Name, Length, LastWriteTime | Write-DbaDbTableData -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table "childitem" -AutoCreateTable
 
         # Refresh tables to ensure we see the newly created objects
         $server.Databases[$dbName].Tables.Refresh()
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         $tableName = "testtable$random"
 
         $splatWrite = @{
-            SqlInstance     = $TestConfig.instance1
+            SqlInstance     = $TestConfig.InstanceSingle
             Database        = $dbName
             Schema          = $schemaName
             Table           = $tableName
@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Verify data is accessible and was written successfully
         $query = "SELECT COUNT(*) as RowTotal FROM [$schemaName].[$tableName]"
-        $result = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbName -Query $query
+        $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query $query
         $result.RowTotal | Should -Be 5
     }
 
@@ -102,7 +102,7 @@ Describe $CommandName -Tag IntegrationTests {
         $tableName = "##globaltemptest$random"
 
         $splatWrite = @{
-            SqlInstance     = $TestConfig.instance1
+            SqlInstance     = $TestConfig.InstanceSingle
             Database        = "tempdb"
             Table           = $tableName
             AutoCreateTable = $true
@@ -111,6 +111,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         # If the table exists and was created successfully, we should be able to query it
         $query = "SELECT TOP 1 * FROM [$tableName]"
-        { Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query $query -EnableException } | Should -Not -Throw
+        { Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query $query -EnableException } | Should -Not -Throw
     }
 }

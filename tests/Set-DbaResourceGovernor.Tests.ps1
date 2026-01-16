@@ -39,30 +39,30 @@ Describe $CommandName -Tag IntegrationTests {
             BEGIN
             RETURN DB_NAME();
             END;"
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $createUDFQuery -Database "master"
-            Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Disabled
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $createUDFQuery -Database "master"
+            Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Disabled
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "enables resource governor" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
             $results.Enabled | Should -Be $true
         }
 
         It "disables resource governor" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Disabled
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Disabled
             $results.Enabled | Should -Be $false
         }
 
         It "modifies resource governor classifier function" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction $classifierFunction
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -ClassifierFunction $classifierFunction
             $results.ClassifierFunction | Should -Be $qualifiedClassifierFunction
         }
 
         It "removes resource governor classifier function" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction "NULL"
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -ClassifierFunction "NULL"
             $results.ClassifierFunction | Should -Be ""
         }
 
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $dropUDFQuery = "DROP FUNCTION $qualifiedClassifierFunction;"
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $dropUDFQuery -Database "master" -ErrorAction SilentlyContinue
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $dropUDFQuery -Database "master" -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }

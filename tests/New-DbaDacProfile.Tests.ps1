@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $dbname = "dbatoolsci_publishprofile"
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
+        $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname
         $null = $db.Query("CREATE TABLE dbo.example (id int);
             INSERT dbo.example
             SELECT top 100 1
@@ -46,13 +46,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "returns the right results" {
-        $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database $dbname
+        $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         $publishprofile.FileName -match "publish.xml" | Should -Be $true
         Remove-Item -Path $publishprofile.FileName -ErrorAction SilentlyContinue
     }

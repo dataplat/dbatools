@@ -30,35 +30,35 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $testUser1 = "dbatoolssci_user1_$(Get-Random)"
         $testUser2 = "dbatoolssci_user2_$(Get-Random)"
         $testRole = "dbatoolssci_role_$(Get-Random)"
         $testDatabase = "dbatoolsci_$(Get-Random)"
 
         $splatLogin1 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Login       = $testUser1
             Password    = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
         }
         $null = New-DbaLogin @splatLogin1
 
         $splatLogin2 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Login       = $testUser2
             Password    = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
         }
         $null = New-DbaLogin @splatLogin2
 
         $splatDatabase = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Name        = $testDatabase
             Owner       = "sa"
         }
         $null = New-DbaDatabase @splatDatabase
 
         $splatDbUser1 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = $testDatabase
             Login       = $testUser1
             Username    = "User1"
@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaDbUser @splatDbUser1
 
         $splatDbUser2 = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = $testDatabase
             Login       = $testUser2
             Username    = "User2"
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaDbUser @splatDbUser2
 
         $splatDbUser1Msdb = @{
-            SqlInstance   = $TestConfig.instance2
+            SqlInstance   = $TestConfig.InstanceSingle
             Database      = "msdb"
             Login         = $testUser1
             Username      = "User1"
@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaDbUser @splatDbUser1Msdb
 
         $splatDbUser2Msdb = @{
-            SqlInstance   = $TestConfig.instance2
+            SqlInstance   = $TestConfig.InstanceSingle
             Database      = "msdb"
             Login         = $testUser2
             Username      = "User2"
@@ -106,24 +106,24 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $cleanupServer.Query("DROP USER User1", "msdb")
         $null = $cleanupServer.Query("DROP USER User2", "msdb")
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase
+        Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testUser1, $testUser2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
         BeforeAll {
-            $contextServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $contextServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Removes Role for User" {
-            $roleDB = Get-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Database $testDatabase -Role $testRole
-            Remove-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $testRole -User "User1" -Database $testDatabase
+            $roleDB = Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase -Role $testRole
+            Remove-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Role $testRole -User "User1" -Database $testDatabase
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $contextServer -Database $testDatabase -Role $testRole
 
             $roleDB.UserName | Should -Be "User1"

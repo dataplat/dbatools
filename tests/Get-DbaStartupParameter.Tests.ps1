@@ -24,18 +24,18 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "Gets Results" {
-            $results = Get-DbaStartupParameter -SqlInstance $TestConfig.instance2
+            $results = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
         It "Simple parameter returns only essential properties" {
-            $results = Get-DbaStartupParameter -SqlInstance $TestConfig.instance2 -Simple
+            $results = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceSingle -Simple
             $results | Should -Not -BeNullOrEmpty
             $properties = ($results | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) | Sort-Object
             $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "MasterData", "MasterLog", "ErrorLog", "TraceFlags", "DebugFlags", "ParameterString") | Sort-Object
             Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $properties | Should -BeNullOrEmpty
         }
         It "Without Simple parameter returns additional properties" {
-            $results = Get-DbaStartupParameter -SqlInstance $TestConfig.instance2
+            $results = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
             $properties = $results | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name
             $properties | Should -Contain "CommandPromptStart"

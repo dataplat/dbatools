@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         $newDbName = "dbatoolsci_newdb_$random"
 
         # Connect to instance and clean up any existing connections
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
 
         # Create test database

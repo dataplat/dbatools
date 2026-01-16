@@ -107,9 +107,9 @@ Describe $CommandName -Tag IntegrationTests {
 
                 -- display trace id for future references
                 select TraceID=@TraceID"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $traceid = ($server.Query($sql)).TraceID
-        $null = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Stop-DbaTrace
+        $null = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -119,7 +119,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
+        $null = Remove-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
         Remove-Item -Path $tracePath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -127,7 +127,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Test Starting Trace" {
         BeforeAll {
-            $initialResults = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
+            $initialResults = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
         }
 
         It "starts in a stopped state" {
@@ -136,7 +136,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "is now running after start" {
-            $runningResults = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Start-DbaTrace
+            $runningResults = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace
             $runningResults.Id | Should -Be $traceid
             $runningResults.IsRunning | Should -Be $true
         }

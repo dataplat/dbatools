@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeEach {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $profileName = "dbatoolsci_test_$(Get-Random)"
         $profileName2 = "dbatoolsci_test_$(Get-Random)"
 

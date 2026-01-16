@@ -27,19 +27,19 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command functions as expected" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Stop-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
+            Stop-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Start-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
+            Start-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         # This command is special and runs infinitely so don't actually try to run it
         It "warns if XE session is not running" {
-            $results = Watch-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Watch-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Match "system_health is not running"
         }
     }

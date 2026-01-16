@@ -27,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # Create the server object
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
         # Get the default data directory to create the additional data file
         $defaultdata = (Get-DbaDefaultPath -SqlInstance $server).Data

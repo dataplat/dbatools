@@ -35,13 +35,13 @@ Describe $CommandName -Tag IntegrationTests {
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object System.Management.Automation.PSCredential "sqladmin", $passwd
 
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
         }
 
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -67,8 +67,8 @@ Describe $CommandName -Tag IntegrationTests {
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
         It "should create a new encryption key" {
-            $null = Get-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $db.Name | Remove-DbaDbEncryptionKey
-            $results = New-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $db.Name -Force -EncryptorName $mastercert.Name
+            $null = Get-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $db.Name | Remove-DbaDbEncryptionKey
+            $results = New-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $db.Name -Force -EncryptorName $mastercert.Name
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
     }
@@ -83,14 +83,14 @@ Describe $CommandName -Tag IntegrationTests {
 
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
-            $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database master
+            $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database master
 
             if (-not $masterasym) {
                 $delmasterasym = $true
-                $masterasym = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database master
+                $masterasym = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database master
             }
 
-            $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
+            $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
             $db | New-DbaDbMasterKey -SecurePassword $passwd
             $db | New-DbaDbAsymmetricKey
 

@@ -22,57 +22,58 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database master
+        $target = $TestConfig.InstanceSingle
+
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         if ($server.VersionMajor -ge 17) {
             # Starting with SQL Server 2025 (17.x), MSOLEDBSQL uses Microsoft OLE DB Driver version 19, which adds support for TDS 8.0. However, this driver introduces a breaking change. You must now specify the encrypt parameter.
-            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'localhost', @srvproduct=N'', @provider=N'MSOLEDBSQL', @provstr = N'encrypt=optional'")
-        } elseif ($server.VersionMajor -eq 16) {
-            # Starting with SQL Server 2022 (16.x), you must specify a provider name. MSOLEDBSQL is recommended. If you omit @provider, you can experience unexpected behavior.
-            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'localhost', @srvproduct=N'', @provider=N'MSOLEDBSQL'")
+            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'$target', @srvproduct=N'', @provider=N'MSOLEDBSQL', @provstr = N'encrypt=optional;TrustServerCertificate=yes'")
+        } elseif (-not $env:AppVeyor) {
+            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'$target', @srvproduct=N'', @provider=N'MSOLEDBSQL'")
         } else {
-            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'localhost', @srvproduct=N'SQL Server'")
+            # AppVeyor images do not have the MSOLEDBSQL provider installed, so we use SQLNCLI11 instead
+            $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'$target', @srvproduct=N'SQL Server'")
         }
     }
 
     AfterAll {
-        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database master
-        $server.Query("EXEC master.dbo.sp_dropserver @server=N'localhost', @droplogins='droplogins'")
+        $server.Query("EXEC master.dbo.sp_dropserver @server=N'$target'")
     }
 
     Context "Function works" {
         BeforeAll {
-            $results = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.instance1 | Where-Object LinkedServerName -eq "localhost"
+            $results = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.InstanceSingle | Where-Object LinkedServerName -eq $target
         }
 
         It "function returns results" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        It "linked server name is localhost" {
-            $results.LinkedServerName | Should -Be "localhost"
+        It "linked server name is correct" {
+            $results.LinkedServerName | Should -Be $target
         }
 
         It "connectivity is true" {
+            $results.Result | Should -Be 'Success'
             $results.Connectivity | Should -BeTrue
         }
     }
 
     Context "Piping to function works" {
         BeforeAll {
-            $pipeResults = Get-DbaLinkedServer -SqlInstance $TestConfig.instance1 | Test-DbaLinkedServerConnection
+            $pipeResults = Get-DbaLinkedServer -SqlInstance $TestConfig.InstanceSingle | Test-DbaLinkedServerConnection
         }
 
         It "piping from Get-DbaLinkedServerConnection returns results" {
             $pipeResults | Should -Not -BeNullOrEmpty
         }
 
-        It "linked server name is localhost" {
-            $pipeResults.LinkedServerName | Should -Be "localhost"
+        It "linked server name is correct" {
+            $pipeResults.LinkedServerName | Should -Be $target
         }
 
         It "connectivity is true" {
+            $pipeResults.Result | Should -Be 'Success'
             $pipeResults.Connectivity | Should -BeTrue
         }
     }

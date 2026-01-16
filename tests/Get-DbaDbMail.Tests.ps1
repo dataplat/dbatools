@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables. They are available in all the It blocks.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailSettings = @{
             AccountRetryAttempts           = "1"
             AccountRetryDelay              = "60"
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail Settings" {
         BeforeAll {
-            $results = Get-DbaDbMail -SqlInstance $TestConfig.instance2
+            $results = Get-DbaDbMail -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Gets results" {

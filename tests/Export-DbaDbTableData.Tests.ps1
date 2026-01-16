@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up test database connection and test tables
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
             INSERT dbo.dbatoolsci_example
             SELECT top 10 1
@@ -63,16 +63,16 @@ Describe $CommandName -Tag IntegrationTests {
         It "exports the table data" {
             $escaped = [regex]::escape("INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)")
             $secondescaped = [regex]::escape("INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],")
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
             "$results" | Should -Match $escaped
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
             "$results" | Should -Match $secondescaped
         }
 
         It "supports piping more than one table" {
             $escaped = [regex]::escape("INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)")
             $secondescaped = [regex]::escape("INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],")
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
             "$results" | Should -Match $escaped
             "$results" | Should -Match $secondescaped
         }

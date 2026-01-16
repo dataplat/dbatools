@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         foreach ($FrequencySubdayType in ("Time", "Seconds", "Minutes", "Hours")) {
             $splatSchedule = @{
-                SqlInstance               = $TestConfig.instance2
+                SqlInstance               = $TestConfig.InstanceSingle
                 Schedule                  = "dbatoolsci_$FrequencySubdayType"
                 FrequencyRecurrenceFactor = "1"
                 FrequencySubdayInterval   = "1"
@@ -57,26 +57,26 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup any remaining test schedules
-        $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Force
+        $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Force
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When removing schedules" {
         It "Should find all created schedules" {
-            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -like "dbatools*"
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should remove specific schedule by name" {
-            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes
-            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes
+            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_Minutes
+            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule dbatoolsci_Minutes
             $results | Should -BeNullOrEmpty
         }
 
         It "Should remove all remaining test schedules via pipeline" {
-            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Force
-            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object Name -like "dbatools*"
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -like "dbatools*" | Remove-DbaAgentSchedule -Force
+            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -like "dbatools*"
             $results | Should -BeNullOrEmpty
         }
     }

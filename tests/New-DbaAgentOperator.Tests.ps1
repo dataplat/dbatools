@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $email1 = "test1$($random)@test.com"
         $email2 = "test2$($random)@test.com"
         $email3 = "test3$($random)@test.com"

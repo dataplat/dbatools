@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When checking distributor installation" {
         It "Should accurately report that the distributor is not installed" {
-            $results = Get-DbaReplDistributor -SqlInstance $TestConfig.instance1
+            $results = Get-DbaReplDistributor -SqlInstance $TestConfig.InstanceSingle
             $results.DistributorInstalled | Should -Be $false
         }
     }

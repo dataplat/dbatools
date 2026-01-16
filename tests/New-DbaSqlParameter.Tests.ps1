@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "CREATE OR ALTER PROC [dbo].[my_proc]
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "CREATE OR ALTER PROC [dbo].[my_proc]
         @json_result nvarchar(max) output
             AS
             BEGIN
@@ -60,13 +60,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup created objects.
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "DROP PROCEDURE dbo.my_proc" -ErrorAction SilentlyContinue
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "DROP PROCEDURE dbo.my_proc" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     It "creates a usable sql parameter" {
         $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         $output.Value | Should -Be "{""example"":""sample""}"
     }
     It "binds a ""falsy"" value properly (see #9542)" {

@@ -54,26 +54,26 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup and ignore all output
-        Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -ErrorAction SilentlyContinue
+        Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "New Agent Job is added properly" {
         It "Should have the right name and description" {
-            $results = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -Description $jobDescription
+            $results = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Description $jobDescription
             $results.Name | Should -Be $jobName
             $results.Description | Should -Be $jobDescription
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName
+            $newresults = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
             $newresults.Name | Should -Be $jobName
             $newresults.Description | Should -Be $jobDescription
         }
 
         It "Should not write over existing jobs" {
-            $results = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -Description $jobDescription -WarningAction SilentlyContinue -WarningVariable warn
+            $results = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Description $jobDescription -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "already exists" | Should -Be $true
         }
     }

@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $random = Get-Random
             $testDbName = "dbatoolsci_getfile$random"
             $server.Query("CREATE DATABASE $testDbName")
@@ -39,26 +39,26 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName | Remove-DbaDatabase
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName | Remove-DbaDatabase
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should find the new database file" {
-            $results = Get-DbaFile -SqlInstance $TestConfig.instance2
+            $results = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle
             ($results.Filename -match "dbatoolsci").Count | Should -BeGreaterThan 0
         }
 
         It "Should find the new database log file" {
-            $logPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance2).Log
-            $results = Get-DbaFile -SqlInstance $TestConfig.instance2 -Path $logPath
+            $logPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle).Log
+            $results = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle -Path $logPath
             ($results.Filename -like "*dbatoolsci*ldf").Count | Should -BeGreaterThan 0
         }
 
         It "Should find the master database file" {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $masterPath = $server.MasterDBPath
-            $results = Get-DbaFile -SqlInstance $TestConfig.instance2 -Path $masterPath
+            $results = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle -Path $masterPath
             ($results.Filename -match "master.mdf").Count | Should -BeGreaterThan 0
         }
     }

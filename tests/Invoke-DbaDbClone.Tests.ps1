@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
             $clonedb = "dbatoolsci_clonetest_CLONE"
             $clonedb2 = "dbatoolsci_clonetest_CLONE2"
 
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $server.Query("CREATE DATABASE $dbname")
         }
 
@@ -42,17 +42,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "warns if destination database already exists" {
-            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.InstanceSingle -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue
             $WarnVar | Should -Match "exists"
         }
 
         It "warns if a system db is specified to clone" {
-            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.InstanceSingle -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue
             $WarnVar | Should -Match "user database"
         }
 
         It "returns 1 result" {
-            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.InstanceSingle -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
             $results | Should -HaveCount 1
             $results.Name | Should -Be $clonedb
         }

@@ -58,15 +58,8 @@ param (
 Set-Location $ModuleBase
 # required to calculate coverage
 $global:dbatools_dotsourcemodule = $true
-$dbatools_serialimport = $true
-
-#imports the module making sure DLL is loaded ok
-Import-Module "$ModuleBase\dbatools.psd1"
-#imports the psm1 to be able to use internal functions in tests
+# imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -Force
-
-Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
-Start-Sleep 5
 
 function Split-ArrayInParts($array, [int]$parts) {
     #splits an array in "equal" parts
@@ -382,11 +375,9 @@ if (-not $Finalize) {
     # Invoke appveyor.common.ps1 to know which tests to run
     . "$ModuleBase\tests\appveyor.common.ps1"
     $AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $ModuleBase
-}
 
-#Run a test with the current version of PowerShell
-#Make things faster by removing most output
-if (-not $Finalize) {
+    # Run a test with the current version of PowerShell
+    # Make things faster by removing most output
     Set-Variable ProgressPreference -Value SilentlyContinue
     if ($AllScenarioTests.Count -eq 0) {
         Write-Host -ForegroundColor DarkGreen "Nothing to do in this scenario"
@@ -394,13 +385,13 @@ if (-not $Finalize) {
     }
 
     # Remove any previously loaded pester module
-    Remove-Module -Name pester -ErrorAction SilentlyContinue
+    Remove-Module -Name Pester -ErrorAction SilentlyContinue
     # Import pester 5
-    Import-Module pester -RequiredVersion 5.6.1
+    Import-Module -Name Pester -RequiredVersion 5.7.1
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
 
     # invoking a single invoke-pester consumes too much memory, let's go file by file
-    $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
+    $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests | Sort-Object Name
 
     # Create a summary file for all test runs
     $allTestsSummary = @{
@@ -511,28 +502,14 @@ if (-not $Finalize) {
         Write-Host -ForegroundColor Red "Message collection failed: $($PSItem.Exception.Message)"
     }
 } else {
-    # Unsure why we're uploading so I removed it for now
-    <#
-    #If finalize is specified, check for failures and  show status
-    $allfiles = Get-ChildItem -Path $ModuleBase\*Results*.xml | Select-Object -ExpandProperty FullName
-    Write-Output "Finalizing results and collating the following files:"
-    Write-Output ($allfiles | Out-String)
-    #Upload results for test page
-    Get-ChildItem -Path "$ModuleBase\TestResultsPS*.xml" | Foreach-Object {
-        $Address = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
-        $Source = $PSItem.FullName
-        Write-Output "Uploading files: $Address $Source"
-        (New-Object System.Net.WebClient).UploadFile($Address, $Source)
-        Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
-    }
-    #>
+    # $Finalize = $true
 
-    #Publish the support package regardless of the outcome
+    # Publish the support package regardless of the outcome
     if (Test-Path $ModuleBase\dbatools_messages_and_errors.xml.zip) {
         Get-ChildItem $ModuleBase\dbatools_messages_and_errors.xml.zip | ForEach-Object { Push-AppveyorArtifact $PSItem.FullName -FileName $PSItem.Name }
     }
 
-    #What failed? How many tests did we run ?
+    # What failed? How many tests did we run ?
     $results = @(Get-ChildItem -Path "$ModuleBase\Pester5Results*.xml" | Import-Clixml)
     $failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     $faileditems = $results | Select-Object -ExpandProperty Tests | Where-Object { $PSItem.Passed -notlike $True }

@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
         $null = $db.Query("CREATE TABLE dbo.dbatoolct_example (object_id int, [definition] nvarchar(max),Document varchar(2000));
         INSERT INTO dbo.dbatoolct_example([object_id], [definition], Document) Select [object_id], [definition], REPLICATE('ab', 800) from master.sys.sql_modules;
         ALTER TABLE dbo.dbatoolct_example DROP COLUMN Definition, Document;")
@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Cmd",
                 "Output"
             )
-            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example"
+            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.InstanceSingle -Database "tempdb" -Object "dbo.dbatoolct_example"
         }
 
         It "Should return ComputerName property" {
@@ -101,7 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate BatchSize parameter" {
         BeforeAll {
-            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example" -BatchSize 1000
+            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.InstanceSingle -Database "tempdb" -Object "dbo.dbatoolct_example" -BatchSize 1000
         }
 
         It "returns results for table" {
@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate NoInformationalMessages parameter" {
         BeforeAll {
-            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.instance1 -Database "tempdb" -Object "dbo.dbatoolct_example" -NoInformationalMessages
+            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.InstanceSingle -Database "tempdb" -Object "dbo.dbatoolct_example" -NoInformationalMessages
         }
 
         It "returns results for table" {

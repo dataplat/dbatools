@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Validate output" {
         It "has some output" {
-            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.instance1
+            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.InstanceSingle
             $result | Should -Not -BeNullOrEmpty
         }
     }

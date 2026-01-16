@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command tests servername" {
         BeforeAll {
-            $results = Test-DbaInstanceName -SqlInstance $TestConfig.instance2
+            $results = Test-DbaInstanceName -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "should say rename is not required" {

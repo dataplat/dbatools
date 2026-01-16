@@ -37,12 +37,12 @@ Describe $CommandName -Tag IntegrationTests {
         $plaintext = "BigOlPassword!"
         $credPassword = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
 
         # Add user
         foreach ($login in $credLogins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.instance2
+            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.InstanceCopy1
         }
 
         <#
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             Follow these steps to configure the local machine to run the crypto provider tests.
 
-            1. Run these SQL commands on the instance2 and instance3 servers:
+            1. Run these SQL commands on the InstanceSingle and instance3 servers:
 
             -- Enable advanced options.
             USE master;
@@ -66,18 +66,18 @@ Describe $CommandName -Tag IntegrationTests {
             GO
             RECONFIGURE;
 
-            2. Install https://www.microsoft.com/en-us/download/details.aspx?id=45344 on the instance2 and instance3 servers.
+            2. Install https://www.microsoft.com/en-us/download/details.aspx?id=45344 on the InstanceSingle and instance3 servers.
 
-            3. Run these SQL commands on the instance2 and instance3 servers:
+            3. Run these SQL commands on the InstanceSingle and instance3 servers:
 
             CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'
         #>
 
         # check to see if a crypto provider is present on the instances
-        $instance2CryptoProviders = $server2.Query("SELECT name FROM sys.cryptographic_providers WHERE is_enabled = 1 ORDER BY name")
+        $InstanceSingleCryptoProviders = $server2.Query("SELECT name FROM sys.cryptographic_providers WHERE is_enabled = 1 ORDER BY name")
         $instance3CryptoProviders = $server3.Query("SELECT name FROM sys.cryptographic_providers WHERE is_enabled = 1 ORDER BY name")
 
-        $cryptoProvider = ($instance2CryptoProviders | Where-Object { $PSItem.name -eq $instance3CryptoProviders.name } | Select-Object -First 1).name
+        $cryptoProvider = ($InstanceSingleCryptoProviders | Where-Object { $PSItem.name -eq $instance3CryptoProviders.name } | Select-Object -First 1).name
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
         Get-DbaCredential -SqlInstance $server2, $server3 -Identity thor, thorsmomma, thor_crypto | Remove-DbaCredential
 
         foreach ($login in $credLogins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance2
+            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.InstanceCopy1
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

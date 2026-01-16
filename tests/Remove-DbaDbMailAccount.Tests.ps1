@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         $accountname1 = "dbatoolsci_test_$(Get-Random)"
         $accountname2 = "dbatoolsci_test_$(Get-Random)"
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
     }
 
     Context "When working with database mail accounts" {

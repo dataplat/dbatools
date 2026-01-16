@@ -28,10 +28,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $testDbName = "dbatoolsci_testvlf"
         $serverInstance.Query("CREATE DATABASE $testDbName")
-        $testDatabase = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+        $testDatabase = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
         $setupSucceeded = $true
         if ($testDatabase.Count -ne 1) {
             $setupSucceeded = $false
@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
             if (-not $setupSucceeded) {
                 Set-TestInconclusive -Message "Setup failed"
             }
-            $testResults = Measure-DbaDbVirtualLogFile -SqlInstance $TestConfig.instance2 -Database $testDbName
+            $testResults = Measure-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
         }
 
         It "Should have correct properties" {

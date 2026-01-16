@@ -1,5 +1,5 @@
 function Get-TestsForScenario {
-    param($Scenario, $AllTest, [switch]$Silent)
+    param($Scenario, $AllTests, [switch]$Silent)
 
     # does this scenario run an 'autodetect' ?
     if ($TestsRunGroups[$Scenario].StartsWith('autodetect_')[0]) {
@@ -83,7 +83,7 @@ function Get-TestsForBuildScenario {
             # Get the list of changed files in this PR compared to the base branch
             $targetBranch = if ($env:APPVEYOR_REPO_BRANCH) { "origin/$env:APPVEYOR_REPO_BRANCH" } else { "origin/development" }
             $ChangedFiles = git diff --name-only "$targetBranch...HEAD" 2>$null
-            
+
             if (-not($Silent)) {
                 Write-Host -ForegroundColor DarkGreen "...Changed files are: "
                 foreach($cmd in $ChangedFiles)
@@ -91,8 +91,8 @@ function Get-TestsForBuildScenario {
                     Write-Host -ForegroundColor DarkGreen "...  - $cmd"
                 }
             }
-            
-            
+
+
             if ($ChangedFiles) {
                 # Track what types of files changed
                 $changedCommands = @()
@@ -115,7 +115,7 @@ function Get-TestsForBuildScenario {
                         $changedTests += $testName
                     }
                 }
-                
+
                 # Build list of tests to run based on changed commands
                 $testsForChangedFiles = @()
 
@@ -247,13 +247,13 @@ function Get-TestsForBuildScenario {
     if ($env:PART) {
         try {
             [int]$num, [int]$denom = $env:PART.Split('/')
-            if (-not($Silent)) {
-                Write-Host -ForegroundColor DarkGreen "Test Parts    : part $($env:PART) on total $($AllScenarioTests.Count)"
-            }
             #shuffle things a bit (i.e. with natural sorting most of the *get* fall into the first part, all the *set* in the last, etc)
             $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression = { $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true }
             $scenarioParts = Split-ArrayInParts -array $AllScenarioTestsShuffled -parts $denom
             $AllScenarioTests = $scenarioParts[$num - 1] | Sort-Object -Property Name
+            if (-not($Silent)) {
+                Write-Host -ForegroundColor DarkGreen "Test Parts    : part $($env:PART) with $($AllScenarioTests.Count)"
+            }
         } catch {
         }
     }

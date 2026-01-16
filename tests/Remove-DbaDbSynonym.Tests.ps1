@@ -34,8 +34,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $dbname2 = "dbatoolsscidb_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname2
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname2
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -45,19 +45,19 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2
-        $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname, $dbname2
+        $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
         It "Removes Synonyms" {
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn1" -BaseObject "obj1"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn2" -BaseObject "obj2"
-            $result1 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn1"
-            $result2 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1" -BaseObject "obj1"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn2" -BaseObject "obj2"
+            $result1 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1"
+            $result2 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
             $result1.Count | Should -BeGreaterThan $result2.Count
             $result2.Name | Should -Not -Contain "syn1"
@@ -65,11 +65,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Accepts a list of synonyms" {
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn3" -BaseObject "obj3"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn4" -BaseObject "obj4"
-            $result3 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Synonym "syn3", "syn4"
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn3", "syn4"
-            $result4 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn3" -BaseObject "obj3"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn4" -BaseObject "obj4"
+            $result3 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Synonym "syn3", "syn4"
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn3", "syn4"
+            $result4 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname
 
             $result3.Count | Should -BeGreaterThan $result4.Count
             $result4.Name | Should -Not -Contain "syn3"
@@ -77,11 +77,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Excludes Synonyms" {
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn5" -BaseObject "obj5"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn6" -BaseObject "obj6"
-            $result5 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSynonym "syn5"
-            $result6 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn5" -BaseObject "obj5"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn6" -BaseObject "obj6"
+            $result5 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -ExcludeSynonym "syn5"
+            $result6 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
             $result5.Count | Should -BeGreaterThan $result6.Count
             $result6.Name | Should -Not -Contain "syn6"
@@ -89,10 +89,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Accepts input from Get-DbaDbSynonym" {
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn7" -BaseObject "obj7"
-            $result7 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Synonym "syn5", "syn7"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn7" -BaseObject "obj7"
+            $result7 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Synonym "syn5", "syn7"
             $result7 | Remove-DbaDbSynonym
-            $result8 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
+            $result8 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
             $result7.Name | Should -Contain "syn5"
             $result7.Name | Should -Contain "syn7"
@@ -101,11 +101,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Excludes Synonyms in a specified database" {
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn10" -BaseObject "obj10"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn11" -BaseObject "obj11"
-            $result11 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname2
-            $result12 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn10" -BaseObject "obj10"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Synonym "syn11" -BaseObject "obj11"
+            $result11 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname2
+            $result12 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
             $result11.Count | Should -BeGreaterThan $result12.Count
             $result12.Database | Should -Not -Contain $dbname
@@ -113,12 +113,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Excludes Synonyms in a specified schema" {
-            $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname2 -Schema "sch2"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn12" -BaseObject "obj12"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn13" -BaseObject "obj13" -Schema "sch2"
-            $result13 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSchema "sch2"
-            $result14 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Schema "sch2"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn12" -BaseObject "obj12"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Synonym "syn13" -BaseObject "obj13" -Schema "sch2"
+            $result13 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -ExcludeSchema "sch2"
+            $result14 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
             $result13.Count | Should -BeGreaterThan $result14.Count
             $result13.Schema | Should -Contain "dbo"
@@ -127,14 +127,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Accepts a list of schemas" {
-            $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname -Schema "sch3"
-            $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname2 -Schema "sch4"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn14" -BaseObject "obj14" -Schema "sch3"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn15" -BaseObject "obj15" -Schema "sch4"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn16" -BaseObject "obj15" -Schema "dbo"
-            $result15 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Schema "sch3", "dbo"
-            $result16 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Schema "sch3"
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Schema "sch4"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn14" -BaseObject "obj14" -Schema "sch3"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Synonym "syn15" -BaseObject "obj15" -Schema "sch4"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Synonym "syn16" -BaseObject "obj15" -Schema "dbo"
+            $result15 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Schema "sch3", "dbo"
+            $result16 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
             $result15.Count | Should -BeGreaterThan $result16.Count
             $result16.Schema | Should -Not -Contain "sch3"
@@ -143,11 +143,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Accepts a list of databases" {
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym "syn17" -BaseObject "obj17"
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Synonym "syn18" -BaseObject "obj18"
-            $result17 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2
-            $result18 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn17" -BaseObject "obj17"
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Synonym "syn18" -BaseObject "obj18"
+            $result17 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname, $dbname2
+            $result18 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
             $result17.Count | Should -BeGreaterThan $result18.Count
             $result18.Database | Should -Not -Contain $dbname

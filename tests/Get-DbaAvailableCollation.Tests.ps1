@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Available Collations" {
         It "finds a collation that matches Slovenian" {
-            $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.instance2
+            $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.InstanceSingle
             ($results.Name -match "Slovenian").Count | Should -BeGreaterThan 10
         }
     }

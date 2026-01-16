@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Can remove a database certificate" {
         It "Successfully removes database certificate in master" {
             # Create and then remove a database certificate for testing
-            $results = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 | Remove-DbaDbCertificate
+            $results = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle | Remove-DbaDbCertificate
 
             "$($results.Status)" -match "Success" | Should -Be $true
         }

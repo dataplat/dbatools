@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Name dbatoolsci_MirroringEndpoint | Start-DbaEndpoint
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Type DatabaseMirroring -Name dbatoolsci_MirroringEndpoint | Start-DbaEndpoint
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -36,13 +36,13 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2 -EndPoint dbatoolsci_MirroringEndpoint
+        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -EndPoint dbatoolsci_MirroringEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "returns success" {
-        $results = Test-DbaEndpoint -SqlInstance $TestConfig.instance2
+        $results = Test-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
     }
-} #$TestConfig.instance2 for appveyor
+}

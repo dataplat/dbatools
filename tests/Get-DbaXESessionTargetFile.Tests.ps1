@@ -34,7 +34,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $session = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session "system_health"
+        $session = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session "system_health"
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 

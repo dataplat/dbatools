@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When retrieving plan cache information" {
         It "Returns correct datatypes" {
-            $results = Get-DbaPlanCache -SqlInstance $TestConfig.instance1 | Clear-DbaPlanCache -Threshold 1024
+            $results = Get-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle | Clear-DbaPlanCache -Threshold 1024
             $results.Size -is [dbasize] | Should -Be $true
         }
     }

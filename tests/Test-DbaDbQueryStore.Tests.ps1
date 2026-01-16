@@ -29,11 +29,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $dbname = "JESSdbatoolsci_querystore_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $db = New-DbaDatabase -SqlInstance $server -Name $dbname
 
-        $null = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.instance2 -Database $dbname -State ReadWrite
-        $null = Enable-DbaTraceFlag -SqlInstance $TestConfig.instance2 -TraceFlag 7745
+        $null = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $dbname -State ReadWrite
+        $null = Enable-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle -TraceFlag 7745
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -43,15 +43,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
-        $null = Disable-DbaTraceFlag -SqlInstance $TestConfig.instance2 -TraceFlag 7745
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        $null = Disable-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle -TraceFlag 7745
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Function works as expected" {
         BeforeAll {
-            $svr = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $svr = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $results = Test-DbaDbQueryStore -SqlInstance $svr -Database $dbname
         }
 
@@ -82,8 +82,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Exclude database works" {
         BeforeAll {
-            $svrExclude = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $resultsExclude = Test-DbaDbQueryStore -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname
+            $svrExclude = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $resultsExclude = Test-DbaDbQueryStore -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname
         }
 
         It "Should return results" {
@@ -97,7 +97,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Function works with piping smo server object" {
         BeforeAll {
-            $svrPipe = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $svrPipe = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $resultsPipe = $svrPipe | Test-DbaDbQueryStore
         }
 

@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
             "ValueType"
         )
 
-        $memoryStatusResults = Get-DbaDbccMemoryStatus -SqlInstance $TestConfig.instance2
+        $memoryStatusResults = Get-DbaDbccMemoryStatus -SqlInstance $TestConfig.InstanceSingle
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

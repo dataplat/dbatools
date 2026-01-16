@@ -30,15 +30,15 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
-            Test-DbaConnection -SqlInstance $TestConfig.instance2
+            Test-DbaConnection -SqlInstance $TestConfig.InstanceSingle
 
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
             $random = Get-Random
             $dbName = "dbatoolsci_$random"
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
-            $newDB = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $newDB = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
 
             $indexName = "dbatoolsci_index_$random"
             $tableName = "dbatoolsci_table_$random"
@@ -53,11 +53,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
         }
 
         It "Should find the 'unused' index on each test sql instance" {
-            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
+            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
             $results.Database | Should -Be $dbName
             $results.DatabaseId | Should -Be $newDB.Id
 
@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $testSQLinstance = $false
 
-            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
+            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
 
             if ( ($null -ne $results) ) {
                 $row = $null

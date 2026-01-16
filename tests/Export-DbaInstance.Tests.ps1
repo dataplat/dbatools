@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # registered server and group
-        $testServer = $TestConfig.instance2
+        $testServer = $TestConfig.InstanceSingle
         $server = Connect-DbaInstance -SqlInstance $testServer
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"

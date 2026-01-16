@@ -28,8 +28,8 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1
-        $db2 = New-DbaDatabase -SqlInstance $TestConfig.instance1
+        $db1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+        $db2 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "should create master key on a database" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $results = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db2.Name -SecurePassword $passwd
+            $results = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $db2.Name -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -BeTrue
         }
     }

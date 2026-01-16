@@ -42,18 +42,18 @@ Describe $CommandName -Tag IntegrationTests {
         $database = "tempdb"
 
         # Create the objects.
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $database
         $null = $db.Query("CREATE TABLE [dbo].[$tableName]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
 
         $splatImport = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = $database
             Table       = $tableName
             FilePath    = "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
         }
         $null = Import-DbaBinaryFile @splatImport
 
-        $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database $database -Table $tableName
+        $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.InstanceSingle -Database $database -Table $tableName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
         $null = $db.Query("DROP TABLE dbo.BunchOFilez")
 
         # Remove the backup directory.
@@ -74,12 +74,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "returns a table" {
-        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb
+        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb
         $results.Name.Count | Should -BeGreaterOrEqual 1
     }
 
     It "supports piping" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database tempdb | Get-DbaBinaryFileTable
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Get-DbaBinaryFileTable
         $results.Name.Count | Should -BeGreaterOrEqual 1
     }
 }

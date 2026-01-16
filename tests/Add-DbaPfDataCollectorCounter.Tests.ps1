@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" |
-            Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1 |
+            Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle |
             Get-DbaPfDataCollector |
             Get-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length" |
             Remove-DbaPfDataCollectorCounter
@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries" |
+        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" |
             Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When adding a counter to a data collector" {
         BeforeAll {
-            $results = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries" |
+            $results = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" |
                 Get-DbaPfDataCollector |
                 Add-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
         }

@@ -108,7 +108,7 @@ exec sp_trace_setstatus @TraceID, 1
 -- display trace id for future references
 select TraceID=@TraceID
 "@
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $traceid = ($server.Query($sql)).TraceID
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -120,7 +120,7 @@ select TraceID=@TraceID
 
     Context "Test Removing Trace" {
         BeforeAll {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Remove-DbaTrace
+            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Remove-DbaTrace
         }
 
         It "returns the right values" {
@@ -129,7 +129,7 @@ select TraceID=@TraceID
         }
 
         It "doesn't return any result for trace file id $($traceid)" {
-            Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Should -Be $null
+            Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Should -Be $null
         }
     }
 }

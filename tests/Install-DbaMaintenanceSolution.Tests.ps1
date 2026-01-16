@@ -55,9 +55,9 @@ Describe $CommandName -Tag IntegrationTests {
                 IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
                 IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
             "
-            # Clean both instance2 and instance3 to handle leftovers from failed test runs
+            # Clean both InstanceSingle and instance3 to handle leftovers from failed test runs
             $splatCleanup = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
                 Database    = "tempdb"
                 Query       = $cleanupQuery
             }
@@ -81,9 +81,9 @@ Describe $CommandName -Tag IntegrationTests {
                 IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
                 IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
             "
-            # Clean both instance2 and instance3
+            # Clean both InstanceSingle and instance3
             $splatCleanup = @{
-                SqlInstance = $TestConfig.instance2, $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
                 Database    = "tempdb"
                 Query       = $cleanupQuery
             }
@@ -94,17 +94,17 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "does not overwrite existing" {
             # First installation should succeed
-            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2 -Database tempdb
+            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
             $results | Should -Not -BeNullOrEmpty
 
             # Second installation should warn about already existing
-            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2 -Database tempdb -WarningVariable warnVar -WarningAction SilentlyContinue
+            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -WarningVariable warnVar -WarningAction SilentlyContinue
             $warnVar | Should -Match "already exists"
         }
 
         It "Continues the installation on other servers" {
-            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database tempdb -WarningAction SilentlyContinue
-            $sproc = Get-DbaModule -SqlInstance $TestConfig.instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
+            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database tempdb -WarningAction SilentlyContinue
+            $sproc = Get-DbaModule -SqlInstance $TestConfig.InstanceMulti2 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
             $sproc | Should -Not -BeNullOrEmpty
         }
     }
@@ -114,15 +114,15 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Clean up any leftover test databases from previous runs
-            $oldTestDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance3 | Where-Object Name -like "dbatoolsci_maintenancesolution_*"
+            $oldTestDbs = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 | Where-Object Name -like "dbatoolsci_maintenancesolution_*"
             if ($oldTestDbs) {
-                $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $oldTestDbs.Name -Confirm:$false
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $oldTestDbs.Name -Confirm:$false
             }
 
             # Clean up any leftover Hallengren jobs
-            $oldJobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 | Where-Object Description -match "hallengren"
+            $oldJobs = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 | Where-Object Description -match "hallengren"
             if ($oldJobs) {
-                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $oldJobs.Name -Confirm:$false
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 -Job $oldJobs.Name -Confirm:$false
             }
 
             # Clean up any leftover Hallengren procedures in tempdb from the first Context
@@ -136,16 +136,16 @@ Describe $CommandName -Tag IntegrationTests {
                 IF OBJECT_ID('tempdb.dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE tempdb.dbo.QueueDatabase;
             "
             $splatCleanupTempdb = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti2
                 Query       = $cleanupTempdb
             }
             Invoke-DbaQuery @splatCleanupTempdb
 
             $testDbName = "dbatoolsci_maintenancesolution_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $testDbName
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Name $testDbName
 
             $splatInstall = @{
-                SqlInstance      = $TestConfig.instance3
+                SqlInstance      = $TestConfig.InstanceMulti2
                 Database         = $testDbName
                 InstallJobs      = $true
                 ReplaceExisting  = $true
@@ -162,7 +162,7 @@ Describe $CommandName -Tag IntegrationTests {
             $script:installationSucceeded = $false
             if ($installResult) {
                 $splatJobCheck = @{
-                    SqlInstance = $TestConfig.instance3
+                    SqlInstance = $TestConfig.InstanceMulti2
                 }
                 $fullBackupJob = Get-DbaAgentJob @splatJobCheck | Where-Object Name -eq "DatabaseBackup - USER_DATABASES - FULL"
                 if ($fullBackupJob) {
@@ -176,10 +176,10 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $testDbName -Confirm:$false
-            $jobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance3 | Where-Object Description -match "hallengren"
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $testDbName -Confirm:$false
+            $jobs = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 | Where-Object Description -match "hallengren"
             if ($jobs) {
-                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job $jobs.Name -Confirm:$false
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 -Job $jobs.Name -Confirm:$false
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -187,7 +187,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should add ChangeBackupType parameter to DIFF backup job" -Skip:(-not $script:installationSucceeded) {
             $splatJobStep = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - DIFF"
             }
             $jobStep = Get-DbaAgentJobStep @splatJobStep
@@ -196,7 +196,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should add ChangeBackupType parameter to LOG backup job" -Skip:(-not $script:installationSucceeded) {
             $splatJobStep = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - LOG"
             }
             $jobStep = Get-DbaAgentJobStep @splatJobStep
@@ -205,7 +205,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should NOT add ChangeBackupType parameter to FULL backup job" -Skip:(-not $script:installationSucceeded) {
             $splatJobStep = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - FULL"
             }
             $jobStep = Get-DbaAgentJobStep @splatJobStep
@@ -214,7 +214,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should add Compress parameter to all backup jobs" -Skip:(-not $script:installationSucceeded) {
             $splatJobStep = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - FULL"
             }
             $jobStep = Get-DbaAgentJobStep @splatJobStep
@@ -223,7 +223,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have Verify parameter set to Y in backup jobs" -Skip:(-not $script:installationSucceeded) {
             $splatJobStep = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - FULL"
             }
             $jobStep = Get-DbaAgentJobStep @splatJobStep
@@ -232,7 +232,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have CheckSum parameter set to Y in backup jobs" -Skip:(-not $script:installationSucceeded) {
             $splatJobStep = @{
-                SqlInstance = $TestConfig.instance3
+                SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - FULL"
             }
             $jobStep = Get-DbaAgentJobStep @splatJobStep

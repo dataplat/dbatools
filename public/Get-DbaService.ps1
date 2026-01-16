@@ -39,6 +39,8 @@ function Get-DbaService {
     .PARAMETER AdvancedProperties
         Includes additional service properties such as SQL Server version, service pack level, SKU name, and cluster information.
         Use this when you need detailed service information for inventory, compliance, or troubleshooting purposes. Note that this adds processing time to the command.
+        This will also output the additional property SqlInstance based on the Clustered and VSName properties for engine services.
+        Use this property to connect to the correct SQL instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -77,6 +79,7 @@ function Get-DbaService {
         - SkuName: The SQL Server edition/SKU name (e.g., Enterprise, Standard)
         - Clustered: Boolean (as numeric or empty) indicating if the service is part of a cluster
         - VSName: The virtual server name if the service is clustered
+        - SqlInstance: The full SQL instance name (including virtual server name if clustered) for engine services
 
         ScriptMethods (callable on returned objects):
         - Stop([bool]$Force): Stops the service, with optional force parameter
@@ -315,12 +318,25 @@ function Get-DbaService {
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ''
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ''
                         }
+                        if ($service.SQLServiceType -eq 1) {
+                            if ($service.VSName) {
+                                $sqlInstanceOutput = $service.VSName
+                            } else {
+                                $sqlInstanceOutput = $service.ComputerName
+                            }
+                            if ($service.InstanceName -ne "MSSQLSERVER") {
+                                $sqlInstanceOutput += '\' + $service.InstanceName
+                            }
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SqlInstance -Value $sqlInstanceOutput
+                        } else {
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SqlInstance -Value ''
+                        }
                     }
                     $outputServices += $service
                 }
             }
             if ($AdvancedProperties) {
-                $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
+                $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "SqlInstance", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
             } else {
                 $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
             }

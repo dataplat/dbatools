@@ -32,8 +32,8 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaMemoryUsage -ComputerName $TestConfig.instance1
-            $resultsSimple = Get-DbaMemoryUsage -ComputerName $TestConfig.instance1
+            $results = Get-DbaMemoryUsage -ComputerName $TestConfig.InstanceSingle
+            $resultsSimple = Get-DbaMemoryUsage -ComputerName $TestConfig.InstanceSingle
         }
 
         It "returns results" {

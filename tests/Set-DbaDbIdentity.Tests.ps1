@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $tableName1 = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"
@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Validate standard output" {
         BeforeAll {
             $props = "ComputerName", "InstanceName", "SqlInstance", "Database", "Table", "Cmd", "IdentityValue", "ColumnValue", "Output"
-            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.instance2 -Database $dbname -Table $tableName1, $tableName2
+            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName1, $tableName2
         }
 
         It "Should return property: <_>" -ForEach $props {
@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Reseed option returns correct results" {
         It "Returns correct results" {
-            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.instance2 -Database $dbname -Table $tableName2 -ReSeedValue 400
+            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName2 -ReSeedValue 400
             $result.cmd -eq "DBCC CHECKIDENT('$tableName2', RESEED, 400)" | Should -Be $true
             $result.IdentityValue -eq "5." | Should -Be $true
         }

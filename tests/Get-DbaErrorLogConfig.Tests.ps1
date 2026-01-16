@@ -24,7 +24,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Get NumberErrorLog for multiple instances" {
         BeforeAll {
             $allResults = @()
-            $allResults += Get-DbaErrorLogConfig -SqlInstance $TestConfig.instance3, $TestConfig.instance2
+            $allResults += Get-DbaErrorLogConfig -SqlInstance $TestConfig.InstanceMulti2, $TestConfig.InstanceMulti1
         }
 
         It "Returns error log configuration objects" {

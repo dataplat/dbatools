@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatAddAlert = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = "master"
         }
         $server = Connect-DbaInstance @splatAddAlert
@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatDeleteAlert = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = "master"
         }
         $server = Connect-DbaInstance @splatDeleteAlert
@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When getting agent alerts" {
         It "Gets the newly created alert" {
-            $results = Get-DbaAgentAlert -SqlInstance $TestConfig.instance2
+            $results = Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceSingle
             $results.Name | Should -Contain "dbatoolsci test alert"
         }
     }

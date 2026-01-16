@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
                     [lname] [varchar](50) NULL,
                     [dob] [datetime] NULL
                 ) ON [PRIMARY]"
-        $testDatabase = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $maskingDbName
+        $testDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $maskingDbName
         $testDatabase.Query($createPeopleTableSql)
         $insertPeopleDataSql = "INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
                 INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')"
@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $maskingDbName
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $maskingDbName
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command works" {
         It "Should output a file with specific content" {
             $splatMaskingConfig = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $maskingDbName
                 Path        = $backupPath
             }
@@ -103,7 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Bug 6934: matching IPAddress, Address, and StreetAddress on known names" {
             $splatMaskingConfig = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $maskingDbName
                 Table       = "DbConfigTest"
                 Path        = $backupPath

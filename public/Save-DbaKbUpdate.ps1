@@ -144,19 +144,9 @@ function Save-DbaKbUpdate {
             if ((Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
                 Start-BitsTransfer -Source $link -Destination $file
             } else {
-                # IWR is crazy slow for large downloads
-                $currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
-                $currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
-                $availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentSupportableTls }
-                $availableTls | ForEach-Object {
-                    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
-                }
-
                 Write-Progress -Activity "Downloading $fileName" -Id 1
-                (New-Object Net.WebClient).DownloadFile($link, $file)
+                Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
                 Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
-
-                [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
             }
             if (Test-Path -Path $file) {
                 Get-ChildItem -Path $file

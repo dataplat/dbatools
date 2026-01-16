@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+        $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session 'Profiler TSQL Duration' | Remove-DbaXESession
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -38,14 +38,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+        $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session 'Profiler TSQL Duration' | Remove-DbaXESession
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Test Importing Session Template" {
         BeforeAll {
-            $results = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template 'Profiler TSQL Duration'
+            $results = Import-DbaXESessionTemplate -SqlInstance $TestConfig.InstanceSingle -Template 'Profiler TSQL Duration'
         }
 
         It "session should exist" {
@@ -53,8 +53,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "session should no longer exist after removal" {
-            $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
-            $removedResults = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Profiler TSQL Duration'
+            $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+            $removedResults = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session 'Profiler TSQL Duration'
             $removedResults.Name | Should -BeNullOrEmpty
             $removedResults.Status | Should -BeNullOrEmpty
         }
