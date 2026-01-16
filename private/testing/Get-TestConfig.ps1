@@ -56,7 +56,7 @@ function Get-TestConfig {
         $config['InstanceCopy1'] = "$(hostname)\sql2016"
         $config['InstanceCopy2'] = "$(hostname)\sql2017"
         $config['InstanceHadr'] = "$(hostname)\sql2017"
-        $config['InstanceRestart'] = "$(hostname)\sql2016"
+        $config['InstanceRestart'] = "$(hostname)\sql2017"
 
         $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
         $config['SQLPassword'] = $null
