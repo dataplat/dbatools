@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding a registered server group" {
         It "adds a registered server group" {
             $splatAddGroup = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = $group
             }
             $results = Add-DbaRegServerGroup @splatAddGroup
@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "adds a registered server group with extended properties" {
             $splatAddGroupExtended = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = $group2
                 Description = $description
             }
@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When using pipeline input" {
         It "supports pipeline input" {
-            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Id 1 |
+            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Id 1 |
                 Add-DbaRegServerGroup -Name dbatoolsci-first |
                 Add-DbaRegServerGroup -Name dbatoolsci-second |
                 Add-DbaRegServerGroup -Name dbatoolsci-third |
@@ -87,7 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding nested groups" {
         It "adds a registered server group and sub-group when not exists" {
             $splatAddNested = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = "$group\$group2"
                 Description = $description
             }
@@ -98,7 +98,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "updates description of sub-group when it already exists" {
             $splatUpdateNested = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = "$group\$group2"
                 Description = $descriptionUpdated
             }

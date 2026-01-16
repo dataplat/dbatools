@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Gets the CPU Usage" {
         It "Results are not empty" {
-            $results = Get-DbaCpuUsage -SqlInstance $TestConfig.instance2
+            $results = Get-DbaCpuUsage -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
     }

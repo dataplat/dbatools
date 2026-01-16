@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When getting resource pools" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $allResults = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2
+            $allResults = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When getting resource pools using -Type parameter" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $typeResults = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -Type Internal
+            $typeResults = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -Type Internal
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 

@@ -33,22 +33,22 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $db1Name = "dbatoolsci_querystoretest1_$(Get-Random)"
-            $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1Name
+            $db1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db1Name
 
             $db2Name = "dbatoolsci_querystoretest2_$(Get-Random)"
-            $db2 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db2Name
+            $db2 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db2Name
 
             $db3Name = "dbatoolsci_querystoretest3_$(Get-Random)"
-            $db3 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db3Name
+            $db3 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db3Name
 
             $db4Name = "dbatoolsci_querystoretest4_$(Get-Random)"
-            $db4 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db4Name
+            $db4 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db4Name
 
-            $db1QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.instance2 -Database $db1Name
+            $db1QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db1Name
             $originalQSOptionValue = $db1QSOptions.DataFlushIntervalInSeconds
             $updatedQSOptionValue = $db1QSOptions.DataFlushIntervalInSeconds + 1
             $splatSetOptions = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceSingle
                 Database      = $db1Name
                 FlushInterval = $updatedQSOptionValue
                 State         = "ReadWrite"
@@ -63,16 +63,16 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1Name, $db2Name, $db3Name, $db4Name
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db1Name, $db2Name, $db3Name, $db4Name
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Copy the query store options from one db to another on the same instance" {
             $splatCopyOptions = @{
-                Source              = $TestConfig.instance2
+                Source              = $TestConfig.InstanceSingle
                 SourceDatabase      = $db1Name
-                Destination         = $TestConfig.instance2
+                Destination         = $TestConfig.InstanceSingle
                 DestinationDatabase = $db2Name
             }
             $result = Copy-DbaDbQueryStoreOption @splatCopyOptions
@@ -83,15 +83,15 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Should -Be $db2Name
             $result.DestinationDatabaseID | Should -Be $db2.ID
 
-            $db2QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.instance2 -Database $db2Name
+            $db2QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db2Name
             $db2QSOptions.DataFlushIntervalInSeconds | Should -Be $updatedQSOptionValue
         }
 
         It "Apply to all databases except db4" {
             $splatCopyExclude = @{
-                Source         = $TestConfig.instance2
+                Source         = $TestConfig.InstanceSingle
                 SourceDatabase = $db1Name
-                Destination    = $TestConfig.instance2
+                Destination    = $TestConfig.InstanceSingle
                 Exclude        = $db4Name
             }
             $result = Copy-DbaDbQueryStoreOption @splatCopyExclude
@@ -110,10 +110,10 @@ Describe $CommandName -Tag IntegrationTests {
             $result.DestinationDatabaseID | Should -Contain $db2.ID
             $result.DestinationDatabaseID | Should -Contain $db3.ID
 
-            $dbQSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.instance2 -Database $db1Name, $db2Name, $db3Name
+            $dbQSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db1Name, $db2Name, $db3Name
             ($dbQSOptions | Where-Object { $PSItem.DataFlushIntervalInSeconds -eq ($originalQSOptionValue + 1) }).Count | Should -Be 3
 
-            $db4QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.instance2 -Database $db4Name
+            $db4QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db4Name
             $db4QSOptions.DataFlushIntervalInSeconds | Should -Be $originalQSOptionValue
         }
     }

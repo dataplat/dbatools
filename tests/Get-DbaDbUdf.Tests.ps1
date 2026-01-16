@@ -54,7 +54,7 @@ BEGIN
      RETURN(@ISOweek);
 END;
 "@
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestUDFunction -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $CreateTestUDFunction -Database master
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -65,15 +65,15 @@ END;
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $DropTestUDFunction = "DROP FUNCTION dbo.dbatoolssci_ISOweek;"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestUDFunction -Database master -ErrorAction SilentlyContinue
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $DropTestUDFunction -Database master -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "User Functions are correctly located" {
         BeforeAll {
-            $results1 = Get-DbaDbUdf -SqlInstance $TestConfig.instance2 -Database master -Name dbatoolssci_ISOweek | Select-Object *
-            $results2 = Get-DbaDbUdf -SqlInstance $TestConfig.instance2
+            $results1 = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -Database master -Name dbatoolssci_ISOweek | Select-Object *
+            $results2 = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should execute and return results" {
@@ -98,7 +98,7 @@ END;
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbUdf -SqlInstance $TestConfig.instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -Not -Throw
+            { Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master -ExcludeSystemUdf } | Should -Not -Throw
         }
     }
 }

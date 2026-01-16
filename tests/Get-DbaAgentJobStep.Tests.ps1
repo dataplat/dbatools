@@ -28,32 +28,32 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets a job step" {
         BeforeAll {
             $jobName = "dbatoolsci_job_$(Get-Random)"
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName
-            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command "select 1"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command "select 1"
         }
 
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
         }
 
         It "Successfully gets job when not using Job param" {
-            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.instance2
+            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle
             $results.Name | Should -Contain "dbatoolsci_jobstep1"
         }
 
         It "Successfully gets job when using Job param" {
-            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName
+            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobName
             $results.Name | Should -Contain "dbatoolsci_jobstep1"
         }
 
         It "Successfully gets job when excluding some jobs" {
-            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -ExcludeJob "syspolicy_purge_history"
+            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -ExcludeJob "syspolicy_purge_history"
             $results.Name | Should -Contain "dbatoolsci_jobstep1"
         }
 
         It "Successfully excludes disabled jobs" {
-            $null = Set-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -Disabled
-            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -ExcludeDisabledJobs
+            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Disabled
+            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -ExcludeDisabledJobs
             $results.Name | Should -Not -Contain "dbatoolsci_jobstep1"
         }
     }

@@ -39,7 +39,7 @@ SELECT [sid],[loginname],[sysadmin]
 FROM [master].[sys].[syslogins];
 "@
             $splatCreateProc = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "Master"
                 Query       = $ServerProcedure
             }
@@ -55,7 +55,7 @@ FROM [master].[sys].[syslogins];
 
             $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
             $splatDropProc = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "Master"
                 Query       = $DropProcedure
             }
@@ -66,7 +66,7 @@ FROM [master].[sys].[syslogins];
 
         It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
             $splatFind = @{
-                SqlInstance            = $TestConfig.instance2
+                SqlInstance            = $TestConfig.InstanceSingle
                 Pattern                = "dbatools*"
                 IncludeSystemDatabases = $true
             }
@@ -85,7 +85,7 @@ FROM [master].[sys].[syslogins];
 
             # Create the database
             $splatNewDb = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = $testDbName
             }
             $null = New-DbaDatabase @splatNewDb
@@ -98,7 +98,7 @@ AS
     PRINT 'Dbatools Rocks';
 "@
             $splatCreateProc = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $testDbName
                 Query       = $StoredProcedure
             }
@@ -113,7 +113,7 @@ AS
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatRemoveDb = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "dbatoolsci_storedproceduredb"
             }
             $null = Remove-DbaDatabase @splatRemoveDb
@@ -123,7 +123,7 @@ AS
 
         It "Should find a specific StoredProcedure named sp_dbatoolsci_custom" {
             $splatFind = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Pattern     = "dbatools*"
                 Database    = "dbatoolsci_storedproceduredb"
             }
@@ -133,7 +133,7 @@ AS
 
         It "Should find sp_dbatoolsci_custom in dbatoolsci_storedproceduredb" {
             $splatFind = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Pattern     = "dbatools*"
                 Database    = "dbatoolsci_storedproceduredb"
             }
@@ -143,7 +143,7 @@ AS
 
         It "Should find no results when Excluding dbatoolsci_storedproceduredb" {
             $splatFind = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceSingle
                 Pattern         = "dbatools*"
                 ExcludeDatabase = "dbatoolsci_storedproceduredb"
             }

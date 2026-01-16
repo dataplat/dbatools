@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Gets UserOptions for the Instance" {
         BeforeAll {
-            $results = Get-DbaInstanceUserOption -SqlInstance $TestConfig.instance2 | Where-Object Name -eq "AnsiNullDefaultOff"
+            $results = Get-DbaInstanceUserOption -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq "AnsiNullDefaultOff"
         }
 
         It "Gets results" {

@@ -30,16 +30,16 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command execution and functionality" {
         It "kills only this specific process" {
-            $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -ClientName 'dbatoolsci test app'
-            $results = Stop-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatoolsci test app'
+            $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -ClientName 'dbatoolsci test app'
+            $results = Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program 'dbatoolsci test app'
             $results.Program.Count | Should -Be 1
             $results.Program | Should -Be 'dbatoolsci test app'
             $results.Status | Should -Be 'Killed'
         }
 
         It "supports piping" {
-            $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -ClientName 'dbatoolsci test app'
-            $results = Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatoolsci test app' | Stop-DbaProcess
+            $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -ClientName 'dbatoolsci test app'
+            $results = Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program 'dbatoolsci test app' | Stop-DbaProcess
             $results.Program.Count | Should -Be 1
             $results.Program | Should -Be 'dbatoolsci test app'
             $results.Status | Should -Be 'Killed'

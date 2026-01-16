@@ -24,7 +24,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $testInstance = $TestConfig.instance1
+        $testInstance = $TestConfig.InstanceSingle
         $results = Enable-DbaHideInstance -SqlInstance $testInstance
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

@@ -29,13 +29,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $encryptionPasswd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterCertExists = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $masterCertExists = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $masterCertExists) {
             $delmastercert = $true
-            $masterCertExists = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
+            $masterCertExists = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
         }
 
-        $testDatabase = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $testDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         $testDatabase | New-DbaDbMasterKey -SecurePassword $encryptionPasswd
         $testDatabase | New-DbaDbCertificate
         $testDbEncryptionKey = $testDatabase | New-DbaDbEncryptionKey -Force
@@ -67,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "should remove encryption key on a database" {
             $null = $testDatabase | New-DbaDbEncryptionKey -Force
-            $results = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $testDatabase.Name
+            $results = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase.Name
             $results.Status | Should -Be "Success"
             $testDatabase.Refresh()
             $testDatabase | Get-DbaDbEncryptionKey | Should -Be $null

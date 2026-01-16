@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up collector set for testing
-        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1
+        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -41,19 +41,19 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup
-        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command returns all the required results" {
         It "returns a file system object using piped input" {
-            $results = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries" | Export-DbaPfDataCollectorSetTemplate
+            $results = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" | Export-DbaPfDataCollectorSetTemplate
             $results.BaseName | Should -Be "Long Running Queries"
         }
 
         It "returns a file system object using direct parameter" {
-            $results = Export-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries"
+            $results = Export-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries"
             $results.BaseName | Should -Be "Long Running Queries"
         }
     }

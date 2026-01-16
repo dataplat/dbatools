@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $login1 = "dbatoolsci_login1_$(Get-Random)"
         $login2 = "dbatoolsci_login2_$(Get-Random)"
         $customServerRole = "dbatoolsci_customrole_$(Get-Random)"
@@ -38,12 +38,12 @@ Describe $CommandName -Tag IntegrationTests {
             "processadmin"
         )
         $splatNewLogin = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Password    = ("Password1234!" | ConvertTo-SecureString -asPlainText -Force)
         }
         $null = New-DbaLogin @splatNewLogin -Login $login1
         $null = New-DbaLogin @splatNewLogin -Login $login2
-        $null = New-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Owner sa
+        $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $customServerRole -Owner sa
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -53,11 +53,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatRemoveLogin = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Login       = $login1, $login2
         }
         $null = Remove-DbaLogin @splatRemoveLogin
-        $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $customServerRole -Confirm:$false
+        $null = Remove-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $customServerRole -Confirm:$false
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Functionality" {
         It "Adds Login to Role" {
             $splatAddRole = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 ServerRole  = $fixedServerRoles[0]
                 Login       = $login1
             }
@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Adds Login to Multiple Roles" {
             $serverRoles = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles
             $splatAddRoles = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 ServerRole  = $serverRoles
                 Login       = $login1
             }
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Adds Customer Server-Level Role Membership" {
             $splatAddCustomRole = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 ServerRole  = $customServerRole
                 Role        = $fixedServerRoles[-1]
             }

@@ -25,13 +25,13 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
         It "gets some endpoints" {
-            $results = @(Get-DbaEndpoint -SqlInstance $TestConfig.instance2)
+            $results = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle)
             $results.Count | Should -BeGreaterThan 1
             $results.Name | Should -Contain "TSQL Default TCP"
         }
 
         It "gets one endpoint" {
-            $results = @(Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint "TSQL Default TCP")
+            $results = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint "TSQL Default TCP")
             $results.Name | Should -Be "TSQL Default TCP"
             $results.Count | Should -Be 1
         }

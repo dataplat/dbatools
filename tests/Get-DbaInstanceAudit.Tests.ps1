@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         $tempDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
         $null = New-Item -Type Container -Path $tempDir
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $sql = "CREATE SERVER AUDIT LoginAudit
                 TO FILE (FILEPATH = N'$tempDir',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
                 WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)
@@ -62,12 +62,12 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -Be $null
         }
 
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit LoginAudit
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit LoginAudit
             $results.Name | Should -Be "LoginAudit"
             $results.Enabled | Should -Be $true
         }

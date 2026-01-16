@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Verifying output" {
         It "exports results to one file and creates directory if required" {
             $splatInvoke = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 QueryName   = "Memory Clerk Usage"
             }
             $null = Invoke-DbaDiagnosticQuery @splatInvoke | Export-DbaDiagnosticQuery -Path $backupPath

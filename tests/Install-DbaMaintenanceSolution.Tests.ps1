@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
                 IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
                 IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
             "
-            # Clean both instance2 and instance3 to handle leftovers from failed test runs
+            # Clean both InstanceSingle and instance3 to handle leftovers from failed test runs
             $splatCleanup = @{
                 SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
                 Database    = "tempdb"
@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
                 IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
                 IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
             "
-            # Clean both instance2 and instance3
+            # Clean both InstanceSingle and instance3
             $splatCleanup = @{
                 SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
                 Database    = "tempdb"

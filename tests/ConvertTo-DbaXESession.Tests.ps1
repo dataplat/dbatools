@@ -112,7 +112,7 @@ exec sp_trace_setstatus @TraceID, 1
 select TraceID=@TraceID
 "@
         $splatConnect = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
         }
         $server = Connect-DbaInstance @splatConnect
         $traceid = ($server.Query($sql)).TraceID
@@ -127,12 +127,12 @@ select TraceID=@TraceID
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatRemoveSession = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Session     = $sessionName
         }
         $null = Remove-DbaXESession @splatRemoveSession
         $splatRemoveTrace = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Id          = $traceid
         }
         $null = Remove-DbaTrace @splatRemoveTrace
@@ -144,12 +144,12 @@ select TraceID=@TraceID
     Context "Test Trace Conversion" {
         BeforeAll {
             $splatGetTrace = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Id          = $traceid
             }
             $null = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
             $splatStartSession = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Session     = $sessionName
             }
             $results = Start-DbaXESession @splatStartSession

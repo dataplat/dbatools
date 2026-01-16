@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $InstanceSingle = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
         $securePassword = ConvertTo-SecureString -String 'securePassword' -AsPlainText -Force
@@ -44,19 +44,19 @@ Describe $CommandName -Tag IntegrationTests {
         $linkedServer1Name = "dbatoolscli_linkedServer1_$random"
         $linkedServer2Name = "dbatoolscli_linkedServer2_$random"
 
-        New-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -SecurePassword $securePassword
+        New-DbaLogin -SqlInstance $InstanceSingle -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -SecurePassword $securePassword
         New-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -SecurePassword $securePassword
 
-        $linkedServer1 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
-        $linkedServer2 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer2Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
+        $linkedServer1 = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
+        $linkedServer2 = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer $linkedServer2Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
 
-        $linkedServerLogin1 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin2 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin3 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin3Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin4 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin5 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin5Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin6 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin6Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin7 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin7Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+        $linkedServerLogin1 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+        $linkedServerLogin2 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+        $linkedServerLogin3 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin3Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+        $linkedServerLogin4 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+        $linkedServerLogin5 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin5Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+        $linkedServerLogin6 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin6Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+        $linkedServerLogin7 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin7Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -64,8 +64,8 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Force
-        Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name
+        Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name, $linkedServer2Name -Force
+        Remove-DbaLogin -SqlInstance $InstanceSingle -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name
         Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -74,33 +74,33 @@ Describe $CommandName -Tag IntegrationTests {
     Context "ensure command works" {
 
         It "Check the validation for a linked server" {
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LocalLogin $localLogin1Name -WarningVariable WarnVar -WarningAction SilentlyContinue
             $WarnVar | Should -Match "LinkedServer is required"
             $results | Should -BeNullOrEmpty
         }
 
         It "Remove a linked server login" {
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results.length | Should -Be 1
 
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results | Should -BeNullOrEmpty
 
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
             $results.length | Should -Be 2
 
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
             $results | Should -BeNullOrEmpty
         }
 
         It "Remove a linked server login via pipeline with a server instance passed in" {
-            $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
+            $results = $InstanceSingle | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
             $results.length | Should -Be 1
 
-            $results = $instance2 | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
-            $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
+            $results = $InstanceSingle | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
+            $results = $InstanceSingle | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
             $results | Should -BeNullOrEmpty
         }
 
@@ -123,13 +123,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Remove linked server logins for multiple linked servers and omit the LocalLogin param" {
-            $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
+            $results = $InstanceSingle | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results.Parent.Name | Should -Contain $linkedServer1Name
             $results.Parent.Name | Should -Contain $linkedServer2Name
             $results.Name | Should -Contain $localLogin7Name
 
-            $results = $instance2 | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
-            $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
+            $results = $InstanceSingle | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
+            $results = $InstanceSingle | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results.Name | Should -Not -Contain $localLogin7Name
         }
     }

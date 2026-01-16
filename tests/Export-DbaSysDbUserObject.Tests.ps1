@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $tableFunctionName = "[dbatoolsci_TableFunction_$random]"
         $scalarFunctionName = "[dbatoolsci_ScalarFunction_$random]"
         $ruleName = "[dbatoolsci_Rule_$random]"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $SqlCredential
         $server.query("CREATE TABLE dbo.$tableName (Col1 int);", "master")
         $server.query("CREATE VIEW dbo.$viewName AS SELECT 1 as Col1;", "master")
         $server.query("CREATE PROCEDURE dbo.$procName as select 1;", "master")
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $SqlCredential
         $server.query("DROP TABLE dbo.$tableName", "master")
         $server.query("DROP VIEW dbo.$viewName", "master")
         $server.query("DROP PROCEDURE dbo.$procName", "master")
@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "works as expected with passthru" {
         BeforeAll {
-            $script = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -PassThru | Out-String
+            $script = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -PassThru | Out-String
         }
 
         It "should export text matching table name '$tableName'" {
@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "works as expected with filename" {
         BeforeAll {
             $filePath = "$backupPath\objects_$random.sql"
-            $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -FilePath $filePath
+            $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -FilePath $filePath
             $file = Get-Content $filePath | Out-String
         }
 
@@ -145,7 +145,7 @@ Describe $CommandName -Tag IntegrationTests {
             $scriptOpts = New-DbaScriptingOption
             $scriptOpts.IncludeIfNotExists = $true
             $splatExport = @{
-                SqlInstance           = $TestConfig.instance2
+                SqlInstance           = $TestConfig.InstanceSingle
                 ScriptingOptionsObject = $scriptOpts
                 PassThru              = $true
             }

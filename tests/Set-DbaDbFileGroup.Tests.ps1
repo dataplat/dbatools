@@ -39,8 +39,8 @@ Describe $CommandName -Tag IntegrationTests {
         $fileGroupROName = "FG1RO"
 
         # Create the objects.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $newDb1 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1name
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $newDb1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db1name
 
         $server.Query("ALTER DATABASE $db1name ADD FILEGROUP $fileGroup1Name")
         $server.Query("ALTER DATABASE $db1name ADD FILEGROUP $fileGroup2Name")
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1name
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1name
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -64,34 +64,34 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When setting filegroup properties" {
 
         It "Sets the options for default, readonly, readwrite, autogrow all files, and not autogrow all files" {
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles
             $results.Name | Should -Be $fileGroup1Name
             $results.AutogrowAllFiles | Should -Be $true
             $results.IsDefault | Should -Be $true
 
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup1Name -AutoGrowAllFiles:$false
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name -AutoGrowAllFiles:$false
             $results.Name | Should -Be $fileGroup1Name
             $results.AutogrowAllFiles | Should -Be $false
 
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroupROName -ReadOnly
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroupROName -ReadOnly
             $results.Name | Should -Be $fileGroupROName
             $results.AutogrowAllFiles | Should -Be $false
             $results.IsDefault | Should -Be $false
             $results.ReadOnly | Should -Be $true
 
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup1Name, $fileGroupROName -ReadOnly:$false
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name, $fileGroupROName -ReadOnly:$false
             $results.Name | Should -Be $fileGroup1Name, $fileGroupROName
             $results.ReadOnly | Should -Be $false, $false
         }
 
         It "A warning is returned when trying to set the options for a filegroup that doesn't exist" {
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -Default -AutoGrowAllFiles -WarningVariable WarnVar -WarningAction SilentlyContinue
-            $WarnVar | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.instance2)"
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup invalidFileGroupName -Default -AutoGrowAllFiles -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $WarnVar | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.InstanceSingle)"
         }
 
         It "A warning is returned when trying to set the options for an empty filegroup" {
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -Default -AutoGrowAllFiles -WarningVariable WarnVar -WarningAction SilentlyContinue
-            $WarnVar | Should -BeLike "*Filegroup $fileGroup2Name is empty on $db1name on $($TestConfig.instance2). Before the options can be set there must be at least one file in the filegroup."
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup2Name -Default -AutoGrowAllFiles -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $WarnVar | Should -BeLike "*Filegroup $fileGroup2Name is empty on $db1name on $($TestConfig.InstanceSingle). Before the options can be set there must be at least one file in the filegroup."
         }
 
         It "Sets the filegroup options using a database from a pipeline and a filegroup from a pipeline" {
@@ -99,11 +99,11 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be Primary
             $results.IsDefault | Should -Be $true
 
-            $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup1Name | Set-DbaDbFileGroup -Default
+            $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name | Set-DbaDbFileGroup -Default
             $results.Name | Should -Be $fileGroup1Name
             $results.IsDefault | Should -Be $true
 
-            $fg1 = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup1Name
+            $fg1 = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name
             $results = $fg1, $newDb1 | Set-DbaDbFileGroup -FileGroup Primary -AutoGrowAllFiles
             $results.Name | Should -Be $fileGroup1Name, Primary
             $results.AutoGrowAllFiles | Should -Be $true, $true

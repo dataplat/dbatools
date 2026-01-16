@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             Select @condition_id as conditionId
 "@
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $conditionId = $server.Query($conditionQuery) | Select-Object -ExpandProperty conditionId
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
 
     Context "Command returns results" {
         BeforeAll {
-            $results = Get-DbaPbmCondition -SqlInstance $TestConfig.instance2
+            $results = Get-DbaPbmCondition -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should get results" {
@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
 
     Context "Command actually works by condition name" {
         BeforeAll {
-            $results = Get-DbaPbmCondition -SqlInstance $TestConfig.instance2 -Condition $conditionName
+            $results = Get-DbaPbmCondition -SqlInstance $TestConfig.InstanceSingle -Condition $conditionName
         }
 
         It "Should get results" {

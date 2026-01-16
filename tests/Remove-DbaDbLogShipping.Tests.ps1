@@ -34,13 +34,13 @@ Describe $CommandName -Tag UnitTests {
         $localPath = "C:\temp\logshipping"
         $networkPath = "\\localhost\c$\temp\logshipping"
 
-        $primaryServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $secondaryServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $primaryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $secondaryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
         # Create the database
         if ($primaryServer.Databases.Name -notcontains $dbName) {
             $query = "CREATE DATABASE [$dbName]"
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $query
         }
 
         if (-not (Test-Path -Path $localPath)) {
@@ -57,8 +57,8 @@ Describe $CommandName -Tag UnitTests {
 
         # Cleanup
         Remove-Item -Path $localPath -Recurse -ErrorAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -ErrorAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "$($dbName)_LS" -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database "$($dbName)_LS" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -66,8 +66,8 @@ Describe $CommandName -Tag UnitTests {
     Context "Remove database from log shipping without removing secondary database" {
         BeforeAll {
             $splatLogShipping = @{
-                SourceSqlInstance       = $TestConfig.instance2
-                DestinationSqlInstance  = $TestConfig.instance2
+                SourceSqlInstance       = $TestConfig.InstanceSingle
+                DestinationSqlInstance  = $TestConfig.InstanceSingle
                 Database                = $dbName
                 BackupNetworkPath       = $networkPath
                 BackupLocalPath         = $localPath
@@ -90,7 +90,7 @@ Describe $CommandName -Tag UnitTests {
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$dbName';"
 
-            $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
+            $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $query
 
             $results.PrimaryDatabase | Should -Be $dbName
         }
@@ -98,15 +98,15 @@ Describe $CommandName -Tag UnitTests {
         It "Should remove log shipping but keep secondary database" {
             # Remove the log shipping
             $splatRemove = @{
-                PrimarySqlInstance   = $TestConfig.instance2
-                SecondarySqlInstance = $TestConfig.instance2
+                PrimarySqlInstance   = $TestConfig.InstanceSingle
+                SecondarySqlInstance = $TestConfig.InstanceSingle
                 Database             = $dbName
             }
 
             Remove-DbaDbLogShipping @splatRemove
 
             $primaryServer.Databases.Refresh()
-            $secondaryServerRefreshed = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $secondaryServerRefreshed = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
             "$($dbName)_LS" | Should -BeIn $secondaryServerRefreshed.Databases.Name
         }
@@ -120,7 +120,7 @@ Describe $CommandName -Tag UnitTests {
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$dbName';"
 
-            $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
+            $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $query
 
             $results.PrimaryDatabase | Should -Be $null
         }
@@ -129,8 +129,8 @@ Describe $CommandName -Tag UnitTests {
     Context "Remove database from log shipping with secondary database removal" {
         BeforeAll {
             $splatLogShipping = @{
-                SourceSqlInstance       = $TestConfig.instance2
-                DestinationSqlInstance  = $TestConfig.instance2
+                SourceSqlInstance       = $TestConfig.InstanceSingle
+                DestinationSqlInstance  = $TestConfig.InstanceSingle
                 Database                = $dbName
                 BackupNetworkPath       = $networkPath
                 BackupLocalPath         = $localPath
@@ -152,7 +152,7 @@ Describe $CommandName -Tag UnitTests {
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$dbName';"
 
-            $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
+            $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $query
 
             $results.PrimaryDatabase | Should -Be $dbName
         }
@@ -160,8 +160,8 @@ Describe $CommandName -Tag UnitTests {
         It "Should remove log shipping and secondary database" {
             # Remove the log shipping
             $splatRemove = @{
-                PrimarySqlInstance      = $TestConfig.instance2
-                SecondarySqlInstance    = $TestConfig.instance2
+                PrimarySqlInstance      = $TestConfig.InstanceSingle
+                SecondarySqlInstance    = $TestConfig.InstanceSingle
                 Database                = $dbName
                 RemoveSecondaryDatabase = $true
             }
@@ -169,7 +169,7 @@ Describe $CommandName -Tag UnitTests {
             Remove-DbaDbLogShipping @splatRemove
 
             $primaryServer.Databases.Refresh()
-            $secondaryServerRefreshed = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $secondaryServerRefreshed = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
             "$($dbName)_LS" | Should -Not -BeIn $secondaryServerRefreshed.Databases.Name
         }
@@ -183,7 +183,7 @@ Describe $CommandName -Tag UnitTests {
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$dbName';"
 
-            $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $query
+            $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $query
 
             $results.PrimaryDatabase | Should -Be $null
         }

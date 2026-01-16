@@ -30,10 +30,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $dbname1 = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname1 -Owner sa
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname1 -Owner sa
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Query "
 
         create table dept (
             deptid int identity(1,1) primary key,
@@ -59,89 +59,89 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {
         BeforeAll {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Query "
                 insert into dept values ('hr');
                 insert into emp values (1);"
         }
 
         It "Removes Data for a specified database" {
-            Remove-DbaDbData -SqlInstance $TestConfig.instance2 -Database $dbname1
-            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
+            Remove-DbaDbData -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
+            (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 
         It "Foreign Keys are recreated" {
-            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
             $fkeys.Name | Should -Be "FK_dept"
         }
 
         It "Foreign Keys are trusted" {
-            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
             $fkeys.IsChecked | Should -Be $true
         }
 
         It "Views are recreated" {
-            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
+            (Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
         }
     }
 
     Context "Functionality - Pipe database" {
         BeforeAll {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Query "
                 insert into dept values ('hr');
                 insert into emp values (1);"
         }
 
         It "Removes Data for a specified database" {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 | Remove-DbaDbData
-            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 | Remove-DbaDbData
+            (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 
         It "Foreign Keys are recreated" {
-            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
             $fkeys.Name | Should -Be "FK_dept"
         }
 
         It "Foreign Keys are trusted" {
-            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
             $fkeys.IsChecked | Should -Be $true
         }
 
         It "Views are recreated" {
-            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
+            (Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
         }
     }
 
     Context "Functionality - Pipe server" {
         BeforeAll {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Query "
                 insert into dept values ('hr');
                 insert into emp values (1);"
         }
 
         It "Removes Data for a specified database" {
-            Connect-DbaInstance -SqlInstance $TestConfig.instance2 | Remove-DbaDbData -Database $dbname1
-            (Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
+            Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle | Remove-DbaDbData -Database $dbname1
+            (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Query "Select count(*) as rwCnt from dept").rwCnt | Should -Be 0
         }
 
         It "Foreign Keys are recreated" {
-            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
             $fkeys.Name | Should -Be "FK_dept"
         }
 
         It "Foreign Keys are trusted" {
-            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname1
+            $fkeys = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
             $fkeys.IsChecked | Should -Be $true
         }
 
         It "Views are recreated" {
-            (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
+            (Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
         }
     }
 }

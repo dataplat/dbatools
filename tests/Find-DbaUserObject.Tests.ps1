@@ -27,10 +27,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login UserLogin1 -SecurePassword $securePassword
-        $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login UserLogin2 -SecurePassword $securePassword
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name UserDB1 -Owner UserLogin1
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name UserDB2 -Owner UserLogin2
+        $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login UserLogin1 -SecurePassword $securePassword
+        $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login UserLogin2 -SecurePassword $securePassword
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name UserDB1 -Owner UserLogin1
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name UserDB2 -Owner UserLogin2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -38,15 +38,15 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database UserDB1, UserDB2
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login UserLogin1, UserLogin2
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database UserDB1, UserDB2
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login UserLogin1, UserLogin2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command finds user objects" {
         It "Should find user databases without pattern" {
-            $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
+            $results = Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle
 
             $results.Count | Should -BeGreaterOrEqual 2
             $results.Type | Should -Contain Database
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should find one user database with the pattern" {
-            $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2 -Pattern UserLogin1
+            $results = Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle -Pattern UserLogin1
 
             $results | Should -HaveCount 1
             $results.Type | Should -Be Database

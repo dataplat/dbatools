@@ -26,10 +26,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
+        $InstanceSingle = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $null = Get-DbaProcess -SqlInstance $InstanceSingle | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
         $newDbName = "dbatoolsci_newdb_$random"
-        $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
+        $db = New-DbaDatabase -SqlInstance $InstanceSingle -Name $newDbName
         $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value $newDbName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Commands work as expected" {
         It "Works" {
-            $ep = Get-DbaExtendedProperty -SqlInstance $instance2 -Name "Test_Database_Name"
+            $ep = Get-DbaExtendedProperty -SqlInstance $InstanceSingle -Name "Test_Database_Name"
             $newep = $ep | Set-DbaExtendedProperty -Value "Test_Database_Value"
             $newep.Name | Should -Be "Test_Database_Name"
             $newep.Value | Should -Be "Test_Database_Value"

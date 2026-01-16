@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("INSERT INTO msdb.[dbo].[sysmail_profile]
            ([name]
            ,[description]
@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Db Mail History" {
         BeforeAll {
-            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 | Where-Object { $PSItem.Subject -eq "Test Job" }
+            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle | Where-Object { $PSItem.Subject -eq "Test Job" }
         }
 
         It "Gets results" {
@@ -106,7 +106,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Db Mail History using -Status" {
         BeforeAll {
-            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 -Status Sent
+            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle -Status Sent
         }
 
         It "Gets results" {
@@ -128,7 +128,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Db Mail History using -Since" {
         BeforeAll {
-            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 -Since "2018-01-01"
+            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle -Since "2018-01-01"
         }
 
         It "Gets results" {

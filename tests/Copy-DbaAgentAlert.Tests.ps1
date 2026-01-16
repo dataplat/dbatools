@@ -38,9 +38,9 @@ Describe $CommandName -Tag IntegrationTests {
         $operatorEmail = "levitan@dbatools.io"
 
         # Connect to instance and create test objects
-        $serverInstance2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
+        $serverInstanceSingle = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
 
-        $serverInstance2.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert1)',
+        $serverInstanceSingle.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert1)',
         @message_id=0,
         @severity=6,
         @enabled=1,
@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
         @category_name=N'[Uncategorized]',
         @job_id=N'00000000-0000-0000-0000-000000000000';")
 
-        $serverInstance2.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert2)',
+        $serverInstanceSingle.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert2)',
         @message_id=0,
         @severity=10,
         @enabled=1,
@@ -57,12 +57,12 @@ Describe $CommandName -Tag IntegrationTests {
         @include_event_description_in=0,
         @job_id=N'00000000-0000-0000-0000-000000000000';")
 
-        $serverInstance2.Query("EXEC msdb.dbo.sp_add_operator
+        $serverInstanceSingle.Query("EXEC msdb.dbo.sp_add_operator
         @name = N'$operatorName',
         @enabled = 1,
         @email_address = N'$operatorEmail' ;")
 
-        $serverInstance2.Query("EXEC msdb.dbo.sp_add_notification   @alert_name = N'$($alert2)',
+        $serverInstanceSingle.Query("EXEC msdb.dbo.sp_add_notification   @alert_name = N'$($alert2)',
         @operator_name = N'$operatorName',
         @notification_method = 1 ;")
 

@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
         $mailAccountName = "dbatoolsci_test_$(Get-Random)"
 
         # Create the mail account for testing
-        $primaryServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $primaryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
             @account_name='$mailAccountName',
             @description='Mail account for email alerts',
@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
             @account_name = '$mailAccountName';"
         $cleanupServer.Query($mailAccountSettings)
@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMailServer" {
         BeforeAll {
-            $mailServerResults = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 | Where-Object Account -eq $mailAccountName
+            $mailServerResults = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle | Where-Object Account -eq $mailAccountName
         }
 
         It "Gets results" {
@@ -91,7 +91,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMailServer using -Server" {
         BeforeAll {
-            $serverFilterResults = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 -Server "smtp.dbatools.io"
+            $serverFilterResults = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle -Server "smtp.dbatools.io"
         }
 
         It "Gets results" {
@@ -101,7 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMailServer using -Account" {
         BeforeAll {
-            $accountFilterResults = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 -Account $mailAccountName
+            $accountFilterResults = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle -Account $mailAccountName
         }
 
         It "Gets results" {

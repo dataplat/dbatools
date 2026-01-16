@@ -29,13 +29,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
-        $splatInstance2 = @{
+        $splatInstanceSingle = @{
             SqlInstance = $TestConfig.InstanceMulti1
         }
         $splatInstance3 = @{
             SqlInstance = $TestConfig.InstanceMulti2
         }
-        $instance2 = Connect-DbaInstance @splatInstance2
+        $InstanceSingle = Connect-DbaInstance @splatInstanceSingle
         $instance3 = Connect-DbaInstance @splatInstance3
 
         $linkedServerName1 = "dbatoolscli_LS1_$random"
@@ -44,19 +44,19 @@ Describe $CommandName -Tag IntegrationTests {
         $linkedServerName4 = "dbatoolscli_LS4_$random"
 
         $splatLinkedServer1 = @{
-            SqlInstance  = $instance2
+            SqlInstance  = $InstanceSingle
             LinkedServer = $linkedServerName1
         }
         $splatLinkedServer2 = @{
-            SqlInstance  = $instance2
+            SqlInstance  = $InstanceSingle
             LinkedServer = $linkedServerName2
         }
         $splatLinkedServer3 = @{
-            SqlInstance  = $instance2
+            SqlInstance  = $InstanceSingle
             LinkedServer = $linkedServerName3
         }
         $splatLinkedServer4 = @{
-            SqlInstance  = $instance2
+            SqlInstance  = $InstanceSingle
             LinkedServer = $linkedServerName4
         }
 
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         $loginName = "dbatoolscli_test_$random"
 
         $splatLogin = @{
-            SqlInstance    = @($instance2, $instance3)
+            SqlInstance    = @($InstanceSingle, $instance3)
             Login          = $loginName
             SecurePassword = $securePassword
         }
@@ -96,15 +96,15 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $linkedServers = @($linkedServerName1, $linkedServerName2, $linkedServerName3, $linkedServerName4)
-        $instance2.LinkedServers.Refresh()
+        $InstanceSingle.LinkedServers.Refresh()
         foreach ($ls in $linkedServers) {
-            if ($instance2.LinkedServers.Name -contains $ls) {
-                $instance2.LinkedServers[$ls].Drop($true)
+            if ($InstanceSingle.LinkedServers.Name -contains $ls) {
+                $InstanceSingle.LinkedServers[$ls].Drop($true)
             }
         }
 
         $splatRemoveLogin = @{
-            SqlInstance = @($instance2, $instance3)
+            SqlInstance = @($InstanceSingle, $instance3)
             Login       = $loginName
         }
         Remove-DbaLogin @splatRemoveLogin -ErrorAction SilentlyContinue
@@ -139,7 +139,7 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction   = "SilentlyContinue"
             }
             Remove-DbaLinkedServer @splatRemoveNonExistent
-            $warnings | Should -BeLike "*Linked server $linkedServerName1 does not exist on $($instance2.Name)"
+            $warnings | Should -BeLike "*Linked server $linkedServerName1 does not exist on $($InstanceSingle.Name)"
         }
 
         It "Removes a linked server passed in via pipeline" {
@@ -151,13 +151,13 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Length | Should -Be 1
 
             $splatGetPipelineLinkedServer = @{
-                SqlInstance  = $instance2
+                SqlInstance  = $InstanceSingle
                 LinkedServer = $linkedServerName2
             }
             Get-DbaLinkedServer @splatGetPipelineLinkedServer | Remove-DbaLinkedServer
 
             $splatGetVerifyLinkedServer = @{
-                SqlInstance  = $instance2
+                SqlInstance  = $InstanceSingle
                 LinkedServer = $linkedServerName2
             }
             $results = Get-DbaLinkedServer @splatGetVerifyLinkedServer
@@ -175,10 +175,10 @@ Describe $CommandName -Tag IntegrationTests {
             $splatRemovePipelineServer = @{
                 LinkedServer = $linkedServerName3
             }
-            $instance2 | Remove-DbaLinkedServer @splatRemovePipelineServer
+            $InstanceSingle | Remove-DbaLinkedServer @splatRemovePipelineServer
 
             $splatGetVerifyLinkedServer3 = @{
-                SqlInstance  = $instance2
+                SqlInstance  = $InstanceSingle
                 LinkedServer = $linkedServerName3
             }
             $results = Get-DbaLinkedServer @splatGetVerifyLinkedServer3
@@ -187,7 +187,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Tries to remove a linked server that still has logins" {
             $splatGetLinkedServer4 = @{
-                SqlInstance  = $instance2
+                SqlInstance  = $InstanceSingle
                 LinkedServer = $linkedServerName4
             }
             $splatRemoveWithWarning = @{
@@ -200,7 +200,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes a linked server that requires the -Force param" {
             $splatGetLinkedServer4Final = @{
-                SqlInstance  = $instance2
+                SqlInstance  = $InstanceSingle
                 LinkedServer = $linkedServerName4
             }
             $splatRemoveWithForce = @{
@@ -209,7 +209,7 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaLinkedServer @splatGetLinkedServer4Final | Remove-DbaLinkedServer @splatRemoveWithForce
 
             $splatGetVerifyLinkedServer4 = @{
-                SqlInstance  = $instance2
+                SqlInstance  = $InstanceSingle
                 LinkedServer = $linkedServerName4
             }
             $results = Get-DbaLinkedServer @splatGetVerifyLinkedServer4

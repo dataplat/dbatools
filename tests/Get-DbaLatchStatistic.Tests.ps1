@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaLatchStatistic -SqlInstance $TestConfig.instance2 -Threshold 100
+            $results = Get-DbaLatchStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100
         }
 
         It "returns results" {

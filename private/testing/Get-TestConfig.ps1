@@ -50,9 +50,7 @@ function Get-TestConfig {
         # This configuration is used for the automated test on AppVeyor
         $config['DbaToolsCi_Computer'] = "$(hostname)"
 
-        $config['Instance1'] = "$(hostname)\sql2008r2sp2"
-        $config['Instance2'] = "$(hostname)\sql2016"
-        $config['InstanceSingle'] = "$(hostname)\sql2017"
+        $config['InstanceSingle'] = "$(hostname)\sql2016"
         $config['InstanceMulti1'] = "$(hostname)\sql2016"
         $config['InstanceMulti2'] = "$(hostname)\sql2017"
         $config['InstanceCopy1'] = "$(hostname)\sql2016"

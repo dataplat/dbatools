@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $safeTraceFlag = 3226
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $startingTfs = @( $server.Query("DBCC TRACESTATUS(-1)") )
             $startingTfsCount = $startingTfs.Count
 
@@ -54,19 +54,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Has the right default properties" {
             $expectedProps = "ComputerName", "InstanceName", "SqlInstance", "TraceFlag", "Global", "Status"
             $results = @( )
-            $results += Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
+            $results += Get-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
         It "Returns filtered results" {
-            $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2 -TraceFlag $safeTraceFlag
+            $results = Get-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle -TraceFlag $safeTraceFlag
             $results.TraceFlag.Count | Should -Be 1
             $results.TraceFlag | Should -Be $safeTraceFlag
             $results.Status | Should -Be 1
         }
 
         It "Returns all TFs" {
-            $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
+            $results = Get-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle
             #$results.TraceFlag.Count | Should -Be $startingTfsCount
             $results.TraceFlag | Should -Be $safeTraceFlag
         }

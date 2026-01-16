@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaServerRole -SqlInstance $TestConfig.instance2
+            $results = Get-DbaServerRole -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should have correct properties" {
@@ -35,17 +35,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Shows only one value with ServerRole parameter" {
-            $singleResult = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole sysadmin
+            $singleResult = Get-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole sysadmin
             $singleResult[0].Role | Should -Be "sysadmin"
         }
 
         It "Should exclude sysadmin from output" {
-            $excludeResults = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ExcludeServerRole sysadmin
+            $excludeResults = Get-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ExcludeServerRole sysadmin
             "sysadmin" -NotIn $excludeResults.Role | Should -Be $true
         }
 
         It "Should exclude fixed server-level roles" {
-            $excludeFixedResults = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ExcludeFixedRole
+            $excludeFixedResults = Get-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ExcludeFixedRole
             "sysadmin" -NotIn $excludeFixedResults.Role | Should -Be $true
         }
     }

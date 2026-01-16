@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $tableTypeName = "dbatools_$(Get-Random)"
         $tableTypeName1 = "dbatools_$(Get-Random)"
         $server.Query("CREATE TYPE $tableTypeName AS TABLE([column1] INT NULL)", "tempdb")
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets a Db User Defined Table Type" {
         BeforeAll {
             $splatUserDefinedTableType = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Type        = $tableTypeName
             }
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets all the Db User Defined Table Type" {
         BeforeAll {
-            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -Database tempdb
+            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.InstanceSingle -Database tempdb
         }
 
         It "Gets results" {

@@ -26,8 +26,8 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Recovery model is correctly identified" {
         BeforeAll {
-            $masterResults = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database master
-            $allResults = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2
+            $masterResults = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database master
+            $allResults = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "returns a single database" {
@@ -45,23 +45,23 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "RecoveryModel parameter works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $dbname = "dbatoolsci_getrecoverymodel"
             Get-DbaDatabase -SqlInstance $server -Database $dbname | Remove-DbaDatabase
             $server.Query("CREATE DATABASE $dbname; ALTER DATABASE $dbname SET RECOVERY BULK_LOGGED WITH NO_WAIT;")
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -ErrorAction SilentlyContinue
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase -ErrorAction SilentlyContinue
         }
 
         It "gets the newly created database with the correct recovery model" {
-            $results = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database $dbname
+            $results = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $dbname
             $results.RecoveryModel -eq "BulkLogged" | Should -BeTrue
         }
 
         It "honors the RecoveryModel parameter filter" {
-            $results = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel BulkLogged
+            $results = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel BulkLogged
             $results.Name -contains $dbname | Should -BeTrue
         }
     }

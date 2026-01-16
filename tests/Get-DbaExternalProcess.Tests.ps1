@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Setup xp_cmdshell to create external processes for testing
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "
         -- To allow advanced options to be changed.
         EXECUTE sp_configure 'show advanced options', 1;
         GO
@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
         $query = @"
         xp_cmdshell 'powershell -command ""sleep 20""'
 "@
-        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.instance1) -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
+        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceSingle) -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup: Disable xp_cmdshell for security
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "
         EXECUTE sp_configure 'xp_cmdshell', 0;
         GO
         RECONFIGURE;

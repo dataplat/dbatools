@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $procname = "dbatools_$(Get-Random)"
         $server.Query("CREATE PROCEDURE $procname AS SELECT 1", "tempdb")
         $queuename = "dbatools_$(Get-Random)"
@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets the service broker queue" {
         BeforeAll {
             $splatGetQueue = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceSingle
                 Database           = "tempdb"
                 ExcludeSystemQueue = $true
             }

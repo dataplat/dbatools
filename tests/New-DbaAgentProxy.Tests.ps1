@@ -35,9 +35,9 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $InstanceSingle = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
-            $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.Instance2 -Property ComputerName
+            $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceSingle -Property ComputerName
             $userName = "user_$(Get-Random)"
             $password = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
             $identity = "$computerName\$userName"
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-Command2 @splatInvoke
 
             $splatCredential = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = $userName
                 Identity    = $identity
                 Password    = $password
@@ -61,22 +61,22 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaCredential @splatCredential
 
             # if replication is installed then these can be tested also: Distribution, LogReader, Merge, QueueReader, Snapshot
-            $isReplicationInstalled = $instance2.Databases["master"].Query("DECLARE @installed int;BEGIN TRY EXEC @installed = sys.sp_MS_replication_installed; END TRY BEGIN CATCH SET @installed = 0; END CATCH SELECT @installed AS IsReplicationInstalled;").IsReplicationInstalled
+            $isReplicationInstalled = $InstanceSingle.Databases["master"].Query("DECLARE @installed int;BEGIN TRY EXEC @installed = sys.sp_MS_replication_installed; END TRY BEGIN CATCH SET @installed = 0; END CATCH SELECT @installed AS IsReplicationInstalled;").IsReplicationInstalled
 
             if ($isReplicationInstalled -eq 1) {
-                $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $instance2 -Name $proxyName1 -Description "Subsystem test" -ProxyCredential $userName -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS, Distribution, LogReader, Merge, QueueReader, Snapshot
+                $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName1 -Description "Subsystem test" -ProxyCredential $userName -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS, Distribution, LogReader, Merge, QueueReader, Snapshot
             } else {
-                $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $instance2 -Name $proxyName1 -Description "Subsystem test" -ProxyCredential $userName -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS
+                $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName1 -Description "Subsystem test" -ProxyCredential $userName -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS
             }
 
-            $agentProxySSISDisabled = New-DbaAgentProxy -SqlInstance $instance2 -Name $proxyName2 -Description "SSIS disabled test" -ProxyCredential $userName -Subsystem SSIS -Disabled
+            $agentProxySSISDisabled = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName2 -Description "SSIS disabled test" -ProxyCredential $userName -Subsystem SSIS -Disabled
 
             $loginName = "login_$random"
             $loginPassword = "MyV3ry`$ecur3P@ssw0rd"
             $securePassword = ConvertTo-SecureString $loginPassword -AsPlainText -Force
-            $sqlLogin = New-DbaLogin -SqlInstance $instance2 -Login $loginName -Password $securePassword -Force
+            $sqlLogin = New-DbaLogin -SqlInstance $InstanceSingle -Login $loginName -Password $securePassword -Force
 
-            $agentProxyLoginRole = New-DbaAgentProxy -SqlInstance $instance2 -Name $proxyName3 -ProxyCredential $userName -Login $loginName -SubSystem CmdExec -ServerRole securityadmin -MsdbRole ServerGroupAdministratorRole
+            $agentProxyLoginRole = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName3 -ProxyCredential $userName -Login $loginName -SubSystem CmdExec -ServerRole securityadmin -MsdbRole ServerGroupAdministratorRole
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -102,7 +102,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "does not try to add the proxy without a valid credential" {
-            $results = New-DbaAgentProxy -SqlInstance $instance2 -Name STIG -ProxyCredential "dbatoolsci_proxytest" -WarningAction SilentlyContinue -WarningVariable warn
+            $results = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name STIG -ProxyCredential "dbatoolsci_proxytest" -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "does not exist" | Should -Be $true
         }
 
@@ -111,8 +111,8 @@ Describe $CommandName -Tag IntegrationTests {
             $agentProxyAllSubsystems.Description | Should -Be "Subsystem test"
             $agentProxyAllSubsystems.CredentialName | Should -Be $userName
             $agentProxyAllSubsystems.CredentialIdentity | Should -Be $identity
-            $agentProxyAllSubsystems.ComputerName | Should -Be $instance2.ComputerName
-            $agentProxyAllSubsystems.InstanceName | Should -Be $instance2.DbaInstanceName
+            $agentProxyAllSubsystems.ComputerName | Should -Be $InstanceSingle.ComputerName
+            $agentProxyAllSubsystems.InstanceName | Should -Be $InstanceSingle.DbaInstanceName
             $agentProxyAllSubsystems.IsEnabled | Should -Be $true
 
             if ($isReplicationInstalled -eq 1) {
@@ -127,8 +127,8 @@ Describe $CommandName -Tag IntegrationTests {
             $agentProxySSISDisabled.Description | Should -Be "SSIS disabled test"
             $agentProxySSISDisabled.CredentialName | Should -Be $userName
             $agentProxySSISDisabled.CredentialIdentity | Should -Be $identity
-            $agentProxySSISDisabled.ComputerName | Should -Be $instance2.ComputerName
-            $agentProxySSISDisabled.InstanceName | Should -Be $instance2.DbaInstanceName
+            $agentProxySSISDisabled.ComputerName | Should -Be $InstanceSingle.ComputerName
+            $agentProxySSISDisabled.InstanceName | Should -Be $InstanceSingle.DbaInstanceName
             $agentProxySSISDisabled.SubSystems.Name | Should -Be SSIS
             $agentProxySSISDisabled.IsEnabled | Should -Be $false
         }
@@ -137,8 +137,8 @@ Describe $CommandName -Tag IntegrationTests {
             $agentProxyLoginRole.Name | Should -Be $proxyName3
             $agentProxyLoginRole.CredentialName | Should -Be $userName
             $agentProxyLoginRole.CredentialIdentity | Should -Be $identity
-            $agentProxyLoginRole.ComputerName | Should -Be $instance2.ComputerName
-            $agentProxyLoginRole.InstanceName | Should -Be $instance2.DbaInstanceName
+            $agentProxyLoginRole.ComputerName | Should -Be $InstanceSingle.ComputerName
+            $agentProxyLoginRole.InstanceName | Should -Be $InstanceSingle.DbaInstanceName
             $agentProxyLoginRole.SubSystems.Name | Should -Be CmdExec
             $agentProxyLoginRole.Logins.Name | Should -Be $loginName
             $agentProxyLoginRole.ServerRoles.Name | Should -Be securityadmin

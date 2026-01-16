@@ -27,9 +27,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables for the test
-        $testInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $testInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $safeTraceFlag = 3226
-        $startingTraceFlags = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
+        $startingTraceFlags = Get-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle
 
         if ($startingTraceFlags.TraceFlag -contains $safeTraceFlag) {
             $testInstance.Query("DBCC TRACEOFF($safeTraceFlag,-1)")

@@ -28,7 +28,7 @@ Describe $CommandName -Tag UnitTests {
 }
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $result = Get-DbaOperatingSystem -ComputerName $TestConfig.instance1
+        $result = Get-DbaOperatingSystem -ComputerName $TestConfig.InstanceSingle
 
         $props = @(
             "ComputerName", "Manufacturer", "Organization",

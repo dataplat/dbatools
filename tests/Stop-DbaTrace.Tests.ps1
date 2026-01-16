@@ -106,9 +106,9 @@ Describe $CommandName -Tag IntegrationTests {
 
                 -- display trace id for future references
                 select TraceID=@TraceID"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $traceid = ($server.Query($sql)).TraceID
-        $null = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Start-DbaTrace
+        $null = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace
 
         # we want to run all commands outside of the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -118,7 +118,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
+        $null = Remove-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
 
         Remove-Item -Path $tracePath -Recurse
 
@@ -127,13 +127,13 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Test Stopping Trace" {
         It "starts in a running state" {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
+            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
             $results.Id | Should -Be $traceid
             $results.IsRunning | Should -BeTrue
         }
 
         It "is now in a stopped state" {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Stop-DbaTrace
+            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace
             $results.Id | Should -Be $traceid
             $results.IsRunning | Should -BeFalse
         }

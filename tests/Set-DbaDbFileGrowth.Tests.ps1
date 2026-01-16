@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Create a test database for file growth operations
         $testDbName = "dbatoolsci_filegrowthtests"
         $splatNewDatabase = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Name        = $testDbName
         }
         $newdb = New-DbaDatabase @splatNewDatabase
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Clean up the test database
         $splatRemoveDatabase = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = $testDbName
         }
         Remove-DbaDatabase @splatRemoveDatabase
@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should return file information for only test database" {
         BeforeAll {
             $splatSetFileGrowth = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $testDbName
             }
             $result = Set-DbaDbFileGrowth @splatSetFileGrowth | Select-Object -First 1
@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Supports piping" {
         BeforeAll {
-            $result = Get-DbaDatabase $TestConfig.instance2 -Database $testDbName | Set-DbaDbFileGrowth | Select-Object -First 1
+            $result = Get-DbaDatabase $TestConfig.InstanceSingle -Database $testDbName | Set-DbaDbFileGrowth | Select-Object -First 1
         }
 
         It "returns only test database files" {

@@ -34,8 +34,8 @@ Describe $CommandName -Tag IntegrationTests {
             $dbname = "dbatoolsci_orphanedfile_$(Get-Random)"
             $dbname2 = "dbatoolsci_orphanedfile_$(Get-Random)"
 
-            $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname
-            $db2 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname2
+            $db1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname
+            $db2 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname2
 
             $tmpdir = "$($TestConfig.Temp)\orphan_$(Get-Random)"
             if (-not(Test-Path $tmpdir)) {
@@ -55,16 +55,16 @@ Describe $CommandName -Tag IntegrationTests {
             $tmpBackupPath2 = Join-Path $tmpdirInner2 "backup"
             $null = New-Item -Path $tmpBackupPath2 -ItemType Directory
 
-            $result = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
             if ($result.Count -eq 0) {
                 throw "Setup failed: database not created"
             }
 
-            $backupFile = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Path $tmpBackupPath -Type Full
-            $backupFile2 = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname2 -Path $tmpBackupPath2 -Type Full
+            $backupFile = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Path $tmpBackupPath -Type Full
+            $backupFile2 = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Path $tmpBackupPath2 -Type Full
 
-            $tmpBackupPath3 = [IO.Path]::Combine((Get-DbaDefaultPath -SqlInstance $TestConfig.instance2).Data, "dbatoolsci_$(Get-Random)")
-            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { $null = New-Item -Path $args -ItemType Directory } -ArgumentList $tmpBackupPath3
+            $tmpBackupPath3 = [IO.Path]::Combine((Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle).Data, "dbatoolsci_$(Get-Random)")
+            Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock { $null = New-Item -Path $args -ItemType Directory } -ArgumentList $tmpBackupPath3
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -74,17 +74,17 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname, $dbname2 | Remove-DbaDatabase
             Remove-Item $tmpdir -Recurse -Force
             Remove-Item $tmpdir2 -Recurse -Force
-            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args -Recurse -Force } -ArgumentList $tmpBackupPath3
+            Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock { Remove-Item -Path $args -Recurse -Force } -ArgumentList $tmpBackupPath3
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Has the correct properties" {
-            $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Force
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
+            $null = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Force
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
             $ExpectedStdProps = "ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename".Split(",")
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedStdProps | Sort-Object)
             $ExpectedProps = "ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename,Server".Split(",")
@@ -92,38 +92,38 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Finds two files" {
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
             $results.Filename.Count | Should -Be 2
         }
 
         It "Finds zero files after cleaning up" {
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
-            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { Remove-Item -Path $args } -ArgumentList $results.FileName
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
+            Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock { Remove-Item -Path $args } -ArgumentList $results.FileName
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
             $results.Filename.Count | Should -Be 0
         }
 
         It "works with -Path" {
             "a" | Out-File (Join-Path $tmpdir "out.mdf")
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -Path $tmpdir
             $results.Filename.Count | Should -Be 1
 
             Move-Item "$tmpdir\out.mdf" -Destination $tmpdirInner
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -Path $tmpdir
             $results.Filename.Count | Should -Be 0
         }
 
         It "works with -Recurse" {
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir -Recurse
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -Path $tmpdir -Recurse
             $results.Filename.Count | Should -Be 1
 
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir, $tmpdir2 -Recurse -FileType bak
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -Path $tmpdir, $tmpdir2 -Recurse -FileType bak
             $results.Filename | Should -Contain $backupFile.BackupPath
             $results.Filename | Should -Contain $backupFile2.BackupPath
             $results.Count | Should -Be 3
 
-            Invoke-Command2 -ComputerName $TestConfig.instance2 -ScriptBlock { "a" | Out-File (Join-Path $args "out.mdf") } -ArgumentList $tmpBackupPath3
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Recurse
+            Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock { "a" | Out-File (Join-Path $args "out.mdf") } -ArgumentList $tmpBackupPath3
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -Recurse
             $results.Filename | Should -Be "$tmpBackupPath3\out.mdf"
         }
     }

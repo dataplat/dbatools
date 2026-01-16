@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $dbname = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
@@ -43,15 +43,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -ErrorAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Command handles heaps and clustered indexes" {
         BeforeAll {
-            $results = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $results = Get-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -67,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command handles nonclustered indexes" {
         BeforeAll {
-            $ncResults = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
+            $ncResults = Get-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         }
 
         It "Gets results" {
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
-            $excludeResults = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname
+            $excludeResults = Get-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ExcludeDatabase $dbname
             $excludeResults.Database | Should -Not -Contain $dbname
         }
     }

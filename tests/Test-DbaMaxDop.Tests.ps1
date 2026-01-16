@@ -24,11 +24,11 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $testDbName = "dbatoolsci_testMaxDop"
         $server.Query("CREATE DATABASE dbatoolsci_testMaxDop")
-        $testDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+        $testDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
         $setupSuccessful = $true
         if (-not $testDb) {
             $setupSuccessful = $false
@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName | Remove-DbaDatabase
+        Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command works on SQL Server 2016 or higher instances" {
         BeforeAll {
             if ($setupSuccessful) {
-                $testResults = Test-DbaMaxDop -SqlInstance $TestConfig.instance2
+                $testResults = Test-DbaMaxDop -SqlInstance $TestConfig.InstanceSingle
             }
         }
 

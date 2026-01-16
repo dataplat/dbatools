@@ -36,8 +36,8 @@ BEGIN
 END
 "@
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $sql
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $sql
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -47,15 +47,15 @@ END
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command works" {
         It "Returns the proper classifier function" {
-            $results = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.instance2
+            $results = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.InstanceSingle
             $results.Name | Should -Be "dbatoolsci_fnRG"
         }
     }

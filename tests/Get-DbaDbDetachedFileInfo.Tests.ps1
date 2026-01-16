@@ -23,25 +23,25 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $versionName = $server.GetSqlServerVersionName()
         $random = Get-Random
         $dbname = "dbatoolsci_detatch_$random"
         $server.Query("CREATE DATABASE $dbname")
-        $path = (Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object PhysicalName -like "*.mdf").PhysicalName
-        Detach-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Force
+        $path = (Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Where-Object PhysicalName -like "*.mdf").PhysicalName
+        Detach-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Force
     }
 
     AfterAll {
         $server.Query("CREATE DATABASE $dbname
             ON (FILENAME = '$path')
             FOR ATTACH")
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaDbDetachedFileInfo -SqlInstance $TestConfig.instance2 -Path $path
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $TestConfig.InstanceSingle -Path $path
         }
 
         It "Gets Results" {
