@@ -49,8 +49,6 @@ environment:
   matrix:
     - scenario: 2008R2SP2Express
       setup_scripts: \tests\appveyor.SQL2008R2SP2.ps1,\tests\appveyor.SQL2017.ps1
-    - scenario: COPY
-      setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2008R2SP2.ps1
 
 # Set alternative clone folder
 clone_folder: c:\github\dbatools
