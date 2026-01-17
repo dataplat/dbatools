@@ -257,6 +257,27 @@ Stop-Transcript
 
 ## Troubleshooting
 
+### Using with Azure PowerShell (Az) or SqlServer Modules
+
+If you use dbatools alongside the Az PowerShell module or Microsoft's SqlServer module in the same session, import them in this order to avoid assembly version conflicts:
+
+```powershell
+# 1. Import Az or SqlServer modules first
+Import-Module Az.Accounts
+Import-Module SqlServer
+
+# 2. Then import dbatools
+Import-Module dbatools
+```
+
+If you still experience conflicts or need to use dbatools with other modules that have assembly conflicts, use the `-ArgumentList $true` parameter to enable conflict avoidance mode:
+
+```powershell
+Import-Module dbatools -ArgumentList $true
+```
+
+This skips loading conflicting Azure assemblies when incompatible versions are already loaded.
+
 ### Common Issues
 
 **Issue: "Could not connect to SqlInstance"**
