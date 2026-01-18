@@ -66,5 +66,10 @@ Import-Module dbatools.library
 Import-Module C:\github\dbatools\dbatools.psd1
 Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
 Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+
+Write-Host -Object "appveyor.prep: Setting up SQL Server Browser" -ForegroundColor DarkGreen
+Set-Service -Name SQLBrowser -StartupType Automatic
+Start-Service -Name SQLBrowser
+
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
