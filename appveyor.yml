@@ -1,5 +1,5 @@
 # See http://www.appveyor.com/docs/appveyor-yml for many more options
-image: Previous Visual Studio 2015
+image: Previous Visual Studio 2022
 configuration: "Debug"
 
 # skip PR builds when there's already a push build
@@ -49,34 +49,33 @@ environment:
   matrix:
     - scenario: SINGLE
       part: 1/3
-      InstanceSingle: sql2017
-      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2022
+      InstanceSingle: sql2019
     - scenario: SINGLE
       part: 2/3
-      InstanceSingle: sql2017
+      InstanceSingle: sql2019
     - scenario: SINGLE
       part: 3/3
-      InstanceSingle: sql2017
+      InstanceSingle: sql2019
     - scenario: MULTI
-      InstanceMulti1: sql2017
-      InstanceMulti2: sql2016
+      InstanceMulti1: sql2019
+      InstanceMulti2: sql2017
     - scenario: COPY
-      InstanceCopy1: sql2016
-      InstanceCopy2: sql2017
+      InstanceCopy1: sql2017
+      InstanceCopy2: sql2019
     - scenario: HADR
-      InstanceHadr: sql2017
+      InstanceHadr: sql2019
     - scenario: RESTART
-      InstanceRestart: sql2017
+      InstanceRestart: sql2019
     - scenario: default
     - scenario: 2008R2SP2Express
       part: 1/2
-      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
       InstanceSingle: sql2008r2sp2
       InstanceMulti1: sql2008r2sp2
       InstanceMulti2: sql2017
       InstanceCopy1: sql2008r2sp2
       InstanceCopy2: sql2017
       InstanceRestart: sql2008r2sp2
+      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
     - scenario: 2008R2SP2Express
       part: 2/2
       InstanceSingle: sql2008r2sp2
@@ -86,6 +85,7 @@ environment:
       InstanceCopy2: sql2017
       InstanceHadr: sql2017
       InstanceRestart: sql2008r2sp2
+      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
 
 # Set alternative clone folder
 clone_folder: c:\github\dbatools

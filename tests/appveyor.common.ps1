@@ -4,7 +4,7 @@ function Get-TestsForScenario {
     # does this scenario run an 'autodetect' ?
     if ($TestsRunGroups[$Scenario].StartsWith('autodetect_')[0]) {
         # exclude any test specifically tied to a non-autodetect or version specific scenario
-        $TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' -and $_.Value -notlike '20*' }).Value
+        $TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' -and $_.Name -notlike '20*' }).Value
         $RemainingTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TiedFunctions }
         # and now scan for the instance string
         $ScanFor = $TestsRunGroups[$Scenario].Replace('autodetect_', '')
