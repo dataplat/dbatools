@@ -50,6 +50,7 @@ environment:
     - scenario: SINGLE
       part: 1/3
       InstanceSingle: sql2017
+      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2022
     - scenario: SINGLE
       part: 2/3
       InstanceSingle: sql2017
@@ -69,6 +70,7 @@ environment:
     - scenario: default
     - scenario: 2008R2SP2Express
       part: 1/2
+      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
       InstanceSingle: sql2008r2sp2
       InstanceMulti1: sql2008r2sp2
       InstanceMulti2: sql2017
