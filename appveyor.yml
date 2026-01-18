@@ -49,10 +49,25 @@ environment:
   matrix:
     - scenario: 2008R2SP2Express
       part: 1/2
-      setup_scripts: \tests\appveyor.SQL2008R2SP2.ps1,\tests\appveyor.SQL2017.ps1
+      InstanceSingle: sql2008r2sp2
+      InstanceMulti1: sql2008r2sp2
+      InstanceMulti2: sql2017
+      InstanceCopy1: sql2008r2sp2
+      InstanceCopy2: sql2017
+      InstanceRestart: sql2008r2sp2
     - scenario: 2008R2SP2Express
       part: 2/2
-      setup_scripts: \tests\appveyor.SQL2008R2SP2.ps1,\tests\appveyor.SQL2017.ps1
+      InstanceSingle: sql2008r2sp2
+      InstanceMulti1: sql2008r2sp2
+      InstanceMulti2: sql2017
+      InstanceCopy1: sql2008r2sp2
+      InstanceCopy2: sql2017
+      InstanceHadr: sql2017
+      InstanceRestart: sql2008r2sp2
+    - scenario: HADR
+      InstanceHadr: sql2017
+    - scenario: RESTART
+      InstanceRestart: sql2016
 
 # Set alternative clone folder
 clone_folder: c:\github\dbatools

@@ -27,13 +27,27 @@ function Get-TestConfig {
             Write-Host -Object "Get-TestConfig: '$($e.Name)' = '$($e.Value)'"  -ForegroundColor DarkGreen
         }
 
-        $config['InstanceSingle'] = "$(hostname)\sql2008r2sp2"
-        $config['InstanceMulti1'] = "$(hostname)\sql2008r2sp2"
-        $config['InstanceMulti2'] = "$(hostname)\sql2017"
-        $config['InstanceCopy1'] = "$(hostname)\sql2008r2sp2"
-        $config['InstanceCopy2'] = "$(hostname)\sql2017"
-        $config['InstanceHadr'] = "$(hostname)\sql2017"
-        $config['InstanceRestart'] = "$(hostname)\sql2008r2sp2"
+        if ($env:InstanceSingle) {
+            $config['InstanceSingle'] = "$(hostname)\$($env:InstanceSingle)"
+        }
+        if ($env:InstanceMulti1) {
+            $config['InstanceMulti1'] = "$(hostname)\$($env:InstanceMulti1)"
+        }
+        if ($env:InstanceMulti2) {
+            $config['InstanceMulti2'] = "$(hostname)\$($env:InstanceMulti2)"
+        }
+        if ($env:InstanceCopy1) {
+            $config['InstanceCopy1'] = "$(hostname)\$($env:InstanceCopy1)"
+        }
+        if ($env:InstanceCopy2) {
+            $config['InstanceCopy2'] = "$(hostname)\$($env:InstanceCopy2)"
+        }
+        if ($env:InstanceHadr) {
+            $config['InstanceHadr'] = "$(hostname)\$($env:InstanceHadr)"
+        }
+        if ($env:InstanceRestart) {
+            $config['InstanceRestart'] = "$(hostname)\$($env:InstanceRestart)"
+        }
 
         $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
         $config['SQLPassword'] = $null
