@@ -449,7 +449,7 @@ if (-not $Finalize) {
                 if ($trialNo -le 3) {
                     Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. Retrying (attempt $trialNo of 3)..." -ForegroundColor Yellow
                     # Restarting all used instances to avoid state issues
-                    Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
+                    $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
                     Start-Sleep -Seconds 10
                 } else {
                     Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
