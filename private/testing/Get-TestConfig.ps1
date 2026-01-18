@@ -21,7 +21,7 @@ function Get-TestConfig {
 
     if (Test-Path $LocalConfigPath) {
         . $LocalConfigPath
-    } elsif ($env:AppVeyor) {
+    } elseif ($env:AppVeyor) {
         Write-Host -Object "Get-TestConfig: Setting up test configuration for AppVeyor"  -ForegroundColor DarkGreen
         foreach ($e in get-childitem env:) {
             Write-Host -Object "Get-TestConfig: '$($e.Name)' = '$($e.Value)'"  -ForegroundColor DarkGreen
