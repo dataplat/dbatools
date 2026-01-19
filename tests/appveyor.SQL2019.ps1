@@ -5,7 +5,7 @@ Write-Host -Object "$indent Running $PSCommandPath" -ForegroundColor DarkGreen
 
 $sqlinstance = "localhost\SQL2019"
 $instance = "SQL2019"
-$port = "1433"
+$port = "14335"
 
 Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
