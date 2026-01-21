@@ -450,16 +450,16 @@ function Get-DbaDatabase {
                 # Azure SQL Database doesn't have sys.master_files
                 # Use sys.database_files which is database-scoped
                 "SELECT DB_NAME() AS name,
-                    CAST(SUM(size) * 8.0 / 1024 AS DECIMAL(18,2)) AS SizeMB
+                    CAST(SUM(CAST(size AS BIGINT)) * 8.0 / 1024 AS DECIMAL(18,2)) AS SizeMB
                 FROM sys.database_files"
             } elseif ($server.VersionMajor -ge 9) {
                 "SELECT DB_NAME(database_id) AS name,
-                    CAST(SUM(size) * 8.0 / 1024 AS DECIMAL(18,2)) AS SizeMB
+                    CAST(SUM(CAST(size AS BIGINT)) * 8.0 / 1024 AS DECIMAL(18,2)) AS SizeMB
                 FROM sys.master_files
                 GROUP BY database_id"
             } else {
                 "SELECT dbname = DB_NAME(dbid),
-                    SizeMB = CAST(SUM(size) * 8.0 / 1024 AS DECIMAL(18,2))
+                    SizeMB = CAST(SUM(CAST(size AS BIGINT)) * 8.0 / 1024 AS DECIMAL(18,2))
                 FROM master.dbo.sysaltfiles
                 GROUP BY dbid"
             }
