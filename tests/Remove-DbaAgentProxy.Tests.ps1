@@ -56,6 +56,35 @@ Describe $CommandName -Tag IntegrationTests {
         @description = 'Maintenance tasks on catalog application.', @credential_name = 'proxyCred' ;"
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $testProxyName = "dbatoolsci_test_$(Get-Random)"
+            $null = Invoke-DbaQuery -SqlInstance $server -Query "EXEC msdb.dbo.sp_add_proxy @proxy_name = '$testProxyName', @enabled = 1,
+            @description = 'Output validation test proxy.', @credential_name = 'proxyCred' ;"
+            $result = Remove-DbaAgentProxy -SqlInstance $server -Proxy $testProxyName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "commands work as expected" {
         It "removes a SQL Agent proxy" {
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName) | Should -Not -BeNullOrEmpty

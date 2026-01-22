@@ -73,4 +73,44 @@ Describe $CommandName -Tag IntegrationTests {
         $findings.Count | Should -Be 1
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            # Create an invalid config to get error output
+            $json = Get-Content -Path $file.FullName | ConvertFrom-Json
+            $json.Tables[0].Columns[0].PSObject.Properties.Remove("SubType")
+            $invalidFile = "$($TestConfig.Temp)\datageneration\invalid_config.json"
+            $json | ConvertTo-Json -Depth 5 | Out-File $invalidFile -Force
+            
+            $result = Test-DbaDbDataGeneratorConfig -FilePath $invalidFile -EnableException
+        }
+
+        AfterAll {
+            if (Test-Path $invalidFile) {
+                Remove-Item $invalidFile -Force
+            }
+        }
+
+        It "Returns PSCustomObject when validation errors exist" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties for validation errors" {
+            $expectedProps = @(
+                "Table",
+                "Column",
+                "Value",
+                "Error"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns no output when configuration is valid" {
+            $validResult = Test-DbaDbDataGeneratorConfig -FilePath $file.FullName -EnableException
+            $validResult | Should -BeNullOrEmpty
+        }
+    }
+
 }

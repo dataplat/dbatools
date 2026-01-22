@@ -28,6 +28,85 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            Test-DbaConnection -SqlInstance $TestConfig.InstanceSingle
+
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+
+            $random = Get-Random
+            $dbName = "dbatoolsci_$random"
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $newDB = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
+
+            $indexName = "dbatoolsci_index_$random"
+            $tableName = "dbatoolsci_table_$random"
+            $sql = "USE $dbName;
+                    CREATE TABLE $tableName (ID INTEGER);
+                    CREATE INDEX $indexName ON $tableName (ID);
+                    INSERT INTO $tableName (ID) VALUES (1);
+                    SELECT ID FROM $tableName;
+                    WAITFOR DELAY '00:00:05'; -- for slower systems allow the query optimizer engine to catch up and update sys.dm_db_index_usage_stats"
+
+            $null = $server.Query($sql)
+
+            $result = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10 -EnableException
+        }
+
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "Table",
+                "ObjectId",
+                "IndexName",
+                "IndexId",
+                "TypeDesc",
+                "UserSeeks",
+                "UserScans",
+                "UserLookups",
+                "UserUpdates",
+                "LastUserSeek",
+                "LastUserScan",
+                "LastUserLookup",
+                "LastUserUpdate",
+                "SystemSeeks",
+                "SystemScans",
+                "SystemLookup",
+                "SystemUpdates",
+                "LastSystemSeek",
+                "LastSystemScan",
+                "LastSystemLookup",
+                "LastSystemUpdate",
+                "IndexSizeMB",
+                "RowCount"
+            )
+
+            # CompressionDescription only on SQL 2008+
+            if ($server.VersionMajor -gt 9) {
+                $expectedProps += "CompressionDescription"
+            }
+
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
+
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
             Test-DbaConnection -SqlInstance $TestConfig.InstanceSingle

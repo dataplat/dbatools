@@ -24,6 +24,45 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $originalPortInfo = Get-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart
+            $originalPort = $originalPortInfo.Port
+            $testPort = $originalPort + 1000
+            $instance = [DbaInstance]$TestConfig.InstanceRestart
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $result = Set-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart -Port $testPort -WarningAction SilentlyContinue -EnableException
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart -Port $originalPort -WarningAction SilentlyContinue
+            $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Changes',
+                'RestartNeeded',
+                'Restarted'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "When changing TCP port configuration" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.

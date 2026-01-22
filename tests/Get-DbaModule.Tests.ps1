@@ -75,4 +75,44 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultsPipedTyped | Select-Object -Unique Database | Measure-Object).Count | Should -Be 1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaModule -SqlInstance $TestConfig.InstanceSingle -Database msdb -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "ObjectID",
+                "SchemaName",
+                "Type",
+                "CreateDate",
+                "ModifyDate",
+                "IsMsShipped",
+                "ExecIsStartUp"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Definition property available via Select-Object *" {
+            $fullResult = Get-DbaModule -SqlInstance $TestConfig.InstanceSingle -Database msdb -EnableException | Select-Object -First 1 *
+            $fullResult.PSObject.Properties.Name | Should -Contain "Definition" -Because "Definition should be available but hidden by default"
+        }
+
+        It "Does not show Definition property by default" {
+            $result.PSObject.Properties.Name | Should -Not -Contain "Definition" -Because "Definition is excluded from default view"
+        }
+    }
 }

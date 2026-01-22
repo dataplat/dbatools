@@ -60,7 +60,7 @@ function Copy-DbaExtendedStoredProcedure {
 
         Returns one object per Extended Stored Procedure processed. The object contains information about the success or failure of the copy operation.
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - DateTime: The date and time when the copy operation was processed (DbaDateTime)
         - SourceServer: The name of the source SQL Server instance (string)
         - DestinationServer: The name of the destination SQL Server instance (string)
@@ -68,6 +68,8 @@ function Copy-DbaExtendedStoredProcedure {
         - Type: Always "Extended Stored Procedure" (string)
         - Status: The result of the operation - Successful, Skipped, Failed, or "Successful (DLL not copied)" (string)
         - Notes: Additional information about the operation result, such as reason for skip, error message, or DLL copy status (string)
+
+        Additional properties available (access via Select-Object *):
         - Schema: The schema in which the Extended Stored Procedure was created (string)
 
     .NOTES

@@ -57,4 +57,39 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -Contain "dbatoolsci_jobstep1"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $jobName = "dbatoolsci_output_$(Get-Random)"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobName -StepName dbatoolsci_outputstep -Subsystem TransactSql -Command "select 1"
+            $result = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobName -EnableException
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobStep]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AgentJob',
+                'Name',
+                'SubSystem',
+                'LastRunDate',
+                'LastRunOutcome',
+                'State'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

@@ -35,11 +35,11 @@ function Get-DbaDbccHelp {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
-        Returns one object per SQL Server instance containing the DBCC help information.
+        Returns one PSCustomObject per SQL Server instance containing the DBCC help information.
 
-        Properties:
+        Default display properties:
         - Operation: The DBCC command name specified in the Statement parameter (e.g., "CHECKDB", "SHRINKFILE")
         - Cmd: The complete DBCC command executed against SQL Server (e.g., "DBCC HELP(CHECKDB)")
         - Output: The raw output from the DBCC HELP command, containing the syntax help and parameter information. This is typically a DataTable or collection of results rows with parameter details.

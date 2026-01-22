@@ -80,4 +80,64 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseID | Get-Unique | Should -Be $tempDB.ID
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties documented in .OUTPUTS" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseID",
+                "FileGroupName",
+                "ID",
+                "Type",
+                "TypeDescription",
+                "LogicalName",
+                "PhysicalName",
+                "State",
+                "MaxSize",
+                "Growth",
+                "GrowthType",
+                "NextGrowthEventSize",
+                "Size",
+                "UsedSpace",
+                "AvailableSpace",
+                "IsOffline",
+                "IsReadOnly",
+                "IsReadOnlyMedia",
+                "IsSparse",
+                "NumberOfDiskWrites",
+                "NumberOfDiskReads",
+                "ReadFromDisk",
+                "WrittenToDisk",
+                "VolumeFreeSpace",
+                "FileGroupDataSpaceId",
+                "FileGroupType",
+                "FileGroupTypeDescription",
+                "FileGroupDefault",
+                "FileGroupReadOnly"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns dbasize objects for size properties" {
+            $result[0].Size.GetType().Name | Should -Be "dbasize"
+            $result[0].UsedSpace.GetType().Name | Should -Be "dbasize"
+            $result[0].AvailableSpace.GetType().Name | Should -Be "dbasize"
+            $result[0].MaxSize.GetType().Name | Should -Be "dbasize"
+            $result[0].NextGrowthEventSize.GetType().Name | Should -Be "dbasize"
+        }
+    }
 }

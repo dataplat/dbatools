@@ -40,5 +40,40 @@ if (-not $env:appveyor) {
                 $results.Count | Should -BeGreaterOrEqual 1
             }
         }
+
+        Context "Output Validation" {
+            BeforeAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+                $splatConnect = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                }
+                $server = Connect-DbaInstance @splatConnect
+                $server.Query("DBCC STACKDUMP")
+
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+                $result = Get-DbaDump -SqlInstance $TestConfig.InstanceSingle -EnableException
+            }
+
+            It "Returns PSCustomObject" {
+                $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+
+            It "Has the expected default display properties" {
+                $expectedProps = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "FileName",
+                    "CreationTime",
+                    "Size"
+                )
+                $actualProps = $result[0].PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+        }
     }
 }

@@ -93,4 +93,34 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select * from people" | Should -Not -Be $null
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $configFile = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Path $backupPath -Rows 5
+            $result = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $configFile.FullName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Columns",
+                "Rows",
+                "Elapsed",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

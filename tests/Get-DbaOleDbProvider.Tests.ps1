@@ -28,4 +28,35 @@ Describe $CommandName -Tag IntegrationTests {
             $allResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaOleDbProvider -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.OleDbProviderSettings]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Description',
+                'AllowInProcess',
+                'DisallowAdHocAccess',
+                'DynamicParameters',
+                'IndexAsAccessPath',
+                'LevelZeroOnly',
+                'NestedQueries',
+                'NonTransactedUpdates'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

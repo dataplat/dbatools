@@ -140,4 +140,55 @@ Describe $CommandName -Tag IntegrationTests {
 
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPermission -SqlInstance $server -Database $dbName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'PermState',
+                'PermissionName',
+                'SecurableType',
+                'Securable',
+                'Grantee',
+                'GranteeType',
+                'RevokeStatement',
+                'GrantStatement'
+            )
+            $actualProps = $result[0].Table.Columns.ColumnName
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
+
+    Context "Output with -IncludeServerLevel" {
+        BeforeAll {
+            $result = Get-DbaPermission -SqlInstance $server -IncludeServerLevel -EnableException
+        }
+
+        It "Includes server-level permissions with empty Database property" {
+            $serverLevelPerms = $result | Where-Object Database -eq ""
+            $serverLevelPerms | Should -Not -BeNullOrEmpty
+        }
+
+        It "Server-level permissions have the same properties as database-level" {
+            $serverLevelPerm = ($result | Where-Object Database -eq "")[0]
+            $expectedProps = @('ComputerName', 'InstanceName', 'SqlInstance', 'PermissionName', 'Grantee')
+            $actualProps = $serverLevelPerm.Table.Columns.ColumnName
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop
+            }
+        }
+    }
 }

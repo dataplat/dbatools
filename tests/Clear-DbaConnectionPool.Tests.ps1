@@ -26,4 +26,11 @@ Describe $CommandName -Tag IntegrationTests {
             { Clear-DbaConnectionPool } | Should -Not -Throw
         }
     }
+
+    Context "Output Validation" {
+        It "Returns no output as documented" {
+            $result = Clear-DbaConnectionPool -ComputerName $env:COMPUTERNAME -EnableException
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

@@ -31,4 +31,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.MonitorStatus | Should -Be "Added"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        AfterAll {
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MonitorStatus"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "MonitorStatus property contains expected value" {
+            $result.MonitorStatus | Should -Be "Added"
+        }
+    }
 }

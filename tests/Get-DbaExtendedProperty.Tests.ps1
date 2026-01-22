@@ -68,4 +68,34 @@ Describe $CommandName -Tag IntegrationTests {
             $ep.Name | Should -Be "dbatoolz"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaExtendedProperty -SqlInstance $server2 -Database $db.Name -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ExtendedProperty]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ParentName',
+                'Type',
+                'Name',
+                'Value'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the Server property added by the command" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'Server' -Because "Server property is added by the command for programmatic access"
+        }
+    }
 }

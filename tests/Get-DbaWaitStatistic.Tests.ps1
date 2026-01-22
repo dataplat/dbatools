@@ -64,4 +64,57 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "WaitType",
+                "Category",
+                "WaitSeconds",
+                "ResourceSeconds",
+                "SignalSeconds",
+                "WaitCount",
+                "Percentage",
+                "AverageWaitSeconds",
+                "AverageResourceSeconds",
+                "AverageSignalSeconds",
+                "URL"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Does not include Notes and Ignorable properties by default" {
+            $actualProps = $result[0].PSObject.Properties.Name
+            $actualProps | Should -Not -Contain "Notes" -Because "Notes is excluded by default"
+            $actualProps | Should -Not -Contain "Ignorable" -Because "Ignorable is excluded by default"
+        }
+    }
+
+    Context "Output with -IncludeIgnorable" {
+        BeforeAll {
+            $result = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeIgnorable -EnableException
+        }
+
+        It "Includes Ignorable property when -IncludeIgnorable is specified" {
+            $result[0].PSObject.Properties.Name | Should -Contain "Ignorable" -Because "-IncludeIgnorable adds the Ignorable property"
+        }
+
+        It "Does not include Notes property even with -IncludeIgnorable" {
+            $result[0].PSObject.Properties.Name | Should -Not -Contain "Notes" -Because "Notes is always excluded from default display"
+        }
+    }
 }

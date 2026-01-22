@@ -78,4 +78,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseId | Should -Be $db2.Id
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -Database $databaseName1
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'DatabaseName',
+                'DatabaseId',
+                'SchemaName',
+                'TableName',
+                'ObjectId',
+                'IndexName',
+                'IndexId',
+                'TypeDesc'
+            )
+            $actualProps = $result.Table.Columns.ColumnName
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

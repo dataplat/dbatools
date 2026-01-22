@@ -50,4 +50,44 @@ Describe $CommandName -Tag IntegrationTests {
             $disconnectResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Connect to instance and then disconnect to capture output
+            $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -EnableException
+            $result = Get-DbaConnectedInstance | Select-Object -First 1 | Disconnect-DbaInstance -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'SqlInstance',
+                'ConnectionType',
+                'State'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ConnectionString as additional property" {
+            $result.PSObject.Properties.Name | Should -Contain 'ConnectionString' -Because "ConnectionString should be available via Select-Object *"
+        }
+
+        It "SqlInstance property is populated" {
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "ConnectionType property is populated" {
+            $result.ConnectionType | Should -Not -BeNullOrEmpty
+        }
+
+        It "State property indicates disconnected or closed" {
+            $result.State | Should -BeIn @('Disconnected', 'Closed')
+        }
+    }
 }

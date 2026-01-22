@@ -26,6 +26,53 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+
+            $wklGroupName = "dbatoolssci_outputTest"
+            $splatNewWorkloadGroup = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                WorkloadGroup = $wklGroupName
+                Force         = $true
+            }
+            $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
+            $result = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $wklGroupName -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Status property indicating operation result" {
+            $result.PSObject.Properties.Name | Should -Contain "Status"
+            $result.Status | Should -BeIn @("Dropped", $null) -Because "Status should indicate Dropped or contain error message"
+        }
+
+        It "Has IsRemoved property as boolean" {
+            $result.PSObject.Properties.Name | Should -Contain "IsRemoved"
+            $result.IsRemoved | Should -BeOfType [bool]
+        }
+    }
+
     Context "Functionality" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.

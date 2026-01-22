@@ -37,6 +37,40 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -CustomPowerPlan "Balanced" -ErrorAction SilentlyContinue
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "PreviousPowerPlan",
+                "ActivePowerPlan",
+                "IsChanged"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the additional properties available via Select-Object" {
+            $additionalProps = @(
+                "PreviousInstanceId",
+                "ActiveInstanceId"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
+
     Context "Command actually works" {
         It "Should return result for the server" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME

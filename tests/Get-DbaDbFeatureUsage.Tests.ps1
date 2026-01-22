@@ -77,4 +77,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results.database | Should -Not -Contain $dbname
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Feature",
+                "Database"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+    }
 }

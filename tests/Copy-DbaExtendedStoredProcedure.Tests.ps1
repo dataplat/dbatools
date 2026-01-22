@@ -74,4 +74,45 @@ WHERE p.type = 'X'
             { Copy-DbaExtendedStoredProcedure @splatWhatIf } | Should -Not -Throw
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Since custom XPs are rare in test environments, we'll validate structure
+            # when results exist, but won't fail if no custom XPs are present
+            $splatCopy = @{
+                Source           = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
+                EnableException = $true
+            }
+            $result = Copy-DbaExtendedStoredProcedure @splatCopy
+        }
+
+        It "Returns PSCustomObject when Extended Stored Procedures are copied" -Skip:($null -eq $result) {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" -Skip:($null -eq $result) {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Schema property available via Select-Object" -Skip:($null -eq $result) {
+            $result[0].PSObject.Properties.Name | Should -Contain 'Schema' -Because "Schema property should be accessible"
+        }
+
+        It "Type property is always 'Extended Stored Procedure'" -Skip:($null -eq $result) {
+            $result[0].Type | Should -Be "Extended Stored Procedure"
+        }
+    }
 }

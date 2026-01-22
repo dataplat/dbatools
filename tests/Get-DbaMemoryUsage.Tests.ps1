@@ -49,4 +49,40 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsSimple.Count -gt 0 | Should -BeTrue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaMemoryUsage -ComputerName $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "SqlInstance",
+                "CounterInstance",
+                "Counter",
+                "Pages",
+                "Memory"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Memory property is dbasize type" {
+            $result[0].Memory | Should -BeOfType [Sqlcollaborative.Dbatools.Utility.Size]
+        }
+
+        It "Pages property exists for buffer and plan cache counters" {
+            $bufferOrPlanResult = $result | Where-Object { $_.Counter -match "pages|plan" } | Select-Object -First 1
+            if ($bufferOrPlanResult) {
+                $bufferOrPlanResult.PSObject.Properties.Name | Should -Contain "Pages"
+            }
+        }
+    }
 }

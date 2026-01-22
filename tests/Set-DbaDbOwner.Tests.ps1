@@ -120,4 +120,28 @@ Describe $CommandName -Tag IntegrationTests {
             @($results).Count | Should -BeGreaterOrEqual 1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbName -TargetLogin $owner -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Owner"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

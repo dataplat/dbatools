@@ -137,4 +137,59 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Property Comparisons will come later when we have the commands
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'Name',
+                'ServerName',
+                'Group',
+                'Description',
+                'Source'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the dbatools-added properties" {
+            $dbatoolsProps = @(
+                'Source',
+                'Group',
+                'FQDN',
+                'IPAddress'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $dbatoolsProps) {
+                $actualProps | Should -Contain $prop -Because "dbatools adds property '$prop'"
+            }
+        }
+    }
+
+    Context "Output with -ResolveNetworkName" {
+        BeforeAll {
+            $result = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ResolveNetworkName -EnableException
+        }
+
+        It "Includes network resolution properties in default display" {
+            $networkProps = @(
+                'ComputerName',
+                'FQDN',
+                'IPAddress'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $networkProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be included with -ResolveNetworkName"
+            }
+        }
+    }
 }

@@ -377,4 +377,29 @@ Describe $CommandName -Tag IntegrationTests {
     # placeholder for a future test with availability groups
     # It "Export availability groups" {
     # }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has FileInfo properties accessible" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'FullName' -Because "FullName property should be accessible"
+            $result[0].PSObject.Properties.Name | Should -Contain 'Name' -Because "Name property should be accessible"
+            $result[0].PSObject.Properties.Name | Should -Contain 'Length' -Because "Length property should be accessible"
+            $result[0].PSObject.Properties.Name | Should -Contain 'Directory' -Because "Directory property should be accessible"
+        }
+
+        It "Returns file objects that exist on disk" {
+            $result[0].FullName | Should -Exist
+        }
+
+        It "Returns files with non-zero length" {
+            $result[0].Length | Should -BeGreaterThan 0
+        }
+    }
 }

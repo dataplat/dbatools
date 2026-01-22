@@ -32,6 +32,64 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaConnectionStringBuilder -DataSource "localhost,1433" -InitialCatalog "master"
+        }
+
+        It "Returns the documented output type (Microsoft.Data.SqlClient.SqlConnectionStringBuilder)" {
+            $result | Should -BeOfType [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]
+        }
+
+        It "Has the expected connection string builder properties" {
+            $expectedProps = @(
+                'ApplicationName',
+                'DataSource',
+                'InitialCatalog',
+                'IntegratedSecurity',
+                'UserID',
+                'Password',
+                'WorkstationID',
+                'MultipleActiveResultSets',
+                'ColumnEncryptionSetting',
+                'Pooling'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible on the builder"
+            }
+        }
+    }
+
+    Context "Output Validation with -Legacy" {
+        BeforeAll {
+            $result = New-DbaConnectionStringBuilder -DataSource "localhost,1433" -Legacy
+        }
+
+        It "Returns System.Data.SqlClient.SqlConnectionStringBuilder when -Legacy specified" {
+            $result | Should -BeOfType [System.Data.SqlClient.SqlConnectionStringBuilder]
+        }
+
+        It "Has the expected connection string builder properties" {
+            $expectedProps = @(
+                'ApplicationName',
+                'DataSource',
+                'InitialCatalog',
+                'IntegratedSecurity',
+                'UserID',
+                'Password',
+                'WorkstationID',
+                'MultipleActiveResultSets',
+                'ColumnEncryptionSetting',
+                'Pooling'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible on the legacy builder"
+            }
+        }
+    }
+
     Context "Get a ConnectionStringBuilder and assert its values" {
         BeforeAll {
             $results = New-DbaConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Column Encryption Setting=enabled"

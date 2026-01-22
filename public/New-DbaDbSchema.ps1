@@ -60,7 +60,9 @@ function New-DbaDbSchema {
 
         Returns one Schema object for each schema created. One schema is created per Schema parameter value in each target database.
 
-        Properties:
+        This command returns the raw SMO Schema object with all standard SMO properties accessible.
+
+        Key properties include:
         - Name: The name of the newly created schema
         - Owner: The database user that owns the schema (dbo by default, or custom owner if SchemaOwner is specified)
         - Parent: Reference to the parent Database object
@@ -68,7 +70,7 @@ function New-DbaDbSchema {
         - State: The current state of the schema object (Existing, Creating, Pending, etc.)
         - Urn: The Uniform Resource Name of the schema object
 
-        All properties from the base SMO Schema object are accessible using Select-Object *.
+        All standard SMO Schema properties are accessible.
 
     .EXAMPLE
         PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -Schema TestSchema1

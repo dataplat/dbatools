@@ -51,4 +51,45 @@ Describe $CommandName -Tag IntegrationTests {
             $results.RunningValue -eq $remoteQueryTimeout.run_value | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name MaxServerMemory -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'DisplayName',
+                'Description',
+                'IsAdvanced',
+                'IsDynamic',
+                'MinValue',
+                'MaxValue',
+                'ConfiguredValue',
+                'RunningValue',
+                'DefaultValue',
+                'IsRunningDefaultValue'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the hidden properties accessible via Select-Object" {
+            $allProps = ($result | Select-Object -Property *).PSObject.Properties.Name
+            $allProps | Should -Contain 'ServerName'
+            $allProps | Should -Contain 'Parent'
+            $allProps | Should -Contain 'ConfigName'
+            $allProps | Should -Contain 'Property'
+        }
+    }
 }

@@ -80,6 +80,46 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Wait for encryption to complete before testing output
+            $timeout = 120
+            $elapsed = 0
+            $encrypted = $false
+            do {
+                Start-Sleep -Seconds 2
+                $elapsed += 2
+                $db.Refresh()
+                $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($db.Name)')"
+                $encrypted = ($dbState.encryption_state -eq 3)
+            } while (-not $encrypted -and $elapsed -lt $timeout)
+
+            $result = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "EncryptionEnabled"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "Parallel processing" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -142,6 +182,69 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.EncryptionEnabled | Should -Be $false
             }
+        }
+    }
+
+    Context "Output with -Parallel" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $parallelOutputMastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            if (-not $parallelOutputMastercert) {
+                $parallelOutputDelmastercert = $true
+                $parallelOutputMastercert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
+            }
+
+            $parallelOutputDatabases = @()
+            1..2 | ForEach-Object {
+                $parallelOutputDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+                $parallelOutputDb | New-DbaDbMasterKey -SecurePassword $passwd
+                $parallelOutputDb | New-DbaDbCertificate
+                $parallelOutputDb | New-DbaDbEncryptionKey -Force
+                $parallelOutputDb | Enable-DbaDbEncryption -EncryptorName $parallelOutputMastercert.Name -Force
+                $parallelOutputDatabases += $parallelOutputDb
+            }
+
+            # Wait for encryption to complete on all databases
+            $timeout = 120
+            $elapsed = 0
+            $allEncrypted = $false
+            do {
+                Start-Sleep -Seconds 2
+                $elapsed += 2
+                $encryptedCount = 0
+                foreach ($parallelOutputDb in $parallelOutputDatabases) {
+                    $parallelOutputDb.Refresh()
+                    $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($parallelOutputDb.Name)')"
+                    if ($dbState.encryption_state -eq 3) {
+                        $encryptedCount++
+                    }
+                }
+                $allEncrypted = ($encryptedCount -eq $parallelOutputDatabases.Count)
+            } while (-not $allEncrypted -and $elapsed -lt $timeout)
+
+            $parallelResult = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -Parallel -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($parallelOutputDatabases) {
+                $parallelOutputDatabases | Remove-DbaDatabase
+            }
+            if ($parallelOutputDelmastercert) {
+                $parallelOutputMastercert | Remove-DbaDbCertificate
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Includes Status and Error properties when -Parallel specified" {
+            $parallelResult[0].PSObject.Properties.Name | Should -Contain "Status"
+            $parallelResult[0].PSObject.Properties.Name | Should -Contain "Error"
         }
     }
 }

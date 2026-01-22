@@ -13,6 +13,44 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaScriptingOption
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ScriptingOptions]
+        }
+
+        It "Has commonly used ScriptingOptions properties" {
+            $expectedProps = @(
+                'ScriptDrops',
+                'WithDependencies',
+                'AgentAlertJob',
+                'AgentNotify',
+                'Indexes',
+                'Triggers',
+                'Permissions',
+                'TargetServerVersion'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible on ScriptingOptions object"
+            }
+        }
+
+        It "Returns a single object" {
+            $result | Should -HaveCount 1
+        }
+
+        It "Has modifiable properties" {
+            $result.ScriptDrops = $true
+            $result.ScriptDrops | Should -Be $true
+            $result.WithDependencies = $false
+            $result.WithDependencies | Should -Be $false
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

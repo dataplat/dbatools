@@ -33,6 +33,44 @@ Describe $CommandName -Tag IntegrationTests {
         $trueTestPath = [System.IO.Path]::GetDirectoryName($trueTest)
     }
 
+    Context "Output Validation" {
+        It "Returns Boolean when testing single path on single instance" {
+            $result = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest -EnableException
+            $result | Should -BeOfType [System.Boolean]
+        }
+
+        It "Returns PSCustomObject when testing multiple paths" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest, $falseTest -EnableException
+            $results[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties for PSCustomObject output" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest, $falseTest -EnableException
+            $expectedProps = @(
+                'SqlInstance',
+                'InstanceName',
+                'ComputerName',
+                'FilePath',
+                'FileExists',
+                'IsContainer'
+            )
+            $actualProps = $results[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns PSCustomObject when testing array input (even single path)" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path @($trueTest) -EnableException
+            $results.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Returns PSCustomObject when testing multiple instances" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Path $falseTest -EnableException
+            $results[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+    }
+
     Context "Command actually works" {
         It "Should only return true if the path IS accessible to the instance" {
             $result = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest

@@ -45,4 +45,58 @@ Describe $CommandName -Tag IntegrationTests {
             $systemDriveResults.SizeInGB -gt 0 | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -EnableException
+            $systemDrive = "$env:SystemDrive\"
+            $firstResult = $result | Where-Object Name -eq $systemDrive | Select-Object -First 1
+        }
+
+        It "Returns the documented output type" {
+            $firstResult.PSObject.TypeNames | Should -Contain 'Dataplat.Dbatools.Computer.DiskSpace'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'Name',
+                'Label',
+                'Capacity',
+                'Free',
+                'PercentFree',
+                'BlockSize'
+            )
+            $actualProps = $firstResult.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional documented properties available" {
+            $additionalProps = @(
+                'FileSystem',
+                'Type',
+                'DriveType',
+                'IsSqlDisk',
+                'Server',
+                'SizeInBytes',
+                'FreeInBytes',
+                'SizeInKB',
+                'FreeInKB',
+                'SizeInMB',
+                'FreeInMB',
+                'SizeInGB',
+                'FreeInGB',
+                'SizeInTB',
+                'FreeInTB',
+                'SizeInPB',
+                'FreeInPB'
+            )
+            $actualProps = $firstResult.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available in output"
+            }
+        }
+    }
 }

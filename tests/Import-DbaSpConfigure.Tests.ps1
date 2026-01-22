@@ -24,6 +24,16 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns the documented output type (System.Boolean)" {
+            # Import-DbaSpConfigure returns boolean indicating success/failure
+            # We cannot test actual execution here without SQL instances configured
+            # but we can verify the command is properly structured to return boolean
+            $command = Get-Command $CommandName
+            $command.OutputType.Name | Should -Contain "System.Boolean"
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

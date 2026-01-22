@@ -34,13 +34,13 @@ function Get-DbaManagementObject {
         https://dbatools.io/Get-DbaManagementObject
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns information about SQL Server Management Object (SMO) assemblies, SqlClient libraries, and SNI modules found on the system or loaded in the PowerShell session. One object is returned per assembly or module discovered.
 
-        Properties:
+        Default display properties:
         - ComputerName: Name of the computer where the assembly or module is located
-        - Version: Version number of the assembly or module
+        - Version: Version number of the assembly or module (e.g., "17.100.0.0")
         - Loaded: Boolean indicating if the assembly/module is currently loaded in the PowerShell session
         - Path: File path to the assembly or module; null for Global Assembly Cache (GAC) assemblies
         - LoadTemplate: Ready-to-use PowerShell command to load the assembly/module via Add-Type

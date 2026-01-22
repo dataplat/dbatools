@@ -59,4 +59,32 @@ Describe $CommandName -Tag IntegrationTests {
             $enableResults.TraceFlag -contains $safeTraceFlag | Should -BeTrue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = Enable-DbaTraceFlag -SqlInstance $testInstance -TraceFlag $safeTraceFlag -EnableException
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'SourceServer',
+                'InstanceName',
+                'SqlInstance',
+                'TraceFlag',
+                'Status',
+                'Notes',
+                'DateTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

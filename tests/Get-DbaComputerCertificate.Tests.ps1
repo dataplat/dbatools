@@ -54,4 +54,34 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             "$($allCertificates.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaComputerCertificate -Thumbprint $thumbprint
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'Store',
+                'Folder',
+                'Name',
+                'DnsNameList',
+                'Thumbprint',
+                'NotBefore',
+                'NotAfter',
+                'Subject',
+                'Issuer',
+                'Algorithm'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

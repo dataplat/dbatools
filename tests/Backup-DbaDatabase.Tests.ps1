@@ -484,6 +484,68 @@ go
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType Dataplat.Dbatools.Database.BackupHistory
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'SqlInstance',
+                'Database',
+                'DatabaseName',
+                'Type',
+                'TotalSize',
+                'DeviceType',
+                'Duration'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'DatabaseId',
+                'UserName',
+                'Start',
+                'End',
+                'Path',
+                'BackupComplete',
+                'BackupFile',
+                'BackupFilesCount',
+                'BackupFolder',
+                'BackupPath',
+                'Script'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
+
+    Context "Output with -OutputScriptOnly" {
+        BeforeAll {
+            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -BackupFileName "c:\test\file.bak" -OutputScriptOnly
+        }
+
+        It "Returns System.String when -OutputScriptOnly specified" {
+            $result | Should -BeOfType System.String
+        }
+
+        It "Returns valid T-SQL BACKUP command" {
+            $result | Should -BeLike "BACKUP DATABASE*"
+        }
+    }
+
     Context "Test Backup Encryption with Certificate" {
         # TODO: Should the master key be created at lab startup like in instance3?
         BeforeAll {

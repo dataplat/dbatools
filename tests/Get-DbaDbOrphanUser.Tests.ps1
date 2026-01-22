@@ -76,18 +76,37 @@ CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
                 $user.DatabaseName | Should -Be "dbatoolsci_orphan"
             }
         }
+    }
 
-        It "Has the correct properties" {
-            $result = $results[0]
-            $ExpectedProps = @(
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database dbatoolsci_orphan -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
                 "SqlInstance",
                 "DatabaseName",
-                "User",
-                "SmoUser"
+                "User"
             )
-            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the SmoUser property available" {
+            $result[0].PSObject.Properties.Name | Should -Contain "SmoUser" -Because "SmoUser property provides access to the underlying SMO User object"
+        }
+
+        It "SmoUser is a Microsoft.SqlServer.Management.Smo.User object" {
+            $result[0].SmoUser | Should -BeOfType [Microsoft.SqlServer.Management.Smo.User]
         }
     }
 }

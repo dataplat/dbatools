@@ -126,4 +126,47 @@ Describe $CommandName -Tag IntegrationTests {
             $results[1].ID | Should -Be 70006
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 16 -MessageText "test_output_validation" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.UserDefinedMessage]
+        }
+
+        It "Has the expected documented properties" {
+            $expectedProps = @(
+                'ID',
+                'Language',
+                'Severity',
+                'Text',
+                'IsLogged',
+                'CreateDate'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has correct property values for the created message" {
+            $result.ID | Should -Be 70004
+            $result.Severity | Should -Be 16
+            $result.Text | Should -Be "test_output_validation"
+            $result.IsLogged | Should -Be $false
+        }
+    }
+
+    Context "Output with -WithLog" {
+        BeforeAll {
+            $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70004) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70004, @lang = 'all'; END")
+            $result = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 16 -MessageText "test_with_log" -WithLog -EnableException
+        }
+
+        It "Has IsLogged property set to true when -WithLog is specified" {
+            $result.IsLogged | Should -Be $true
+        }
+    }
 }

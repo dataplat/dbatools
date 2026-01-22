@@ -336,4 +336,71 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $testDbName = "dbatoolsci_output_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDbName
+
+            $splatOutput = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Database     = $testDbName
+                DatabaseName = "$($testDbName)_renamed"
+            }
+
+            $result = Rename-DbaDatabase @splatOutput
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database "$($testDbName)_renamed" | Remove-DbaDatabase
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DBN",
+                "FGN",
+                "LGN",
+                "FNN",
+                "PendingRenames",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the hidden string properties for human-readable output" {
+            $result.PSObject.Properties.Name | Should -Contain "DatabaseRenames"
+            $result.PSObject.Properties.Name | Should -Contain "FileGroupsRenames"
+            $result.PSObject.Properties.Name | Should -Contain "LogicalNameRenames"
+            $result.PSObject.Properties.Name | Should -Contain "FileNameRenames"
+        }
+
+        It "Database property contains SMO database object" {
+            $result.Database | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "DBN property is a hashtable when database is renamed" {
+            $result.DBN | Should -BeOfType [System.Collections.Hashtable]
+        }
+
+        It "Status property indicates completion status" {
+            $result.Status | Should -BeIn @("Full", "Partial")
+        }
+    }
 }

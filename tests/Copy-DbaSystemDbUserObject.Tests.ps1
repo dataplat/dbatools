@@ -94,4 +94,55 @@ AS
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has DateTime property of type DbaDateTime" {
+            $result[0].DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+
+        It "Has SourceServer property populated" {
+            $result[0].SourceServer | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has DestinationServer property populated" {
+            $result[0].DestinationServer | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has Status property with valid values" {
+            $validStatuses = @("Successful", "Skipped", "Failed")
+            $result[0].Status | Should -BeIn $validStatuses
+        }
+    }
+
+    Context "Output with -Classic" {
+        It "Returns no output when -Classic specified" {
+            $result = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Classic
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

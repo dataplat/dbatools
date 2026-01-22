@@ -45,4 +45,30 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Test-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint dbatoolsci_MirroringEndpoint -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Endpoint',
+                'Port',
+                'Connection',
+                'SslConnection'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

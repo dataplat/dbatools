@@ -31,4 +31,51 @@ Describe $CommandName -Tag IntegrationTests {
             $results.CurrentRunStatus | Should -Be 'Idle'
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Start a job so we have something to stop
+            $job = Get-DbaAgentJob -SqlInstance $TestConfig.instance1 -EnableException | Select-Object -First 1
+            if ($job) {
+                $null = Start-DbaAgentJob -SqlInstance $TestConfig.instance1 -Job $job.Name
+                $result = Stop-DbaAgentJob -SqlInstance $TestConfig.instance1 -Job $job.Name -Wait -EnableException
+            }
+        }
+
+        It "Returns the documented output type" {
+            if ($result) {
+                $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Job]
+            } else {
+                Set-ItResult -Skipped -Because "No running job available to test"
+            }
+        }
+
+        It "Has the expected SMO Job properties" {
+            if ($result) {
+                $expectedProps = @(
+                    'Name',
+                    'Enabled',
+                    'CurrentRunStatus',
+                    'LastRunOutcome',
+                    'LastRunDate',
+                    'NextRunDate',
+                    'OwnerLoginName'
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in SMO Job object"
+                }
+            } else {
+                Set-ItResult -Skipped -Because "No running job available to test"
+            }
+        }
+
+        It "Returns job with Idle status when -Wait is used" {
+            if ($result) {
+                $result.CurrentRunStatus | Should -Be 'Idle' -Because "-Wait should ensure job stops before returning"
+            } else {
+                Set-ItResult -Skipped -Because "No running job available to test"
+            }
+        }
+    }
 }

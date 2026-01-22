@@ -29,4 +29,48 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaConnection -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SessionId",
+                "MostRecentSessionId",
+                "ConnectTime",
+                "Transport",
+                "ProtocolType",
+                "ProtocolVersion",
+                "EndpointId",
+                "EncryptOption",
+                "AuthScheme",
+                "NodeAffinity",
+                "Reads",
+                "Writes",
+                "LastRead",
+                "LastWrite",
+                "PacketSize",
+                "ClientNetworkAddress",
+                "ClientTcpPort",
+                "ServerNetworkAddress",
+                "ServerTcpPort",
+                "ConnectionId",
+                "ParentConnectionId",
+                "MostRecentSqlHandle"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

@@ -72,4 +72,44 @@ Describe $CommandName -Tag IntegrationTests {
             $results.server_principal_name | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected standard properties" {
+            $expectedProps = @(
+                'name',
+                'timestamp'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has dynamic properties from audit fields" {
+            # The specific properties vary based on audit configuration
+            # but we can verify that additional properties beyond name/timestamp exist
+            $allProps = $result.PSObject.Properties.Name
+            $allProps.Count | Should -BeGreaterThan 2 -Because "audit events should have fields beyond name and timestamp"
+        }
+    }
+
+    Context "Output with -Raw" {
+        BeforeAll {
+            $result = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile -Raw -EnableException
+        }
+
+        It "Returns enumeration object when -Raw specified" {
+            $result | Should -Not -BeNullOrEmpty
+            # Raw returns the enumeration from Read-XEvent, not PSCustomObject
+            $result.GetType().Name | Should -Not -Be 'PSCustomObject'
+        }
+    }
 }

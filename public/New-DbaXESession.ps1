@@ -32,9 +32,27 @@ function New-DbaXESession {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        None
+        Microsoft.SqlServer.Management.XEvent.Session
 
-        This command creates the Extended Events session on the server but does not return any output objects to the pipeline. The session object is created on the SQL Server instance but is not returned to the caller. To work with the created session, you can use Get-DbaXESession to retrieve it after creation, or the session can be further configured and created in a single operation using other Extended Events cmdlets.
+        Returns an Extended Events session object that can be further configured with events, actions, and targets before calling Create() to deploy it to the server. The session object is created but not yet persisted until Create() is called.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the Extended Events session
+        - Status: Current session status (typically New before Create() is called)
+        - StartTime: DateTime when the session was started (null until started)
+        - AutoStart: Boolean indicating if the session starts automatically on SQL Server restart
+        - State: SMO object state (typically Creating until Create() is called)
+        - Targets: Target collection for the session (initially empty)
+        - TargetFile: File path(s) where XE trace data will be written (if configured)
+        - Events: Events configured in the session (initially empty)
+        - MaxMemory: Maximum memory in MB allocated to the session
+        - MaxEventSize: Maximum size in MB for individual events
+
+        Additional properties available (from SMO Session object):
+        - All standard SMO XEvent.Session properties are accessible via Select-Object *
 
     .NOTES
         Tags: ExtendedEvent, XE, XEvent
@@ -78,7 +96,13 @@ function New-DbaXESession {
                 $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
                 $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
 
-                $store.CreateSession($Name)
+                $session = $store.CreateSession($Name)
+
+                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'StartTime', 'AutoStart', 'State', 'Targets', 'TargetFile', 'Events', 'MaxMemory', 'MaxEventSize'
+                $session | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                $session | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                $session | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                $session | Select-DefaultView -Property $defaults
             }
         }
     }

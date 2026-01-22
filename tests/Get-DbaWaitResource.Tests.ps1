@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Test getting a Page resource" {
+    Context "Output Validation - PAGE Wait Resource" {
         BeforeAll {
             $PageSql = "
                 Create table #TmpIndex(
@@ -84,7 +84,28 @@ Describe $CommandName -Tag IntegrationTests {
             "
             $page = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB -Query $Pagesql).Column1
             $file = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB | Where-Object TypeDescription -eq "ROWS"
-            $results = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $page
+            $results = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $page -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $results.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties for PAGE wait resources" {
+            $expectedProps = @(
+                "DatabaseID",
+                "DatabaseName",
+                "DataFileName",
+                "DataFilePath",
+                "ObjectID",
+                "ObjectName",
+                "ObjectSchema",
+                "ObjectType"
+            )
+            $actualProps = $results.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in PAGE output"
+            }
         }
 
         It "Should return databasename $WaitResourceDB" {
@@ -108,7 +129,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Deciphering a KEY WaitResource" {
+    Context "Output Validation - KEY Wait Resource" {
         BeforeAll {
             $SqlKey = "
                 create table keytest(
@@ -126,11 +147,33 @@ Describe $CommandName -Tag IntegrationTests {
                 select 'KEY: '+convert(varchar(3),db_id())+':'+convert(varchar(30),@hobt_id)+' '+ %%lockres%% from keytest  where col1=1
             "
             $key = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB -Query $SqlKey).Column1
-            $resultskey = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $key -row
+            $resultskey = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $key -EnableException
+            $resultskeyWithRow = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $key -Row -EnableException
         }
 
-        It "Should Return DatabaseName $WaitResourceDB" {
-            $results
+        It "Returns PSCustomObject" {
+            $resultskey.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties for KEY wait resources" {
+            $expectedProps = @(
+                "DatabaseID",
+                "DatabaseName",
+                "SchemaName",
+                "IndexName",
+                "ObjectID",
+                "Objectname",
+                "HobtID"
+            )
+            $actualProps = $resultskey.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in KEY output"
+            }
+        }
+
+        It "Includes row data when -Row is specified" {
+            $resultskeyWithRow.PSObject.Properties.Name | Should -Contain "col1" -Because "-Row should expand object with table columns"
+            $resultskeyWithRow.PSObject.Properties.Name | Should -Contain "col2" -Because "-Row should expand object with table columns"
         }
 
         It "Should return databasename $WaitResourceDB" {
@@ -146,15 +189,15 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return ObjectName keytest" {
-            $resultskey.ObjectName | Should -Be "Keytest"
+            $resultskey.Objectname | Should -Be "Keytest"
         }
 
-        It "SHould return col1 is 1" {
-            $resultskey.ObjectData.col1 | Should -Be 1
+        It "Should return col1 is 1" {
+            $resultskeyWithRow.col1 | Should -Be 1
         }
 
-        It "Should return col1 is bilbo" {
-            $resultskey.ObjectData.col2 | Should -Be "bilbo"
+        It "Should return col2 is bilbo" {
+            $resultskeyWithRow.col2 | Should -Be "bilbo"
         }
     }
 }

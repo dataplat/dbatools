@@ -112,4 +112,36 @@ Describe $CommandName -Tag IntegrationTests {
             @($results | Where-Object Schema -ne "someschema").Count | Should -Be 0
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database tempdb -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.View]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'CreateDate',
+                'DateLastModified',
+                'Name'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Includes standard SMO View properties" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'IsSystemObject'
+            $result[0].PSObject.Properties.Name | Should -Contain 'IsEncrypted'
+        }
+    }
 }

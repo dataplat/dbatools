@@ -569,4 +569,41 @@ Describe $CommandName -Tag IntegrationTests {
             $newJobStep.JobStepFlags | Should -Be AppendAllCmdExecOutputToJobHistory
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle -StepName "Step 1" -Command "SELECT 1" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobStep]
+        }
+
+        It "Has the documented JobStep properties" {
+            $expectedProps = @(
+                'Name',
+                'ID',
+                'Subsystem',
+                'Command',
+                'DatabaseName',
+                'DatabaseUserName',
+                'CommandExecutionSuccessCode',
+                'OnSuccessAction',
+                'OnSuccessStep',
+                'OnFailAction',
+                'OnFailStep',
+                'RetryAttempts',
+                'RetryInterval',
+                'OutputFileName',
+                'ProxyName',
+                'JobStepFlags',
+                'CreateDate',
+                'LastModifiedDate'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in JobStep object"
+            }
+        }
+    }
 }

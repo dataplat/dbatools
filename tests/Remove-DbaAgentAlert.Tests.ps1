@@ -62,4 +62,40 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentAlert -SqlInstance $server ) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $alertName = "dbatoolsci_test_$(Get-Random)"
+            $null = Invoke-DbaQuery -SqlInstance $server -Query "EXEC msdb.dbo.sp_add_alert @name=N'$alertName', @event_description_keyword=N'$alertName', @severity=25"
+            $result = Remove-DbaAgentAlert -SqlInstance $server -Alert $alertName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns IsRemoved as boolean" {
+            $result.IsRemoved | Should -BeOfType [bool]
+        }
+
+        It "Returns Status as string" {
+            $result.Status | Should -BeOfType [string]
+        }
+    }
 }

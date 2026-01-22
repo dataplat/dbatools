@@ -160,4 +160,34 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "You must pipe in a synonym, database, or server or specify a SqlInstance"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "synOut1" -BaseObject "objOut1" -EnableException
+            $result = Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "synOut1" -Confirm:$false -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Synonym",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns Status property with value 'Removed'" {
+            $result.Status | Should -Be "Removed"
+        }
+    }
 }

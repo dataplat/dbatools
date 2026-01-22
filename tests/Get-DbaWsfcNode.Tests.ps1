@@ -18,4 +18,31 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaWsfcNode -ComputerName $env:COMPUTERNAME -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Management.ManagementObject]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ClusterName',
+                'ClusterFqdn',
+                'Name',
+                'PrimaryOwnerName',
+                'PrimaryOwnerContact',
+                'Dedicated',
+                'NodeHighestVersion',
+                'NodeLowestVersion'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

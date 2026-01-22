@@ -39,4 +39,29 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaErrorLogConfig -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogCount",
+                "LogSize",
+                "LogPath"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

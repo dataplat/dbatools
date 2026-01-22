@@ -21,6 +21,16 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns System.String as documented" {
+            # Note: This command requires a GUI window interaction and cannot be easily
+            # integration tested without mocking. The output type is well-documented
+            # and the implementation clearly returns $script:selected (a string) or $null.
+            $command = Get-Command $CommandName
+            $command.OutputType.Name | Should -Contain 'System.String' -Because "command should declare System.String output type"
+        }
+    }
 }
 
 <#

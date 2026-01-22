@@ -260,4 +260,59 @@ Describe $CommandName -Tag IntegrationTests {
             $result.IsEdge | Should -BeTrue
         }
     }
+    Context "Output Validation" {
+        BeforeAll {
+            $map = @{
+                Name     = "TestColumn"
+                Type     = "int"
+                Nullable = $false
+            }
+            $outputTableName = "dbatoolssci_output_$(Get-Random)"
+            $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name $outputTableName -ColumnMap $map -EnableException
+        }
+
+        It "Returns the documented output type Microsoft.SqlServer.Management.Smo.Table" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Table]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'Name',
+                'IndexSpaceUsed',
+                'DataSpaceUsed',
+                'RowCount',
+                'HasClusteredIndex'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+    Context "Output with -Passthru" {
+        BeforeAll {
+            $map = @{
+                Name     = "TestColumn"
+                Type     = "varchar"
+                MaxLength = 50
+                Nullable = $true
+            }
+            $passthruTableName = "dbatoolssci_passthru_$(Get-Random)"
+            $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name $passthruTableName -ColumnMap $map -Passthru -EnableException
+        }
+
+        It "Returns System.String when -Passthru specified" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns CREATE TABLE script" {
+            $result | Should -Match "CREATE TABLE"
+            $result | Should -Match $passthruTableName
+        }
+    }
 }

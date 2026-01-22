@@ -70,4 +70,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Schema | Should -BeExactly "dbo"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatGetQueue = @{
+                SqlInstance        = $TestConfig.InstanceSingle
+                Database           = "tempdb"
+                ExcludeSystemQueue = $true
+                EnableException    = $true
+            }
+            $result = Get-DbaDbServiceBrokerQueue @splatGetQueue
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ServiceBrokerQueue]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'QueueID',
+                'CreateDate',
+                'DateLastModified',
+                'Name',
+                'ProcedureName',
+                'ProcedureSchema'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

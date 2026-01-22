@@ -38,4 +38,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Value | Should -Be $false
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaInstanceUserOption -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Property]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Value'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

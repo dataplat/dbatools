@@ -111,4 +111,61 @@ Describe $CommandName -Tag IntegrationTests {
             $results.LastLogBackupIsCopyOnly | Should -Be $false
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "LastFullBackup",
+                "LastDiffBackup",
+                "LastLogBackup"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            $additionalProps = @(
+                "RecoveryModel",
+                "SinceFull",
+                "SinceDiff",
+                "SinceLog",
+                "LastFullBackupIsCopyOnly",
+                "LastDiffBackupIsCopyOnly",
+                "LastLogBackupIsCopyOnly",
+                "DatabaseCreated",
+                "DaysSinceDbCreated",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available via Select-Object *"
+            }
+        }
+
+        It "LastFullBackup is DbaDateTime type" {
+            $result.LastFullBackup | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+
+        It "LastDiffBackup is DbaDateTime type" {
+            $result.LastDiffBackup | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+
+        It "LastLogBackup is DbaDateTime type" {
+            $result.LastLogBackup | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+    }
 }

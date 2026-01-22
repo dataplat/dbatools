@@ -168,4 +168,30 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $results = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thorcred -Force -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $results.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $actualProps = $results.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

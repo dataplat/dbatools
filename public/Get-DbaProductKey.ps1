@@ -35,11 +35,11 @@ function Get-DbaProductKey {
         https://dbatools.io/Get-DbaProductKey
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per SQL Server instance found on the target computer(s) with license key information.
 
-        Properties:
+        Default display properties:
         - ComputerName: The name of the computer hosting the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance format)

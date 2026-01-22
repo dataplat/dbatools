@@ -108,4 +108,73 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ReplicaRole | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Database $dbName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has all expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'PrimaryReplica',
+                'ReplicaServerName',
+                'ReplicaRole',
+                'ReplicaAvailabilityMode',
+                'ReplicaFailoverMode',
+                'ReplicaConnectionState',
+                'ReplicaJoinState',
+                'ReplicaSynchronizationState',
+                'DatabaseName',
+                'SynchronizationState',
+                'IsFailoverReady',
+                'IsJoined',
+                'IsSuspended',
+                'SuspendReason',
+                'EstimatedRecoveryTime',
+                'EstimatedDataLoss',
+                'SynchronizationPerformance',
+                'LogSendQueueSize',
+                'LogSendRate',
+                'RedoQueueSize',
+                'RedoRate',
+                'FileStreamSendRate',
+                'EndOfLogLSN',
+                'RecoveryLSN',
+                'TruncationLSN',
+                'LastCommitLSN',
+                'LastCommitTime',
+                'LastHardenedLSN',
+                'LastHardenedTime',
+                'LastReceivedLSN',
+                'LastReceivedTime',
+                'LastRedoneLSN',
+                'LastRedoneTime',
+                'LastSentLSN',
+                'LastSentTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Has correct property types for key properties" {
+            $result.ComputerName | Should -BeOfType [string]
+            $result.InstanceName | Should -BeOfType [string]
+            $result.SqlInstance | Should -BeOfType [string]
+            $result.AvailabilityGroup | Should -BeOfType [string]
+            $result.DatabaseName | Should -BeOfType [string]
+            $result.IsFailoverReady | Should -BeOfType [bool]
+            $result.IsJoined | Should -BeOfType [bool]
+            $result.IsSuspended | Should -BeOfType [bool]
+        }
+    }
 }

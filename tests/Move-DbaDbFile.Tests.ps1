@@ -77,25 +77,96 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Should output current database structure" {
+    Context "Output Validation with -FileStructureOnly" {
         BeforeAll {
             $splatFileStructure = @{
                 SqlInstance       = $TestConfig.InstanceSingle
                 Database          = "dbatoolsci_MoveDbFile"
                 FileStructureOnly = $true
+                EnableException   = $true
             }
 
             $structureResults = Move-DbaDbFile @splatFileStructure
         }
 
-        It "Should have Results" {
-            $structureResults | Should -Not -BeNullOrEmpty
+        It "Returns System.String type when -FileStructureOnly specified" {
+            $structureResults | Should -BeOfType [System.String]
         }
+
         It "Should have a logical name" {
             $structureResults | Should -BeLike "*dbatoolsci_MoveDbFile*"
         }
         It "Should not have filename and/or extensions" {
             $structureResults | Should -Not -BeLike "*mdf*"
+        }
+    }
+
+    Context "Output Validation (default)" {
+        BeforeAll {
+            # Move a file to test output structure
+            $dbFiles = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_MoveDbFile" -EnableException
+            $physicalPathFolder = Split-Path -Path $dbFiles[0].PhysicalName -Parent
+            $tempMoveFolder = "$physicalPathFolder\TempOutputTest"
+            
+            if (([DbaInstanceParameter]($TestConfig.InstanceSingle)).IsLocalHost) {
+                $null = New-Item -Path $tempMoveFolder -Type Directory -Force
+            } else {
+                Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock { $null = New-Item -Path $args[0] -Type Directory -Force } -ArgumentList $tempMoveFolder
+            }
+
+            $splatMove = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "dbatoolsci_MoveDbFile"
+                FileType        = "Log"
+                FileDestination = $tempMoveFolder
+                EnableException = $true
+            }
+
+            $result = Move-DbaDbFile @splatMove
+            Start-Sleep -Seconds 3
+        }
+
+        AfterAll {
+            # Move file back and clean up
+            $dbFiles = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_MoveDbFile" -EnableException
+            $originalFolder = Split-Path -Path $dbFiles[0].PhysicalName -Parent
+            
+            $splatMoveBack = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "dbatoolsci_MoveDbFile"
+                FileType        = "Log"
+                FileDestination = $originalFolder
+                EnableException = $true
+            }
+            $null = Move-DbaDbFile @splatMoveBack
+            Start-Sleep -Seconds 3
+
+            if (([DbaInstanceParameter]($TestConfig.InstanceSingle)).IsLocalHost) {
+                Remove-Item -Path $tempMoveFolder -Recurse -Force -ErrorAction SilentlyContinue
+            } else {
+                Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock { Remove-Item -Path $args[0] -Recurse -Force -ErrorAction SilentlyContinue } -ArgumentList $tempMoveFolder
+            }
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'Instance',
+                'Database',
+                'LogicalName',
+                'Source',
+                'Destination',
+                'Result',
+                'DatabaseFileMetadata',
+                'SourceFileDeleted'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
     }
 

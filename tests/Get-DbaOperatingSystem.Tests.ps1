@@ -65,4 +65,67 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaOperatingSystem -ComputerName $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "Manufacturer",
+                "Organization",
+                "Architecture",
+                "Version",
+                "OSVersion",
+                "LastBootTime",
+                "LocalDateTime",
+                "PowerShellVersion",
+                "TimeZone",
+                "TotalVisibleMemory",
+                "ActivePowerPlan",
+                "LanguageNative"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has all documented additional properties" {
+            $additionalProps = @(
+                "Build",
+                "SPVersion",
+                "InstallDate",
+                "BootDevice",
+                "SystemDevice",
+                "SystemDrive",
+                "WindowsDirectory",
+                "PagingFileSize",
+                "FreePhysicalMemory",
+                "TotalVirtualMemory",
+                "FreeVirtualMemory",
+                "Status",
+                "Language",
+                "LanguageId",
+                "LanguageKeyboardLayoutId",
+                "LanguageTwoLetter",
+                "LanguageThreeLetter",
+                "LanguageAlias",
+                "CodeSet",
+                "CountryCode",
+                "Locale",
+                "IsWsfc"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
 }

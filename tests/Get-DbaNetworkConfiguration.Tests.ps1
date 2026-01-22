@@ -59,4 +59,140 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultsTcpIpProperties.PsObject.Properties.Name | Sort-Object) | Should -BeExactly ($expectedPropsTcpIpProperties | Sort-Object)
         }
     }
+
+    Context "Output Validation - Full" {
+        BeforeAll {
+            $result = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType Full -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default properties for Full output" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SharedMemoryEnabled",
+                "NamedPipesEnabled",
+                "TcpIpEnabled",
+                "TcpIpProperties",
+                "TcpIpAddresses",
+                "Certificate",
+                "Advanced"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in Full output"
+            }
+        }
+    }
+
+    Context "Output Validation - ServerProtocols" {
+        BeforeAll {
+            $result = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType ServerProtocols -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties for ServerProtocols output" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SharedMemoryEnabled",
+                "NamedPipesEnabled",
+                "TcpIpEnabled"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in ServerProtocols output"
+            }
+        }
+    }
+
+    Context "Output Validation - TcpIpProperties" {
+        BeforeAll {
+            $result = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType TcpIpProperties -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties for TcpIpProperties output" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Enabled",
+                "KeepAlive",
+                "ListenAll"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in TcpIpProperties output"
+            }
+        }
+    }
+
+    Context "Output Validation - TcpIpAddresses" {
+        BeforeAll {
+            $result = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType TcpIpAddresses -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected core properties for TcpIpAddresses output" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "TcpDynamicPorts",
+                "TcpPort"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in TcpIpAddresses output"
+            }
+        }
+    }
+
+    Context "Output Validation - Certificate" {
+        BeforeAll {
+            $result = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType Certificate -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected core properties for Certificate output" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ServiceAccount",
+                "ForceEncryption",
+                "FriendlyName",
+                "DnsNameList",
+                "Thumbprint",
+                "Generated",
+                "Expires",
+                "IssuedTo",
+                "IssuedBy",
+                "Certificate"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in Certificate output"
+            }
+        }
+    }
 }

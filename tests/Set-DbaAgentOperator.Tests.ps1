@@ -61,4 +61,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.EmailAddress | Should -Be "new@new.com"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgentOperator -SqlInstance $InstanceSingle -Operator new | Set-DbaAgentOperator -EmailAddress updated@test.com -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Operator]
+        }
+
+        It "Has the core properties documented in .OUTPUTS" {
+            $expectedProps = @(
+                'EmailAddress',
+                'NetSendAddress',
+                'PagerAddress',
+                'PagerDays',
+                'SaturdayPagerStartTime',
+                'SaturdayPagerEndTime',
+                'SundayPagerStartTime',
+                'SundayPagerEndTime',
+                'WeekdayPagerStartTime',
+                'WeekdayPagerEndTime',
+                'Name',
+                'LastNotificationTime',
+                'ID'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on Operator object"
+            }
+        }
+    }
 }

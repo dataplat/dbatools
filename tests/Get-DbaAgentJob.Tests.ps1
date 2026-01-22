@@ -156,4 +156,64 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -EnableException
+            $firstJob = $result | Select-Object -First 1
+        }
+
+        It "Returns the documented output type" {
+            $firstJob | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Job]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Category',
+                'OwnerLoginName',
+                'CurrentRunStatus',
+                'CurrentRunRetryAttempt',
+                'Enabled',
+                'LastRunDate',
+                'LastRunOutcome',
+                'HasSchedule',
+                'OperatorToEmail',
+                'CreateDate'
+            )
+            $actualProps = $firstJob.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Should not include StartDate property by default" {
+            $actualProps = $firstJob.PSObject.Properties.Name
+            $actualProps | Should -Not -Contain 'StartDate' -Because "StartDate should only be added with -IncludeExecution"
+        }
+    }
+
+    Context "Output with -IncludeExecution" {
+        BeforeAll {
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_runningjob
+            $null = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_runningjob
+            Start-Sleep -Milliseconds 500
+            $result = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_runningjob -IncludeExecution -EnableException
+        }
+        AfterAll {
+            $null = Stop-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_runningjob
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_runningjob
+        }
+
+        It "Includes StartDate property when job is executing" {
+            if ($result.CurrentRunStatus -ne 'Idle') {
+                $result.PSObject.Properties.Name | Should -Contain 'StartDate' -Because "-IncludeExecution should add StartDate for running jobs"
+            } else {
+                Set-ItResult -Skipped -Because "Job completed before IncludeExecution could capture it"
+            }
+        }
+    }
 }

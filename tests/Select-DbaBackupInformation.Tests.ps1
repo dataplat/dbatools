@@ -314,5 +314,36 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
+        Context "Output Validation" {
+            BeforeAll {
+                $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+                $header | Add-Member -Type NoteProperty -Name FullName -Value 1
+                $result = Select-DbaBackupInformation -BackupHistory $header -EnableException
+            }
+
+            It "Returns backup objects from Get-DbaBackupInformation" {
+                $result | Should -Not -BeNullOrEmpty
+            }
+
+            It "Adds RestoreTime property to each object" {
+                $result[0].PSObject.Properties.Name | Should -Contain 'RestoreTime' -Because "RestoreTime property should be added by Select-DbaBackupInformation"
+            }
+
+            It "Has expected backup metadata properties" {
+                $expectedProps = @(
+                    'Database',
+                    'Type',
+                    'FirstLsn',
+                    'LastLsn',
+                    'FullName',
+                    'RestoreTime'
+                )
+                $actualProps = $result[0].PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+                }
+            }
+        }
+
     }
 }

@@ -1001,4 +1001,76 @@ use master
             $results.RestoreComplete | Should -Be $true
         }
     }
+
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Setup a simple database to backup and restore for testing output
+            $testDbName = "dbatoolsci_RestoreOutputTest"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDbName -EnableException
+            $backupFile = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -Path $backupPath -EnableException
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -EnableException
+        }
+
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName | Remove-DbaDatabase
+        }
+
+        Context "Output with -OutputScriptOnly" {
+            BeforeAll {
+                $result = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $backupFile.BackupPath -DatabaseName $testDbName -OutputScriptOnly -EnableException
+            }
+
+            It "Returns System.String type" {
+                $result | Should -BeOfType [System.String]
+            }
+
+            It "Contains RESTORE DATABASE statement" {
+                $result | Should -Match "RESTORE DATABASE"
+            }
+        }
+
+        Context "Output with -Recover" {
+            BeforeAll {
+                # First restore with NoRecovery to set up for recovery test
+                $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $backupFile.BackupPath -DatabaseName $testDbName -NoRecovery -EnableException
+                # Then recover the database
+                $result = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Recover -DatabaseName $testDbName -EnableException
+            }
+
+            It "Returns PSCustomObject" {
+                $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+
+            It "Has the expected properties" {
+                $expectedProps = @(
+                    "SqlInstance",
+                    "DatabaseName",
+                    "RestoreComplete",
+                    "Scripts"
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be present in -Recover output"
+                }
+            }
+
+            It "Has SqlInstance property populated" {
+                $result.SqlInstance | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has DatabaseName property populated" {
+                $result.DatabaseName | Should -Be $testDbName
+            }
+
+            It "Has RestoreComplete as boolean" {
+                $result.RestoreComplete | Should -BeOfType [System.Boolean]
+            }
+
+            It "Has Scripts property containing RESTORE statement" {
+                $result.Scripts | Should -Match "RESTORE DATABASE"
+                $result.Scripts | Should -Match "WITH RECOVERY"
+            }
+        }
+    }
 }

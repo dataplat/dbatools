@@ -27,6 +27,51 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart
+            $instanceName = $server.ServiceName
+            $result = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent -EnableException
+        }
+
+        AfterAll {
+            $null = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Wmi.Service]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'ServiceName',
+                'InstanceName',
+                'ServiceType',
+                'State',
+                'Status',
+                'Message'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties accessible via Select-Object" {
+            $additionalProps = @(
+                'ServiceAccount',
+                'StartMode',
+                'Properties',
+                'Parent'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+    }
+
     Context "Command execution and functionality" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart

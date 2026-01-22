@@ -176,4 +176,47 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "SqlInstance",
+                "InstanceName",
+                "ComputerName",
+                "DatabaseName",
+                "RW",
+                "Status",
+                "Access"
+            )
+            $actualProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has all documented properties available" {
+            $expectedProps = @(
+                "SqlInstance",
+                "InstanceName",
+                "ComputerName",
+                "DatabaseName",
+                "RW",
+                "Status",
+                "Access",
+                "Database"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
 }

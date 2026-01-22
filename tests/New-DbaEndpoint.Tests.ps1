@@ -59,4 +59,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Owner | Should -Be $sa
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaEndpoint -SqlInstance $TestConfig.InstanceMulti1 -Name "dbatoolsci_OutputTest" -Type DatabaseMirroring -EnableException
+        }
+
+        AfterAll {
+            $null = Remove-DbaEndpoint -SqlInstance $TestConfig.InstanceMulti1 -EndPoint "dbatoolsci_OutputTest" -Confirm:$false
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Endpoint]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ID',
+                'Name',
+                'IPAddress',
+                'Port',
+                'EndpointState',
+                'EndpointType',
+                'Owner',
+                'IsAdminEndpoint',
+                'Fqdn',
+                'IsSystemObject'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

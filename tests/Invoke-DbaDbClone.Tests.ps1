@@ -57,4 +57,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be $clonedb
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Invoke-DbaDbClone -SqlInstance $TestConfig.InstanceSingle -Database $dbname -CloneDatabase $clonedb2 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsAccessible',
+                'RecoveryModel',
+                'LogReuseWaitStatus',
+                'Size',
+                'Owner',
+                'Collation',
+                'Encrypted'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

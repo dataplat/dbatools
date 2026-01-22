@@ -138,4 +138,115 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseName | Should -Contain $parallelTestDatabases[0].Name
         }
     }
+
+    Context "Output Validation - Sequential Mode" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $seqBackupPath = "$($TestConfig.Temp)\$CommandName-OutputSeq-$(Get-Random)"
+            $null = New-Item -Path $seqBackupPath -ItemType Directory
+
+            $seqTestDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $splatSeqEncryption = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                Database                = $seqTestDatabase.Name
+                MasterKeySecurePassword = $passwd
+                BackupSecurePassword    = $passwd
+                BackupPath              = $seqBackupPath
+                EnableException         = $true
+            }
+            $result = Start-DbaDbEncryption @splatSeqEncryption
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($seqTestDatabase) {
+                $seqTestDatabase | Remove-DbaDatabase
+            }
+
+            Remove-Item -Path $seqBackupPath -Recurse
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns SMO Database object in sequential mode" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'DatabaseName',
+                'EncryptionEnabled'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation - Parallel Mode" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $parBackupPath = "$($TestConfig.Temp)\$CommandName-OutputPar-$(Get-Random)"
+            $null = New-Item -Path $parBackupPath -ItemType Directory
+
+            $parTestDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $splatParEncryption = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                Database                = $parTestDatabase.Name
+                MasterKeySecurePassword = $passwd
+                BackupSecurePassword    = $passwd
+                BackupPath              = $parBackupPath
+                Parallel                = $true
+                EnableException         = $true
+            }
+            $result = Start-DbaDbEncryption @splatParEncryption
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($parTestDatabase) {
+                $parTestDatabase | Remove-DbaDatabase
+            }
+
+            Remove-Item -Path $parBackupPath -Recurse
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject when -Parallel specified" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties for parallel mode" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'DatabaseName',
+                'EncryptionEnabled',
+                'Status',
+                'Error'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in parallel mode output"
+            }
+        }
+    }
 }

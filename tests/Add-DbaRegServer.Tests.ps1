@@ -102,4 +102,48 @@ Describe $CommandName -Tag IntegrationTests {
             $results2.SqlInstance | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatRegServer = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                ServerName      = "dbatoolsci-outputtest"
+                Description     = "Output validation test server"
+                EnableException = $true
+            }
+            $result = Add-DbaRegServer @splatRegServer
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'Name',
+                'ServerName',
+                'Group',
+                'Description',
+                'Source'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional standard properties available" {
+            $additionalProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'ConnectionString'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
 }

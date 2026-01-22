@@ -42,4 +42,23 @@ Describe $CommandName -Tag IntegrationTests {
         $results | Should -Not -BeNullOrEmpty
         $results.HideInstance | Should -BeTrue
     }
+
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $results.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'HideInstance'
+            )
+            $actualProps = $results.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

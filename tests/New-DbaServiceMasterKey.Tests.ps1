@@ -20,6 +20,29 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Documentation Validation" {
+        It "Should have .OUTPUTS documentation with output type" {
+            $help = Get-Help $CommandName
+            $help.returnValues | Should -Not -BeNullOrEmpty -Because "command should document its return type in .OUTPUTS"
+            $help.returnValues.returnValue.type.name | Should -Match 'MasterKey' -Because "return type should be documented"
+        }
+
+        It "Should have .SYNOPSIS documentation" {
+            $help = Get-Help $CommandName
+            $help.Synopsis | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have .DESCRIPTION documentation" {
+            $help = Get-Help $CommandName
+            $help.Description | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have at least one .EXAMPLE" {
+            $help = Get-Help $CommandName
+            $help.Examples.example.Count | Should -BeGreaterThan 0
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

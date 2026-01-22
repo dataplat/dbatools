@@ -36,4 +36,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPfDataCollectorCounterSample -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "DataCollectorSet",
+                "DataCollector",
+                "Name",
+                "Timestamp",
+                "Path",
+                "InstanceName",
+                "CookedValue",
+                "RawValue",
+                "SecondValue",
+                "MultipleCount",
+                "CounterType",
+                "SampleTimestamp",
+                "SampleTimestamp100NSec",
+                "Status",
+                "DefaultScale",
+                "TimeBase"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Excludes Sample and CounterSampleObject from default view" {
+            $defaultProps = ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames)
+            $defaultProps | Should -Not -Contain "Sample"
+            $defaultProps | Should -Not -Contain "CounterSampleObject"
+        }
+    }
 }

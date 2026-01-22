@@ -85,4 +85,46 @@ Describe $CommandName -Tag IntegrationTests {
             $db.Users[$user.Name] | Should -Be $user
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $db = Get-DbaDatabase $server -Database tempdb
+            $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
+            $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user_output -Password $securePassword -Force
+            $user = New-Object Microsoft.SqlServer.Management.SMO.User($db, $loginTest.Name)
+            $user.Login = $loginTest.Name
+            $user.Create()
+            
+            $result = Remove-DbaDbUser -SqlInstance $server -Database tempdb -User $user.Name -EnableException
+        }
+        AfterAll {
+            if ($loginTest) {
+                $loginTest.Drop()
+            }
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'User',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Status property set to 'Dropped' on successful removal" {
+            $result.Status | Should -Be 'Dropped'
+        }
+    }
 }

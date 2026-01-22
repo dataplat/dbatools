@@ -95,4 +95,77 @@ Describe $CommandName -Tag IntegrationTests {
             $results.PortNumber | Should -Be $listenerPort
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatListener = @{
+                SqlInstance = $TestConfig.InstanceHadr
+                AvailabilityGroup = $agName
+                Name        = "listener2"
+                IPAddress   = "127.0.20.2"
+                Port        = 14331
+                EnableException = $true
+            }
+            $result = Add-DbaAgListener @splatListener
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgListener -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Listener "listener2" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'Name',
+                'PortNumber',
+                'ClusterIPConfiguration'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ComputerName property populated" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has SqlInstance property populated" {
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has Name matching the listener name" {
+            $result.Name | Should -Be "listener2"
+        }
+
+        It "Has PortNumber matching the specified port" {
+            $result.PortNumber | Should -Be 14331
+        }
+    }
+
+    Context "Output with -Passthru" {
+        It "Returns listener object before creation when -Passthru specified" {
+            $splatListener = @{
+                SqlInstance = $TestConfig.InstanceHadr
+                AvailabilityGroup = $agName
+                Name        = "passthruListener"
+                IPAddress   = "127.0.20.3"
+                Port        = 14332
+                Passthru    = $true
+                EnableException = $true
+            }
+            $result = Add-DbaAgListener @splatListener
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener]
+            $result.PSObject.Properties.Name | Should -Contain 'Name'
+            $result.PSObject.Properties.Name | Should -Contain 'PortNumber'
+        }
+    }
 }

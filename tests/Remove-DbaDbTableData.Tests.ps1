@@ -161,6 +161,44 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $addRowsToSimpleModelDb = Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query $sqlAddRows
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table dbo.Test -BatchSize 10 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "Database",
+                "Sql",
+                "TotalRowsDeleted",
+                "TotalTimeMillis",
+                "AvgTimeMillis",
+                "TotalIterations"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties accessible via Select-Object" {
+            $result.PSObject.Properties.Name | Should -Contain "Timings"
+            $result.PSObject.Properties.Name | Should -Contain "LogBackups"
+        }
+
+        It "Returns arrays for Timings and LogBackups properties" {
+            $result.Timings | Should -BeOfType [System.Array]
+            $result.LogBackups | Should -BeOfType [System.Array]
+        }
+    }
+
     Context "Functionality with simple recovery model" {
         BeforeEach {
             $addRowsToSimpleModelDb = Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query $sqlAddRows

@@ -71,4 +71,52 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultNotMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 2
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            $testDb = "dbatoolscli_OutputValidation_$(Get-Random -Minimum 100 -Maximum 999)"
+            $null = New-DbaDatabase -SqlInstance $sqlCn -Name $testDb
+            $sqlCn.Refresh()
+            $sqlCn.Databases.Refresh()
+            
+            # Set to a different compatibility level to ensure output
+            $currentLevel = $sqlCn.Databases[$testDb].CompatibilityLevel
+            $targetLevel = [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]"Version110"
+            if ($currentLevel -eq $targetLevel) {
+                $targetLevel = [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]"Version120"
+            }
+            $result = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database $testDb -Compatibility $targetLevel -EnableException
+        }
+        AfterAll {
+            $sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            Remove-DbaDatabase -SqlInstance $sqlCn -Database $testDb -Confirm:$false -ErrorAction SilentlyContinue
+            $sqlCn.ConnectionContext.Disconnect()
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Compatibility',
+                'PreviousCompatibility'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should exist in output"
+            }
+        }
+
+        It "Returns no output when database is already at target level" {
+            # Run again with same compatibility - should return nothing
+            $result2 = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database $testDb -Compatibility $targetLevel -EnableException
+            $result2 | Should -BeNullOrEmpty
+        }
+    }
 }

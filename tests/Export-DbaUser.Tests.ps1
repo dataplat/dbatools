@@ -216,4 +216,39 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $resultFile = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -FilePath "$($TestConfig.Temp)\Dbatoolsci_outputtest.sql" -EnableException
+            $resultPath = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Path "$($TestConfig.Temp)\Dbatoolsci_outputpath" -EnableException
+            $resultPassthru = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Passthru -EnableException
+        }
+
+        AfterAll {
+            Remove-Item -Path "$($TestConfig.Temp)\Dbatoolsci_outputtest.sql" -ErrorAction SilentlyContinue
+            Remove-Item -Path "$($TestConfig.Temp)\Dbatoolsci_outputpath" -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns System.IO.FileInfo when -FilePath is specified" {
+            $resultFile | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns System.IO.FileInfo when -Path is specified" {
+            $resultPath | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has standard FileInfo properties when exporting to file" {
+            $resultFile.FullName | Should -Not -BeNullOrEmpty
+            $resultFile.Name | Should -Not -BeNullOrEmpty
+            $resultFile.Length | Should -BeGreaterThan 0
+        }
+
+        It "Returns System.String when -Passthru is specified" {
+            $resultPassthru | Should -BeOfType [System.String]
+        }
+
+        It "Contains T-SQL content when -Passthru is specified" {
+            $resultPassthru | Should -BeLike "*CREATE USER*"
+        }
+    }
 }

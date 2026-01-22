@@ -24,4 +24,40 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopy = @{
+                Source         = $TestConfig.instance1
+                Destination    = $TestConfig.instance2
+                WhatIf         = $true
+                EnableException = $true
+            }
+            $result = Copy-DbaInstanceAudit @splatCopy
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has MigrationObject type name" {
+            $result.PSObject.TypeNames | Should -Contain "MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

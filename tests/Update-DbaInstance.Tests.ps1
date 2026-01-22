@@ -54,6 +54,67 @@ Describe -skip $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+    Context "Output Validation" {
+        BeforeAll {
+            Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+                [PSCustomObject]@{
+                    InstanceName = "MSSQLSERVER"
+                    Version      = [PSCustomObject]@{
+                        "SqlInstance" = $null
+                        "Build"       = "11.0.5058"
+                        "NameLevel"   = "2012"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = $null
+                        "KBLevel"     = "2958429"
+                        "BuildLevel"  = [version]'11.0.5058'
+                        "MatchType"   = "Exact"
+                    }
+                }
+            }
+            Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+                [PSCustomObject]@{
+                    FullName = "c:\mocked\filename.exe"
+                }
+            }
+            Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
+            Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith {
+                [PSCustomObject]@{
+                    FullName = "c:\mocked\filename.exe"
+                }
+            }
+            Mock -CommandName Resolve-DbaNetworkName -ModuleName dbatools -MockWith {
+                [PSCustomObject]@{
+                    FullComputerName = "TESTSERVER"
+                }
+            }
+            Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith {
+                [PSCustomObject]@{ SystemType = "x64" }
+            }
+            $result = Update-DbaInstance -ComputerName "TESTSERVER" -Version "2012SP3" -Path "c:\mocked" -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'MajorVersion',
+                'TargetLevel',
+                'KB',
+                'Successful',
+                'Restarted',
+                'InstanceName',
+                'Installer',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
     Context "testing proper Authorization" {
         BeforeAll {
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {

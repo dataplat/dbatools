@@ -46,4 +46,43 @@ Describe $CommandName -Tag IntegrationTests {
             $assemblyResults.Version | Should -BeExactly $masterDatabase.assemblies.Version
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbAssembly -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException
+            $result = $result | Select-Object -First 1
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.SqlAssembly]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'ID',
+                'Name',
+                'Owner',
+                'SecurityLevel',
+                'CreateDate',
+                'IsSystemObject',
+                'Version'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has dbatools-added properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'ComputerName'
+            $result.PSObject.Properties.Name | Should -Contain 'InstanceName'
+            $result.PSObject.Properties.Name | Should -Contain 'SqlInstance'
+            $result.PSObject.Properties.Name | Should -Contain 'Database'
+            $result.PSObject.Properties.Name | Should -Contain 'DatabaseId'
+        }
+    }
 }

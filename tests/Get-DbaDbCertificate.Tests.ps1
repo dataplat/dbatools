@@ -74,4 +74,63 @@ Describe $CommandName -Tag IntegrationTests {
             $cert.Name | Should -Not -BeIn $certificateName1, $certificateName2
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $certificateName = "Cert_$(Get-Random)"
+            $dbName = "dbatoolscli_db2_$(Get-Random)"
+            $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
+            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Password $pw
+            $null = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Password $pw -Name $certificateName
+
+            $result = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $dbName -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Certificate]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Name',
+                'Subject',
+                'StartDate',
+                'ActiveForServiceBrokerDialog',
+                'ExpirationDate',
+                'Issuer',
+                'LastBackupDate',
+                'Owner',
+                'PrivateKeyEncryptionType',
+                'Serial'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the expected added context properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'ComputerName' -Because 'dbatools adds ComputerName via Add-Member'
+            $result.PSObject.Properties.Name | Should -Contain 'InstanceName' -Because 'dbatools adds InstanceName via Add-Member'
+            $result.PSObject.Properties.Name | Should -Contain 'SqlInstance' -Because 'dbatools adds SqlInstance via Add-Member'
+            $result.PSObject.Properties.Name | Should -Contain 'Database' -Because 'dbatools adds Database via Add-Member'
+            $result.PSObject.Properties.Name | Should -Contain 'DatabaseId' -Because 'dbatools adds DatabaseId via Add-Member'
+        }
+    }
 }

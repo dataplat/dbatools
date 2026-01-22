@@ -50,6 +50,129 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            # Create Database with small size and grow it
+            $db = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_shrinktest_output")
+
+            $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($db, "PRIMARY")
+            $db.FileGroups.Add($primaryFileGroup)
+            $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $db.Name)
+            $primaryFile.FileName = "$($defaultPath.Data)\$($db.Name).mdf"
+            $primaryFile.Size = 8 * 1024
+            $primaryFile.Growth = 8 * 1024
+            $primaryFile.GrowthType = "KB"
+            $primaryFileGroup.Files.Add($primaryFile)
+
+            $logFile = New-Object Microsoft.SqlServer.Management.Smo.LogFile($db, "$($db.Name)_log")
+            $logFile.FileName = "$($defaultPath.Log)\$($db.Name)_log.ldf"
+            $logFile.Size = 8 * 1024
+            $logFile.Growth = 8 * 1024
+            $logFile.GrowthType = "KB"
+            $db.LogFiles.Add($logFile)
+
+            $db.Create()
+
+            # grow the files
+            $server.Query("
+            ALTER DATABASE [$($db.name)] MODIFY FILE ( NAME = N'$($db.name)', SIZE = 16384KB )
+            ALTER DATABASE [$($db.name)] MODIFY FILE ( NAME = N'$($db.name)_log', SIZE = 16384KB )")
+
+            $db.Refresh()
+            $result = Invoke-DbaDbShrink -SqlInstance $server -Database $db.Name -EnableException
+        }
+
+        AfterAll {
+            $db | Remove-DbaDatabase
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "File",
+                "Start",
+                "End",
+                "Elapsed",
+                "Success",
+                "InitialSize",
+                "InitialUsed",
+                "InitialAvailable",
+                "TargetAvailable",
+                "FinalAvailable",
+                "FinalSize",
+                "InitialAverageFragmentation",
+                "FinalAverageFragmentation",
+                "InitialTopFragmentation",
+                "FinalTopFragmentation",
+                "Notes"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Success property is boolean" {
+            $result[0].Success | Should -BeOfType [bool]
+        }
+    }
+
+    Context "Output with -ExcludeIndexStats" {
+        BeforeAll {
+            $db = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_shrinktest_excludestats")
+
+            $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($db, "PRIMARY")
+            $db.FileGroups.Add($primaryFileGroup)
+            $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $db.Name)
+            $primaryFile.FileName = "$($defaultPath.Data)\$($db.Name).mdf"
+            $primaryFile.Size = 8 * 1024
+            $primaryFile.Growth = 8 * 1024
+            $primaryFile.GrowthType = "KB"
+            $primaryFileGroup.Files.Add($primaryFile)
+
+            $logFile = New-Object Microsoft.SqlServer.Management.Smo.LogFile($db, "$($db.Name)_log")
+            $logFile.FileName = "$($defaultPath.Log)\$($db.Name)_log.ldf"
+            $logFile.Size = 8 * 1024
+            $logFile.Growth = 8 * 1024
+            $logFile.GrowthType = "KB"
+            $db.LogFiles.Add($logFile)
+
+            $db.Create()
+
+            # grow the files
+            $server.Query("
+            ALTER DATABASE [$($db.name)] MODIFY FILE ( NAME = N'$($db.name)', SIZE = 16384KB )
+            ALTER DATABASE [$($db.name)] MODIFY FILE ( NAME = N'$($db.name)_log', SIZE = 16384KB )")
+
+            $db.Refresh()
+            $result = Invoke-DbaDbShrink -SqlInstance $server -Database $db.Name -ExcludeIndexStats -EnableException
+        }
+
+        AfterAll {
+            $db | Remove-DbaDatabase
+        }
+
+        It "Excludes fragmentation properties when -ExcludeIndexStats specified" {
+            $result[0].PSObject.Properties.Name | Should -Not -Contain "InitialAverageFragmentation"
+            $result[0].PSObject.Properties.Name | Should -Not -Contain "FinalAverageFragmentation"
+            $result[0].PSObject.Properties.Name | Should -Not -Contain "InitialTopFragmentation"
+            $result[0].PSObject.Properties.Name | Should -Not -Contain "FinalTopFragmentation"
+        }
+
+        It "Still includes core properties" {
+            $result[0].PSObject.Properties.Name | Should -Contain "Database"
+            $result[0].PSObject.Properties.Name | Should -Contain "File"
+            $result[0].PSObject.Properties.Name | Should -Contain "Success"
+        }
+    }
+
     Context "Verifying Database is shrunk" {
         BeforeEach {
             # Create Database with small size and grow it

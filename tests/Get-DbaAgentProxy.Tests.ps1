@@ -137,4 +137,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IsEnabled | Should -Contain $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceSingle -Proxy $proxyName1 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'SqlInstance',
+                'InstanceName',
+                'Name',
+                'ID',
+                'CredentialID',
+                'CredentialIdentity',
+                'CredentialName',
+                'Description',
+                'IsEnabled'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

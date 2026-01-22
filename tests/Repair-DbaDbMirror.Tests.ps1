@@ -20,6 +20,14 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns the documented output type" {
+            $command = Get-Command $CommandName
+            $outputType = $command.OutputType
+            $outputType.Name | Should -Contain 'Microsoft.SqlServer.Management.Smo.Database'
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

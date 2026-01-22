@@ -83,4 +83,37 @@ Describe $CommandName -Tag IntegrationTests {
             { Get-DbaAgReplica -SqlInstance invalidSQLHostName -EnableException } | Should -Throw
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityReplica]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'Name',
+                'Role',
+                'ConnectionState',
+                'RollupSynchronizationState',
+                'AvailabilityMode',
+                'BackupPriority',
+                'EndpointUrl',
+                'SessionTimeout',
+                'FailoverMode',
+                'ReadonlyRoutingList'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

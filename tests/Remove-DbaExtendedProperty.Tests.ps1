@@ -51,4 +51,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Dropped"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $ep = $db | Add-DbaExtendedProperty -Name "Test_Output_Validation" -Value "TestValue" -EnableException
+            $result = $ep | Remove-DbaExtendedProperty -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties documented in .OUTPUTS" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ParentName",
+                "PropertyType",
+                "Name",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output object"
+            }
+        }
+
+        It "Returns Status property with 'Dropped' value" {
+            $result.Status | Should -Be "Dropped"
+        }
+    }
 }

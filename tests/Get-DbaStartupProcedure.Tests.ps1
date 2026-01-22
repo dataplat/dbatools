@@ -69,4 +69,34 @@ Describe $CommandName -Tag IntegrationTests {
             $null -eq $result | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.StoredProcedure]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'ObjectId',
+                'CreateDate',
+                'DateLastModified',
+                'Name',
+                'ImplementationType',
+                'Startup'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

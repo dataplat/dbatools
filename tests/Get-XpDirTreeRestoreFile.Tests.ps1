@@ -158,5 +158,45 @@ Describe $CommandName -Tag UnitTests {
                 $results[0].Fullname | Should -Not -BeLike "*\*"
             }
         }
+        Context "Output Validation" {
+            BeforeAll {
+                $array = (@{ subdirectory = "full.bak"; depth = 1; file = 1 },
+                    @{ subdirectory = "full2.bak"; depth = 1; file = 1 })
+                Mock Connect-DbaInstance -MockWith {
+                    $obj = [PSCustomObject]@{
+                        Name                 = "BASEName"
+                        NetName              = "BASENetName"
+                        ComputerName         = "BASEComputerName"
+                        InstanceName         = "BASEInstanceName"
+                        DomainInstanceName   = "BASEDomainInstanceName"
+                        InstallDataDirectory = "BASEInstallDataDirectory"
+                        ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', ']'
+                        ServiceName          = "BASEServiceName"
+                        VersionMajor         = 9
+                        ConnectionContext    = New-Object PSObject
+                    }
+                    Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value "put=an=equal=in=it"
+                    Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                        param($query)
+                        if ($query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;") {
+                            return $array
+                        }
+                    }
+                    $obj.PSObject.TypeNames.Clear()
+                    $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                    return $obj
+                }
+                $result = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException
+            }
+
+            It "Returns PSCustomObject" {
+                $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+
+            It "Has the expected property: FullName" {
+                $actualProps = $result[0].PSObject.Properties.Name
+                $actualProps | Should -Contain "FullName" -Because "property 'FullName' should be in output"
+            }
+        }
     }
 }

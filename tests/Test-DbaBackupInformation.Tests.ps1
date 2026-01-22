@@ -27,6 +27,66 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     InModuleScope dbatools {
+        Context "Output Validation" {
+            BeforeAll {
+                $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
+                $BackupHistory = $BackupHistory | Format-DbaBackupInformation
+                Mock Connect-DbaInstance -MockWith {
+                    $obj = [PSCustomObject]@{
+                        Name                 = "BASEName"
+                        NetName              = "BASENetName"
+                        ComputerName         = "BASEComputerName"
+                        InstanceName         = "BASEInstanceName"
+                        DomainInstanceName   = "BASEDomainInstanceName"
+                        InstallDataDirectory = "BASEInstallDataDirectory"
+                        ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', "]"
+                        ServiceName          = "BASEServiceName"
+                        VersionMajor         = 9
+                        ConnectionContext    = New-Object PSObject
+                    }
+                    Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value "put=an=equal=in=it"
+                    Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                        param($query)
+                        if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
+                            return @(
+                                @{ "Name"          = "master"
+                                    "PhysicalName" = "C:\temp\master.mdf"
+                                }
+                            )
+                        }
+                    }
+                    $obj.PSObject.TypeNames.Clear()
+                    $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                    return $obj
+                }
+                Mock Get-DbaDatabase { $null }
+                Mock New-DbaDirectory { $true }
+                Mock Test-DbaPath { [PSCustomObject]@{
+                        FilePath   = "does\exists"
+                        FileExists = $true
+                    }
+                }
+                $result = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningAction SilentlyContinue -EnableException
+            }
+
+            It "Returns the input backup history objects" {
+                $result | Should -Not -BeNullOrEmpty
+                $result.Count | Should -BeGreaterThan 0
+            }
+
+            It "Preserves all original properties from input objects" {
+                $inputProps = $BackupHistory[0].PSObject.Properties.Name
+                $outputProps = $result[0].PSObject.Properties.Name
+                foreach ($prop in $inputProps) {
+                    $outputProps | Should -Contain $prop -Because "original property '$prop' should be preserved"
+                }
+            }
+
+            It "Adds the IsVerified property" {
+                $result[0].PSObject.Properties.Name | Should -Contain "IsVerified" -Because "validation status should be added"
+            }
+        }
+
         Context "Everything as it should" {
             It "Should pass as all systems Green" {
                 $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml

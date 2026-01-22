@@ -55,4 +55,53 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Contain "dbatoolsci test alert"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceSingle -EnableException
+            $firstResult = $result | Where-Object { $_.Name -eq "dbatoolsci test alert" } | Select-Object -First 1
+        }
+
+        It "Returns the documented output type" {
+            $firstResult | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Alert]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'SqlInstance',
+                'InstanceName',
+                'Name',
+                'ID',
+                'JobName',
+                'AlertType',
+                'CategoryName',
+                'Severity',
+                'MessageId',
+                'IsEnabled',
+                'DelayBetweenResponses',
+                'LastRaised',
+                'OccurrenceCount'
+            )
+            $actualProps = $firstResult.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the custom properties added by dbatools" {
+            $firstResult.PSObject.Properties.Name | Should -Contain 'ComputerName' -Because "ComputerName is added by dbatools"
+            $firstResult.PSObject.Properties.Name | Should -Contain 'InstanceName' -Because "InstanceName is added by dbatools"
+            $firstResult.PSObject.Properties.Name | Should -Contain 'SqlInstance' -Because "SqlInstance is added by dbatools"
+            $firstResult.PSObject.Properties.Name | Should -Contain 'Notifications' -Because "Notifications is added by dbatools"
+            $firstResult.PSObject.Properties.Name | Should -Contain 'LastRaised' -Because "LastRaised is added by dbatools"
+        }
+
+        It "Has LastRaised property of correct type" {
+            # LastRaised should be of type dbadatetime or $null if never raised
+            if ($null -ne $firstResult.LastRaised) {
+                $firstResult.LastRaised.GetType().Name | Should -BeIn @('DbaDateTime', 'DBNull')
+            }
+        }
+    }
 }

@@ -35,4 +35,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AliasName -contains "dbatoolscialias" | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaClientAlias -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'NetworkLibrary',
+                'ServerName',
+                'AliasName',
+                'AliasString',
+                'Architecture'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

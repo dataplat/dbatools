@@ -138,4 +138,59 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IsRunning | Should -BeFalse
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "IsRunning"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional documented properties available" {
+            $additionalProps = @(
+                "Status",
+                "Path",
+                "MaxSize",
+                "StopTime",
+                "MaxFiles",
+                "IsRowset",
+                "IsRollover",
+                "IsShutdown",
+                "IsDefault",
+                "BufferCount",
+                "BufferSize",
+                "FilePosition",
+                "ReaderSpid",
+                "StartTime",
+                "LastEventTime",
+                "EventCount",
+                "DroppedEventCount",
+                "Parent"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available via Select-Object *"
+            }
+        }
+
+        It "IsRunning property reflects stopped state" {
+            $result.IsRunning | Should -BeFalse -Because "trace should be stopped after Stop-DbaTrace"
+        }
+    }
 }

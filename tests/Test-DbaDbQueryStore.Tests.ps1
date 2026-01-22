@@ -113,4 +113,54 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultsPipe | Where-Object Name -eq "Trace Flag 7745 Enabled").IsBestPractice | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaDbQueryStore -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for Query Store configuration" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Value",
+                "RecommendedValue",
+                "IsBestPractice",
+                "Justification"
+            )
+            $qsConfigResult = $result | Where-Object { $PSItem.Database -eq $dbname } | Select-Object -First 1
+            $actualProps = $qsConfigResult.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in Query Store configuration output"
+            }
+        }
+
+        It "Has the expected properties for Trace Flag status" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Value",
+                "RecommendedValue",
+                "IsBestPractice",
+                "Justification"
+            )
+            $tfResult = $result | Where-Object { $PSItem.Name -like "Trace Flag*" } | Select-Object -First 1
+            if ($tfResult) {
+                $actualProps = $tfResult.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in Trace Flag output"
+                }
+                $actualProps | Should -Not -Contain "Database" -Because "Trace Flag output should not include Database property"
+            }
+        }
+    }
 }

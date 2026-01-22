@@ -89,4 +89,29 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group $testGroupHR | Move-DbaRegServer -Group $testGroupFinance
         $results.Count | Should -Be 2
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Move-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName $srvName -NewGroup $newGroup.Name -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'ServerName',
+                'Group'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

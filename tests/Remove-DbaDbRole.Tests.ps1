@@ -106,6 +106,22 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $testRole = "dbatoolssci_outputtest_$(Get-Random)"
+            $null = $server.Query("CREATE ROLE [$testRole]", $dbname1)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns no output by default" {
+            $result = Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole -Confirm:$false -EnableException
+            $result | Should -BeNullOrEmpty
+        }
+    }
+
     Context "Schema ownership handling" {
         BeforeEach {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

@@ -161,4 +161,69 @@ select TraceID=@TraceID
             $results.Targets.Name | Should -Be "package0.event_file"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatGetTrace = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Id              = $traceid
+                EnableException = $true
+            }
+            $convertSessionName = "dbatoolsci-output-test"
+            $result = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $convertSessionName -EnableException
+        }
+
+        AfterAll {
+            $splatRemoveSession = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Session     = $convertSessionName
+            }
+            $null = Remove-DbaXESession @splatRemoveSession
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.XEvent.Session]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'StartTime',
+                'AutoStart',
+                'State',
+                'Targets',
+                'TargetFile',
+                'Events',
+                'MaxMemory',
+                'MaxEventSize'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output with -OutputScriptOnly" {
+        BeforeAll {
+            $splatGetTrace = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Id              = $traceid
+                EnableException = $true
+            }
+            $result = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name "dbatoolsci-script-only" -OutputScriptOnly -EnableException
+        }
+
+        It "Returns string when -OutputScriptOnly specified" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns T-SQL script containing CREATE EVENT SESSION" {
+            $result | Should -Match "CREATE EVENT SESSION"
+        }
+    }
 }

@@ -116,7 +116,7 @@ function New-DbaDatabase {
         - IsAccessible: Boolean indicating if the database is currently accessible
         - RecoveryModel: Database recovery model (Simple, Full, or BulkLogged as specified)
         - LogReuseWaitStatus: Status of transaction log reuse
-        - Size: Database size in megabytes (MB)
+        - SizeMB: Database size in megabytes (MB)
         - Compatibility: Database compatibility level
         - Collation: Database collation setting (as specified)
         - Owner: Database owner login name (as specified)

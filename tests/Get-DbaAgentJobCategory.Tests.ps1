@@ -58,4 +58,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeGreaterThan 1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobCategory]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'ID',
+                'CategoryType',
+                'JobCount'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

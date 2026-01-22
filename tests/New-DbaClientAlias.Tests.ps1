@@ -37,4 +37,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AliasName | Should -Be $aliasName, $aliasName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $aliasName = "dbatoolscialias-output"
+            $serverName = "sql2016"
+            $result = New-DbaClientAlias -ServerName $serverName -Alias $aliasName -EnableException
+        }
+
+        AfterAll {
+            # Cleanup
+            Get-DbaClientAlias | Where-Object AliasName -eq "dbatoolscialias-output" | Remove-DbaClientAlias
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "NetworkLibrary",
+                "ServerName",
+                "AliasName",
+                "AliasString",
+                "Architecture"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

@@ -191,4 +191,64 @@ Describe $CommandName -Tag IntegrationTests {
         $results1 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         $results1.Name -contains $loginWindows | Should -Be $false
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Create a scenario where schema operations occur (which generates output)
+            $testLogin = "dbatoolssci_outputtest_$random"
+            $testSchema = "dbatoolssci_outputschema_$random"
+
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin -Password $securePassword -Force -EnableException
+            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Login $testLogin -Username $testLogin -EnableException
+
+            # Create a schema owned by the test user
+            $sql = "CREATE SCHEMA $testSchema AUTHORIZATION $testLogin"
+            $server.Query($sql, $dbname)
+
+            # Make the user orphaned by removing the login
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin -EnableException
+
+            # Remove the orphan user with Force (to handle schema ownership)
+            $result = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $testLogin -Force -EnableException
+        }
+
+        AfterAll {
+            # Cleanup - drop the schema if it still exists
+            try {
+                $sql = "IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$testSchema') DROP SCHEMA $testSchema"
+                $server.Query($sql, $dbname)
+            } catch {
+                # Ignore cleanup errors
+            }
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'DatabaseName',
+                'SchemaName',
+                'Action',
+                'SchemaOwnerBefore',
+                'SchemaOwnerAfter'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns schema operation details when schemas are modified" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.DatabaseName | Should -Be $dbname
+            $result.SchemaName | Should -Be $testSchema
+            $result.Action | Should -Be "ALTER OWNER"
+            $result.SchemaOwnerAfter | Should -Be "dbo"
+        }
+    }
 }

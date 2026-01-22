@@ -91,4 +91,62 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Remove-DbaDbCertificate
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $backupPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $backupPath -ItemType Directory
+
+            $dbName = "certoutput-$(Get-Random)"
+            $masterKeyPassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+            $certificatePassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -Force
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
+            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Password $masterKeyPassword
+            $cert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $backup = Backup-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Certificate $cert.Name -Database $dbName -EncryptionPassword $certificatePassword -Path $backupPath
+            $cert | Remove-DbaDbCertificate
+
+            $result = Restore-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Path $backup.ExportPath -Password $certificatePassword -Database $dbName -EncryptionPassword $certificatePassword
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            Remove-Item -Path $backupPath -Recurse
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Certificate]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Name',
+                'Subject',
+                'StartDate',
+                'ActiveForServiceBrokerDialog',
+                'ExpirationDate',
+                'Issuer',
+                'LastBackupDate',
+                'Owner',
+                'PrivateKeyEncryptionType',
+                'Serial'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

@@ -88,4 +88,52 @@ Describe $CommandName -Tag IntegrationTests {
             $excludeResults.Database | Should -Not -Contain $dbname
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "TableName",
+                "IndexName",
+                "Partition",
+                "IndexID",
+                "IndexType",
+                "DataCompression",
+                "SizeCurrent",
+                "RowCount"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns one object per partition" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.Count | Should -BeGreaterThan 0
+        }
+
+        It "DataCompression property contains valid compression types" {
+            foreach ($row in $result) {
+                $row.DataCompression | Should -BeIn @("None", "Row", "Page", "ColumnStore")
+            }
+        }
+
+        It "SizeCurrent property is dbasize type" {
+            $result[0].SizeCurrent | Should -BeOfType [dbasize]
+        }
+    }
 }

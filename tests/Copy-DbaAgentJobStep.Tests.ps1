@@ -142,4 +142,51 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatCopyStepOutput = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Job         = $sourceJobName
+            }
+            $result = Copy-DbaAgentJobStep @splatCopyStepOutput
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result.PSObject.TypeNames | Should -Contain "MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "DateTime property is of type DbaDateTime" {
+            $result.DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+
+        It "Type property is always 'Agent Job Steps'" {
+            $result.Type | Should -Be "Agent Job Steps"
+        }
+
+        It "Status property contains expected values" {
+            $result.Status | Should -BeIn @('Successful', 'Skipped', 'Failed')
+        }
+    }
 }

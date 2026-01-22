@@ -153,4 +153,50 @@ Describe $CommandName -Tag IntegrationTests {
             $script -match "IF NOT EXISTS" | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        Context "Output with -PassThru" {
+            BeforeAll {
+                $result = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -PassThru -EnableException
+            }
+
+            It "Returns System.String when -PassThru is specified" {
+                $result | Should -BeOfType [System.String]
+            }
+
+            It "Returns non-empty content" {
+                $result | Should -Not -BeNullOrEmpty
+            }
+        }
+
+        Context "Output with -FilePath" {
+            BeforeAll {
+                $filePath = "$backupPath\output_validation_$random.sql"
+                $result = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -FilePath $filePath -EnableException
+            }
+
+            AfterAll {
+                Remove-Item -Path $filePath -ErrorAction SilentlyContinue
+            }
+
+            It "Returns System.IO.FileInfo when -FilePath is specified" {
+                $result | Should -BeOfType [System.IO.FileInfo]
+            }
+
+            It "Has the expected FileInfo properties" {
+                $result.PSObject.Properties.Name | Should -Contain 'Name'
+                $result.PSObject.Properties.Name | Should -Contain 'FullName'
+                $result.PSObject.Properties.Name | Should -Contain 'Directory'
+                $result.PSObject.Properties.Name | Should -Contain 'Extension'
+            }
+
+            It "Has .sql extension" {
+                $result.Extension | Should -Be '.sql'
+            }
+
+            It "File exists on disk" {
+                Test-Path -Path $result.FullName | Should -Be $true
+            }
+        }
+    }
 }

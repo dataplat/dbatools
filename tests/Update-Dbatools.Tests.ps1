@@ -18,6 +18,18 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns no output" {
+            $result = Update-Dbatools -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+        }
+
+        It "Displays a deprecation warning" {
+            $warningMessage = Update-Dbatools -WarningVariable warnings -WarningAction SilentlyContinue 3>&1
+            $warningMessage | Should -Match "deprecated"
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

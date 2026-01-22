@@ -352,4 +352,44 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $validationError | Should -Be $true
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 10000 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobServer]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'AgentLogLevel',
+                'DatabaseMailProfile',
+                'SqlAgentAutoStart',
+                'SqlAgentRestart'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has standard dbatools properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'ComputerName'
+            $result.PSObject.Properties.Name | Should -Contain 'InstanceName'
+            $result.PSObject.Properties.Name | Should -Contain 'SqlInstance'
+        }
+
+        It "Has key SMO JobServer properties accessible" {
+            $result.PSObject.Properties.Name | Should -Contain 'MaximumHistoryRows'
+            $result.PSObject.Properties.Name | Should -Contain 'MaximumJobHistoryRows'
+            $result.PSObject.Properties.Name | Should -Contain 'IsCpuPollingEnabled'
+            $result.PSObject.Properties.Name | Should -Contain 'ErrorLogFile'
+        }
+    }
 }

@@ -25,10 +25,17 @@ function Set-DbatoolsInsecureConnection {
         The function now automatically handles registration of settings when SessionOnly is not specified.
 
     .OUTPUTS
-        None
+        Dataplat.Dbatools.Configuration.Config
 
-        This command configures dbatools connection security settings but does not output any objects to the pipeline.
-        The internal configuration values are applied silently to enable insecure connections (disabled encryption, trusted certificates).
+        Returns two configuration objects representing the settings that were modified:
+        - sql.connection.trustcert (set to true)
+        - sql.connection.encrypt (set to false)
+
+        Each object contains properties describing the configuration setting:
+        - Module: The module name ("sql")
+        - Name: The configuration setting name (e.g., "connection.trustcert")
+        - Value: The current value ($true or $false)
+        - Description: Human-readable description of the configuration setting
 
     .LINK
         https://dbatools.io/Set-DbatoolsInsecureConnection

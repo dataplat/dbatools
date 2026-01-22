@@ -143,4 +143,62 @@ Describe $CommandName -Tag IntegrationTests {
             $results.JobSteps | Where-Object Id -eq 5 | Select-Object -ExpandProperty Name | Should -Be "Step 4"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $random = Get-Random
+            $outputJob = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_output_$random" -Description "Output validation test"
+            $result = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $outputJob -StepName "ValidateStep" -Command "SELECT 1" -Database "master" -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_output_$random"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobStep]
+        }
+
+        It "Has the expected SMO JobStep properties" {
+            $expectedProps = @(
+                'Name',
+                'ID',
+                'Parent',
+                'Subsystem',
+                'Command',
+                'DatabaseName',
+                'DatabaseUserName',
+                'OnSuccessAction',
+                'OnSuccessStep',
+                'OnFailAction',
+                'OnFailStep',
+                'RetryAttempts',
+                'RetryInterval',
+                'OutputFileName',
+                'ProxyName',
+                'JobStepFlags',
+                'Server',
+                'CommandExecutionSuccessCode'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on JobStep object"
+            }
+        }
+
+        It "Returns a JobStep with correct basic properties" {
+            $result.Name | Should -Be "ValidateStep"
+            $result.Subsystem | Should -Be "TransactSql"
+            $result.DatabaseName | Should -Be "master"
+            $result.Command | Should -Be "SELECT 1"
+        }
+    }
 }

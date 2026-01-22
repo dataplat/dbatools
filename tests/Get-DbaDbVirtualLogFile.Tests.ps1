@@ -49,17 +49,22 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Command actually works" {
+    Context "Output Validation" {
         BeforeAll {
             $splatVirtualLogFile = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = $testDbName
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $testDbName
+                EnableException = $true
             }
-            $allResults = Get-DbaDbVirtualLogFile @splatVirtualLogFile
+            $result = Get-DbaDbVirtualLogFile @splatVirtualLogFile
         }
 
-        It "Should have correct properties" {
-            $expectedProperties = @(
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
                 "SqlInstance",
@@ -71,9 +76,22 @@ Describe $CommandName -Tag IntegrationTests {
                 "FSeqNo",
                 "Status",
                 "Parity",
-                "CreateLSN"
+                "CreateLsn"
             )
-            ($allResults[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProperties | Sort-Object)
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Command actually works" {
+        BeforeAll {
+            $splatVirtualLogFile = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $testDbName
+            }
+            $allResults = Get-DbaDbVirtualLogFile @splatVirtualLogFile
         }
 
         It "Should have database name of $testDbName" {

@@ -333,6 +333,48 @@ Describe $CommandName -Tag UnitTests {
             }
         }
 
+        Context "Output Validation" {
+            BeforeAll {
+                $result = @(Get-DbaAgentJobHistory -SqlInstance "SQLServerName")
+            }
+
+            It "Returns the documented output type" {
+                $result[0].PSObject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobExecutionHistory"
+            }
+
+            It "Has the expected default display properties without -WithOutputFile" {
+                $expectedProps = @(
+                    'ComputerName',
+                    'InstanceName',
+                    'SqlInstance',
+                    'Job',
+                    'StepName',
+                    'RunDate',
+                    'StartDate',
+                    'EndDate',
+                    'Duration',
+                    'Status',
+                    'OperatorEmailed',
+                    'Message'
+                )
+                $actualProps = $result[0].PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+        }
+
+        Context "Output Validation with -WithOutputFile" {
+            BeforeAll {
+                $result = @(Get-DbaAgentJobHistory -SqlInstance "SQLServerName" -WithOutputFile)
+            }
+
+            It "Includes OutputFileName and RemoteOutputFileName properties" {
+                $result[0].PSObject.Properties.Name | Should -Contain 'OutputFileName'
+                $result[0].PSObject.Properties.Name | Should -Contain 'RemoteOutputFileName'
+            }
+        }
+
         Context "SQL Agent escape sequences" {
             It "Handles ESCAPE_NONE" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {

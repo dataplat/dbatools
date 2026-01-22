@@ -124,4 +124,40 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileCount 4 -DataFileSize 1024 -LogFileSize 256 -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly -EnableException
+        }
+
+        It "Returns System.String array when -OutputScriptOnly specified" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns T-SQL ALTER DATABASE statements" {
+            $result | Should -Match "ALTER DATABASE tempdb"
+        }
+    }
+
+    Context "Output Validation with -OutFile" {
+        BeforeAll {
+            $outFilePath = "$tempdbDataFilePath\tempdb_config_$random.sql"
+        }
+
+        AfterAll {
+            if (Test-Path $outFilePath) {
+                Remove-Item $outFilePath -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns no output when -OutFile specified" {
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileCount 4 -DataFileSize 1024 -DataPath $tempdbDataFilePath -OutFile $outFilePath -EnableException
+            $result | Should -BeNullOrEmpty
+        }
+
+        It "Creates the output file" {
+            Test-Path $outFilePath | Should -Be $true
+        }
+    }
+}
 }

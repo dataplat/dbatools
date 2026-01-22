@@ -102,4 +102,39 @@ Describe $CommandName -Tag IntegrationTests -Skip {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $results = Get-DbaDbSharePoint -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $results[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsAccessible',
+                'RecoveryModel',
+                'LogReuseWaitStatus',
+                'Size',
+                'Compatibility',
+                'Collation',
+                'Owner',
+                'Encrypted',
+                'LastFullBackup',
+                'LastDiffBackup',
+                'LastLogBackup'
+            )
+            $actualProps = $results[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

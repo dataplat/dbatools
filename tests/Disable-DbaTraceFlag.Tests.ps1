@@ -62,4 +62,36 @@ Describe $CommandName -Tag IntegrationTests {
             $disableResults.TraceFlag | Should -Contain $safeTraceFlag
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Re-enable the trace flag for testing
+            $null = $server.Query("DBCC TRACEON($safeTraceFlag,-1)")
+            $result = Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safeTraceFlag -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "SourceServer",
+                "InstanceName",
+                "SqlInstance",
+                "TraceFlag",
+                "Status",
+                "Notes",
+                "DateTime"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Sets Status property to expected values" {
+            $result.Status | Should -BeIn @("Successful", "Skipped", "Failed")
+        }
+    }
 }

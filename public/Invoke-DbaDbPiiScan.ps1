@@ -93,11 +93,11 @@ function Invoke-DbaDbPiiScan {
         https://dbatools.io/Invoke-DbaDbPiiScan
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per detected PII finding across all scanned databases, tables, and columns. The result set includes classification information, masking recommendations, and detection method details.
 
-        Default properties returned (all findings):
+        Properties returned for all findings:
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
@@ -123,7 +123,7 @@ function Invoke-DbaDbPiiScan {
         - Pattern: The column name pattern that matched
 
         When FoundWith = "DataType" (geography type):
-        - No additional properties beyond the default set
+        - No additional properties beyond the standard set
 
     .EXAMPLE
         Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1

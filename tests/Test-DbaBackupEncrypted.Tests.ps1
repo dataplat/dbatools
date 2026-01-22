@@ -41,6 +41,38 @@ Describe $CommandName -Tag IntegrationTests {
         Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem | Remove-DbaDatabase
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+            $backup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $backupPath -Database $db.Name
+            $result = Test-DbaBackupEncrypted -SqlInstance $TestConfig.InstanceSingle -FilePath $backup.BackupPath -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "FilePath",
+                "BackupName",
+                "Encrypted",
+                "KeyAlgorithm",
+                "EncryptorThumbprint",
+                "EncryptorType",
+                "TDEThumbprint",
+                "Compressed"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+    }
+
     Context "Command actually works" {
         It "should detect encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force

@@ -53,6 +53,44 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id 1 | Read-DbaTraceFile -EnableException | Select-Object -First 1
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected dbatools-added properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be added by dbatools"
+            }
+        }
+
+        It "Has trace event properties from fn_trace_gettable" {
+            $traceProps = @(
+                'DatabaseName',
+                'LoginName',
+                'SPID',
+                'StartTime',
+                'EventClass',
+                'ApplicationName',
+                'HostName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $traceProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be from fn_trace_gettable"
+            }
+        }
+    }
     Context "Verify Parameter Use" {
         It "Should execute using parameters Database, Login, Spid" {
             $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id 1 | Read-DbaTraceFile -Database Master -Login sa -Spid 7 -WarningAction SilentlyContinue -WarningVariable warn

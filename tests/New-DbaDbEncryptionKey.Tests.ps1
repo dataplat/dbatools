@@ -72,6 +72,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = Get-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $db.Name | Remove-DbaDbEncryptionKey -ErrorAction SilentlyContinue
+            $result = New-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $db.Name -Force -EncryptorName $mastercert.Name -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'CreateDate',
+                'EncryptionAlgorithm',
+                'EncryptionState',
+                'EncryptionType',
+                'EncryptorName',
+                'ModifyDate',
+                'OpenedDate',
+                'RegenerateDate',
+                'SetDate',
+                'Thumbprint'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }
 
 

@@ -341,4 +341,64 @@ Describe $CommandName -Tag IntegrationTests {
             $functionContent | Should -BeLike '*xp_logininfo*'
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Copy-DbaLogin -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Login tester -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has all documented properties available" {
+            $allProps = @(
+                'SourceServer',
+                'DestinationServer',
+                'Type',
+                'Name',
+                'DestinationLogin',
+                'SourceLogin',
+                'Status',
+                'Notes',
+                'DateTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $allProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on output object"
+            }
+        }
+    }
+
+    Context "Output with -OutFile" {
+        BeforeAll {
+            $tempExportFile = [System.IO.Path]::GetTempFileName()
+            $result = Copy-DbaLogin -Source $TestConfig.InstanceCopy1 -Login tester -OutFile $tempExportFile -EnableException
+        }
+
+        AfterAll {
+            Remove-Item -Path $tempExportFile -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Returns file path as string when -OutFile specified" {
+            $result | Should -BeOfType [System.String]
+            $result | Should -Be $tempExportFile
+        }
+    }
 }

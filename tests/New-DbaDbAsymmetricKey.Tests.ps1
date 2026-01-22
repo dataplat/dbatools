@@ -180,4 +180,39 @@ Describe $CommandName -Tag IntegrationTests {
             $results7 | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name "outputtest" -Database master
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name "outputtest" -Database master -ErrorAction SilentlyContinue
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AsymmetricKey]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Name',
+                'Owner',
+                'KeyEncryptionAlgorithm',
+                'KeyLength',
+                'PrivateKeyEncryptionType',
+                'Thumbprint'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

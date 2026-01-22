@@ -25,20 +25,24 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $props = @("Operation", "Cmd", "Output")
-        $result = Get-DbaDbccHelp -SqlInstance $TestConfig.InstanceSingle -Statement FREESYSTEMCACHE
+        $result = Get-DbaDbccHelp -SqlInstance $TestConfig.InstanceSingle -Statement FREESYSTEMCACHE -EnableException
     }
 
-    Context "Validate standard output" {
-        It "Should return property: Operation" {
-            $result.PSObject.Properties["Operation"].Name | Should -Be "Operation"
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
-        It "Should return property: Cmd" {
-            $result.PSObject.Properties["Cmd"].Name | Should -Be "Cmd"
-        }
-
-        It "Should return property: Output" {
-            $result.PSObject.Properties["Output"].Name | Should -Be "Output"
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "Operation",
+                "Cmd",
+                "Output"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
     }
 

@@ -25,6 +25,60 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $srvName = "dbatoolsci-output-validation"
+            $regSrvName = "dbatoolsci-output-server"
+            $regSrvDesc = "dbatoolsci-output-desc"
+
+            $null = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName $srvName -Name $regSrvName -Description $regSrvDesc
+
+            $random = Get-Random
+            $newDirectory = "$($TestConfig.Temp)\$CommandName-output-$random"
+            $null = New-Item -Path $newDirectory -ItemType Directory -Force
+
+            $result = Export-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Path $newDirectory
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -Match dbatoolsci-output | Remove-DbaRegServer
+            Remove-Item $result -ErrorAction SilentlyContinue
+            Remove-Item $newDirectory -ErrorAction SilentlyContinue -Recurse -Force
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'Directory',
+                'Extension',
+                'Length',
+                'CreationTime',
+                'LastWriteTime',
+                'Attributes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on FileInfo"
+            }
+        }
+
+        It "Returns an XML or REGSRVR file" {
+            $result.Extension | Should -BeIn @('.xml', '.regsrvr')
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

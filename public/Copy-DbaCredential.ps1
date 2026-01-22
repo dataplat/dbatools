@@ -86,11 +86,11 @@ function Copy-DbaCredential {
         - DAC access enabled for local (default)
 
     .OUTPUTS
-        PSCustomObject (MigrationObject type)
+        System.Management.Automation.PSCustomObject
 
         Returns one object per credential copy operation (successful, skipped, or failed).
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - DateTime: Timestamp of when the operation was executed (DbaDateTime)
         - SourceServer: The name of the source SQL Server instance where the credential was copied from
         - DestinationServer: The name of the destination SQL Server instance where the credential was copied to

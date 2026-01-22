@@ -57,4 +57,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.BaseName | Should -Be "Long Running Queries"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Export-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'Directory',
+                'Length',
+                'CreationTime',
+                'LastWriteTime',
+                'Extension'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+
+        It "Creates an XML file" {
+            $result.Extension | Should -Be ".xml"
+            $result.Exists | Should -Be $true
+        }
+    }
 }

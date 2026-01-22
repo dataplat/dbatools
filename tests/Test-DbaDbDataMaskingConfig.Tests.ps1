@@ -153,4 +153,54 @@ Describe $CommandName -Tag IntegrationTests {
         $findings.Count | Should -Be 1
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # Retrieve the JSON content
+            $json = Get-Content -Path $file.FullName | ConvertFrom-Json
+
+            # Break the content by removing a property
+            $json.Tables[0].Columns[7].PSObject.Properties.Remove("SubType")
+
+            # Write the JSON back to the file
+            $json | ConvertTo-Json -Depth 5 | Out-File $file.FullName -Force
+
+            $result = Test-DbaDbDataMaskingConfig -FilePath $file.FullName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject when validation errors exist" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties for error objects" {
+            $expectedProps = @(
+                "Table",
+                "Column",
+                "Value",
+                "Error"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in error output"
+            }
+        }
+    }
+
+    Context "Output with no errors" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # Create a new valid config file
+            $validFile = New-DbaDbMaskingConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table Customer -Path $tempPath
+            $result = Test-DbaDbDataMaskingConfig -FilePath $validFile.FullName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns no output when configuration is valid" {
+            $result | Should -BeNullOrEmpty
+        }
+    }
+
 }

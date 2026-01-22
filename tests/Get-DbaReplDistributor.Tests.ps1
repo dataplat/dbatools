@@ -27,4 +27,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DistributorInstalled | Should -Be $false
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaReplDistributor -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Replication.ReplicationServer]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'IsPublisher',
+                'IsDistributor',
+                'DistributionServer',
+                'DistributionDatabase',
+                'DistributorInstalled',
+                'DistributorAvailable',
+                'HasRemotePublisher'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

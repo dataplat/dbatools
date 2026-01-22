@@ -87,6 +87,46 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatMaskingConfig = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $maskingDbName
+                Path            = $backupPath
+                EnableException = $true
+            }
+            $result = New-DbaDbMaskingConfig @splatMaskingConfig
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'Length',
+                'CreationTime',
+                'LastWriteTime',
+                'Directory'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in FileInfo object"
+            }
+        }
+
+        It "Returns a valid file path" {
+            $result.FullName | Should -Exist
+        }
+
+        It "File contains valid JSON content" {
+            $jsonContent = Get-Content $result.FullName -Raw
+            { $jsonContent | ConvertFrom-Json } | Should -Not -Throw
+        }
+    }
+
     Context "Command works" {
         It "Should output a file with specific content" {
             $splatMaskingConfig = @{

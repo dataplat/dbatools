@@ -236,4 +236,57 @@ Describe $CommandName -Tag IntegrationTests -Skip {
             $results.Column | Should -Not -Contain FirstName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.InstanceSingle -Database $piiscanDb -SampleCount 100 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected standard properties for all findings" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Column",
+                "PII-Category",
+                "PII-Name",
+                "FoundWith",
+                "MaskingType",
+                "MaskingSubType"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in all findings"
+            }
+        }
+
+        It "Includes additional properties when FoundWith = 'Pattern'" {
+            $patternResult = $result | Where-Object { $PSItem.FoundWith -eq "Pattern" } | Select-Object -First 1
+            if ($patternResult) {
+                $patternResult.PSObject.Properties.Name | Should -Contain "Country"
+                $patternResult.PSObject.Properties.Name | Should -Contain "CountryCode"
+                $patternResult.PSObject.Properties.Name | Should -Contain "Pattern"
+                $patternResult.PSObject.Properties.Name | Should -Contain "Description"
+            }
+        }
+
+        It "Includes Pattern property when FoundWith = 'KnownName'" {
+            $knownNameResult = $result | Where-Object { $PSItem.FoundWith -eq "KnownName" } | Select-Object -First 1
+            if ($knownNameResult) {
+                $knownNameResult.PSObject.Properties.Name | Should -Contain "Pattern"
+            }
+        }
+
+        It "Returns objects with FoundWith values of DataType, KnownName, or Pattern" {
+            $foundWithValues = $result.FoundWith | Select-Object -Unique
+            $foundWithValues | Should -BeIn @("DataType", "KnownName", "Pattern")
+        }
+    }
 }

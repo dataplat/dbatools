@@ -56,4 +56,57 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsAll.Count - $resultsIpv6.Count | Should -BeGreaterThan 0
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'IPAddress',
+                'Port'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation with -All" {
+        BeforeAll {
+            $result = Get-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle -All -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties when -All is specified" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Active',
+                'Enabled',
+                'IpAddress',
+                'TcpDynamicPorts',
+                'TcpPort',
+                'IsUsed'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present with -All parameter"
+            }
+        }
+    }
 }

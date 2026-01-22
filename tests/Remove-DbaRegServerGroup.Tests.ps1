@@ -69,4 +69,43 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "dbatoolsci-third"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $testGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci-outputtest"
+        }
+
+        AfterAll {
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq "dbatoolsci-outputtest" | Remove-DbaRegServerGroup
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result = Remove-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci-outputtest" -EnableException
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for CMS groups" {
+            $testGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci-outputtest2" -EnableException
+            $result = Remove-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci-outputtest2" -EnableException
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Status property contains 'Dropped' when successful" {
+            $testGroup3 = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci-outputtest3" -EnableException
+            $result = Remove-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci-outputtest3" -EnableException
+            $result.Status | Should -Be "Dropped"
+        }
+    }
 }

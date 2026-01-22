@@ -214,6 +214,49 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2 -Truncate -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'SourceInstance',
+                'SourceDatabase',
+                'SourceDatabaseID',
+                'SourceSchema',
+                'SourceTable',
+                'DestinationInstance',
+                'DestinationDatabase',
+                'DestinationDatabaseID',
+                'DestinationSchema',
+                'DestinationTable',
+                'RowsCopied',
+                'Elapsed'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has numeric RowsCopied property" {
+            $result.RowsCopied | Should -BeOfType [Int64]
+        }
+
+        It "Has TimeSpan Elapsed property" {
+            $result.Elapsed.GetType().Name | Should -Be "PrettyTimeSpan"
+        }
+    }
+
     Context "Regression tests" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

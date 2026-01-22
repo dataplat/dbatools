@@ -91,4 +91,31 @@ Describe $CommandName -Tag IntegrationTests {
             $removeResults.Name | Should -Be $keyname
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $keyname = "testOutputValidation"
+            $null = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname -Database $database
+            $result = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname -Database $database -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Name',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

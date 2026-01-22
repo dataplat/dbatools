@@ -40,4 +40,33 @@ Describe $CommandName -Tag IntegrationTests {
             $templateResults.Name | Should -Be "Long Running Queries"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPfDataCollectorSetTemplate -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "Name",
+                "Source",
+                "UserAccount",
+                "Description"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties accessible via Select-Object" {
+            $result = Get-DbaPfDataCollectorSetTemplate -EnableException | Select-Object -First 1 *
+            $result.PSObject.Properties.Name | Should -Contain "Path"
+            $result.PSObject.Properties.Name | Should -Contain "File"
+        }
+    }
 }

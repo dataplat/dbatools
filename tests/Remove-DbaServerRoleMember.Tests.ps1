@@ -61,8 +61,16 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        It "Returns no output" {
+            $result = Remove-DbaServerRoleMember -SqlInstance $TestConfig.InstanceSingle -ServerRole $fixedServerRoles[0] -Login $login1 -EnableException
+            $result | Should -BeNullOrEmpty
+        }
+    }
+
     Context "Functionality" {
         It "Removes Login from Role" {
+            Add-DbaServerRoleMember -SqlInstance $TestConfig.InstanceSingle -ServerRole $fixedServerRoles[0] -Login $login1 -EnableException
             Remove-DbaServerRoleMember -SqlInstance $TestConfig.InstanceSingle -ServerRole $fixedServerRoles[0] -Login $login1
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
 

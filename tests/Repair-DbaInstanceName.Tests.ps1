@@ -20,6 +20,37 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # This command requires a rename scenario which we can't easily test without breaking things
+            # So we test the output structure based on what Test-DbaInstanceName returns
+            # since Repair-DbaInstanceName passes through Test-DbaInstanceName output
+            $testResult = Test-DbaInstanceName -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $testResult.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ServerName",
+                "NewServerName",
+                "RenameRequired",
+                "Updatable",
+                "Warnings",
+                "Blockers"
+            )
+            $actualProps = $testResult.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

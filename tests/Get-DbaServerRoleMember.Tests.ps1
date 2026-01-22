@@ -44,6 +44,32 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaServerRoleMember -SqlInstance $server2 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Role",
+                "Name",
+                "SmoRole",
+                "SmoLogin"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "Functionality" {
         It "Returns all role membership for server roles" {
             $result = Get-DbaServerRoleMember -SqlInstance $server2

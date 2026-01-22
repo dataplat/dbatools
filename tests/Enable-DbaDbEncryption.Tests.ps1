@@ -83,4 +83,37 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].EncryptionEnabled | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Disable-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -Database $testDb.Name
+            $splatEnableEncryption = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                EncryptorName = $mastercert.Name
+                Database      = $testDb.Name
+                Force         = $true
+            }
+            $result = Enable-DbaDbEncryption @splatEnableEncryption
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'DatabaseName',
+                'EncryptionEnabled'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

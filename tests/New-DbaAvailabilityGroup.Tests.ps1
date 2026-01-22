@@ -101,6 +101,81 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatAg = @{
+                Primary      = $TestConfig.InstanceHadr
+                Name         = $agName
+                ClusterType  = "None"
+                FailoverMode = "Manual"
+                Database     = $dbName
+                Certificate  = "dbatoolsci_AGCert"
+                EnableException = $true
+            }
+            $result = New-DbaAvailabilityGroup @splatAg
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'LocalReplicaRole',
+                'PrimaryReplica',
+                'ClusterType',
+                'DtcSupportEnabled',
+                'AutomatedBackupPreference',
+                'AvailabilityReplicas',
+                'AvailabilityDatabases',
+                'AvailabilityGroupListeners'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output with -Passthru" {
+        BeforeAll {
+            $splatAgPassthru = @{
+                Primary      = $TestConfig.InstanceHadr
+                Name         = $agName
+                ClusterType  = "None"
+                FailoverMode = "Manual"
+                Certificate  = "dbatoolsci_AGCert"
+                Passthru     = $true
+                EnableException = $true
+            }
+            $result = New-DbaAvailabilityGroup @splatAgPassthru
+        }
+
+        It "Returns AvailabilityGroup object when -Passthru specified" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+        }
+
+        It "Includes properties displayed with -Passthru" {
+            $expectedPassthruProps = @(
+                'LocalReplicaRole',
+                'AvailabilityGroup',
+                'PrimaryReplica',
+                'AutomatedBackupPreference',
+                'AvailabilityReplicas',
+                'AvailabilityDatabases',
+                'AvailabilityGroupListeners'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedPassthruProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be included with -Passthru"
+            }
+        }
+    }
+
     Context "When creating availability groups" {
         It "returns an ag with a db named" {
             $splatAg = @{

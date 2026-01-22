@@ -63,6 +63,31 @@ Describe $CommandName -Tag IntegrationTests {
             $ExpectedProps = "SqlInstance", "InstanceName", "ComputerName", "Name", "Status", "Database"
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
+    }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -Database $database -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Status"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default output"
+            }
+        }
         It "Shows status of Updated" {
             $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -Database $database
             $resultsDownload[0].Status -eq "Updated" | Should -Be $true
@@ -119,6 +144,31 @@ Describe $CommandName -Tag IntegrationTests {
             $result = $resultsLocalFile[0]
             $ExpectedProps = "SqlInstance", "InstanceName", "ComputerName", "Name", "Status", "Database"
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+        }
+    }
+
+    Context "Output Validation with LocalFile" {
+        BeforeAll {
+            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti2 -Database $database -LocalFile $outfile -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Status"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default output"
+            }
         }
         It "Shows status of Updated" {
             $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti2 -Database $database

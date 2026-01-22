@@ -53,4 +53,35 @@ Describe $CommandName -Tag IntegrationTests {
             $newep.Value | Should -Be "Test_Database_Value"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $ep = Get-DbaExtendedProperty -SqlInstance $InstanceSingle -Name "Test_Database_Name" -EnableException
+            $result = $ep | Set-DbaExtendedProperty -Value "OutputValidation_$random" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ExtendedProperty]
+        }
+
+        It "Has the expected properties documented in .OUTPUTS" {
+            $expectedProps = @(
+                'Name',
+                'Value',
+                'ID',
+                'Parent',
+                'State',
+                'Urn',
+                'Properties'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on ExtendedProperty object"
+            }
+        }
+
+        It "Returns the updated value" {
+            $result.Value | Should -Be "OutputValidation_$random"
+        }
+    }
 }

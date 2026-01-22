@@ -60,27 +60,27 @@ function Test-DbaReplLatency {
         https://dbatools.io/Test-DbaReplLatency
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per tracer token result per subscriber in each transactional replication publication. When using -DisplayTokenHistory, multiple objects per token are returned for historical token data. Each object represents the latency measurements for one tracer token's journey from publisher to a specific subscriber database.
 
-        Properties:
-        - ComputerName (string): The name of the computer hosting the publisher SQL Server instance
-        - InstanceName (string): The SQL Server instance name of the publisher
-        - SqlInstance (string): The full SQL Server instance name of the publisher (computer\instance format)
-        - TokenID (int): Unique identifier for the tracer token within the publication
-        - TokenCreateDate (datetime): The date and time when the tracer token was created and inserted into the publication transaction log
-        - PublicationServer (string): The name of the publisher SQL Server instance
-        - PublicationDB (string): The name of the database containing the transactional replication publication
-        - PublicationName (string): The name of the transactional replication publication
-        - PublicationType (string): The type of replication publication (Transactional, Merge, or Snapshot)
-        - DistributionServer (string): The name of the distributor SQL Server instance
-        - DistributionDB (string): The name of the distribution database on the distributor
-        - SubscriberServer (string): The name of the subscriber SQL Server instance receiving the replicated data
-        - SubscriberDB (string): The name of the subscription database on the subscriber
-        - PublisherToDistributorLatency (timespan or DBNull): Time in seconds for the tracer token to travel from the publisher transaction log to the distributor; may be DBNull if latency has not yet been recorded
-        - DistributorToSubscriberLatency (timespan or DBNull): Time in seconds for the tracer token to travel from the distributor to the subscriber; may be DBNull if the token has not yet reached the subscriber
-        - TotalLatency (timespan or DBNull): Combined latency (PublisherToDistributorLatency + DistributorToSubscriberLatency); DBNull if either component latency is not yet available
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the publisher SQL Server instance
+        - InstanceName: The SQL Server instance name of the publisher
+        - SqlInstance: The full SQL Server instance name of the publisher (computer\instance format)
+        - TokenID: Unique identifier for the tracer token within the publication
+        - TokenCreateDate: The date and time when the tracer token was created and inserted into the publication transaction log
+        - PublicationServer: The name of the publisher SQL Server instance
+        - PublicationDB: The name of the database containing the transactional replication publication
+        - PublicationName: The name of the transactional replication publication
+        - PublicationType: The type of replication publication (Transactional, Merge, or Snapshot)
+        - DistributionServer: The name of the distributor SQL Server instance
+        - DistributionDB: The name of the distribution database on the distributor
+        - SubscriberServer: The name of the subscriber SQL Server instance receiving the replicated data
+        - SubscriberDB: The name of the subscription database on the subscriber
+        - PublisherToDistributorLatency: Time in seconds for the tracer token to travel from the publisher transaction log to the distributor; may be DBNull if latency has not yet been recorded
+        - DistributorToSubscriberLatency: Time in seconds for the tracer token to travel from the distributor to the subscriber; may be DBNull if the token has not yet reached the subscriber
+        - TotalLatency: Combined latency (PublisherToDistributorLatency + DistributorToSubscriberLatency); DBNull if either component latency is not yet available
 
     .EXAMPLE
         PS C:\> Test-DbaReplLatency -SqlInstance sql2008, sqlserver2012

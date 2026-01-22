@@ -28,6 +28,37 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -ClientName 'dbatoolsci output test app'
+            $result = Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program 'dbatoolsci output test app' -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'SqlInstance',
+                'Spid',
+                'Login',
+                'Host',
+                'Database',
+                'Program',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Status property confirms successful termination" {
+            $result.Status | Should -Be 'Killed'
+        }
+    }
+
     Context "Command execution and functionality" {
         It "kills only this specific process" {
             $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -ClientName 'dbatoolsci test app'

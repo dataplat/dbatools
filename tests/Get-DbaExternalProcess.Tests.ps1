@@ -76,4 +76,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ProcessId | Should -Not -Be $null
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            Start-Sleep -Seconds 1
+            $result = Get-DbaExternalProcess -ComputerName localhost -EnableException | Where-Object Name -eq "cmd.exe" | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'ProcessId',
+                'Name',
+                'HandleCount',
+                'WorkingSetSize',
+                'VirtualSize',
+                'CimObject'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

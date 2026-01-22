@@ -77,15 +77,15 @@ function Get-DbaDbRestoreHistory {
         - Date: Timestamp when the restore operation completed
         - From: Comma-separated list of physical device names where the backup source(s) are located
         - To: Comma-separated list of physical file paths where the database files were restored
+        - BackupFinishDate: Timestamp when the backup operation completed
 
-        Additional properties available (from MSDB backupset table):
+        Additional properties available (access via Select-Object *):
         - first_lsn: First log sequence number in the backup
         - last_lsn: Last log sequence number in the backup
         - checkpoint_lsn: Checkpoint log sequence number
         - database_backup_lsn: Log sequence number of database backup
-        - BackupFinishDate: Timestamp when the backup operation completed
-
-        All properties from the underlying DataRow object are accessible using Select-Object *.
+        - backup_finish_date: Original backup finish date column (same as BackupFinishDate)
+        - All standard DataRow properties are accessible
 
     .EXAMPLE
         PS C:\> Get-DbaDbRestoreHistory -SqlInstance sql2016

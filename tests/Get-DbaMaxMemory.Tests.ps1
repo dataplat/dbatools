@@ -79,6 +79,34 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaMaxMemory -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Total',
+                'MaxValue'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the Server property accessible via Select-Object" {
+            $result.PSObject.Properties.Name | Should -Contain 'Server' -Because "Server property should be accessible for piping"
+        }
+    }
+
     Context "Connects to multiple instances" {
         It "Returns multiple objects" {
             # Suppressing warning on Azure: [Test-DbaMaxMemory] The memory calculation may be inaccurate as the following SQL components have also been detected: SSIS,SSAS

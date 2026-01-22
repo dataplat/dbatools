@@ -16,4 +16,18 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbatoolsPath -Name "Temp"
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns a non-empty path when valid Name is provided" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+    }
 }

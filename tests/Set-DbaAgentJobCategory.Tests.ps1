@@ -65,4 +65,52 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "CategoryTest2"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create test category for output validation
+            $testOutputCategory = "OutputValidationTest"
+            $renamedOutputCategory = "OutputValidationRenamed"
+            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testOutputCategory
+
+            # Perform the rename operation
+            $result = Set-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testOutputCategory -NewName $renamedOutputCategory
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Cleanup and ignore all output
+            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $renamedOutputCategory -ErrorAction SilentlyContinue
+            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testOutputCategory -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobCategory]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'ID',
+                'CategoryType'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

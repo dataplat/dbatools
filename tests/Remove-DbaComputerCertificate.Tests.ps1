@@ -50,4 +50,30 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $verifyResults | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -EnableException
+            $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
+            $result = Remove-DbaComputerCertificate -Thumbprint $thumbprint -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'Store',
+                'Folder',
+                'Thumbprint',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

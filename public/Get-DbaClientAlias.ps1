@@ -30,11 +30,11 @@ function Get-DbaClientAlias {
         https://dbatools.io/Get-DbaClientAlias
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per SQL Server client alias found in the registry. Each object represents a single alias configured on the specified computer(s).
 
-        Properties:
+        Default display properties:
         - ComputerName: The name of the computer where the client alias is configured
         - NetworkLibrary: The network protocol type for the alias (TCP/IP or Named Pipes)
         - ServerName: The target server name or instance (with protocol prefix removed)

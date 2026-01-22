@@ -86,6 +86,62 @@ Describe $CommandName -Tag UnitTests {
             $result.FullComputerName | Should -Be "8.8.8.8"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Resolve-DbaNetworkName -ComputerName $env:computername -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @(
+                'InputName',
+                'ComputerName',
+                'IPAddress',
+                'DNSHostname',
+                'DNSDomain',
+                'Domain',
+                'DNSHostEntry',
+                'FQDN',
+                'FullComputerName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has exactly the expected number of properties" {
+            $result.PSObject.Properties.Name.Count | Should -Be 9
+        }
+    }
+
+    Context "Output with -Turbo" {
+        BeforeAll {
+            $result = Resolve-DbaNetworkName -ComputerName $env:computername -Turbo -EnableException
+        }
+
+        It "Returns the same property structure as non-Turbo mode" {
+            $expectedProps = @(
+                'InputName',
+                'ComputerName',
+                'IPAddress',
+                'DNSHostname',
+                'DNSDomain',
+                'Domain',
+                'DNSHostEntry',
+                'FQDN',
+                'FullComputerName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output with -Turbo"
+            }
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

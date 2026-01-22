@@ -51,4 +51,68 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SqlConnected | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Find-DbaInstance -ComputerName $TestConfig.InstanceSingle -ScanType Browser, SqlConnect -EnableException | Select-Object -First 1
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Dataplat.Dbatools.Discovery.DbaInstanceReport]
+        }
+
+        It "Has core identification properties" {
+            $coreProps = @(
+                'MachineName',
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Port'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $coreProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should exist"
+            }
+        }
+
+        It "Has discovery metadata properties" {
+            $metadataProps = @(
+                'Confidence',
+                'Availability',
+                'Timestamp',
+                'ScanTypes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $metadataProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should exist"
+            }
+        }
+
+        It "Has connectivity test properties" {
+            $connectivityProps = @(
+                'DnsResolution',
+                'Ping',
+                'TcpConnected',
+                'SqlConnected'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $connectivityProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should exist"
+            }
+        }
+
+        It "Has discovery detail properties" {
+            $detailProps = @(
+                'Services',
+                'SystemServices',
+                'SPNs',
+                'BrowseReply',
+                'PortsScanned'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $detailProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should exist"
+            }
+        }
+    }
 }

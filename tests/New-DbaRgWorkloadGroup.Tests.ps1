@@ -159,4 +159,49 @@ Describe $CommandName -Tag IntegrationTests {
             $result.ReconfigurePending | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $splatNewWorkloadGroup = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                WorkloadGroup = $testWorkloadGroup
+                Force         = $true
+            }
+            $result = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $testWorkloadGroup -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.WorkloadGroup]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Name',
+                'ExternalResourcePoolName',
+                'GroupMaximumRequests',
+                'Importance',
+                'IsSystemObject',
+                'MaximumDegreeOfParallelism',
+                'RequestMaximumCpuTimeInSeconds',
+                'RequestMaximumMemoryGrantPercentage',
+                'RequestMemoryGrantTimeoutInSeconds'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

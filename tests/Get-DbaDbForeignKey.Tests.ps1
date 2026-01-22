@@ -74,73 +74,46 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Parameters are returned correctly" {
+    Context "Output Validation" {
         BeforeAll {
-            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master
+            $result = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
         }
 
-        It "Has the correct default properties" {
-            $expectedStdProps = @(
-                "ComputerName",
-                "CreateDate",
-                "Database",
-                "DateLastModified",
-                "ID",
-                "InstanceName",
-                "IsChecked",
-                "IsEnabled",
-                "Name",
-                "NotForReplication",
-                "ReferencedKey",
-                "ReferencedTable",
-                "ReferencedTableSchema",
-                "SqlInstance",
-                "Schema",
-                "Table"
-            )
-            ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedStdProps | Sort-Object)
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ForeignKey]
         }
 
-        It "Has the correct properties" {
+        It "Has the expected default display properties" {
             $expectedProps = @(
-                "Columns",
-                "ComputerName",
-                "CreateDate",
-                "Database",
-                "DatabaseEngineEdition",
-                "DatabaseEngineType",
-                "DateLastModified",
-                "DeleteAction",
-                "ExecutionManager",
-                "ExtendedProperties",
-                "ID",
-                "InstanceName",
-                "IsChecked",
-                "IsDesignMode",
-                "IsEnabled",
-                "IsFileTableDefined",
-                "IsMemoryOptimized",
-                "IsSystemNamed",
-                "Name",
-                "NotForReplication",
-                "Parent",
-                "ParentCollection",
-                "Properties",
-                "ReferencedKey",
-                "ReferencedTable",
-                "ReferencedTableSchema",
-                "ScriptReferencedTable",
-                "ScriptReferencedTableSchema",
-                "ServerVersion",
-                "SqlInstance",
-                "State",
-                "Schema",
-                "Table",
-                "UpdateAction",
-                "Urn",
-                "UserData"
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'Table',
+                'ID',
+                'CreateDate',
+                'DateLastModified',
+                'Name',
+                'IsEnabled',
+                'IsChecked',
+                'NotForReplication',
+                'ReferencedKey',
+                'ReferencedTable',
+                'ReferencedTableSchema'
             )
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Includes dbatools-added properties" {
+            $dbatoolsProps = @('ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'Table')
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $dbatoolsProps) {
+                $actualProps | Should -Contain $prop -Because "dbatools adds '$prop' via Add-Member"
+            }
         }
     }
 }

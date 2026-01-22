@@ -305,4 +305,53 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Remove-DbaAgentSchedule
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job 'dbatoolsci_output_test' -OwnerLogin 'sa'
+            $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
+            $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
+
+            $result = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule 'dbatoolsci_output_validation' -Job 'dbatoolsci_output_test' -FrequencyType Daily -FrequencyInterval 1 -FrequencyRecurrenceFactor 1 -StartDate $start -StartTime '010000' -EndDate $end -EndTime '020000' -EnableException
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job 'dbatoolsci_output_test' -Confirm:$false
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobSchedule]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ScheduleName',
+                'ActiveEndDate',
+                'ActiveEndTimeOfDay',
+                'ActiveStartDate',
+                'ActiveStartTimeOfDay',
+                'DateCreated',
+                'FrequencyInterval',
+                'FrequencyRecurrenceFactor',
+                'FrequencyRelativeIntervals',
+                'FrequencySubDayInterval',
+                'FrequencySubDayTypes',
+                'FrequencyTypes',
+                'IsEnabled',
+                'JobCount',
+                'Description',
+                'ScheduleUid'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns a schedule with JobCount property when attached to a job" {
+            $result.JobCount | Should -Be 1 -Because "schedule is attached to one job"
+        }
+    }
 }

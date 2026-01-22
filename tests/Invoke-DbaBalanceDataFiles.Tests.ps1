@@ -86,4 +86,54 @@ Describe $CommandName -Tag IntegrationTests {
             $sizeUsedAfter | Should -BeLessThan $sizeUsedBefore
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -RebuildOffline -Force -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Start",
+                "End",
+                "Elapsed",
+                "Success",
+                "Unsuccessful",
+                "DataFilesStart",
+                "DataFilesEnd"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Has DataFilesStart as an array with file objects" {
+            $result.DataFilesStart | Should -Not -BeNullOrEmpty
+            $result.DataFilesStart[0].PSObject.Properties.Name | Should -Contain "ID"
+            $result.DataFilesStart[0].PSObject.Properties.Name | Should -Contain "LogicalName"
+            $result.DataFilesStart[0].PSObject.Properties.Name | Should -Contain "PhysicalName"
+            $result.DataFilesStart[0].PSObject.Properties.Name | Should -Contain "Size"
+            $result.DataFilesStart[0].PSObject.Properties.Name | Should -Contain "UsedSpace"
+            $result.DataFilesStart[0].PSObject.Properties.Name | Should -Contain "AvailableSpace"
+        }
+
+        It "Has DataFilesEnd as an array with file objects" {
+            $result.DataFilesEnd | Should -Not -BeNullOrEmpty
+            $result.DataFilesEnd[0].PSObject.Properties.Name | Should -Contain "ID"
+            $result.DataFilesEnd[0].PSObject.Properties.Name | Should -Contain "LogicalName"
+            $result.DataFilesEnd[0].PSObject.Properties.Name | Should -Contain "PhysicalName"
+            $result.DataFilesEnd[0].PSObject.Properties.Name | Should -Contain "Size"
+            $result.DataFilesEnd[0].PSObject.Properties.Name | Should -Contain "UsedSpace"
+            $result.DataFilesEnd[0].PSObject.Properties.Name | Should -Contain "AvailableSpace"
+        }
+    }
 }

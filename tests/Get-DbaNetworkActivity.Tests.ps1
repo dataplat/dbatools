@@ -27,4 +27,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaNetworkActivity -ComputerName $env:ComputerName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0].PSObject.TypeNames | Should -Contain 'Win32_PerfFormattedData_Tcpip_NetworkInterface'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'NIC',
+                'BytesReceivedPersec',
+                'BytesSentPersec',
+                'BytesTotalPersec',
+                'Bandwidth'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

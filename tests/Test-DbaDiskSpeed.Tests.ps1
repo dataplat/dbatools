@@ -32,6 +32,130 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -Database master -EnableException
+        }
+
+        It "Returns System.Data.DataRow" {
+            if ($result -is [System.Data.DataRow]) {
+                $result | Should -BeOfType [System.Data.DataRow]
+            } else {
+                # When multiple rows returned, it's an array of DataRows
+                $result[0] | Should -BeOfType [System.Data.DataRow]
+            }
+        }
+
+        It "Has the expected default properties for File aggregation" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'SizeGB',
+                'FileName',
+                'FileID',
+                'FileType',
+                'DiskLocation',
+                'Reads',
+                'AverageReadStall',
+                'ReadPerformance',
+                'Writes',
+                'AverageWriteStall',
+                'WritePerformance',
+                'Avg Overall Latency',
+                'Avg Bytes/Read',
+                'Avg Bytes/Write',
+                'Avg Bytes/Transfer'
+            )
+            $row = if ($result -is [System.Data.DataRow]) { $result } else { $result[0] }
+            $actualProps = $row | Get-Member -MemberType Property | Select-Object -ExpandProperty Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output with -AggregateBy Database" {
+        BeforeAll {
+            $result = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -Database master -AggregateBy Database -EnableException
+        }
+
+        It "Has the expected properties for Database aggregation" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'DiskLocation',
+                'Reads',
+                'AverageReadStall',
+                'ReadPerformance',
+                'Writes',
+                'AverageWriteStall',
+                'WritePerformance',
+                'Avg Overall Latency',
+                'Avg Bytes/Read',
+                'Avg Bytes/Write',
+                'Avg Bytes/Transfer'
+            )
+            $row = if ($result -is [System.Data.DataRow]) { $result } else { $result[0] }
+            $actualProps = $row | Get-Member -MemberType Property | Select-Object -ExpandProperty Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in Database aggregation"
+            }
+        }
+
+        It "Does not include file-specific properties" {
+            $row = if ($result -is [System.Data.DataRow]) { $result } else { $result[0] }
+            $actualProps = $row | Get-Member -MemberType Property | Select-Object -ExpandProperty Name
+            $actualProps | Should -Not -Contain 'SizeGB'
+            $actualProps | Should -Not -Contain 'FileName'
+            $actualProps | Should -Not -Contain 'FileID'
+            $actualProps | Should -Not -Contain 'FileType'
+        }
+    }
+
+    Context "Output with -AggregateBy Disk" {
+        BeforeAll {
+            $result = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -AggregateBy Disk -EnableException
+        }
+
+        It "Has the expected properties for Disk aggregation" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'DiskLocation',
+                'Reads',
+                'AverageReadStall',
+                'ReadPerformance',
+                'Writes',
+                'AverageWriteStall',
+                'WritePerformance',
+                'Avg Overall Latency',
+                'Avg Bytes/Read',
+                'Avg Bytes/Write',
+                'Avg Bytes/Transfer'
+            )
+            $row = if ($result -is [System.Data.DataRow]) { $result } else { $result[0] }
+            $actualProps = $row | Get-Member -MemberType Property | Select-Object -ExpandProperty Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in Disk aggregation"
+            }
+        }
+
+        It "Does not include database or file-specific properties" {
+            $row = if ($result -is [System.Data.DataRow]) { $result } else { $result[0] }
+            $actualProps = $row | Get-Member -MemberType Property | Select-Object -ExpandProperty Name
+            $actualProps | Should -Not -Contain 'Database'
+            $actualProps | Should -Not -Contain 'SizeGB'
+            $actualProps | Should -Not -Contain 'FileName'
+            $actualProps | Should -Not -Contain 'FileID'
+            $actualProps | Should -Not -Contain 'FileType'
+        }
+    }
+
     Context "Command actually works" {
         It "should have info for model" {
             $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1

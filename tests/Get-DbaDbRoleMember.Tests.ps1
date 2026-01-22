@@ -100,4 +100,38 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Role | Select-Object -Unique | Should -Not -Contain "db_owner"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbRoleMember -SqlInstance $instance -Database msdb -IncludeSystemUser -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Role",
+                "UserName",
+                "Login",
+                "MemberRole",
+                "SmoRole",
+                "SmoUser",
+                "SmoMemberRole"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns at least one result" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+    }
 }

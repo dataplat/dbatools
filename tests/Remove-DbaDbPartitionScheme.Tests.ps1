@@ -54,6 +54,40 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $dbname3 = "dbatoolsci_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $server -Name $dbname3 -EnableException
+            $partfun3 = "dbatoolssci_partfun3_$(Get-Random)"
+            $partsch3 = "dbatoolssci_partsch3_$(Get-Random)"
+            $null = $server.Query("CREATE PARTITION FUNCTION $partfun3 (int) AS RANGE LEFT FOR VALUES (1, 100, 1000); CREATE PARTITION SCHEME $partsch3 AS PARTITION $partfun3 ALL TO ( [PRIMARY] );", $dbname3)
+            
+            $result = Remove-DbaDbPartitionScheme -SqlInstance $server -Database $dbname3 -Confirm:$false -EnableException
+            
+            $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname3 -Confirm:$false -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'PartitionSchemeName',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "Commands work as expected" {
         It "removes partition scheme" {
             Get-DbaDbPartitionScheme -SqlInstance $server -Database $dbname1 | Should -Not -BeNullOrEmpty

@@ -56,4 +56,68 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaComputerSystem -ComputerName $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "Domain",
+                "DomainRole",
+                "Manufacturer",
+                "Model",
+                "SystemFamily",
+                "SystemType",
+                "ProcessorName",
+                "ProcessorCaption",
+                "ProcessorMaxClockSpeed",
+                "NumberLogicalProcessors",
+                "NumberProcessors",
+                "IsHyperThreading",
+                "TotalPhysicalMemory",
+                "IsSystemManagedPageFile",
+                "PendingReboot"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties not shown by default" {
+            $additionalProps = @(
+                "SystemSkuNumber",
+                "IsDaylightSavingsTime",
+                "DaylightInEffect",
+                "DnsHostName",
+                "AdminPasswordStatus"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available via Select-Object *"
+            }
+        }
+    }
+
+    Context "Output with -IncludeAws" {
+        BeforeAll {
+            # Note: This test will only add AWS properties if the target is actually an EC2 instance
+            # On non-AWS systems, these properties won't be added
+            $result = Get-DbaComputerSystem -ComputerName $TestConfig.InstanceSingle -IncludeAws -EnableException
+        }
+
+        It "Includes AWS properties when detected as EC2 instance" {
+            # AWS properties are conditionally added only if the system is detected as an EC2 instance
+            # We test that the command executes successfully with -IncludeAws
+            $result | Should -Not -BeNullOrEmpty
+            $result.PSObject.Properties.Name | Should -Contain "ComputerName"
+        }
+    }
 }

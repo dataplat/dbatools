@@ -26,11 +26,11 @@ function Get-DbaDeprecatedFeature {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per deprecated SQL Server feature that has been used on the instance (with usage count > 0).
 
-        Properties:
+        Default display properties:
         - ComputerName: The name of the computer running the SQL Server instance
         - InstanceName: The name of the SQL Server instance (from SQL Server's perspective)
         - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName format)

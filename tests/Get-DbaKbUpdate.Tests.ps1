@@ -22,6 +22,97 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaKbUpdate -Name KB4057119 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "Title",
+                "NameLevel",
+                "SPLevel",
+                "KBLevel",
+                "CULevel",
+                "BuildLevel",
+                "SupportedUntil",
+                "Architecture",
+                "Language",
+                "Hotfix",
+                "Description",
+                "LastModified",
+                "Size",
+                "Classification",
+                "SupportedProducts",
+                "MSRCNumber",
+                "MSRCSeverity",
+                "RebootBehavior",
+                "RequestsUserInput",
+                "ExclusiveInstall",
+                "NetworkRequired",
+                "UninstallNotes",
+                "UninstallSteps",
+                "UpdateId",
+                "Supersedes",
+                "SupersededBy",
+                "Link"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output with -Simple" {
+        BeforeAll {
+            $result = Get-DbaKbUpdate -Name KB4577194 -Simple -EnableException
+        }
+
+        It "Returns reduced property set" {
+            $expectedProps = @(
+                "Title",
+                "Architecture",
+                "Language",
+                "Hotfix",
+                "UpdateId",
+                "Link"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present with -Simple"
+            }
+        }
+
+        It "Excludes detailed properties when -Simple specified" {
+            $excludedProps = @(
+                "LastModified",
+                "Description",
+                "Size",
+                "Classification",
+                "SupportedProducts",
+                "MSRCNumber",
+                "MSRCSeverity",
+                "RebootBehavior",
+                "RequestsUserInput",
+                "ExclusiveInstall",
+                "NetworkRequired",
+                "UninstallNotes",
+                "UninstallSteps",
+                "SupersededBy",
+                "Supersedes"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $excludedProps) {
+                $actualProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded with -Simple"
+            }
+        }
+    }
+
     It "successfully connects and parses link and title" {
         $results = Get-DbaKbUpdate -Name KB4057119
         $results.Link -match "download.windowsupdate.com"

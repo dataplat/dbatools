@@ -159,4 +159,40 @@ Describe $CommandName -Tag IntegrationTests {
             $schemas | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema $schemaName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Schema]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'IsSystemObject'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the DatabaseName property added by dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain 'DatabaseName'
+            $result.DatabaseName | Should -Be $newDbName
+        }
+
+        It "Has the DatabaseId property added by dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain 'DatabaseId'
+            $result.DatabaseId | Should -BeGreaterThan 0
+        }
+    }
 }

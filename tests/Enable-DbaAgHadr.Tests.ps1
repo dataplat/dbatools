@@ -46,4 +46,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IsHadrEnabled | Should -BeTrue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'IsHadrEnabled'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "IsHadrEnabled property is set to true on successful completion" {
+            $result.IsHadrEnabled | Should -BeTrue
+        }
+    }
 }

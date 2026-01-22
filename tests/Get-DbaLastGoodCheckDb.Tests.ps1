@@ -106,4 +106,35 @@ Describe $CommandName -Tag IntegrationTests {
             ($duplicateResults | Group-Object SqlInstance, Database | Where-Object Count -gt 1) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.InstanceMulti1 -Database master -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected core properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseCreated",
+                "LastGoodCheckDb",
+                "DaysSinceDbCreated",
+                "DaysSinceLastGoodCheckDb",
+                "Status",
+                "DataPurityEnabled",
+                "CreateVersion",
+                "DbccFlags"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

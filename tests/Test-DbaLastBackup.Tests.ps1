@@ -107,6 +107,54 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $testlastbackup -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'SourceServer',
+                'TestServer',
+                'Database',
+                'FileExists',
+                'Size',
+                'RestoreResult',
+                'DbccResult',
+                'RestoreStart',
+                'RestoreEnd',
+                'RestoreElapsed',
+                'DbccMaxDop',
+                'DbccStart',
+                'DbccEnd',
+                'DbccElapsed',
+                'BackupDates',
+                'BackupFiles'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has correct property types" {
+            $result.SourceServer | Should -BeOfType [string]
+            $result.TestServer | Should -BeOfType [string]
+            $result.Database | Should -BeOfType [string]
+            $result.FileExists | Should -BeOfType [bool]
+            $result.Size.GetType().Name | Should -Be "DbaSize"
+            $result.RestoreResult | Should -BeOfType [string]
+            $result.DbccResult | Should -BeOfType [string]
+            $result.DbccMaxDop | Should -BeOfType [int]
+            $result.BackupDates | ForEach-Object { $PSItem.GetType().Name | Should -Be "DbaDateTime" }
+            $result.BackupFiles | Should -BeOfType [System.Array]
+        }
+    }
+
     Context "Test a single database" {
         BeforeAll {
             $singleDbResults = Test-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $testlastbackup

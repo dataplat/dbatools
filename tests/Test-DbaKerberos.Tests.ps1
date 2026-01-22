@@ -32,4 +32,82 @@ Describe $CommandName -Tag UnitTests {
             $computerSet.Parameters.Name | Should -Contain "ComputerName"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaKerberos -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "Check",
+                "Category",
+                "Status",
+                "Details",
+                "Remediation"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns multiple check results" {
+            $result.Count | Should -BeGreaterThan 1 -Because "Test-DbaKerberos should perform multiple diagnostic checks"
+        }
+
+        It "ComputerName property is not null or empty" {
+            $result[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Check property is not null or empty" {
+            $result[0].Check | Should -Not -BeNullOrEmpty
+        }
+
+        It "Category property is not null or empty" {
+            $result[0].Category | Should -Not -BeNullOrEmpty
+        }
+
+        It "Status property contains valid values" {
+            $validStatuses = @("Pass", "Fail", "Warning")
+            $result[0].Status | Should -BeIn $validStatuses
+        }
+    }
+
+    Context "Output with -ComputerName parameter" {
+        BeforeAll {
+            $result = Test-DbaKerberos -ComputerName $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "Check",
+                "Category",
+                "Status",
+                "Details",
+                "Remediation"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "InstanceName should be null when using ComputerName parameter" {
+            # When testing at computer level, InstanceName should be null
+            $result[0].InstanceName | Should -BeNullOrEmpty
+        }
+    }
 }

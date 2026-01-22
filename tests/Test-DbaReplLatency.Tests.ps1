@@ -23,4 +23,37 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" -Tag UnitTests {
+        It "Has the expected output type documented" {
+            $commandHelp = Get-Help $CommandName
+            $commandHelp.returnValues.returnValue[0].type.name | Should -Be "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties documented" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'TokenID',
+                'TokenCreateDate',
+                'PublicationServer',
+                'PublicationDB',
+                'PublicationName',
+                'PublicationType',
+                'DistributionServer',
+                'DistributionDB',
+                'SubscriberServer',
+                'SubscriberDB',
+                'PublisherToDistributorLatency',
+                'DistributorToSubscriberLatency',
+                'TotalLatency'
+            )
+            $commandHelp = Get-Help $CommandName
+            $outputSection = $commandHelp.description.Text
+            foreach ($prop in $expectedProps) {
+                $outputSection | Should -Match $prop -Because "property '$prop' should be documented in .OUTPUTS section"
+            }
+        }
+    }
 }

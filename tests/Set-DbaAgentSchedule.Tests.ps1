@@ -53,6 +53,70 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_setschedule1", "dbatoolsci_setschedule2"
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCreateSchedule = @{
+                SqlInstance               = $TestConfig.InstanceSingle
+                Schedule                  = "dbatoolsci_outputtest"
+                Job                       = "dbatoolsci_setschedule1"
+                FrequencyType             = "Daily"
+                FrequencyRecurrenceFactor = "1"
+                FrequencySubdayInterval   = "5"
+                FrequencySubdayType       = "Time"
+                StartDate                 = $start
+                StartTime                 = "010000"
+                EndDate                   = $end
+                EndTime                   = "020000"
+            }
+            $null = New-DbaAgentSchedule @splatCreateSchedule
+
+            $splatSetSchedule = @{
+                SqlInstance               = $TestConfig.InstanceSingle
+                Schedule                  = "dbatoolsci_outputtest"
+                Job                       = "dbatoolsci_setschedule1"
+                StartTime                 = "080000"
+                EnableException           = $true
+            }
+            $result = Set-DbaAgentSchedule @splatSetSchedule
+        }
+
+        AfterAll {
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle |
+                Where-Object Name -eq "dbatoolsci_outputtest" |
+                Remove-DbaAgentSchedule -Force
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobSchedule]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'IsEnabled',
+                'FrequencyTypes',
+                'FrequencyInterval',
+                'FrequencySubDayTypes',
+                'FrequencySubDayInterval',
+                'ActiveStartDate',
+                'ActiveEndDate',
+                'ActiveStartTimeOfDay',
+                'ActiveEndTimeOfDay'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns modified schedule with updated properties" {
+            $result.ActiveStartTimeOfDay.ToString("HHmmss") | Should -Be "080000"
+        }
+    }
     Context "Should rename schedule" {
         BeforeAll {
             $splatCreateSchedule = @{

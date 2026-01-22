@@ -211,4 +211,49 @@ Describe $CommandName -Tag IntegrationTests {
             $warn.message | Should -Not -BeLike "*Schema dbo already exists in the database*"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "OutputTestSequence_$random" -Schema "Schema_$random" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Sequence]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'Name',
+                'DataType',
+                'StartValue',
+                'IncrementValue'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the dbatools-added properties with correct values" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $result.Database | Should -Be $newDbName
+            $result.Schema | Should -Be "Schema_$random"
+            $result.Name | Should -Be "OutputTestSequence_$random"
+        }
+
+        It "Has SMO Sequence properties accessible" {
+            # Verify additional SMO properties are accessible
+            $result.MinValue | Should -Not -BeNull
+            $result.MaxValue | Should -Not -BeNull
+            $result.IsCycleEnabled | Should -Not -BeNull
+            $result.SequenceCacheType | Should -Not -BeNull
+        }
+    }
 }

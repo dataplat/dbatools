@@ -84,4 +84,29 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Parent | Should -Be $dbname
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaDbRole -SqlInstance $instance -Database $dbname -Role $roleExecutor -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DatabaseRole]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Parent',
+                'Owner'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

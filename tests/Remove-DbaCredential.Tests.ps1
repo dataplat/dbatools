@@ -160,4 +160,49 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaCredential @splatGetAll) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Create a test credential for output validation
+            $splatCreateCredential = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Query       = "CREATE CREDENTIAL $credentialName WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
+            }
+            $null = Invoke-DbaQuery @splatCreateCredential
+
+            $splatRemoveCredential = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Credential      = $credentialName
+                EnableException = $true
+            }
+            $result = Remove-DbaCredential @splatRemoveCredential
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Sets Status to 'Dropped' on success" {
+            $result.Status | Should -Be "Dropped"
+        }
+
+        It "Sets IsRemoved to true on success" {
+            $result.IsRemoved | Should -Be $true
+        }
+    }
 }

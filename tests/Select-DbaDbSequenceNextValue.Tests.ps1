@@ -49,6 +49,20 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Select-DbaDbSequenceNextValue -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Int64]
+        }
+
+        It "Returns a numeric value" {
+            $result | Should -BeGreaterOrEqual 0
+        }
+    }
+
     Context "commands work as expected" {
         It "validates required Database param" {
             $sequenceValue = Select-DbaDbSequenceNextValue -SqlInstance $server -Sequence SequenceTest -ErrorVariable error -WarningAction SilentlyContinue

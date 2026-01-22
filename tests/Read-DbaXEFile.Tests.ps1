@@ -43,4 +43,45 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = $xeSession | Read-DbaXEFile -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject by default" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected standard properties" {
+            $expectedProps = @(
+                'name',
+                'timestamp'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has dynamic properties from XEvent fields and actions" {
+            # The result should have more properties than just name and timestamp
+            $result.PSObject.Properties.Name.Count | Should -BeGreaterThan 2
+        }
+    }
+
+    Context "Output with -Raw" {
+        BeforeAll {
+            $result = $xeSession | Read-DbaXEFile -Raw -EnableException | Select-Object -First 1
+        }
+
+        It "Returns Microsoft.SqlServer.XEvent.XELite.XEvent when -Raw specified" {
+            $result | Should -BeOfType [Microsoft.SqlServer.XEvent.XELite.XEvent]
+        }
+
+        It "Has native XEvent properties" {
+            $result.Name | Should -Not -BeNullOrEmpty
+            $result.Timestamp | Should -Not -BeNullOrEmpty
+        }
+    }
 }

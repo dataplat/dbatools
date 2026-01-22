@@ -33,6 +33,114 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+
+            $resourcePoolName = "dbatoolssci_outputTest"
+            $splatNewResourcePool = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                ResourcePool            = $resourcePoolName
+                MaximumCpuPercentage    = 100
+                MaximumMemoryPercentage = 100
+                EnableException         = $true
+            }
+            $result = New-DbaRgResourcePool @splatNewResourcePool
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type for Internal pools" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ResourcePool]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Name',
+                'CapCpuPercentage',
+                'IsSystemObject',
+                'MaximumCpuPercentage',
+                'MaximumIopsPerVolume',
+                'MaximumMemoryPercentage',
+                'MinimumCpuPercentage',
+                'MinimumIopsPerVolume',
+                'MinimumMemoryPercentage',
+                'WorkloadGroups'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $resourcePoolName = "dbatoolssci_outputTest"
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName -Type Internal -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Output Validation - External pools" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+
+            $resourcePoolName = "dbatoolssci_outputExternal"
+            $splatNewResourcePool = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                ResourcePool            = $resourcePoolName
+                Type                    = "External"
+                MaximumCpuPercentage    = 100
+                MaximumMemoryPercentage = 100
+                MaximumProcesses        = 5
+                EnableException         = $true
+            }
+            $result = New-DbaRgResourcePool @splatNewResourcePool
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type for External pools" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ExternalResourcePool]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Name',
+                'CapCpuPercentage',
+                'IsSystemObject',
+                'MaximumCpuPercentage',
+                'MaximumIopsPerVolume',
+                'MaximumMemoryPercentage',
+                'MinimumCpuPercentage',
+                'MinimumIopsPerVolume',
+                'MinimumMemoryPercentage',
+                'WorkloadGroups'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $resourcePoolName = "dbatoolssci_outputExternal"
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName -Type External -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
     Context "Functionality" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.

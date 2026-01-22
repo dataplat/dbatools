@@ -5,6 +5,21 @@ Internal Function to get SQL Server backfiles from a specified folder
 
 .DESCRIPTION
 Takes path, checks for validity. Scans for usual backup file
+
+.OUTPUTS
+    System.IO.FileInfo
+
+    Returns one or more FileInfo objects representing backup files found in the specified path.
+    When -Recurse is specified, includes files from subdirectories.
+
+    Properties are standard System.IO.FileInfo properties including:
+    - FullName: Complete path to the file
+    - Name: File name including extension
+    - DirectoryName: Parent directory path
+    - Extension: File extension (e.g., .bak, .trn)
+    - Length: File size in bytes
+    - CreationTime: File creation timestamp
+    - LastWriteTime: File last modified timestamp
     #>
     [CmdletBinding()]
     param (

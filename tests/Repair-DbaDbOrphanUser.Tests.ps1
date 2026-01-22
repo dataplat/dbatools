@@ -99,4 +99,39 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
             $secondRepairResults | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Create new orphans for output validation testing
+            $createOrphanSql = @"
+CREATE USER [dbatoolsci_orphan_output1] WITHOUT LOGIN;
+CREATE USER [dbatoolsci_orphan_output2] WITHOUT LOGIN;
+"@
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $createOrphanSql -Database dbatoolsci_orphan -EnableException
+            $result = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database dbatoolsci_orphan -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "User",
+                "Status"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the correct Status values" {
+            $result.Status | Should -BeIn @("Success", "No matching login")
+        }
+    }
 }

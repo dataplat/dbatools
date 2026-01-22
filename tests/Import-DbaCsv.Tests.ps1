@@ -617,6 +617,50 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Delimiter "`t" -Table SuperSmall -Truncate -EnableException
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Table',
+                'Schema',
+                'RowsCopied',
+                'Elapsed',
+                'RowsPerSecond',
+                'Path'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has all documented properties" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $result.Database | Should -Be "tempdb"
+            $result.Table | Should -Be "SuperSmall"
+            $result.Schema | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeOfType [long]
+            $result.Elapsed | Should -Not -BeNullOrEmpty
+            $result.RowsPerSecond | Should -BeOfType [double]
+            $result.Path | Should -Not -BeNullOrEmpty
+        }
+    }
+
     Context "AutoCreateTable post-import optimization" {
         It "optimizes nvarchar(MAX) columns to appropriate sizes after import" {
             $filePath = "$($TestConfig.Temp)\optimize-$(Get-Random).csv"

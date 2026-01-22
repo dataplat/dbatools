@@ -63,6 +63,50 @@ DROP LOGIN [$DBUserName2];
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.User]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'CreateDate',
+                'DateLastModified',
+                'Name',
+                'Login',
+                'LoginType',
+                'AuthenticationType',
+                'State',
+                'HasDbAccess',
+                'DefaultSchema'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the dbatools-added properties" {
+            $dbatoolsProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database'
+            )
+            foreach ($prop in $dbatoolsProps) {
+                $result[0].$prop | Should -Not -BeNullOrEmpty -Because "dbatools adds '$prop' property"
+            }
+        }
+    }
+
     Context "Users are correctly located" {
         BeforeAll {
             $results1 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -eq $DBUserName | Select-Object *

@@ -44,4 +44,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context -Skip:(-not (Get-DbaPfDataCollectorSet -CollectorSet RTEvents)) "Output Validation" {
+        BeforeAll {
+            $null = Stop-DbaPfDataCollectorSet -CollectorSet RTEvents -EnableException
+            $result = Start-DbaPfDataCollectorSet -CollectorSet RTEvents -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'Name',
+                'State'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the DataCollectorSetObject property available" {
+            $result.PSObject.Properties.Name | Should -Contain 'DataCollectorSetObject' -Because "underlying COM object should be accessible"
+        }
+    }
 }

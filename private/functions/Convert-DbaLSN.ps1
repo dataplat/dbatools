@@ -11,6 +11,15 @@ function Convert-DbaLSN {
     .PARAMETER LSN
         The LSN value to be converted
 
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        Returns a custom object with the LSN value in both formats.
+
+        Properties:
+        - Hexadecimal: The LSN in hexadecimal format (xxxx:xxxx:xxxx)
+        - Numeric: The LSN in numeric format
+
     .EXAMPLE
         PS C:\ $output = Convert-DbaLSN -LSN 0000002f:000044aa:002b
 

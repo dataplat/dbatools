@@ -222,4 +222,37 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Login | Should -Be $loginName1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatSync = @{
+                Source      = $primaryInstance
+                Destination = $secondaryInstance
+                Login       = $loginName1
+            }
+            $result = Sync-DbaLoginPassword @splatSync
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @(
+                "SourceServer",
+                "DestinationServer",
+                "Login",
+                "Status",
+                "Notes"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns Status property with expected values" {
+            $result.Status | Should -BeIn @("Success", "Failed")
+        }
+    }
 }

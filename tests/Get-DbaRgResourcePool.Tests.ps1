@@ -46,4 +46,78 @@ Describe $CommandName -Tag IntegrationTests {
             $typeResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation for Internal pools" {
+        BeforeAll {
+            $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -Type Internal -EnableException
+        }
+
+        It "Returns the documented output type for Internal pools" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ResourcePool]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Name',
+                'CapCpuPercentage',
+                'IsSystemObject',
+                'MaximumCpuPercentage',
+                'MaximumIopsPerVolume',
+                'MaximumMemoryPercentage',
+                'MinimumCpuPercentage',
+                'MinimumIopsPerVolume',
+                'MinimumMemoryPercentage',
+                'WorkloadGroups'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation for External pools" {
+        BeforeAll {
+            $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -Type External -EnableException
+        }
+
+        It "Returns the documented output type for External pools" {
+            if ($result) {
+                $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ExternalResourcePool]
+            } else {
+                Set-ItResult -Skipped -Because "No external resource pools exist on this instance"
+            }
+        }
+
+        It "Has the expected default display properties" {
+            if ($result) {
+                $expectedProps = @(
+                    'ComputerName',
+                    'InstanceName',
+                    'SqlInstance',
+                    'Id',
+                    'Name',
+                    'CapCpuPercentage',
+                    'IsSystemObject',
+                    'MaximumCpuPercentage',
+                    'MaximumIopsPerVolume',
+                    'MaximumMemoryPercentage',
+                    'MinimumCpuPercentage',
+                    'MinimumIopsPerVolume',
+                    'MinimumMemoryPercentage',
+                    'WorkloadGroups'
+                )
+                $actualProps = $result[0].PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            } else {
+                Set-ItResult -Skipped -Because "No external resource pools exist on this instance"
+            }
+        }
+    }
 }

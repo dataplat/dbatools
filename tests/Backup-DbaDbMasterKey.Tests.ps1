@@ -67,6 +67,43 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatBackup = @{
+                SqlInstance    = $testInstance
+                Database       = $testDatabase
+                SecurePassword = $masterKeyPass
+                Path           = $backupPath
+                EnableException = $true
+            }
+            $result = Backup-DbaDbMasterKey @splatBackup
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.MasterKey]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Path',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the additional properties added by this function" {
+            $result.PSObject.Properties.Name | Should -Contain 'DatabaseID' -Because "DatabaseID is added via Add-Member"
+            $result.PSObject.Properties.Name | Should -Contain 'Filename' -Because "Filename is added via Add-Member"
+        }
+    }
+
     Context "Can backup a database master key" {
         It "Backs up the database master key" {
             $splatBackup = @{

@@ -81,4 +81,54 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be @("Successful", "Successful")
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopy = @{
+                Source          = $TestConfig.InstanceCopy2
+                Destination     = $TestConfig.InstanceCopy1
+                CMSGroup        = $groupName
+                EnableException = $true
+            }
+            $result = Copy-DbaRegServer @splatCopy
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result[0].PSObject.TypeNames | Should -Contain "MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns multiple objects for different migration actions" {
+            $result.Count | Should -BeGreaterThan 0
+        }
+
+        It "Status property contains valid values" {
+            $validStatuses = @("Successful", "Skipped", "Failed")
+            foreach ($item in $result) {
+                $validStatuses | Should -Contain $item.Status
+            }
+        }
+
+        It "Type property contains valid object types" {
+            $validTypes = @("CMS Destination Group", "CMS Group", "CMS Instance")
+            foreach ($item in $result) {
+                $validTypes | Should -Contain $item.Type
+            }
+        }
+    }
 }

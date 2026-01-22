@@ -54,6 +54,49 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_output_$random" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.FileGroup]
+        }
+
+        It "Has the expected connection context properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on the output"
+            }
+        }
+
+        It "Has the expected SMO FileGroup properties" {
+            $expectedProps = @(
+                'Parent',
+                'FileGroupType',
+                'Name',
+                'Size',
+                'IsDefault',
+                'Files'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on the FileGroup object"
+            }
+        }
+
+        It "Returns filegroup with correct properties populated" {
+            $result.Name | Should -Be "filegroup_output_$random"
+            $result.Parent.Name | Should -Be $db1name
+            $result.FileGroupType | Should -Be 'RowsFileGroup'
+        }
+    }
+
     Context "ensure command works" {
         It "Creates a filegroup" {
             $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_$random"

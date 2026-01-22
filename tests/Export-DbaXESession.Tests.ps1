@@ -107,4 +107,65 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
         }
     }
+
+    Context "Output Validation with -Passthru" {
+        BeforeAll {
+            $result = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -Passthru -EnableException
+        }
+
+        It "Returns String output type when -Passthru specified" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns T-SQL script containing CREATE EVENT SESSION" {
+            $result | Should -Match "CREATE EVENT SESSION"
+        }
+    }
+
+    Context "Output Validation with -FilePath" {
+        BeforeAll {
+            $tempFile = "$backupPath\OutputValidation-$(Get-Random).sql"
+            $result = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -FilePath $tempFile -EnableException
+        }
+
+        It "Returns FileInfo output type when -FilePath specified" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "FileInfo object has expected properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'FullName'
+            $result.PSObject.Properties.Name | Should -Contain 'Name'
+            $result.PSObject.Properties.Name | Should -Contain 'Length'
+        }
+    }
+
+    Context "Output Validation with -Path" {
+        BeforeAll {
+            $result = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -Path $backupPath -EnableException
+        }
+
+        It "Returns FileInfo output type when -Path specified" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "FileInfo object has expected properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'FullName'
+            $result.PSObject.Properties.Name | Should -Contain 'Name'
+            $result.PSObject.Properties.Name | Should -Contain 'Length'
+        }
+    }
+
+    Context "Output Validation default behavior" {
+        BeforeAll {
+            $result = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -EnableException
+        }
+
+        It "Returns String output type by default (no path parameters)" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns T-SQL script containing CREATE EVENT SESSION" {
+            $result | Should -Match "CREATE EVENT SESSION"
+        }
+    }
 }

@@ -67,4 +67,41 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "$sessionName.xml"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.InstanceSingle -Template "Profiler TSQL Duration" -EnableException
+            $result = $session | Export-DbaXESessionTemplate -Path $tempPath -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'DirectoryName',
+                'Extension',
+                'Length',
+                'CreationTime',
+                'LastWriteTime',
+                'LastAccessTime',
+                'Mode'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on FileInfo"
+            }
+        }
+
+        It "Creates a file with .xml extension" {
+            $result.Extension | Should -Be ".xml"
+        }
+
+        It "Creates a file in the specified Path directory" {
+            $result.DirectoryName | Should -Be $tempPath
+        }
+    }
 }

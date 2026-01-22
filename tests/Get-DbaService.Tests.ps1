@@ -90,4 +90,59 @@ Describe $CommandName -Tag IntegrationTests {
             $sqlInstanceResults.Count | Should -Be 1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Engine -EnableException
+        }
+
+        It "Returns objects with the custom DbaSqlService type" {
+            $result.PSObject.TypeNames | Should -Contain "DbaSqlService"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'ServiceName',
+                'ServiceType',
+                'InstanceName',
+                'DisplayName',
+                'StartName',
+                'State',
+                'StartMode'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the expected script methods" {
+            $result[0].Stop | Should -Not -BeNullOrEmpty
+            $result[0].Start | Should -Not -BeNullOrEmpty
+            $result[0].Restart | Should -Not -BeNullOrEmpty
+            $result[0].ChangeStartMode | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output with -AdvancedProperties" {
+        BeforeAll {
+            $result = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Engine -AdvancedProperties -EnableException
+        }
+
+        It "Includes advanced properties" {
+            $advancedProps = @(
+                'SqlInstance',
+                'Version',
+                'SPLevel',
+                'SkuName',
+                'Clustered',
+                'VSName'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $advancedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be included with -AdvancedProperties"
+            }
+        }
+    }
 }

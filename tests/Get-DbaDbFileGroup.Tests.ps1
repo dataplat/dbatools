@@ -104,4 +104,45 @@ Describe $CommandName -Tag IntegrationTests {
             $pipedResults.Parent.Name | Should -Contain "msdb"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $multifgdb -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.FileGroup]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Parent',
+                'FileGroupType',
+                'Name',
+                'Size'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ComputerName property added by dbatools" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'ComputerName'
+            $result[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has InstanceName property added by dbatools" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'InstanceName'
+            $result[0].InstanceName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has SqlInstance property added by dbatools" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'SqlInstance'
+            $result[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
 }

@@ -76,4 +76,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be $endpointName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopy = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Endpoint    = $endpointName
+                Force       = $true
+            }
+            $result = Copy-DbaEndpoint @splatCopy -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has TypeName set to MigrationObject" {
+            $result.PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+    }
 }

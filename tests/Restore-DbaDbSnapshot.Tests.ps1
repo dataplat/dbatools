@@ -119,4 +119,36 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Name $db1_snap1
+            $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Snapshot $db1_snap1 -Force -EnableException
+        }
+
+        AfterAll {
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1 -ErrorAction SilentlyContinue
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsAccessible',
+                'RecoveryModel',
+                'Owner'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

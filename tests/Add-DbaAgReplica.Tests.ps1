@@ -119,4 +119,65 @@ Describe $CommandName -Tag IntegrationTests {
             $results.FailoverMode | Should -Be "Manual"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputAgName = "dbatoolsci_output_ag"
+            $splatOutputAg = @{
+                Primary      = $TestConfig.InstanceHadr
+                Name         = $outputAgName
+                ClusterType  = "None"
+                FailoverMode = "Manual"
+                Certificate  = "dbatoolsci_AGCert"
+            }
+            $outputAg = New-DbaAvailabilityGroup @splatOutputAg
+            $result = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $outputAgName
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Cleanup all created objects.
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $outputAgName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityReplica]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'Name',
+                'Role',
+                'RollupSynchronizationState',
+                'AvailabilityMode',
+                'BackupPriority',
+                'EndpointUrl',
+                'SessionTimeout',
+                'FailoverMode',
+                'ReadonlyRoutingList'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the backward compatibility Replica property" {
+            $result.PSObject.Properties.Name | Should -Contain 'Replica' -Because "Replica property is added for backwards compatibility"
+        }
+    }
 }

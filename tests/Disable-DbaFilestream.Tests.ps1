@@ -41,4 +41,42 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ServiceAccessLevel | Should -Be 0
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Disable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -Force -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "InstanceAccess",
+                "ServiceAccess",
+                "ServiceShareName"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available via Select-Object" {
+            $additionalProps = @(
+                "InstanceAccessLevel",
+                "ServiceAccessLevel",
+                "Credential",
+                "SqlCredential"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
 }

@@ -81,11 +81,11 @@ function Remove-DbaDatabaseSafely {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per database that completes the removal workflow (backup, restore job creation, drop, verify restore, and cleanup).
 
-        Properties:
+        Default display properties:
         - SqlInstance: The source SQL Server instance name where the original database was located
         - DatabaseName: The name of the database that was removed
         - JobName: The name of the SQL Agent restore job that was created for backup verification testing

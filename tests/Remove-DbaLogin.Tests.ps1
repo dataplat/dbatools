@@ -96,4 +96,36 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Create a test login for output validation
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputTestLogin = "dbatoolsci_outputtest"
+            $outputTestPassword = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputTestLogin -Password $outputTestPassword
+
+            $result = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputTestLogin -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Login",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

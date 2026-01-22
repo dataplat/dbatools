@@ -82,6 +82,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
+    }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.LogFileEntry]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'LogDate',
+                'Source',
+                'Text'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
 
         It "Returns filtered results for [Source = $sourceFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -Source $sourceFilter

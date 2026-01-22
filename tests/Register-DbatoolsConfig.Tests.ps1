@@ -21,6 +21,22 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $configName = "dbatools.test.register-output-$(Get-Random)"
+            Set-DbatoolsConfig -FullName $configName -Value "test-value"
+        }
+
+        AfterAll {
+            Unregister-DbatoolsConfig -FullName $configName -Scope UserDefault -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output by default" {
+            $result = Register-DbatoolsConfig -FullName $configName -Scope UserDefault
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

@@ -91,4 +91,47 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbMailAccount -SqlInstance $server) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $accountname = "dbatoolsci_test_$(Get-Random)"
+            $splatAccount = @{
+                SqlInstance  = $server
+                Name         = $accountname
+                EmailAddress = "admin@ad.local"
+            }
+            $null = New-DbaDbMailAccount @splatAccount
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDbMailAccount -SqlInstance $server -Account $accountname
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result = Remove-DbaDbMailAccount -SqlInstance $server -Account $accountname -EnableException
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $result = Remove-DbaDbMailAccount -SqlInstance $server -Account $accountname -EnableException
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+    }
 }

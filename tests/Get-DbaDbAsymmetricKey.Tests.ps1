@@ -109,4 +109,47 @@ Describe $CommandName -Tag IntegrationTests {
             $multiResults.Name | Should -Contain $keyName2
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database $databaseName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AsymmetricKey]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Name',
+                'Owner',
+                'KeyEncryptionAlgorithm',
+                'KeyLength',
+                'PrivateKeyEncryptionType',
+                'Thumbprint'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the expected custom properties added by dbatools" {
+            $customProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'DatabaseId'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $customProps) {
+                $actualProps | Should -Contain $prop -Because "custom property '$prop' should be added by dbatools"
+            }
+        }
+    }
 }

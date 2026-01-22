@@ -273,9 +273,21 @@ function New-DbaDbTable {
        - Database: Database containing the table
        - Schema: Schema containing the table
        - Name: Name of the table
-       - Rows: Number of rows in the table (0 for newly created tables)
-       - Created: DateTime when the table was created
-       - LastModified: DateTime when the table was last modified
+       - IndexSpaceUsed: Space used by indexes on the table
+       - DataSpaceUsed: Space used by table data
+       - RowCount: Number of rows in the table (0 for newly created tables)
+       - HasClusteredIndex: Boolean indicating if table has a clustered index
+       
+       Version-specific properties (added based on SQL Server version):
+       - IsPartitioned: Boolean indicating if table is partitioned (SQL 2005+)
+       - ChangeTrackingEnabled: Boolean indicating if change tracking is enabled (SQL 2008+)
+       - IsFileTable: Boolean indicating if table is a FileTable (SQL 2012+)
+       - HasSparseColumn: Boolean indicating if table has sparse columns (SQL 2008+)
+       - IsSystemVersioned: Boolean indicating if table is system-versioned temporal table (SQL 2016+)
+       - IsExternal: Boolean indicating if table is an external table (SQL 2016+)
+       - IsNode: Boolean indicating if table is a graph node table (SQL 2017+)
+       - IsEdge: Boolean indicating if table is a graph edge table (SQL 2017+)
+       - FullTextIndex: Full-text index information if present
 
        Additional properties available (from SMO Table object):
        - FileGroup: Filegroup where the table data is stored

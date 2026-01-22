@@ -72,4 +72,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Enabled | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit LoginAudit -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Audit]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'IsEnabled',
+                'OnFailure',
+                'MaximumFiles',
+                'MaximumFileSize',
+                'MaximumFileSizeUnit',
+                'MaximumRolloverFiles',
+                'QueueDelay',
+                'ReserveDiskSpace',
+                'FullName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the additional dbatools-added properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'RemoteFullName'
+        }
+    }
 }

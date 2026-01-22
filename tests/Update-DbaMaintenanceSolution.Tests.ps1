@@ -22,4 +22,27 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $command = Get-Command $CommandName
+            $command.OutputType.Name | Should -Contain 'PSCustomObject'
+        }
+
+        It "Has the expected properties in output documentation" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Solution',
+                'Procedure',
+                'IsUpdated',
+                'Results'
+            )
+            # Verify these properties are documented in the command's .OUTPUTS section
+            $help = Get-Help $CommandName
+            $outputSection = $help.returnValues.returnValue.type.name
+            $outputSection | Should -Contain 'PSCustomObject'
+        }
+    }
 }

@@ -84,4 +84,60 @@ DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
         }
         #>
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $result = Find-DbaDbGrowthEvent -SqlInstance $server -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            if ($result) {
+                $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+            }
+        }
+
+        It "Has the expected default display properties" {
+            if ($result) {
+                $expectedProps = @(
+                    'ComputerName',
+                    'InstanceName',
+                    'SqlInstance',
+                    'EventClass',
+                    'DatabaseName',
+                    'Filename',
+                    'Duration',
+                    'StartTime',
+                    'EndTime',
+                    'ChangeInSize',
+                    'ApplicationName',
+                    'HostName'
+                )
+                $actualProps = $result[0].PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+        }
+
+        It "Has the additional properties available via Select-Object *" {
+            if ($result) {
+                $additionalProps = @(
+                    'DatabaseId',
+                    'SessionLoginName',
+                    'SPID',
+                    'OrderRank'
+                )
+                $actualProps = $result[0].PSObject.Properties.Name
+                foreach ($prop in $additionalProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+                }
+            }
+        }
+    }
 }

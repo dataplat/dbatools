@@ -33,4 +33,30 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPrivilege -ComputerName $env:ComputerName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'User',
+                'LogonAsBatch',
+                'InstantFileInitialization',
+                'LockPagesInMemory',
+                'GenerateSecurityAudit',
+                'LogonAsAService'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

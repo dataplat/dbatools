@@ -80,11 +80,11 @@ function Move-DbaDbFile {
         Returns the current file structure as a formatted PowerShell hashtable template showing logical file names and their current directory paths. This can be used as input for the FileToMove parameter.
         Example: $fileToMove=@{'MyDB_Data'='D:\Data'; 'MyDB_Log'='D:\Logs'}
 
-        PSCustomObject (default)
+        System.Management.Automation.PSCustomObject (default)
 
         Returns one object per database file processed during the move operation. Each object represents the result of moving a single logical database file.
 
-        Properties:
+        Default display properties:
         - Instance: The target SQL Server instance name
         - Database: The name of the database containing the file
         - LogicalName: The logical name of the database file within SQL Server

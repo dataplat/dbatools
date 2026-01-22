@@ -252,6 +252,45 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordPolicyEnforced | Should -Be $false
         }
 
+        It "PasswordMustChange" {
+            # password is required
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordMustChange -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "You must specify a password when using the -PasswordMustChange parameter"
+            $changeResult | Should -BeNullOrEmpty
+
+            # ensure the policy settings are off
+            $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordPolicyEnforced:$false -PasswordExpirationEnabled:$false
+            $result.PasswordExpirationEnabled | Should -Be $false
+            $result.PasswordPolicyEnforced | Should -Be $false
+
+            # set the policy options separately for testlogin2
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin2_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult.PasswordPolicyEnforced | Should -Be $true
+            $changeResult.PasswordExpirationEnabled | Should -Be $true
+
+            # check_policy and check_expiration must be set on the login
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -Password $password1 -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "Unable to change the password and set the must_change option for \[testlogin1_$random\] because check_policy = False and check_expiration = False"
+            $changeResult.Count | Should -Be 1
+            $changeResult.Name | Should -Be "testlogin2_$random"
+
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordMustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult.MustChangePassword | Should -Be $true
+            $changeResult.PasswordChanged | Should -Be $true
+            $changeResult.PasswordPolicyEnforced | Should -Be $true
+            $changeResult.PasswordExpirationEnabled | Should -Be $true
+
+            # now change the password and set the must_change
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin2_$random" -PasswordMustChange -Password $password1
+            $changeResult.MustChangePassword | Should -Be $true
+            $changeResult.PasswordChanged | Should -Be $true
+
+            # get a listing of the logins that must change their password
+            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -MustChangePassword
+            $result.Name | Should -Contain "testlogin1_$random"
+            $result.Name | Should -Contain "testlogin2_$random"
+        }
+
         # TODO: The 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
         It -Skip "Unlock" {
             $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
@@ -296,44 +335,44 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Unlock -SecurePassword $password1
             $results.IsLocked | Should -Be $false
         }
+    }
 
-        It "PasswordMustChange" {
-            # password is required
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordMustChange -WarningAction SilentlyContinue
-            $WarnVar | Should -Match "You must specify a password when using the -PasswordMustChange parameter"
-            $changeResult | Should -BeNullOrEmpty
+    Context "Output Validation" {
+        BeforeAll {
+            $random = Get-Random
+            $password1 = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
+            New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "outputtest_$random" -Password $password1
+            $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "outputtest_$random" -Enable -EnableException
+        }
 
-            # ensure the policy settings are off
-            $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordPolicyEnforced:$false -PasswordExpirationEnabled:$false
-            $result.PasswordExpirationEnabled | Should -Be $false
-            $result.PasswordPolicyEnforced | Should -Be $false
+        AfterAll {
+            Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "outputtest_$random" -Force
+        }
 
-            # set the policy options separately for testlogin2
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin2_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
-            $changeResult.PasswordPolicyEnforced | Should -Be $true
-            $changeResult.PasswordExpirationEnabled | Should -Be $true
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Login]
+        }
 
-            # check_policy and check_expiration must be set on the login
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -Password $password1 -WarningAction SilentlyContinue
-            $WarnVar | Should -Match "Unable to change the password and set the must_change option for \[testlogin1_$random\] because check_policy = False and check_expiration = False"
-            $changeResult.Count | Should -Be 1
-            $changeResult.Name | Should -Be "testlogin2_$random"
-
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordMustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
-            $changeResult.MustChangePassword | Should -Be $true
-            $changeResult.PasswordChanged | Should -Be $true
-            $changeResult.PasswordPolicyEnforced | Should -Be $true
-            $changeResult.PasswordExpirationEnabled | Should -Be $true
-
-            # now change the password and set the must_change
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin2_$random" -PasswordMustChange -Password $password1
-            $changeResult.MustChangePassword | Should -Be $true
-            $changeResult.PasswordChanged | Should -Be $true
-
-            # get a listing of the logins that must change their password
-            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -MustChangePassword
-            $result.Name | Should -Contain "testlogin1_$random"
-            $result.Name | Should -Contain "testlogin2_$random"
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'DenyLogin',
+                'IsDisabled',
+                'IsLocked',
+                'PasswordPolicyEnforced',
+                'PasswordExpirationEnabled',
+                'MustChangePassword',
+                'PasswordChanged',
+                'ServerRole',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
     }
 }

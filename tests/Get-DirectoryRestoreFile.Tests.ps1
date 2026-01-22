@@ -31,6 +31,38 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $null = New-Item "TestDrive:\outputValidation\" -ItemType Directory
+            $null = New-Item "TestDrive:\outputValidation\test.bak" -ItemType File
+            $result = Get-DirectoryRestoreFile -Path "TestDrive:\outputValidation" -EnableException
+        }
+
+        AfterAll {
+            Remove-Item -Path "TestDrive:\outputValidation" -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has standard FileInfo properties" {
+            $expectedProps = @(
+                'FullName',
+                'Name',
+                'DirectoryName',
+                'Extension',
+                'Length',
+                'CreationTime',
+                'LastWriteTime'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on FileInfo object"
+            }
+        }
+    }
+
 
     Context "Returning Files from one folder" {
         BeforeAll {

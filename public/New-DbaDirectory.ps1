@@ -58,16 +58,16 @@ function New-DbaDirectory {
         If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
-        Returns one object per SQL Server instance specified in -SqlInstance, providing the directory creation status for each instance.
+        Returns one object per SQL Server instance when a directory is created.
 
-        Properties:
+        Default display properties:
         - Server: The SQL Server instance name that was targeted for directory creation
         - Path: The full directory path that was created on the SQL Server machine
         - Created: Boolean ($true or $false) indicating whether the directory was successfully created
 
-        The function only returns output if the path does not already exist and the ShouldProcess operation is confirmed (when -WhatIf is not specified or user confirms the action).
+        Note: The function only returns output if the path does not already exist and the ShouldProcess operation is confirmed (when -WhatIf is not specified or user confirms the action).
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (

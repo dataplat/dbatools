@@ -113,4 +113,48 @@ Describe $CommandName -Tag IntegrationTests {
             { Convert-DbaMaskingValue -Value "whatever" -EnableException } | Should -Throw "Please enter a data type"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Convert-DbaMaskingValue -Value "test value" -DataType varchar
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'OriginalValue',
+                'NewValue',
+                'DataType',
+                'ErrorMessage'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns all expected properties with correct values for text conversion" {
+            $result.OriginalValue | Should -Be "test value"
+            $result.NewValue | Should -Be "'test value'"
+            $result.DataType | Should -Be "varchar"
+            $result.ErrorMessage | Should -BeNullOrEmpty
+        }
+
+        It "Returns all expected properties with correct values for NULL conversion" {
+            $nullResult = Convert-DbaMaskingValue -Value $null -Nullable
+            $nullResult.OriginalValue | Should -Be '$null'
+            $nullResult.NewValue | Should -Be "NULL"
+            $nullResult.ErrorMessage | Should -BeNullOrEmpty
+        }
+
+        It "Returns multiple objects when given multiple values" {
+            $multiResult = Convert-DbaMaskingValue -Value @("value1", "value2") -DataType varchar
+            $multiResult.Count | Should -Be 2
+            $multiResult[0].NewValue | Should -Be "'value1'"
+            $multiResult[1].NewValue | Should -Be "'value2'"
+        }
+    }
 }

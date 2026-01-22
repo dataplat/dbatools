@@ -58,26 +58,24 @@ function Start-DbaService {
         Requires Local Admin rights on destination computer(s).
 
     .OUTPUTS
-        System.ServiceProcess.ServiceController
+        Dataplat.Dbatools.DbaSqlService
 
-        Returns one ServiceController object per service that was successfully started. Each object represents a SQL Server related service on the target computer(s).
+        Returns one DbaSqlService object per service that was started. Each object represents a SQL Server related service on the target computer(s).
 
-        Default display properties (from ServiceController):
-        - Name: The service name (e.g., MSSQLSERVER, SQLSERVERAGENT, MSSQLServerOlapService)
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name where the service is located
+        - ServiceName: The service name (e.g., MSSQLSERVER, SQLSERVERAGENT, MSSQLServerOLAPService)
+        - InstanceName: The instance name for named instances, or MSSQLSERVER for default instances
+        - ServiceType: The type of SQL Server service (Engine, Agent, Browser, FullText, SSAS, SSIS, SSRS, PolyBase, Launchpad)
+        - State: The current state of the service (Running, Stopped, StartPending, StopPending)
+        - Status: The status of the start operation (Successful, Failed)
+        - Message: Descriptive message about the service operation result
+
+        Additional properties available (access via Select-Object *):
         - DisplayName: The friendly display name of the service
-        - Status: The current status of the service (Running, Stopped, StartPending, StopPending, etc.)
-        - StartType: How the service starts (Boot, System, Automatic, Manual, Disabled)
-
-        Additional properties available from ServiceController:
-        - ServiceName: The name of the service
-        - ServiceType: The type of service
-        - CanPauseAndContinue: Boolean indicating if the service can be paused and resumed
-        - CanShutdown: Boolean indicating if the service should be notified of system shutdown
-        - CanStop: Boolean indicating if the service can be stopped
-        - ServiceHandle: The service's Windows handle
-        - DependentServices: Collection of services that depend on this service
-        - ServicesDependedOn: Collection of services that this service depends on
-        - RequiredServices: Collection of services required for this service to run
+        - StartMode: How the service starts (Boot, System, Automatic, Manual, Disabled)
+        - ServicePriority: Internal priority for dependency ordering
+        - And other properties from the underlying service object
 
         Returns nothing if no services are found matching the specified parameters, or if the -WhatIf parameter is used.
 

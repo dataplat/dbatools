@@ -38,9 +38,9 @@ function Read-DbaTransactionLog {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject[]
+        System.Data.DataRow
 
-        Returns zero or more objects representing transaction log records from the fn_dblog function. Each object represents one transaction log record with all columns from fn_dblog as individual properties.
+        Returns zero or more DataRow objects representing transaction log records from the fn_dblog function. Each DataRow represents one transaction log record with all columns from fn_dblog as individual properties.
 
         Common properties include:
         - RecoveryUnitId: Identifier of the recovery unit

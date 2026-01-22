@@ -89,6 +89,10 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -BeExactly 3
         }
 
+        It "returns PSCustomObject output type" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
         It "Should return all expected properties" {
             foreach ($prop in $props) {
                 $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
@@ -115,6 +119,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns results" {
             $result.Count | Should -BeGreaterThan 0
+        }
+
+        It "returns PSCustomObject output type" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Should return all expected properties" {
@@ -147,6 +155,10 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -BeGreaterThan 0
         }
 
+        It "returns PSCustomObject output type" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
         It "Should return all expected properties" {
             foreach ($prop in $props) {
                 $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
@@ -173,6 +185,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns results" {
             $result.Count | Should -BeGreaterThan 0
+        }
+
+        It "returns PSCustomObject output type" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Should return all expected properties" {

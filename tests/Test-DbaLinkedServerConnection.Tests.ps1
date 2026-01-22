@@ -77,4 +77,31 @@ Describe $CommandName -Tag IntegrationTests {
             $pipeResults.Connectivity | Should -BeTrue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.InstanceSingle -EnableException | Where-Object LinkedServerName -eq $target
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType Dataplat.Dbatools.Validation.LinkedServerResult
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'LinkedServerName',
+                'DataSource',
+                'Connectivity',
+                'Result'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+    }
 }

@@ -140,4 +140,72 @@ Describe $CommandName -Tag IntegrationTests {
             @($results).Count | Should -Be 2
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName 'Memory Clerk Usage' -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Number',
+                'Name',
+                'Description',
+                'DatabaseSpecific',
+                'Database',
+                'Notes',
+                'Result'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has correct DatabaseSpecific value for instance-level query" {
+            $result.DatabaseSpecific | Should -Be $false
+            $result.Database | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output Validation - Database Specific Queries" {
+        BeforeAll {
+            $result = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database -EnableException
+        }
+
+        It "Has correct DatabaseSpecific value for database-level query" {
+            $result.DatabaseSpecific | Should -Be $true
+            $result.Database | Should -Be $database
+        }
+
+        It "Result property contains query output" {
+            $result.Result | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output with -ExportQueries" {
+        BeforeAll {
+            $exportPath = "TestDrive:\ExportTest"
+            $result = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName 'Memory Clerk Usage' -ExportQueries -OutputPath $exportPath
+        }
+        AfterAll {
+            Remove-Item $exportPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output when -ExportQueries is used" {
+            $result | Should -BeNullOrEmpty
+        }
+
+        It "Creates SQL files instead of returning objects" {
+            $files = Get-ChildItem -Path $exportPath -Filter *.sql
+            $files.Count | Should -BeGreaterThan 0
+        }
+    }
 }

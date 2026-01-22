@@ -132,4 +132,34 @@ Describe $CommandName -Tag IntegrationTests {
             $results -match "GRANT VIEW ANY DATABASE TO \[$svRole\];" | Should -BeTrue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Test -Passthru output (returns string)
+            $passthruResult = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole -Passthru -EnableException
+
+            # Test file output (returns FileInfo)
+            $fileResult = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole -FilePath $outputFile -EnableException
+        }
+
+        It "Returns System.String when -Passthru is specified" {
+            $passthruResult | Should -BeOfType [System.String]
+        }
+
+        It "Returns System.IO.FileInfo when -FilePath is specified" {
+            $fileResult | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "FileInfo output has expected properties" {
+            $fileResult.PSObject.Properties.Name | Should -Contain 'FullName'
+            $fileResult.PSObject.Properties.Name | Should -Contain 'Name'
+            $fileResult.PSObject.Properties.Name | Should -Contain 'Directory'
+            $fileResult.PSObject.Properties.Name | Should -Contain 'Length'
+        }
+
+        It "String output contains T-SQL script content" {
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+    }
 }

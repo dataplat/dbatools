@@ -23,6 +23,38 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbFileMapping -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'FileMapping'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "FileMapping property is a hashtable" {
+            $result.FileMapping | Should -BeOfType [hashtable]
+        }
+
+        It "FileMapping contains logical-to-physical file mappings" {
+            $result.FileMapping.Keys.Count | Should -BeGreaterThan 0 -Because "database should have at least one file"
+        }
+    }
+
     Context "Should return file information" {
         It "returns information about multiple databases" {
             $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.InstanceSingle

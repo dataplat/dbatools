@@ -216,4 +216,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns no output by default" {
+            # Create a temporary linked server for this test
+            $tempRandom = Get-Random
+            $tempLinkedServerName = "dbatoolscli_OUTPUT_$tempRandom"
+            $splatTempLinkedServer = @{
+                SqlInstance  = $InstanceSingle
+                LinkedServer = $tempLinkedServerName
+                EnableException = $true
+            }
+            $null = New-DbaLinkedServer @splatTempLinkedServer
+
+            # Test that removal returns no output
+            $splatRemoveTemp = @{
+                SqlInstance     = $InstanceSingle
+                LinkedServer    = $tempLinkedServerName
+                Confirm         = $false
+                EnableException = $true
+            }
+            $result = Remove-DbaLinkedServer @splatRemoveTemp
+
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

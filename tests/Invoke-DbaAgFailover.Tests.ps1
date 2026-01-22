@@ -21,6 +21,39 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns the documented output type" {
+            $command = Get-Command $CommandName
+            $command.OutputType.Name | Should -Contain 'AvailabilityGroup'
+        }
+
+        It "Has the expected properties documented in .OUTPUTS" {
+            # Testing that the documented properties exist in the SMO type
+            $expectedProps = @(
+                'Name',
+                'PrimaryReplicaServerName',
+                'LocalReplicaRole',
+                'AutomatedBackupPreference',
+                'FailureConditionLevel',
+                'HealthCheckTimeout',
+                'BasicAvailabilityGroup',
+                'ClusterType',
+                'ID',
+                'UniqueId',
+                'AvailabilityReplicas',
+                'AvailabilityDatabases',
+                'AvailabilityGroupListeners',
+                'DatabaseReplicaStates',
+                'RequiredSynchronizedSecondariesToCommit'
+            )
+            # Verify the SMO type has these properties
+            $agType = [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+            foreach ($prop in $expectedProps) {
+                $agType.GetProperties().Name | Should -Contain $prop -Because "property '$prop' should be available on AvailabilityGroup SMO object"
+            }
+        }
+    }
 }
 <#
     Integration test are custom to the command you are writing for.

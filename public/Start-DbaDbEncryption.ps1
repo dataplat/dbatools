@@ -110,11 +110,19 @@ function Start-DbaDbEncryption {
         https://dbatools.io/Start-DbaDbEncryption
 
     .OUTPUTS
-        PSCustomObject
+        Microsoft.SqlServer.Management.Smo.Database (sequential mode)
+        PSCustomObject (parallel mode)
 
-        When using the -Parallel parameter, returns one object per database after encryption is enabled. In sequential mode, no output is returned to the pipeline, only progress messages.
+        Returns one object per database after encryption is enabled.
 
-        Properties (when -Parallel is specified):
+        Sequential mode (default) returns SMO Database objects with the following default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance where encryption was applied
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: Name of the database that was encrypted (aliased from Name property)
+        - EncryptionEnabled: Boolean indicating if encryption was successfully enabled on the database
+
+        Parallel mode (when -Parallel is specified) returns PSCustomObject with the following properties:
         - ComputerName: The computer name of the SQL Server instance where encryption was applied
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
@@ -123,7 +131,8 @@ function Start-DbaDbEncryption {
         - Status: String indicating operation result - either "Success" or "Failed"
         - Error: Error message if Status is "Failed", otherwise null
 
-        Note: Sequential processing (default, without -Parallel) does not output to the pipeline. Use -Parallel to receive result objects for each encrypted database.
+        Additional properties available in sequential mode (access via Select-Object *):
+        - All standard SMO Database properties are accessible
 
     .EXAMPLE
         PS C:\> $masterkeypass = (Get-Credential justneedpassword).Password

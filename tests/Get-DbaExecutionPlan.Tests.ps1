@@ -112,4 +112,68 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $emptyPlanResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "ObjectName",
+                "QueryPosition",
+                "SqlHandle",
+                "PlanHandle",
+                "CreationTime",
+                "LastExecutionTime",
+                "StatementCondition",
+                "StatementSimple",
+                "StatementId",
+                "StatementCompId",
+                "StatementType",
+                "RetrievedFromCache",
+                "StatementSubTreeCost",
+                "StatementEstRows",
+                "SecurityPolicyApplied",
+                "StatementOptmLevel",
+                "QueryHash",
+                "QueryPlanHash",
+                "StatementOptmEarlyAbortReason",
+                "CardinalityEstimationModelVersion",
+                "ParameterizedText",
+                "StatementSetOptions",
+                "QueryPlan",
+                "BatchConditionXml",
+                "BatchSimpleXml"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Should have ComputerName, InstanceName, and SqlInstance properties from dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain "ComputerName"
+            $result.PSObject.Properties.Name | Should -Contain "InstanceName"
+            $result.PSObject.Properties.Name | Should -Contain "SqlInstance"
+        }
+    }
+
+    Context "Output with -Force" {
+        BeforeAll {
+            $result = Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database master -Force -EnableException | Select-Object -First 1
+        }
+
+        It "Returns DataRow when -Force specified" {
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+    }
 }

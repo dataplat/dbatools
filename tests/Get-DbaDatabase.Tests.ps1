@@ -37,6 +37,80 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsAccessible',
+                'RecoveryModel',
+                'LogReuseWaitStatus',
+                'SizeMB',
+                'Compatibility',
+                'Collation',
+                'Owner',
+                'Encrypted',
+                'LastFullBackup',
+                'LastDiffBackup',
+                'LastLogBackup'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the custom properties added by dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain 'ComputerName'
+            $result.PSObject.Properties.Name | Should -Contain 'InstanceName'
+            $result.PSObject.Properties.Name | Should -Contain 'SqlInstance'
+            $result.PSObject.Properties.Name | Should -Contain 'IsCdcEnabled'
+        }
+    }
+
+    Context "Output with -NoFullBackup" {
+        BeforeAll {
+            $random = Get-Random
+            $dbname = "dbatoolsci_NoBackup_$random"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -NoFullBackup -EnableException
+        }
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase
+        }
+
+        It "Includes BackupStatus property when -NoFullBackup specified" {
+            $result.PSObject.Properties.Name | Should -Contain 'BackupStatus'
+        }
+    }
+
+    Context "Output with -IncludeLastUsed" {
+        BeforeAll {
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master -IncludeLastUsed -EnableException
+        }
+
+        It "Includes LastIndexRead and LastIndexWrite properties when -IncludeLastUsed specified" {
+            $result.PSObject.Properties.Name | Should -Contain 'LastIndexRead'
+            $result.PSObject.Properties.Name | Should -Contain 'LastIndexWrite'
+        }
+
+        It "Has LastRead and LastWrite base properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'LastRead'
+            $result.PSObject.Properties.Name | Should -Contain 'LastWrite'
+        }
+    }
+
     Context "Count system databases on localhost" {
         It "reports the right number of databases" {
             $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeUser

@@ -67,4 +67,48 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Parent.Name | Should -Be "DatabaseEngineServerGroup"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $testGroup = "dbatoolsci-output-test"
+            $testGroup2 = "dbatoolsci-output-dest"
+            $outputTestGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $testGroup
+            $outputDestGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $testGroup2
+
+            $result = Move-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $testGroup -NewGroup $testGroup2
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group "$testGroup2\$testGroup", $testGroup2 | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'DisplayName',
+                'Description',
+                'ServerGroups',
+                'RegisteredServers'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

@@ -91,4 +91,43 @@ Describe $CommandName -Tag IntegrationTests {
             $commandlineResults.Changes | Should -Match "Changed NamedPipesEnabled to"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
+            $result.TcpIpProperties.KeepAlive = 45000
+            $outputResult = $result | Set-DbaNetworkConfiguration -WarningAction SilentlyContinue
+        }
+
+        It "Returns PSCustomObject" {
+            $outputResult.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Changes",
+                "RestartNeeded",
+                "Restarted"
+            )
+            $actualProps = $outputResult.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Changes property is an array" {
+            $outputResult.Changes | Should -BeOfType [System.Array]
+        }
+
+        It "RestartNeeded is a boolean" {
+            $outputResult.RestartNeeded | Should -BeOfType [System.Boolean]
+        }
+
+        It "Restarted is a boolean" {
+            $outputResult.Restarted | Should -BeOfType [System.Boolean]
+        }
+    }
 }

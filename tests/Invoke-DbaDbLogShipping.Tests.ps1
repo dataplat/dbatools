@@ -98,6 +98,33 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $command = Get-Command $CommandName
+            $command.OutputType.Name | Should -Contain 'PSCustomObject'
+        }
+
+        It "Has the expected output properties documented" {
+            $expectedProps = @(
+                'PrimaryInstance',
+                'SecondaryInstance',
+                'PrimaryDatabase',
+                'SecondaryDatabase',
+                'Result',
+                'Comment'
+            )
+            $help = Get-Help $CommandName
+            $outputSection = $help.returnValues.returnValue.type.name
+            $outputSection | Should -Be 'PSCustomObject' -Because "command should document PSCustomObject as output type"
+
+            # Verify all properties are documented in .OUTPUTS
+            $helpText = (Get-Help $CommandName -Full | Out-String)
+            foreach ($prop in $expectedProps) {
+                $helpText | Should -Match $prop -Because "property '$prop' should be documented in .OUTPUTS section"
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests -Skip {

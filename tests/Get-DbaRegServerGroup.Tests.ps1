@@ -132,4 +132,31 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Property Comparisons will come later when we have the commands
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $group -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'DisplayName',
+                'Description',
+                'ServerGroups',
+                'RegisteredServers'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

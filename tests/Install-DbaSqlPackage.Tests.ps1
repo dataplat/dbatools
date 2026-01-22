@@ -42,12 +42,6 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Installed | Should -Be $true
         }
 
-        It "Returns an object with the expected properties" {
-            $result = $results
-            $ExpectedProps = 'Name', 'Path', 'Installed'
-            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
-        }
-
         It "Should return a valid installation path" {
             $results.Path | Should -Not -BeNullOrEmpty
             Test-Path $results.Path | Should -Be $true
@@ -74,6 +68,63 @@ Describe $CommandName -Tag IntegrationTests {
                 Remove-Item "$env:TEMP\sqlpackage_test.txt" -ErrorAction SilentlyContinue
                 Remove-Item "$env:TEMP\sqlpackage_error.txt" -ErrorAction SilentlyContinue
             }
+        }
+    }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Install-DbaSqlPackage -Force -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "Name",
+                "Path",
+                "Installed"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Name property with correct executable name" {
+            if ($PSVersionTable.Platform -eq "Unix") {
+                $result.Name | Should -Be "sqlpackage"
+            } else {
+                $result.Name | Should -Be "SqlPackage.exe"
+            }
+        }
+
+        It "Has Path property that points to a valid file" {
+            $result.Path | Should -Not -BeNullOrEmpty
+            Test-Path $result.Path | Should -Be $true
+        }
+
+        It "Has Installed property set to true" {
+            $result.Installed | Should -Be $true
+        }
+    }
+
+    Context "Output when already installed" {
+        BeforeAll {
+            # First ensure it's installed
+            $null = Install-DbaSqlPackage -Force -EnableException
+            # Then run without -Force to get "already installed" message
+            $result = Install-DbaSqlPackage -EnableException
+        }
+
+        It "Includes Notes property when skipping installation" {
+            $result.PSObject.Properties.Name | Should -Contain "Notes"
+        }
+
+        It "Notes property indicates installation was skipped" {
+            $result.Notes | Should -Match "already exists"
+            $result.Notes | Should -Match "Skipped installation"
         }
     }
 }

@@ -47,6 +47,96 @@ Describe $CommandName -Tag IntegrationTests {
         Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatAlert = @{
+                SqlInstance           = $TestConfig.InstanceMulti1
+                DelayBetweenResponses = 60
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                NotificationMessage   = "Test Notification"
+                Operator              = "Test Operator"
+                OperatorEmail         = "dba@ad.local"
+                ExcludeSeverity       = 0
+                EnableException       = $true
+            }
+            $result = Install-DbaAgentAdminAlert @splatAlert | Select-Object -First 1
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Alert]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "SqlInstance",
+                "InstanceName",
+                "Name",
+                "Severity",
+                "MessageId",
+                "DelayBetweenResponses"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output with -Category" {
+        BeforeAll {
+            $splatAlert = @{
+                SqlInstance           = $TestConfig.InstanceMulti1
+                Category              = "Test Category"
+                DelayBetweenResponses = 60
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                Operator              = "Test Operator"
+                OperatorEmail         = "dba@ad.local"
+                ExcludeSeverity       = 0
+                EnableException       = $true
+            }
+            $result = Install-DbaAgentAdminAlert @splatAlert | Select-Object -First 1
+        }
+
+        It "Includes CategoryName property when -Category specified" {
+            $result.PSObject.Properties.Name | Should -Contain "CategoryName"
+        }
+    }
+
+    Context "Output with -JobId" {
+        BeforeAll {
+            $splatJob = @{
+                SqlInstance     = $TestConfig.InstanceMulti1
+                Job             = "Test Job For Alert"
+                EnableException = $true
+            }
+            $job = New-DbaAgentJob @splatJob
+
+            $splatAlert = @{
+                SqlInstance           = $TestConfig.InstanceMulti1
+                JobId                 = $job.JobID
+                DelayBetweenResponses = 60
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                Operator              = "Test Operator"
+                OperatorEmail         = "dba@ad.local"
+                ExcludeSeverity       = 0
+                EnableException       = $true
+            }
+            $result = Install-DbaAgentAdminAlert @splatAlert | Select-Object -First 1
+        }
+
+        AfterAll {
+            Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job "Test Job For Alert" -Confirm:$false
+        }
+
+        It "Includes JobName property when -JobId specified" {
+            $result.PSObject.Properties.Name | Should -Contain "JobName"
+        }
+    }
+
     Context "Creating a new SQL Server Agent alert" {
         It "Should create a bunch of new alerts with specified parameters" {
             $splatAlert1 = @{

@@ -123,4 +123,38 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "Requested procedure Four.Part.Schema.Name could not be parsed"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatOutput = @{
+                SqlInstance      = $TestConfig.InstanceSingle
+                StartupProcedure = $startupProc
+                EnableException  = $true
+            }
+            $result = Enable-DbaStartupProcedure @splatOutput
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.StoredProcedure]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'Name',
+                'Startup',
+                'Action',
+                'Status',
+                'Note'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

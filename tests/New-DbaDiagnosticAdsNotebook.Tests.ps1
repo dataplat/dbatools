@@ -44,4 +44,37 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Get-Content) -contains "information for current instance"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $testNotebookFile -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'FullName',
+                'Name',
+                'DirectoryName',
+                'Length',
+                'CreationTime',
+                'LastWriteTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available in FileInfo object"
+            }
+        }
+
+        It "Returns a file that exists on disk" {
+            $result.FullName | Should -Exist
+        }
+
+        It "Returns a file with .ipynb extension" {
+            $result.Extension | Should -Be ".ipynb"
+        }
+    }
 }

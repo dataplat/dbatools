@@ -52,20 +52,17 @@ function New-DbaClientAlias {
         https://dbatools.io/New-DbaClientAlias
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.RegisteredServer
+        System.Management.Automation.PSCustomObject
 
         Returns one client alias object for each alias created on the specified computer(s). The object represents the SQL Server client alias created in the Windows registry.
 
-        Default display properties:
+        Default display properties (returned from Get-DbaClientAlias):
         - ComputerName: The computer where the alias was created
+        - NetworkLibrary: The network protocol type (TCP/IP or Named Pipes)
+        - ServerName: The SQL Server instance the alias points to (with protocol prefix removed)
         - AliasName: The alias name that was created
-        - ServerName: The SQL Server instance the alias points to
-        - Protocol: The network protocol used (TCPIP or NamedPipes)
-        - InstanceName: The instance name portion if specified
-        - PipeName: The pipe name for NamedPipes protocol aliases
-        - Port: The TCP port number if specified in ServerName
-
-        All properties from the base SMO RegisteredServer object are accessible using Select-Object *.
+        - AliasString: The complete registry value including protocol prefix (e.g., DBMSSOCN,servername,1433)
+        - Architecture: The registry hive architecture where the alias was found (32-bit or 64-bit)
 
     .EXAMPLE
         PS C:\> New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp

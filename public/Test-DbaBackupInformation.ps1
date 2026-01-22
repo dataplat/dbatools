@@ -71,14 +71,19 @@ function Test-DbaBackupInformation {
         https://dbatools.io/Test-DbaBackupInformation
 
     .OUTPUTS
-        The same backup history object type provided as input, with an additional IsVerified property
+        System.Object
 
-        Returns one validated backup history object per input backup, with all original properties preserved and an added IsVerified property.
+        Returns the same backup history object(s) provided as input with an added IsVerified property.
 
-        Properties:
-        - IsVerified (boolean) - Boolean indicating whether the backup history passed all validation tests. Set to $True for backups that passed all validation checks (LSN chain integrity, file accessibility, database conflicts, and path availability). Set to $False or left unchanged for backups with validation errors.
+        This function acts as a pass-through validator - it returns the exact same backup history objects that were provided via the BackupHistory parameter, preserving all original properties and metadata. The only modification is adding or updating an IsVerified property to indicate validation results.
 
-        All original properties from the input backup history objects remain accessible (BackupName, Database, Type, Path, etc.). The function acts as a pass-through validator that marks backups with a verification status for filtering restoration candidates.
+        Default display properties (inherited from input objects - typically from Format-DbaBackupInformation):
+        - All properties from the input backup history objects are preserved and accessible
+
+        Added/modified property:
+        - IsVerified: Boolean indicating whether the backup passed all validation tests ($True = passed all checks including LSN chain integrity, file accessibility, database conflict checks, and path availability; $False or unchanged = validation errors detected)
+
+        All original properties from input objects remain accessible (BackupName, Database, Type, Path, OriginalDatabase, FullName, FileList, etc. depending on the source of the backup history objects)
 
     .EXAMPLE
         PS C:\> $BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance

@@ -81,4 +81,48 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Dropped"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create a test server to remove
+            $testSrvName = "dbatoolsci-outputtest"
+            $testRegName = "dbatoolsci-outputtest1"
+            $splatTestServer = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                ServerName  = $testSrvName
+                Name        = $testRegName
+            }
+            $null = Add-DbaRegServer @splatTestServer
+
+            # Remove it and capture output
+            $result = Remove-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Name $testRegName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for CMS registered servers" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ServerName",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Sets Status property to 'Dropped'" {
+            $result.Status | Should -Be "Dropped"
+        }
+    }
 }

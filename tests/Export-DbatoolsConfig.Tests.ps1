@@ -25,6 +25,17 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $testPath = Join-Path $TestDrive "config-export-test.json"
+        }
+
+        It "Returns no output" {
+            $result = Get-DbatoolsConfig -FullName "sql.connection.trustcert" | Export-DbatoolsConfig -OutPath $testPath -EnableException
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }
 <#
     Integration test are custom to the command you are writing for.

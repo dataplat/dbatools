@@ -75,4 +75,127 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsExcluded.Database -notcontains "master" | Should -Be $true
         }
     }
+
+    Context "Output Validation - Duration" {
+        BeforeAll {
+            $resultDuration = Get-DbaTopResourceUsage -SqlInstance $TestConfig.InstanceMulti1 -Type Duration -Database master -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $resultDuration.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for Duration metric" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ObjectName",
+                "QueryHash",
+                "TotalElapsedTimeMs",
+                "ExecutionCount",
+                "AverageDurationMs",
+                "QueryTotalElapsedTimeMs",
+                "QueryText"
+            )
+            $actualProps = $resultDuration.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has QueryPlan property available with Select-Object *" {
+            $resultWithAll = Get-DbaTopResourceUsage -SqlInstance $TestConfig.InstanceMulti1 -Type Duration -Database master -Limit 1 -EnableException | Select-Object -First 1 *
+            $resultWithAll.PSObject.Properties.Name | Should -Contain "QueryPlan"
+        }
+    }
+
+    Context "Output Validation - Frequency" {
+        BeforeAll {
+            $resultFrequency = Get-DbaTopResourceUsage -SqlInstance $TestConfig.InstanceMulti1 -Type Frequency -Database master -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $resultFrequency.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for Frequency metric" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ObjectName",
+                "QueryHash",
+                "ExecutionCount",
+                "QueryTotalExecutions",
+                "QueryText"
+            )
+            $actualProps = $resultFrequency.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation - IO" {
+        BeforeAll {
+            $resultIO = Get-DbaTopResourceUsage -SqlInstance $TestConfig.InstanceMulti1 -Type IO -Database master -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $resultIO.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for IO metric" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ObjectName",
+                "QueryHash",
+                "TotalIO",
+                "ExecutionCount",
+                "AverageIO",
+                "QueryTotalIO",
+                "QueryText"
+            )
+            $actualProps = $resultIO.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation - CPU" {
+        BeforeAll {
+            $resultCPU = Get-DbaTopResourceUsage -SqlInstance $TestConfig.InstanceMulti1 -Type CPU -Database master -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $resultCPU.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for CPU metric" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ObjectName",
+                "QueryHash",
+                "CpuTime",
+                "ExecutionCount",
+                "AverageCpuMs",
+                "QueryTotalCpu",
+                "QueryText"
+            )
+            $actualProps = $resultCPU.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

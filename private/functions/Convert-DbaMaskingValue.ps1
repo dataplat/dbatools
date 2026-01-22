@@ -37,6 +37,15 @@ function Convert-DbaMaskingValue {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        Returns a custom object with the following properties:
+        - OriginalValue: The original value that was passed to the function
+        - NewValue: The converted value formatted for T-SQL queries
+        - DataType: The SQL Server data type used for conversion
+        - ErrorMessage: Error message if conversion failed, otherwise null
+
     .NOTES
         Tags: Masking, DataMasking
         Author: Sander Stad (@sqlstad, sqlstad.nl)

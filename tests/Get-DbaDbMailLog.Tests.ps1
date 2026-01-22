@@ -107,4 +107,45 @@ Describe $CommandName -Tag IntegrationTests {
             $results.LastModDate | Should -BeGreaterThan "2018-01-01"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbMailLog -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogDate",
+                "EventType",
+                "Description",
+                "Login"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties accessible via Select-Object" {
+            $additionalProps = @(
+                "LogId",
+                "ProcessId",
+                "MailItemId",
+                "AccountId",
+                "LastModDate",
+                "LastModUser"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+    }
 }

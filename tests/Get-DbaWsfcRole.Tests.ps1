@@ -18,4 +18,33 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" -Skip:$(-not $env:COMPUTERNAME) {
+        BeforeAll {
+            try {
+                $result = Get-DbaWsfcRole -ComputerName $env:COMPUTERNAME -EnableException
+            } catch {
+                $result = $null
+            }
+        }
+
+        It "Returns the documented output type" -Skip:($null -eq $result) {
+            $result | Should -BeOfType [Microsoft.Management.Infrastructure.CimInstance]
+            $result.CimClass.CimClassName | Should -Be 'MSCluster_ResourceGroup'
+        }
+
+        It "Has the expected default display properties" -Skip:($null -eq $result) {
+            $expectedProps = @(
+                'ClusterName',
+                'ClusterFqdn',
+                'Name',
+                'OwnerNode',
+                'State'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

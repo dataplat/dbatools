@@ -506,4 +506,101 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Notes | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $version = [version]'14.0'
+            $cred = New-Object PSCredential('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
+            $mainNode = if ($version.Major -ne 10) { "OPTIONS" } else { "SQLSERVER2008" }
+
+            # Create a dummy Configuration.ini
+            @(
+                "[$mainNode]"
+                'SQLSVCACCOUNT="foo\bar"'
+                'FEATURES="SQLEngine,AS"'
+            ) | Set-Content -Path TestDrive:\Configuration.ini -Force
+
+            $config = @{
+                $mainNode = @{
+                    ACTION                = "Install"
+                    AGTSVCSTARTUPTYPE     = "Automatic"
+                    ASCOLLATION           = "Latin1_General_CI_AS"
+                    BROWSERSVCSTARTUPTYPE = "False"
+                    ENABLERANU            = "False"
+                    ERRORREPORTING        = "False"
+                    FEATURES              = "SQLEngine"
+                    FILESTREAMLEVEL       = "0"
+                    HELP                  = "False"
+                    INDICATEPROGRESS      = "False"
+                    INSTANCEID            = 'foo'
+                    INSTANCENAME          = 'foo'
+                    ISSVCSTARTUPTYPE      = "Automatic"
+                    QUIET                 = "True"
+                    QUIETSIMPLE           = "False"
+                    RSINSTALLMODE         = "DefaultNativeMode"
+                    RSSVCSTARTUPTYPE      = "Automatic"
+                    SQLCOLLATION          = "SQL_Latin1_General_CP1_CI_AS"
+                    SQLSVCSTARTUPTYPE     = "Automatic"
+                    SQLSYSADMINACCOUNTS   = 'foo\bar'
+                    SQMREPORTING          = "False"
+                    TCPENABLED            = "1"
+                    UPDATEENABLED         = "False"
+                    X86                   = "False"
+                }
+            }
+
+            $splatInstall = @{
+                ComputerName                  = $env:COMPUTERNAME
+                InstanceName                  = 'foo'
+                Port                          = 1337
+                InstallationPath              = 'TestDrive:\dummy.exe'
+                ConfigurationPath             = 'TestDrive:\Configuration.ini'
+                ArgumentList                  = @('/IACCEPTSQLSERVERLICENSETERMS')
+                Restart                       = $false
+                Version                       = $version
+                Configuration                 = $config
+                SaveConfiguration             = 'TestDrive:\Configuration.copy.ini'
+                SaCredential                  = $cred
+                PerformVolumeMaintenanceTasks = $true
+            }
+            $result = Invoke-DbaAdvancedInstall @splatInstall -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'Version',
+                'Port',
+                'Successful',
+                'Restarted',
+                'Installer',
+                'ExitCode',
+                'LogFile',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available via Select-Object" {
+            $additionalProps = @(
+                'SACredential',
+                'Configuration',
+                'ExitMessage',
+                'Log',
+                'ConfigurationFile'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+    }
 }

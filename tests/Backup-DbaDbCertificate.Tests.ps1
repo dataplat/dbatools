@@ -153,4 +153,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatBackupCert = @{
+                SqlInstance        = $TestConfig.InstanceSingle
+                Database           = $db1Name
+                Certificate        = $cert1.Name
+                EncryptionPassword = $pw
+                DecryptionPassword = $pw
+                EnableException    = $true
+            }
+            $result = Backup-DbaDbCertificate @splatBackupCert
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'DatabaseID',
+                'Certificate',
+                'Path',
+                'Key',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional non-displayed properties available" {
+            # These properties exist but are excluded from default view
+            $result.PSObject.Properties.Name | Should -Contain 'ExportPath'
+            $result.PSObject.Properties.Name | Should -Contain 'ExportKey'
+        }
+    }
 }

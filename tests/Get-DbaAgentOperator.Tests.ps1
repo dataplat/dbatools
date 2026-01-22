@@ -60,4 +60,43 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeExactly 1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle -Operator dbatoolsci_operator -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Operator]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'ID',
+                'IsEnabled',
+                'EmailAddress',
+                'LastEmail'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the RelatedJobs property added by dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain 'RelatedJobs' -Because "dbatools adds this property via Add-Member"
+        }
+
+        It "Has the RelatedAlerts property added by dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain 'RelatedAlerts' -Because "dbatools adds this property via Add-Member"
+        }
+
+        It "Has the AlertLastEmail property added by dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain 'AlertLastEmail' -Because "dbatools adds this property via Add-Member"
+        }
+    }
 }

@@ -77,4 +77,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ServiceBrokerGuid | Should -BeLike "*-0000-0000-000000000000"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Find-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern master -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Id',
+                'Size',
+                'Owner',
+                'CreateDate',
+                'ServiceBrokerGuid',
+                'Tables',
+                'StoredProcedures',
+                'Views',
+                'ExtendedProperties'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

@@ -141,4 +141,52 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Note | Should -Be "Disable succeded"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatEnableForOutput = @{
+                SqlInstance      = $TestConfig.InstanceSingle
+                StartupProcedure = $startupProc
+            }
+            $null = Enable-DbaStartupProcedure @splatEnableForOutput
+            $result = Disable-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure $startupProc -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.StoredProcedure]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'Name',
+                'Startup',
+                'Action',
+                'Status',
+                'Note'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has dbatools-added properties" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $result.Database | Should -Not -BeNullOrEmpty
+            $result.Action | Should -Be "Disable"
+            $result.Status | Should -BeIn @($true, $false)
+            $result.Note | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has Startup property set to false after disable" {
+            $result.Startup | Should -Be $false
+        }
+    }
 }

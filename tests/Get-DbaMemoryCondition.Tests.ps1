@@ -63,4 +63,44 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaMemoryCondition -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Runtime',
+                'NotificationTime',
+                'NotificationType',
+                'MemoryUtilizationPercent',
+                'TotalPhysicalMemory',
+                'AvailablePhysicalMemory',
+                'TotalPageFile',
+                'AvailablePageFile',
+                'TotalVirtualAddressSpace',
+                'AvailableVirtualAddressSpace',
+                'NodeId',
+                'SQLReservedMemory',
+                'SQLCommittedMemory',
+                'RecordId',
+                'Type',
+                'Indicators',
+                'RecordTime',
+                'CurrentTime'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

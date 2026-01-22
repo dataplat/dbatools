@@ -76,4 +76,43 @@ Describe $CommandName -Tag IntegrationTests {
             $copiedProc.Status | Should -Be "Successful"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopy = @{
+                Source            = $TestConfig.InstanceCopy1
+                Destination       = $TestConfig.InstanceCopy2
+                EnableException   = $true
+            }
+            $result = Copy-DbaStartupProcedure @splatCopy | Where-Object Name -eq $procName
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has MigrationObject type name" {
+            $result.PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the Schema property available" {
+            $result.PSObject.Properties.Name | Should -Contain 'Schema'
+        }
+    }
 }

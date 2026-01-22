@@ -36,6 +36,53 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaCmConnection -ComputerName $env:COMPUTERNAME -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Dataplat.Dbatools.Connection.ManagementConnection]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'IsConnected',
+                'CimRM',
+                'CimDCOM',
+                'Wmi',
+                'PowerShellRemoting'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional documented properties available" {
+            $additionalProps = @(
+                'Credentials',
+                'UseWindowsCredentials',
+                'WindowsCredentialsAreBad',
+                'KnownBadCredentials',
+                'OverrideExplicitCredential',
+                'OverrideConnectionPolicy',
+                'DisabledConnectionTypes',
+                'DisableBadCredentialCache',
+                'DisableCimPersistence',
+                'DisableCredentialAutoRegister',
+                'EnableCredentialFailover',
+                'CimWinRMOptions',
+                'CimDCOMOptions'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

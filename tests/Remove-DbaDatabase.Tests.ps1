@@ -23,6 +23,36 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $dbName = "dbatoolsci_removetest_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName -EnableException
+            $result = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Confirm:$false -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns Status as 'Dropped' when successful" {
+            $result.Status | Should -Be "Dropped"
+        }
+    }
+
     Context "Should not munge system databases." {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

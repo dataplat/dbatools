@@ -88,4 +88,55 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status.Count | Should -BeGreaterOrEqual 2
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatFind = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "dbatools_dupeindex"
+                EnableException = $true
+            }
+            $result = Find-DbaDbDuplicateIndex @splatFind
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected core properties" {
+            $expectedProps = @(
+                "DatabaseName",
+                "TableName",
+                "IndexName",
+                "KeyColumns",
+                "IncludedColumns",
+                "IndexType",
+                "IndexSizeMB",
+                "RowCount",
+                "IsDisabled",
+                "IsUnique"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
+
+    Context "Output with -IncludeOverlapping" {
+        BeforeAll {
+            $splatFind = @{
+                SqlInstance        = $TestConfig.InstanceSingle
+                Database           = "dbatools_dupeindex"
+                IncludeOverlapping = $true
+                EnableException    = $true
+            }
+            $result = Find-DbaDbDuplicateIndex @splatFind
+        }
+
+        It "Returns results with same core properties" {
+            $result.PSObject.Properties.Name | Should -Contain "DatabaseName"
+            $result.PSObject.Properties.Name | Should -Contain "KeyColumns"
+        }
+    }
 }

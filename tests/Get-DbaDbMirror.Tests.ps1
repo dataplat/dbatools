@@ -72,4 +72,39 @@ Describe $CommandName -Tag IntegrationTests -Skip {
     It "returns 2x1 database" {
         @(Get-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $db2).Count | Should -Be 2
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti2 -Database $db1 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'MirroringSafetyLevel',
+                'MirroringStatus',
+                'MirroringPartner',
+                'MirroringPartnerInstance',
+                'MirroringFailoverLogSequenceNumber',
+                'MirroringID',
+                'MirroringRedoQueueMaxSize',
+                'MirroringRoleSequence',
+                'MirroringSafetySequence',
+                'MirroringTimeout',
+                'MirroringWitness',
+                'MirroringWitnessStatus'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

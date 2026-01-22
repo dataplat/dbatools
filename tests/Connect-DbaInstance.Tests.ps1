@@ -294,4 +294,64 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server | Disconnect-DbaInstance
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -DisableException
+        }
+
+        AfterAll {
+            $result | Disconnect-DbaInstance
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Server]
+        }
+
+        It "Has the dbatools-specific added properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'IsAzure',
+                'DbaInstanceName',
+                'SqlInstance',
+                'NetPort',
+                'ConnectedAs'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be added by dbatools"
+            }
+        }
+
+        It "Has standard SMO Server properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'Name'
+            $result.PSObject.Properties.Name | Should -Contain 'Databases'
+            $result.PSObject.Properties.Name | Should -Contain 'Logins'
+            $result.PSObject.Properties.Name | Should -Contain 'ConnectionContext'
+            $result.PSObject.Properties.Name | Should -Contain 'VersionMajor'
+        }
+    }
+
+    Context "Output with -SqlConnectionOnly" {
+        BeforeAll {
+            $result = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -SqlConnectionOnly -DisableException
+        }
+
+        AfterAll {
+            if ($result) {
+                $result.Close()
+                $result.Dispose()
+            }
+        }
+
+        It "Returns SqlConnection when -SqlConnectionOnly specified" {
+            $result | Should -BeOfType [Microsoft.Data.SqlClient.SqlConnection]
+        }
+
+        It "Has SqlConnection properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'State'
+            $result.PSObject.Properties.Name | Should -Contain 'ConnectionString'
+            $result.PSObject.Properties.Name | Should -Contain 'Database'
+        }
+    }
 }

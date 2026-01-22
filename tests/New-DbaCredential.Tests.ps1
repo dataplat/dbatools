@@ -84,4 +84,41 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Identity | Should -Be "Managed Identity"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $plaintext = "OutputValidationPassword!"
+            $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
+            $null = Invoke-Command2 -ScriptBlock { net user outputvalidtest $args /add *>&1 } -ArgumentList $plaintext -ComputerName $TestConfig.InstanceSingle
+            $result = New-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Name outputvalidcred -Identity outputvalidtest -SecurePassword $password -EnableException
+        }
+
+        AfterAll {
+            try {
+                (Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Name outputvalidcred -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
+            } catch { }
+            $null = Invoke-Command2 -ScriptBlock { net user outputvalidtest /delete *>&1 } -ComputerName $TestConfig.InstanceSingle
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Credential]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Identity',
+                'CreateDate',
+                'MappedClassType',
+                'ProviderName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

@@ -87,4 +87,51 @@ Describe $CommandName -Tag IntegrationTests {
             $proxyResults.Name | Should -Be "dbatoolsci_agentproxy"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopyProxy = @{
+                Source       = $TestConfig.InstanceCopy1
+                Destination  = $TestConfig.InstanceCopy2
+                ProxyAccount = "dbatoolsci_agentproxy"
+                Force        = $true
+                EnableException = $true
+            }
+            $result = Copy-DbaAgentProxy @splatCopyProxy
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result.PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "DateTime property is of type DbaDateTime" {
+            $result.DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+
+        It "Status property contains valid migration status values" {
+            $validStatuses = @('Successful', 'Skipped', 'Failed', 'Skipping')
+            $validStatuses | Should -Contain $result.Status
+        }
+
+        It "Type property contains valid object type values" {
+            $validTypes = @('Agent Proxy', 'Credential', 'ProxyAccount')
+            $validTypes | Should -Contain $result.Type
+        }
+    }
 }

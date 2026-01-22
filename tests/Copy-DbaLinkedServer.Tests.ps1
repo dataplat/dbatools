@@ -92,4 +92,43 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -BeExactly "Skipped"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopy = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                LinkedServer  = "dbatoolsci_localhost"
+                Force         = $true
+                WarningAction = "SilentlyContinue"
+                EnableException = $true
+            }
+            $result = Copy-DbaLinkedServer @splatCopy
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns one or more objects per linked server operation" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.Count | Should -BeGreaterOrEqual 1
+        }
+    }
 }

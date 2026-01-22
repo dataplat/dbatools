@@ -59,4 +59,32 @@ END
             $results.Name | Should -Be "dbatoolsci_fnRG"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.UserDefinedFunction]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'CreateDate',
+                'DateLastModified',
+                'Name',
+                'DataType'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

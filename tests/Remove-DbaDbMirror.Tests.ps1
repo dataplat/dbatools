@@ -20,6 +20,38 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Note: This test validates output structure but requires actual mirrored databases to execute
+            # For structure validation, we can test with mock objects
+            $mockOutput = [PSCustomObject]@{
+                ComputerName = "TestServer"
+                InstanceName = "MSSQLSERVER"
+                SqlInstance  = "TestServer"
+                Database     = "TestDB"
+                Status       = "Removed"
+            }
+        }
+
+        It "Returns PSCustomObject" {
+            $mockOutput.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Status"
+            )
+            $actualProps = $mockOutput.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

@@ -147,4 +147,64 @@ Describe $CommandName -Tag IntegrationTests {
             $results.where( { $PSItem.object -eq "[dbo].[t2]" }).IncludeColumns | Should -Be "c3, c4"
         }
     }
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Object",
+                "Index",
+                "Statistics",
+                "IndexType",
+                "KeyColumns",
+                "IncludeColumns",
+                "FilterDefinition",
+                "FillFactor",
+                "DataCompression",
+                "IndexReads",
+                "IndexUpdates",
+                "Size",
+                "IndexRows",
+                "IndexLookups",
+                "MostRecentlyUsed",
+                "StatsSampleRows",
+                "StatsRowMods",
+                "HistogramSteps",
+                "StatsLastUpdated"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+    Context "Output with -IncludeFragmentation" {
+        BeforeAll {
+            $result = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -IncludeFragmentation -EnableException
+        }
+
+        It "Includes IndexFragInPercent property" {
+            $result.PSObject.Properties.Name | Should -Contain "IndexFragInPercent"
+        }
+    }
+    Context "Output with -IncludeStats" {
+        BeforeAll {
+            $result = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -IncludeStats -EnableException
+        }
+
+        It "Returns statistics objects with Statistics property populated" {
+            $statsResults = $result | Where-Object { $null -ne $_.Statistics -and $_.Statistics -ne "" }
+            $statsResults | Should -Not -BeNullOrEmpty
+        }
+    }
 }

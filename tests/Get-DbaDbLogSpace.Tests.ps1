@@ -119,4 +119,42 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Database | Should -Contain $db1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbLogSpace -SqlInstance $TestConfig.InstanceSingle -Database $db1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "LogSize",
+                "LogSpaceUsedPercent",
+                "LogSpaceUsed"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "LogSize property is dbasize type" {
+            $result.LogSize | Should -BeOfType [Sqlcollaborative.Dbatools.Utility.Size]
+        }
+
+        It "LogSpaceUsed property is dbasize type" {
+            $result.LogSpaceUsed | Should -BeOfType [Sqlcollaborative.Dbatools.Utility.Size]
+        }
+
+        It "LogSpaceUsedPercent is a numeric value" {
+            $result.LogSpaceUsedPercent | Should -BeOfType [System.Double]
+        }
+    }
 }

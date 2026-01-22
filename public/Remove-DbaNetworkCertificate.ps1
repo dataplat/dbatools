@@ -20,11 +20,11 @@ function Remove-DbaNetworkCertificate {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per SQL Server instance where the network certificate configuration was removed.
 
-        Properties:
+        Default display properties:
         - ComputerName: The name of the computer where the certificate was removed
         - InstanceName: The SQL Server instance name (extracted from DisplayName)
         - SqlInstance: The full SQL Server instance identifier (VSNAME)

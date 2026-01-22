@@ -69,4 +69,43 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -EnableException |
+                Where-Object Table -Match dbatoolsci | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Table',
+                'MatchingTable',
+                'MatchPercent',
+                'OriginalDatabaseName',
+                'OriginalDatabaseId',
+                'OriginalSchemaName',
+                'OriginalTableName',
+                'OriginalTableNameRankInDB',
+                'OriginalTableType',
+                'OriginalColumnCount',
+                'MatchingDatabaseName',
+                'MatchingDatabaseId',
+                'MatchingSchemaName',
+                'MatchingTableName',
+                'MatchingTableType',
+                'MatchingColumnCount'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

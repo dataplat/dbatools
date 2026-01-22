@@ -24,6 +24,49 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ServerRole]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Role',
+                'Login',
+                'Owner',
+                'IsFixedRole',
+                'DateCreated',
+                'DateModified'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the dbatools-added properties" {
+            $dbatoolsProps = @(
+                'Login',
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Role',
+                'ServerRole'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $dbatoolsProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be added by dbatools"
+            }
+        }
+    }
+
     Context "Command actually works" {
         BeforeAll {
             $results = Get-DbaServerRole -SqlInstance $TestConfig.InstanceSingle

@@ -301,4 +301,46 @@ Describe $CommandName -Tag IntegrationTests {
             $warning | Should -Match "Login tester already exists"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login "OutputValidationTest" -Password $securePassword -EnableException -Force
+        }
+
+        AfterAll {
+            if ($l = Get-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login "OutputValidationTest") {
+                $l.Drop()
+            }
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Login]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'LoginType',
+                'CreateDate',
+                'LastLogin',
+                'HasAccess',
+                'IsLocked',
+                'IsDisabled',
+                'MustChangePassword'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional SMO Login properties available" {
+            $result.PSObject.Properties.Name | Should -Contain 'DefaultDatabase'
+            $result.PSObject.Properties.Name | Should -Contain 'Language'
+            $result.PSObject.Properties.Name | Should -Contain 'Sid'
+        }
+    }
 }

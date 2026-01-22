@@ -29,11 +29,11 @@ function Get-DbaDbccUserOption {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per session option returned by DBCC USEROPTIONS. If the -Option parameter is specified, only matching options are returned.
 
-        Properties:
+        Default display properties:
         - ComputerName: The name of the computer hosting the SQL Server instance
         - InstanceName: The SQL Server instance name (service name)
         - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName or just the computer name for the default instance

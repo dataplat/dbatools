@@ -102,4 +102,50 @@ Describe $CommandName -Tag IntegrationTests {
         $modItem.GetType().FullName | Should -Be "System.IO.FileInfo"
         $modItem.Size | Should -BeLike "* KB"
     }
+
+    Context "Output Validation" {
+        It "Returns PSCustomObject by default when transforming properties" {
+            $result = $object | Select-DbaObject -Property "Foo", "Bar as Bar2"
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the transformed properties in output" {
+            $result = $object | Select-DbaObject -Property "Foo", "Bar as Bar2"
+            $result.PSObject.Properties.Name | Should -Contain "Foo"
+            $result.PSObject.Properties.Name | Should -Contain "Bar2"
+            $result.PSObject.Properties.Name | Should -Not -Contain "Bar"
+        }
+
+        It "Preserves original object type when -KeepInputObject is used" {
+            $item = Get-Item "$PSScriptRoot\Select-DbaObject.Tests.ps1"
+            $result = $item | Select-DbaObject "Length as Size" -KeepInputObject
+            $result.GetType().FullName | Should -Be "System.IO.FileInfo"
+        }
+
+        It "Adds custom typename when -TypeName is specified" {
+            $result = $object | Select-DbaObject -Property "Foo", "Bar" -TypeName "CustomType"
+            $result.PSObject.TypeNames[0] | Should -Be "CustomType"
+        }
+
+        It "Has properties added by -KeepInputObject" {
+            $item = Get-Item "$PSScriptRoot\Select-DbaObject.Tests.ps1"
+            $result = $item | Select-DbaObject "Length as Size" -KeepInputObject
+            $result.PSObject.Properties.Name | Should -Contain "Size"
+            $result.PSObject.Properties.Name | Should -Contain "Length"
+        }
+
+        It "Sets default display properties when -ShowProperty is used" {
+            $testObj = [PSCustomObject]@{ Foo = "Bar"; Bar = 42; Test = "Value" }
+            $null = $testObj | Select-DbaObject -ShowProperty Foo, Bar
+            $testObj.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Be "Foo", "Bar"
+        }
+
+        It "Excludes properties from default display when -ShowExcludeProperty is used" {
+            $testObj = [PSCustomObject]@{ Foo = "Bar"; Bar = 42; Test = "Value" }
+            $null = $testObj | Select-DbaObject -ShowExcludeProperty Foo
+            $testObj.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Contain "Bar"
+            $testObj.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Contain "Test"
+            $testObj.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Not -Contain "Foo"
+        }
+    }
 }

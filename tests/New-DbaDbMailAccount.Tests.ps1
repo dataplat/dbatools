@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server.query($mailAccountSettings)
     }
 
-    Context "Gets DbMail Account" {
+    Context "Output Validation" {
         BeforeAll {
             $splatMailAccount = @{
                 SqlInstance    = $TestConfig.InstanceSingle
@@ -58,8 +58,33 @@ Describe $CommandName -Tag IntegrationTests {
                 ReplyToAddress = $replyto_address
                 # MailServer is not set, because we don't want to configure the mail server on the instance.
                 # MailServer     = $mailserver_name
+                EnableException = $true
             }
             $results = New-DbaDbMailAccount @splatMailAccount
+        }
+
+        It "Returns the documented output type" {
+            $results | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Mail.MailAccount]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Name',
+                'DisplayName',
+                'Description',
+                'EmailAddress',
+                'ReplyToAddress',
+                'IsBusyAccount',
+                'MailServers'
+            )
+            $actualProps = $results.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
 
         It "Gets results" {

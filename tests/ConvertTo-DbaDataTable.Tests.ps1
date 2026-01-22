@@ -21,6 +21,37 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $testObject = [PSCustomObject]@{
+                Name   = "TestName"
+                Value  = 42
+                Active = $true
+            }
+            $result = ConvertTo-DbaDataTable -InputObject $testObject -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Data.DataTable]
+        }
+
+        It "Has Columns collection" {
+            $result.Columns | Should -Not -BeNullOrEmpty
+            $result.Columns | Should -BeOfType [System.Data.DataColumnCollection]
+        }
+
+        It "Has Rows collection" {
+            $result.Rows | Should -Not -BeNullOrEmpty
+            $result.Rows | Should -BeOfType [System.Data.DataRowCollection]
+        }
+
+        It "Creates columns matching input object properties" {
+            $result.Columns.ColumnName | Should -Contain "Name"
+            $result.Columns.ColumnName | Should -Contain "Value"
+            $result.Columns.ColumnName | Should -Contain "Active"
+        }
+    }
 }
 
 Describe $CommandName -Tag UnitTests, "DataTableOutput" {

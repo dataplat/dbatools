@@ -86,4 +86,52 @@ Describe $CommandName -Tag IntegrationTests {
             $linecount1 | Should -Not -Be $linecount3
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # For all temp files that we want to clean up after the test, we create a directory that we can delete at the end.
+            $tempPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $tempPath -ItemType Directory
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Remove the temp directory.
+            Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns System.IO.FileInfo by default" {
+            $tempFile = "$tempPath\default-output-$(Get-Random).sql"
+            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb -EnableException | Select-Object -First 1 | Export-DbaScript -FilePath $tempFile -EnableException
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has expected FileInfo properties" {
+            $tempFile = "$tempPath\fileinfo-props-$(Get-Random).sql"
+            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb -EnableException | Select-Object -First 1 | Export-DbaScript -FilePath $tempFile -EnableException
+            $result.PSObject.Properties.Name | Should -Contain 'Name'
+            $result.PSObject.Properties.Name | Should -Contain 'FullName'
+            $result.PSObject.Properties.Name | Should -Contain 'Directory'
+            $result.PSObject.Properties.Name | Should -Contain 'Length'
+            $result.PSObject.Properties.Name | Should -Contain 'Extension'
+            $result.Extension | Should -Be '.sql'
+        }
+
+        It "Returns System.String when -Passthru is specified" {
+            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb -EnableException | Select-Object -First 1 | Export-DbaScript -Passthru -EnableException
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns T-SQL script content with -Passthru" {
+            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb -EnableException | Select-Object -First 1 | Export-DbaScript -Passthru -EnableException
+            $result | Should -Match 'CREATE TABLE'
+        }
+    }
 }

@@ -17,6 +17,18 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Create a test connection to remove
+            $null = Get-DbaCmConnection -ComputerName localhost -EnableException
+        }
+
+        It "Returns no output by default" {
+            $result = Remove-DbaCmConnection -ComputerName localhost -Confirm:$false -EnableException
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

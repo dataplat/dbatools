@@ -18,6 +18,20 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+    Context "Output Validation" {
+        It "Returns no output (command launches browser)" {
+            # This command doesn't return objects - it opens a browser or shows a message
+            # We're just verifying it runs without errors
+            { Get-DbatoolsChangeLog -Local -EnableException } | Should -Not -Throw
+        }
+
+        It "Produces no pipeline output" {
+            $result = Get-DbatoolsChangeLog -Local -EnableException
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests

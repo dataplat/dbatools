@@ -68,4 +68,34 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbUdf -SqlInstance $server -Database $dbname1 -Name $udf2 | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $udf3 = "dbatoolssci_udf3_$(Get-Random)"
+            $null = $server.Query("CREATE FUNCTION dbo.$udf3 (@a int) RETURNS TABLE AS RETURN (SELECT 1 a);", $dbname1)
+            $result = Remove-DbaDbUdf -SqlInstance $server -Database $dbname1 -Name $udf3 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Udf',
+                'UdfName',
+                'UdfSchema',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

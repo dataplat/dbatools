@@ -239,4 +239,87 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep.Command | Should -Match "@CheckSum = 'Y'"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Clean up any existing maintenance solution objects in tempdb
+            $cleanupQuery = "
+                IF OBJECT_ID('dbo.CommandExecute', 'P') IS NOT NULL DROP PROCEDURE dbo.CommandExecute;
+                IF OBJECT_ID('dbo.DatabaseBackup', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseBackup;
+                IF OBJECT_ID('dbo.DatabaseIntegrityCheck', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseIntegrityCheck;
+                IF OBJECT_ID('dbo.IndexOptimize', 'P') IS NOT NULL DROP PROCEDURE dbo.IndexOptimize;
+                IF OBJECT_ID('dbo.CommandLog', 'U') IS NOT NULL DROP TABLE dbo.CommandLog;
+                IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
+                IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
+            "
+            $splatCleanup = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Database    = "tempdb"
+                Query       = $cleanupQuery
+            }
+            Invoke-DbaQuery @splatCleanup
+
+            $splatInstall = @{
+                SqlInstance     = $TestConfig.InstanceMulti1
+                Database        = "tempdb"
+                ReplaceExisting = $true
+            }
+            $result = Install-DbaMaintenanceSolution @splatInstall
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Clean up maintenance solution objects
+            $cleanupQuery = "
+                IF OBJECT_ID('dbo.CommandExecute', 'P') IS NOT NULL DROP PROCEDURE dbo.CommandExecute;
+                IF OBJECT_ID('dbo.DatabaseBackup', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseBackup;
+                IF OBJECT_ID('dbo.DatabaseIntegrityCheck', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseIntegrityCheck;
+                IF OBJECT_ID('dbo.IndexOptimize', 'P') IS NOT NULL DROP PROCEDURE dbo.IndexOptimize;
+                IF OBJECT_ID('dbo.CommandLog', 'U') IS NOT NULL DROP TABLE dbo.CommandLog;
+                IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
+                IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
+            "
+            $splatCleanup = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Database    = "tempdb"
+                Query       = $cleanupQuery
+            }
+            Invoke-DbaQuery @splatCleanup
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Results"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Returns no output when using -WhatIf" {
+            $splatWhatIf = @{
+                SqlInstance     = $TestConfig.InstanceMulti1
+                Database        = "tempdb"
+                ReplaceExisting = $true
+                WhatIf          = $true
+            }
+            $whatIfResult = Install-DbaMaintenanceSolution @splatWhatIf
+            $whatIfResult | Should -BeNullOrEmpty
+        }
+    }
 }

@@ -19,4 +19,15 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $testPath = "C:\temp"
+            $result = Set-DbatoolsPath -Name "testpath" -Path $testPath
+        }
+
+        It "Returns no output as documented" {
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

@@ -74,4 +74,43 @@ Describe $CommandName -Tag IntegrationTests {
             $configResults | Remove-Item -ErrorAction SilentlyContinue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -Path $tempConfigPath -EnableException
+        }
+
+        AfterAll {
+            if ($result -and (Test-Path $result.FullName)) {
+                Remove-Item -Path $result.FullName -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'Length',
+                'CreationTime',
+                'LastWriteTime',
+                'DirectoryName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available in FileInfo output"
+            }
+        }
+
+        It "Returns a JSON file with expected naming pattern" {
+            $result.Name | Should -Match "\.DataGeneratorConfig\.json$"
+        }
+
+        It "Returns a non-empty file" {
+            $result.Length | Should -BeGreaterThan 0
+        }
+    }
 }

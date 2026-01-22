@@ -88,4 +88,39 @@ Describe $CommandName -Tag IntegrationTests {
             $fileBackupPath = $fileBackupResults.Path
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+            $splatBackup = @{
+                SqlInstance    = $TestConfig.InstanceSingle
+                SecurePassword = $securePassword
+                Path           = $backupPath
+                EnableException = $true
+            }
+            $result = Backup-DbaServiceMasterKey @splatBackup
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ServiceMasterKey]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Path',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the Filename property (alias for Path)" {
+            $result.PSObject.Properties.Name | Should -Contain 'Filename' -Because "Filename is added as an alias property"
+        }
+    }
 }

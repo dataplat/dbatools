@@ -60,4 +60,39 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random") | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $random2 = Get-Random
+            $null = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence3_$random2" -Schema "Schema_$random"
+
+            $result = Remove-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence3_$random2" -Schema "Schema_$random" -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Sequence',
+                'SequenceName',
+                'SequenceSchema',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

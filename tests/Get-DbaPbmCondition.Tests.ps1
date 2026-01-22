@@ -94,4 +94,37 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results.Name | Should -Be $conditionName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPbmCondition -SqlInstance $TestConfig.InstanceSingle -Condition $conditionName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Dmf.Condition]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Name',
+                'CreateDate',
+                'CreatedBy',
+                'DateModified',
+                'Description',
+                'ExpressionNode',
+                'Facet',
+                'HasScript',
+                'IsSystemObject',
+                'ModifiedBy'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

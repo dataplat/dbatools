@@ -133,4 +133,62 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -Contain $localLogin7Name
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $random = Get-Random
+            $testInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $remoteInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+
+            $securePassword = ConvertTo-SecureString -String 'securePassword' -AsPlainText -Force
+            $testLocalLogin = "dbatoolscli_outputtest_$random"
+            $testRemoteLogin = "dbatoolscli_remoteoutput_$random"
+            $testLinkedServer = "dbatoolscli_lsoutput_$random"
+
+            New-DbaLogin -SqlInstance $testInstance -Login $testLocalLogin -SecurePassword $securePassword
+            New-DbaLogin -SqlInstance $remoteInstance -Login $testRemoteLogin -SecurePassword $securePassword
+
+            New-DbaLinkedServer -SqlInstance $testInstance -LinkedServer $testLinkedServer -ServerProduct mssql -Provider sqlncli -DataSource $remoteInstance
+            New-DbaLinkedServerLogin -SqlInstance $testInstance -LinkedServer $testLinkedServer -LocalLogin $testLocalLogin -RemoteUser $testRemoteLogin -RemoteUserPassword $securePassword
+
+            $result = Remove-DbaLinkedServerLogin -SqlInstance $testInstance -LinkedServer $testLinkedServer -LocalLogin $testLocalLogin -Confirm:$false -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaLinkedServer -SqlInstance $testInstance -LinkedServer $testLinkedServer -Force
+            Remove-DbaLogin -SqlInstance $testInstance -Login $testLocalLogin
+            Remove-DbaLogin -SqlInstance $remoteInstance -Login $testRemoteLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'LinkedServer',
+                'Login',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Status property with value 'Removed' on success" {
+            $result.Status | Should -Be 'Removed'
+        }
+    }
 }

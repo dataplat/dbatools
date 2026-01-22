@@ -163,4 +163,42 @@ Describe $CommandName -Tag IntegrationTests {
         $results[2].Dependent | Should -Be "dbatoolsci_circrefA"
         $results[2].Tier | Should -Be 2
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci3 | Get-DbaDependency -Parents -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType Dataplat.Dbatools.Database.Dependency
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'ServiceName',
+                'SqlInstance',
+                'Dependent',
+                'Type',
+                'Owner',
+                'IsSchemaBound',
+                'Parent',
+                'ParentType',
+                'Tier',
+                'Object',
+                'Urn',
+                'OriginalResource',
+                'Script'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Script property contains T-SQL creation script" {
+            $result[0].Script | Should -Not -BeNullOrEmpty
+            $result[0].Script | Should -BeOfType [string]
+        }
+    }
 }

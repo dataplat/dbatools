@@ -52,4 +52,27 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
         $results.MonitorStatus | Should -Be "Removed"
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MonitorStatus"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

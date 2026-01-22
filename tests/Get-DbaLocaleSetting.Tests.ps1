@@ -27,4 +27,26 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -Be $null
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaLocaleSetting -ComputerName $env:ComputerName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has ComputerName property" {
+            $result.PSObject.Properties.Name | Should -Contain "ComputerName" -Because "ComputerName is always included"
+        }
+
+        It "Has dynamic registry properties" {
+            # The command dynamically reads registry values, so we test for common locale properties
+            $commonProps = @('Locale', 'LocaleName', 'sLanguage', 'sDecimal', 'sList')
+            $actualProps = $result.PSObject.Properties.Name
+            $foundProps = $commonProps | Where-Object { $_ -in $actualProps }
+            $foundProps.Count | Should -BeGreaterThan 0 -Because "at least some common locale properties should be present"
+        }
+    }
 }

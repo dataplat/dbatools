@@ -18,4 +18,21 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns System.String type" {
+            $result = Join-DbaPath -Path 'C:\temp'
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns System.String when joining multiple path segments" {
+            $result = Join-DbaPath -Path 'C:\temp' -Child 'Foo', 'Bar'
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns a non-empty string" {
+            $result = Join-DbaPath -Path 'C:\temp' -Child 'Foo'
+            $result | Should -Not -BeNullOrEmpty
+        }
+    }
 }

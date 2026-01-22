@@ -56,4 +56,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeGreaterThan 5
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Find-DbaCommand -Pattern "Get-DbaDatabase" -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "CommandName",
+                "Synopsis"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available via Select-Object" {
+            $additionalProps = @(
+                "Name",
+                "Availability",
+                "Alias",
+                "Description",
+                "Examples",
+                "Links",
+                "Syntax",
+                "Tags",
+                "Author",
+                "MinimumVersion",
+                "MaximumVersion",
+                "Params"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+    }
 }

@@ -267,4 +267,176 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsSanLog.Count | Should -BeExactly 3
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatOutput = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $DestBackupDir
+                EnableException = $true
+            }
+            $result = Get-DbaBackupInformation @splatOutput | Select-Object -First 1
+        }
+
+        It "Returns the documented output type" {
+            $result.PSObject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.BackupHistory"
+        }
+
+        It "Has ComputerName property" {
+            $result.PSObject.Properties.Name | Should -Contain "ComputerName"
+        }
+
+        It "Has InstanceName property" {
+            $result.PSObject.Properties.Name | Should -Contain "InstanceName"
+        }
+
+        It "Has SqlInstance property" {
+            $result.PSObject.Properties.Name | Should -Contain "SqlInstance"
+        }
+
+        It "Has Database property" {
+            $result.PSObject.Properties.Name | Should -Contain "Database"
+        }
+
+        It "Has UserName property" {
+            $result.PSObject.Properties.Name | Should -Contain "UserName"
+        }
+
+        It "Has Start property" {
+            $result.PSObject.Properties.Name | Should -Contain "Start"
+        }
+
+        It "Has End property" {
+            $result.PSObject.Properties.Name | Should -Contain "End"
+        }
+
+        It "Has Duration property" {
+            $result.PSObject.Properties.Name | Should -Contain "Duration"
+        }
+
+        It "Has Type property" {
+            $result.PSObject.Properties.Name | Should -Contain "Type"
+        }
+
+        It "Has Path property" {
+            $result.PSObject.Properties.Name | Should -Contain "Path"
+        }
+
+        It "Has FullName property" {
+            $result.PSObject.Properties.Name | Should -Contain "FullName"
+        }
+
+        It "Has FileList property" {
+            $result.PSObject.Properties.Name | Should -Contain "FileList"
+        }
+
+        It "Has TotalSize property" {
+            $result.PSObject.Properties.Name | Should -Contain "TotalSize"
+        }
+
+        It "Has CompressedBackupSize property" {
+            $result.PSObject.Properties.Name | Should -Contain "CompressedBackupSize"
+        }
+
+        It "Has BackupSetId property" {
+            $result.PSObject.Properties.Name | Should -Contain "BackupSetId"
+        }
+
+        It "Has Position property" {
+            $result.PSObject.Properties.Name | Should -Contain "Position"
+        }
+
+        It "Has DeviceType property" {
+            $result.PSObject.Properties.Name | Should -Contain "DeviceType"
+        }
+
+        It "Has FirstLsn property" {
+            $result.PSObject.Properties.Name | Should -Contain "FirstLsn"
+        }
+
+        It "Has DatabaseBackupLsn property" {
+            $result.PSObject.Properties.Name | Should -Contain "DatabaseBackupLsn"
+        }
+
+        It "Has CheckpointLSN property" {
+            $result.PSObject.Properties.Name | Should -Contain "CheckpointLSN"
+        }
+
+        It "Has LastLsn property" {
+            $result.PSObject.Properties.Name | Should -Contain "LastLsn"
+        }
+
+        It "Has SoftwareVersionMajor property" {
+            $result.PSObject.Properties.Name | Should -Contain "SoftwareVersionMajor"
+        }
+
+        It "Has RecoveryModel property" {
+            $result.PSObject.Properties.Name | Should -Contain "RecoveryModel"
+        }
+
+        It "Has IsCopyOnly property" {
+            $result.PSObject.Properties.Name | Should -Contain "IsCopyOnly"
+        }
+    }
+
+    Context "Output with -PassThru and -ExportPath" {
+        BeforeAll {
+            $exportFile = "$($TestConfig.Temp)\BackupHistory_PassThru.xml"
+            if (Test-Path $exportFile) {
+                Remove-Item $exportFile -Force
+            }
+            $splatPassThru = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $DestBackupDir
+                ExportPath      = $exportFile
+                PassThru        = $true
+                EnableException = $true
+            }
+            $result = Get-DbaBackupInformation @splatPassThru
+        }
+
+        AfterAll {
+            if (Test-Path $exportFile) {
+                Remove-Item $exportFile -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns output when -PassThru specified with -ExportPath" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Exports file to the specified path" {
+            Test-Path $exportFile | Should -BeTrue
+        }
+    }
+
+    Context "Output without -PassThru" {
+        BeforeAll {
+            $exportFile = "$($TestConfig.Temp)\BackupHistory_NoPassThru.xml"
+            if (Test-Path $exportFile) {
+                Remove-Item $exportFile -Force
+            }
+            $splatNoPassThru = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $DestBackupDir
+                ExportPath      = $exportFile
+                EnableException = $true
+            }
+            $result = Get-DbaBackupInformation @splatNoPassThru
+        }
+
+        AfterAll {
+            if (Test-Path $exportFile) {
+                Remove-Item $exportFile -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns no output when -ExportPath specified without -PassThru" {
+            $result | Should -BeNullOrEmpty
+        }
+
+        It "Exports file to the specified path" {
+            Test-Path $exportFile | Should -BeTrue
+        }
+    }
 }

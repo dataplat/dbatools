@@ -65,16 +65,17 @@ function Install-DbaSqlPackage {
         https://dbatools.io/Install-DbaSqlPackage
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
-        Returns installation details when SqlPackage is successfully installed.
+        Returns installation details when SqlPackage is successfully installed or when it already exists.
 
-        If SqlPackage is already installed and -Force is not specified, no output is returned. If installation fails, an error is raised instead of returning an object.
-
-        Properties:
+        Default display properties (all properties are shown by default):
         - Name: The executable name - "sqlpackage" on Unix platforms, "SqlPackage.exe" on Windows
         - Path: The full file path to the installed SqlPackage executable
-        - Installed: Boolean value of $true indicating successful installation
+        - Installed: Boolean value of $true indicating successful installation or existing installation
+
+        When SqlPackage is already installed and -Force is not specified, an additional property is included:
+        - Notes: Message indicating that installation was skipped
 
     .EXAMPLE
         PS C:\> Install-DbaSqlPackage

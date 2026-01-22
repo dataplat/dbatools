@@ -25,6 +25,57 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $table = "OutputValidationTable_$(Get-Random)"
+            $tableDDL = "CREATE TABLE $table (testId INT IDENTITY(1,1), testData DATETIME2 DEFAULT getdate())"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $tableDDL -Database TempDb
+            $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $insertSql -Database TempDb
+            $result = Test-DbaIdentityUsage -SqlInstance $TestConfig.InstanceSingle -Database TempDb -EnableException | Where-Object Table -eq $table
+        }
+
+        AfterAll {
+            $cleanup = "DROP TABLE $table"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $cleanup -Database TempDb
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Column",
+                "SeedValue",
+                "IncrementValue",
+                "LastValue",
+                "PercentUsed"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available via Select-Object *" {
+            $additionalProps = @(
+                "MaxNumberRows",
+                "NumberOfUses"
+            )
+            $allProps = ($result | Select-Object -Property *).PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $allProps | Should -Contain $prop -Because "property '$prop' should be accessible via Select-Object *"
+            }
+        }
+    }
+
     Context "Verify Test Identity Usage on TinyInt" {
         BeforeAll {
             $table1 = "TestTable_$(Get-Random)"

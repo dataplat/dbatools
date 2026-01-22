@@ -21,8 +21,31 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    It "returns a value" {
-        $results = Get-DbaExtendedProtection $TestConfig.InstanceSingle -EnableException
-        $results.ExtendedProtection | Should -Not -BeNullOrEmpty
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ExtendedProtection'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "ExtendedProtection property has expected format" {
+            $result.ExtendedProtection | Should -Not -BeNullOrEmpty
+            $result.ExtendedProtection | Should -Match '^\d+ - (Off|Allowed|Required)$'
+        }
     }
 }

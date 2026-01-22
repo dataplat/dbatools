@@ -64,4 +64,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.LogFiles | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbDetachedFileInfo -SqlInstance $TestConfig.InstanceSingle -Path $path -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Version",
+                "ExactVersion",
+                "Collation",
+                "DataFiles",
+                "LogFiles"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "DataFiles property is StringCollection" {
+            $result.DataFiles | Should -BeOfType [System.Collections.Specialized.StringCollection]
+        }
+
+        It "LogFiles property is StringCollection" {
+            $result.LogFiles | Should -BeOfType [System.Collections.Specialized.StringCollection]
+        }
+    }
 }

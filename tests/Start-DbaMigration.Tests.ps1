@@ -155,6 +155,45 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatOutputTest = @{
+                Force         = $true
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $backupPath
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
+            }
+            $outputResult = Start-DbaMigration @splatOutputTest
+        }
+
+        It "Returns PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $outputResult[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Includes the DestinationDatabase property" {
+            $outputResult[0].PSObject.Properties.Name | Should -Contain 'DestinationDatabase'
+        }
+    }
+
     Context "When using last backup method" {
         BeforeAll {
             # Create backups first

@@ -63,6 +63,43 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatOperator = @{
+                SqlInstance  = $server2
+                Operator     = $email1
+                EmailAddress = $email1
+                PagerDay     = "Everyday"
+                Force        = $true
+            }
+            $result = New-DbaAgentOperator @splatOperator -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Operator]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'EmailAddress',
+                'NetSendAddress',
+                'PagerAddress',
+                'Enabled',
+                'LastEmailDate',
+                'LastNetSendDate',
+                'LastPagerDate'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "New Agent Operator is added properly" {
         It "Should have the right name" {
             $splatOperator1 = @{

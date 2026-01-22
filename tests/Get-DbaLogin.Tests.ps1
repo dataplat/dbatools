@@ -85,6 +85,63 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login sa -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Login]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'LoginType',
+                'CreateDate',
+                'LastLogin',
+                'HasAccess',
+                'IsLocked',
+                'IsDisabled',
+                'MustChangePassword'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the SidString property" {
+            $result.PSObject.Properties.Name | Should -Contain 'SidString'
+        }
+    }
+
+    Context "Output with -Detailed" {
+        BeforeAll {
+            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login sa -Detailed -EnableException
+        }
+
+        It "Includes additional detailed properties" {
+            $detailedProps = @(
+                'BadPasswordCount',
+                'BadPasswordTime',
+                'DaysUntilExpiration',
+                'HistoryLength',
+                'IsMustChange',
+                'LockoutTime',
+                'PasswordHash',
+                'PasswordLastSetTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $detailedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present with -Detailed switch"
+            }
+        }
+    }
+
     Context "Validate params" {
 
         It "Multiple logins" {

@@ -141,4 +141,45 @@ Describe $CommandName -Tag IntegrationTests {
             $runningResults.IsRunning | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Status",
+                "IsRunning",
+                "Path",
+                "MaxSize",
+                "StopTime",
+                "MaxFiles",
+                "IsRowset",
+                "IsRollover",
+                "IsShutdown",
+                "IsDefault",
+                "BufferCount",
+                "BufferSize",
+                "FilePosition",
+                "ReaderSpid",
+                "StartTime",
+                "LastEventTime",
+                "EventCount",
+                "DroppedEventCount"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

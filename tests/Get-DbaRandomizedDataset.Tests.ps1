@@ -31,4 +31,39 @@ Describe $CommandName -Tag IntegrationTests {
             $dataset.Count | Should -Be 10
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaRandomizedDataset -Template PersonalData -Rows 1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has properties dynamically defined by the template" {
+            # PersonalData template should have these common properties
+            $result.PSObject.Properties.Name | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns the correct number of rows" {
+            $result.Count | Should -Be 1
+        }
+    }
+
+    Context "Output Validation with multiple rows" {
+        BeforeAll {
+            $result = Get-DbaRandomizedDataset -Template PersonalData -Rows 5 -EnableException
+        }
+
+        It "Returns correct count for multiple rows" {
+            $result.Count | Should -Be 5
+        }
+
+        It "Each row has properties" {
+            foreach ($row in $result) {
+                $row.PSObject.Properties.Name | Should -Not -BeNullOrEmpty
+            }
+        }
+    }
 }

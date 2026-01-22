@@ -64,4 +64,57 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Success"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login tester | Grant-DbaAgPermission -Type EndPoint -Permission Connect -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Permission',
+                'Type',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Type property is always 'Grant'" {
+            $result.Type | Should -Be "Grant"
+        }
+
+        It "Status property is 'Success' for successful grants" {
+            $result.Status | Should -Be "Success"
+        }
+    }
+
+    Context "Output with AvailabilityGroup type" {
+        BeforeAll {
+            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login tester | Grant-DbaAgPermission -Type AvailabilityGroup -AvailabilityGroup $agName -Permission Alter -EnableException
+        }
+
+        It "Returns output for AvailabilityGroup permission grants" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.Permission | Should -Be "Alter"
+        }
+
+        It "Has the same property structure as Endpoint grants" {
+            $expectedProps = @('ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Permission', 'Type', 'Status')
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop
+            }
+        }
+    }
 }

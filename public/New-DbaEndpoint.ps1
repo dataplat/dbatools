@@ -95,11 +95,16 @@ function New-DbaEndpoint {
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: The unique identifier for the endpoint
         - Name: The name of the endpoint (e.g., hadr_endpoint for DatabaseMirroring)
-        - Type: The endpoint type (DatabaseMirroring, ServiceBroker, Soap, TSql)
-        - Protocol: The communication protocol (Tcp, NamedPipes, Http, Via, SharedMemory)
+        - IPAddress: The IP address the endpoint listens on (when TCP protocol is used)
+        - Port: The TCP port number the endpoint listens on (when TCP protocol is used)
+        - EndpointState: The current state of the endpoint (Started, Stopped, Disabled)
+        - EndpointType: The endpoint type (DatabaseMirroring, ServiceBroker, Soap, TSql)
         - Owner: The SQL Server login that owns the endpoint
-        - IsAdminOnly: Boolean indicating if the endpoint is restricted to administrators only
+        - IsAdminEndpoint: Boolean indicating if the endpoint is restricted to administrators only
+        - Fqdn: The fully qualified domain name of the SQL Server instance
+        - IsSystemObject: Boolean indicating if the endpoint is a system object
 
         Additional properties available (from SMO EndPoint object):
         - EndpointType: The type of endpoint (same as Type)

@@ -70,25 +70,16 @@ function New-DbaReplSubscription {
     .OUTPUTS
         None
 
-        This function creates replication subscriptions but does not return output objects. The function performs the following operations:
+        This command creates replication subscriptions but does not return output objects.
+
+        Operations performed:
         - Validates or creates the subscription database on the subscriber instance
         - Creates necessary database schemas on the subscriber if needed
         - Configures Push or Pull subscription based on the -Type parameter
         - Initializes the subscription and creates synchronization agent jobs
 
-        To verify the subscription was created successfully, use Get-DbaReplSubscription with the same parameters:
-        PS C:\> Get-DbaReplSubscription -SqlInstance $SqlInstance -Database $Database -PublicationName $PublicationName
-
-        This will return subscription objects showing:
-        - ComputerName: The publisher server name
-        - InstanceName: The publisher instance name
-        - SqlInstance: The publisher instance in domain\instance format
-        - DatabaseName: The publishing database name
-        - PublicationName: The publication name
-        - Name: The subscription name
-        - SubscriberName: The subscriber instance name
-        - SubscriptionDBName: The subscription database name on subscriber
-        - SubscriptionType: Push or Pull indicating subscription type
+        To verify the subscription was created, use Get-DbaReplSubscription:
+            Get-DbaReplSubscription -SqlInstance $SqlInstance -Database $Database -PublicationName $PublicationName
 
     .LINK
         https://dbatools.io/New-DbaReplSubscription

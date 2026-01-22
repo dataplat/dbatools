@@ -31,4 +31,41 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DTCServiceName | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaMsdtc -ComputerName $env:COMPUTERNAME -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "DTCServiceName",
+                "DTCServiceState",
+                "DTCServiceStatus",
+                "DTCServiceStartMode",
+                "DTCServiceAccount",
+                "DTCCID_MSDTC",
+                "DTCCID_MSDTCUIS",
+                "DTCCID_MSDTCTIPGW",
+                "DTCCID_MSDTCXATM",
+                "networkDTCAccess",
+                "networkDTCAccessAdmin",
+                "networkDTCAccessClients",
+                "networkDTCAccessInbound",
+                "networkDTCAccessOutBound",
+                "networkDTCAccessTip",
+                "networkDTCAccessTransactions",
+                "XATransactions"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+    }
 }

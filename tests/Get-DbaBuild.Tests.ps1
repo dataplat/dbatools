@@ -221,6 +221,53 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $resultInstance = Get-DbaBuild -SqlInstance $TestConfig.instance1 -EnableException
+            $resultBuild = Get-DbaBuild -Build "13.0.5026" -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $resultInstance.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties when querying by -SqlInstance" {
+            $expectedProps = @(
+                "SqlInstance",
+                "Build",
+                "NameLevel",
+                "SPLevel",
+                "CULevel",
+                "KBLevel",
+                "BuildLevel",
+                "SupportedUntil",
+                "MatchType",
+                "Warning"
+            )
+            $actualProps = $resultInstance.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Excludes SqlInstance from display when querying by -Build" {
+            $defaultDisplay = $resultBuild.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultDisplay | Should -Not -Contain "SqlInstance" -Because "SqlInstance should be excluded when using -Build parameter"
+        }
+
+        It "Has SqlInstance property when querying by -SqlInstance" {
+            $resultInstance.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has Build property as version object" {
+            $resultInstance.Build | Should -BeOfType [System.Version]
+        }
+
+        It "Has MatchType property with valid values" {
+            $resultInstance.MatchType | Should -BeIn "Exact", "Approximate"
+        }
+    }
+
     Context "piping and params" {
         BeforeAll {
             $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1

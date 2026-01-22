@@ -99,4 +99,52 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'SnapshotOf',
+                'CreateDate',
+                'DiskUsage'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ComputerName, InstanceName, SqlInstance properties added by dbatools" {
+            $result[0].ComputerName | Should -Not -BeNullOrEmpty
+            $result[0].InstanceName | Should -Not -BeNullOrEmpty
+            $result[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has DiskUsage property added by dbatools" {
+            $result[0].DiskUsage | Should -Not -BeNullOrEmpty
+            $result[0].DiskUsage.GetType().Name | Should -Be 'DbaSize'
+        }
+
+        It "Has SnapshotOf property (alias for DatabaseSnapshotBaseName)" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'SnapshotOf'
+            $result[0].SnapshotOf | Should -Be $db1
+        }
+
+        It "Has core SMO Database properties" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'CreateDate'
+            $result[0].PSObject.Properties.Name | Should -Contain 'IsDatabaseSnapshot'
+            $result[0].PSObject.Properties.Name | Should -Contain 'DatabaseSnapshotBaseName'
+        }
+    }
 }

@@ -51,4 +51,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SynchronizationState | Should -Be 'NotSynchronizing'
         }
     }
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Suspend-DbaAgDbDataMovement -SqlInstance $TestConfig.InstanceHadr -Database $dbname -EnableException
+            $null = Resume-DbaAgDbDataMovement -SqlInstance $TestConfig.InstanceHadr -Database $dbname
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityDatabase]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'LocalReplicaRole',
+                'Name',
+                'SynchronizationState',
+                'IsFailoverReady',
+                'IsJoined',
+                'IsSuspended'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

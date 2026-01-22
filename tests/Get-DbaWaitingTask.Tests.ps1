@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Command functionality with waiting task" {
+    Context "Output Validation" {
         BeforeAll {
             Start-Job -Name $waitingTaskJobName -ScriptBlock {
                 Import-Module $args[0];
@@ -81,32 +81,44 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             Start-Sleep -Seconds 1
 
             # Get the results
-            $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
+            $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess -EnableException
         }
 
-        It "Should have correct properties" {
+        It "Returns PSCustomObject" {
+            $results.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
             $expectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Spid",
-                "Thread",
-                "Scheduler",
-                "WaitMs",
-                "WaitType",
-                "BlockingSpid",
-                "ResourceDesc",
-                "NodeId",
-                "Dop",
-                "DbId",
-                "InfoUrl",
-                "QueryPlan",
-                "SqlText"
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Spid',
+                'Thread',
+                'Scheduler',
+                'WaitMs',
+                'WaitType',
+                'BlockingSpid',
+                'ResourceDesc',
+                'NodeId',
+                'Dop',
+                'DbId'
             )
-            ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+            $actualProps = $results.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
 
-        It "Should have command of WAITFOR" {
+        It "Has additional properties available via Select-Object" {
+            $additionalProps = @('SqlText', 'QueryPlan', 'InfoUrl')
+            $actualProps = $results.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available but excluded from default display"
+            }
+        }
+
+        It "Returns waiting task data" {
             $results.WaitType | Should -BeLike "*WAITFOR*"
         }
     }

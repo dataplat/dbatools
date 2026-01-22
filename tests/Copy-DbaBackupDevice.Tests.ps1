@@ -86,4 +86,42 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Not -Be "Successful"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Copy-DbaBackupDevice -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -EnableException
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result.PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "DateTime property is a DbaDateTime object" {
+            $result.DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+
+        It "Type property returns 'Backup Device'" {
+            $result.Type | Should -Be "Backup Device"
+        }
+
+        It "Status property contains valid values" {
+            $result.Status | Should -BeIn @('Successful', 'Skipped', 'Failed', $null)
+        }
+    }
 }

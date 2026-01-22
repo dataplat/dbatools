@@ -185,4 +185,48 @@ Describe $CommandName -Tag IntegrationTests {
             $secondaryFileGroupDb.DefaultFileGroup | Should -Be "$($secondaryFileGroupDbName)_MainData"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $random = Get-Random
+            $testDbName = "dbatoolsci_outputtest_$random"
+            $result = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $testDbName
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $testDbName | Remove-DbaDatabase
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsAccessible',
+                'RecoveryModel',
+                'LogReuseWaitStatus',
+                'SizeMB',
+                'Compatibility',
+                'Collation',
+                'Owner',
+                'Encrypted',
+                'LastFullBackup',
+                'LastDiffBackup',
+                'LastLogBackup'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

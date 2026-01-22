@@ -145,47 +145,47 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "return object properties" {
-        It "has the correct properties" {
-            $results = Get-DbaDbRestoreHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname1, $dbname2
+    Context "Output Validation" {
+        BeforeAll {
+            $results = Get-DbaDbRestoreHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname1, $dbname2 -EnableException
             $result = $results[0]
-            $ExpectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Username",
-                "RestoreType",
-                "Date",
-                "From",
-                "To",
-                "first_lsn",
-                "last_lsn",
-                "checkpoint_lsn",
-                "database_backup_lsn",
-                "backup_finish_date",
-                "BackupFinishDate",
-                "RowError",
-                "RowState",
-                "Table",
-                "ItemArray",
-                "HasErrors"
-            )
-            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+        }
 
-            $ExpectedPropsDefault = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Username",
-                "RestoreType",
-                "Date",
-                "From",
-                "To",
-                "BackupFinishDate"
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Username',
+                'RestoreType',
+                'Date',
+                'From',
+                'To',
+                'BackupFinishDate'
             )
-            ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
+            $actualProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties accessible via Select-Object" {
+            $additionalProps = @(
+                'first_lsn',
+                'last_lsn',
+                'checkpoint_lsn',
+                'database_backup_lsn',
+                'backup_finish_date'
+            )
+            $allProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $allProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
         }
     }
 

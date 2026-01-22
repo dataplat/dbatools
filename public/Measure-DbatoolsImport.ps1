@@ -22,8 +22,8 @@ function Measure-DbatoolsImport {
 
         Returns one object per dbatools module initialization step that took measurable time to complete. The timing data includes steps for loading the dbatools library, type aliases, internal commands, external commands, and other initialization operations.
 
-        Properties:
-        - Name: Name of the initialization step (e.g., "Importing Type Aliases", "Loading Internal Commands")
+        Default display properties:
+        - Action: Name of the initialization step (e.g., "Importing Type Aliases", "Loading Internal Commands")
         - Duration: TimeSpan representing how long the step took to complete; only steps with Duration greater than 00:00:00 are returned
 
     .EXAMPLE

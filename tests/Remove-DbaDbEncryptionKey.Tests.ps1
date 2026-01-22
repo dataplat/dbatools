@@ -73,4 +73,29 @@ Describe $CommandName -Tag IntegrationTests {
             $testDatabase | Get-DbaDbEncryptionKey | Should -Be $null
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = $testDatabase | New-DbaDbEncryptionKey -Force
+            $result = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase.Name -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

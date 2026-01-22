@@ -28,6 +28,36 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaCmConnection -ComputerName localhost -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Dataplat.Dbatools.Connection.ManagementConnection]
+        }
+
+        It "Has the expected key properties documented in .OUTPUTS" {
+            $expectedProps = @(
+                'ComputerName',
+                'Credentials',
+                'UseWindowsCredentials',
+                'OverrideExplicitCredential',
+                'DisabledConnectionTypes',
+                'DisableBadCredentialCache',
+                'DisableCimPersistence',
+                'DisableCredentialAutoRegister',
+                'WindowsCredentialsAreBad',
+                'CimWinRMOptions',
+                'CimDCOMOptions'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

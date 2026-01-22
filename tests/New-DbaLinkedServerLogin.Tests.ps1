@@ -100,4 +100,53 @@ Describe $CommandName -Tag IntegrationTests {
             $warnings | Should -BeLike "*LocalLogin is required in all scenarios*"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputTestLogin = "dbatoolscli_outputTest_$random"
+            $outputRemoteLogin = "dbatoolscli_outputRemote_$random"
+            $outputPassword = ConvertTo-SecureString -String "outputPassword" -AsPlainText -Force
+
+            New-DbaLogin -SqlInstance $InstanceSingle -Login $outputTestLogin -SecurePassword $outputPassword
+            New-DbaLogin -SqlInstance $instance3 -Login $outputRemoteLogin -SecurePassword $outputPassword
+
+            $result = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $outputTestLogin -RemoteUser $outputRemoteLogin -RemoteUserPassword $outputPassword
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $outputTestLogin -ErrorAction SilentlyContinue
+            Remove-DbaLogin -SqlInstance $InstanceSingle -Login $outputTestLogin -ErrorAction SilentlyContinue
+            Remove-DbaLogin -SqlInstance $instance3 -Login $outputRemoteLogin -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.LinkedServerLogin]
+        }
+
+        It "Has the documented properties" {
+            $expectedProps = @(
+                'Name',
+                'RemoteUser',
+                'Impersonate',
+                'Parent',
+                'DateLastModified',
+                'State'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on LinkedServerLogin object"
+            }
+        }
+
+        It "Returns the correct property values for created login mapping" {
+            $result.Name | Should -Be $outputTestLogin
+            $result.RemoteUser | Should -Be $outputRemoteLogin
+            $result.Impersonate | Should -Be $false
+            $result.Parent.Name | Should -Be $linkedServer1Name
+        }
+    }
 }

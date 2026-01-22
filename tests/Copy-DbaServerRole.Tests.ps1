@@ -105,4 +105,36 @@ Describe $CommandName -Tag IntegrationTests {
             $roleResults.Name | Should -Contain $testRoleName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopyRole = @{
+                Source           = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
+                ServerRole       = $testRoleName
+                EnableException  = $true
+            }
+            $result = Copy-DbaServerRole @splatCopyRole
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result.PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

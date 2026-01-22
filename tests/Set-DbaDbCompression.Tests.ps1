@@ -160,4 +160,71 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -MaxRunTime 5 -PercentCompression 0 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "TableName",
+                "IndexName",
+                "Partition",
+                "IndexID",
+                "IndexType",
+                "PercentScan",
+                "PercentUpdate",
+                "RowEstimatePercentOriginal",
+                "PageEstimatePercentOriginal",
+                "CompressionTypeRecommendation",
+                "SizeCurrent",
+                "SizeRequested",
+                "PercentCompression",
+                "AlreadyProcessed"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has AlreadyProcessed property set to True" {
+            foreach ($row in $result) {
+                $row.AlreadyProcessed | Should -Be "True"
+            }
+        }
+
+        It "Has CompressionTypeRecommendation in uppercase" {
+            foreach ($row in $result) {
+                $row.CompressionTypeRecommendation | Should -BeIn @("ROW", "PAGE", "NONE")
+            }
+        }
+    }
+
+    Context "Output Validation with CompressionType parameter" {
+        BeforeAll {
+            $result = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType Row -EnableException
+        }
+
+        It "Returns PSCustomObject for each partition" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has CompressionTypeRecommendation matching requested type" {
+            foreach ($row in $result) {
+                $row.CompressionTypeRecommendation | Should -Be "ROW"
+            }
+        }
+    }
 }

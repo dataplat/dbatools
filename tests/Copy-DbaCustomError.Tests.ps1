@@ -95,4 +95,41 @@ Describe $CommandName -Tag IntegrationTests {
             $errorResults.ID | Should -Contain 60000
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopyError = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                CustomError = 60000
+                EnableException = $true
+            }
+            $result = Copy-DbaCustomError @splatCopyError
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns one object per custom error and language combination" {
+            # 60000 has 2 languages: us_english and French
+            $result.Count | Should -BeGreaterThan 0
+        }
+    }
 }

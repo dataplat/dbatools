@@ -71,4 +71,43 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database dbclrassembly).ID
         $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database dbclrassembly).ID
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Copy-DbaDbAssembly -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Assembly dbclrassembly.resolveDNS -Force -EnableException
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result.PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available via Select-Object" {
+            $additionalProps = @(
+                'SourceDatabase',
+                'SourceDatabaseID',
+                'DestinationDatabase',
+                'DestinationDatabaseID'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
 }

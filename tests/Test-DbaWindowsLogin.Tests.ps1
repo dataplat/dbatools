@@ -23,6 +23,84 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Get current Windows user to test with
+            $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+            # Create a temporary login if it doesn't exist
+            try {
+                $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -EnableException
+                if ($currentUser -notin $server.Logins.Name) {
+                    $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $currentUser -EnableException
+                    $loginCreated = $true
+                }
+                $result = Test-DbaWindowsLogin -SqlInstance $TestConfig.instance1 -Login $currentUser -EnableException
+            } catch {
+                # Skip tests if we can't create/test Windows logins
+                $result = $null
+            }
+        }
+
+        AfterAll {
+            if ($loginCreated) {
+                Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $currentUser -Confirm:$false
+            }
+        }
+
+        It "Returns PSCustomObject" -Skip:($null -eq $result) {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected core properties" -Skip:($null -eq $result) {
+            $expectedProps = @(
+                "Server",
+                "Domain",
+                "Login",
+                "Type",
+                "Found",
+                "SamAccountNameMismatch",
+                "DisabledInSQLServer",
+                "Enabled",
+                "AccountNotDelegated",
+                "AllowReversiblePasswordEncryption",
+                "CannotChangePassword",
+                "PasswordExpired",
+                "PasswordNeverExpires",
+                "PasswordNotRequired",
+                "LockedOut",
+                "SmartcardLogonRequired",
+                "TrustedForDelegation",
+                "UserAccountControl"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should exist"
+            }
+        }
+
+        It "Has the expected default display properties" -Skip:($null -eq $result) {
+            # Default view shows all properties EXCEPT those in ExcludeProperty
+            $defaultProps = @(
+                "Server",
+                "Domain",
+                "Login",
+                "Type",
+                "Found",
+                "SamAccountNameMismatch",
+                "DisabledInSQLServer",
+                "Enabled",
+                "PasswordExpired",
+                "PasswordNotRequired",
+                "LockedOut",
+                "CannotChangePassword"
+            )
+            $actualDefaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            foreach ($prop in $defaultProps) {
+                $actualDefaultProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }
 <#
 Did not include these tests yet as I was unsure if AppVeyor was capable of testing domain logins. Included these for future use.

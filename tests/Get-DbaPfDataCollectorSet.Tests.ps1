@@ -29,4 +29,65 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPfDataCollectorSet | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'Name',
+                'DisplayName',
+                'Description',
+                'State',
+                'Duration',
+                'OutputLocation',
+                'LatestOutputLocation',
+                'RootPath',
+                'SchedulesEnabled',
+                'Segment',
+                'SegmentMaxDuration',
+                'SegmentMaxSize',
+                'SerialNumber',
+                'Server',
+                'StopOnCompletion',
+                'Subdirectory',
+                'SubdirectoryFormat',
+                'SubdirectoryFormatPattern',
+                'Task',
+                'TaskArguments',
+                'TaskRunAsSelf',
+                'TaskUserTextArguments',
+                'UserAccount'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            $additionalProps = @(
+                'Keywords',
+                'DescriptionUnresolved',
+                'DisplayNameUnresolved',
+                'Schedules',
+                'Xml',
+                'Security',
+                'DataCollectorSetObject',
+                'TaskObject',
+                'Credential'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available via Select-Object *"
+            }
+        }
+    }
 }

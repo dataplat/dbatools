@@ -70,6 +70,46 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $splatBackupPriority = @{
+                SqlInstance       = $TestConfig.InstanceHadr
+                AvailabilityGroup = $agName
+                Replica           = $replicaName
+                BackupPriority    = 50
+                EnableException   = $true
+            }
+            $result = Set-DbaAgReplica @splatBackupPriority
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityReplica]
+        }
+
+        It "Has the documented properties" {
+            $expectedProps = @(
+                'Name',
+                'AvailabilityGroup',
+                'AvailabilityMode',
+                'FailoverMode',
+                'BackupPriority',
+                'ConnectionModeInPrimaryRole',
+                'ConnectionModeInSecondaryRole',
+                'EndpointUrl',
+                'ReadonlyRoutingConnectionUrl',
+                'SeedingMode',
+                'SessionTimeout',
+                'Parent'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on the output object"
+            }
+        }
+    }
+
     Context "Sets AG properties" {
         It "Returns modified results when setting BackupPriority" {
             $splatBackupPriority = @{

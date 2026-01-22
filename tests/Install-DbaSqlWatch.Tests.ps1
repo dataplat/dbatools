@@ -51,10 +51,86 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         It "Installs to specified database: $database" {
             $results[0].Database -eq $database | Should -Be $true
         }
-        It "Returns an object with the expected properties" {
-            $result = $results[0]
-            $ExpectedProps = "SqlInstance", "InstanceName", "ComputerName", "Database", "Status", "DashboardPath"
-            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+    }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $database = "dbatoolsci_sqlwatch_output_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $server.Query("CREATE DATABASE $database")
+
+            $result = Install-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $database -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Status",
+                "DashboardPath"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has exactly the documented properties and no extras" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Status",
+                "DashboardPath"
+            )
+            $actualProps = $result.PSObject.Properties.Name | Sort-Object
+            $expectedProps = $expectedProps | Sort-Object
+            Compare-Object -ReferenceObject $expectedProps -DifferenceObject $actualProps | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Testing SqlWatch installer" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $database = "dbatoolsci_sqlwatch_install_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $server.Query("CREATE DATABASE $database")
+
+            $results = Install-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $database -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Installs to specified database: $database" {
+            $results[0].Database -eq $database | Should -Be $true
         }
         It "Installed tables" {
             $tableCount = (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $database | Where-Object Name -like "sqlwatch_*").Count

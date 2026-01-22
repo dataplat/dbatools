@@ -66,4 +66,95 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should -Not -Be $null
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaBuild -Build "12.0.5540" -MinimumBuild "12.0.4511" -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected core properties" {
+            $expectedProps = @(
+                "Build",
+                "MatchType",
+                "Compliant"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has MinimumBuild property when -MinimumBuild specified" {
+            $result.PSObject.Properties.Name | Should -Contain "MinimumBuild"
+        }
+
+        It "Has all added properties accessible" {
+            $allProps = @(
+                "Compliant",
+                "MinimumBuild",
+                "MaxBehind",
+                "SPTarget",
+                "CUTarget",
+                "BuildTarget"
+            )
+            $actualProps = ($result | Select-Object *).PSObject.Properties.Name
+            foreach ($prop in $allProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible via Select-Object *"
+            }
+        }
+    }
+
+    Context "Output with -MaxBehind" {
+        BeforeAll {
+            $result = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP" -EnableException
+        }
+
+        It "Includes MaxBehind, SPTarget, and BuildTarget properties" {
+            $result.PSObject.Properties.Name | Should -Contain "MaxBehind"
+            $result.PSObject.Properties.Name | Should -Contain "SPTarget"
+            $result.PSObject.Properties.Name | Should -Contain "BuildTarget"
+        }
+    }
+
+    Context "Output with -Latest" {
+        BeforeAll {
+            $result = Test-DbaBuild -Build "12.0.5540" -Latest -EnableException
+        }
+
+        It "Includes BuildTarget property" {
+            $result.PSObject.Properties.Name | Should -Contain "BuildTarget"
+        }
+
+        It "Includes MaxBehind property (empty for -Latest)" {
+            $result.PSObject.Properties.Name | Should -Contain "MaxBehind"
+        }
+    }
+
+    Context "Output with -Quiet" {
+        BeforeAll {
+            $result = Test-DbaBuild -Build "12.0.5540" -MinimumBuild "12.0.4511" -Quiet -EnableException
+        }
+
+        It "Returns System.Boolean when -Quiet specified" {
+            $result | Should -BeOfType [System.Boolean]
+        }
+
+        It "Returns true for compliant build" {
+            $result | Should -Be $true
+        }
+    }
+
+    Context "Output with -SqlInstance" {
+        BeforeAll {
+            $result = Test-DbaBuild -SqlInstance $TestConfig.InstanceSingle -MinimumBuild "12.0.4511" -EnableException
+        }
+
+        It "Includes SqlInstance property when -SqlInstance specified" {
+            $result.PSObject.Properties.Name | Should -Contain "SqlInstance"
+        }
+    }
 }

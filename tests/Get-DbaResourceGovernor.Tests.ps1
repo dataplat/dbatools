@@ -19,6 +19,40 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ResourceGovernor]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ClassifierFunction',
+                'Enabled',
+                'MaxOutstandingIOPerVolume',
+                'ReconfigurePending',
+                'ResourcePools',
+                'ExternalResourcePools'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns one object per instance" {
+            $result | Should -HaveCount 1
+        }
+    }
+}
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests

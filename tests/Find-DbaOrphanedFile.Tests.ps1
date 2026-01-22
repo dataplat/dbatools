@@ -90,6 +90,65 @@ Describe $CommandName -Tag IntegrationTests {
             $ExpectedProps = "ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename,Server".Split(",")
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
+    }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Force -EnableException
+            $result = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Filename",
+                "RemoteFilename"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the Server property available" {
+            $result[0].PSObject.Properties.Name | Should -Contain "Server"
+        }
+    }
+
+    Context "Output with -LocalOnly" {
+        BeforeAll {
+            $result = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -LocalOnly -EnableException
+        }
+
+        It "Returns System.String" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns only file paths" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeLike "*.*"
+        }
+    }
+
+    Context "Output with -RemoteOnly" {
+        BeforeAll {
+            $result = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -RemoteOnly -EnableException
+        }
+
+        It "Returns System.String" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns UNC paths" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeLike "\\*"
+        }
 
         It "Finds two files" {
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle

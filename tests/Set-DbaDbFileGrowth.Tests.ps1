@@ -80,4 +80,38 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Database | Should -Be $testDbName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatSetFileGrowth = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $testDbName
+                EnableException = $true
+            }
+            $result = Set-DbaDbFileGrowth @splatSetFileGrowth | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "MaxSize",
+                "GrowthType",
+                "Growth",
+                "File",
+                "FileName",
+                "State"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

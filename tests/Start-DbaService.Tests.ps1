@@ -37,6 +37,41 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
+        Context "Output Validation" {
+            BeforeAll {
+                $null = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent -EnableException
+                $result = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent -EnableException
+            }
+
+            It "Returns the documented output type" {
+                $result.PSObject.TypeNames | Should -Contain "Dataplat.Dbatools.DbaSqlService"
+            }
+
+            It "Has the expected default display properties" {
+                $expectedProps = @(
+                    'ComputerName',
+                    'ServiceName',
+                    'InstanceName',
+                    'ServiceType',
+                    'State',
+                    'Status',
+                    'Message'
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+
+            It "Returns objects with correct Status for successful start" {
+                $result.Status | Should -Be 'Successful'
+            }
+
+            It "Returns objects with correct State for running services" {
+                $result.State | Should -Be 'Running'
+            }
+        }
+
         Context "Single service restart" {
             BeforeAll {
                 $null = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent

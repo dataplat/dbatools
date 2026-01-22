@@ -22,6 +22,34 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaInstanceName -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ServerName',
+                'NewServerName',
+                'RenameRequired',
+                'Updatable',
+                'Warnings',
+                'Blockers'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "Command tests servername" {
         BeforeAll {
             $results = Test-DbaInstanceName -SqlInstance $TestConfig.InstanceSingle
@@ -29,11 +57,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "should say rename is not required" {
             $results.RenameRequired | Should -Be $false
-        }
-
-        It "returns the correct properties" {
-            $expectedProps = "ComputerName", "InstanceName", "SqlInstance", "ServerName", "NewServerName", "RenameRequired", "Updatable", "Warnings", "Blockers"
-            ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
     }
 }

@@ -65,6 +65,52 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName
     }
+    Context "Output Validation" {
+        BeforeAll {
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $dbName -Confirm:$false
+            $destination.Query("CREATE DATABASE $dbname")
+        }
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $dbName -Confirm:$false
+        }
+
+        It "Returns PSCustomObject with default properties" {
+            $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -DestinationSqlInstance $TestConfig.InstanceMulti2 -Database $dbName -CopyAll Tables -EnableException
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected output properties" {
+            $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -DestinationSqlInstance $TestConfig.InstanceMulti2 -Database $dbName -CopyAll Tables -EnableException
+            $expectedProps = @(
+                'SourceInstance',
+                'SourceDatabase',
+                'DestinationInstance',
+                'DestinationDatabase',
+                'Status',
+                'Elapsed',
+                'Log'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation with -ScriptOnly" {
+        It "Returns System.String array when -ScriptOnly specified" {
+            $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName -CopyAll Tables -ScriptOnly -EnableException
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns script content that can be joined" {
+            $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName -CopyAll Tables -ScriptOnly -EnableException
+            $script = $result -join "`n"
+            $script | Should -Not -BeNullOrEmpty
+            $script | Should -BeOfType [System.String]
+        }
+    }
+
     Context "Testing scripting invocation" {
         It "Should script all objects" {
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName -CopyAllObjects

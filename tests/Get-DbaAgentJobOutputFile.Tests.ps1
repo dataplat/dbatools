@@ -122,4 +122,64 @@ Describe $CommandName -Tag UnitTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            InModuleScope "dbatools" {
+                Mock Connect-DbaInstance -MockWith {
+                    [object]@{
+                        Name         = "TestServer"
+                        ComputerName = "TestServer"
+                        ServiceName  = "MSSQLSERVER"
+                        DomainInstanceName = "TestServer"
+                        JobServer    = @{
+                            Jobs = @(
+                                @{
+                                    Name     = "TestJob"
+                                    JobSteps = @(
+                                        @{
+                                            Id             = 1
+                                            Name           = "TestStep"
+                                            OutputFileName = "C:\Temp\output.txt"
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+                $result = Get-DbaAgentJobOutputFile -SqlInstance "TestServer" -EnableException
+            }
+        }
+
+        It "Returns PSCustomObject" {
+            InModuleScope "dbatools" {
+                $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+        }
+
+        It "Has the expected default display properties" {
+            InModuleScope "dbatools" {
+                $expectedProps = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Job",
+                    "JobStep",
+                    "OutputFileName",
+                    "RemoteOutputFileName"
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+        }
+
+        It "Has the StepId property available but excluded from default display" {
+            InModuleScope "dbatools" {
+                $result.PSObject.Properties.Name | Should -Contain "StepId" -Because "StepId should be accessible via Select-Object *"
+            }
+        }
+    }
 }

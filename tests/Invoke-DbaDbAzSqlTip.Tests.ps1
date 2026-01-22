@@ -63,4 +63,47 @@ Describe $CommandName -Tag IntegrationTests -Skip:($env:azuredbpasswd -ne "fails
             $results.Database | Should -Be "test"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
+            $splatCredential = @{
+                UserName    = $TestConfig.azuresqldblogin
+                Password    = $securePassword
+                ErrorAction = "Stop"
+            }
+            $cred = New-Object System.Management.Automation.PSCredential @splatCredential
+
+            $splatInvokeTips = @{
+                SqlInstance     = $TestConfig.azureserver
+                Database        = "test"
+                SqlCredential   = $cred
+                ReturnAllTips   = $true
+                EnableException = $true
+            }
+            $result = Invoke-DbaDbAzSqlTip @splatInvokeTips | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'tip_id',
+                'description',
+                'confidence_percent',
+                'additional_info_url',
+                'details'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

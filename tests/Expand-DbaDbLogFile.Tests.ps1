@@ -51,6 +51,40 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Expand-DbaDbLogFile -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -TargetLogSize 128 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'DatabaseID',
+                'ID',
+                'Name',
+                'InitialSize',
+                'CurrentSize',
+                'InitialVLFCount',
+                'CurrentVLFCount'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has LogFileCount property available via Select-Object" {
+            $result.PSObject.Properties.Name | Should -Contain 'LogFileCount' -Because "LogFileCount should be accessible even though excluded from default view"
+        }
+    }
+
     Context "Ensure command functionality" {
         BeforeAll {
             $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -TargetLogSize 128

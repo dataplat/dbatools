@@ -52,4 +52,42 @@ Describe $CommandName -Tag IntegrationTests {
             $Results.GetType().fullname | Should -Be "System.Management.Automation.PSCustomObject"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            . "$PSScriptRoot\..\private\functions\Get-SqlDefaultSPConfigure.ps1"
+            $result2012 = Get-SqlDefaultSpConfigure -SqlVersion 11
+            $result2000 = Get-SqlDefaultSpConfigure -SqlVersion 8
+        }
+
+        It "Returns PSCustomObject" {
+            $result2012.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Contains common sp_configure properties across all versions" {
+            $commonProps = @(
+                "cost threshold for parallelism",
+                "max degree of parallelism",
+                "max server memory (MB)",
+                "min server memory (MB)",
+                "show advanced options"
+            )
+            $actualProps = $result2012.PSObject.Properties.Name
+            foreach ($prop in $commonProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in SQL 2012"
+            }
+        }
+
+        It "Returns different property counts for different SQL versions" {
+            $count2012 = ($result2012 | Get-Member -MemberType NoteProperty).Count
+            $count2000 = ($result2000 | Get-Member -MemberType NoteProperty).Count
+            $count2012 | Should -BeGreaterThan $count2000 -Because "SQL 2012 has more configuration options than SQL 2000"
+        }
+
+        It "All property values are numeric or numeric defaults" {
+            $result2012.PSObject.Properties | ForEach-Object {
+                $_.Value | Should -BeOfType [System.Int32] -Because "all sp_configure defaults should be integers"
+            }
+        }
+    }
 }

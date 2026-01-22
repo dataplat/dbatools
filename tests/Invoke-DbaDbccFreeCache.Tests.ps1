@@ -26,22 +26,26 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $expectedProperties = @(
-            "ComputerName",
-            "InstanceName",
-            "SqlInstance",
-            "Operation",
-            "Cmd",
-            "Output"
-        )
-        $resultFreeSystemCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FreeSystemCache
+        $resultFreeSystemCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FreeSystemCache -EnableException
     }
 
-    Context "Validate standard output" {
-        It "Should return all expected properties" {
-            foreach ($property in $expectedProperties) {
-                $resultFreeSystemCache.PSObject.Properties[$property] | Should -Not -BeNullOrEmpty
-                $resultFreeSystemCache.PSObject.Properties[$property].Name | Should -Be $property
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $resultFreeSystemCache.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Operation",
+                "Cmd",
+                "Output"
+            )
+            $actualProps = $resultFreeSystemCache.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
             }
         }
     }

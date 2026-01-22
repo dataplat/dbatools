@@ -36,11 +36,11 @@ function Remove-DbaTrace {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per trace that was successfully removed.
 
-        Properties:
+        Default display properties:
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)

@@ -20,6 +20,13 @@ function Test-DbaLsnChain {
        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.Boolean
+
+        Returns $true if the LSN chain is valid and restorable.
+        Returns $false if there are breaks in the chain, multiple full backups with different LSNs, 
+        or other issues that would prevent a successful restore.
+
     .EXAMPLE
         Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles
 

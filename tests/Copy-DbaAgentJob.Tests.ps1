@@ -261,4 +261,38 @@ WHERE a.name = '$testAlertName'
             $alertCheck.JobName | Should -Be $testJobWithAlert
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Copy-DbaAgentJob -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob -EnableException
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result.PSObject.TypeNames | Should -Contain "MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Type property set to 'Agent Job'" {
+            $result.Type | Should -Be "Agent Job"
+        }
+
+        It "Has Status property with valid value" {
+            $result.Status | Should -BeIn @('Successful', 'Skipped', 'Failed')
+        }
+    }
 }

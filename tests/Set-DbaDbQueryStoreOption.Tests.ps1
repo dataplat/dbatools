@@ -105,4 +105,60 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $instance = $TestConfig.InstanceMulti1
+            $server = Connect-DbaInstance -SqlInstance $instance
+        }
+
+        It "Returns the documented output type" {
+            if ($server.VersionMajor -ge 13) {
+                $result = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 900 -EnableException
+                $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.QueryStoreOptions]
+            }
+        }
+
+        It "Has the expected base default display properties (SQL 2016+)" {
+            if ($server.VersionMajor -ge 13) {
+                $result = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 900 -EnableException
+                $expectedProps = @(
+                    'ComputerName',
+                    'InstanceName',
+                    'SqlInstance',
+                    'Database',
+                    'ActualState',
+                    'DataFlushIntervalInSeconds',
+                    'StatisticsCollectionIntervalInMinutes',
+                    'MaxStorageSizeInMB',
+                    'CurrentStorageSizeInMB',
+                    'QueryCaptureMode',
+                    'SizeBasedCleanupMode',
+                    'StaleQueryThresholdInDays'
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+        }
+
+        It "Has MaxPlansPerQuery and WaitStatsCaptureMode properties for SQL 2017+" {
+            if ($server.VersionMajor -ge 14) {
+                $result = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 900 -EnableException
+                $result.PSObject.Properties.Name | Should -Contain 'MaxPlansPerQuery'
+                $result.PSObject.Properties.Name | Should -Contain 'WaitStatsCaptureMode'
+            }
+        }
+
+        It "Has Custom Capture Policy properties for SQL 2019+" {
+            if ($server.VersionMajor -ge 15) {
+                $result = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 900 -EnableException
+                $result.PSObject.Properties.Name | Should -Contain 'CustomCapturePolicyExecutionCount'
+                $result.PSObject.Properties.Name | Should -Contain 'CustomCapturePolicyTotalCompileCPUTimeMS'
+                $result.PSObject.Properties.Name | Should -Contain 'CustomCapturePolicyTotalExecutionCPUTimeMS'
+                $result.PSObject.Properties.Name | Should -Contain 'CustomCapturePolicyStaleThresholdHours'
+            }
+        }
+    }
 }

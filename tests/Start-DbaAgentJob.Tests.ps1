@@ -87,4 +87,48 @@ Describe $CommandName -Tag IntegrationTests {
             ($nonExistentStepResults.SqlInstance).Count | Should -Be 0
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $testJobName = "dbatoolsci_outputtest_$(Get-Random)"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $testJobName
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $testJobName -StepName "step1" -Subsystem TransactSql -Command "SELECT 1"
+
+            $result = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $testJobName -Wait -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $testJobName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Job]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'CurrentRunStatus',
+                'LastRunDate',
+                'LastRunOutcome',
+                'IsEnabled',
+                'HasSchedule',
+                'OwnerLoginName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

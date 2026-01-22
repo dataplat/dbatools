@@ -17,4 +17,11 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns no output by default" {
+            $result = Update-DbaBuildReference -EnableException
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

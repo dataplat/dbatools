@@ -41,4 +41,38 @@ Describe $CommandName -Tag IntegrationTests {
             $clearResults.Status | Should -Be "Success"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Clear-DbaWaitStatistics -SqlInstance $TestConfig.InstanceSingle -Confirm:$false -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has exactly the documented properties and no extras" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProps -DifferenceObject $actualProps | Should -BeNullOrEmpty
+        }
+    }
 }

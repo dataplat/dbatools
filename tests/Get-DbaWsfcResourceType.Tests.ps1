@@ -18,4 +18,29 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaWsfcResourceType -ComputerName $env:COMPUTERNAME -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0].PSObject.TypeNames | Should -Contain 'Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_ResourceType'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ClusterName',
+                'ClusterFqdn',
+                'Name',
+                'DisplayName',
+                'DllName',
+                'RequiredDependencyTypes'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

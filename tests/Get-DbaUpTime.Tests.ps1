@@ -22,11 +22,47 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Command actually works" {
-        It "Should have correct properties" {
-            $results = Get-DbaUptime -SqlInstance $TestConfig.InstanceMulti1
-            $ExpectedProps = "ComputerName", "InstanceName", "SqlServer", "SqlUptime", "WindowsUptime", "SqlStartTime", "WindowsBootTime", "SinceSqlStart", "SinceWindowsBoot"
-            ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaUptime -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlServer",
+                "SqlUptime",
+                "WindowsUptime",
+                "SqlStartTime",
+                "WindowsBootTime",
+                "SinceSqlStart",
+                "SinceWindowsBoot"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "SqlStartTime property is DbaDateTime type" {
+            $result.SqlStartTime | Should -BeOfType DbaDateTime
+        }
+
+        It "WindowsBootTime property is DbaDateTime type" {
+            $result.WindowsBootTime | Should -BeOfType DbaDateTime
+        }
+
+        It "SqlUptime property is TimeSpan type" {
+            $result.SqlUptime | Should -BeOfType TimeSpan
+        }
+
+        It "WindowsUptime property is TimeSpan type" {
+            $result.WindowsUptime | Should -BeOfType TimeSpan
         }
     }
 

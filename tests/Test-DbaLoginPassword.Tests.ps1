@@ -63,4 +63,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SqlLogin | Should -Be $weaksauce
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaLoginPassword -SqlInstance $TestConfig.InstanceSingle -Login $weaksauce -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SqlLogin",
+                "WeakPassword",
+                "Password",
+                "Disabled",
+                "CreatedDate",
+                "ModifiedDate",
+                "DefaultDatabase"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+    }
 }

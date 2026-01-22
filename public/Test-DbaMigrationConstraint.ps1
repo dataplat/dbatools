@@ -65,11 +65,11 @@ function Test-DbaMigrationConstraint {
         https://dbatools.io/Test-DbaMigrationConstraint
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per database validated, providing detailed migration compatibility assessment.
 
-        Properties:
+        Default properties:
         - SourceInstance: Name of the source SQL Server instance
         - DestinationInstance: Name of the destination SQL Server instance
         - SourceVersion: Source server edition, product level, and version number (e.g., "Enterprise SP1 (13.0.5850.14)")

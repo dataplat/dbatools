@@ -67,4 +67,42 @@ Describe $CommandName -Tag IntegrationTests {
             $newConfig.ConfiguredValue | Should -Be $sourceConfigValue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Copy-DbaSpConfigure -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -ConfigName RemoteQueryTimeout -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has DateTime as DbaDateTime object" {
+            $result.DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+
+        It "Has Type property set to 'Configuration Value'" {
+            $result.Type | Should -Be "Configuration Value"
+        }
+
+        It "Has Status property with valid value" {
+            $result.Status | Should -BeIn @('Skipped', 'Successful', 'Failed')
+        }
+    }
 }

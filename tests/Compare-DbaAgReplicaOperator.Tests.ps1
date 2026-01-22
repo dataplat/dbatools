@@ -19,4 +19,28 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $command = Get-Command $CommandName
+            $command.OutputType.Name | Should -Contain 'PSCustomObject'
+        }
+
+        It "Has the expected properties documented in .OUTPUTS" {
+            $expectedProps = @(
+                'AvailabilityGroup',
+                'Replica',
+                'OperatorName',
+                'Status',
+                'EmailAddress'
+            )
+            $command = Get-Command $CommandName
+            $helpOutput = Get-Help $CommandName
+            $outputSection = $helpOutput.returnValues.returnValue.type.name
+            $outputSection | Should -Be 'PSCustomObject'
+            foreach ($prop in $expectedProps) {
+                $helpOutput.description.Text | Should -Match $prop -Because "property '$prop' should be documented in .OUTPUTS"
+            }
+        }
+    }
 }

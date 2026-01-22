@@ -91,4 +91,34 @@ function Get-DbaStub {
             $newContent | Should -Be $wantedContent
         }
     }
+
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $results[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'Path',
+                'Pattern',
+                'ReplacedWith'
+            )
+            $actualProps = $results[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Path property contains the file path" {
+            $results[0].Path | Should -Be $tempPath
+        }
+
+        It "Pattern property contains the matched deprecated name" {
+            $results[0].Pattern | Should -Not -BeNullOrEmpty
+        }
+
+        It "ReplacedWith property contains the new name" {
+            $results[0].ReplacedWith | Should -Not -BeNullOrEmpty
+        }
+    }
 }

@@ -57,4 +57,32 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Should -Contain $roleMaster
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ServerRole]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Role',
+                'Login',
+                'Owner',
+                'IsFixedRole',
+                'DateCreated',
+                'DateModified'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

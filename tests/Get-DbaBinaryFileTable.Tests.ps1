@@ -82,4 +82,39 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Get-DbaBinaryFileTable
         $results.Name.Count | Should -BeGreaterOrEqual 1
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaBinaryFileTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Table]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'Name',
+                'BinaryColumn',
+                'FileNameColumn'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has BinaryColumn property added by dbatools" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'BinaryColumn' -Because "dbatools adds BinaryColumn via Add-Member"
+        }
+
+        It "Has FileNameColumn property added by dbatools" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'FileNameColumn' -Because "dbatools adds FileNameColumn via Add-Member"
+        }
+    }
 }

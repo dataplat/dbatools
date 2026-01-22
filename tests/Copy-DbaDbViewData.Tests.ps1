@@ -182,4 +182,43 @@ Describe $CommandName -Tag IntegrationTests {
         $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
         $result.RowsCopied | Should -Be 1
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_example_table -AutoCreateTable -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @(
+                "SourceInstance",
+                "SourceDatabase",
+                "SourceDatabaseID",
+                "SourceSchema",
+                "SourceTable",
+                "DestinationInstance",
+                "DestinationDatabase",
+                "DestinationDatabaseID",
+                "DestinationSchema",
+                "DestinationTable",
+                "RowsCopied",
+                "Elapsed"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has RowsCopied as Int64 to support large row counts" {
+            $result.RowsCopied | Should -BeOfType [Int64]
+        }
+
+        It "Has Elapsed as a TimeSpan" {
+            $result.Elapsed.ToString() | Should -Match "\d{2}:\d{2}:\d{2}"
+        }
+    }
 }

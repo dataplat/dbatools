@@ -25,6 +25,56 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
+            $result = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -EnableException
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DisplayName",
+                "Type",
+                "Successful",
+                "Status",
+                "Protocol",
+                "LocalPort",
+                "Program"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available" {
+            $result[0].PSObject.Properties.Name | Should -Contain "Name"
+            $result[0].PSObject.Properties.Name | Should -Contain "RuleConfig"
+            $result[0].PSObject.Properties.Name | Should -Contain "Details"
+        }
+
+        It "Details property contains expected sub-properties" {
+            $details = $result[0].Details
+            $details.PSObject.Properties.Name | Should -Contain "Successful"
+            $details.PSObject.Properties.Name | Should -Contain "CimInstance"
+        }
+    }
+
     Context "RuleType Program (default - executable-based rules)" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

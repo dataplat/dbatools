@@ -61,6 +61,49 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatAlert = @{
+                SqlInstance           = $TestConfig.InstanceMulti1
+                Alert                 = "Test Alert"
+                DelayBetweenResponses = 60
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                NotificationMessage   = "Test Notification"
+                Severity              = 17
+                EnableException       = $true
+            }
+            $result = New-DbaAgentAlert @splatAlert
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Alert]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'SqlInstance',
+                'InstanceName',
+                'Name',
+                'ID',
+                'JobName',
+                'AlertType',
+                'CategoryName',
+                'Severity',
+                'MessageId',
+                'IsEnabled',
+                'DelayBetweenResponses',
+                'LastRaised',
+                'OccurrenceCount'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "Creating a new SQL Server Agent alert" {
         BeforeEach {
             # Clean up alerts before each test to ensure clean state

@@ -39,4 +39,32 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaLatchStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'WaitType',
+                'WaitSeconds',
+                'WaitCount',
+                'Percentage',
+                'AverageWaitSeconds',
+                'URL'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+    }
 }

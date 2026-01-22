@@ -86,4 +86,37 @@ Describe $CommandName -Tag IntegrationTests {
             $encryptionKeyResults.EncryptionType | Should -Be "ServerCertificate"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'CreateDate',
+                'EncryptionAlgorithm',
+                'EncryptionState',
+                'EncryptionType',
+                'EncryptorName',
+                'ModifyDate',
+                'OpenedDate',
+                'RegenerateDate',
+                'SetDate',
+                'Thumbprint'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

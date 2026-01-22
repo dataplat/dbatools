@@ -62,16 +62,21 @@ function ConvertTo-DbaDataTable {
 
         Column data types are automatically detected based on input object properties:
         - Numeric types (Int32, Int64, Decimal, Double, Single, etc.) are preserved as their original types
-        - TimeSpan and DbaTimeSpan objects are converted based on the -TimeSpanType parameter (default: TotalMilliseconds as Int64)
-        - DbaSize (file/database size) objects are converted based on the -SizeType parameter (default: Byte value as Int64)
+        - TimeSpan and DbaTimeSpan objects are converted based on -TimeSpanType parameter (default: TotalMilliseconds as Int64)
+        - DbaSize objects are converted based on -SizeType parameter (default: Byte value as Int64)
         - DateTime objects are preserved as System.DateTime
         - Boolean, Guid, and Char types are preserved
         - String arrays and System.Object[] are joined with comma separators
         - Other types are converted to strings
 
-        When the -Raw parameter is specified, all columns are created as strings regardless of input type, which can be useful as a fallback when type detection fails or maximum compatibility is needed.
+        When -Raw is specified, all columns are created as strings regardless of input type.
 
-        The DataTable is suitable for use with Write-DbaDataTable for bulk insert operations into SQL Server tables. All properties from the input objects are included as columns in the returned DataTable.
+        The returned DataTable includes:
+        - Columns: One column per property from the input objects
+        - Rows: One row per input object (unless null with -IgnoreNull)
+        - TableName: Empty by default (can be set after return if needed)
+
+        All properties from the input objects are included as columns. The DataTable is suitable for use with Write-DbaDataTable for bulk insert operations into SQL Server tables.
 
     .EXAMPLE
         PS C:\> Get-Service | ConvertTo-DbaDataTable

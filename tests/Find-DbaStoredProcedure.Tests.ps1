@@ -151,4 +151,52 @@ AS
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatFind = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Pattern     = "dbatools*"
+                Database    = "dbatoolsci_storedproceduredb"
+            }
+            $result = Find-DbaStoredProcedure @splatFind
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "Name",
+                "Owner",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "StoredProcedureTextFound"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has StoredProcedure property available via Select-Object *" {
+            $result.PSObject.Properties.Name | Should -Contain "StoredProcedure"
+        }
+
+        It "Has StoredProcedureFullText property available via Select-Object *" {
+            $result.PSObject.Properties.Name | Should -Contain "StoredProcedureFullText"
+        }
+    }
 }

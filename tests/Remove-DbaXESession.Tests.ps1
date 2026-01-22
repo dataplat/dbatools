@@ -59,4 +59,37 @@ Describe $CommandName -Tag IntegrationTests {
             $removedResults.Status | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = Import-DbaXESessionTemplate -SqlInstance $TestConfig.InstanceSingle -Template 'Profiler TSQL Duration' -EnableException
+            $result = Remove-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session 'Profiler TSQL Duration' -Confirm:$false -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Session',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Status property indicates successful removal" {
+            $result.Status | Should -Be "Removed"
+        }
+
+        It "Session property contains the removed session name" {
+            $result.Session | Should -Be 'Profiler TSQL Duration'
+        }
+    }
 }

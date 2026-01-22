@@ -72,4 +72,32 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $operatorName = "dbatoolsci_outputtest_$(Get-Random)"
+            $operatorsToCleanup += $operatorName
+            $null = New-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName -EnableException
+            $result = Remove-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

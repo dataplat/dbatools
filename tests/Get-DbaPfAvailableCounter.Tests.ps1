@@ -51,4 +51,30 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPfAvailableCounter -ComputerName $TestConfig.InstanceSingle -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "Name"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Credential property available via Select-Object" {
+            $fullResult = Get-DbaPfAvailableCounter -ComputerName $TestConfig.InstanceSingle -EnableException | Select-Object -First 1 -Property *
+            $fullResult.PSObject.Properties.Name | Should -Contain "Credential"
+        }
+    }
 }

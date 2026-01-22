@@ -50,9 +50,17 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Validate standard output" {
+    Context "Output Validation" {
         BeforeAll {
-            $props = @(
+            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.InstanceSingle -Database "tempdb" -Object "dbo.dbatoolct_example" -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
                 "SqlInstance",
@@ -61,35 +69,10 @@ Describe $CommandName -Tag IntegrationTests {
                 "Cmd",
                 "Output"
             )
-            $result = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.InstanceSingle -Database "tempdb" -Object "dbo.dbatoolct_example"
-        }
-
-        It "Should return ComputerName property" {
-            $result[0].PSObject.Properties["ComputerName"].Name | Should -Be "ComputerName"
-        }
-
-        It "Should return InstanceName property" {
-            $result[0].PSObject.Properties["InstanceName"].Name | Should -Be "InstanceName"
-        }
-
-        It "Should return SqlInstance property" {
-            $result[0].PSObject.Properties["SqlInstance"].Name | Should -Be "SqlInstance"
-        }
-
-        It "Should return Database property" {
-            $result[0].PSObject.Properties["Database"].Name | Should -Be "Database"
-        }
-
-        It "Should return Object property" {
-            $result[0].PSObject.Properties["Object"].Name | Should -Be "Object"
-        }
-
-        It "Should return Cmd property" {
-            $result[0].PSObject.Properties["Cmd"].Name | Should -Be "Cmd"
-        }
-
-        It "Should return Output property" {
-            $result[0].PSObject.Properties["Output"].Name | Should -Be "Output"
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
 
         It "returns correct results" {

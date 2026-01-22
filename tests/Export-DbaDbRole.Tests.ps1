@@ -134,4 +134,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
         }
     }
+
+    Context "Output Validation with -Passthru" {
+        BeforeAll {
+            $result = Export-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database msdb -Passthru -EnableException
+        }
+
+        It "Returns System.String when -Passthru is specified" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Output contains T-SQL statements" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -Match "CREATE ROLE"
+        }
+    }
+
+    Context "Output Validation with -FilePath" {
+        BeforeAll {
+            $result = Export-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database msdb -FilePath $outputFile1 -EnableException
+        }
+
+        It "Returns System.IO.FileInfo when -FilePath is specified" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "FileInfo object has expected properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'FullName'
+            $result.PSObject.Properties.Name | Should -Contain 'Name'
+            $result.PSObject.Properties.Name | Should -Contain 'Length'
+        }
+    }
 }

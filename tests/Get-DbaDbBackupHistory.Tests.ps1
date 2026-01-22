@@ -239,4 +239,68 @@ Describe $CommandName -Tag IntegrationTests {
             $warning | Should -BeLike "*-Since must be either a DateTime or TimeSpan object*"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType Dataplat.Dbatools.Database.BackupHistory
+        }
+
+        It "Has the expected properties added by dbatools" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'DatabaseId',
+                'UserName',
+                'Start',
+                'End',
+                'Duration',
+                'Path',
+                'TotalSize',
+                'CompressedBackupSize',
+                'CompressionRatio',
+                'Type',
+                'BackupSetId',
+                'DeviceType',
+                'Software',
+                'FullName',
+                'FileList',
+                'Position',
+                'FirstLsn',
+                'DatabaseBackupLsn',
+                'CheckpointLsn',
+                'LastLsn',
+                'SoftwareVersionMajor',
+                'IsCopyOnly',
+                'LastRecoveryForkGuid',
+                'RecoveryModel',
+                'EncryptorType',
+                'EncryptorThumbprint',
+                'KeyAlgorithm'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
+
+    Context "Output with -Raw" {
+        BeforeAll {
+            $result = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Raw -EnableException
+        }
+
+        It "Returns DataRow when -Raw specified" {
+            $result[0] | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Includes FullName property" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'FullName'
+        }
+    }
 }

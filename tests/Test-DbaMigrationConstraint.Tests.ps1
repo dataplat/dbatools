@@ -72,4 +72,31 @@ Describe $CommandName -Tag IntegrationTests {
             (Test-DbaMigrationConstraint -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Database $db1).IsMigratable | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaMigrationConstraint -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Database $db1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                "SourceInstance",
+                "DestinationInstance",
+                "SourceVersion",
+                "DestinationVersion",
+                "Database",
+                "FeaturesInUse",
+                "IsMigratable",
+                "Notes"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

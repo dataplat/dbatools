@@ -68,6 +68,50 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $results = Copy-DbaDbMail -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -EnableException
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $results[0].PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $results[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "DateTime property is of type Dataplat.Dbatools.Utility.DbaDateTime" {
+            $results[0].DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+
+        It "Type property contains valid Database Mail component types" {
+            $validTypes = @('Mail Configuration', 'Mail Profile', 'Mail Account', 'Mail Server')
+            foreach ($result in $results) {
+                $validTypes | Should -Contain $result.Type
+            }
+        }
+
+        It "Status property contains valid migration statuses" {
+            $validStatuses = @('Successful', 'Skipped', 'Failed')
+            foreach ($result in $results) {
+                $validStatuses | Should -Contain $result.Status
+            }
+        }
+    }
+
     Context "When copying DbMail" {
         BeforeAll {
             $results = Copy-DbaDbMail -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2

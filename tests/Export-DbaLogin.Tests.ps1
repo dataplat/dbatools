@@ -187,4 +187,31 @@ Describe $CommandName -Tag IntegrationTests {
             { Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should -Throw
         }
     }
+
+    Context "Output Validation" {
+        It "Returns FileInfo when -Path or -FilePath is specified" {
+            $result = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1 -FilePath "$AltExportPath\Dbatoolsci_OutputTest.sql" -ExcludeDatabase -WarningAction SilentlyContinue
+            $allfiles += $result.FullName
+            $result | Should -BeOfType [System.IO.FileInfo]
+            $result.Name | Should -Be "Dbatoolsci_OutputTest.sql"
+        }
+
+        It "Returns String when -Passthru is specified" {
+            $result = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1 -Passthru -ExcludeDatabase -WarningAction SilentlyContinue
+            $result | Should -BeOfType [System.String]
+            $result | Should -Match "CREATE LOGIN"
+        }
+
+        It "Returns String when neither -Path, -FilePath, nor -Passthru is specified" {
+            $originalPath = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'
+            try {
+                Set-DbatoolsConfig -FullName 'Path.DbatoolsExport' -Value $null
+                $result = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1 -ExcludeDatabase -WarningAction SilentlyContinue
+                $result | Should -BeOfType [System.String]
+                $result | Should -Match "CREATE LOGIN"
+            } finally {
+                Set-DbatoolsConfig -FullName 'Path.DbatoolsExport' -Value $originalPath
+            }
+        }
+    }
 }

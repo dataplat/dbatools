@@ -63,7 +63,43 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            # Re-add the database to the AG for output validation testing
+            $null = Add-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname -Database $dbname -EnableException
+            $result = Remove-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbname -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "Database",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Has Status property set to 'Removed'" {
+            $result.Status | Should -Be "Removed"
+        }
+    }
+
     Context "removes ag db" {
+        BeforeAll {
+            # Re-add the database to the AG for functional testing
+            $null = Add-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname -Database $dbname -EnableException
+        }
+
         It "returns removed results" {
             $results = Remove-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname

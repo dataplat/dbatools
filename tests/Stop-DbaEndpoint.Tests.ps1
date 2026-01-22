@@ -44,4 +44,41 @@ Describe $CommandName -Tag IntegrationTests {
             $results.EndpointState | Should -Be 'Stopped'
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Ensure endpoint is started before stopping
+            Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint 'TSQL Default TCP' -EnableException | Start-DbaEndpoint
+            $result = Stop-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint 'TSQL Default TCP' -EnableException
+        }
+
+        AfterAll {
+            # Restore endpoint to started state
+            Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Endpoint]
+        }
+
+        It "Has the documented key properties" {
+            $expectedProps = @(
+                'Name',
+                'EndpointType',
+                'ProtocolType',
+                'EndpointState',
+                'Parent',
+                'Protocol',
+                'Payload'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on the endpoint object"
+            }
+        }
+
+        It "Returns endpoint in Stopped state" {
+            $result.EndpointState | Should -Be 'Stopped'
+        }
+    }
 }

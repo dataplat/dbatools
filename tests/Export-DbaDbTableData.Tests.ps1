@@ -59,6 +59,46 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $testPath = Join-Path $TestDrive "export-test.sql"
+            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -FilePath $testPath -EnableException
+        }
+
+        It "Returns System.IO.FileInfo when not using -Passthru" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'Directory',
+                'Length',
+                'LastWriteTime',
+                'CreationTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available in FileInfo"
+            }
+        }
+    }
+
+    Context "Output with -Passthru" {
+        BeforeAll {
+            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru -EnableException
+        }
+
+        It "Returns System.String when -Passthru specified" {
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Contains INSERT statement in the output" {
+            "$result" | Should -Match "INSERT"
+        }
+    }
+
     Context "When exporting table data" {
         It "exports the table data" {
             $escaped = [regex]::escape("INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)")

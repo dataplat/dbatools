@@ -41,4 +41,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Success"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatClearLatch = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                EnableException = $true
+                Confirm         = $false
+            }
+            $result = Clear-DbaLatchStatistics @splatClearLatch
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Has Status property with Success value" {
+            $result.Status | Should -Be "Success"
+        }
+    }
 }

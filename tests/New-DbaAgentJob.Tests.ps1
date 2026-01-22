@@ -77,4 +77,56 @@ Describe $CommandName -Tag IntegrationTests {
             $warn -match "already exists" | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $testJobName = "dbatoolsci_outputtest_$(Get-Random)"
+            $result = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $testJobName -Description "Output validation test"
+        }
+
+        AfterAll {
+            Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $testJobName -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Job]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Category',
+                'OwnerLoginName',
+                'CurrentRunStatus',
+                'CurrentRunRetryAttempt',
+                'Enabled',
+                'LastRunDate',
+                'LastRunOutcome',
+                'HasSchedule',
+                'OperatorToEmail',
+                'CreateDate'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ComputerName property populated" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has SqlInstance property populated" {
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has Name property matching job name" {
+            $result.Name | Should -Be $testJobName
+        }
+    }
 }

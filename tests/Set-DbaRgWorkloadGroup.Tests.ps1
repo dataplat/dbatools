@@ -242,4 +242,63 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $wklGroupCleanupName, $wklGroupCleanupName2 -ErrorAction SilentlyContinue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+
+            $wklGroupTestName = "dbatoolssci_wklgroupTest"
+            $splatNewWorkloadGroup = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                WorkloadGroup = $wklGroupTestName
+                ResourcePool  = "default"
+                Importance    = "MEDIUM"
+                Force         = $true
+            }
+            $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
+
+            $splatSetWorkloadGroup = @{
+                SqlInstance      = $TestConfig.InstanceSingle
+                WorkloadGroup    = $wklGroupTestName
+                ResourcePool     = "default"
+                Importance       = "HIGH"
+                EnableException  = $true
+            }
+            $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $wklGroupCleanupName = "dbatoolssci_wklgroupTest"
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $wklGroupCleanupName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.WorkloadGroup]
+        }
+
+        It "Has the expected workload group properties" {
+            $expectedProps = @(
+                'Name',
+                'Importance',
+                'RequestMaximumMemoryGrantPercentage',
+                'RequestMaximumCpuTimeInSeconds',
+                'RequestMemoryGrantTimeoutInSeconds',
+                'MaximumDegreeOfParallelism',
+                'GroupMaximumRequests',
+                'Parent'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on WorkloadGroup object"
+            }
+        }
+    }
 }

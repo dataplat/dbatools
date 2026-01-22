@@ -109,4 +109,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AutoGrowAllFiles | Should -Be $true, $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name -AutoGrowAllFiles
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.FileGroup]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'Name',
+                'IsDefault',
+                'ReadOnly',
+                'AutogrowAllFiles'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has standard SMO FileGroup properties accessible" {
+            $result.PSObject.Properties.Name | Should -Contain 'ID'
+            $result.PSObject.Properties.Name | Should -Contain 'Parent'
+            $result.PSObject.Properties.Name | Should -Contain 'Files'
+        }
+    }
 }

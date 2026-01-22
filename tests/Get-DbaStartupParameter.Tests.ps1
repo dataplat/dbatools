@@ -43,4 +43,87 @@ Describe $CommandName -Tag IntegrationTests {
             $properties | Should -Contain "MemoryToReserve"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MasterData",
+                "MasterLog",
+                "ErrorLog",
+                "TraceFlags",
+                "DebugFlags",
+                "CommandPromptStart",
+                "MinimalStart",
+                "MemoryToReserve",
+                "SingleUser",
+                "SingleUserName",
+                "NoLoggingToWinEvents",
+                "StartAsNamedInstance",
+                "DisableMonitoring",
+                "IncreasedExtents",
+                "ParameterString"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation with -Simple" {
+        BeforeAll {
+            $result = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceSingle -Simple -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has only the essential properties when -Simple is specified" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MasterData",
+                "MasterLog",
+                "ErrorLog",
+                "TraceFlags",
+                "DebugFlags",
+                "ParameterString"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in simplified output"
+            }
+        }
+
+        It "Does not include detailed startup mode properties when -Simple is specified" {
+            $detailedProps = @(
+                "CommandPromptStart",
+                "MinimalStart",
+                "MemoryToReserve",
+                "SingleUser",
+                "SingleUserName",
+                "NoLoggingToWinEvents",
+                "StartAsNamedInstance",
+                "DisableMonitoring",
+                "IncreasedExtents"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $detailedProps) {
+                $actualProps | Should -Not -Contain $prop -Because "property '$prop' should not be in simplified output"
+            }
+        }
+    }
 }

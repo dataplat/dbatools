@@ -32,4 +32,58 @@ Describe $CommandName -Tag IntegrationTests {
             $allResults.Name | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPfDataCollector | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'DataCollectorSet',
+                'Name',
+                'DataCollectorType',
+                'DataSourceName',
+                'FileName',
+                'FileNameFormat',
+                'FileNameFormatPattern',
+                'LatestOutputLocation',
+                'LogAppend',
+                'LogCircular',
+                'LogFileFormat',
+                'LogOverwrite',
+                'SampleInterval',
+                'SegmentMaxRecords',
+                'Counters'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available via Select-Object" {
+            $additionalProps = @(
+                'CounterDisplayNames',
+                'RemoteLatestOutputLocation',
+                'DataCollectorSetXml',
+                'CollectorXml',
+                'DataCollectorObject',
+                'Credential'
+            )
+            $allProps = ($result | Select-Object *).PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $allProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+
+        It "Has DataCollectorObject flag set to true" {
+            $result.DataCollectorObject | Should -Be $true
+        }
+    }
 }

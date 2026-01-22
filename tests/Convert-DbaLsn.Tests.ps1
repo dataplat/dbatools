@@ -17,37 +17,66 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+}
 
-    Context "Converts Numeric LSN to Hex" {
-        BeforeAll {
-            $numericLSN = "00000000020000000024300001"
-            $convertResults = Convert-DbaLSN -LSN $numericLSN
+Describe $CommandName -Tag UnitTests {
+    InModuleScope dbatools {
+        Context "Converts Numeric LSN to Hex" {
+            BeforeAll {
+                $numericLSN = "00000000020000000024300001"
+                $convertResults = Convert-DbaLSN -LSN $numericLSN
+            }
+
+            It "Should convert to 00000014:000000f3:0001" {
+                $convertResults.Hexadecimal | Should -Be "00000014:000000f3:0001"
+            }
         }
 
-        It "Should convert to 00000014:000000f3:0001" {
-            $convertResults.Hexadecimal | Should -Be "00000014:000000f3:0001"
-        }
-    }
+        Context "Converts Numeric LSN to Hex without leading 0s" {
+            BeforeAll {
+                $shortLSN = "20000000024300001"
+                $shortResults = Convert-DbaLSN -LSN $shortLSN
+            }
 
-    Context "Converts Numeric LSN to Hex without leading 0s" {
-        BeforeAll {
-            $shortLSN = "20000000024300001"
-            $shortResults = Convert-DbaLSN -LSN $shortLSN
-        }
-
-        It "Should convert to 00000014:000000f3:0001" {
-            $shortResults.Hexadecimal | Should -Be "00000014:000000f3:0001"
-        }
-    }
-
-    Context "Converts Hex LSN to Numeric" {
-        BeforeAll {
-            $hexLSN = "00000014:000000f3:0001"
-            $hexResults = Convert-DbaLSN -LSN $hexLSN
+            It "Should convert to 00000014:000000f3:0001" {
+                $shortResults.Hexadecimal | Should -Be "00000014:000000f3:0001"
+            }
         }
 
-        It "Should convert to 20000000024300001" {
-            $hexResults.Numeric | Should -Be 20000000024300001
+        Context "Converts Hex LSN to Numeric" {
+            BeforeAll {
+                $hexLSN = "00000014:000000f3:0001"
+                $hexResults = Convert-DbaLSN -LSN $hexLSN
+            }
+
+            It "Should convert to 20000000024300001" {
+                $hexResults.Numeric | Should -Be 20000000024300001
+            }
+        }
+
+        Context "Output Validation" {
+            BeforeAll {
+                $result = Convert-DbaLSN -LSN "00000014:000000f3:0001" -EnableException
+            }
+
+            It "Returns PSCustomObject" {
+                $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+
+            It "Has the expected properties" {
+                $expectedProps = @(
+                    "Hexadecimal",
+                    "Numeric"
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Has exactly two properties" {
+                $result.PSObject.Properties.Name.Count | Should -Be 2 -Because "command should return only Hexadecimal and Numeric properties"
+            }
         }
     }
 }

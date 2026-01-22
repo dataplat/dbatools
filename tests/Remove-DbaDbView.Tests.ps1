@@ -51,6 +51,44 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $view3 = "dbatoolssci_view3_$(Get-Random)"
+            $null = $InstanceSingle.Query("CREATE VIEW $view3 (c) AS (SELECT 2);", $dbname1)
+            $result = Remove-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view3 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'View',
+                'ViewName',
+                'ViewSchema',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns Status as 'Dropped' on success" {
+            $result.Status | Should -Be 'Dropped'
+        }
+
+        It "Returns IsRemoved as true on success" {
+            $result.IsRemoved | Should -Be $true
+        }
+    }
+
     Context "When removing views" {
         It "removes a view" {
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1) | Should -Not -BeNullOrEmpty

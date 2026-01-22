@@ -39,4 +39,36 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
         $results.Status | Should -Be 'Removed'
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Create a test endpoint
+            $null = New-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Type DatabaseMirroring -Role Partner -Name MirroringOutputTest -EnableException | Start-DbaEndpoint
+            
+            # Remove it and capture output
+            $result = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint MirroringOutputTest -EnableException | Remove-DbaEndpoint
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Endpoint',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Sets Status property to 'Removed'" {
+            $result.Status | Should -Be 'Removed'
+        }
+    }
 }

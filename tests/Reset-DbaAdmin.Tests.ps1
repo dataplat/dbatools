@@ -53,4 +53,35 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results.IsMember("sysadmin") | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $password = ConvertTo-SecureString -Force -AsPlainText resetadmin1
+            $result = Reset-DbaAdmin -SqlInstance $TestConfig.InstanceRestart -Login dbatoolsci_resetadmin -SecurePassword $password -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Login]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'LoginType',
+                'CreateDate',
+                'LastLogin',
+                'HasAccess',
+                'IsLocked',
+                'IsDisabled',
+                'MustChangePassword'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

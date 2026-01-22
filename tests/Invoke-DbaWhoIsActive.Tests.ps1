@@ -135,4 +135,79 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             # No test for results as we don't expect any running queries
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid -EnableException
+        }
+
+        It "Returns DataRow by default" {
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has core sp_WhoIsActive columns" {
+            $columnNames = $result.Table.Columns.ColumnName
+            $columnNames | Should -Contain 'session_id'
+            $columnNames | Should -Contain 'sql_text'
+        }
+    }
+
+    Context "Output with -As PSObject" {
+        BeforeAll {
+            $result = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid -As PSObject -EnableException
+        }
+
+        It "Returns PSCustomObject when -As PSObject specified" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has core sp_WhoIsActive properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'session_id'
+            $result.PSObject.Properties.Name | Should -Contain 'sql_text'
+        }
+    }
+
+    Context "Output with -As DataTable" {
+        BeforeAll {
+            $result = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid -As DataTable -EnableException
+        }
+
+        It "Returns DataTable when -As DataTable specified" {
+            $result | Should -BeOfType [System.Data.DataTable]
+        }
+
+        It "Has core sp_WhoIsActive columns" {
+            $result.Columns.ColumnName | Should -Contain 'session_id'
+            $result.Columns.ColumnName | Should -Contain 'sql_text'
+        }
+    }
+
+    Context "Output with -As DataSet" {
+        BeforeAll {
+            $result = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid -As DataSet -EnableException
+        }
+
+        It "Returns DataSet when -As DataSet specified" {
+            $result | Should -BeOfType [System.Data.DataSet]
+        }
+
+        It "Contains table with core sp_WhoIsActive columns" {
+            $result.Tables[0].Columns.ColumnName | Should -Contain 'session_id'
+            $result.Tables[0].Columns.ColumnName | Should -Contain 'sql_text'
+        }
+    }
+
+    Context "Output with -ReturnSchema" {
+        BeforeAll {
+            $result = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ReturnSchema -EnableException
+        }
+
+        It "Returns DataRow containing CREATE TABLE statement" {
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has create_table_sql column" {
+            $result.Table.Columns.ColumnName | Should -Contain 'create_table_sql'
+        }
+    }
 }

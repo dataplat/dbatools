@@ -332,6 +332,49 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Install-DbaInstance -Version 2019 -Path TestDrive: -EnableException -Confirm:$false
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "Version",
+                "Port",
+                "Successful",
+                "Restarted",
+                "Installer",
+                "ExitCode",
+                "LogFile",
+                "Notes"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available" {
+            $additionalProps = @(
+                "SACredential",
+                "Configuration",
+                "ExitMessage",
+                "Log",
+                "ConfigurationFile"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
+
     Context "Negative tests" {
         It "fails when a reboot is pending" {
             #override default mock

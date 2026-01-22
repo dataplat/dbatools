@@ -42,4 +42,51 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count -gt 0 | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaXESessionTarget -SqlInstance $TestConfig.InstanceSingle -Session "system_health" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.XEvent.Target]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Session',
+                'SessionStatus',
+                'Name',
+                'ID',
+                'Field',
+                'PackageName',
+                'File',
+                'Description',
+                'ScriptName'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has dbatools-added properties" {
+            $addedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Session',
+                'SessionStatus',
+                'TargetFile',
+                'RemoteTargetFile'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $addedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be added by dbatools"
+            }
+        }
+    }
 }

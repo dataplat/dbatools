@@ -210,4 +210,62 @@ Describe $CommandName -Tag IntegrationTests {
             ($output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should -Be $history.count
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $result = $history | Format-DbaBackupInformation -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0].PSObject.TypeNames | Should -Contain 'Dataplat.Dbatools.Database.BackupHistory'
+        }
+
+        It "Has the documented properties that dbatools adds" {
+            $expectedProps = @(
+                'OriginalDatabase',
+                'OriginalFileList',
+                'OriginalFullName',
+                'IsVerified'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be added by Format-DbaBackupInformation"
+            }
+        }
+
+        It "Has the standard backup history properties" {
+            $standardProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'UserName',
+                'Start',
+                'End',
+                'Duration',
+                'Path',
+                'FileList',
+                'TotalSize',
+                'Type',
+                'BackupSetId',
+                'FullName',
+                'FirstLsn',
+                'LastLsn'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $standardProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in backup history"
+            }
+        }
+
+        It "Initializes IsVerified to False" {
+            $result[0].IsVerified | Should -Be $false
+        }
+
+        It "Preserves OriginalDatabase value" {
+            $result[0].OriginalDatabase | Should -Not -BeNullOrEmpty
+            $result[0].OriginalDatabase | Should -Be $history[0].Database
+        }
+    }
 }

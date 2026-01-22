@@ -69,6 +69,35 @@ Describe $CommandName -Tag IntegrationTests {
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'Table',
+                'PageType',
+                'PageFreePercent',
+                'IsAllocated',
+                'IsMixedPage'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "Count Pages" {
         It "returns the proper results" {
             $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.InstanceSingle -Database $dbname

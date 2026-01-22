@@ -401,4 +401,45 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query "select cast(null as hierarchyid)"
         $results.Column1 | Should -Be "NULL"
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $testQuery = "SELECT 'TestValue' AS TestColumn, 123 AS TestNumber"
+        }
+
+        It "Returns DataRow by default" {
+            $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $testQuery -EnableException
+            $result | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Returns DataSet when -As DataSet specified" {
+            $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $testQuery -As DataSet -EnableException
+            $result | Should -BeOfType [System.Data.DataSet]
+        }
+
+        It "Returns DataTable array when -As DataTable specified" {
+            $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $testQuery -As DataTable -EnableException
+            $result[0] | Should -BeOfType [System.Data.DataTable]
+        }
+
+        It "Returns PSObject when -As PSObject specified" {
+            $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $testQuery -As PSObject -EnableException
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Returns PSObject array when -As PSObjectArray specified" {
+            $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $testQuery -As PSObjectArray -EnableException
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Returns scalar value when -As SingleValue specified" {
+            $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 42" -As SingleValue -EnableException
+            $result | Should -Be 42
+        }
+
+        It "Includes ServerInstance column when -AppendServerInstance specified" {
+            $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $testQuery -AppendServerInstance -EnableException
+            $result.ServerInstance | Should -Not -BeNullOrEmpty
+        }
+    }
 }

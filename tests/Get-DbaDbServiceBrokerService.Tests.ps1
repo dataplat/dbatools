@@ -76,4 +76,32 @@ Describe $CommandName -Tag IntegrationTests {
             $testResults.QueueName | Should -Be $testQueueName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.InstanceSingle -Database tempdb -ExcludeSystemService:$true -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Broker.ServiceBrokerService]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Owner',
+                'ServiceID',
+                'Name',
+                'QueueSchema',
+                'QueueName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

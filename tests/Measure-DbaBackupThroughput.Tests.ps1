@@ -64,4 +64,55 @@ Describe $CommandName -Tag IntegrationTests {
             $testResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Measure-DbaBackupThroughput -SqlInstance $TestConfig.InstanceSingle -Database $testDb -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "AvgThroughput",
+                "AvgSize",
+                "AvgDuration",
+                "MinThroughput",
+                "MaxThroughput",
+                "MinBackupDate",
+                "MaxBackupDate",
+                "BackupCount"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has DbaSize type for throughput properties" {
+            $result.AvgThroughput | Should -BeOfType [DbaSize]
+            $result.AvgSize | Should -BeOfType [DbaSize]
+            $result.MinThroughput | Should -BeOfType [DbaSize]
+            $result.MaxThroughput | Should -BeOfType [DbaSize]
+        }
+
+        It "Has DbaTimeSpan type for AvgDuration" {
+            $result.AvgDuration | Should -BeOfType [DbaTimeSpan]
+        }
+
+        It "Has DbaDateTime type for date properties" {
+            $result.MinBackupDate | Should -BeOfType [DbaDateTime]
+            $result.MaxBackupDate | Should -BeOfType [DbaDateTime]
+        }
+
+        It "Has integer type for BackupCount" {
+            $result.BackupCount | Should -BeOfType [int]
+        }
+    }
 }

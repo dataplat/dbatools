@@ -134,4 +134,39 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -Match "cannot be zero"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -RestartWith 1 -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Sequence]
+        }
+
+        It "Has the core sequence properties" {
+            $expectedProps = @(
+                'Name',
+                'Schema',
+                'Owner',
+                'StartValue',
+                'CurrentValue',
+                'IncrementValue',
+                'MinValue',
+                'MaxValue',
+                'IsCycleEnabled',
+                'SequenceCacheType',
+                'CacheSize'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on the sequence object"
+            }
+        }
+
+        It "Has the Parent property referencing the database" {
+            $result.Parent | Should -Not -BeNullOrEmpty
+            $result.Parent.Name | Should -Be $newDbName
+        }
+    }
 }

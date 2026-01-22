@@ -98,10 +98,13 @@ function New-DbaLinkedServer {
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: Name of the linked server
-        - DataSource: Network name or connection string for the remote data source
-        - ProviderName: OLE DB provider used to connect to the remote data source
+        - RemoteServer: Network name or connection string for the remote data source (alias for DataSource)
         - ProductName: Product name of the remote data source
-        - LinkedServerLogins: Number of login mappings configured for this linked server
+        - Impersonate: Boolean or collection indicating if impersonation is enabled
+        - RemoteUser: The remote user login mapped for this linked server connection
+        - Publisher: The distribution publisher for the linked server (alias for DistPublisher)
+        - Distributor: The distributor server (if applicable)
+        - DateLastModified: DateTime indicating when the linked server configuration was last modified
 
         Additional properties available (from SMO LinkedServer object):
         - Catalog: Default database or catalog name on the remote data source

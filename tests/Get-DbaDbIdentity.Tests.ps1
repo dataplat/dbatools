@@ -44,25 +44,30 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Validate standard output" {
+    Context "Output Validation" {
         BeforeAll {
-            $props = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Table",
-                "Cmd",
-                "IdentityValue",
-                "ColumnValue",
-                "Output"
-            )
-            $result = Get-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table "dbo.dbatoolsci_example", "dbo.dbatoolsci_example2"
+            $result = Get-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table "dbo.dbatoolsci_example", "dbo.dbatoolsci_example2" -EnableException
         }
 
-        It "Should return all expected properties" {
-            foreach ($prop in $props) {
-                $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Table',
+                'Cmd',
+                'IdentityValue',
+                'ColumnValue',
+                'Output'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
 
@@ -70,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -BeExactly 2
         }
 
-        It "Returns correct results" {
+        It "Returns correct identity value" {
             $result[0].IdentityValue | Should -BeExactly 125
         }
     }

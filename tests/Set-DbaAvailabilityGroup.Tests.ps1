@@ -73,4 +73,44 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DtcSupportEnabled | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname -DtcSupportEnabled:$false -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+        }
+
+        It "Has the expected properties documented in .OUTPUTS" {
+            $expectedProps = @(
+                'Name',
+                'AvailabilityReplicas',
+                'AutomatedBackupPreference',
+                'BasicAvailabilityGroup',
+                'ClusterType',
+                'DatabaseHealthTrigger',
+                'DtcSupportEnabled',
+                'FailureConditionLevel',
+                'HealthCheckTimeout',
+                'IsDistributedAvailabilityGroup'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available in output"
+            }
+        }
+
+        It "Has additional SMO properties accessible" {
+            $additionalProps = @(
+                'Parent',
+                'Databases'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "SMO property '$prop' should be accessible"
+            }
+        }
+    }
 }

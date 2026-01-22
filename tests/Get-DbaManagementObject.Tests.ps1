@@ -38,4 +38,24 @@ Describe $CommandName -Tag IntegrationTests {
     It "Returns the version specified" {
         $versionResults | Should -Not -BeNullOrEmpty
     }
+
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $results[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'Version',
+                'Loaded',
+                'Path',
+                'LoadTemplate'
+            )
+            $actualProps = $results[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

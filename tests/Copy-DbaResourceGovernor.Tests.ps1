@@ -98,4 +98,37 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -BeExactly "dbatoolsci_fnRG"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopyRG = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Force         = $true
+                WarningAction = "SilentlyContinue"
+                EnableException = $true
+            }
+            $result = Copy-DbaResourceGovernor @splatCopyRG
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result[0].PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

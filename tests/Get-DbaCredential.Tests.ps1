@@ -97,4 +97,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeGreaterThan 1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thor" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Credential]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ID',
+                'Name',
+                'Identity',
+                'MappedClassType',
+                'ProviderName'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

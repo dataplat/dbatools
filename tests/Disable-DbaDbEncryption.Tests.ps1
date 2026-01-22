@@ -89,4 +89,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results.EncryptionEnabled | Should -Be $false
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = $testDb | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
+            Start-Sleep -Seconds 10 # Allow encryption to complete
+            $result = $testDb | Disable-DbaDbEncryption -NoEncryptionKeyDrop -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'DatabaseName',
+                'EncryptionEnabled'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

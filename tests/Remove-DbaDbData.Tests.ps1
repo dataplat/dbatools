@@ -144,4 +144,17 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Query "
+                insert into dept values ('hr');
+                insert into emp values (1);"
+        }
+
+        It "Returns no output by default" {
+            $result = Remove-DbaDbData -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -EnableException -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

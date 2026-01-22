@@ -42,4 +42,50 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results.Thumbprint | Should -Be $thumbprint
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
+            $result = Test-DbaComputerCertificateExpiration -Thumbprint "29C469578D6C6211076A09CEE5C5797EEA0C2713" -EnableException
+        }
+
+        AfterAll {
+            Remove-DbaComputerCertificate -Thumbprint "29C469578D6C6211076A09CEE5C5797EEA0C2713"
+        }
+
+        It "Returns certificate object" {
+            $result | Should -BeOfType [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'Store',
+                'Folder',
+                'Name',
+                'DnsNameList',
+                'Thumbprint',
+                'NotBefore',
+                'NotAfter',
+                'Subject',
+                'Issuer',
+                'Algorithm',
+                'ExpiredOrExpiring',
+                'Note'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ExpiredOrExpiring property set to true" {
+            $result.ExpiredOrExpiring | Should -Be $true
+        }
+
+        It "Has Note property with expiration message" {
+            $result.Note | Should -Not -BeNullOrEmpty
+            $result.Note | Should -Match "certificate (expires in|has expired)"
+        }
+    }
 }

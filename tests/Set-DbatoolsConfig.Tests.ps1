@@ -49,4 +49,66 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Match "Connect Timeout=60"
         }
     }
+
+    Context "Output without -PassThru" {
+        It "Returns no output by default" {
+            $result = Set-DbatoolsConfig -FullName "dbatools.test.outputvalidation" -Value "NoPassThru"
+            $result | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output Validation with -PassThru" {
+        BeforeAll {
+            $result = Set-DbatoolsConfig -FullName "dbatools.test.outputvalidation" -Value "TestValue" -PassThru -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Dataplat.Dbatools.Configuration.Config]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'FullName',
+                'Module',
+                'Name',
+                'Value',
+                'Description'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the full set of Config object properties" {
+            $expectedProps = @(
+                'Description',
+                'FullName',
+                'Handler',
+                'Hidden',
+                'Initialized',
+                'Module',
+                'ModuleExport',
+                'Name',
+                'PolicyEnforced',
+                'PolicySet',
+                'RegistryData',
+                'SafeValue',
+                'SimpleExport',
+                'Type',
+                'Unchanged',
+                'Validation',
+                'Value'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+
+        It "Returns a configuration object with the set value" {
+            $result.Value | Should -Be "TestValue"
+            $result.FullName | Should -Be "dbatools.test.outputvalidation"
+        }
+    }
 }

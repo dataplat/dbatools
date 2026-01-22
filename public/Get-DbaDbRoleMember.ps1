@@ -61,11 +61,11 @@ function Get-DbaDbRoleMember {
         https://dbatools.io/Get-DbaDbRoleMember
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per member (user or nested role) found in each database role.
 
-        Properties:
+        Default display properties (all properties are displayed):
         - ComputerName: The name of the computer where the SQL Server instance is running
         - InstanceName: The name of the SQL Server instance
         - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName

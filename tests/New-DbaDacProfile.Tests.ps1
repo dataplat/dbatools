@@ -56,4 +56,62 @@ Describe $CommandName -Tag IntegrationTests {
         $publishprofile.FileName -match "publish.xml" | Should -Be $true
         Remove-Item -Path $publishprofile.FileName -ErrorAction SilentlyContinue
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaDacProfile -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
+        }
+
+        AfterAll {
+            if ($result.FileName) {
+                Remove-Item -Path $result.FileName -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "SqlInstance",
+                "Database",
+                "FileName",
+                "ConnectionString"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the expected hidden properties accessible via Select-Object" {
+            $hiddenProps = @(
+                "ComputerName",
+                "InstanceName",
+                "ProfileTemplate"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $hiddenProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should exist but be hidden from default view"
+            }
+        }
+
+        It "Has all seven documented properties" {
+            $allProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "FileName",
+                "ConnectionString",
+                "ProfileTemplate"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            $actualProps.Count | Should -Be $allProps.Count
+            foreach ($prop in $allProps) {
+                $actualProps | Should -Contain $prop
+            }
+        }
+    }
 }

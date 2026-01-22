@@ -37,11 +37,11 @@ function Get-DbaSuspectPage {
         https://dbatools.io/Get-DbaSuspectPage
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per suspect page record found in the msdb.dbo.suspect_pages table. If no suspect pages exist, nothing is returned.
 
-        Properties:
+        Default display properties:
         - ComputerName: The name of the computer hosting the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance format)

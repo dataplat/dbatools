@@ -15,6 +15,25 @@ function Get-SqlDefaultSpConfigure {
         SQL Server 2005 - http://technet.microsoft.com/en-us/library/ms189631(v=sql.90).aspx
         SQL Server 2000 - http://technet.microsoft.com/en-us/library/aa196706(v=sql.80).aspx (requires PDF download)
 
+        .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        Returns a PSCustomObject containing default sp_configure values for the specified SQL Server version.
+        Each sp_configure option name is returned as a property with its default value.
+
+        The number and names of properties vary by SQL Server version:
+        - SQL 2000 (v8): ~33 configuration options
+        - SQL 2005 (v9): ~61 configuration options
+        - SQL 2008/R2 (v10): ~69 configuration options
+        - SQL 2012+ (v11+): 71+ configuration options (additional options added in newer versions)
+
+        Common properties across all versions include:
+        - "cost threshold for parallelism"
+        - "max degree of parallelism"
+        - "max server memory (MB)"
+        - "min server memory (MB)"
+        - "show advanced options"
+
         .EXAMPLE
         Get-SqlDefaultSpConfigure -SqlVersion 11
         Returns a list of sp_configure (sys.configurations) items for SQL 2012.

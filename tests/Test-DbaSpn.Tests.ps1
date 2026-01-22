@@ -38,4 +38,41 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaSpn -ComputerName $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlProduct",
+                "InstanceServiceAccount",
+                "RequiredSPN",
+                "IsSet",
+                "Cluster",
+                "TcpEnabled",
+                "Port",
+                "DynamicPort",
+                "Warning",
+                "Error"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Does not include Credential or DomainName properties in output" {
+            $actualProps = $result[0].PSObject.Properties.Name
+            $actualProps | Should -Not -Contain "Credential" -Because "Credential is excluded by Select-DefaultView"
+            $actualProps | Should -Not -Contain "DomainName" -Because "DomainName is excluded by Select-DefaultView"
+        }
+    }
 }

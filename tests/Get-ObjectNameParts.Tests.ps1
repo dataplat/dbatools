@@ -24,6 +24,34 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-ObjectNameParts -ObjectName "database1.schema1.table1"
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "InputValue",
+                "Database",
+                "Schema",
+                "Name",
+                "Parsed"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has exactly 5 properties" {
+            $result.PSObject.Properties.Name.Count | Should -Be 5
+        }
+    }
+
     Context 'Test one part names' {
         It 'Should return correct parts' {
             $objectName = 'table1', '[table2]', '[tab..le3]', '[table]]x4]', '[table5]]]'

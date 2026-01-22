@@ -54,18 +54,37 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "When detaching a single database" {
+    Context "Output Validation" {
         BeforeAll {
-            $results = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Force
+            $result = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Force -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'DatabaseID',
+                'DetachResult'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
         }
 
         It "Should complete successfully" {
-            $results.DetachResult | Should -Be "Success"
-            $results.DatabaseID | Should -Be $database.ID
+            $result.DetachResult | Should -Be "Success"
+            $result.DatabaseID | Should -Be $database.ID
         }
 
         It "Should remove just one database" {
-            $results.Database | Should -Be $dbName
+            $result.Database | Should -Be $dbName
         }
     }
 

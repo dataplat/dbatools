@@ -64,4 +64,54 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseId | Should -Be $masterDbId
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Compatibility"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has ComputerName property with a value" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has InstanceName property with a value" {
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has SqlInstance property with a value" {
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has Database property with expected value" {
+            $result.Database | Should -Be "master"
+        }
+
+        It "Has DatabaseId property with a value" {
+            $result.DatabaseId | Should -BeOfType [System.Int32]
+            $result.DatabaseId | Should -BeGreaterThan 0
+        }
+
+        It "Has Compatibility property with a value" {
+            $result.Compatibility | Should -Not -BeNullOrEmpty
+        }
+    }
 }

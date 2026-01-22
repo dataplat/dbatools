@@ -18,6 +18,56 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -MinimumVersion 10
+            if ($server.ServerAuditSpecifications.Count -eq 0) {
+                # Create a test audit and audit specification
+                $auditName = "dbatoolsci_test_audit_$(Get-Random)"
+                $specName = "dbatoolsci_test_spec_$(Get-Random)"
+                $server.Audits.Add((New-Object Microsoft.SqlServer.Management.Smo.Audit($server, $auditName)))
+                $server.Audits[$auditName].FilePath = $server.DefaultFile
+                $server.Audits[$auditName].Create()
+                $server.ServerAuditSpecifications.Add((New-Object Microsoft.SqlServer.Management.Smo.ServerAuditSpecification($server, $specName)))
+                $server.ServerAuditSpecifications[$specName].AuditName = $auditName
+                $server.ServerAuditSpecifications[$specName].Create()
+            }
+            $result = Get-DbaInstanceAuditSpecification -SqlInstance $TestConfig.instance2 -EnableException
+        }
+
+        AfterAll {
+            if ($specName) {
+                $server.ServerAuditSpecifications[$specName].Drop()
+            }
+            if ($auditName) {
+                $server.Audits[$auditName].Drop()
+            }
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ServerAuditSpecification]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ID',
+                'Name',
+                'AuditName',
+                'Enabled',
+                'CreateDate',
+                'DateLastModified',
+                'Guid'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }
 
 <#

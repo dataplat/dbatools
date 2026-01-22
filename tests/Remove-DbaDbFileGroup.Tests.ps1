@@ -67,6 +67,27 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $random = Get-Random
+            $testDb = "dbatoolsci_output_test_$random"
+            $testFg = "TestFG"
+            
+            New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDb -EnableException
+            $server.Query("ALTER DATABASE $testDb ADD FILEGROUP $testFg;")
+        }
+        
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDb -EnableException
+        }
+        
+        It "Returns no output by default" {
+            $result = Remove-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $testDb -FileGroup $testFg -EnableException -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
+
     Context "When removing filegroups" {
         It "Removes filegroups" {
             $results = @(Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name)

@@ -26,6 +26,13 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns System.String when -Passthru is specified" {
+            $command = Get-Command $CommandName
+            $command.OutputType.Name | Should -Contain 'System.String'
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

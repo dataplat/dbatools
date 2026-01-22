@@ -22,33 +22,27 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $props = @("ComputerName", "InstanceName", "SqlInstance", "Option", "Value")
-    }
-
-    Context "Validate standard output" {
+    Context "Output Validation" {
         BeforeAll {
-            $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.InstanceSingle
+            $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.InstanceSingle -EnableException
         }
 
-        It "Should return property: ComputerName" {
-            $result[0].PSObject.Properties["ComputerName"].Name | Should -Be "ComputerName"
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
         }
 
-        It "Should return property: InstanceName" {
-            $result[0].PSObject.Properties["InstanceName"].Name | Should -Be "InstanceName"
-        }
-
-        It "Should return property: SqlInstance" {
-            $result[0].PSObject.Properties["SqlInstance"].Name | Should -Be "SqlInstance"
-        }
-
-        It "Should return property: Option" {
-            $result[0].PSObject.Properties["Option"].Name | Should -Be "Option"
-        }
-
-        It "Should return property: Value" {
-            $result[0].PSObject.Properties["Value"].Name | Should -Be "Value"
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Option',
+                'Value'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
 
         It "returns results for DBCC USEROPTIONS" {

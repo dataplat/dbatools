@@ -147,4 +147,53 @@ Describe $CommandName -Tag IntegrationTests {
             $schema.Parent.Name | Should -Be $newDbName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatUpdateSchema = @{
+                SqlInstance = $server1
+                Database    = $newDbName
+                Schema      = "TestSchema1"
+                SchemaOwner = $userName
+            }
+            $result = Set-DbaDbSchema @splatUpdateSchema
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Schema]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'IsSystemObject'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the dbatools-added properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'ComputerName'
+            $result.PSObject.Properties.Name | Should -Contain 'InstanceName'
+            $result.PSObject.Properties.Name | Should -Contain 'SqlInstance'
+            $result.PSObject.Properties.Name | Should -Contain 'DatabaseName'
+            $result.PSObject.Properties.Name | Should -Contain 'DatabaseId'
+        }
+
+        It "Has the key SMO properties accessible" {
+            $result.PSObject.Properties.Name | Should -Contain 'Owner'
+            $result.PSObject.Properties.Name | Should -Contain 'CreateDate'
+            $result.PSObject.Properties.Name | Should -Contain 'DateLastModified'
+            $result.PSObject.Properties.Name | Should -Contain 'ID'
+        }
+    }
 }

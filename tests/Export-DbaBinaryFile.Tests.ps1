@@ -109,4 +109,65 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
         }
     }
+
+    Context "Output Validation" {
+        BeforeEach {
+            # We want to run all commands in the BeforeEach block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Set up test table and data for each test
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            $null = $db.Query("CREATE TABLE [dbo].[BunchOFilezz]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
+
+            $splatImportMain = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Table       = "BunchOFilezz"
+                FilePath    = "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
+            }
+            $null = Import-DbaBinaryFile @splatImportMain
+
+            # We want to run all commands outside of the BeforeEach block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterEach {
+            # We want to run all commands in the AfterEach block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Clean up test table
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            $null = $db.Query("DROP TABLE dbo.BunchOFilezz")
+
+            # Clean up exported files for this specific test
+            Remove-Item -Path "$exportPath\*" -Recurse -ErrorAction SilentlyContinue
+
+            # We want to run all commands outside of the AfterEach block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result = Export-DbaBinaryFile -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Path $exportPath -EnableException
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $result = Export-DbaBinaryFile -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Path $exportPath -EnableException
+            $expectedProps = @(
+                'FullName',
+                'Name',
+                'DirectoryName',
+                'Directory',
+                'Extension',
+                'Length',
+                'CreationTime',
+                'LastWriteTime',
+                'Attributes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on FileInfo object"
+            }
+        }
+    }
 }

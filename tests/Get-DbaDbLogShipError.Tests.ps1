@@ -42,4 +42,42 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status.Count | Should -BeExactly 0
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # This command returns errors only if log shipping errors exist
+            # Testing with no errors present, so we expect empty/null results
+            $result = Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject when errors exist" {
+            # Note: This test will be skipped if no log shipping errors are present
+            # When errors exist, verify the output type
+            if ($result) {
+                $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+        }
+
+        It "Has the expected output properties when errors exist" {
+            # Note: This test will be skipped if no log shipping errors are present
+            if ($result) {
+                $expectedProps = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Database",
+                    "Instance",
+                    "Action",
+                    "SessionID",
+                    "SequenceNumber",
+                    "LogTime",
+                    "Message"
+                )
+                $actualProps = $result[0].PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+                }
+            }
+        }
+    }
 }

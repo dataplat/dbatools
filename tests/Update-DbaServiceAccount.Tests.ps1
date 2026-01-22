@@ -206,4 +206,37 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = $services | Select-Object -First 1 | Update-DbaServiceAccount -Username $currentEngineUser -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Wmi.Service]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'ServiceName',
+                'State',
+                'StartName',
+                'Status',
+                'Message'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Status property added by dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain 'Status'
+        }
+
+        It "Has Message property added by dbatools" {
+            $result.PSObject.Properties.Name | Should -Contain 'Message'
+        }
+    }
 }

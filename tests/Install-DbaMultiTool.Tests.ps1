@@ -25,6 +25,47 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $database = "dbatoolsci_multitool_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $database -EnableException
+            $result = Install-DbaMultiTool -SqlInstance $TestConfig.InstanceMulti1 -Database $database -Branch main -Force -EnableException
+        }
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $database -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Status"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns one object per stored procedure installed" {
+            $result.Count | Should -BeGreaterOrEqual 4 -Because "at minimum sp_doc, sp_helpme, sp_sizeoptimiser, and sp_estindex should be installed"
+        }
+
+        It "Status property contains valid values" {
+            $validStatuses = @("Installed", "Updated", "Error")
+            $result.Status | ForEach-Object {
+                $validStatuses | Should -Contain $_ -Because "Status should be one of: Installed, Updated, or Error"
+            }
+        }
+    }
+
     Context "Testing DBA MultiTool installer with download" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.

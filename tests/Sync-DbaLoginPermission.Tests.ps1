@@ -113,4 +113,57 @@ CREATE LOGIN [$stateTestLogin]
             $destLoginAfter.IsDisabled | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $tempOutputGuid = [guid]::newguid()
+            $outputTestLogin = "dbatoolssci_output_$($tempOutputGuid.guid)"
+            $createOutputLogin = @"
+CREATE LOGIN [$outputTestLogin]
+    WITH PASSWORD = '$($tempOutputGuid.guid)';
+"@
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query $createOutputLogin
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Query $createOutputLogin
+
+            $splatSyncOutput = @{
+                Source            = $TestConfig.InstanceMulti1
+                Destination       = $TestConfig.InstanceMulti2
+                Login             = $outputTestLogin
+                EnableException   = $true
+            }
+            $result = Sync-DbaLoginPermission @splatSyncOutput
+        }
+        AfterAll {
+            $dropOutputLogin = "DROP LOGIN [$outputTestLogin]"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Query $dropOutputLogin -Database master
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result.PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Status property with valid value" {
+            $result.Status | Should -BeIn @('Successful', 'Failed')
+        }
+
+        It "Has Type property set to 'Login Permissions'" {
+            $result.Type | Should -Be 'Login Permissions'
+        }
+    }
 }

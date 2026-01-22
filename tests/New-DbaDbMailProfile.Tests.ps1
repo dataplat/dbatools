@@ -82,4 +82,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results.description | Should -Be $description
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatProfile = @{
+                SqlInstance         = $TestConfig.InstanceSingle
+                Profile             = $profilename
+                Description         = $description
+                MailAccountName     = $mailaccountname
+                MailAccountPriority = $mailaccountpriority
+                EnableException     = $true
+            }
+            $result = New-DbaDbMailProfile @splatProfile
+        }
+
+        AfterAll {
+            if ($result) {
+                $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -EnableException
+                $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$($result.Name)';"
+                $server.query($mailAccountSettings)
+            }
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Mail.MailProfile]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Name',
+                'Description',
+                'IsBusyProfile'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

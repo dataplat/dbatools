@@ -22,12 +22,31 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $results = Get-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr
+        $results = Get-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -EnableException
     }
 
     Context "Validate output" {
         It "returns the correct properties" {
             $results.IsHadrEnabled | Should -Be $true
+        }
+    }
+
+    Context "Output Validation" {
+        It "Returns the documented output type" {
+            $results | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Server]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'IsHadrEnabled'
+            )
+            $actualProps = $results.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
     }
 }

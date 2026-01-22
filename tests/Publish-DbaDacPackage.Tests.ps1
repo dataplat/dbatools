@@ -167,4 +167,115 @@ Describe $CommandName -Tag IntegrationTests {
             { $bacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -ScriptOnly -Type Bacpac -EnableException } | Should -Throw
         }
     }
+
+    Context "Output Validation - Dacpac" {
+        BeforeAll {
+            $extractOptions = New-DbaDacOption -Action Export
+            $extractOptions.ExtractAllTableData = $true
+            $dacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions
+            $result = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -EnableException
+        }
+
+        AfterAll {
+            if ($dacpac.Path) { Remove-Item -Path $dacpac.Path -ErrorAction SilentlyContinue }
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $dbname -Confirm:$false
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for Dacpac deployment" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Dacpac",
+                "PublishXml",
+                "Result",
+                "DeployOptions",
+                "SqlCmdVariableValues"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation - Dacpac with ScriptOnly" {
+        BeforeAll {
+            $extractOptions = New-DbaDacOption -Action Export
+            $extractOptions.ExtractAllTableData = $true
+            $dacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions
+            $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -Path $TestConfig.Temp
+            $result = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -ScriptOnly -PublishXml $publishprofile.FileName -EnableException
+        }
+
+        AfterAll {
+            if ($dacpac.Path) { Remove-Item -Path $dacpac.Path -ErrorAction SilentlyContinue }
+            if ($result.DatabaseScriptPath) { Remove-Item -Path $result.DatabaseScriptPath -ErrorAction SilentlyContinue }
+            if ($publishprofile.FileName) { Remove-Item -Path $publishprofile.FileName -ErrorAction SilentlyContinue }
+        }
+
+        It "Includes script path properties when ScriptOnly is specified" {
+            $result.PSObject.Properties.Name | Should -Contain "DatabaseScriptPath" -Because "ScriptOnly should generate script path"
+            $result.PSObject.Properties.Name | Should -Contain "MasterDbScriptPath" -Because "ScriptOnly should include master script path"
+        }
+    }
+
+    Context "Output Validation - Dacpac with GenerateDeploymentReport" {
+        BeforeAll {
+            $extractOptions = New-DbaDacOption -Action Export
+            $extractOptions.ExtractAllTableData = $true
+            $dacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions
+            $options = New-DbaDacOption -Action Publish
+            $result = $dacpac | Publish-DbaDacPackage -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -GenerateDeploymentReport -EnableException
+        }
+
+        AfterAll {
+            if ($dacpac.Path) { Remove-Item -Path $dacpac.Path -ErrorAction SilentlyContinue }
+            if ($result.DeploymentReport) { Remove-Item -Path $result.DeploymentReport -ErrorAction SilentlyContinue }
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $dbname -Confirm:$false
+        }
+
+        It "Includes DeploymentReport property when -GenerateDeploymentReport is specified" {
+            $result.PSObject.Properties.Name | Should -Contain "DeploymentReport" -Because "GenerateDeploymentReport should create deployment report"
+        }
+    }
+
+    Context "Output Validation - Bacpac" {
+        BeforeAll {
+            $extractOptions = New-DbaDacOption -Action Export -Type Bacpac
+            $bacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions -Type Bacpac
+            $options = New-DbaDacOption -Action Publish -Type Bacpac
+            $result = $bacpac | Publish-DbaDacPackage -Type Bacpac -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -EnableException
+        }
+
+        AfterAll {
+            if ($bacpac.Path) { Remove-Item -Path $bacpac.Path -ErrorAction SilentlyContinue }
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $dbname -Confirm:$false
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for Bacpac import" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Bacpac",
+                "Result",
+                "DeployOptions"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

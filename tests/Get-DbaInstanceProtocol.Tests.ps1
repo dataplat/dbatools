@@ -37,4 +37,39 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaInstanceProtocol -ComputerName $TestConfig.InstanceMulti1 -EnableException
+        }
+
+        It "Returns WMI ServerNetworkProtocol objects" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'DisplayName',
+                'Name',
+                'MultiIP',
+                'IsEnabled'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Enable() script method" {
+            $result[0].Enable | Should -Not -BeNullOrEmpty
+            $result[0].Enable.GetType().Name | Should -Be 'PSScriptMethod'
+        }
+
+        It "Has Disable() script method" {
+            $result[0].Disable | Should -Not -BeNullOrEmpty
+            $result[0].Disable.GetType().Name | Should -Be 'PSScriptMethod'
+        }
+    }
 }

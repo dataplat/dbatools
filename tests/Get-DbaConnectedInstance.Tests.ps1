@@ -22,4 +22,32 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+            $result = Get-DbaConnectedInstance | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'SqlInstance',
+                'ConnectionType',
+                'ConnectionObject',
+                'Pooled'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the ConnectionString property available" {
+            $result.PSObject.Properties.Name | Should -Contain 'ConnectionString' -Because "ConnectionString is available via Select-Object *"
+        }
+    }
 }

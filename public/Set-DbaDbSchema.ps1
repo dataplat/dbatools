@@ -66,9 +66,9 @@ function Set-DbaDbSchema {
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The name of the schema that was updated
         - IsSystemObject: Boolean indicating if this is a built-in system schema or custom user-defined schema
-        - Owner: The new owner of the schema (updated to the value specified by -SchemaOwner)
 
         Additional properties available (from SMO Schema object):
+        - Owner: The new owner of the schema (updated to the value specified by -SchemaOwner)
         - DatabaseName: The name of the database containing the schema
         - DatabaseId: The unique identifier (ID) of the database
         - CreateDate: DateTime when the schema was created

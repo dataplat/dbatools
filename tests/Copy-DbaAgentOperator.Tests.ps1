@@ -87,4 +87,46 @@ Describe $CommandName -Tag IntegrationTests {
             $copyResult.Status | Should -Be "Skipped"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $splatCopyOperator = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Operator    = $operatorName2
+                Force       = $true
+            }
+            $result = Copy-DbaAgentOperator @splatCopyOperator
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject with MigrationObject type" {
+            $result.PSObject.TypeNames | Should -Contain 'MigrationObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Type property set to 'Agent Operator'" {
+            $result.Type | Should -Be "Agent Operator"
+        }
+
+        It "Has Status property with valid values" {
+            $result.Status | Should -BeIn @('Successful', 'Skipped', 'Failed')
+        }
+    }
 }

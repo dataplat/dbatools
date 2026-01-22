@@ -62,4 +62,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results.PhysicalLocation | Should -Be "\\.\Tape0"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaBackupDevice -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.BackupDevice]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'BackupDeviceType',
+                'PhysicalLocation',
+                'SkipTapeLabel'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

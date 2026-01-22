@@ -53,4 +53,44 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedPropsDefault | Sort-Object)
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaNetworkLatency -SqlInstance $TestConfig.instance1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ExecutionCount',
+                'Total',
+                'Average',
+                'ExecuteOnlyTotal',
+                'ExecuteOnlyAverage',
+                'NetworkOnlyTotal'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns prettytimespan objects for time properties" {
+            $result.Total.GetType().Name | Should -Be 'PrettyTimeSpan'
+            $result.Average.GetType().Name | Should -Be 'PrettyTimeSpan'
+            $result.ExecuteOnlyTotal.GetType().Name | Should -Be 'PrettyTimeSpan'
+            $result.ExecuteOnlyAverage.GetType().Name | Should -Be 'PrettyTimeSpan'
+            $result.NetworkOnlyTotal.GetType().Name | Should -Be 'PrettyTimeSpan'
+        }
+
+        It "Returns correct ExecutionCount matching default Count parameter" {
+            $result.ExecutionCount | Should -Be 3
+        }
+    }
 }

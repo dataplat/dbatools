@@ -34,13 +34,13 @@ function Get-DbaSpn {
         https://dbatools.io/Get-DbaSpn
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
-        Returns one object per Service Principal Name (SPN) found. The command supports two search modes that return the same object structure:
+        Returns one object per Service Principal Name (SPN) found. The command supports two search modes (by ComputerName or by AccountName) that return the same object structure.
 
-        Properties:
+        Default display properties:
         - Input: The search term provided (computer name or account name)
-        - AccountName: The Active Directory service account name
+        - AccountName: The Active Directory service account name that owns the SPN
         - ServiceClass: Always "MSSQLSvc" for SQL Server SPNs
         - Port: The port number if present in the SPN; null if no port is specified
         - SPN: The full Service Principal Name value

@@ -52,14 +52,17 @@ function Invoke-DbaDbMirrorFailover {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Database
 
-        Returns one Database object for each database that was failed over successfully. When performing a failover operation, the database object is returned with its mirroring state updated to reflect the new role (now the principal server).
+        Returns one Database object for each database that was failed over successfully. The database object reflects the updated mirroring state after the failover operation completes.
 
-        Default properties visible:
+        Default display properties (standard SMO Database properties):
         - Name: Database name
         - Status: Current database status
-        - Owner: Database owner login
         - RecoveryModel: Database recovery model (typically Full for mirrored databases)
-        - Size: Database size in megabytes
+        - Owner: Database owner login name
+        - LastBackupDate: Date of last full backup
+
+        Additional properties are available via Select-Object *:
+        - All standard SMO Database properties including mirroring-specific properties like MirroringPartner, MirroringStatus, MirroringSafetyLevel, etc.
 
         When no failover is performed due to -WhatIf or user cancellation, no output is returned.
 
@@ -78,6 +81,7 @@ function Invoke-DbaDbMirrorFailover {
         Does not prompt for confirmation.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [OutputType([Microsoft.SqlServer.Management.Smo.Database])]
     param (
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,

@@ -120,4 +120,51 @@ Describe $CommandName -Tag IntegrationTests {
             $server.Configuration.MaxDegreeOfParallelism.ConfigValue | Should -Be 2
         }
     }
+
+    Context "Output Validation - Instance-level configuration" {
+        BeforeAll {
+            $result = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti1 -MaxDop 2 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for instance-level configuration" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "PreviousInstanceMaxDopValue",
+                "CurrentInstanceMaxDop"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation - Database-level configuration" {
+        BeforeAll {
+            $result = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti2 -Database $singledb -MaxDop 4 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties for database-level configuration" {
+            $expectedProps = @(
+                "InstanceName",
+                "Database",
+                "PreviousDatabaseMaxDopValue",
+                "CurrentDatabaseMaxDopValue"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

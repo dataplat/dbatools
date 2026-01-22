@@ -66,4 +66,63 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AvailabilityGroup | Should -Be $agName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'LocalReplicaRole',
+                'AvailabilityGroup',
+                'PrimaryReplica',
+                'ClusterType',
+                'DtcSupportEnabled',
+                'AutomatedBackupPreference',
+                'AvailabilityReplicas',
+                'AvailabilityDatabases',
+                'AvailabilityGroupListeners'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation with -IsPrimary" {
+        BeforeAll {
+            $result = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -IsPrimary -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+        }
+
+        It "Has the expected default display properties for -IsPrimary" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'IsPrimary'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display with -IsPrimary"
+            }
+        }
+
+        It "IsPrimary property contains a boolean value" {
+            $result.IsPrimary | Should -BeOfType [System.Boolean]
+        }
+    }
 }

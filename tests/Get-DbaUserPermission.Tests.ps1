@@ -75,6 +75,53 @@ exec sp_addrolemember 'userrole','bob';
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $dbName = "dbatoolsci_OutputValidation"
+            $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            $result = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceSingle -Database $dbName -EnableException
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Object",
+                "Type",
+                "Member",
+                "RoleSecurableClass",
+                "SchemaOwner",
+                "Securable",
+                "GranteeType",
+                "Grantee",
+                "Permission",
+                "State",
+                "Grantor",
+                "GrantorType",
+                "SourceView"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
+
     Context "Command do not return error when database as different collation" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

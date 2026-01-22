@@ -68,4 +68,32 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $backupResult.Name | Should -Match "$certThumbprint.cer"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'DirectoryName',
+                'Directory',
+                'Extension',
+                'Length',
+                'CreationTime',
+                'LastWriteTime',
+                'Attributes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in FileInfo output"
+            }
+        }
+    }
 }

@@ -197,4 +197,38 @@ Describe $CommandName -Tag IntegrationTests {
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true } } -ModuleName dbatools
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Action $singleAction -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "MajorVersion",
+                "Build",
+                "Architecture",
+                "TargetVersion",
+                "TargetLevel",
+                "KB",
+                "Successful",
+                "Restarted",
+                "InstanceName",
+                "Installer",
+                "ExtractPath",
+                "Notes",
+                "ExitCode",
+                "Log"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output object"
+            }
+        }
+    }
 }

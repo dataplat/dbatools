@@ -56,4 +56,33 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Extension | Should -Contain ".xel"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaXESessionTargetFile -SqlInstance $TestConfig.InstanceSingle -Session "system_health" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'DirectoryName',
+                'Length',
+                'LastWriteTime',
+                'CreationTime',
+                'Attributes',
+                'Directory',
+                'Extension'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in FileInfo object"
+            }
+        }
+    }
 }

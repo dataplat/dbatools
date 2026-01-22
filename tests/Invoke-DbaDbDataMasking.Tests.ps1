@@ -218,4 +218,63 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery @splatQueryBit2 | Should -Be $null
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatConfig = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                Path            = $tempPath
+                EnableException = $true
+            }
+            $configFile = New-DbaDbMaskingConfig @splatConfig
+
+            $splatMasking = @{
+                FilePath        = $configFile.FullName
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                EnableException = $true
+            }
+            $result = @(Invoke-DbaDbDataMasking @splatMasking)
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Columns",
+                "Rows",
+                "Elapsed",
+                "Status"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Returns one object per table processed" {
+            $result.Count | Should -BeGreaterThan 0 -Because "at least one table should be processed"
+        }
+
+        It "Has Database property matching the target database" {
+            $result[0].Database | Should -Be $dbName
+        }
+
+        It "Has Status property with valid values" {
+            $result[0].Status | Should -BeIn @("Successful", "Failed")
+        }
+
+        It "Has Rows property as an integer" {
+            $result[0].Rows | Should -BeOfType [int]
+        }
+    }
 }

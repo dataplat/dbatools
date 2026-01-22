@@ -193,4 +193,49 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeExactly 5
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $testPath = "TestDrive:\sqlbackups"
+            if (!(Test-Path $testPath)) {
+                $null = New-Item -Path $testPath -ItemType Container
+            }
+
+            $filepath = Join-Path $testPath "dbatoolsci_output_test.bak"
+            Set-Content $filepath -value "test content for output validation"
+            (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-1)
+
+            $result = Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'FullName',
+                'Name',
+                'Extension',
+                'DirectoryName',
+                'Length',
+                'LastWriteTime',
+                'Attributes',
+                'CreationTime',
+                'LastAccessTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on FileInfo object"
+            }
+        }
+
+        It "Returns files with correct extension" {
+            $result.Extension | Should -Be ".bak"
+        }
+
+        It "Returns files older than retention period" {
+            $result.LastWriteTime | Should -BeLessThan (Get-Date).AddDays(-1).AddMinutes(1)
+        }
+    }
 }

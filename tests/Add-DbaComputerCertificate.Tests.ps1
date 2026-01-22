@@ -58,6 +58,40 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Add-DbaComputerCertificate -Path $certPath -EnableException
+        }
+
+        AfterAll {
+            Remove-DbaComputerCertificate -Thumbprint $certThumbprint -ErrorAction SilentlyContinue
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Security.Cryptography.X509Certificates.X509Certificate2]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'FriendlyName',
+                'DnsNameList',
+                'Thumbprint',
+                'NotBefore',
+                'NotAfter',
+                'Subject',
+                'Issuer'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Should have HasPrivateKey property available" {
+            $result.PSObject.Properties.Name | Should -Contain 'HasPrivateKey'
+        }
+    }
+
     Context "PFX certificate with chain is imported properly" -Skip:($env:APPVEYOR) {
         BeforeAll {
             # Generate unique temp path for this test run

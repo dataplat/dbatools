@@ -23,6 +23,40 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            # Make plan cache way higher than likely for a test rig
+            $threshold = 10240
+            $result = Clear-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle -Threshold $threshold -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Size",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has Size property of type dbasize" {
+            $result.Size | Should -BeOfType [dbasize]
+        }
+
+        It "Has Status property indicating threshold check" {
+            $result.Status | Should -Match "below|cleared"
+        }
+    }
+
     Context "When not clearing plan cache" {
         BeforeAll {
             # Make plan cache way higher than likely for a test rig

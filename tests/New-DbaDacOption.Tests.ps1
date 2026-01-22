@@ -62,4 +62,87 @@ Describe $CommandName -Tag IntegrationTests {
         $result.GenerateDeploymentReport | Should -BeTrue
         $result.DeployOptions.CommandTimeout | Should -Be 5
     }
+
+    Context "Output Validation - Dacpac Export" {
+        BeforeAll {
+            $result = New-DbaDacOption -Type Dacpac -Action Export -EnableException
+        }
+
+        It "Returns the documented output type DacExtractOptions" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Dac.DacExtractOptions]
+        }
+
+        It "Has ExtractAllTableData property" {
+            $result.PSObject.Properties.Name | Should -Contain 'ExtractAllTableData'
+        }
+
+        It "Has CommandTimeout property" {
+            $result.PSObject.Properties.Name | Should -Contain 'CommandTimeout'
+        }
+    }
+
+    Context "Output Validation - Bacpac Export" {
+        BeforeAll {
+            $result = New-DbaDacOption -Type Bacpac -Action Export -EnableException
+        }
+
+        It "Returns the documented output type DacExportOptions" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Dac.DacExportOptions]
+        }
+
+        It "Has CommandTimeout property" {
+            $result.PSObject.Properties.Name | Should -Contain 'CommandTimeout'
+        }
+    }
+
+    Context "Output Validation - Dacpac Publish" {
+        BeforeAll {
+            $result = New-DbaDacOption -Type Dacpac -Action Publish -EnableException
+        }
+
+        It "Returns the documented output type PublishOptions" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Dac.PublishOptions]
+        }
+
+        It "Has DeployOptions property" {
+            $result.PSObject.Properties.Name | Should -Contain 'DeployOptions'
+        }
+
+        It "Has GenerateDeploymentScript property" {
+            $result.PSObject.Properties.Name | Should -Contain 'GenerateDeploymentScript'
+        }
+
+        It "DeployOptions is of type DacDeployOptions" {
+            $result.DeployOptions | Should -BeOfType [Microsoft.SqlServer.Dac.DacDeployOptions]
+        }
+    }
+
+    Context "Output Validation - Bacpac Publish" {
+        BeforeAll {
+            $result = New-DbaDacOption -Type Bacpac -Action Publish -EnableException
+        }
+
+        It "Returns the documented output type DacImportOptions" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Dac.DacImportOptions]
+        }
+
+        It "Has CommandTimeout property" {
+            $result.PSObject.Properties.Name | Should -Contain 'CommandTimeout'
+        }
+    }
+
+    Context "Output Validation - PublishXml Profile" {
+        BeforeAll {
+            $result = New-DbaDacOption -Type Dacpac -Action Publish -PublishXml $publishProfile.FileName -EnableException
+        }
+
+        It "Returns PublishOptions when using PublishXml" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Dac.PublishOptions]
+        }
+
+        It "Loads DeployOptions from profile" {
+            $result.DeployOptions | Should -Not -BeNullOrEmpty
+            $result.DeployOptions | Should -BeOfType [Microsoft.SqlServer.Dac.DacDeployOptions]
+        }
+    }
 }

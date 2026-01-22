@@ -22,6 +22,31 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     InModuleScope dbatools {
+        Context "Output Validation" {
+            BeforeAll {
+                $header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+                $header | Add-Member -Type NoteProperty -Name FullName -Value 1
+                $filteredFiles = $header | Select-DbaBackupInformation
+            }
+
+            It "Returns the documented output type (Boolean)" {
+                $output = Test-DbaLsnChain -FilteredRestoreFiles $filteredFiles -WarningAction SilentlyContinue
+                $output | Should -BeOfType [Boolean]
+            }
+
+            It "Returns True for valid LSN chain" {
+                $output = Test-DbaLsnChain -FilteredRestoreFiles $filteredFiles -WarningAction SilentlyContinue
+                $output | Should -BeExactly $true
+            }
+
+            It "Returns False for invalid LSN chain" {
+                $filteredFiles[4].FirstLsn = 2
+                $filteredFiles[4].LastLsn = 1
+                $output = Test-DbaLsnChain -FilteredRestoreFiles $filteredFiles -WarningAction SilentlyContinue
+                $output | Should -BeExactly $false
+            }
+        }
+
         Context "General Diff restore" {
             BeforeAll {
                 $header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)

@@ -86,4 +86,36 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Set-DbaErrorLogConfig -SqlInstance $TestConfig.InstanceMulti1 -LogCount 10 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'LogCount',
+                'LogSize'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Has LogSize as dbasize type" {
+            $result.LogSize | Should -BeOfType [Sqlcollaborative.Dbatools.Utility.Size]
+        }
+
+        It "Has LogCount as integer" {
+            $result.LogCount | Should -BeOfType [int]
+        }
+    }
 }

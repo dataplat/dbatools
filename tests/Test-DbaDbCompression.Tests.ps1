@@ -102,4 +102,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].CompressionTypeRecommendation | Should -Be '?'
         }
     }
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbname -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'TableName',
+                'IndexName',
+                'Partition',
+                'IndexID',
+                'IndexType',
+                'PercentScan',
+                'PercentUpdate',
+                'RowEstimatePercentOriginal',
+                'PageEstimatePercentOriginal',
+                'CompressionTypeRecommendation',
+                'SizeCurrent',
+                'SizeRequested',
+                'PercentCompression'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

@@ -66,4 +66,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Owner | Should -Be UserLogin1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Type",
+                "Owner",
+                "Name",
+                "Parent"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+    }
 }

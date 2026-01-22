@@ -22,12 +22,16 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Validate output" {
+    Context "Output Validation" {
         BeforeAll {
-            $results = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.InstanceSingle -Type instance
+            $result = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.InstanceSingle -Type instance -EnableException
         }
 
-        It "Should have correct properties" {
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
             $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
@@ -36,11 +40,25 @@ Describe $CommandName -Tag IntegrationTests {
                 "IsSuccessful",
                 "Notes"
             )
-            ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
 
         It "Should cycle instance error log" {
-            $results.LogType | Should -Be "instance"
+            $result.LogType | Should -Be "instance"
+        }
+    }
+
+    Context "Output Validation with multiple log types" {
+        BeforeAll {
+            $result = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "LogType contains both instance and agent when no -Type specified" {
+            $result.LogType | Should -Contain "instance"
+            $result.LogType | Should -Contain "agent"
         }
     }
 }

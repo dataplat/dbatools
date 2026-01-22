@@ -61,4 +61,55 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -EnableException | Select-Object -First 1
+        }
+
+        It "Returns a process object" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Spid',
+                'Login',
+                'LoginTime',
+                'Host',
+                'Database',
+                'BlockingSpid',
+                'Program',
+                'Status',
+                'Command',
+                'Cpu',
+                'MemUsage',
+                'LastRequestStartTime',
+                'LastRequestEndTime',
+                'MinutesAsleep',
+                'ClientNetAddress',
+                'NetTransport',
+                'EncryptOption',
+                'AuthScheme',
+                'NetPacketSize',
+                'ClientVersion',
+                'HostProcessId',
+                'IsSystem',
+                'EndpointName',
+                'IsDac',
+                'LastQuery'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Parent property pointing to server object" {
+            $result.PSObject.Properties.Name | Should -Contain 'Parent'
+        }
+    }
 }

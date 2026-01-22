@@ -67,6 +67,46 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $testDb = "dbatoolsci_darling_output_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $server.Query("CREATE DATABASE $testDb")
+            $result = Install-DbaDarlingData -SqlInstance $TestConfig.InstanceSingle -Database $testDb -Branch main -Force -Verbose:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDb
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Name',
+                'Status'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns multiple objects when installing multiple procedures" {
+            $result.Count | Should -BeGreaterThan 1 -Because "DarlingData.sql contains multiple procedures"
+        }
+    }
+
     Context "Testing DarlingData installer with LocalFile" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
@@ -110,6 +150,13 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $result = $resultsLocalFile[0]
             $ExpectedProps = "SqlInstance", "InstanceName", "ComputerName", "Name", "Status", "Database"
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+        }
+
+        It "Returns objects with valid Status values" {
+            $validStatuses = @('Installed', 'Updated', 'Skipped', 'Error')
+            foreach ($item in $resultsLocalFile) {
+                $validStatuses | Should -Contain $item.Status -Because "Status should be one of the documented values"
+            }
         }
     }
 }

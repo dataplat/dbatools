@@ -22,21 +22,25 @@ Describe $CommandName -Tag UnitTests {
 }
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $props = @(
-            "ComputerName",
-            "InstanceName",
-            "SqlInstance",
-            "Cmd",
-            "Output"
-        )
-        $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.InstanceSingle
+        $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.InstanceSingle -EnableException
     }
 
-    Context "Validate standard output" {
-        It "Should return all expected properties" {
-            foreach ($prop in $props) {
-                $p = $result.PSObject.Properties[$prop]
-                $p.Name | Should -Be $prop
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Cmd',
+                'Output'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
             }
         }
     }

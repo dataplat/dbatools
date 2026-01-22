@@ -54,15 +54,31 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Validate standard output" {
+    Context "Output Validation" {
         BeforeAll {
-            $props = "ComputerName", "InstanceName", "SqlInstance", "Database", "Table", "Cmd", "IdentityValue", "ColumnValue", "Output"
-            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName1, $tableName2
+            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName1, $tableName2 -EnableException
         }
 
-        It "Should return property: <_>" -ForEach $props {
-            $p = $result[0].PSObject.Properties[$PSItem]
-            $p.Name | Should -Be $PSItem
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Table",
+                "Cmd",
+                "IdentityValue",
+                "ColumnValue",
+                "Output"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
 
         It "Returns results for each table" {

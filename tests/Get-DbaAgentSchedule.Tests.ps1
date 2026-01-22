@@ -165,6 +165,44 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_MonthlyTest -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobSchedule]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ScheduleName',
+                'ActiveEndDate',
+                'ActiveEndTimeOfDay',
+                'ActiveStartDate',
+                'ActiveStartTimeOfDay',
+                'DateCreated',
+                'FrequencyInterval',
+                'FrequencyRecurrenceFactor',
+                'FrequencyRelativeIntervals',
+                'FrequencySubDayInterval',
+                'FrequencySubDayTypes',
+                'FrequencyTypes',
+                'IsEnabled',
+                'JobCount',
+                'Description',
+                'ScheduleUid'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
     Context "Monthly schedule is correct" {
         It "verify schedule components" {
             $results = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_MonthlyTest)

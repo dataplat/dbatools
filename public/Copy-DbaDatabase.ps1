@@ -160,17 +160,21 @@ function Copy-DbaDatabase {
         Use with caution as this will permanently destroy existing destination databases.
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
-        Returns one object per database migrated, with the following properties:
+        Returns one object per database migrated.
+
+        Default display properties (via Select-DefaultView):
         - DateTime: The timestamp when the migration status was recorded (DbaDateTime)
         - SourceServer: The name of the source SQL Server instance
         - DestinationServer: The name of the destination SQL Server instance
         - Name: The original database name on the source instance
-        - DestinationDatabase: The database name on the destination instance (may differ if -NewName or -Prefix was used)
         - Type: The migration method used - either "Database (BackupRestore)" or "Database (DetachAttach)"
         - Status: The outcome of the migration operation (Successful, Failed, or Skipped)
         - Notes: Additional details about the migration, including reasons for failure or skip conditions
+
+        Additional property available (access via Select-Object *):
+        - DestinationDatabase: The database name on the destination instance (may differ from Name if -NewName or -Prefix was used)
 
     .NOTES
         Tags: Migration, Backup, Restore

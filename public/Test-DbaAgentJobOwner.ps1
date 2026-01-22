@@ -47,11 +47,11 @@ function Test-DbaAgentJobOwner {
         https://dbatools.io/Test-DbaAgentJobOwner
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per SQL Agent job found on the instance. By default, only jobs where the current owner does not match the target owner are returned. When -Job is specified, all matching jobs are returned regardless of ownership status.
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - Server: The name of the SQL Server instance
         - Job: The name of the SQL Agent job
         - JobType: Type of job (Remote for remote jobs, LocalJob, or other job type values)

@@ -64,4 +64,44 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $table3 = "dbatoolssci_table3_$(Get-Random)"
+            $null = $InstanceSingle.Query("CREATE TABLE $table3 (Id int IDENTITY PRIMARY KEY, Value int DEFAULT 0);", $dbname1)
+            $result = Remove-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table3 -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Table',
+                'TableName',
+                'TableSchema',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns IsRemoved as boolean" {
+            $result.IsRemoved | Should -BeOfType [bool]
+        }
+
+        It "Returns Status as string" {
+            $result.Status | Should -BeOfType [string]
+        }
+    }
 }

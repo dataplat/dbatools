@@ -80,4 +80,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.BackupFolder | Should -Be $backupPath
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $db3 = "dbatoolsci_safely_output"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $db3 -EnableException
+            $result = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.InstanceCopy1 -Database $db3 -BackupFolder $backupPath -NoDbccCheckDb -EnableException
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $db3 -EnableException -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "Rationalised Database Restore Script for $db3" -EnableException -ErrorAction SilentlyContinue
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "SqlInstance",
+                "DatabaseName",
+                "JobName",
+                "TestingInstance",
+                "BackupFolder"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

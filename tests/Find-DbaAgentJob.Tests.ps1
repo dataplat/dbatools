@@ -114,4 +114,45 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -HaveCount 2
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Job]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Category',
+                'OwnerLoginName',
+                'CurrentRunStatus',
+                'CurrentRunRetryAttempt',
+                'Enabled',
+                'LastRunDate',
+                'LastRunOutcome',
+                'DateCreated',
+                'HasSchedule',
+                'OperatorToEmail',
+                'CreateDate'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Includes dbatools-added properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'ComputerName'
+            $result.PSObject.Properties.Name | Should -Contain 'InstanceName'
+            $result.PSObject.Properties.Name | Should -Contain 'SqlInstance'
+            $result.PSObject.Properties.Name | Should -Contain 'JobName'
+        }
+    }
 }

@@ -19,6 +19,18 @@ function Get-ObjectNameParts {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        Returns a custom object containing the parsed object name components.
+
+        Properties:
+        - InputValue: The original object name string passed to the function
+        - Database: The database name component (null for one or two-part names)
+        - Schema: The schema name component (null for one-part names)
+        - Name: The object name component
+        - Parsed: Boolean indicating whether the parsing was successful (false for invalid names with 4+ parts)
+
     .EXAMPLE
         Get-ObjectNameParts -ObjectName 'table'
 

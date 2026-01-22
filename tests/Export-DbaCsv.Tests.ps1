@@ -332,6 +332,50 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $filePath = "$testExportPath\output-validation.csv"
+            $splatExport = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "tempdb"
+                Table           = $tableName
+                Path            = $filePath
+                EnableException = $true
+            }
+            $result = Export-DbaCsv @splatExport
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @(
+                'Path',
+                'RowsExported',
+                'FileSizeBytes',
+                'FileSizeMB',
+                'CompressionType',
+                'Elapsed',
+                'RowsPerSecond'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns expected property types" {
+            $result.Path | Should -BeOfType [string]
+            $result.RowsExported | Should -BeOfType [int]
+            $result.FileSizeBytes | Should -BeOfType [long]
+            $result.FileSizeMB | Should -BeOfType [double]
+            $result.CompressionType | Should -BeOfType [string]
+            $result.Elapsed | Should -BeOfType [timespan]
+            $result.RowsPerSecond | Should -BeOfType [double]
+        }
+    }
+
     Context "Compression options (issue #8646)" {
         It "exports with each compression type" {
             $compressionTypes = @("None", "GZip", "Deflate")

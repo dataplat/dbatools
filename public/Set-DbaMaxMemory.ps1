@@ -59,11 +59,11 @@ function Set-DbaMaxMemory {
         https://dbatools.io/Set-DbaMaxMemory
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per SQL Server instance showing the configured memory settings. This object is derived from Test-DbaMaxMemory output with added tracking properties.
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance format)

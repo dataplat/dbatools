@@ -108,4 +108,34 @@ Describe $CommandName -Tag IntegrationTests {
             $accountFilterResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle -Account $mailAccountName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Mail.MailServer]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Account',
+                'Name',
+                'Port',
+                'EnableSsl',
+                'ServerType',
+                'UserName',
+                'UseDefaultCredentials',
+                'NoCredentialChange'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

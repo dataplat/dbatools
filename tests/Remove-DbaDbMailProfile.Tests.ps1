@@ -72,4 +72,50 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbMailProfile -SqlInstance $server) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $profileName = "dbatoolsci_test_$(Get-Random)"
+
+            $null = New-DbaDbMailProfile -SqlInstance $server -Name $profileName
+
+            $result = Remove-DbaDbMailProfile -SqlInstance $server -Profile $profileName -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has IsRemoved property as boolean" {
+            $result.IsRemoved | Should -BeOfType [bool]
+        }
+
+        It "Has Status property indicating success" {
+            $result.Status | Should -Be 'Dropped'
+        }
+
+        It "Has Name property matching removed profile" {
+            $result.Name | Should -Be $profileName
+        }
+    }
 }

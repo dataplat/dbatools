@@ -52,7 +52,48 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $partfun3 = "dbatoolssci_partfun3_$(Get-Random)"
+            $null = $server.Query("CREATE PARTITION FUNCTION $partfun3 (int) AS RANGE LEFT FOR VALUES (1, 100, 1000);", $dbname1)
+            $result = Remove-DbaDbPartitionFunction -SqlInstance $server -Database $dbname1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'PartitionFunctionName',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Has Status property set to 'Dropped' on success" {
+            $result.Status | Should -Be 'Dropped'
+        }
+
+        It "Has IsRemoved property set to true on success" {
+            $result.IsRemoved | Should -Be $true
+        }
+    }
+
     Context "When removing partition functions" {
+        BeforeAll {
+            $partfun4 = "dbatoolssci_partfun4_$(Get-Random)"
+            $null = $server.Query("CREATE PARTITION FUNCTION $partfun4 (int) AS RANGE LEFT FOR VALUES (1, 100, 1000);", $dbname1)
+        }
+
         It "Removes partition function by SqlInstance and Database" {
             Get-DbaDbPartitionFunction -SqlInstance $server -Database $dbname1 | Should -Not -BeNullOrEmpty
             Remove-DbaDbPartitionFunction -SqlInstance $server -Database $dbname1

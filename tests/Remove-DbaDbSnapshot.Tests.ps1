@@ -101,4 +101,49 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Name $db1_snap1 -EnableException
+            $result = Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Snapshot $db1_snap1 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "ComputerName property is populated" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "InstanceName property is populated" {
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+        }
+
+        It "SqlInstance property is populated" {
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Name property contains the snapshot name" {
+            $result.Name | Should -Be $db1_snap1
+        }
+
+        It "Status property indicates success" {
+            $result.Status | Should -Be "Dropped"
+        }
+    }
 }

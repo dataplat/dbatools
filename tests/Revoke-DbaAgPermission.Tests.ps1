@@ -61,4 +61,38 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Success"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login tester | Revoke-DbaAgPermission -Type EndPoint -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Permission",
+                "Type",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns Status as Success when permission is revoked" {
+            $result.Status | Should -Be "Success"
+        }
+
+        It "Returns Type as Revoke" {
+            $result.Type | Should -Be "Revoke"
+        }
+    }
 }

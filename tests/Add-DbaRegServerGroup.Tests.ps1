@@ -73,6 +73,46 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name dbatoolsci-outputtest -Description "Output validation test group"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq dbatoolsci-outputtest | Remove-DbaRegServerGroup
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'DisplayName',
+                'Description',
+                'ServerGroups',
+                'RegisteredServers'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the ServerGroup-specific properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'Id' -Because "Id is a key ServerGroup property"
+            $result.PSObject.Properties.Name | Should -Contain 'Parent' -Because "Parent is a key ServerGroup property"
+        }
+    }
+
     Context "When using pipeline input" {
         It "supports pipeline input" {
             $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Id 1 |

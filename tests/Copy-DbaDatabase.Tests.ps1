@@ -109,6 +109,45 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopyOutput = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $backuprestoredb
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                Force         = $true
+            }
+            $result = Copy-DbaDatabase @splatCopyOutput
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "DestinationDatabase",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "DateTime property is of type DbaDateTime" {
+            $result.DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+    }
+
     Context "Support databases are excluded when AllDatabase selected" {
         It "Support databases should not be migrated" {
             $SupportDbs = @("ReportServer", "ReportServerTempDB", "distribution", "SSISDB")

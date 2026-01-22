@@ -46,13 +46,15 @@ function Stop-DbaExternalProcess {
         https://dbatools.io/Stop-DbaExternalProcess
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
-        Returns one object per successfully stopped external process with the following properties:
+        Returns one object per successfully stopped external process.
+
+        Default display properties:
         - ComputerName: The name of the computer where the process was terminated
-        - ProcessId: The Windows process ID that was stopped (integer)
+        - ProcessId: The Windows process ID that was stopped
         - Name: The process name/executable name of the terminated process
-        - Status: The status of the operation; always "Stopped" when successful
+        - Status: The status of the operation (always "Stopped" when successful)
 
     .EXAMPLE
         PS C:\> Get-DbaExternalProcess -ComputerName SQL01 | Stop-DbaExternalProcess

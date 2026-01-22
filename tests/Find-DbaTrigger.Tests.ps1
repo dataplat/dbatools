@@ -134,4 +134,52 @@ GO
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID, $dbatoolsci_triggerdb.ID
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $dbatoolsci_outputdb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci_outputdb" -EnableException
+            $OutputTrigger = @"
+CREATE TRIGGER dbatoolsci_output_test
+ON DATABASE
+FOR DROP_TABLE
+AS
+    PRINT 'Table dropped'
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_outputdb" -Query $OutputTrigger -EnableException
+            $result = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern "dbatoolsci_output_test" -Database "dbatoolsci_outputdb" -EnableException
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_outputdb" -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "SqlInstance",
+                "TriggerLevel",
+                "Database",
+                "DatabaseId",
+                "Object",
+                "Name",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "TriggerTextFound"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the additional properties available" {
+            $result.PSObject.Properties.Name | Should -Contain "Trigger" -Because "SMO Trigger object should be available"
+            $result.PSObject.Properties.Name | Should -Contain "TriggerFullText" -Because "complete T-SQL definition should be available"
+        }
+    }
 }

@@ -74,6 +74,35 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Path $testFolder -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "SqlInstance",
+                "Database",
+                "Path",
+                "Elapsed",
+                "Result"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the documented additional properties" {
+            $result.PSObject.Properties.Name | Should -Contain "ComputerName"
+            $result.PSObject.Properties.Name | Should -Contain "InstanceName"
+        }
+    }
+
     # See https://github.com/dataplat/dbatools/issues/7038
     Context "Ensure the database name is part of the generated filename" {
         It "Database name is included in the output filename" {

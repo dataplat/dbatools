@@ -78,4 +78,47 @@ Describe $CommandName -Tag IntegrationTests {
             $triggerNames.Count | Should -BeExactly 2
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaInstanceTrigger -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Trigger]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ID',
+                'Name',
+                'AnsiNullsStatus',
+                'AssemblyName',
+                'BodyStartIndex',
+                'ClassName',
+                'CreateDate',
+                'DateLastModified',
+                'DdlTriggerEvents',
+                'ExecutionContext',
+                'ExecutionContextLogin',
+                'ImplementationType',
+                'IsDesignMode',
+                'IsEnabled',
+                'IsEncrypted',
+                'IsSystemObject',
+                'MethodName',
+                'QuotedIdentifierStatus',
+                'State',
+                'TextHeader',
+                'TextMode'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

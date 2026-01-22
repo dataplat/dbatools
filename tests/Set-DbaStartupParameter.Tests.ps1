@@ -76,4 +76,55 @@ Describe $CommandName -Tag IntegrationTests {
             $result.TraceFlags[0] | Should -Be 3226
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatSetStartup = @{
+                SqlInstance     = $TestConfig.instance1
+                TraceFlag       = 3226
+                EnableException = $true
+            }
+            $result = Set-DbaStartupParameter @splatSetStartup
+        }
+
+        It "Has the expected base properties from Get-DbaStartupParameter" {
+            $expectedProps = @(
+                'CommandPromptStart',
+                'DisableMonitoring',
+                'ErrorLog',
+                'IncreasedExtents',
+                'MasterData',
+                'MasterLog',
+                'MemoryToReserve',
+                'MinimalStart',
+                'NoLoggingToWinEvents',
+                'ParameterString',
+                'SingleUser',
+                'SingleUserDetails',
+                'StartAsNamedInstance',
+                'TraceFlags'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has the OriginalStartupParameters property added by Set-DbaStartupParameter" {
+            $result.PSObject.Properties.Name | Should -Contain 'OriginalStartupParameters'
+        }
+
+        It "Has the Notes property when Credential parameter not provided" {
+            $result.PSObject.Properties.Name | Should -Contain 'Notes'
+        }
+
+        It "OriginalStartupParameters contains the parameter string before changes" {
+            $result.OriginalStartupParameters | Should -Not -BeNullOrEmpty
+            $result.OriginalStartupParameters | Should -BeOfType [string]
+        }
+
+        It "Notes property indicates restart is required" {
+            $result.Notes | Should -Match "restart"
+        }
+    }
 }

@@ -50,17 +50,59 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            if (-not $setupSucceeded) {
+                Set-TestInconclusive -Message "Setup failed"
+            }
+            $result = Measure-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Total'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has all documented properties available" {
+            $allProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Total',
+                'TotalCount',
+                'Inactive',
+                'Active',
+                'LogFileName',
+                'LogFileGrowth',
+                'LogFileGrowthType'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $allProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
+
     Context "Command actually works" {
         BeforeAll {
             if (-not $setupSucceeded) {
                 Set-TestInconclusive -Message "Setup failed"
             }
             $testResults = Measure-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
-        }
-
-        It "Should have correct properties" {
-            $expectedProps = "ComputerName", "InstanceName", "SqlInstance", "Database", "Total", "TotalCount", "Inactive", "Active", "LogFileName", "LogFileGrowth", "LogFileGrowthType"
-            ($testResults.PSObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
         It "Should have database name of $testDbName" {

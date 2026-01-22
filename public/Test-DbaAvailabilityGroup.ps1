@@ -65,7 +65,7 @@ function Test-DbaAvailabilityGroup {
         https://dbatools.io/Test-DbaAvailabilityGroup
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Without the -AddDatabase parameter, returns one object per Availability Group tested with the following properties:
         - ComputerName: The name of the computer hosting the SQL Server instance

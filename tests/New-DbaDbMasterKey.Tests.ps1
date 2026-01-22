@@ -55,4 +55,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IsEncryptedByServer | Should -BeTrue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $db3 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -EnableException
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $result = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $db3.Name -SecurePassword $passwd -EnableException
+        }
+
+        AfterAll {
+            $db3 | Remove-DbaDatabase -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.MasterKey]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'CreateDate',
+                'DateLastModified',
+                'IsEncryptedByServer'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

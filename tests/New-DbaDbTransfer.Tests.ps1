@@ -97,6 +97,45 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Transfer]
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                'BatchSize',
+                'BulkCopyTimeOut',
+                'CopyAllObjects',
+                'ObjectList',
+                'DestinationServer',
+                'DestinationDatabase',
+                'DestinationServerConnection',
+                'DestinationLoginSecure',
+                'CopyData',
+                'CopySchema',
+                'Database',
+                'Options'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has DestinationLogin and DestinationPassword when using SQL authentication" {
+            $securePassword = "testpass" | ConvertTo-SecureString -AsPlainText -Force
+            $cred = New-Object PSCredential ("testuser", $securePassword)
+            $resultWithAuth = New-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName -DestinationSqlInstance "fakeserver" -DestinationSqlCredential $cred -EnableException
+            $resultWithAuth.PSObject.Properties.Name | Should -Contain 'DestinationLogin'
+            $resultWithAuth.PSObject.Properties.Name | Should -Contain 'DestinationPassword'
+        }
+    }
+
     Context "Testing connection parameters" {
         It "Should create a transfer object" {
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName

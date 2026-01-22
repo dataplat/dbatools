@@ -101,5 +101,38 @@ Describe $CommandName -Tag IntegrationTests {
                 $buffer.Count -ge 4 | Should -Be $true
             }
         }
+
+        Context "Output Validation" {
+            BeforeAll {
+                $null = New-DbaClientAlias -ServerName sql2016 -Alias dbatoolscialias_output
+                $result = Remove-DbaClientAlias -Alias dbatoolscialias_output -EnableException
+            }
+
+            It "Returns PSCustomObject" {
+                $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+
+            It "Has the expected default display properties" {
+                $expectedProps = @(
+                    "ComputerName",
+                    "Architecture",
+                    "Alias",
+                    "Status"
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+
+            It "Returns one object per registry architecture" {
+                # Should have 2 results: one for 32-bit and one for 64-bit registry
+                $result.Count | Should -BeGreaterOrEqual 1
+            }
+
+            It "Has Status property set to 'Removed'" {
+                $result[0].Status | Should -Be "Removed"
+            }
+        }
     }
 }

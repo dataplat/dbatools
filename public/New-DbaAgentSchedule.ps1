@@ -158,34 +158,31 @@ function New-DbaAgentSchedule {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Agent.JobSchedule
 
-        Returns the newly created SQL Server Agent schedule object. When the -Job parameter is specified, the schedule is attached to the specified jobs before being returned.
+        Returns the newly created SQL Server Agent schedule object via Get-DbaAgentSchedule. When the -Job parameter is specified, the schedule is attached to the specified jobs before being returned.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
-        - Name: The name of the schedule
-        - IsEnabled: Boolean indicating if the schedule is enabled
-        - FrequencyTypes: The frequency type (Once, Daily, Weekly, Monthly, etc.)
-        - NextRunDate: DateTime of the next scheduled execution
-        - LastRunDate: DateTime of the last scheduled execution
-
-        Additional properties available from the SMO JobSchedule object include:
-        - FrequencyInterval: The frequency interval value
-        - FrequencySubDayTypes: The subday frequency type (Once, Hours, Minutes, Seconds)
-        - FrequencySubDayInterval: The subday frequency interval
-        - FrequencyRelativeIntervals: The relative interval for monthly relative schedules
-        - FrequencyRecurrenceFactor: How often the schedule repeats (weeks or months)
+        - ScheduleName: The name of the schedule
+        - ActiveEndDate: The date when the schedule stops being active (year 9999 indicates no end date)
+        - ActiveEndTimeOfDay: The time of day when the schedule stops being active
         - ActiveStartDate: The date when the schedule becomes active
-        - ActiveEndDate: The date when the schedule stops being active
-        - ActiveStartTimeOfDay: The time when the schedule starts each day
-        - ActiveEndTimeOfDay: The time when the schedule stops each day
-        - OwnerLoginName: The login that owns the schedule
-        - DateCreated: DateTime when the schedule was created
-        - ID: Unique identifier for the schedule
-        - ScheduleUid: Unique GUID for the schedule
+        - ActiveStartTimeOfDay: The time of day when the schedule becomes active
+        - DateCreated: Timestamp when the schedule was created in SQL Agent
+        - FrequencyInterval: The frequency interval value
+        - FrequencyRecurrenceFactor: How often the schedule repeats (weeks or months)
+        - FrequencyRelativeIntervals: The relative interval for monthly relative schedules
+        - FrequencySubDayInterval: The subday frequency interval
+        - FrequencySubDayTypes: The subday frequency type (Once, Hour, Minute, Second)
+        - FrequencyTypes: The frequency type (OneTime, Daily, Weekly, Monthly, MonthlyRelative, AutoStart, OnIdle)
+        - IsEnabled: Boolean indicating if the schedule is enabled
+        - JobCount: Number of jobs currently using this schedule
+        - Description: Human-readable description of the schedule's frequency
+        - ScheduleUid: Unique GUID identifier for the schedule
 
-        All properties from the base SMO JobSchedule object are accessible using Select-Object *.
+        Additional properties available (access via Select-Object *):
+        - All standard SMO JobSchedule properties are accessible
 
     .EXAMPLE
         PS C:\> New-DbaAgentSchedule -SqlInstance sql01 -Schedule DailyAt6 -FrequencyType Daily -StartTime "060000" -Force

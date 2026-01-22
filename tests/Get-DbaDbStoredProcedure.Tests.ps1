@@ -131,4 +131,38 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Schema | Should -Be $schemaName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbStoredProcedure -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.StoredProcedure]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'ObjectId',
+                'CreateDate',
+                'DateLastModified',
+                'Name',
+                'ImplementationType',
+                'Startup'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has DatabaseId property added by dbatools" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'DatabaseId'
+        }
+    }
 }

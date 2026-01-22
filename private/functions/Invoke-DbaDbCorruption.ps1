@@ -32,6 +32,19 @@ function Invoke-DbaDbCorruption {
       This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
       Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+      .OUTPUTS
+      System.Management.Automation.PSCustomObject
+
+      Returns a custom object with information about the corrupted database.
+
+      Properties included:
+      - ComputerName: The computer name of the SQL Server instance
+      - InstanceName: The SQL Server instance name
+      - SqlInstance: The full SQL Server instance name
+      - Database: The name of the corrupted database
+      - Table: The name of the corrupted table
+      - Status: The corruption status (always "Corrupted" on success)
+
       .NOTES
       Tags: Corruption, Testing
       Author: Constantine Kokkinos (@mobileck https://constantinekokkinos.com)

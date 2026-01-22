@@ -80,6 +80,51 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Start-DbaXESession -SqlInstance $server -Session $dbatoolsciValid.Name -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.XEvent.Session]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'StartTime',
+                'AutoStart',
+                'State',
+                'Targets',
+                'TargetFile',
+                'Events',
+                'MaxMemory',
+                'MaxEventSize'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the additional NoteProperties added by dbatools" {
+            $expectedNoteProps = @(
+                'Session',
+                'RemoteTargetFile',
+                'Parent',
+                'Store'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedNoteProps) {
+                $actualProps | Should -Contain $prop -Because "NoteProperty '$prop' should be added by dbatools"
+            }
+        }
+    }
+
     Context "Verifying command works" {
         It "starts the system_health session" {
             $systemhealth | Start-DbaXESession

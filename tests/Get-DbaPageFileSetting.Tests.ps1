@@ -29,4 +29,43 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not $env:appveyor) {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPageFileSetting -ComputerName $env:ComputerName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Dataplat.Dbatools.Computer.PageFileSetting]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'AutoPageFile',
+                'FileName',
+                'Status',
+                'SystemManaged',
+                'LastModified',
+                'LastAccessed',
+                'AllocatedBaseSize',
+                'InitialSize',
+                'MaximumSize',
+                'PeakUsage',
+                'CurrentUsage'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Has ComputerName property populated" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has AutoPageFile property with boolean value" {
+            $result.AutoPageFile | Should -BeIn @($true, $false)
+        }
+    }
 }

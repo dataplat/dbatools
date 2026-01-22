@@ -50,4 +50,36 @@ Describe $CommandName -Tag IntegrationTests {
         $results = $endpoint | Start-DbaEndpoint
         $results.EndpointState | Should -Be "Started"
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint "TSQL Default TCP" | Start-DbaEndpoint -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Endpoint]
+        }
+
+        It "Has the expected documented properties" {
+            $expectedProps = @(
+                'Name',
+                'EndpointState',
+                'EndpointType',
+                'ProtocolType',
+                'Owner',
+                'IsAdminEndpoint',
+                'IsSystemObject',
+                'ID',
+                'Parent'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on the Endpoint object"
+            }
+        }
+
+        It "Returns endpoint in Started state" {
+            $result.EndpointState | Should -Be "Started"
+        }
+    }
 }

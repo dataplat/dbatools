@@ -112,4 +112,48 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $job = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob
+            Start-Sleep -Seconds 1
+            $result = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        AfterAll {
+            # Wait for job to complete before cleanup
+            while ($job.CurrentRunStatus -eq "Executing") {
+                Start-Sleep -Seconds 1
+                $job.Refresh()
+            }
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Login',
+                'Command',
+                'PercentComplete',
+                'StartTime',
+                'RunningTime',
+                'EstimatedTimeToGo',
+                'EstimatedCompletionTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the Text property available but not in default view" {
+            $result.PSObject.Properties.Name | Should -Contain 'Text' -Because "Text property should exist for access via Select-Object *"
+        }
+    }
 }

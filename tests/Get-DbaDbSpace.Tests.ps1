@@ -96,4 +96,50 @@ Describe $CommandName -Tag IntegrationTests {
             $excludeResults.Database | Should -Not -Contain $dbName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $dbName -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "FileName",
+                "FileGroup",
+                "PhysicalName",
+                "FileType",
+                "UsedSpace",
+                "FreeSpace",
+                "FileSize",
+                "PercentUsed",
+                "AutoGrowth",
+                "AutoGrowType",
+                "SpaceUntilMaxSize",
+                "AutoGrowthPossible",
+                "UnusableSpace"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns dbasize objects for size properties" {
+            $result[0].UsedSpace | Should -BeOfType [dbasize]
+            $result[0].FreeSpace | Should -BeOfType [dbasize]
+            $result[0].FileSize | Should -BeOfType [dbasize]
+            $result[0].AutoGrowth | Should -BeOfType [dbasize]
+            $result[0].SpaceUntilMaxSize | Should -BeOfType [dbasize]
+            $result[0].AutoGrowthPossible | Should -BeOfType [dbasize]
+            $result[0].UnusableSpace | Should -BeOfType [dbasize]
+        }
+    }
 }

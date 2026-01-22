@@ -98,4 +98,41 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results.Condition -eq "dbatoolsci_Condition" | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPbmPolicy -SqlInstance $TestConfig.InstanceSingle -Policy dbatoolsci_TestPolicy -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Dmf.Policy]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'ID',
+                'Name',
+                'Enabled',
+                'Description',
+                'PolicyCategory',
+                'AutomatedPolicyEvaluationMode',
+                'Condition',
+                'CreateDate',
+                'CreatedBy',
+                'DateModified',
+                'ModifiedBy',
+                'IsSystemObject',
+                'ObjectSet',
+                'RootCondition',
+                'ScheduleUid'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

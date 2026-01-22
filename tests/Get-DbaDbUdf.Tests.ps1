@@ -101,4 +101,35 @@ END;
             { Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master -ExcludeSystemUdf } | Should -Not -Throw
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -Database master -Name dbatoolssci_ISOweek -EnableException
+        }
+
+        It "Returns the documented output type (UserDefinedFunction or UserDefinedAggregate)" {
+            # Can be either Microsoft.SqlServer.Management.Smo.UserDefinedFunction or UserDefinedAggregate
+            $isValidType = ($result -is [Microsoft.SqlServer.Management.Smo.UserDefinedFunction]) -or
+                          ($result -is [Microsoft.SqlServer.Management.Smo.UserDefinedAggregate])
+            $isValidType | Should -BeTrue -Because "output should be UserDefinedFunction or UserDefinedAggregate"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Schema',
+                'CreateDate',
+                'DateLastModified',
+                'Name',
+                'DataType'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

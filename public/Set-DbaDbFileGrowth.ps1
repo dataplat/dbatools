@@ -62,17 +62,20 @@ function Set-DbaDbFileGrowth {
 
         Returns one object per database file that was modified. The output represents the updated file growth configuration after the changes have been applied.
 
-        Properties:
+        Default display properties (via Select-DefaultView from Get-DbaDbFileGrowth):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Database: Name of the database containing the file
-        - MaxSize: Maximum size the file can grow to; displays as dbasize object (KB, MB, GB, TB)
+        - MaxSize: Maximum size the file can grow to - displays as dbasize object (KB, MB, GB, TB)
         - GrowthType: How the file grows - either "Percent" or "kb"
         - Growth: The growth increment value (percentage if GrowthType is Percent, kilobytes if kb)
-        - File: Logical name of the file within SQL Server
-        - FileName: Operating system file path
+        - File: Logical name of the file within SQL Server (aliased from LogicalName)
+        - FileName: Operating system file path (aliased from PhysicalName)
         - State: Current state of the file (ONLINE, OFFLINE, etc.)
+
+        Additional properties available (access via Select-Object *):
+        - All properties from Get-DbaDbFile are accessible through the base object
 
     .EXAMPLE
         PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2016 -Database test  -GrowthType GB -Growth 1

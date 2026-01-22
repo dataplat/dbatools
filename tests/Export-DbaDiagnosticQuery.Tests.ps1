@@ -58,4 +58,55 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-ChildItem $backupPath).Count | Should -BeExactly 1
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatInvoke = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                QueryName       = "Memory Clerk Usage"
+                EnableException = $true
+            }
+            $result = Invoke-DbaDiagnosticQuery @splatInvoke | Export-DbaDiagnosticQuery -Path $backupPath -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has standard FileInfo properties" {
+            $expectedProps = @(
+                'Name',
+                'FullName',
+                'Directory',
+                'Length',
+                'CreationTime',
+                'LastWriteTime'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in FileInfo object"
+            }
+        }
+    }
+
+    Context "Output with -ConvertTo Excel" {
+        BeforeAll {
+            $splatInvoke = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                QueryName       = "Memory Clerk Usage"
+                EnableException = $true
+            }
+            $splatExport = @{
+                Path            = $backupPath
+                ConvertTo       = "Excel"
+                EnableException = $true
+            }
+            $result = Invoke-DbaDiagnosticQuery @splatInvoke | Export-DbaDiagnosticQuery @splatExport
+        }
+
+        It "Returns FileInfo for Excel file with .xlsx extension" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+            $result.Extension | Should -Be ".xlsx"
+        }
+    }
 }

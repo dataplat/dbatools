@@ -170,4 +170,95 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External -ErrorAction SilentlyContinue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+
+            $resourcePoolName = "dbatoolssci_poolOutputTest"
+            $splatNewResourcePool = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                ResourcePool            = $resourcePoolName
+                MaximumCpuPercentage    = 100
+                MaximumMemoryPercentage = 100
+                MaximumIOPSPerVolume    = 100
+                CapCpuPercent           = 100
+            }
+            $null = New-DbaRgResourcePool @splatNewResourcePool
+
+            $result = Set-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName -MaximumCpuPercentage 95 -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type for Internal resource pools" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ResourcePool]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Name',
+                'CapCpuPercentage',
+                'IsSystemObject',
+                'MaximumCpuPercentage',
+                'MaximumIopsPerVolume',
+                'MaximumMemoryPercentage',
+                'MinimumCpuPercentage',
+                'MinimumIopsPerVolume',
+                'MinimumMemoryPercentage',
+                'WorkloadGroups'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        AfterAll {
+            $resourcePoolName = "dbatoolssci_poolOutputTest"
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName -Type Internal -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context "Output with -Type External" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+
+            $resourcePoolName = "dbatoolssci_poolExternal"
+            $splatNewResourcePool = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                ResourcePool            = $resourcePoolName
+                MaximumCpuPercentage    = 100
+                MaximumMemoryPercentage = 100
+                MaximumProcesses        = 10
+                Type                    = "External"
+            }
+            $null = New-DbaRgResourcePool @splatNewResourcePool
+
+            $result = Set-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName -MaximumCpuPercentage 90 -Type External -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns ExternalResourcePool type when -Type External specified" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ExternalResourcePool]
+        }
+
+        It "Includes connection context properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'ComputerName'
+            $result.PSObject.Properties.Name | Should -Contain 'InstanceName'
+            $result.PSObject.Properties.Name | Should -Contain 'SqlInstance'
+        }
+
+        AfterAll {
+            $resourcePoolName = "dbatoolssci_poolExternal"
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName -Type External -ErrorAction SilentlyContinue
+        }
+    }
 }

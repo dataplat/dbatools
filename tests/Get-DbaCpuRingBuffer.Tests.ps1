@@ -30,4 +30,31 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $results.Count | Should -BeGreaterThan 0
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaCpuRingBuffer -SqlInstance $TestConfig.InstanceSingle -CollectionMinutes 60 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "RecordId",
+                "EventTime",
+                "SQLProcessUtilization",
+                "OtherProcessUtilization",
+                "SystemIdle"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

@@ -106,4 +106,37 @@ Describe $CommandName -Tag IntegrationTests {
             $schema.Parent.Name | Should -Be $newDbName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema "TestSchema_OutputValidation" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Schema]
+        }
+
+        It "Has the expected key properties" {
+            $expectedProps = @(
+                'Name',
+                'Owner',
+                'Parent',
+                'CreateDate',
+                'State',
+                'Urn'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on SMO Schema object"
+            }
+        }
+
+        It "Returns Schema with correct Name property" {
+            $result.Name | Should -Be "TestSchema_OutputValidation"
+        }
+
+        It "Returns Schema with Parent database reference" {
+            $result.Parent.Name | Should -Be $newDbName
+        }
+    }
 }

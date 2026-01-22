@@ -128,4 +128,65 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Get-Unique | Should -Be $loginName
         }
     }
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTestDb = "dbatoolscidb_OutputTest_$(Get-Random)"
+            $outputTestLogin = "dbatoolscidb_OutputLogin_$(Get-Random)"
+            $outputTestUser = "dbatoolscidb_OutputUser_$(Get-Random)"
+
+            $password = "MyV3ry`$ecur3P@ssw0rd"
+            $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputTestLogin -Password $securePassword -Force
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
+
+            $result = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Login $outputTestLogin -User $outputTestUser -EnableException
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputTestLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.User]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Name',
+                'LoginType',
+                'Login',
+                'AuthenticationType',
+                'DefaultSchema'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ComputerName, InstanceName, SqlInstance, and Database properties added by dbatools" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $result.Database | Should -Be $outputTestDb
+        }
+
+        It "Has expected values for dbatools-controlled properties" {
+            $result.Name | Should -Be $outputTestUser
+            $result.Login | Should -Be $outputTestLogin
+            $result.DefaultSchema | Should -Be "dbo"
+        }
+    }
 }

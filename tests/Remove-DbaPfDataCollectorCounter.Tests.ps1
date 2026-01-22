@@ -49,4 +49,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Removed"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" |
+                Get-DbaPfDataCollector |
+                Get-DbaPfDataCollectorCounter |
+                Select-Object -First 1 |
+                Remove-DbaPfDataCollectorCounter -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'DataCollectorSet',
+                'DataCollector',
+                'Name',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Status property is 'Removed' on success" {
+            $result.Status | Should -Be "Removed"
+        }
+    }
 }

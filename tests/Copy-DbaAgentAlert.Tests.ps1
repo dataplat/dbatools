@@ -86,6 +86,49 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopyOutput = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Alert       = $alert1
+            }
+            $result = Copy-DbaAgentAlert @splatCopyOutput -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Returns expected Type values" {
+            $result.Type | Should -BeIn @("Agent Alert", "Agent Alert Job Association", "Agent Alert Notification", "Alert Defaults")
+        }
+
+        It "Returns expected Status values" {
+            $result.Status | Should -BeIn @("Successful", "Failed", "Skipped")
+        }
+
+        It "Returns DateTime as DbaDateTime type" {
+            $result[0].DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+    }
+
     Context "When copying alerts" {
         It "Copies the sample alert" {
             $splatCopyAlert = @{

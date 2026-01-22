@@ -74,4 +74,41 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "dbatoolsci test alert NEW"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatModify = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Alert           = "dbatoolsci test alert NEW"
+                Enabled         = $true
+                EnableException = $true
+            }
+            $result = Set-DbaAgentAlert @splatModify
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Alert]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'IsEnabled',
+                'NotificationMessage',
+                'AlertType',
+                'Severity',
+                'DatabaseName',
+                'EventDescriptionKeyword',
+                'LastOccurrenceDate',
+                'OccurrenceCount'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

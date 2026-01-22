@@ -103,4 +103,34 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "No servers added"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = $newServer | Import-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'Name',
+                'ServerName',
+                'Group',
+                'Description',
+                'Source'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ComputerName, InstanceName, and SqlInstance properties" {
+            $result.PSObject.Properties.Name | Should -Contain 'ComputerName'
+            $result.PSObject.Properties.Name | Should -Contain 'InstanceName'
+            $result.PSObject.Properties.Name | Should -Contain 'SqlInstance'
+        }
+    }
 }

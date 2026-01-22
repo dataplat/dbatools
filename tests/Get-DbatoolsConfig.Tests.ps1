@@ -28,4 +28,44 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Value | Should -BeOfType [int]
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbatoolsConfig -FullName sql.connection.timeout
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Dataplat.Dbatools.Configuration.ConfigurationValue]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'Module',
+                'Name',
+                'Value',
+                'Description',
+                'Hidden'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
+
+    Context "Output with -Force" {
+        BeforeAll {
+            $resultWithForce = Get-DbatoolsConfig -Force
+            $resultWithoutForce = Get-DbatoolsConfig
+        }
+
+        It "Returns more results when -Force is specified" {
+            $resultWithForce.Count | Should -BeGreaterThan $resultWithoutForce.Count -Because "-Force should include hidden configuration values"
+        }
+
+        It "Includes hidden configuration values" {
+            $hiddenConfigs = $resultWithForce | Where-Object { $_.Hidden -eq $true }
+            $hiddenConfigs | Should -Not -BeNullOrEmpty -Because "-Force should reveal hidden configurations"
+        }
+    }
 }

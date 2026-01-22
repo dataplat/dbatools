@@ -83,4 +83,85 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $renamedLogin | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $loginName2 = "dbatoolsci_renamelogin_output"
+            $renamedLogin2 = "dbatoolsci_renamelogin_output2"
+            $password = 'MyV3ry$ecur3P@ssw0rd'
+            $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+
+            $splatNewLogin = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Login           = $loginName2
+                Password        = $securePassword
+                EnableException = $true
+            }
+            $null = New-DbaLogin @splatNewLogin
+
+            $splatRename = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Login           = $loginName2
+                NewLogin        = $renamedLogin2
+                EnableException = $true
+            }
+            $result = Rename-DbaLogin @splatRename
+
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $renamedLogin2 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'PreviousLogin',
+                'NewLogin',
+                'PreviousUser',
+                'NewUser',
+                'Status'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output"
+            }
+        }
+
+        It "Has ComputerName populated for login rename" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has InstanceName populated for login rename" {
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has SqlInstance populated for login rename" {
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has PreviousLogin populated for login rename" {
+            $result.PreviousLogin | Should -Be $loginName2
+        }
+
+        It "Has NewLogin populated for login rename" {
+            $result.NewLogin | Should -Be $renamedLogin2
+        }
+
+        It "Has null Database for login rename" {
+            $result.Database | Should -BeNullOrEmpty
+        }
+
+        It "Has null PreviousUser for login rename" {
+            $result.PreviousUser | Should -BeNullOrEmpty
+        }
+
+        It "Has null NewUser for login rename" {
+            $result.NewUser | Should -BeNullOrEmpty
+        }
+    }
 }

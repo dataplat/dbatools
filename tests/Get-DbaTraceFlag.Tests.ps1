@@ -71,4 +71,67 @@ Describe $CommandName -Tag IntegrationTests {
             $results.TraceFlag | Should -Be $safeTraceFlag
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $safeTraceFlag = 3226
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            if (-not ($server.Query("DBCC TRACESTATUS(-1)") | Where-Object TraceFlag -eq $safeTraceFlag)) {
+                $server.Query("DBCC TRACEON($safeTraceFlag,-1) WITH NO_INFOMSGS")
+            }
+            $result = Get-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        AfterAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $server.Query("DBCC TRACEOFF($safeTraceFlag,-1)")
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'TraceFlag',
+                'Global',
+                'Status'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Session property available via Select-Object" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'Session' -Because "Session property should be accessible even though excluded from default view"
+        }
+
+        It "Has ComputerName property" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'ComputerName'
+        }
+
+        It "Has InstanceName property" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'InstanceName'
+        }
+
+        It "Has SqlInstance property" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'SqlInstance'
+        }
+
+        It "Has TraceFlag property" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'TraceFlag'
+        }
+
+        It "Has Global property" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'Global'
+        }
+
+        It "Has Status property" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'Status'
+        }
+    }
 }

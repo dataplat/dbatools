@@ -226,4 +226,61 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
             $dacPackage.Name | Should -Be "LoadTestDB"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $outputDacpac = "$testFolder\output-validation.dacpac"
+            $splatBuildValidation = @{
+                Path           = $sqlSourcePath
+                OutputPath     = $outputDacpac
+                Recursive      = $true
+                DatabaseName   = "ValidationDB"
+                DacVersion     = "1.2.3.4"
+                DacDescription = "Test output validation"
+                WarningAction  = "SilentlyContinue"
+                EnableException = $true
+            }
+            $result = New-DbaDacPackage @splatBuildValidation
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'Path',
+                'DatabaseName',
+                'Version',
+                'FileCount',
+                'ObjectCount',
+                'Duration',
+                'Success'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has all documented output properties" {
+            $allExpectedProps = @(
+                'ComputerName',
+                'Path',
+                'Database',
+                'DatabaseName',
+                'Version',
+                'FileCount',
+                'ObjectCount',
+                'Duration',
+                'Success',
+                'Errors',
+                'Warnings'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $allExpectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present in output object"
+            }
+        }
+    }
 }

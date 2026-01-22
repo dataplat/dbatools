@@ -50,6 +50,26 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        It "Returns no output by default" {
+            $splatNewSchema = @{
+                SqlInstance = $server1Instance
+                Database    = $testDbName
+                Schema      = "TestSchemaOutput1"
+            }
+            $null = New-DbaDbSchema @splatNewSchema
+
+            $splatRemoveSchema = @{
+                SqlInstance = $server1Instance
+                Database    = $testDbName
+                Schema      = "TestSchemaOutput1"
+            }
+            $result = Remove-DbaDbSchema @splatRemoveSchema -Confirm:$false
+
+            $result | Should -BeNullOrEmpty
+        }
+    }
+
     Context "When removing database schemas" {
         It "Should drop the schema successfully" {
             $splatNewSchema = @{

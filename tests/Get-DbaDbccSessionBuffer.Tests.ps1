@@ -43,43 +43,57 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Validate standard output for all databases" {
+    Context "Output Validation - InputBuffer" {
         BeforeAll {
-            $propsInputBuffer = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "SessionId",
-                "EventType",
-                "Parameters",
-                "EventInfo"
+            $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation InputBuffer -All -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'SessionId',
+                'EventType',
+                'Parameters',
+                'EventInfo'
             )
-            $propsOutputBuffer = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "SessionId",
-                "Buffer",
-                "HexBuffer"
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output Validation - OutputBuffer" {
+        BeforeAll {
+            $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation OutputBuffer -All -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'SessionId',
+                'Buffer'
             )
-            $resultInputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation InputBuffer -All
-            $resultOutputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation OutputBuffer -All
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
         }
 
-        It "Returns results for InputBuffer" {
-            $resultInputBuffer.Count | Should -BeGreaterThan 0
-        }
-
-        It "Returns results for OutputBuffer" {
-            $resultOutputBuffer.Count | Should -BeGreaterThan 0
-        }
-
-        It "Should return property: <_> for InputBuffer" -ForEach $propsInputBuffer {
-            $resultInputBuffer[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
-        }
-
-        It "Should return property: <_> for OutputBuffer" -ForEach $propsOutputBuffer {
-            $resultOutputBuffer[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
+        It "Has HexBuffer property available via Select-Object" {
+            $result[0].PSObject.Properties.Name | Should -Contain 'HexBuffer' -Because "property 'HexBuffer' should be available but not in default display"
         }
     }
 

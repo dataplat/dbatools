@@ -317,4 +317,48 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
             (Get-Content $result.OutputFile -Raw).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Type',
+                'Schema',
+                'Name',
+                'FullName',
+                'Script',
+                'OutputFile'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has OutputFile property set to null when -ExportDestination not specified" {
+            $result.OutputFile | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output Validation with -ExportDestination" {
+        BeforeAll {
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -ExportDestination $tempDir -EnableException
+        }
+
+        It "Has OutputFile property populated when -ExportDestination specified" {
+            $result.OutputFile | Should -Not -BeNullOrEmpty
+            $result.OutputFile | Should -BeLike "*$tempDir*"
+        }
+    }
 }

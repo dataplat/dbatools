@@ -132,4 +132,49 @@ select TraceID=@TraceID
             Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Should -Be $null
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $sql = @"
+-- Create a Queue
+declare @rc int
+declare @TraceID int
+declare @maxfilesize bigint
+set @maxfilesize = 5
+exec @rc = sp_trace_create @TraceID output, 0, N'$tracePath\temptrace2', @maxfilesize, NULL
+
+-- Set the events
+declare @on bit
+set @on = 1
+exec sp_trace_setevent @TraceID, 14, 1, @on
+
+-- Set the trace status to start
+exec sp_trace_setstatus @TraceID, 1
+
+-- display trace id for future references
+select TraceID=@TraceID
+"@
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $traceid2 = ($server.Query($sql)).TraceID
+            $result = Remove-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid2 -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
 }

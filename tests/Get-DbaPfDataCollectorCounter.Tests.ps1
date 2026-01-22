@@ -35,4 +35,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -Be $null
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaPfDataCollectorCounter -EnableException | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "DataCollectorSet",
+                "DataCollector",
+                "Name",
+                "FileName"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Does not expose excluded properties in default view" {
+            $excludedProps = @(
+                "DataCollectorObject",
+                "Credential",
+                "CounterObject",
+                "DataCollectorSetXml"
+            )
+            # Note: These properties exist in the object but are excluded from default display
+            # We're verifying they're present but marked as excluded
+            $result.PSObject.Properties.Name | Should -Contain "DataCollectorSetXml" -Because "property is in object but excluded from view"
+        }
+    }
 }

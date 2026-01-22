@@ -51,10 +51,12 @@ function Start-DbaPfDataCollectorSet {
 
         Returns one Performance Monitor Data Collector Set object for each collector set that was successfully started.
 
-        Properties:
+        Default display properties (via Get-DbaPfDataCollectorSet):
         - ComputerName: The name of the computer where the Data Collector Set is located
-        - State: The current state of the Data Collector Set (Running, Stopped, etc.)
         - Name: The name of the Data Collector Set
+        - State: The current state of the Data Collector Set (Running, Stopped, etc.)
+
+        Additional properties available (access via Select-Object *):
         - DataCollectorSetObject: The underlying Windows Performance Monitor Data Collector Set COM object
 
         Returns nothing if no collector sets are found matching the specified parameters, if they are already running, if they are disabled, or if the -WhatIf parameter is used.

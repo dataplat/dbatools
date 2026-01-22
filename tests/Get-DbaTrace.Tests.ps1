@@ -66,4 +66,78 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Id.Count -gt 0 | Should -Be $true
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns PSCustomObject" {
+            $result[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Id',
+                'Status',
+                'IsRunning',
+                'Path',
+                'MaxSize',
+                'StopTime',
+                'MaxFiles',
+                'IsRowset',
+                'IsRollover',
+                'IsShutdown',
+                'IsDefault',
+                'BufferCount',
+                'BufferSize',
+                'FilePosition',
+                'ReaderSpid',
+                'StartTime',
+                'LastEventTime',
+                'EventCount',
+                'DroppedEventCount'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+    }
+
+    Context "Output with -Default" {
+        BeforeAll {
+            $result = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Default -EnableException
+        }
+
+        It "Returns only the default trace" {
+            $result.IsDefault | Should -Be $true
+        }
+
+        It "Has the same property structure as standard output" {
+            $result.PSObject.Properties.Name | Should -Contain 'Id'
+            $result.PSObject.Properties.Name | Should -Contain 'Path'
+        }
+    }
+
+    Context "Output with -Id" {
+        BeforeAll {
+            $allTraces = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -EnableException
+            if ($allTraces) {
+                $traceId = $allTraces[0].Id
+                $result = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceId -EnableException
+            }
+        }
+
+        It "Returns only the specified trace ID" {
+            if ($result) {
+                $result.Id | Should -Be $traceId
+            } else {
+                Set-ItResult -Skipped -Because "No traces available for testing"
+            }
+        }
+    }
 }

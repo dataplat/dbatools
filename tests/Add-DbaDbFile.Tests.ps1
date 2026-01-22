@@ -143,4 +143,77 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Parent.Name | Should -Be $fgName
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatAddFile = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FileGroup   = $fgName
+                FileName    = "outputtest_$random"
+            }
+            $result = Add-DbaDbFile @splatAddFile
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DataFile]
+        }
+
+        It "Has the expected dbatools-controlled properties for standard data files" {
+            $expectedProps = @(
+                'Name',
+                'FileName',
+                'Size',
+                'Growth',
+                'GrowthType',
+                'MaxSize',
+                'Parent',
+                'IsPrimaryFile',
+                'IsReadOnly',
+                'IsOffline'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+
+        It "Sets Size, Growth, and MaxSize correctly for standard data files" {
+            $result.Size | Should -Be 131072 -Because "Size should be 128MB (default) * 1024 = 131072KB"
+            $result.Growth | Should -Be 65536 -Because "Growth should be 64MB (default) * 1024 = 65536KB"
+            $result.GrowthType | Should -Be "KB" -Because "GrowthType should be set to KB for standard files"
+            $result.MaxSize | Should -Be -1 -Because "MaxSize should be -1 (unlimited) by default"
+        }
+
+        It "Returns the correct Parent FileGroup object" {
+            $result.Parent.Name | Should -Be $fgName
+            $result.Parent | Should -BeOfType [Microsoft.SqlServer.Management.Smo.FileGroup]
+        }
+    }
+
+    Context "Output Validation for Memory-Optimized FileGroup" {
+        BeforeAll {
+            $splatAddMemFile = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FileGroup   = $fgMemName
+                FileName    = "outputtest_mem_$random"
+            }
+            $result = Add-DbaDbFile @splatAddMemFile
+        }
+
+        It "Returns DataFile type for memory-optimized filegroup" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DataFile]
+        }
+
+        It "Has Name and FileName properties" {
+            $result.Name | Should -Be "outputtest_mem_$random"
+            $result.FileName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns the correct Parent FileGroup with MemoryOptimizedDataFileGroup type" {
+            $result.Parent.Name | Should -Be $fgMemName
+            $result.Parent.FileGroupType | Should -Be MemoryOptimizedDataFileGroup
+        }
+    }
 }

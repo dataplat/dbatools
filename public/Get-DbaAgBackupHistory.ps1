@@ -188,6 +188,7 @@ function Get-DbaAgBackupHistory {
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
+    [OutputType([Dataplat.Dbatools.Database.BackupHistory])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]

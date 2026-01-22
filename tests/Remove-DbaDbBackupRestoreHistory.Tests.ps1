@@ -22,6 +22,14 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+<#
+    Output Validation Tests:
+    No output validation tests are needed for this command because Remove-DbaDbBackupRestoreHistory
+    does not return any objects to the pipeline. It performs cleanup operations (ShouldProcess)
+    that modify MSDB history tables via SMO methods but generates no output.
+#>
+
 <#
     Integration test are custom to the command you are writing for.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests

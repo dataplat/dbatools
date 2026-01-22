@@ -186,4 +186,40 @@ Describe $CommandName -Tag IntegrationTests {
             $excludePasswordResults | Should -Not -Match "ReallyT3rrible!"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $outputFilePath = "$backupPath\output-validation.sql"
+            $splatExport = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Identity        = $captainCredIdentity
+                FilePath        = $outputFilePath
+                EnableException = $true
+            }
+            $result = Export-DbaCredential @splatExport
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $expectedProps = @(
+                'FullName',
+                'Name',
+                'Length',
+                'LastWriteTime',
+                'Directory'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Returns a valid file path" {
+            $result.FullName | Should -Be $outputFilePath
+            Test-Path -Path $result.FullName | Should -Be $true
+        }
+    }
 }

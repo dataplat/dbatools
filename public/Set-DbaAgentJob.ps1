@@ -128,15 +128,16 @@ function Set-DbaAgentJob {
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The name of the SQL Server Agent job
-        - Enabled: Boolean indicating if the job is enabled for execution
-        - Description: Description of the job's purpose
-        - Owner: SQL Server login that owns the job
         - Category: The job category name for organizational grouping
+        - OwnerLoginName: SQL Server login that owns the job
         - CurrentRunStatus: Current execution status of the job (Idle, Running, Succeeded, Failed, etc.)
+        - CurrentRunRetryAttempt: Number of retry attempts for the current run
+        - Enabled: Boolean indicating if the job is enabled for execution
         - LastRunDate: DateTime of the most recent job execution attempt
         - LastRunOutcome: Outcome of the last execution (Succeeded, Failed, Retry, Cancelled)
-        - NextRunDate: DateTime when the job is scheduled to run next
-        - EventLogLevel: Setting for Windows event log notifications (Never, OnSuccess, OnFailure, Always)
+        - HasSchedule: Boolean indicating if the job has at least one schedule assigned
+        - OperatorToEmail: Name of the operator to receive email notifications
+        - CreateDate: DateTime when the job was created
 
         Additional properties available (from SMO Job object):
         - ID: Unique identifier for the job

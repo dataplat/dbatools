@@ -80,4 +80,47 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $categoryName) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create test category that we can remove
+            $testOutputCategory = "dbatoolsci_output_test_$(Get-Random)"
+            $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testOutputCategory
+
+            # Remove the category to get output
+            $result = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testOutputCategory
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Name',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has IsRemoved set to true for successful removal" {
+            $result.IsRemoved | Should -Be $true
+        }
+
+        It "Has Status set to 'Dropped' for successful removal" {
+            $result.Status | Should -Be "Dropped"
+        }
+    }
 }

@@ -89,5 +89,32 @@ Describe $CommandName -Tag UnitTests {
                 { Get-DbaReplPublication -SqlInstance MockServerName -Type NotAPubType } | Should -Throw
             }
         }
+
+        Context "Output Validation" {
+            BeforeAll {
+                $result = Get-DbaReplPublication -SqlInstance MockServerName
+            }
+
+            It "Returns the documented output type" {
+                $result | Should -BeOfType [Microsoft.SqlServer.Replication.Publication]
+            }
+
+            It "Has the expected default display properties" {
+                $expectedProps = @(
+                    'ComputerName',
+                    'InstanceName',
+                    'SQLInstance',
+                    'DatabaseName',
+                    'Name',
+                    'Type',
+                    'Articles',
+                    'Subscriptions'
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+        }
     }
 }

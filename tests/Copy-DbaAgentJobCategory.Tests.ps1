@@ -96,4 +96,48 @@ Describe $CommandName -Tag IntegrationTests {
             $secondCopyResults.Status | Should -Be "Skipped"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatCopyCategory = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                JobCategory = "dbatoolsci test category"
+                Force       = $true
+            }
+            $result = Copy-DbaAgentJobCategory @splatCopyCategory
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the MigrationObject type name" {
+            $result.PSObject.TypeNames | Should -Contain "MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has Type property set to Agent Job Category" {
+            $result.Type | Should -Be "Agent Job Category"
+        }
+
+        It "Has DateTime property of type DbaDateTime" {
+            $result.DateTime | Should -BeOfType [Dataplat.Dbatools.Utility.DbaDateTime]
+        }
+    }
 }

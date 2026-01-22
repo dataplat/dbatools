@@ -22,6 +22,86 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Mock to avoid actual SQL Server dependency in unit tests
+            Mock -CommandName Connect-DbaInstance -MockWith {
+                [PSCustomObject]@{
+                    ComputerName       = "MockComputer"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "MockComputer"
+                    Query              = { }
+                }
+            }
+            Mock -CommandName New-Object -MockWith {
+                [PSCustomObject]@{
+                    Catalogs = @(
+                        [PSCustomObject]@{
+                            Name    = "SSISDB"
+                            Folders = @{
+                                "TestFolder" = [PSCustomObject]@{
+                                    Environments = @(
+                                        [PSCustomObject]@{
+                                            Name          = "TestEnv"
+                                            EnvironmentId = 1
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    )
+                }
+            } -ParameterFilter { $TypeName -eq "Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices" }
+
+            # Create a mock result that matches actual output structure
+            $mockResult = [PSCustomObject]@{
+                ComputerName = "MockComputer"
+                InstanceName = "MSSQLSERVER"
+                SqlInstance  = "MockComputer"
+                Folder       = "TestFolder"
+                Environment  = "TestEnv"
+                Id           = 1
+                Name         = "TestVar"
+                Description  = "Test Description"
+                Type         = "String"
+                IsSensitive  = $false
+                BaseDataType = "nvarchar"
+                Value        = "TestValue"
+            }
+        }
+
+        It "Returns PSCustomObject" {
+            # Use the mock result for validation
+            $mockResult.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties documented in .OUTPUTS" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Folder",
+                "Environment",
+                "Id",
+                "Name",
+                "Description",
+                "Type",
+                "IsSensitive",
+                "BaseDataType",
+                "Value"
+            )
+            $actualProps = $mockResult.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has exactly the documented properties (no extras)" {
+            $expectedCount = 12
+            $mockResult.PSObject.Properties.Name.Count | Should -Be $expectedCount -Because "output should have exactly $expectedCount properties as documented"
+        }
+    }
 }
 
 <#

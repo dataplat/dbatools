@@ -112,18 +112,16 @@ function New-DbaAgentJob {
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The name of the SQL Server Agent job
-        - Enabled: Boolean indicating if the job is enabled
-        - Description: The description of the job
-        - Owner: The owner login name of the job
-        - CreateDate: DateTime when the job was created
-        - LastModifiedDate: DateTime when the job was last modified
         - Category: The category assigned to the job
-        - EventLogLevel: Notification level for Windows Application event log (Never, OnSuccess, OnFailure, Always)
-        - EmailLevel: Notification level for e-mail notifications (Never, OnSuccess, OnFailure, Always)
-        - NetSendLevel: Notification level for network message notifications (Never, OnSuccess, OnFailure, Always)
-        - PageLevel: Notification level for pager notifications (Never, OnSuccess, OnFailure, Always)
-        - DeleteLevel: Automatic deletion level (Never, OnSuccess, OnFailure, Always)
-        - IsScheduled: Boolean indicating if the job has schedules attached
+        - OwnerLoginName: The owner login name of the job
+        - CurrentRunStatus: Current execution status of the job (Idle, Executing, etc.)
+        - CurrentRunRetryAttempt: Number of retry attempts for the current execution
+        - Enabled: Boolean indicating if the job is enabled
+        - LastRunDate: DateTime of the last job execution
+        - LastRunOutcome: Outcome of the last execution (Succeeded, Failed, etc.)
+        - HasSchedule: Boolean indicating if the job has schedules attached
+        - OperatorToEmail: Email address of the operator to notify on completion
+        - CreateDate: DateTime when the job was created
 
         All properties from the base SMO Job object are accessible using Select-Object *.
 

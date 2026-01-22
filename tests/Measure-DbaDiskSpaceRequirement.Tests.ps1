@@ -64,4 +64,55 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].FileLocation | Should -Be "Only on Source"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatMeasure = @{
+                Source              = $TestConfig.InstanceCopy1
+                Destination         = $TestConfig.InstanceCopy2
+                Database            = "master"
+                DestinationDatabase = "Dbatoolsci_DestinationDB"
+                EnableException     = $true
+            }
+            $result = Measure-DbaDiskSpaceRequirement @splatMeasure
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'SourceSqlInstance',
+                'SourceDatabase',
+                'SourceLogicalName',
+                'SourceFileName',
+                'SourceFileSize',
+                'DestinationComputerName',
+                'DestinationSqlInstance',
+                'DestinationDatabase',
+                'DestinationFileName',
+                'DestinationFileSize',
+                'DifferenceSize',
+                'MountPoint',
+                'FileLocation'
+            )
+            $actualProps = $result[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has hidden properties available via Select-Object" {
+            $hiddenProps = @(
+                'SourceComputerName',
+                'SourceInstance',
+                'DestinationInstance'
+            )
+            $allProps = ($result[0] | Select-Object *).PSObject.Properties.Name
+            foreach ($prop in $hiddenProps) {
+                $allProps | Should -Contain $prop -Because "hidden property '$prop' should be accessible"
+            }
+        }
+    }
 }

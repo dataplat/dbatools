@@ -182,5 +182,70 @@ Describe $CommandName -Tag UnitTests {
                 $WarnVar | Should -BeLike "*The memory calculation may be inaccurate as the following SQL components have also been detected*"
             }
         }
+
+        Context "Output Validation" {
+            BeforeAll {
+                Mock Connect-DbaInstance -MockWith {
+                    $obj = [PSCustomObject]@{
+                        Name                 = "TestServer"
+                        NetName              = "TestServer"
+                        ComputerName         = "TestServer"
+                        InstanceName         = "MSSQLSERVER"
+                        DomainInstanceName   = "TestServer"
+                        ServiceName          = "MSSQLSERVER"
+                        VersionMajor         = 14
+                        ConnectionContext    = New-Object PSObject
+                    }
+                    Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value "test=connection"
+                    $obj.PSObject.TypeNames.Clear()
+                    $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                    return $obj
+                }
+
+                Mock Get-DbaMaxMemory -MockWith {
+                    [PSCustomObject]@{
+                        ComputerName = "TestServer"
+                        InstanceName = "MSSQLSERVER"
+                        SqlInstance  = "TestServer"
+                        Total        = 16384
+                        MaxValue     = 12288
+                    }
+                }
+
+                Mock Get-DbaService -MockWith {
+                    [PSCustomObject]@{
+                        InstanceName = "MSSQLSERVER"
+                        State        = "Running"
+                        ServiceType  = "Engine"
+                    }
+                }
+
+                $result = Test-DbaMaxMemory -SqlInstance "TestServer" -EnableException
+            }
+
+            It "Returns PSCustomObject" {
+                $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+            }
+
+            It "Has the expected default display properties" {
+                $expectedProps = @(
+                    'ComputerName',
+                    'InstanceName',
+                    'SqlInstance',
+                    'InstanceCount',
+                    'Total',
+                    'MaxValue',
+                    'RecommendedValue'
+                )
+                $actualProps = $result.PSObject.Properties.Name
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+                }
+            }
+
+            It "Has the Server property available" {
+                $result.PSObject.Properties.Name | Should -Contain 'Server' -Because "Server property allows piping to other commands"
+            }
+        }
     }
 }

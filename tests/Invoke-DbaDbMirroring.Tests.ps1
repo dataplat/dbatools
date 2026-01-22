@@ -73,4 +73,39 @@ Describe $CommandName -Tag IntegrationTests {
         $WarnVar | Should -BeNullOrEmpty
         $results.Status | Should -Be "Success"
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $splatMirroring = @{
+                Primary         = $TestConfig.InstanceCopy1
+                Mirror          = $TestConfig.InstanceCopy2
+                Database        = $dbName
+                Force           = $true
+                SharedPath      = $TestConfig.Temp
+                EnableException = $true
+            }
+            $result = Invoke-DbaDbMirroring @splatMirroring
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties without witness" {
+            $expectedProps = @(
+                "Primary",
+                "Mirror",
+                "Database",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has ServiceAccount property" {
+            $result.PSObject.Properties.Name | Should -Contain "ServiceAccount"
+        }
+    }
 }

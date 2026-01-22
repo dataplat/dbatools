@@ -25,18 +25,6 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $expectedProps = @(
-            "ComputerName",
-            "InstanceName",
-            "RecordSet",
-            "RowId",
-            "RecordSetId",
-            "Type",
-            "Name",
-            "Value",
-            "ValueType"
-        )
-
         $memoryStatusResults = Get-DbaDbccMemoryStatus -SqlInstance $TestConfig.InstanceSingle
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -52,11 +40,27 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Validate standard output" {
-        It "Should return all expected properties" {
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $memoryStatusResults[0].PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'RecordSet',
+                'RowId',
+                'RecordSetId',
+                'Type',
+                'Name',
+                'Value',
+                'ValueType'
+            )
+            $actualProps = $memoryStatusResults[0].PSObject.Properties.Name
             foreach ($prop in $expectedProps) {
-                $p = $memoryStatusResults[0].PSObject.Properties[$prop]
-                $p.Name | Should -Be $prop
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
             }
         }
     }

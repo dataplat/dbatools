@@ -23,6 +23,31 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        It "Returns PSCustomObject" {
+            $command = Get-Command $CommandName
+            $command.OutputType.Name | Should -Contain 'PSCustomObject'
+        }
+
+        It "Has the expected output properties documented" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'RecoverResult',
+                'Comment'
+            )
+            $help = Get-Help $CommandName
+            $outputSection = $help.returnValues.returnValue | Where-Object { $_.type.name -eq 'PSCustomObject' }
+            $outputSection | Should -Not -BeNullOrEmpty -Because "command should document PSCustomObject output type"
+
+            foreach ($prop in $expectedProps) {
+                $help.Text | Should -Match $prop -Because "property '$prop' should be documented in help"
+            }
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

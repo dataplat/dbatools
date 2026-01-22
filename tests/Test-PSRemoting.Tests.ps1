@@ -22,6 +22,20 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Test-PSRemoting -ComputerName localhost -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [System.Boolean]
+        }
+
+        It "Returns a single boolean value" {
+            $result | Should -BeIn @($true, $false)
+        }
+    }
+
     Context "Returns a boolean with no exceptions" {
         BeforeAll {
             $failResult = Test-PSRemoting -ComputerName "funny" 3>$null

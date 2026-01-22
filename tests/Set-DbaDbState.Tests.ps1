@@ -241,4 +241,52 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $db1 = "dbatoolsci_outputvalidation"
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1 | Remove-DbaDatabase
+            $server.Query("CREATE DATABASE $db1")
+        }
+        AfterAll {
+            $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Online -ReadWrite -MultiUser -Force
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1
+        }
+
+        It "Returns PSCustomObject" {
+            $result = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1 -ReadOnly -Force -EnableException
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $result = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1 -ReadWrite -Force -EnableException
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "RW",
+                "Status",
+                "Access",
+                "Notes"
+            )
+            $actualProps = $result.PSObject.Properties.Name | Where-Object { $_ -ne "Database" }
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Includes Database property for pipeline scenarios" {
+            $result = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Online -Force -EnableException
+            $result.PSObject.Properties.Name | Should -Contain "Database" -Because "Database property should be available for pipeline chaining"
+        }
+
+        It "Has ComputerName, InstanceName, and SqlInstance properties" {
+            $result = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1 -MultiUser -Force -EnableException
+            $result.PSObject.Properties.Name | Should -Contain "ComputerName"
+            $result.PSObject.Properties.Name | Should -Contain "InstanceName"
+            $result.PSObject.Properties.Name | Should -Contain "SqlInstance"
+        }
+    }
 }

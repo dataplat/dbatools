@@ -64,6 +64,43 @@ Describe $CommandName -Tag IntegrationTests {
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+    Context "Output Validation" {
+        BeforeAll {
+            $result = New-DbaSqlParameter -ParameterName "@TestParam" -SqlDbType NVarChar -Size 100 -Value "TestValue" -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.Data.SqlClient.SqlParameter]
+        }
+
+        It "Has the expected properties available" {
+            $expectedProps = @(
+                'CompareInfo',
+                'DbType',
+                'Direction',
+                'ForceColumnEncryption',
+                'IsNullable',
+                'LocaleId',
+                'Offset',
+                'ParameterName',
+                'Precision',
+                'Scale',
+                'Size',
+                'SourceColumn',
+                'SourceColumnNullMapping',
+                'SourceVersion',
+                'SqlDbType',
+                'SqlValue',
+                'TypeName',
+                'UdtTypeName',
+                'Value'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be available on SqlParameter"
+            }
+        }
+    }
     It "creates a usable sql parameter" {
         $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
         Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output

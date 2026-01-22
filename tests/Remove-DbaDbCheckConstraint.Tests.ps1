@@ -53,6 +53,52 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $dbname3 = "dbatoolsci_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $server -Name $dbname3
+            $chkc3 = "dbatoolssci_chkc3_$(Get-Random)"
+            $null = $server.Query("CREATE TABLE dbo.checkconstraint3(col int CONSTRAINT $chkc3 CHECK(col > 0));", $dbname3)
+            $result = Remove-DbaDbCheckConstraint -SqlInstance $server -Database $dbname3 -EnableException
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname3
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'Database',
+                'Name',
+                'Status',
+                'IsRemoved'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has Status property set to 'Dropped' on success" {
+            $result.Status | Should -Be 'Dropped'
+        }
+
+        It "Has IsRemoved property set to true on success" {
+            $result.IsRemoved | Should -Be $true
+        }
+    }
+
     Context "commands work as expected" {
         It "removes an check constraint" {
             Get-DbaDbCheckConstraint -SqlInstance $server -Database $dbname1 | Should -Not -BeNullOrEmpty

@@ -98,4 +98,56 @@ Describe $CommandName -Tag IntegrationTests {
             $checkDbResult | Should -Not -Be "Success"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            # Recreate clean database for output validation
+            $dbNameOutputTest = "dbatoolsci_InvokeDbaDatabaseCorruptionOutput"
+            $null = $serverConnection.Query("Create Database [$dbNameOutputTest]")
+            $null = $serverConnection.Query("
+                USE [$dbNameOutputTest];
+                CREATE TABLE dbo.OutputTest (id int);
+                INSERT dbo.OutputTest
+                SELECT top 100 1
+                FROM sys.objects")
+            
+            $result = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameOutputTest -Table "OutputTest" -Confirm:$false -EnableException
+        }
+
+        AfterAll {
+            # Cleanup output test database
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbNameOutputTest -Confirm:$false
+        }
+
+        It "Returns the documented output type" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Table",
+                "Status"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in output"
+            }
+        }
+
+        It "Has Status property set to Corrupted" {
+            $result.Status | Should -Be "Corrupted"
+        }
+
+        It "Has Database property set correctly" {
+            $result.Database | Should -Be $dbNameOutputTest
+        }
+
+        It "Has Table property set correctly" {
+            $result.Table | Should -Be "OutputTest"
+        }
+    }
 }

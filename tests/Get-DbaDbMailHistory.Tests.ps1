@@ -143,4 +143,52 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SendRequestDate | Should -BeGreaterThan "2018-01-01"
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle -EnableException | Where-Object { $PSItem.Subject -eq "Test Job" } | Select-Object -First 1
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Profile",
+                "Recipients",
+                "CopyRecipients",
+                "BlindCopyRecipients",
+                "Subject",
+                "Importance",
+                "Sensitivity",
+                "FileAttachments",
+                "AttachmentEncoding",
+                "SendRequestDate",
+                "SendRequestUser",
+                "SentStatus",
+                "SentDate"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has additional properties available via Select-Object *" {
+            $additionalProps = @(
+                "MailItemId",
+                "ProfileId",
+                "Body",
+                "BodyFormat"
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+    }
 }

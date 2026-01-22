@@ -82,4 +82,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results.LocalReplicaRole | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $result = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName -EnableException
+        }
+
+        It "Returns the documented output type" {
+            $result | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityDatabase]
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'LocalReplicaRole',
+                'Name',
+                'SynchronizationState',
+                'IsFailoverReady',
+                'IsJoined',
+                'IsSuspended'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has dbatools-added properties" {
+            $dbatoolsProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'AvailabilityGroup',
+                'LocalReplicaRole'
+            )
+            foreach ($prop in $dbatoolsProps) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "dbatools adds '$prop' property"
+            }
+        }
+    }
 }

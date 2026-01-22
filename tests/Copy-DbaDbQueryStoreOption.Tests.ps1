@@ -117,4 +117,78 @@ Describe $CommandName -Tag IntegrationTests {
             $db4QSOptions.DataFlushIntervalInSeconds | Should -Be $originalQSOptionValue
         }
     }
+
+    Context "Output Validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $db1Name = "dbatoolsci_outputtest1_$(Get-Random)"
+            $db1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db1Name
+
+            $db2Name = "dbatoolsci_outputtest2_$(Get-Random)"
+            $db2 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db2Name
+
+            $splatSetOptions = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Database      = $db1Name
+                FlushInterval = 120
+                State         = "ReadWrite"
+            }
+            $null = Set-DbaDbQueryStoreOption @splatSetOptions
+
+            $splatCopyOptions = @{
+                Source              = $TestConfig.InstanceSingle
+                SourceDatabase      = $db1Name
+                Destination         = $TestConfig.InstanceSingle
+                DestinationDatabase = $db2Name
+            }
+            $result = Copy-DbaDbQueryStoreOption @splatCopyOptions
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db1Name, $db2Name
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns PSCustomObject" {
+            $result.PSObject.TypeNames | Should -Contain 'System.Management.Automation.PSCustomObject'
+        }
+
+        It "Has the expected default display properties" {
+            $expectedProps = @(
+                'DateTime',
+                'SourceServer',
+                'DestinationServer',
+                'Name',
+                'Type',
+                'Status',
+                'Notes'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be in default display"
+            }
+        }
+
+        It "Has the additional properties available via Select-Object *" {
+            $additionalProps = @(
+                'SourceDatabase',
+                'SourceDatabaseID',
+                'DestinationDatabaseID'
+            )
+            $actualProps = $result.PSObject.Properties.Name
+            foreach ($prop in $additionalProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be accessible"
+            }
+        }
+
+        It "Returns expected property values for Type" {
+            $result.Type | Should -Be "QueryStore Configuration"
+        }
+    }
 }
