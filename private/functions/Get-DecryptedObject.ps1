@@ -107,7 +107,7 @@ function Get-DecryptedObject {
     } else {
         $instance = $server.InstanceName
         if (-not $server.IsClustered) {
-            $connString = "Server=ADMIN:$fullComputerName\$instance;Trusted_Connection=True;Pooling=false"
+            $connString = "Server=ADMIN:127.0.0.1\$instance;Trusted_Connection=True;Pooling=false"
         } else {
             $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
 
