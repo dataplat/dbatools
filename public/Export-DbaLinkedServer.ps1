@@ -206,7 +206,7 @@ function Export-DbaLinkedServer {
             }
 
             # Disconnect DAC connection if it was opened
-            if (-not $ExcludePassword -and $server) {
+            if (-not $ExcludePassword) {
                 $null = $server | Disconnect-DbaInstance -WhatIf:$false
             }
         }
