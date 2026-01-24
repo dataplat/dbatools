@@ -2386,13 +2386,13 @@
             "KBList": "2799883"
         },
         {
+            "CU": "CU10",
             "Version": "10.0.5835",
             "KBList": "2814783"
         },
         {
-            "CU": "CU10",
             "Version": "10.0.5840",
-            "KBList": "2834048"
+            "Retired": true
         },
         {
             "CU": "CU11",
@@ -2652,8 +2652,12 @@
             "KBList": "2812683"
         },
         {
-            "CU": "CU12",
             "Version": "10.50.2874",
+            "Retired": true
+        },
+        {
+            "CU": "CU12",
+            "Version": "10.50.2875",
             "KBList": "2828727"
         },
         {
@@ -2710,7 +2714,8 @@
         },
         {
             "Version": "10.50.4279",
-            "KBList": "2830140"
+            "KBList": "2830140",
+            "Retired": true
         },
         {
             "CU": "CU6",
@@ -4600,7 +4605,8 @@
         {
             "CU": "CU2",
             "Version": "15.0.4013",
-            "KBList": "4536075"
+            "KBList": "4536075",
+            "Retired": true
         },
         {
             "CU": "CU3",
@@ -5035,7 +5041,8 @@
         {
             "CU": "CU23",
             "Version": "16.0.4235",
-            "KBList": "5074819"
+            "KBList": "5074819",
+            "Retired": true
         },
         {
             "Version": "17.0.100",
@@ -5061,7 +5068,8 @@
         {
             "CU": "CU1",
             "Version": "17.0.4005",
-            "KBList": "5074901"
+            "KBList": "5074901",
+            "Retired": true
         }
     ]
 }
