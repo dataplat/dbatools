@@ -122,7 +122,12 @@ function Export-DbaLinkedServer {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                if (-not $ExcludePassword) {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                } else {
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                }
                 $InputObject += $server.LinkedServers
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -198,6 +203,11 @@ function Export-DbaLinkedServer {
                 }
             } else {
                 $sql
+            }
+
+            # Disconnect DAC connection if it was opened
+            if (-not $ExcludePassword) {
+                $null = $server | Disconnect-DbaInstance -WhatIf:$false
             }
         }
     }

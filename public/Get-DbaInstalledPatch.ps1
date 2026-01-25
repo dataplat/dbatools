@@ -72,7 +72,7 @@ function Get-DbaInstalledPatch {
         foreach ($computer in $ComputerName.ComputerName) {
             try {
                 $patches = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock {
-                    Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall | Get-ItemProperty | Where-Object { $_.DisplayName -like "Hotfix*SQL*" -or $_.DisplayName -like "Service Pack*SQL*" } | Sort-Object InstallDate
+                    Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall | Get-ItemProperty | Where-Object { $_.DisplayName -like "Hotfix*SQL*" -or $_.DisplayName -like "Service Pack*SQL*" -or $_.DisplayName -like "GDR*SQL*" } | Sort-Object InstallDate
                 }
             } catch {
                 Stop-Function -Message "Failed" -Continue -Target $computer -ErrorRecord $_
