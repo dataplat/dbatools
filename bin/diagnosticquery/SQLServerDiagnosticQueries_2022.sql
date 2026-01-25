@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 15, 2026
+-- Last Modified: January 21, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -101,7 +101,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4222.2		CU21 + GDR							11/11/2025		https://support.microsoft.com/en-us/topic/kb5068406-description-of-the-security-update-for-sql-server-2022-cu21-november-11-2025-7403d389-606b-4176-a1d5-b0960fb7dc50
 -- 16.0.4225.2		CU22								11/13/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate22
 -- 16.0.4230.2		CU22 + GDR							1/13/2026		https://support.microsoft.com/en-gb/topic/kb5072936-description-of-the-security-update-for-sql-server-2022-cu22-january-13-2026-c483559a-57d8-4c72-a010-5792bb668dc8
--- 16.0.4235.2		CU 23								1/15/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate23
+-- 16.0.4235.2		CU23								1/15/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate23
+-- Microsoft has temporarily removed CU23 due to an issue with Database Mail
 
 
 -- What's new in SQL Server 2022 (16.x)
