@@ -49,23 +49,23 @@ environment:
   matrix:
     - scenario: SINGLE
       part: 1/3
-      InstanceSingle: sql2019
+      InstanceSingle: sql2022
     - scenario: SINGLE
       part: 2/3
-      InstanceSingle: sql2019
+      InstanceSingle: sql2022
     - scenario: SINGLE
       part: 3/3
-      InstanceSingle: sql2019
+      InstanceSingle: sql2022
     - scenario: MULTI
-      InstanceMulti1: sql2019
+      InstanceMulti1: sql2022
       InstanceMulti2: sql2017
     - scenario: COPY
       InstanceCopy1: sql2017
-      InstanceCopy2: sql2019
+      InstanceCopy2: sql2022
     - scenario: HADR
-      InstanceHadr: sql2019
+      InstanceHadr: sql2022
     - scenario: RESTART
-      InstanceRestart: sql2019
+      InstanceRestart: sql2022
     - scenario: default
     - scenario: 2008R2SP2Express
       part: 1/2
