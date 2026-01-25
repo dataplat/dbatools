@@ -145,7 +145,7 @@ function Install-FromGitHubRelease {
             # Check if manifest exists in root
             $rootManifest = Join-Path $extractPath "dbatools.library.psd1"
             if (Test-Path $rootManifest) {
-                Write-Log "Found manifest in root, using extract path as module directory" -Level 'Warning'
+                Write-Log "Found manifest in root, using extract path as module directory"
                 $moduleDir = Get-Item $extractPath
             } else {
                 Write-Log "No manifest found in root either. Available items:" -Level 'Warning'
@@ -155,7 +155,7 @@ function Install-FromGitHubRelease {
                 throw "Could not locate dbatools.library module in extracted archive"
             }
         } else {
-            Write-Log "Found dbatools.library directory: $($moduleDir.FullName)" -Level 'Warning'
+            Write-Log "Found dbatools.library directory: $($moduleDir.FullName)"
         }
 
         # Verify manifest exists in module directory
@@ -164,7 +164,7 @@ function Install-FromGitHubRelease {
             Write-Log "ERROR: No dbatools.library.psd1 manifest found in module directory!" -Level 'Error'
             throw "Module manifest not found in $($moduleDir.FullName)"
         } else {
-            Write-Log "Manifest found at: $manifestInModuleDir" -Level 'Warning'
+            Write-Log "Manifest found at: $manifestInModuleDir"
         }
 
         # Determine installation paths based on scope
@@ -190,9 +190,9 @@ function Install-FromGitHubRelease {
             }
         }
 
-        Write-Log "Will install to the following paths:" -Level 'Warning'
+        Write-Log "Will install to the following paths:"
         foreach ($path in $installBasePaths) {
-            Write-Log "  $path" -Level 'Warning'
+            Write-Log "  $path"
         }
 
         $success = $false
@@ -215,30 +215,30 @@ function Install-FromGitHubRelease {
             }
 
             # Copy module files
-            Write-Log "Copying from: $($moduleDir.FullName)" -Level 'Warning'
-            Write-Log "Copying to: $finalInstallPath" -Level 'Warning'
+            Write-Log "Copying from: $($moduleDir.FullName)"
+            Write-Log "Copying to: $finalInstallPath"
 
             # Ensure parent directory exists
             $parentDir = Split-Path $finalInstallPath -Parent
             if (-not (Test-Path $parentDir)) {
-                Write-Log "Creating parent directory: $parentDir" -Level 'Warning'
+                Write-Log "Creating parent directory: $parentDir"
                 New-Item -Path $parentDir -ItemType Directory -Force | Out-Null
             }
 
             Copy-Item -Path $moduleDir.FullName -Destination $finalInstallPath -Recurse -Force
 
             # Diagnostic: Verify copy results
-            Write-Log "Verifying copy operation..." -Level 'Warning'
+            Write-Log "Verifying copy operation..."
             if (Test-Path $finalInstallPath) {
-                Write-Log "Final installation contents:" -Level 'Warning'
+                Write-Log "Final installation contents:"
 
                 # Verify manifest exists in final location
                 $finalManifest = Join-Path $finalInstallPath "dbatools.library.psd1"
                 if (Test-Path $finalManifest) {
-                    Write-Log "Manifest confirmed at final location: $finalManifest" -Level 'Warning'
+                    Write-Log "Manifest confirmed at final location: $finalManifest"
                     try {
                         $manifestTest = Test-ModuleManifest -Path $finalManifest -ErrorAction Stop
-                        Write-Log "Manifest validation successful, version: $($manifestTest.Version)" -Level 'Warning'
+                        Write-Log "Manifest validation successful, version: $($manifestTest.Version)"
                         $success = $true
                     } catch {
                         Write-Log "Manifest validation failed: $($_.Exception.Message)" -Level 'Error'
@@ -347,49 +347,49 @@ try {
     Write-Log "Verifying installation..."
 
     # Diagnostic: Check PSModulePath before verification
-    Write-Log "Current PSModulePath before verification:" -Level 'Warning'
+    Write-Log "Current PSModulePath before verification:"
     $env:PSModulePath -split [System.IO.Path]::PathSeparator | ForEach-Object {
-        Write-Log "  $_" -Level 'Warning'
+        Write-Log "  $_"
     }
 
     # Diagnostic: Force refresh module cache
-    Write-Log "Refreshing module cache..." -Level 'Warning'
+    Write-Log "Refreshing module cache..."
     Get-Module -Refresh -ListAvailable | Out-Null
 
     # Diagnostic: Check for any dbatools.library modules first
-    Write-Log "Searching for any dbatools.library modules..." -Level 'Warning'
+    Write-Log "Searching for any dbatools.library modules..."
     $allDbaModules = Get-Module -ListAvailable | Where-Object { $_.Name -like "*dbatools*" }
     if ($allDbaModules) {
-        Write-Log "Found dbatools-related modules:" -Level 'Warning'
+        Write-Log "Found dbatools-related modules:"
         $allDbaModules | ForEach-Object {
-            Write-Log "  $($_.Name) v$($_.Version) at $($_.ModuleBase)" -Level 'Warning'
+            Write-Log "  $($_.Name) v$($_.Version) at $($_.ModuleBase)"
         }
     } else {
         Write-Log "No dbatools-related modules found at all!" -Level 'Warning'
     }
 
     # Diagnostic: Try multiple module discovery approaches
-    Write-Log "Attempting multiple discovery methods..." -Level 'Warning'
+    Write-Log "Attempting multiple discovery methods..."
 
     # Method 1: Standard Get-Module
     $installedModules = Get-Module -ListAvailable -Name 'dbatools.library'
-    Write-Log "Method 1 (Get-Module -Name): Found $($installedModules.Count) modules" -Level 'Warning'
+    Write-Log "Method 1 (Get-Module -Name): Found $($installedModules.Count) modules"
 
     # Method 2: Wildcard search
     $wildcardModules = Get-Module -ListAvailable -Name '*dbatools.library*'
-    Write-Log "Method 2 (Wildcard search): Found $($wildcardModules.Count) modules" -Level 'Warning'
+    Write-Log "Method 2 (Wildcard search): Found $($wildcardModules.Count) modules"
 
     # Method 3: Direct path check if we have the installation path
     if ($finalInstallPath -and (Test-Path $finalInstallPath)) {
-        Write-Log "Method 3: Checking direct installation path: $finalInstallPath" -Level 'Warning'
+        Write-Log "Method 3: Checking direct installation path: $finalInstallPath"
         $manifestPath = Join-Path $finalInstallPath "dbatools.library.psd1"
         if (Test-Path $manifestPath) {
             try {
                 $directModule = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
-                Write-Log "Method 3 (Direct path): Found module version $($directModule.Version)" -Level 'Warning'
+                Write-Log "Method 3 (Direct path): Found module version $($directModule.Version)"
                 # Try to import it directly to see if it works
                 $importedModule = Import-Module $manifestPath -PassThru -Force -ErrorAction Stop
-                Write-Log "Method 3 (Direct import): Successfully imported version $($importedModule.Version)" -Level 'Warning'
+                Write-Log "Method 3 (Direct import): Successfully imported version $($importedModule.Version)"
                 Remove-Module $importedModule -Force -ErrorAction SilentlyContinue
             } catch {
                 Write-Log "Method 3 (Direct path): Failed - $($_.Exception.Message)" -Level 'Warning'
