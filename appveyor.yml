@@ -1,5 +1,5 @@
 # See http://www.appveyor.com/docs/appveyor-yml for many more options
-image: Previous Visual Studio 2015
+image: Previous Visual Studio 2022
 configuration: "Debug"
 
 # skip PR builds when there's already a push build
@@ -49,22 +49,43 @@ environment:
   matrix:
     - scenario: SINGLE
       part: 1/3
-      setup_scripts: \tests\appveyor.SQL2016.ps1
+      InstanceSingle: sql2022
     - scenario: SINGLE
       part: 2/3
-      setup_scripts: \tests\appveyor.SQL2016.ps1
+      InstanceSingle: sql2022
     - scenario: SINGLE
       part: 3/3
-      setup_scripts: \tests\appveyor.SQL2016.ps1
+      InstanceSingle: sql2022
     - scenario: MULTI
-      setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
+      InstanceMulti1: sql2022
+      InstanceMulti2: sql2017
     - scenario: COPY
-      setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
+      InstanceCopy1: sql2017
+      InstanceCopy2: sql2022
     - scenario: HADR
-      setup_scripts: \tests\appveyor.SQL2017.ps1
+      InstanceHadr: sql2022
     - scenario: RESTART
-      setup_scripts: \tests\appveyor.SQL2017.ps1
+      InstanceRestart: sql2022
     - scenario: default
+    - scenario: 2008R2SP2Express
+      part: 1/2
+      InstanceSingle: sql2008r2sp2
+      InstanceMulti1: sql2008r2sp2
+      InstanceMulti2: sql2017
+      InstanceCopy1: sql2008r2sp2
+      InstanceCopy2: sql2017
+      InstanceRestart: sql2008r2sp2
+      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
+    - scenario: 2008R2SP2Express
+      part: 2/2
+      InstanceSingle: sql2008r2sp2
+      InstanceMulti1: sql2008r2sp2
+      InstanceMulti2: sql2017
+      InstanceCopy1: sql2008r2sp2
+      InstanceCopy2: sql2017
+      InstanceHadr: sql2017
+      InstanceRestart: sql2008r2sp2
+      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
 
 # Set alternative clone folder
 clone_folder: c:\github\dbatools
