@@ -118,20 +118,19 @@ function Export-DbaCredential {
         if (Test-Bound -ParameterName SqlInstance) {
             foreach ($instance in $SqlInstance) {
                 try {
-                    try {
+                    if (-not $ExcludePassword) {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    } else {
                         $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                    } catch {
-                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                     }
-
                     $serverCreds = $server.Credentials
                     if (Test-Bound -ParameterName Identity) {
                         $serverCreds = $serverCreds | Where-Object Identity -In $Identity
                     }
-
                     $InputObject += $serverCreds
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
