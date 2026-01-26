@@ -231,6 +231,10 @@ function Copy-DbaCredential {
                         EnableException = $true
                     }
                     if ($cred.mappedClassType -eq "CryptographicProvider") {
+                        $cryptoConfiguredOnDestination = $destServer.Query("SELECT is_enabled FROM sys.cryptographic_providers WHERE name = '$($cred.ProviderName)'")
+                        if (-not $cryptoConfiguredOnDestination.is_enabled) {
+                            throw "The cryptographic provider $($cred.ProviderName) needs to be configured and enabled on $destServer"
+                        }
                         $splatNewCredential.ProviderName = $cred.ProviderName
                     }
                     if (-not $ExcludePassword) {
