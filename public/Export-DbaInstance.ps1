@@ -264,7 +264,7 @@ function Export-DbaInstance {
             if ($Exclude -notcontains 'Credentials') {
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL credentials"
-                $null = Export-DbaCredential -SqlInstance $server -Credential $Credential -FilePath "$exportPath\credentials.sql" -ExcludePassword:$ExcludePassword
+                $null = Export-DbaCredential -SqlInstance $server -FilePath "$exportPath\credentials.sql" -ExcludePassword:$ExcludePassword
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\credentials.sql"
             }
 
