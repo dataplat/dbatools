@@ -56,6 +56,10 @@ function Copy-DbaCredential {
         Specifies credential identities (user accounts) to exclude from the copy operation. Does not support wildcards for pattern matching.
         Use this when you want to copy most credentials but skip those associated with specific service accounts or domain users.
 
+    .PARAMETER ExcludePassword
+        Copies credential definitions without the actual password values.
+        Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+
     .PARAMETER Force
         Overwrites existing credentials on the destination server by dropping and recreating them with the source values.
         Use this when you need to update credential passwords or identities that have changed on the source server since the last migration.
@@ -131,6 +135,7 @@ function Copy-DbaCredential {
         [string[]]$Identity,
         [Alias('ExcludeCredentialIdentity')]
         [string[]]$ExcludeIdentity,
+        [switch]$ExcludePassword,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -140,33 +145,30 @@ function Copy-DbaCredential {
             Stop-Function -Message "Copy-DbaCredential is only supported on Windows"
             return
         }
-        $results = Test-ElevationRequirement -ComputerName $Source.ComputerName
-
-        if (-not $results) {
-            return
-        }
 
         if ($Force) { $ConfirmPreference = 'none' }
 
         try {
-            Write-Message -Level Verbose -Message "We will try to open a dedicated admin connection."
-            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+            if ($ExcludePassword) {
+                Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            } else {
+                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+            }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        Invoke-SmoCheck -SqlInstance $sourceServer
 
-        if ($null -ne $SourceSqlCredential.Username) {
-            Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
-        }
-
-        Write-Message -Level Verbose -Message "Decrypting all Credential logins and passwords on $($sourceServer.Name)"
-        try {
-            $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential -EnableException
-        } catch {
-            Stop-Function -Message "Failed to decrypt credentials on $($sourceServer.Name)" -ErrorRecord $_
-            return
+        if (-not $ExcludePassword) {
+            Write-Message -Level Verbose -Message "Decrypting all Credential logins and passwords on $($sourceServer.Name)"
+            try {
+                $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential -EnableException
+            } catch {
+                Stop-Function -Message "Failed to decrypt credentials on $($sourceServer.Name)" -ErrorRecord $_
+                return
+            }
         }
 
         Write-Message -Level Verbose -Message "Getting all Credentials that should be processed on $($sourceServer.Name)"
@@ -181,7 +183,6 @@ function Copy-DbaCredential {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            Invoke-SmoCheck -SqlInstance $destServer
 
             Write-Message -Level Verbose -Message "Starting migration"
             $destServer.Credentials.Refresh()
@@ -222,24 +223,23 @@ function Copy-DbaCredential {
 
                 Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
                 try {
-                    $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
-                    $sqlcredentialName = $decryptedCred.Quotename
-                    $identity = $decryptedCred.Identity.Replace("'", "''")
-                    $password = $decryptedCred.Password.Replace("'", "''")
-
-                    if ($cred.MappedClassType -eq "CryptographicProvider") {
-                        $cryptoConfiguredOnDestination = $destServer.Query("SELECT is_enabled FROM sys.cryptographic_providers WHERE name = '$($cred.ProviderName)'")
-
-                        if (-not $cryptoConfiguredOnDestination.is_enabled) {
-                            throw "The cryptographic provider $($cred.ProviderName) needs to be configured and enabled on $destServer"
-                        } else {
-                            $cryptoSQL = " FOR CRYPTOGRAPHIC PROVIDER $($cred.ProviderName) "
-                        }
+                    $splatNewCredential = @{
+                        SqlInstance     = $destServer
+                        Name            = $cred.Name
+                        Identity        = $cred.Identity
+                        MappedClassType = $cred.MappedClassType
+                        EnableException = $true
+                    }
+                    if ($cred.mappedClassType -eq "CryptographicProvider") {
+                        $splatNewCredential.ProviderName = $cred.ProviderName
+                    }
+                    if (-not $ExcludePassword) {
+                        $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
+                        $splatNewCredential.SecurePassword = ConvertTo-SecureString -String $decryptedCred.Password -AsPlainText -Force
                     }
 
                     if ($Pscmdlet.ShouldProcess($destinstance, "Copying $identity ($credentialName)")) {
-                        $destServer.Query("CREATE CREDENTIAL $sqlcredentialName WITH IDENTITY = N'$identity', SECRET = N'$password' $cryptoSQL")
-                        $destServer.Credentials.Refresh()
+                        $null = New-DbaCredential @splatNewCredential
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
                         $copyCredentialStatus.Status = "Successful"
                         $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -257,6 +257,8 @@ function Copy-DbaCredential {
     end {
         # Disconnect is important because it is a DAC
         # Disconnect in case of WhatIf, as we opened the connection
-        $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        if (-not $ExcludePassword) {
+            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        }
     }
 }
