@@ -12,14 +12,13 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
-                "Identity",
                 "SqlCredential",
-                "Credential",
                 "Path",
                 "FilePath",
+                "Identity",
                 "ExcludePassword",
                 "Append",
-                "InputObject",
+                "Passthru",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
