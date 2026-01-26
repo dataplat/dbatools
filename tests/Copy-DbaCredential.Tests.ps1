@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeName",
                 "Identity",
                 "ExcludeIdentity",
+                "ExcludePassword",
                 "Force",
                 "EnableException"
             )
