@@ -126,7 +126,7 @@ function Copy-DbaDbMail {
 
             Write-Message -Message "Migrating mail server configuration values." -Level Verbose
             $copyMailConfigStatus = [PSCustomObject]@{
-                SourceServer      = $sourceServer.Name
+                SourceServer      = $sourceServerName
                 DestinationServer = $destServer.Name
                 Name              = "Server Configuration"
                 Type              = "Mail Configuration"
@@ -163,7 +163,7 @@ function Copy-DbaDbMail {
                 $newAccountName = $accountName -replace [Regex]::Escape($source), $destinstance
                 Write-Message -Message "Updating account name from '$accountName' to '$newAccountName'." -Level Verbose
                 $copyMailAccountStatus = [PSCustomObject]@{
-                    SourceServer      = $sourceServer.Name
+                    SourceServer      = $sourceServerName
                     DestinationServer = $destServer.Name
                     Name              = $accountName
                     Type              = "Mail Account"
@@ -232,7 +232,7 @@ function Copy-DbaDbMail {
                 $newProfileName = $profileName -replace [Regex]::Escape($source), $destinstance
                 Write-Message -Message "Updating profile name from '$profileName' to '$newProfileName'." -Level Verbose
                 $copyMailProfileStatus = [PSCustomObject]@{
-                    SourceServer      = $sourceServer.Name
+                    SourceServer      = $sourceServerName
                     DestinationServer = $destServer.Name
                     Name              = $profileName
                     Type              = "Mail Profile"
@@ -309,7 +309,7 @@ function Copy-DbaDbMail {
             foreach ($mailServer in $sourceMailServers) {
                 $mailServerName = [string]$mailServer.name
                 $copyMailServerStatus = [PSCustomObject]@{
-                    SourceServer      = $sourceServer.Name
+                    SourceServer      = $sourceServerName
                     DestinationServer = $destServer.Name
                     Name              = $mailServerName
                     Type              = "Mail Server"
@@ -382,9 +382,11 @@ function Copy-DbaDbMail {
             if ($ExcludePassword) {
                 Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
                 $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+                $sourceServerName = $sourceServer.Name
             } else {
                 Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
                 $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                $sourceServerName = $sourceServer.Name -replace '^ADMIN:', ''
             }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
@@ -466,7 +468,7 @@ function Copy-DbaDbMail {
             Write-Message -Message "Destination Database Mail XPs: $destDbMailEnabled" -Level Verbose
 
             $enableDBMailStatus = [PSCustomObject]@{
-                SourceServer      = $sourceServer.Name
+                SourceServer      = $sourceServerName
                 DestinationServer = $destServer.Name
                 Name              = "Database Mail XPs"
                 Type              = "Mail Configuration"
@@ -500,6 +502,11 @@ function Copy-DbaDbMail {
                 Write-Message -Message "Database Mail XPs is already enabled on destination $destServer." -Level Verbose
                 $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
+        }
+    }
+    end {
+        if (-not $ExcludePassword) {
+            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
         }
     }
 }
