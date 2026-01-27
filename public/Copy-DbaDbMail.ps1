@@ -36,6 +36,10 @@ function Copy-DbaDbMail {
         Limits migration to specific Database Mail component types instead of copying everything. Choose 'ConfigurationValues' for global settings like retry attempts and file size limits, 'Profiles' for mail profile definitions, 'Accounts' for SMTP account configurations, or 'MailServers' for SMTP server details.
         Use this when you only need to sync specific components or when troubleshooting individual Database Mail layers.
 
+    .PARAMETER ExcludePassword
+        Copies credential definitions without the actual password values.
+        Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -110,6 +114,7 @@ function Copy-DbaDbMail {
         [string[]]$Type,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
+        [switch]$ExcludePassword,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -291,11 +296,13 @@ function Copy-DbaDbMail {
             $sourceMailServers = $sourceServer.Mail.Accounts.MailServers
             $destMailServers = $destServer.Mail.Accounts.MailServers
 
-            Write-Message -Message "Getting mail server credentials." -Level Verbose
-            $sql = "SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"
-            $credentialAccounts = @($sourceServer.Query($sql))
-            if ($credentialAccounts.Count -gt 0) {
-                $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential | Where-Object { $_.Name -in $credentialAccounts.credential_name }
+            if (-not $ExcludePassword) {
+                Write-Message -Message "Getting mail server credentials." -Level Verbose
+                $sql = "SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"
+                $credentialAccounts = @($sourceServer.Query($sql))
+                if ($credentialAccounts.Count -gt 0) {
+                    $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential | Where-Object { $_.Name -in $credentialAccounts.credential_name }
+                }
             }
 
             Write-Message -Message "Migrating mail servers." -Level Verbose
@@ -344,14 +351,16 @@ function Copy-DbaDbMail {
                         Write-Message -Message "Copying mail server $mailServerName." -Level Verbose
                         $sql = $mailServer.Script() | Out-String
                         $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
-                        $credentialName = ($credentialAccounts | Where-Object { $_.account_id -eq $mailServer.Parent.ID }).credential_name
-                        if ($credentialName) {
-                            $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
-                            if ($decryptedCred) {
-                                $password = $decryptedCred.Password.Replace("'", "''")
-                                $sql = $sql -replace "@password=N''", "@password=N'$($password)'"
-                            } else {
-                                Write-Message -Level Warning -Message "Failed to get mail server password, it will need to be entered manually on the destination."
+                        if (-not $ExcludePassword) {
+                            $credentialName = ($credentialAccounts | Where-Object { $_.account_id -eq $mailServer.Parent.ID }).credential_name
+                            if ($credentialName) {
+                                $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
+                                if ($decryptedCred) {
+                                    $password = $decryptedCred.Password.Replace("'", "''")
+                                    $sql = $sql -replace "@password=N''", "@password=N'$($password)'"
+                                } else {
+                                    Write-Message -Level Warning -Message "Failed to get mail server password, it will need to be entered manually on the destination."
+                                }
                             }
                         }
                         Write-Message -Message $sql -Level Debug
@@ -370,7 +379,13 @@ function Copy-DbaDbMail {
         }
 
         try {
-            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            if ($ExcludePassword) {
+                Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            } else {
+                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+            }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
