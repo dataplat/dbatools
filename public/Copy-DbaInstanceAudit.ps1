@@ -210,7 +210,7 @@ function Copy-DbaInstanceAudit {
                         $root = $currentAudit.Filepath.Substring(0, 3)
                         $rootUnc = Join-AdminUnc $resolvedComputerName $root
 
-                        if ((Test-Path $rootUnc) -eq $true ) {
+                        if ((Test-Path $rootUnc) -eq $true) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Creating directory $($currentAudit.Filepath)")) {
                                 try {
                                     $null = New-DbaDirectory -SqlInstance $destServer -Path $currentAudit.Filepath -EnableException
