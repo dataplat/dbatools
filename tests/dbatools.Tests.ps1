@@ -2,9 +2,25 @@
 param(
     $ModuleName = "dbatools"
 )
-$Path = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ModulePath = (Get-Item $Path).Parent.FullName
-#$ManifestPath = "$ModulePath\$ModuleName.psd1"
+
+BeforeAll {
+    $Path = Split-Path -Parent $PSCommandPath
+    $ModulePath = (Get-Item $Path).Parent.FullName
+    #$ManifestPath = "$ModulePath\$ModuleName.psd1"
+
+    function Split-ArrayInParts($array, [int]$parts) {
+        #splits an array in "equal" parts
+        $size = $array.Length / $parts
+        if ($size -lt 1) { $size = 1 }
+        $counter = [PSCustomObject] @{ Value = 0 }
+        $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
+        $rtn = @()
+        foreach ($g in $groups) {
+            $rtn += , @($g.Group)
+        }
+        $rtn
+    }
+}
 
 Describe "$ModuleName Aliases" -Tag Aliases, Build {
     ## Get the Aliases that should -Be set from the psm1 file
@@ -14,30 +30,16 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
         $global:Aliases = $Matches.ForEach{ $_.Groups[1].Value }
     }
 
-    foreach ($Alias in $global:Aliases) {
-        Context "Testing $Alias Alias" {
-            It "$Alias Alias should exist" {
-                Get-Alias $Alias | Should -Not -BeNullOrEmpty
-            }
-            It "$Alias Aliased Command Should Exist" {
-                $Definition = (Get-Alias $Alias).Definition
-                Get-Command $Definition -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
-            }
-        }
+    It "Should have aliases defined in module" -ForEach $global:Aliases {
+        $Alias = $_
+        Get-Alias $Alias | Should -Not -BeNullOrEmpty
     }
-}
 
-function Split-ArrayInParts($array, [int]$parts) {
-    #splits an array in "equal" parts
-    $size = $array.Length / $parts
-    if ($size -lt 1) { $size = 1 }
-    $counter = [PSCustomObject] @{ Value = 0 }
-    $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
-    $rtn = @()
-    foreach ($g in $groups) {
-        $rtn += , @($g.Group)
+    It "Should have aliased commands that exist" -ForEach $global:Aliases {
+        $Alias = $_
+        $Definition = (Get-Alias $Alias).Definition
+        Get-Command $Definition -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
     }
-    $rtn
 }
 
 
@@ -71,38 +73,38 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     }
 
     Context "formatting" {
-        foreach ($f in $global:formattingResults) {
-            It "$f is not compliant with the OTBS formatting style. Please run Invoke-DbatoolsFormatter against the failing file and commit the changes." {
-                1 | Should -Be 0
-            }
+        It "Should be compliant with OTBS formatting style" -ForEach $global:formattingResults {
+            $f = $_
+            "$f is not compliant with the OTBS formatting style. Please run Invoke-DbatoolsFormatter against the failing file and commit the changes." | Should -BeNullOrEmpty
         }
     }
 
     Context "BOM" {
-        foreach ($f in $global:AllFiles) {
+        It "Should not have BOM" -ForEach $global:AllFiles {
+            $f = $_
             [byte[]]$byteContent = Get-Content -Path $f.FullName -Encoding Byte -ReadCount 4 -TotalCount 4
-            if ( $byteContent.Length -gt 2 -and $byteContent[0] -eq 0xef -and $byteContent[1] -eq 0xbb -and $byteContent[2] -eq 0xbf ) {
-                It "$f has no BOM in it" {
-                    "utf8bom" | Should -Be "utf8"
-                }
+            $hasBOM = $byteContent.Length -gt 2 -and $byteContent[0] -eq 0xef -and $byteContent[1] -eq 0xbb -and $byteContent[2] -eq 0xbf
+            if ($hasBOM) {
+                "$f has BOM in it" | Should -BeNullOrEmpty
             }
         }
     }
 
 
     Context "indentation" {
-        foreach ($f in $global:AllFiles) {
+        It "Should not have leading tabs" -ForEach $global:AllFiles {
+            $f = $_
             $LeadingTabs = Select-String -Path $f -Pattern '^[\t]+'
             if ($LeadingTabs.Count -gt 0) {
-                It "$f is not indented with tabs (line(s) $($LeadingTabs.LineNumber -join ','))" {
-                    $LeadingTabs.Count | Should -Be 0
-                }
+                "$f is indented with tabs (line(s) $($LeadingTabs.LineNumber -join ','))" | Should -BeNullOrEmpty
             }
+        }
+
+        It "Should not have trailing spaces" -ForEach $global:AllFiles {
+            $f = $_
             $TrailingSpaces = Select-String -Path $f -Pattern '([^ \t\r\n])[ \t]+$'
             if ($TrailingSpaces.Count -gt 0) {
-                It "$f has no trailing spaces (line(s) $($TrailingSpaces.LineNumber -join ','))" {
-                    $TrailingSpaces.Count | Should -Be 0
-                }
+                "$f has trailing spaces (line(s) $($TrailingSpaces.LineNumber -join ','))" | Should -BeNullOrEmpty
             }
         }
     }
@@ -119,23 +121,21 @@ Describe "$ModuleName style" -Tag 'Compliance' {
 
     Context "NoCompatibleTLS" {
         # .NET defaults clash with recent TLS hardening (e.g. no TLS 1.2 by default)
-        foreach ($f in $global:AllPublicFunctions) {
+        It "Should use Invoke-TlsWebRequest instead of WebRequest/WebClient" -ForEach $global:AllPublicFunctions {
+            $f = $_
             $NotAllowed = Select-String -Path $f -Pattern 'Invoke-WebRequest | New-Object System.Net.WebClient|\.DownloadFile'
             if ($NotAllowed.Count -gt 0 -and $f.Name -notmatch 'DbaKbUpdate') {
-                It "$f should instead use Invoke-TlsWebRequest, see #4250" {
-                    $NotAllowed.Count | Should -Be 0
-                }
+                "$f should instead use Invoke-TlsWebRequest, see #4250" | Should -BeNullOrEmpty
             }
         }
     }
     Context "Shell.Application" {
         # Not every PS instance has Shell.Application
-        foreach ($f in $global:AllPublicFunctions) {
+        It "Should not use Shell.Application" -ForEach $global:AllPublicFunctions {
+            $f = $_
             $NotAllowed = Select-String -Path $f -Pattern 'shell.application'
             if ($NotAllowed.Count -gt 0) {
-                It "$f should not use Shell.Application (usually fallbacks for Expand-Archive, which dbatools ships), see #4800" {
-                    $NotAllowed.Count | Should -Be 0
-                }
+                "$f should not use Shell.Application (usually fallbacks for Expand-Archive, which dbatools ships), see #4800" | Should -BeNullOrEmpty
             }
         }
     }
@@ -150,12 +150,9 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
         $global:ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\private\functions" -Severity Error
     }
     Context "Errors" {
-        if ($global:ScriptAnalyzerErrors.Count -gt 0) {
-            foreach ($err in $global:ScriptAnalyzerErrors) {
-                It "$($err.scriptName) has Error(s) : $($err.RuleName)" {
-                    $err.Message | Should -Be $null
-                }
-            }
+        It "Should not have ScriptAnalyzer errors" -ForEach $global:ScriptAnalyzerErrors {
+            $err = $_
+            "$($err.scriptName) has Error(s) : $($err.RuleName) - $($err.Message)" | Should -BeNullOrEmpty
         }
     }
 }
@@ -165,16 +162,17 @@ Describe "$ModuleName Tests missing" -Tag 'Tests' {
         $global:functions = Get-ChildItem "$ModulePath\public\" -Recurse -Include *.ps1
     }
     Context "Every function should have tests" {
-        foreach ($f in $global:functions) {
-            It "$($f.basename) has a tests.ps1 file" {
-                Test-Path "$ModulePath\tests\$($f.basename).tests.ps1" | Should -Be $true
-            }
-            If (Test-Path "$ModulePath\tests\$($f.basename).tests.ps1") {
-                It "$($f.basename) has validate parameters unit test" {
-                    $testFile = Get-Content "$ModulePath\tests\$($f.basename).Tests.ps1" -Raw
-                    $hasValidation = $testFile -match 'Context "Validate parameters"' -or $testFile -match 'Context "Parameter validation"'
-                    $hasValidation | Should -Be $true -Because "Test file must have parameter validation"
-                }
+        It "Should have a tests.ps1 file" -ForEach $global:functions {
+            $f = $_
+            Test-Path "$ModulePath\tests\$($f.basename).tests.ps1" | Should -Be $true
+        }
+
+        It "Should have validate parameters unit test" -ForEach $global:functions {
+            $f = $_
+            if (Test-Path "$ModulePath\tests\$($f.basename).tests.ps1") {
+                $testFile = Get-Content "$ModulePath\tests\$($f.basename).Tests.ps1" -Raw
+                $hasValidation = $testFile -match 'Context "Validate parameters"' -or $testFile -match 'Context "Parameter validation"'
+                $hasValidation | Should -Be $true -Because "Test file must have parameter validation"
             }
         }
     }
@@ -222,21 +220,15 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
         }
     }
     Context "Function Name Matching Filename Errors" {
-        if ($global:FunctionNameMatchesErrors.Count -gt 0) {
-            foreach ($err in $global:FunctionNameMatchesErrors) {
-                It "$($err.FunctionName) is not equal to $($err.BaseName)" {
-                    $err.Message | Should -Be $null
-                }
-            }
+        It "Function name should match filename" -ForEach $global:FunctionNameMatchesErrors {
+            $err = $_
+            "$($err.FunctionName) is not equal to $($err.BaseName)" | Should -BeNullOrEmpty
         }
     }
     Context "Function Name has -Dba in it" {
-        if ($global:FunctionNameDbaErrors.Count -gt 0) {
-            foreach ($err in $global:FunctionNameDbaErrors) {
-                It "$($err.FunctionName) does not contain -Dba" {
-                    $err.Message | Should -Be $null
-                }
-            }
+        It "Function name should contain -Dba" -ForEach $global:FunctionNameDbaErrors {
+            $err = $_
+            "$($err.FunctionName) does not contain -Dba" | Should -BeNullOrEmpty
         }
     }
 }
