@@ -130,11 +130,12 @@ function Remove-DbaDbLogShipping {
             }
 
             # Get the log shipping information
+            # Using LEFT JOIN to handle incomplete configurations where secondary setup failed
             $query = "SELECT pd.primary_database AS PrimaryDatabase,
                     ps.secondary_server AS SecondaryServer,
                     ps.secondary_database AS SecondaryDatabase
-                FROM msdb.dbo.log_shipping_primary_secondaries AS ps
-                    INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
+                FROM msdb.dbo.log_shipping_primary_databases AS pd
+                    LEFT JOIN msdb.dbo.log_shipping_primary_secondaries AS ps
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$db';"
 
@@ -148,32 +149,40 @@ function Remove-DbaDbLogShipping {
                 Stop-Function -Message "Could not retrieve log shipping information for [$db]" -Target $db -Continue
             }
 
-            # Get the secondary server if it's not set
-            if (-not $SecondarySqlInstance) {
-                $SecondarySqlInstance = $logshippingInfo.SecondaryServer
-            }
+            # Determine if this is a complete or incomplete log shipping configuration
+            $hasSecondary = $logshippingInfo[0].SecondaryServer -and $logshippingInfo[0].SecondaryDatabase
 
-            # Try connecting to the destination instance
-            try {
-                $secondaryServer = Connect-DbaInstance -SqlInstance $SecondarySqlInstance -SqlCredential $SecondarySqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SecondarySqlInstance
-                return
-            }
-
-            # Remove the primary secondaries log shipping
-            if ($PSCmdlet.ShouldProcess("Removing the primary and secondaries from log shipping")) {
-                $query = "EXEC dbo.sp_delete_log_shipping_primary_secondary
-                    @primary_database = N'$($logshippingInfo.PrimaryDatabase)',
-                    @secondary_server = N'$($logshippingInfo.SecondaryServer)',
-                    @secondary_database = N'$($logshippingInfo.SecondaryDatabase)'"
-
-                try {
-                    Write-Message -Level verbose -Message "Removing the primary and secondaries from log shipping"
-                    Invoke-DbaQuery -SqlInstance $primaryServer -SqlCredential $PrimarySqlCredential -Database master -Query $query
-                } catch {
-                    Stop-Function -Message "Something went wrong removing the primaries and secondaries" -Target $primaryServer -ErrorRecord $_
+            # Only attempt secondary operations if we have a complete configuration
+            if ($hasSecondary) {
+                # Get the secondary server if it's not set
+                if (-not $SecondarySqlInstance) {
+                    $SecondarySqlInstance = $logshippingInfo.SecondaryServer
                 }
+
+                # Try connecting to the destination instance
+                try {
+                    $secondaryServer = Connect-DbaInstance -SqlInstance $SecondarySqlInstance -SqlCredential $SecondarySqlCredential
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SecondarySqlInstance
+                    return
+                }
+
+                # Remove the primary secondaries log shipping
+                if ($PSCmdlet.ShouldProcess("Removing the primary and secondaries from log shipping")) {
+                    $query = "EXEC dbo.sp_delete_log_shipping_primary_secondary
+                        @primary_database = N'$($logshippingInfo.PrimaryDatabase)',
+                        @secondary_server = N'$($logshippingInfo.SecondaryServer)',
+                        @secondary_database = N'$($logshippingInfo.SecondaryDatabase)'"
+
+                    try {
+                        Write-Message -Level verbose -Message "Removing the primary and secondaries from log shipping"
+                        Invoke-DbaQuery -SqlInstance $primaryServer -SqlCredential $PrimarySqlCredential -Database master -Query $query
+                    } catch {
+                        Stop-Function -Message "Something went wrong removing the primaries and secondaries" -Target $primaryServer -ErrorRecord $_
+                    }
+                }
+            } else {
+                Write-Message -Level Verbose -Message "No secondary configuration found for [$db]. Removing primary configuration only."
             }
 
             # Remove the primary database log shipping info
@@ -188,26 +197,29 @@ function Remove-DbaDbLogShipping {
                 }
             }
 
-            # Remove the secondary database log shipping
-            if ($PSCmdlet.ShouldProcess("Removing the secondary database from log shipping")) {
-                $query = "EXEC dbo.sp_delete_log_shipping_secondary_database @secondary_database = N'$($logshippingInfo.SecondaryDatabase)'"
+            # Only remove secondary database configuration if we have a complete setup
+            if ($hasSecondary) {
+                # Remove the secondary database log shipping
+                if ($PSCmdlet.ShouldProcess("Removing the secondary database from log shipping")) {
+                    $query = "EXEC dbo.sp_delete_log_shipping_secondary_database @secondary_database = N'$($logshippingInfo.SecondaryDatabase)'"
 
-                try {
-                    Write-Message -Level verbose -Message "Removing the secondary database from log shipping"
-                    Invoke-DbaQuery -SqlInstance $secondaryServer -SqlCredential $SecondarySqlCredential -Database master -Query $query
-                } catch {
-                    Stop-Function -Message "Something went wrong removing the secondary database from log shipping" -Target $secondaryServer -ErrorRecord $_
-                }
-            }
-
-            # Remove the secondary database if needed
-            if ($RemoveSecondaryDatabase) {
-                if ($PSCmdlet.ShouldProcess("Removing the secondary database from [$($logshippingInfo.SecondaryDatabase)]")) {
-                    Write-Message -Level verbose -Message "Removing the secondary database [$($logshippingInfo.SecondaryDatabase)]"
                     try {
-                        $null = Remove-DbaDatabase -SqlInstance $secondaryServer -SqlCredential $SecondarySqlCredential -Database $logshippingInfo.SecondaryDatabase -Confirm:$false
+                        Write-Message -Level verbose -Message "Removing the secondary database from log shipping"
+                        Invoke-DbaQuery -SqlInstance $secondaryServer -SqlCredential $SecondarySqlCredential -Database master -Query $query
                     } catch {
-                        Stop-Function -Message "Could not remove [$($logshippingInfo.SecondaryDatabase)] from $secondaryServer" -Target $secondaryServer -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Something went wrong removing the secondary database from log shipping" -Target $secondaryServer -ErrorRecord $_
+                    }
+                }
+
+                # Remove the secondary database if needed
+                if ($RemoveSecondaryDatabase) {
+                    if ($PSCmdlet.ShouldProcess("Removing the secondary database from [$($logshippingInfo.SecondaryDatabase)]")) {
+                        Write-Message -Level verbose -Message "Removing the secondary database [$($logshippingInfo.SecondaryDatabase)]"
+                        try {
+                            $null = Remove-DbaDatabase -SqlInstance $secondaryServer -SqlCredential $SecondarySqlCredential -Database $logshippingInfo.SecondaryDatabase -Confirm:$false
+                        } catch {
+                            Stop-Function -Message "Could not remove [$($logshippingInfo.SecondaryDatabase)] from $secondaryServer" -Target $secondaryServer -ErrorRecord $_ -Continue
+                        }
                     }
                 }
             }
