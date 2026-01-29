@@ -199,7 +199,7 @@ function Add-DbaComputerCertificate {
                 try {
                     # Import using plain text password (or null for non-password-protected certificates)
                     # Works reliably in all PowerShell versions v3+
-                    $null = $certCollection.Import($fileBytes, $plainPassword, "Exportable, PersistKeySet")
+                    $null = $certCollection.Import($fileBytes, $plainPassword, $flags)
 
                     # Export the entire collection as a single PFX to preserve the chain
                     # This re-exports with the password, creating a fresh encrypted byte array that can be passed to remote
