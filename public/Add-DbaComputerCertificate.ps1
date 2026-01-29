@@ -227,7 +227,7 @@ function Add-DbaComputerCertificate {
                 [string]$PlainPassword,
                 $Store,
                 $Folder,
-                [string]$flags
+                [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]$flags
             )
 
             # Use X509Certificate2Collection to import the full certificate chain
