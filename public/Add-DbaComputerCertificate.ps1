@@ -155,13 +155,11 @@ function Add-DbaComputerCertificate {
         if ("NonExportable" -in $Flag) {
             $flags = ($Flag | Where-Object { $PSItem -ne "Exportable" -and $PSItem -ne "NonExportable" } ) -join ","
 
-            # It needs at least one flag
-            if (-not $flags) {
-                if ($Store -eq "LocalMachine") {
-                    $flags = "MachineKeySet"
-                } else {
-                    $flags = "UserKeySet"
-                }
+            # Ensure the correct store is used
+            if ($Store -eq "LocalMachine") {
+                $flags += "MachineKeySet"
+            } else {
+                $flags += "UserKeySet"
             }
         } else {
             $flags = $Flag -join ","
