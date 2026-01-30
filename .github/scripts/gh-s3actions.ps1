@@ -135,7 +135,26 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
             $result | Should -Not -BeNullOrEmpty
             $result.BackupComplete | Should -BeTrue
-            $result.Type | Should -Be "Log"
+            $result.Type | Should -Be "Transaction Log"
+        }
+
+        It "Should backup a differential to S3" {
+            $backupFile = "$($script:TestDbName)_diff.bak"
+
+            $splatBackup = @{
+                SqlInstance       = "localhost"
+                SqlCredential     = $cred
+                Database          = $script:TestDbName
+                StorageBaseUrl    = $script:S3BaseUrl
+                StorageCredential = $script:S3CredentialName
+                FilePath          = $backupFile
+                Type              = "Differential"
+            }
+            $result = Backup-DbaDatabase @splatBackup
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.BackupComplete | Should -BeTrue
+            $result.Type | Should -Be "Database Differential"
         }
 
         It "Should backup with custom MaxTransferSize for S3" {
@@ -196,7 +215,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
             $result | Should -Not -BeNullOrEmpty
             $result.Database | Should -Be $script:TestDbName2
-            $result.Type | Should -Be "Full"
+            $result.Type | Should -Be "Database"
         }
     }
 
