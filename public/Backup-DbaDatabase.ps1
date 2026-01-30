@@ -966,7 +966,7 @@ function Backup-DbaDatabase {
                                 # Generate script first, then append BACKUP_OPTIONS and execute via T-SQL
                                 $script = $backup.Script($server)
                                 $backupOptionsJson = "{`"s3`": {`"region`":`"$S3Region`"}}"
-                                $script = $script -replace ";$", ", BACKUP_OPTIONS = '$backupOptionsJson';"
+                                $script += ", BACKUP_OPTIONS = '$backupOptionsJson'"
                                 Write-Message -Level Verbose -Message "Executing S3 backup with BACKUP_OPTIONS for region: $S3Region"
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                             } else {
@@ -1044,7 +1044,7 @@ function Backup-DbaDatabase {
                             # Append BACKUP_OPTIONS for S3 with region
                             if ($isS3Backup -and $S3Region) {
                                 $backupOptionsJson = "{`"s3`": {`"region`":`"$S3Region`"}}"
-                                $script = $script -replace ";$", ", BACKUP_OPTIONS = '$backupOptionsJson';"
+                                $script += ", BACKUP_OPTIONS = '$backupOptionsJson'"
                             }
                             $script
                             Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
