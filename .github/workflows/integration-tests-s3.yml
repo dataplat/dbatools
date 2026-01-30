@@ -158,8 +158,9 @@ jobs:
           sleep 15
 
           # Copy the MinIO certificate to SQL Server container and update CA certificates
+          # Must run as root since mssql user doesn't have permission to system directories
           docker cp $HOME/.minio/certs/public.crt mssql1:/tmp/minio.crt
-          docker exec mssql1 bash -c "cp /tmp/minio.crt /usr/local/share/ca-certificates/minio.crt && update-ca-certificates"
+          docker exec --user root mssql1 bash -c "cp /tmp/minio.crt /usr/local/share/ca-certificates/minio.crt && update-ca-certificates"
 
       - name: Wait for SQL Server to be ready
         run: |
