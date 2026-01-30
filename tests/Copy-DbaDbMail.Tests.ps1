@@ -17,6 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "SourceSqlCredential",
                 "DestinationSqlCredential",
                 "Force",
+                "ExcludePassword",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
