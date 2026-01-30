@@ -83,14 +83,16 @@ function Backup-DbaDatabase {
         When omitted, uses server default compression setting. Explicitly false disables compression entirely.
 
     .PARAMETER MaxTransferSize
-        Controls the size of each data transfer unit during backup operations. Must be a multiple of 64KB with 4MB maximum.
+        Controls the size of each data transfer unit during backup operations. Must be a multiple of 64KB.
+        For disk and Azure backups: Maximum value is 4MB.
+        For S3 backups: Value must be between 5MB and 20MB (required for S3-compatible storage).
         Larger values can improve performance for fast storage but may cause memory pressure.
         Automatically set to 128KB for TDE-encrypted databases with compression to avoid conflicts.
 
     .PARAMETER Blocksize
         Sets the physical block size for backup devices. Must be 0.5KB, 1KB, 2KB, 4KB, 8KB, 16KB, 32KB, or 64KB.
         Affects backup file structure and restore performance. Larger blocks may improve performance for fast storage.
-        Cannot be used with Azure page blob backups (when AzureCredential is specified).
+        Cannot be used with Azure page blob backups (when StorageCredential is specified).
 
     .PARAMETER BufferCount
         Specifies the number of I/O buffers allocated for the backup operation.
@@ -127,16 +129,23 @@ function Backup-DbaDatabase {
         Allows piping databases from Get-DbaDatabase or other dbatools commands.
         Internal parameter primarily used for pipeline processing and automation scenarios.
 
-    .PARAMETER AzureBaseUrl
-        Specifies Azure blob storage container URLs for cloud backup destinations.
-        Single URL required for page blobs (with AzureCredential), multiple URLs supported for block blobs with SAS.
-        Requires corresponding SQL Server credentials for authentication. Limits other parameter usage to core backup options.
-        Essential for backing up to Azure storage for cloud-native or hybrid SQL Server deployments.
+    .PARAMETER StorageBaseUrl
+        Specifies cloud storage URLs for backup destinations, supporting Azure Blob Storage and S3-compatible object storage.
+        For Azure: Use https:// URLs like 'https://account.blob.core.windows.net/container'. Single URL required for page blobs (with StorageCredential), multiple URLs supported for block blobs with SAS.
+        For S3: Use s3:// URLs like 's3://bucket.s3.region.amazonaws.com/folder'. Requires SQL Server 2022 or later. Supports AWS S3, MinIO, and other S3-compatible providers.
+        Requires corresponding SQL Server credentials for authentication. Essential for backing up to cloud storage for cloud-native or hybrid SQL Server deployments.
 
-    .PARAMETER AzureCredential
-        Specifies the SQL Server credential name for Azure storage access key authentication.
-        Creates page blob backups with automatic single-file restriction and ignores BlockSize/MaxTransferSize.
-        For SAS authentication, use credentials named to match the AzureBaseUrl. Required for Azure storage access key scenarios.
+    .PARAMETER StorageCredential
+        Specifies the SQL Server credential name for cloud storage authentication.
+        For Azure: The credential for storage access key authentication. Creates page blob backups with automatic single-file restriction and ignores BlockSize/MaxTransferSize.
+        For S3: The credential containing the S3 Access Key ID and Secret Key ID. The credential name should match the S3 URL path.
+        For SAS authentication, use credentials named to match the StorageBaseUrl.
+
+    .PARAMETER S3Region
+        Specifies the AWS region for S3 backups using the BACKUP_OPTIONS JSON parameter. Only applies to S3-compatible storage.
+        Use this when your S3 bucket is in a specific region that differs from the default, or when required by your S3-compatible provider.
+        Example regions: us-east-1, us-west-2, eu-west-1, ap-southeast-1.
+        When specified, adds BACKUP_OPTIONS = '{"s3": {"region":"<region>"}}' to the backup command.
 
     .PARAMETER NoRecovery
         Performs transaction log backup without truncating the log, leaving database in restoring state.
@@ -256,7 +265,7 @@ function Backup-DbaDatabase {
         Backs up AdventureWorks2014 to sql2016 C:\temp folder.
 
     .EXAMPLE
-        PS C:\> Backup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder
+        PS C:\> Backup-DbaDatabase -SqlInstance sql2016 -StorageBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -StorageCredential dbatoolscred -Type Full -CreateFolder
 
         Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blob storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
 
@@ -289,9 +298,24 @@ function Backup-DbaDatabase {
         PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -EncryptionAlgorithm AES256 -EncryptionCertificate BackupCert
 
         Backs up the master database using the BackupCert certificate and the AES256 algorithm.
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance sql2022 -Database AdventureWorks -StorageBaseUrl "s3://mybucket.s3.us-west-2.amazonaws.com/backups" -Type Full -CompressBackup
+
+        Performs a full compressed backup of the AdventureWorks database to an S3-compatible storage bucket. Requires SQL Server 2022 or later and a credential matching the S3 URL created with New-DbaCredential using Identity 'S3 Access Key'.
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance sql2022 -Database AdventureWorks -S3BaseUrl "s3://minio.local:9000/sqlbackups" -Type Full
+
+        Performs a full backup to a MinIO S3-compatible storage server using the S3BaseUrl alias. The credential must be created to match the S3 URL path.
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance sql2022 -Database AdventureWorks -StorageBaseUrl "s3://mybucket.s3.amazonaws.com/backups" -S3Region "us-west-2" -MaxTransferSize 10485760 -Type Full
+
+        Performs a full backup to S3 with explicit region specification and a 10MB transfer size. The S3Region parameter adds BACKUP_OPTIONS to the backup command for cross-region scenarios.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For StorageCredential
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
@@ -318,8 +342,11 @@ function Backup-DbaDatabase {
         [int]$MaxTransferSize,
         [int]$BlockSize,
         [int]$BufferCount,
-        [string[]]$AzureBaseUrl,
-        [string]$AzureCredential,
+        [Alias("AzureBaseUrl", "S3BaseUrl")]
+        [string[]]$StorageBaseUrl,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
+        [string]$S3Region,
         [switch]$NoRecovery,
         [switch]$BuildPath,
         [switch]$WithFormat,
@@ -344,19 +371,24 @@ function Backup-DbaDatabase {
             $TimeStampFormat = "yyyyMMddHHmm"
         }
 
-        if ((Test-Bound 'AzureBaseUrl') -and (Test-Bound 'CreateFolder')) {
-            Stop-Function -Message 'CreateFolder cannot be specified with an Azure Backup, the container must exist and be referenced by the URL'
+        if ((Test-Bound 'StorageBaseUrl') -and (Test-Bound 'CreateFolder')) {
+            Stop-Function -Message 'CreateFolder cannot be specified with a cloud storage backup, the container/bucket must exist and be referenced by the URL'
             return
         }
 
-        if ((Test-Bound 'AzureCredential') -and (Test-Bound 'BlockSize')) {
-            Write-Message -Level Warning -Message 'BlockSize cannot be specified when backup up to an Azure page blob, ignoring'
+        if ((Test-Bound 'StorageCredential') -and (Test-Bound 'BlockSize')) {
+            Write-Message -Level Warning -Message 'BlockSize cannot be specified when backing up to an Azure page blob, ignoring'
             $BlockSize = $null
         }
 
-        if ((Test-Bound 'AzureCredential') -and (Test-Bound 'MaxTransferSize')) {
-            Write-Message -Level Warning -Message 'MaxTransferSize cannot be specified when backup up to an Azure page blob ignoring'
+        if ((Test-Bound 'StorageCredential') -and (Test-Bound 'MaxTransferSize')) {
+            Write-Message -Level Warning -Message 'MaxTransferSize cannot be specified when backing up to an Azure page blob, ignoring'
             $MaxTransferSize = $null
+        }
+
+        if ((Test-Bound 'S3Region') -and -not (Test-Bound 'StorageBaseUrl')) {
+            Stop-Function -Message 'S3Region can only be specified when using StorageBaseUrl with an S3 URL'
+            return
         }
 
         if ($SqlInstance) {
@@ -514,7 +546,7 @@ function Backup-DbaDatabase {
             }
 
 
-            if ( (Test-Bound AzureBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
+            if ( (Test-Bound StorageBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
                 Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
                 $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
                 if ($Path) {
@@ -527,10 +559,14 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
-                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                Stop-Function -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
-                return
+            # Validate MaxTransferSize for non-S3 backups (S3 validation is done later in the S3 block)
+            $isS3Url = $null -ne $StorageBaseUrl -and $StorageBaseUrl[0] -match "^s3://"
+            if ($MaxTransferSize -and -not $isS3Url) {
+                if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
+                    Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
+                    Stop-Function -Message "MaxTransferSize value must be a multiple of 64KB and no greater than 4MB"
+                    return
+                }
             }
 
             if ($BlockSize) {
@@ -541,33 +577,91 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if ($null -ne $AzureBaseUrl) {
-                $AzureBaseUrl = $AzureBaseUrl.Trim("/")
-                if ('' -ne $AzureCredential) {
-                    Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
-                    $FileCount = 1
-                } else {
-                    foreach ($baseUrl in $AzureBaseUrl) {
-                        $base = $baseUrl -split "/"
-                        if ( $base.Count -gt 4) {
-                            Write-Message "AzureURL contains a folder"
-                            $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
-                        } else {
-                            # URL is just the container, use it as-is for credential name
-                            $credentialName = $baseUrl
+            if ($null -ne $StorageBaseUrl) {
+                # Detect if this is S3 or Azure storage
+                $isS3Backup = $StorageBaseUrl[0] -match "^s3://"
+
+                if ($isS3Backup) {
+                    # S3-compatible object storage (SQL Server 2022+)
+                    if ($server.VersionMajor -lt 16) {
+                        Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
+                        Stop-Function -Message "S3 backup requires SQL Server 2022 or later. Current version: $($server.Version)"
+                        return
+                    }
+
+                    # Validate MaxTransferSize for S3 (must be between 5MB and 20MB)
+                    if ($MaxTransferSize) {
+                        if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -lt 5mb -or $MaxTransferSize -gt 20mb) {
+                            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
+                            Stop-Function -Message "MaxTransferSize for S3 backups must be a multiple of 64KB and between 5MB and 20MB"
+                            return
                         }
-                        Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
+                    } else {
+                        # Set default MaxTransferSize for S3 if not specified (10MB is a good default)
+                        $MaxTransferSize = 10mb
+                        Write-Message -Level Verbose -Message "S3 backup detected, setting default MaxTransferSize to 10MB"
+                    }
+
+                    # Validate S3Region if specified with non-S3 URL
+                    if ((Test-Bound 'S3Region') -and -not $isS3Backup) {
+                        Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
+                        Stop-Function -Message "S3Region can only be specified with S3 URLs"
+                        return
+                    }
+
+                    # S3 URLs should not have trailing slash trimmed the same way
+                    $StorageBaseUrl = $StorageBaseUrl | ForEach-Object { $_.TrimEnd("/") }
+                } else {
+                    # Azure Blob Storage
+                    $StorageBaseUrl = $StorageBaseUrl.Trim("/")
+
+                    # Validate S3Region not used with Azure
+                    if (Test-Bound 'S3Region') {
+                        Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
+                        Stop-Function -Message "S3Region can only be specified with S3 URLs, not Azure storage"
+                        return
+                    }
+                }
+
+                if ('' -ne $StorageCredential) {
+                    Write-Message -Message "Storage credential name passed in, will proceed assuming it's valid" -Level Verbose
+                    if (-not $isS3Backup) {
+                        # Azure page blob with credential = single file only
+                        $FileCount = 1
+                    }
+                } else {
+                    foreach ($baseUrl in $StorageBaseUrl) {
+                        if ($isS3Backup) {
+                            # S3 credential name should match the S3 URL path
+                            $credentialName = $baseUrl
+                            Write-Message -Message "S3 URL detected, testing for S3 credential" -Level Verbose
+                        } else {
+                            # Azure SAS credential logic
+                            $base = $baseUrl -split "/"
+                            if ( $base.Count -gt 4) {
+                                Write-Message "Storage URL contains a folder"
+                                $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                            } else {
+                                # URL is just the container, use it as-is for credential name
+                                $credentialName = $baseUrl
+                            }
+                            Write-Message -Message "Azure URL and no credential, testing for SAS credential" -Level Verbose
+                        }
                         if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
-                            Write-Message -Message "Found a SAS backup credential" -Level Verbose
+                            Write-Message -Message "Found a matching backup credential" -Level Verbose
                         } else {
                             Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                            Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+                            if ($isS3Backup) {
+                                Stop-Function -Message "You must provide the credential name for S3 storage or create a credential matching the S3 URL"
+                            } else {
+                                Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+                            }
                             return
                         }
                     }
                 }
-                $FileCount = $AzureBaseUrl.count
-                $Path = $AzureBaseUrl
+                $FileCount = $StorageBaseUrl.count
+                $Path = $StorageBaseUrl
             }
 
             if ($OutputScriptOnly) {
@@ -709,8 +803,8 @@ function Backup-DbaDatabase {
 
             $backup.CopyOnly = $CopyOnly
             $backup.Action = $SMOBackupType
-            if ($null -ne $AzureBaseUrl -and $null -ne $AzureCredential) {
-                $backup.CredentialName = $AzureCredential
+            if ($null -ne $StorageBaseUrl -and $null -ne $StorageCredential) {
+                $backup.CredentialName = $StorageCredential
             }
 
             Write-Message -Level Verbose -Message "Building file name"
@@ -749,7 +843,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if ($AzureBaseUrl -or $AzureCredential -or $isdestlinux) {
+            if ($StorageBaseUrl -or $StorageCredential -or $isdestlinux) {
                 $slash = "/"
             } else {
                 $slash = "\"
@@ -788,7 +882,7 @@ function Backup-DbaDatabase {
 
             # Linux can't support making new directories yet, and it's likely that databases
             # will be in one place
-            if (-not $IgnoreFileChecks -and -not $AzureBaseUrl -and -not $isdestlinux) {
+            if (-not $IgnoreFileChecks -and -not $StorageBaseUrl -and -not $isdestlinux) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
                     if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
@@ -804,7 +898,7 @@ function Backup-DbaDatabase {
             }
 
             # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-            if ($null -eq $AzureBaseUrl -and $Path -and -not $nonwindows -and -not $isdestlinux) {
+            if ($null -eq $StorageBaseUrl -and $Path -and -not $nonwindows -and -not $isdestlinux) {
                 $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
 
@@ -817,7 +911,7 @@ function Backup-DbaDatabase {
 
                 foreach ($backupfile in $FinalBackupPath) {
                     $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-                    if ($null -ne $AzureBaseUrl) {
+                    if ($null -ne $StorageBaseUrl) {
                         $device.DeviceType = "URL"
                     } else {
                         $device.DeviceType = "File"
@@ -859,8 +953,18 @@ function Backup-DbaDatabase {
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbName to $humanBackupFile")) {
                         if ($OutputScriptOnly -ne $True) {
-                            $backup.SqlBackup($server)
-                            $script = $backup.Script($server)
+                            # Check if we need to use T-SQL execution for S3 with BACKUP_OPTIONS
+                            if ($isS3Backup -and $S3Region) {
+                                # Generate script first, then append BACKUP_OPTIONS and execute via T-SQL
+                                $script = $backup.Script($server)
+                                $backupOptionsJson = "{`"s3`": {`"region`":`"$S3Region`"}}"
+                                $script = $script -replace ";$", ", BACKUP_OPTIONS = '$backupOptionsJson';"
+                                Write-Message -Level Verbose -Message "Executing S3 backup with BACKUP_OPTIONS for region: $S3Region"
+                                $null = $server.ConnectionContext.ExecuteNonQuery($script)
+                            } else {
+                                $backup.SqlBackup($server)
+                                $script = $backup.Script($server)
+                            }
                             Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
                             $BackupComplete = $true
                             if ($server.VersionMajor -eq '8') {
@@ -928,7 +1032,13 @@ function Backup-DbaDatabase {
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified
                         } else {
-                            $backup.Script($server)
+                            $script = $backup.Script($server)
+                            # Append BACKUP_OPTIONS for S3 with region
+                            if ($isS3Backup -and $S3Region) {
+                                $backupOptionsJson = "{`"s3`": {`"region`":`"$S3Region`"}}"
+                                $script = $script -replace ";$", ", BACKUP_OPTIONS = '$backupOptionsJson';"
+                            }
+                            $script
                             Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
                         }
                     }
