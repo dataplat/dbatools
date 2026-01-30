@@ -83,7 +83,24 @@ jobs:
         run: |
           docker network create localnet
 
-      - name: Start MinIO container
+      - name: Generate TLS certificates for MinIO
+        shell: bash
+        run: |
+          # Create certs directory
+          mkdir -p $HOME/.minio/certs
+
+          # Generate self-signed certificate for MinIO
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout $HOME/.minio/certs/private.key \
+            -out $HOME/.minio/certs/public.crt \
+            -subj "/CN=minio" \
+            -addext "subjectAltName=DNS:minio,DNS:localhost,IP:127.0.0.1"
+
+          # Set proper permissions
+          chmod 600 $HOME/.minio/certs/private.key
+          chmod 644 $HOME/.minio/certs/public.crt
+
+      - name: Start MinIO container with TLS
         shell: bash
         run: |
           docker run -d \
@@ -92,15 +109,16 @@ jobs:
             --network localnet \
             -p 9000:9000 \
             -p 9001:9001 \
+            -v $HOME/.minio/certs:/root/.minio/certs:ro \
             -e "MINIO_ROOT_USER=${{ env.MINIO_ROOT_USER }}" \
             -e "MINIO_ROOT_PASSWORD=${{ env.MINIO_ROOT_PASSWORD }}" \
             minio/minio:latest server /data --console-address ":9001"
 
-          # Wait for MinIO to be ready
-          echo "Waiting for MinIO to start..."
+          # Wait for MinIO to be ready (now using HTTPS)
+          echo "Waiting for MinIO to start with TLS..."
           for i in {1..30}; do
-            if curl -s http://localhost:9000/minio/health/live > /dev/null 2>&1; then
-              echo "MinIO is ready!"
+            if curl -sk https://localhost:9000/minio/health/live > /dev/null 2>&1; then
+              echo "MinIO is ready with TLS!"
               break
             fi
             echo "Attempt $i: MinIO not ready yet..."
@@ -114,16 +132,16 @@ jobs:
           curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o $HOME/mc
           chmod +x $HOME/mc
 
-          # Configure MinIO client
-          $HOME/mc alias set myminio http://localhost:9000 ${{ env.MINIO_ROOT_USER }} ${{ env.MINIO_ROOT_PASSWORD }}
+          # Configure MinIO client (with --insecure for self-signed cert)
+          $HOME/mc alias set myminio https://localhost:9000 ${{ env.MINIO_ROOT_USER }} ${{ env.MINIO_ROOT_PASSWORD }} --insecure
 
           # Create bucket for backups
-          $HOME/mc mb myminio/sqlbackups
+          $HOME/mc mb myminio/sqlbackups --insecure
 
           # Verify bucket was created
-          $HOME/mc ls myminio/
+          $HOME/mc ls myminio/ --insecure
 
-      - name: Start SQL Server 2022 container
+      - name: Copy MinIO certificate to SQL Server container
         shell: bash
         run: |
           # SQL Server 2022 is required for S3 backup support
@@ -138,6 +156,10 @@ jobs:
 
           echo "Waiting for SQL Server container to initialize..."
           sleep 15
+
+          # Copy the MinIO certificate to SQL Server container and update CA certificates
+          docker cp $HOME/.minio/certs/public.crt mssql1:/tmp/minio.crt
+          docker exec mssql1 bash -c "cp /tmp/minio.crt /usr/local/share/ca-certificates/minio.crt && update-ca-certificates"
 
       - name: Wait for SQL Server to be ready
         run: |
