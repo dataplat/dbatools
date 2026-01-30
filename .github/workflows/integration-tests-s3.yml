@@ -79,10 +79,12 @@ jobs:
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
 
       - name: Setup docker network
+        shell: bash
         run: |
           docker network create localnet
 
       - name: Start MinIO container
+        shell: bash
         run: |
           docker run -d \
             --name minio \
@@ -106,21 +108,23 @@ jobs:
           done
 
       - name: Setup MinIO bucket
+        shell: bash
         run: |
           # Install MinIO client
-          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
-          chmod +x /usr/local/bin/mc
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o $HOME/mc
+          chmod +x $HOME/mc
 
           # Configure MinIO client
-          mc alias set myminio http://localhost:9000 ${{ env.MINIO_ROOT_USER }} ${{ env.MINIO_ROOT_PASSWORD }}
+          $HOME/mc alias set myminio http://localhost:9000 ${{ env.MINIO_ROOT_USER }} ${{ env.MINIO_ROOT_PASSWORD }}
 
           # Create bucket for backups
-          mc mb myminio/sqlbackups
+          $HOME/mc mb myminio/sqlbackups
 
           # Verify bucket was created
-          mc ls myminio/
+          $HOME/mc ls myminio/
 
       - name: Start SQL Server 2022 container
+        shell: bash
         run: |
           # SQL Server 2022 is required for S3 backup support
           docker run -d \
@@ -134,14 +138,18 @@ jobs:
 
           # Wait for SQL Server to be ready
           echo "Waiting for SQL Server to start..."
+          sleep 10
           for i in {1..60}; do
-            if docker exec mssql1 /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "dbatools.IO" -C -Q "SELECT 1" 2>/dev/null; then
+            if docker exec mssql1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "dbatools.IO" -No -Q "SELECT 1" 2>/dev/null; then
               echo "SQL Server is ready!"
               break
             fi
             echo "Attempt $i: SQL Server not ready yet..."
-            sleep 2
+            sleep 3
           done
+
+          # Verify SQL Server is responsive
+          docker exec mssql1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "dbatools.IO" -No -Q "SELECT @@VERSION"
 
       - name: Run S3 backup tests
         env:

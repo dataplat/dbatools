@@ -150,6 +150,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
                 FilePath          = $backupFile
                 Type              = "Full"
                 MaxTransferSize   = 10485760
+                CompressBackup    = $true
             }
             $result = Backup-DbaDatabase @splatBackup
 
