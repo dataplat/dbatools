@@ -157,18 +157,19 @@ jobs:
           echo "Waiting for SQL Server container to initialize..."
           sleep 15
 
-          # Copy the MinIO certificate to SQL Server container and update CA certificates
-          # Must run as root since mssql user doesn't have permission to system directories
+          # SQL Server on Linux uses SQLPAL for certificate validation, NOT the OS certificate store
+          # Self-signed certificates must be placed in /var/opt/mssql/security/ca-certificates
+          # See: https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/sql-server-backup-to-url-s3-compatible-object-storage-best-practices-and-troubleshooting
           docker cp $HOME/.minio/certs/public.crt mssql1:/tmp/minio.crt
-          docker exec --user root mssql1 bash -c "cp /tmp/minio.crt /usr/local/share/ca-certificates/minio.crt && update-ca-certificates"
+          docker exec --user root mssql1 bash -c "mkdir -p /var/opt/mssql/security/ca-certificates && cp /tmp/minio.crt /var/opt/mssql/security/ca-certificates/minio.crt && chown -R mssql:mssql /var/opt/mssql/security"
 
           # Restart SQL Server to pick up the new CA certificates
-          # OpenSSL loads CA certs at process startup, so SQL Server needs a restart
+          # SQL Server reads certificates from /var/opt/mssql/security/ca-certificates during startup
           echo "Restarting SQL Server to load new CA certificates..."
           docker restart mssql1
 
           echo "Waiting for SQL Server to restart..."
-          sleep 20
+          sleep 10
 
       - name: Wait for SQL Server to be ready
         run: |
