@@ -32,7 +32,7 @@ Describe $CommandName -Tag UnitTests {
                 "BufferCount",
                 "StorageBaseUrl",
                 "StorageCredential",
-                "S3Region",
+                "StorageRegion",
                 "NoRecovery",
                 "BuildPath",
                 "WithFormat",

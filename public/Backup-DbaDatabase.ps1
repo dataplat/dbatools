@@ -141,7 +141,7 @@ function Backup-DbaDatabase {
         For S3: The credential containing the S3 Access Key ID and Secret Key ID. The credential name should match the S3 URL path.
         For SAS authentication, use credentials named to match the StorageBaseUrl.
 
-    .PARAMETER S3Region
+    .PARAMETER StorageRegion
         Specifies the AWS region for S3 backups using the BACKUP_OPTIONS JSON parameter. Only applies to S3-compatible storage.
         Use this when your S3 bucket is in a specific region that differs from the default, or when required by your S3-compatible provider.
         Example regions: us-east-1, us-west-2, eu-west-1, ap-southeast-1.
@@ -310,9 +310,9 @@ function Backup-DbaDatabase {
         Performs a full backup to a MinIO S3-compatible storage server using the S3BaseUrl alias. The credential must be created to match the S3 URL path.
 
     .EXAMPLE
-        PS C:\> Backup-DbaDatabase -SqlInstance sql2022 -Database AdventureWorks -StorageBaseUrl "s3://mybucket.s3.amazonaws.com/backups" -S3Region "us-west-2" -MaxTransferSize 10485760 -Type Full
+        PS C:\> Backup-DbaDatabase -SqlInstance sql2022 -Database AdventureWorks -StorageBaseUrl "s3://mybucket.s3.amazonaws.com/backups" -StorageRegion "us-west-2" -MaxTransferSize 10485760 -Type Full
 
-        Performs a full backup to S3 with explicit region specification and a 10MB transfer size. The S3Region parameter adds BACKUP_OPTIONS to the backup command for cross-region scenarios.
+        Performs a full backup to S3 with explicit region specification and a 10MB transfer size. The StorageRegion parameter adds BACKUP_OPTIONS to the backup command for cross-region scenarios.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For StorageCredential
@@ -346,7 +346,8 @@ function Backup-DbaDatabase {
         [string[]]$StorageBaseUrl,
         [Alias("AzureCredential", "S3Credential")]
         [string]$StorageCredential,
-        [string]$S3Region,
+        [Alias("S3Region")]
+        [string]$StorageRegion,
         [switch]$NoRecovery,
         [switch]$BuildPath,
         [switch]$WithFormat,
@@ -394,8 +395,8 @@ function Backup-DbaDatabase {
             return
         }
 
-        if ((Test-Bound 'S3Region') -and -not (Test-Bound 'StorageBaseUrl')) {
-            Stop-Function -Message 'S3Region can only be specified when using StorageBaseUrl with an S3 URL'
+        if ((Test-Bound 'StorageRegion') -and -not (Test-Bound 'StorageBaseUrl')) {
+            Stop-Function -Message 'StorageRegion can only be specified when using StorageBaseUrl with an S3 URL'
             return
         }
 
@@ -610,10 +611,10 @@ function Backup-DbaDatabase {
                         Write-Message -Level Verbose -Message "S3 backup detected, setting default MaxTransferSize to 10MB"
                     }
 
-                    # Validate S3Region if specified with non-S3 URL
-                    if ((Test-Bound 'S3Region') -and -not $isS3Backup) {
+                    # Validate StorageRegion if specified with non-S3 URL
+                    if ((Test-Bound 'StorageRegion') -and -not $isS3Backup) {
                         Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                        Stop-Function -Message "S3Region can only be specified with S3 URLs"
+                        Stop-Function -Message "StorageRegion can only be specified with S3 URLs"
                         return
                     }
 
@@ -623,10 +624,10 @@ function Backup-DbaDatabase {
                     # Azure Blob Storage
                     $StorageBaseUrl = $StorageBaseUrl.Trim("/")
 
-                    # Validate S3Region not used with Azure
-                    if (Test-Bound 'S3Region') {
+                    # Validate StorageRegion not used with Azure
+                    if (Test-Bound 'StorageRegion') {
                         Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                        Stop-Function -Message "S3Region can only be specified with S3 URLs, not Azure storage"
+                        Stop-Function -Message "StorageRegion can only be specified with S3 URLs, not Azure storage"
                         return
                     }
                 }
@@ -962,12 +963,12 @@ function Backup-DbaDatabase {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbName to $humanBackupFile")) {
                         if ($OutputScriptOnly -ne $True) {
                             # Check if we need to use T-SQL execution for S3 with BACKUP_OPTIONS
-                            if ($isS3Backup -and $S3Region) {
+                            if ($isS3Backup -and $StorageRegion) {
                                 # Generate script first, then append BACKUP_OPTIONS and execute via T-SQL
                                 $script = $backup.Script($server)
-                                $backupOptionsJson = "{`"s3`": {`"region`":`"$S3Region`"}}"
+                                $backupOptionsJson = "{`"s3`": {`"region`":`"$StorageRegion`"}}"
                                 $script += ", BACKUP_OPTIONS = '$backupOptionsJson'"
-                                Write-Message -Level Verbose -Message "Executing S3 backup with BACKUP_OPTIONS for region: $S3Region"
+                                Write-Message -Level Verbose -Message "Executing S3 backup with BACKUP_OPTIONS for region: $StorageRegion"
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                             } else {
                                 $backup.SqlBackup($server)
@@ -1042,8 +1043,8 @@ function Backup-DbaDatabase {
                         } else {
                             $script = $backup.Script($server)
                             # Append BACKUP_OPTIONS for S3 with region
-                            if ($isS3Backup -and $S3Region) {
-                                $backupOptionsJson = "{`"s3`": {`"region`":`"$S3Region`"}}"
+                            if ($isS3Backup -and $StorageRegion) {
+                                $backupOptionsJson = "{`"s3`": {`"region`":`"$StorageRegion`"}}"
                                 $script += ", BACKUP_OPTIONS = '$backupOptionsJson'"
                             }
                             $script
