@@ -376,14 +376,22 @@ function Backup-DbaDatabase {
             return
         }
 
-        if ((Test-Bound 'StorageCredential') -and (Test-Bound 'BlockSize')) {
+        # Determine if this is an S3 backup (S3 URLs start with s3://)
+        $isS3Backup = (Test-Bound 'StorageBaseUrl') -and ($StorageBaseUrl | Where-Object { $_ -match "^s3://" })
+
+        if ((Test-Bound 'StorageCredential') -and (Test-Bound 'BlockSize') -and -not $isS3Backup) {
             Write-Message -Level Warning -Message 'BlockSize cannot be specified when backing up to an Azure page blob, ignoring'
             $BlockSize = $null
         }
 
-        if ((Test-Bound 'StorageCredential') -and (Test-Bound 'MaxTransferSize')) {
+        if ((Test-Bound 'StorageCredential') -and (Test-Bound 'MaxTransferSize') -and -not $isS3Backup) {
             Write-Message -Level Warning -Message 'MaxTransferSize cannot be specified when backing up to an Azure page blob, ignoring'
             $MaxTransferSize = $null
+        }
+
+        if ($isS3Backup -and (Test-Bound 'MaxTransferSize') -and -not (Test-Bound 'CompressBackup')) {
+            Stop-Function -Message 'CompressBackup must be enabled when specifying MaxTransferSize for S3 backups'
+            return
         }
 
         if ((Test-Bound 'S3Region') -and -not (Test-Bound 'StorageBaseUrl')) {
