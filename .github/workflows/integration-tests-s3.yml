@@ -162,6 +162,14 @@ jobs:
           docker cp $HOME/.minio/certs/public.crt mssql1:/tmp/minio.crt
           docker exec --user root mssql1 bash -c "cp /tmp/minio.crt /usr/local/share/ca-certificates/minio.crt && update-ca-certificates"
 
+          # Restart SQL Server to pick up the new CA certificates
+          # OpenSSL loads CA certs at process startup, so SQL Server needs a restart
+          echo "Restarting SQL Server to load new CA certificates..."
+          docker restart mssql1
+
+          echo "Waiting for SQL Server to restart..."
+          sleep 20
+
       - name: Wait for SQL Server to be ready
         run: |
           Import-Module ./dbatools.psd1 -Force
