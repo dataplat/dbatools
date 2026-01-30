@@ -1,0 +1,152 @@
+name: Run S3 Backup Integration Tests
+on:
+  push:
+    branches-ignore:
+      - master
+    tags-ignore:
+      - "**"
+    paths:
+      - "public/Backup-DbaDatabase.ps1"
+      - "public/Restore-DbaDatabase.ps1"
+      - "public/Get-DbaBackupInformation.ps1"
+      - "public/Test-DbaLastBackup.ps1"
+      - "public/Test-DbaBackupInformation.ps1"
+      - "private/functions/Read-DbaBackupHeader.ps1"
+      - "private/functions/Invoke-DbaAdvancedRestore.ps1"
+      - ".github/workflows/integration-tests-s3.yml"
+      - ".github/scripts/gh-s3actions.ps1"
+  pull_request:
+    paths:
+      - "public/Backup-DbaDatabase.ps1"
+      - "public/Restore-DbaDatabase.ps1"
+      - "public/Get-DbaBackupInformation.ps1"
+      - "public/Test-DbaLastBackup.ps1"
+      - "public/Test-DbaBackupInformation.ps1"
+      - "private/functions/Read-DbaBackupHeader.ps1"
+      - "private/functions/Invoke-DbaAdvancedRestore.ps1"
+      - ".github/workflows/integration-tests-s3.yml"
+      - ".github/scripts/gh-s3actions.ps1"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  s3-backup-tests:
+    env:
+      SMODefaultModuleName: dbatools
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # MinIO credentials - these are test credentials for local container
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Read dbatools.library version
+        id: get-version
+        shell: pwsh
+        run: |
+          $versionConfig = Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json
+          $version = $versionConfig.version
+          $isPreview = $version -like "*preview*"
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "is_preview=$isPreview" >> $env:GITHUB_OUTPUT
+          Write-Output "Using dbatools.library version: $version"
+          Write-Output "Is preview version: $isPreview"
+
+      - name: Install and cache PowerShell modules (stable versions)
+        if: steps.get-version.outputs.is_preview == 'False'
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
+
+      - name: Install dbatools.library (preview versions)
+        if: steps.get-version.outputs.is_preview == 'True'
+        shell: pwsh
+        run: |
+          Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          ./.github/scripts/install-dbatools-library.ps1
+
+      - name: Set encryption values
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+
+      - name: Setup docker network
+        run: |
+          docker network create localnet
+
+      - name: Start MinIO container
+        run: |
+          docker run -d \
+            --name minio \
+            --hostname minio \
+            --network localnet \
+            -p 9000:9000 \
+            -p 9001:9001 \
+            -e "MINIO_ROOT_USER=${{ env.MINIO_ROOT_USER }}" \
+            -e "MINIO_ROOT_PASSWORD=${{ env.MINIO_ROOT_PASSWORD }}" \
+            minio/minio:latest server /data --console-address ":9001"
+
+          # Wait for MinIO to be ready
+          echo "Waiting for MinIO to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:9000/minio/health/live > /dev/null 2>&1; then
+              echo "MinIO is ready!"
+              break
+            fi
+            echo "Attempt $i: MinIO not ready yet..."
+            sleep 2
+          done
+
+      - name: Setup MinIO bucket
+        run: |
+          # Install MinIO client
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
+          chmod +x /usr/local/bin/mc
+
+          # Configure MinIO client
+          mc alias set myminio http://localhost:9000 ${{ env.MINIO_ROOT_USER }} ${{ env.MINIO_ROOT_PASSWORD }}
+
+          # Create bucket for backups
+          mc mb myminio/sqlbackups
+
+          # Verify bucket was created
+          mc ls myminio/
+
+      - name: Start SQL Server 2022 container
+        run: |
+          # SQL Server 2022 is required for S3 backup support
+          docker run -d \
+            --name mssql1 \
+            --hostname mssql1 \
+            --network localnet \
+            -p 1433:1433 \
+            -e "ACCEPT_EULA=Y" \
+            -e "MSSQL_SA_PASSWORD=dbatools.IO" \
+            mcr.microsoft.com/mssql/server:2022-latest
+
+          # Wait for SQL Server to be ready
+          echo "Waiting for SQL Server to start..."
+          for i in {1..60}; do
+            if docker exec mssql1 /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "dbatools.IO" -C -Q "SELECT 1" 2>/dev/null; then
+              echo "SQL Server is ready!"
+              break
+            fi
+            echo "Attempt $i: SQL Server not ready yet..."
+            sleep 2
+          done
+
+      - name: Run S3 backup tests
+        env:
+          S3_ENDPOINT: minio:9000
+          S3_BUCKET: sqlbackups
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          $null = Invoke-Pester .github/scripts/gh-s3actions.ps1 -Output Detailed -PassThru
