@@ -157,9 +157,9 @@ function Add-DbaComputerCertificate {
 
             # Ensure the correct store is used
             if ($Store -eq "LocalMachine") {
-                $flags += "MachineKeySet"
+                $flags += ",MachineKeySet"
             } else {
-                $flags += "UserKeySet"
+                $flags += ",UserKeySet"
             }
         } else {
             $flags = $Flag -join ","
@@ -196,6 +196,7 @@ function Add-DbaComputerCertificate {
                     $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
                 }
 
+                Write-Message -Level Verbose -Message "Importing Path: $Path"
                 try {
                     # Import using plain text password (or null for non-password-protected certificates)
                     # Works reliably in all PowerShell versions v3+
@@ -227,14 +228,14 @@ function Add-DbaComputerCertificate {
                 [string]$PlainPassword,
                 $Store,
                 $Folder,
-                [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]$flags
+                $flags
             )
 
             # Use X509Certificate2Collection to import the full certificate chain
             $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+            Write-Verbose -Message "Importing certificate chain to $Folder\$Store using flags: $flags"
             $certCollection.Import($CertificateData, $PlainPassword, $flags)
 
-            Write-Verbose -Message "Importing certificate chain to $Folder\$Store using flags: $flags"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
             $tempStore.Open("ReadWrite")
 
