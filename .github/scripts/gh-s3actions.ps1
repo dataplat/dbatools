@@ -350,14 +350,15 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
     Context "Cleanup" {
         It "Should remove the S3 credential" {
-            $server = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
-
-            $existingCred = Get-DbaCredential -SqlInstance $server -Name $script:S3CredentialName
-            if ($existingCred) {
-                $server.Query("DROP CREDENTIAL [$($script:S3CredentialName)]")
+            $splatRemoveCred = @{
+                SqlInstance   = "localhost"
+                SqlCredential = $cred
+                Name          = $script:S3CredentialName
+                Confirm       = $false
             }
+            $null = Remove-DbaCredential @splatRemoveCred
 
-            $deletedCred = Get-DbaCredential -SqlInstance $server -Name $script:S3CredentialName
+            $deletedCred = Get-DbaCredential -SqlInstance localhost -SqlCredential $cred -Name $script:S3CredentialName
             $deletedCred | Should -BeNullOrEmpty
         }
     }
