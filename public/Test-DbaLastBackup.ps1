@@ -298,7 +298,7 @@ function Test-DbaLastBackup {
         [string[]]$DeviceType,
         [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
-        [Alias("AzureCredential")]
+        [Alias("AzureCredential", "S3Credential")]
         [string]$StorageCredential,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
