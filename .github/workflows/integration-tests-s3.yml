@@ -136,20 +136,35 @@ jobs:
             -e "MSSQL_SA_PASSWORD=dbatools.IO" \
             mcr.microsoft.com/mssql/server:2022-latest
 
-          # Wait for SQL Server to be ready
-          echo "Waiting for SQL Server to start..."
-          sleep 10
-          for i in {1..60}; do
-            if docker exec mssql1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "dbatools.IO" -No -Q "SELECT 1" 2>/dev/null; then
-              echo "SQL Server is ready!"
-              break
-            fi
-            echo "Attempt $i: SQL Server not ready yet..."
-            sleep 3
-          done
+          echo "Waiting for SQL Server container to initialize..."
+          sleep 15
 
-          # Verify SQL Server is responsive
-          docker exec mssql1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "dbatools.IO" -No -Q "SELECT @@VERSION"
+      - name: Wait for SQL Server to be ready
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+
+          $maxAttempts = 15
+          $attempt = 0
+          $connected = $false
+
+          while (-not $connected -and $attempt -lt $maxAttempts) {
+              $attempt++
+              Write-Host "Attempt $attempt of $maxAttempts`: Connecting to SQL Server..."
+              try {
+                  $server = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred -ErrorAction Stop
+                  Write-Host "Connected to SQL Server version: $($server.Version)"
+                  $connected = $true
+              } catch {
+                  Write-Host "Not ready yet, waiting 5 seconds..."
+                  Start-Sleep -Seconds 5
+              }
+          }
+
+          if (-not $connected) {
+              throw "Failed to connect to SQL Server after $maxAttempts attempts"
+          }
 
       - name: Run S3 backup tests
         env:
