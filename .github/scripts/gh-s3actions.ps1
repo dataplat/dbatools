@@ -42,20 +42,20 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
         It "Should create an S3 credential on the SQL Server" {
             # S3 credential format: IDENTITY = 'S3 Access Key', SECRET = 'AccessKeyID:SecretKeyID'
-            $server = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
+            $secretString = "$($script:S3AccessKey):$($script:S3SecretKey)"
+            $securePassword = ConvertTo-SecureString -String $secretString -AsPlainText -Force
 
-            # Drop existing credential if present
-            $existingCred = Get-DbaCredential -SqlInstance $server -Name $script:S3CredentialName
-            if ($existingCred) {
-                $server.Query("DROP CREDENTIAL [$($script:S3CredentialName)]")
+            $splatCredential = @{
+                SqlInstance    = "localhost"
+                SqlCredential  = $cred
+                Name           = $script:S3CredentialName
+                Identity       = "S3 Access Key"
+                SecurePassword = $securePassword
+                Force          = $true
             }
-
-            # Create new S3 credential
-            $sql = "CREATE CREDENTIAL [$($script:S3CredentialName)] WITH IDENTITY = 'S3 Access Key', SECRET = '$($script:S3AccessKey):$($script:S3SecretKey)'"
-            $server.Query($sql)
+            $newCred = New-DbaCredential @splatCredential
 
             # Verify credential was created
-            $newCred = Get-DbaCredential -SqlInstance $server -Name $script:S3CredentialName
             $newCred | Should -Not -BeNullOrEmpty
             $newCred.Name | Should -Be $script:S3CredentialName
             $newCred.Identity | Should -Be "S3 Access Key"
