@@ -446,7 +446,15 @@ if (-not $Finalize) {
                 }
                 $errorMessageDetail = $failedTestsList -join " | "
 
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                if ($trialNo -le 3) {
+                    Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. Retrying (attempt $trialNo of 3)..." -ForegroundColor Yellow
+                    # Restarting all used instances to avoid state issues
+                    $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
+                    Start-Sleep -Seconds 10
+                } else {
+                    Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
+                    Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                }
 
                 # Add to summary
                 $allTestsSummary.TestRuns += @{

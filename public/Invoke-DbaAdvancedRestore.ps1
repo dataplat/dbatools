@@ -74,10 +74,11 @@ function Invoke-DbaAdvancedRestore {
         Use this when applying additional transaction log backups to a database that was restored WITH NORECOVERY.
         Automatically enables WithReplace to allow the operation on existing database objects.
 
-    .PARAMETER AzureCredential
-        Name of the SQL Server credential object required to access backup files stored in Azure Blob Storage.
+    .PARAMETER StorageCredential
+        Name of the SQL Server credential object required to access backup files stored in Azure Blob Storage or S3-compatible object storage.
         The credential must already exist on the target SQL Server instance with proper access keys for the storage account.
-        Required when restoring from URLs that point to Azure blob storage containers instead of local file paths.
+        For Azure: The credential must contain valid Azure storage account keys or SAS tokens.
+        For S3: The credential must use Identity = 'S3 Access Key' and Secret = 'AccessKeyID:SecretKeyID'. Requires SQL Server 2022 or higher.
 
     .PARAMETER WithReplace
         Allows the restore operation to overwrite an existing database with the same name.
@@ -212,7 +213,7 @@ function Invoke-DbaAdvancedRestore {
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "StorageCredential", Justification = "For Parameter StorageCredential")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -228,7 +229,8 @@ function Invoke-DbaAdvancedRestore {
         [int]$BlockSize,
         [int]$BufferCount,
         [switch]$Continue,
-        [string]$AzureCredential,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
         [switch]$WithReplace,
         [switch]$KeepReplication,
         [switch]$KeepCDC,
@@ -387,14 +389,14 @@ function Invoke-DbaAdvancedRestore {
                     Write-Message -Message "Adding device $file" -Level Debug
                     $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
                     $device.Name = $file
-                    if ($file.StartsWith("http")) {
+                    if ($file -like "http*" -or $file -like "s3*") {
                         $device.devicetype = "URL"
                     } else {
                         $device.devicetype = "File"
                     }
 
-                    if ($AzureCredential) {
-                        $restore.CredentialName = $AzureCredential
+                    if ($StorageCredential) {
+                        $restore.CredentialName = $StorageCredential
                     }
 
                     $restore.FileNumber = $backup.Position

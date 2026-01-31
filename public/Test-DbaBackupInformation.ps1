@@ -205,7 +205,7 @@ function Test-DbaBackupInformation {
             $allpaths = $DbHistory | Select-Object -ExpandProperty FullName
             $allpaths_validity = Test-DbaPath -SqlInstance $RestoreInstance -Path $allpaths
             foreach ($path in $allpaths_validity) {
-                if ($path.FileExists -eq $false -and ($path.FilePath -notlike 'http*')) {
+                if ($path.FileExists -eq $false -and ($path.FilePath -notlike 'http*') -and ($path.FilePath -notlike 's3*')) {
                     Write-Message -Message "Backup File $($path.FilePath) cannot be read by $($RestoreInstance.Name). Does the service account ($($RestoreInstance.ServiceAccount)) have permission?" -Level Warning
                     $VerificationErrors++
                 }

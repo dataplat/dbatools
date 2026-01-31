@@ -70,8 +70,10 @@ function Get-DbaBackupInformation {
         This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the DIFF folder contains only differential backups and skip it.
         For all other scenarios we need to read the file headers to be sure.
 
-    .PARAMETER AzureCredential
-        The name of the SQL Server credential to be used if restoring from an Azure hosted backup
+    .PARAMETER StorageCredential
+        The name of the SQL Server credential to be used if restoring from cloud storage (Azure Blob Storage or S3-compatible object storage).
+        For Azure, this is typically a credential with access to the storage account.
+        For S3, this should be a credential created with Identity 'S3 Access Key' matching the S3 URL path.
 
     .PARAMETER Import
         When specified along with a path the command will import a previously exported BackupHistory object from an xml file.
@@ -168,9 +170,14 @@ function Get-DbaBackupInformation {
 
         As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means they WON'T be restored
 
+    .EXAMPLE
+        PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance sql2022 -Path s3://s3.us-west-2.amazonaws.com/mybucket/backups/mydb.bak -StorageCredential MyS3Credential
+
+        Gets backup information from an S3-compatible object storage location. Requires SQL Server 2022 or higher. The credential must be configured with Identity = 'S3 Access Key' and Secret containing the access key and secret key.
+
     #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter StorageCredential")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
@@ -191,7 +198,8 @@ function Get-DbaBackupInformation {
         [switch]$IgnoreLogBackup,
         [switch]$IgnoreDiffBackup,
         [string]$ExportPath,
-        [string]$AzureCredential,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
         [parameter(ParameterSetName = "Import")]
         [switch]$Import,
         [switch][Alias('Anonymize')]$Anonymise,
@@ -254,7 +262,8 @@ function Get-DbaBackupInformation {
         } else {
             $Files = @()
             $groupResults = @()
-            if ($Path[0] -match 'http') { $NoXpDirTree = $true }
+            # Detect cloud storage URLs (Azure http:// or S3 s3://)
+            if ($Path[0] -match 'http' -or $Path[0] -match 's3') { $NoXpDirTree = $true }
             if ($NoXpDirTree -ne $true) {
                 foreach ($f in $path) {
                     if ([System.IO.Path]::GetExtension($f).Length -gt 1) {
@@ -311,8 +320,8 @@ function Get-DbaBackupInformation {
                         }
                     } else {
                         if ($true -eq $MaintenanceSolution) {
-                            # Use forward slashes for URLs, backslashes for file system paths
-                            $separator = if ($f -match '^https?://') { "/" } else { "\" }
+                            # Use forward slashes for URLs (Azure https:// or S3 s3://), backslashes for file system paths
+                            $separator = if ($f -match '^https?://' -or $f -match '^s3://') { "/" } else { "\" }
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)FULL" -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)DIFF" -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)LOG" -SqlInstance $server -NoRecurse
@@ -337,7 +346,7 @@ function Get-DbaBackupInformation {
             if ($Files.Count -gt 0) {
                 Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
                 try {
-                    $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential -EnableException
+                    $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -StorageCredential $StorageCredential -EnableException
                 } catch {
                     Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -Continue
                 }

@@ -188,4 +188,69 @@ Describe $CommandName -Tag UnitTests {
             $results.PrimaryDatabase | Should -Be $null
         }
     }
+
+    Context "Remove incomplete log shipping configuration (primary only, no secondary)" {
+        BeforeAll {
+            # Simulate an incomplete log shipping setup by inserting only into primary tables
+            # This mimics the Azure Managed Instance scenario where secondary setup fails
+            $primaryId = [guid]::NewGuid()
+
+            $splatInsertPrimary = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "msdb"
+                Query           = "INSERT INTO dbo.log_shipping_primary_databases
+                    (primary_id, primary_database, backup_directory, backup_share, backup_retention_period,
+                     backup_job_id, monitor_server, monitor_server_security_mode, backup_threshold, threshold_alert,
+                     threshold_alert_enabled, last_backup_file, last_backup_date, last_backup_date_utc, history_retention_period)
+                    VALUES ('$primaryId', '$dbName', 'C:\Backup', '\\localhost\Backup', 4320,
+                     '00000000-0000-0000-0000-000000000000', '', 1, 60, 14420, 0, NULL, NULL, NULL, 5760)"
+                EnableException = $true
+            }
+            Invoke-DbaQuery @splatInsertPrimary
+        }
+
+        AfterAll {
+            # Clean up the manually inserted primary record
+            $splatCleanup = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "msdb"
+                Query           = "DELETE FROM dbo.log_shipping_primary_databases WHERE primary_database = '$dbName'"
+                EnableException = $true
+            }
+            Invoke-DbaQuery @splatCleanup
+        }
+
+        It "Should detect incomplete log shipping configuration" {
+            # Verify that we have primary but no secondary
+            $queryPrimary = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$dbName'"
+            $querySecondary = "SELECT ps.secondary_database
+                FROM msdb.dbo.log_shipping_primary_secondaries AS ps
+                    INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
+                        ON pd.primary_id = ps.primary_id
+                WHERE pd.primary_database = '$dbName'"
+
+            $primaryResult = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database msdb -Query $queryPrimary
+            $secondaryResult = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database msdb -Query $querySecondary
+
+            $primaryResult.primary_database | Should -Be $dbName
+            $secondaryResult | Should -BeNullOrEmpty
+        }
+
+        It "Should remove incomplete log shipping configuration without error" {
+            $splatRemove = @{
+                PrimarySqlInstance = $TestConfig.InstanceSingle
+                Database           = $dbName
+            }
+
+            # This should not throw and should successfully remove the primary-only configuration
+            { Remove-DbaDbLogShipping @splatRemove -EnableException } | Should -Not -Throw
+        }
+
+        It "Should have removed the primary database configuration" {
+            $queryPrimary = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$dbName'"
+            $result = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database msdb -Query $queryPrimary
+
+            $result | Should -BeNullOrEmpty
+        }
+    }
 } #>

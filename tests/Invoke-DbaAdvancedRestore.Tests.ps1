@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
                 "BlockSize",
                 "BufferCount",
                 "Continue",
-                "AzureCredential",
+                "StorageCredential",
                 "WithReplace",
                 "KeepReplication",
                 "KeepCDC",

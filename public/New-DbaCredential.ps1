@@ -129,6 +129,17 @@ function New-DbaCredential {
 
         Create a credential on Server1 using a Managed Identity for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
         As no password is needed in this case, we just don't pass the -SecurePassword parameter.
+
+    .EXAMPLE
+        PS C:\> $s3Params = @{
+        >>SqlInstance = "server1"
+        >>Name = "s3://mybucket.s3.us-west-2.amazonaws.com/backups"
+        >>Identity = "S3 Access Key"
+        >>SecurePassword = (ConvertTo-SecureString -String "AKIAIOSFODNN7EXAMPLE:wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" -AsPlainText -Force)
+        >>}
+        PS C:\> New-DbaCredential @s3Params
+
+        Creates a credential on Server1 for SQL Server 2022+ Backup to URL with S3-compatible object storage. The Name must be the S3 URL path matching your backup destination. The Identity must be exactly 'S3 Access Key'. The SecurePassword contains your Access Key ID and Secret Key ID separated by a colon (AccessKeyID:SecretKeyID).
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
