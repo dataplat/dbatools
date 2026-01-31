@@ -32,9 +32,11 @@ function Read-DbaBackupHeader {
         Returns detailed information about each data and log file contained within the backup set, including logical names, physical paths, file sizes, and file types.
         Use this when planning restores to different locations or when you need to understand the file structure before performing a restore operation.
 
-    .PARAMETER AzureCredential
-        Specifies the name of a SQL Server credential object that contains the authentication information for accessing Azure blob storage.
-        Required when reading backup files stored in Azure blob storage. The credential must already exist on the target SQL Server instance and contain valid Azure storage account keys or SAS tokens.
+    .PARAMETER StorageCredential
+        Specifies the name of a SQL Server credential object that contains the authentication information for accessing Azure blob storage or S3-compatible object storage.
+        Required when reading backup files stored in Azure blob storage or S3. The credential must already exist on the target SQL Server instance.
+        For Azure: The credential must contain valid Azure storage account keys or SAS tokens.
+        For S3: The credential must use Identity = 'S3 Access Key' and Secret = 'AccessKeyID:SecretKeyID'. Requires SQL Server 2022 or higher.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -174,12 +176,17 @@ function Read-DbaBackupHeader {
         Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
 
     .EXAMPLE
-        PS C:\> Read-DbaBackupHeader -SqlInstance sql2016 -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser
+        PS C:\> Read-DbaBackupHeader -SqlInstance sql2016 -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -StorageCredential AzureBackupUser
 
         Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 
+    .EXAMPLE
+        PS C:\> Read-DbaBackupHeader -SqlInstance sql2022 -Path s3://s3.us-west-2.amazonaws.com/mybucket/backups/mydb.bak -StorageCredential MyS3Credential
+
+        Gets the backup header information from the SQL Server backup file stored in an AWS S3 bucket. Requires SQL Server 2022 or higher and a credential configured with S3 access keys.
+
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'AzureCredential', Justification = "For Parameter AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'StorageCredential', Justification = "For Parameter StorageCredential")]
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -189,7 +196,8 @@ function Read-DbaBackupHeader {
         [object[]]$Path,
         [switch]$Simple,
         [switch]$FileList,
-        [string]$AzureCredential,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
         [switch]$EnableException
     )
 
@@ -213,14 +221,14 @@ function Read-DbaBackupHeader {
                 $SqlInstance,
                 $Path,
                 $DeviceType,
-                $AzureCredential
+                $StorageCredential
             )
             #Copy existing connection to create an independent TSQL session
             $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance.ConnectionContext.Copy()
             $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 
             if ($DeviceType -eq 'URL') {
-                $restore.CredentialName = $AzureCredential
+                $restore.CredentialName = $StorageCredential
             }
 
             $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $Path, $DeviceType
@@ -288,7 +296,7 @@ function Read-DbaBackupHeader {
         $threads = @()
 
         foreach ($file in $pathGroup) {
-            if ($file -like 'http*') {
+            if ($file -like 'http*' -or $file -like 's3*') {
                 $deviceType = 'URL'
             } else {
                 $deviceType = 'FILE'
@@ -301,10 +309,10 @@ function Read-DbaBackupHeader {
             if ($fileExists -or $deviceType -eq 'URL') {
                 #Create parameters hashtable
                 $argsRunPool = @{
-                    SqlInstance     = $server
-                    Path            = $file
-                    AzureCredential = $AzureCredential
-                    DeviceType      = $deviceType
+                    SqlInstance       = $server
+                    Path              = $file
+                    StorageCredential = $StorageCredential
+                    DeviceType        = $deviceType
                 }
                 Write-Message -Level Verbose -Message "Scanning file $file."
                 #Create new runspace thread
@@ -340,7 +348,7 @@ function Read-DbaBackupHeader {
                         if ($thread.deviceType -eq 'FILE') {
                             Stop-Function -Message "Problem found with $($thread.file)." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
                         } else {
-                            Stop-Function -Message "Unable to read $($thread.file), check credential $AzureCredential and network connectivity." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
+                            Stop-Function -Message "Unable to read $($thread.file), check credential $StorageCredential and network connectivity." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
                         }
                     }
                     #Process the result of this thread

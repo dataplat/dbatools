@@ -1,0 +1,207 @@
+name: Run S3 Backup Integration Tests
+on:
+  push:
+    branches-ignore:
+      - master
+    tags-ignore:
+      - "**"
+    paths:
+      - "public/Backup-DbaDatabase.ps1"
+      - "public/Restore-DbaDatabase.ps1"
+      - "public/Get-DbaBackupInformation.ps1"
+      - "public/Test-DbaLastBackup.ps1"
+      - "public/Test-DbaBackupInformation.ps1"
+      - "private/functions/Read-DbaBackupHeader.ps1"
+      - "private/functions/Invoke-DbaAdvancedRestore.ps1"
+      - ".github/workflows/integration-tests-s3.yml"
+      - ".github/scripts/gh-s3actions.ps1"
+  pull_request:
+    paths:
+      - "public/Backup-DbaDatabase.ps1"
+      - "public/Restore-DbaDatabase.ps1"
+      - "public/Get-DbaBackupInformation.ps1"
+      - "public/Test-DbaLastBackup.ps1"
+      - "public/Test-DbaBackupInformation.ps1"
+      - "private/functions/Read-DbaBackupHeader.ps1"
+      - "private/functions/Invoke-DbaAdvancedRestore.ps1"
+      - ".github/workflows/integration-tests-s3.yml"
+      - ".github/scripts/gh-s3actions.ps1"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  s3-backup-tests:
+    env:
+      SMODefaultModuleName: dbatools
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # MinIO credentials - these are test credentials for local container
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Read dbatools.library version
+        id: get-version
+        shell: pwsh
+        run: |
+          $versionConfig = Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json
+          $version = $versionConfig.version
+          $isPreview = $version -like "*preview*"
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "is_preview=$isPreview" >> $env:GITHUB_OUTPUT
+          Write-Output "Using dbatools.library version: $version"
+          Write-Output "Is preview version: $isPreview"
+
+      - name: Install and cache PowerShell modules (stable versions)
+        if: steps.get-version.outputs.is_preview == 'False'
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
+
+      - name: Install dbatools.library (preview versions)
+        if: steps.get-version.outputs.is_preview == 'True'
+        shell: pwsh
+        run: |
+          Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          ./.github/scripts/install-dbatools-library.ps1
+
+      - name: Set encryption values
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+
+      - name: Setup docker network
+        shell: bash
+        run: |
+          docker network create localnet
+
+      - name: Generate TLS certificates for MinIO
+        shell: bash
+        run: |
+          # Create certs directory
+          mkdir -p $HOME/.minio/certs
+
+          # Generate self-signed certificate for MinIO
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout $HOME/.minio/certs/private.key \
+            -out $HOME/.minio/certs/public.crt \
+            -subj "/CN=minio" \
+            -addext "subjectAltName=DNS:minio,DNS:localhost,IP:127.0.0.1"
+
+          # Set proper permissions
+          chmod 600 $HOME/.minio/certs/private.key
+          chmod 644 $HOME/.minio/certs/public.crt
+
+      - name: Start MinIO container with TLS
+        shell: bash
+        run: |
+          docker run -d \
+            --name minio \
+            --hostname minio \
+            --network localnet \
+            -p 9000:9000 \
+            -p 9001:9001 \
+            -v $HOME/.minio/certs:/root/.minio/certs:ro \
+            -e "MINIO_ROOT_USER=${{ env.MINIO_ROOT_USER }}" \
+            -e "MINIO_ROOT_PASSWORD=${{ env.MINIO_ROOT_PASSWORD }}" \
+            minio/minio:latest server /data --console-address ":9001"
+
+          # Wait for MinIO to be ready (now using HTTPS)
+          echo "Waiting for MinIO to start with TLS..."
+          for i in {1..30}; do
+            if curl -sk https://localhost:9000/minio/health/live > /dev/null 2>&1; then
+              echo "MinIO is ready with TLS!"
+              break
+            fi
+            echo "Attempt $i: MinIO not ready yet..."
+            sleep 2
+          done
+
+      - name: Setup MinIO bucket
+        shell: bash
+        run: |
+          # Install MinIO client
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o $HOME/mc
+          chmod +x $HOME/mc
+
+          # Configure MinIO client (with --insecure for self-signed cert)
+          $HOME/mc alias set myminio https://localhost:9000 ${{ env.MINIO_ROOT_USER }} ${{ env.MINIO_ROOT_PASSWORD }} --insecure
+
+          # Create bucket for backups
+          $HOME/mc mb myminio/sqlbackups --insecure
+
+          # Verify bucket was created
+          $HOME/mc ls myminio/ --insecure
+
+      - name: Copy MinIO certificate to SQL Server container
+        shell: bash
+        run: |
+          # SQL Server 2022 is required for S3 backup support
+          docker run -d \
+            --name mssql1 \
+            --hostname mssql1 \
+            --network localnet \
+            -p 1433:1433 \
+            -e "ACCEPT_EULA=Y" \
+            -e "MSSQL_SA_PASSWORD=dbatools.IO" \
+            mcr.microsoft.com/mssql/server:2022-latest
+
+          echo "Waiting for SQL Server container to initialize..."
+          sleep 15
+
+          # SQL Server on Linux uses SQLPAL for certificate validation, NOT the OS certificate store
+          # Self-signed certificates must be placed in /var/opt/mssql/security/ca-certificates
+          # See: https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/sql-server-backup-to-url-s3-compatible-object-storage-best-practices-and-troubleshooting
+          docker cp $HOME/.minio/certs/public.crt mssql1:/tmp/minio.crt
+          docker exec --user root mssql1 bash -c "mkdir -p /var/opt/mssql/security/ca-certificates && cp /tmp/minio.crt /var/opt/mssql/security/ca-certificates/minio.crt && chown -R mssql:mssql /var/opt/mssql/security"
+
+          # Restart SQL Server to pick up the new CA certificates
+          # SQL Server reads certificates from /var/opt/mssql/security/ca-certificates during startup
+          echo "Restarting SQL Server to load new CA certificates..."
+          docker restart mssql1
+
+          echo "Waiting for SQL Server to restart..."
+          sleep 10
+
+      - name: Wait for SQL Server to be ready
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+
+          $maxAttempts = 15
+          $attempt = 0
+          $connected = $false
+
+          while (-not $connected -and $attempt -lt $maxAttempts) {
+              $attempt++
+              Write-Host "Attempt $attempt of $maxAttempts`: Connecting to SQL Server..."
+              try {
+                  $server = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred -ErrorAction Stop
+                  Write-Host "Connected to SQL Server version: $($server.Version)"
+                  $connected = $true
+              } catch {
+                  Write-Host "Not ready yet, waiting 5 seconds..."
+                  Start-Sleep -Seconds 5
+              }
+          }
+
+          if (-not $connected) {
+              throw "Failed to connect to SQL Server after $maxAttempts attempts"
+          }
+
+      - name: Run S3 backup tests
+        env:
+          S3_ENDPOINT: minio:9000
+          S3_BUCKET: sqlbackups
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          $null = Invoke-Pester .github/scripts/gh-s3actions.ps1 -Output Detailed -PassThru

@@ -40,7 +40,7 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException",
                 "StandbyDirectory",
                 "Continue",
-                "AzureCredential",
+                "StorageCredential",
                 "ReplaceDbNameInFile",
                 "DestinationFileSuffix",
                 "Recover",
