@@ -16,7 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "Path",
                 "Simple",
                 "FileList",
-                "AzureCredential",
+                "StorageCredential",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

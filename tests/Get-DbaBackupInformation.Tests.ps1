@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
                 "IgnoreLogBackup",
                 "IgnoreDiffBackup",
                 "ExportPath",
-                "AzureCredential",
+                "StorageCredential",
                 "Import",
                 "Anonymise",
                 "NoClobber",

@@ -30,7 +30,7 @@ Describe $CommandName -Tag UnitTests {
                 "MaxDop",
                 "IncludeCopyOnly",
                 "IgnoreLogBackup",
-                "AzureCredential",
+                "StorageCredential",
                 "InputObject",
                 "EnableException",
                 "DeviceType",

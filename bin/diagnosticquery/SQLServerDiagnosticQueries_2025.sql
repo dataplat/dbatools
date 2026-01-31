@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 15, 2026
+-- Last Modified: January 29, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -64,7 +64,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 17.0.925.4		RC1									9-16-2025
 -- 17.0.1000.7		RTM									11-18-2025
 -- 17.0.1050.2		RTM + GDR							1-13-2026		https://support.microsoft.com/en-us/topic/kb5073177-description-of-the-security-update-for-sql-server-2025-gdr-january-13-2026-b1f8569f-b2e2-479e-84a4-96e1a9076b77	
--- 17.0.4005.7		CU 1								1-15-2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate1
+-- 17.0.4006.2		CU1									1-29-2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate1
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 

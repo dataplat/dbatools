@@ -55,13 +55,21 @@ Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 5.7.1
 Write-Host -Object "appveyor.prep: Create Path.DbatoolsExport" -ForegroundColor DarkGreen
 $null = New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory
 
-Write-Host -Object "Creating temp directory" -ForegroundColor DarkGreen
+Write-Host -Object "appveyor.prep: Creating temp directory" -ForegroundColor DarkGreen
 $null = New-Item -Path C:\Temp -ItemType Directory
+
+Write-Host -Object "appveyor.prep: Configuring WSMan (see #9782)" -ForegroundColor DarkGreen
+$null = Set-WSManQuickConfig -Force
 
 Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
 Import-Module dbatools.library
 Import-Module C:\github\dbatools\dbatools.psd1
 Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
 Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+
+Write-Host -Object "appveyor.prep: Setting up SQL Server Browser" -ForegroundColor DarkGreen
+Set-Service -Name SQLBrowser -StartupType Automatic
+Start-Service -Name SQLBrowser
+
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds

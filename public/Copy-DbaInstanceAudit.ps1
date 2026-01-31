@@ -195,7 +195,7 @@ function Copy-DbaInstanceAudit {
                     }
                 }
 
-                if ($null -ne ($currentAudit.Filepath) -and -not (Test-DbaPath -SqlInstance $destServer -Path $currentAudit.Filepath)) {
+                if (-not [string]::IsNullOrEmpty($currentAudit.Filepath) -and -not (Test-DbaPath -SqlInstance $destServer -Path $currentAudit.Filepath)) {
                     if ($Force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$($currentAudit.Filepath) does not exist on $destinstance. Skipping $auditName. Specify -Force to create the directory.")) {
                             $copyAuditStatus.Status = "Skipped"

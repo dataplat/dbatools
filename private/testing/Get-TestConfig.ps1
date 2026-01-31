@@ -21,6 +21,43 @@ function Get-TestConfig {
 
     if (Test-Path $LocalConfigPath) {
         . $LocalConfigPath
+    } elseif ($env:AppVeyor) {
+        Write-Host -Object "Get-TestConfig: Setting up test configuration for AppVeyor"  -ForegroundColor DarkGreen
+
+        if ($env:InstanceSingle) {
+            $config['InstanceSingle'] = "$(hostname)\$($env:InstanceSingle)"
+        }
+        if ($env:InstanceMulti1) {
+            $config['InstanceMulti1'] = "$(hostname)\$($env:InstanceMulti1)"
+        }
+        if ($env:InstanceMulti2) {
+            $config['InstanceMulti2'] = "$(hostname)\$($env:InstanceMulti2)"
+        }
+        if ($env:InstanceCopy1) {
+            $config['InstanceCopy1'] = "$(hostname)\$($env:InstanceCopy1)"
+        }
+        if ($env:InstanceCopy2) {
+            $config['InstanceCopy2'] = "$(hostname)\$($env:InstanceCopy2)"
+        }
+        if ($env:InstanceHadr) {
+            $config['InstanceHadr'] = "$(hostname)\$($env:InstanceHadr)"
+        }
+        if ($env:InstanceRestart) {
+            $config['InstanceRestart'] = "$(hostname)\$($env:InstanceRestart)"
+        }
+
+        $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
+        $config['SQLPassword'] = $null
+
+        $config['AppveyorLabRepo'] = "C:\github\appveyor-lab"
+
+        $config['AzureBlob'] = "https://dbatools.blob.core.windows.net/sql"
+        $config['AzureBlobAccount'] = "dbatools"
+        $config['AzureServer'] = 'psdbatools.database.windows.net'
+        $config['AzureSqlDbLogin'] = "appveyor@clemairegmail.onmicrosoft.com"
+
+        $config['BigDatabaseBackup'] = 'C:\github\StackOverflowMini.bak'
+        $config['BigDatabaseBackupSourceUrl'] = 'https://github.com/BrentOzarULTD/Stack-Overflow-Database/releases/download/20230114/StackOverflowMini.bak'
     } elseif ($env:CODESPACES -or ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
         $null = Set-DbatoolsInsecureConnection
 
@@ -46,30 +83,6 @@ function Get-TestConfig {
         $config['AzureBlobAccount'] = "dbatools"
         $config['AzureServer'] = 'psdbatools.database.windows.net'
         $config['AzureSqlDbLogin'] = "appveyor@clemairegmail.onmicrosoft.com"
-    } else {
-        # This configuration is used for the automated test on AppVeyor
-        $config['DbaToolsCi_Computer'] = "$(hostname)"
-
-        $config['InstanceSingle'] = "$(hostname)\sql2016"
-        $config['InstanceMulti1'] = "$(hostname)\sql2016"
-        $config['InstanceMulti2'] = "$(hostname)\sql2017"
-        $config['InstanceCopy1'] = "$(hostname)\sql2016"
-        $config['InstanceCopy2'] = "$(hostname)\sql2017"
-        $config['InstanceHadr'] = "$(hostname)\sql2017"
-        $config['InstanceRestart'] = "$(hostname)\sql2017"
-
-        $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
-        $config['SQLPassword'] = $null
-
-        $config['AppveyorLabRepo'] = "C:\github\appveyor-lab"
-
-        $config['AzureBlob'] = "https://dbatools.blob.core.windows.net/sql"
-        $config['AzureBlobAccount'] = "dbatools"
-        $config['AzureServer'] = 'psdbatools.database.windows.net'
-        $config['AzureSqlDbLogin'] = "appveyor@clemairegmail.onmicrosoft.com"
-
-        $config['BigDatabaseBackup'] = 'C:\github\StackOverflowMini.bak'
-        $config['BigDatabaseBackupSourceUrl'] = 'https://github.com/BrentOzarULTD/Stack-Overflow-Database/releases/download/20230114/StackOverflowMini.bak'
     }
 
     [pscustomobject]$config
