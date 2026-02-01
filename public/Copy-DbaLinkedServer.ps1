@@ -128,7 +128,7 @@ function Copy-DbaLinkedServer {
     )
     begin {
         if (-not $script:isWindows) {
-            Stop-Function -Message "Copy-DbaCredential is only supported on Windows"
+            Stop-Function -Message "Copy-DbaLinkedServer is only supported on Windows"
             return
         }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
