@@ -87,6 +87,7 @@ function Export-DbaCredential {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
         [string]$FilePath,
