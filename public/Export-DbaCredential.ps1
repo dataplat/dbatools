@@ -20,6 +20,11 @@ function Export-DbaCredential {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER Path
         Specifies the directory where the exported T-SQL script file will be saved. Defaults to the configured DbatoolsExport path.
         Use this when you want to control where credential scripts are stored for organization or compliance requirements.
@@ -127,7 +132,7 @@ function Export-DbaCredential {
                     }
                 }
             } else {
-                $credentials = Get-DecryptedObject -SqlInstance $server -Type Credential
+                $credentials = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type Credential -EnableException
             }
 
             if ($Identity) {

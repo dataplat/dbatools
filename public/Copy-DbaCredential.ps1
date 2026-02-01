@@ -36,7 +36,9 @@ function Copy-DbaCredential {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
 
     .PARAMETER Name
         Specifies the credential names to copy from the source server. Does not supports wildcards for pattern matching.
@@ -164,7 +166,7 @@ function Copy-DbaCredential {
         if (-not $ExcludePassword) {
             Write-Message -Level Verbose -Message "Decrypting all Credential logins and passwords on $($sourceServer.Name)"
             try {
-                $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential -EnableException
+                $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type Credential -EnableException
             } catch {
                 Stop-Function -Message "Failed to decrypt credentials on $($sourceServer.Name)" -ErrorRecord $_
                 return

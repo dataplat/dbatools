@@ -1,15 +1,43 @@
 function Get-DecryptedObject {
     <#
-            .SYNOPSIS
-                Internal function.
+    .SYNOPSIS
+        Internal function.
 
-                This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
-                Antti Rantasaari 2014, NetSPI
-                License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+    .DESCRIPTION
+        Copies SQL Server credentials from source to destination instances without losing the original passwords, which normally can't be retrieved through standard methods. This function uses a Dedicated Admin Connection (DAC) and password decryption techniques to extract the actual credential passwords from the source server and recreate them identically on the destination.
+
+        This is essential for server migrations, disaster recovery setup, or environment synchronization where you need to move service accounts, proxy credentials, or linked server authentication without having to reset passwords or contact application teams for credentials.
+
+        This function is used by the following public functions:
+        - Copy-DbaCredential
+        - Copy-DbaDbMail
+        - Copy-DbaLinkedServer
+        - Export-DbaCredential
+        - Export-DbaLinkedServer
+
+        This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
+        Antti Rantasaari 2014, NetSPI
+        License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+
+    .PARAMETER SqlInstance
+        Dedicated admin connection (DAC) to the SQL Server instance.
+
+    .PARAMETER Credential
+        This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
+
+    .PARAMETER Type
+        LinkedServer or Credential - what type of object to decrypt.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     #>
     param (
         [Parameter(Mandatory)]
         [Microsoft.SqlServer.Management.Smo.Server]$SqlInstance,
+        [pscredential]$Credential,
         [Parameter(Mandatory)]
         [ValidateSet("LinkedServer", "Credential")]
         [string]$Type,
@@ -23,10 +51,10 @@ function Get-DecryptedObject {
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
     Write-Message -Level Verbose -Message "Querying service master key"
     try {
-        $sql = "SELECT SUBSTRING(crypt_property,9,LEN(crypt_property)-8) AS smk FROM sys.key_encryptions WHERE key_id=102 AND thumbprint=0x0300000001"
+        $sql = "SELECT SUBSTRING(crypt_property, 9, LEN(crypt_property) - 8) AS smk FROM sys.key_encryptions WHERE key_id = 102 AND thumbprint = 0x0300000001"
         $smkBytes = $server.Query($sql).smk
         if (-not $smkBytes) {
-            $sql = "SELECT SUBSTRING(crypt_property,9,LEN(crypt_property)-8) AS smk FROM sys.key_encryptions WHERE key_id=102 AND thumbprint=0x03"
+            $sql = "SELECT SUBSTRING(crypt_property, 9, LEN(crypt_property) - 8) AS smk FROM sys.key_encryptions WHERE key_id = 102 AND thumbprint = 0x03"
             $smkBytes = $server.Query($sql).smk
         }
     } catch {
@@ -39,7 +67,7 @@ function Get-DecryptedObject {
 
     Write-Message -Level Verbose -Message "Decrypt the service master key"
     try {
-        $serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $serviceInstanceId, $smkBytes {
+        $serviceKey = Invoke-Command2 -Raw -ComputerName $fullComputerName -Credential $Credential -ArgumentList $serviceInstanceId, $smkBytes {
             $serviceInstanceId = $args[0]
             $smkBytes = $args[1]
             Add-Type -AssemblyName System.Security
@@ -71,102 +99,41 @@ function Get-DecryptedObject {
         $ivlen = 16
     }
 
-    <# NOTE: This query is accessing syslnklgns table. Can only be done via the DAC connection #>
-
     $sql = switch ($Type) {
         "LinkedServer" {
-            "SELECT sysservers.srvname,
-                syslnklgns.name,
-                SUBSTRING(syslnklgns.pwdhash,5,$ivlen) iv,
-                SUBSTRING(syslnklgns.pwdhash,$($ivlen + 5),
-                LEN(syslnklgns.pwdhash)-$($ivlen + 4)) pass
+            "SELECT sysservers.srvname AS Name,
+                NULL AS Quotename,
+                syslnklgns.name AS Identity,
+                SUBSTRING(syslnklgns.pwdhash, 5, $ivlen) AS iv,
+                SUBSTRING(syslnklgns.pwdhash, $($ivlen + 5), LEN(syslnklgns.pwdhash) - $($ivlen + 4)) AS pass,
+                NULL AS MappedClassType,
+                NULL AS ProviderName
             FROM master.sys.syslnklgns
                 INNER JOIN master.sys.sysservers
-                ON syslnklgns.srvid=sysservers.srvid
-            WHERE LEN(pwdhash) > 0"
+                ON syslnklgns.srvid = sysservers.srvid
+            WHERE LEN(syslnklgns.pwdhash) > 0"
         }
         "Credential" {
-            #"SELECT name,QUOTENAME(name) quotename,credential_identity,SUBSTRING(imageval,5,$ivlen) iv, SUBSTRING(imageval,$($ivlen + 5),LEN(imageval)-$($ivlen + 4)) pass FROM sys.credentials cred INNER JOIN sys.sysobjvalues obj ON cred.credential_id = obj.objid WHERE valclass=28 AND valnum=2"
-            "SELECT cred.name,QUOTENAME(cred.name) quotename,credential_identity,SUBSTRING(imageval,5,$ivlen) iv, SUBSTRING(imageval,$($ivlen + 5),LEN(imageval)-$($ivlen + 4)) pass,target_type AS 'mappedClassType', cp.name AS 'ProviderName' FROM sys.credentials cred INNER JOIN sys.sysobjvalues obj ON cred.credential_id = obj.objid LEFT OUTER JOIN sys.cryptographic_providers cp ON cred.target_id = cp.provider_id WHERE valclass=28 AND valnum=2"
+            "SELECT cred.name AS Name,
+                QUOTENAME(cred.name) AS Quotename,
+                cred.credential_identity AS Identity,
+                SUBSTRING(obj.imageval, 5, $ivlen) AS iv,
+                SUBSTRING(obj.imageval, $($ivlen + 5), LEN(obj.imageval) - $($ivlen + 4)) AS pass,
+                cred.target_type AS MappedClassType,
+                cp.name AS ProviderName
+            FROM sys.credentials cred
+                INNER JOIN sys.sysobjvalues obj
+                ON cred.credential_id = obj.objid
+                LEFT OUTER JOIN sys.cryptographic_providers cp
+                ON cred.target_id = cp.provider_id
+            WHERE valclass = 28
+                AND valnum = 2"
         }
     }
-
-    Write-Message -Level Debug -Message $sql
-
-    <#
-        Query link server password information from the Db.
-        Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
-        Ignore links with blank credentials (integrated auth ?)
-    #>
 
     Write-Message -Level Verbose -Message "Query password information from the Db."
-
-    if ($server.Name -like 'ADMIN:*') {
-        Write-Message -Level Verbose -Message "We already have a dac, so we use it."
-        $results = $server.Query($sql)
-    } else {
-        $instance = $server.InstanceName
-        if (-not $server.IsClustered) {
-            $connString = "Server=ADMIN:127.0.0.1\$instance;Trusted_Connection=True;Pooling=false"
-        } else {
-            $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
-
-            if ($dacEnabled -eq $false) {
-                If ($Pscmdlet.ShouldProcess($server.Name, "Enabling remote DAC on clustered instance.")) {
-                    try {
-                        Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
-                        $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
-                        $server.Configuration.Alter()
-                    } catch {
-                        Stop-Function -Message "Failure enabling remote DAC on clustered instance $sourceName" -Target $sourceName -ErrorRecord $_
-                        return
-                    }
-                }
-            }
-
-            $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True;Pooling=false;"
-        }
-
-        try {
-            $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $connString, $sql {
-                try {
-                    $connString = $args[0]
-                    $sql = $args[1]
-                    $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
-                    $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
-                    $dt = New-Object System.Data.DataTable
-                    $conn.open()
-                    $dt.Load($cmd.ExecuteReader())
-                    $conn.Close()
-                    $conn.Dispose()
-                    return $dt
-                } catch {
-                    $exception = $_
-                    try {
-                        $conn.Close()
-                        $conn.Dispose()
-                    } catch {
-                        $null = 1
-                    }
-                    throw $exception
-                }
-            }
-        } catch {
-            Stop-Function -Message "Can't establish local DAC connection on $sourceName." -Target $server -ErrorRecord $_
-        }
-
-        if ($server.IsClustered -and $dacEnabled -eq $false) {
-            If ($Pscmdlet.ShouldProcess($server.Name, "Disabling remote DAC on clustered instance.")) {
-                try {
-                    Write-Message -Level Verbose -Message "Setting remote DAC config back to 0."
-                    $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
-                    $server.Configuration.Alter()
-                } catch {
-                    Stop-Function -Message "Failure disabling remote DAC on clustered instance $sourceName" -Target $server -ErrorRecord $_
-                }
-            }
-        }
-    }
+    Write-Message -Level Debug -Message $sql
+    $results = $server.Query($sql)
 
     Write-Message -Level Verbose -Message "Go through each row in results"
     foreach ($result in $results) {
@@ -188,24 +155,13 @@ function Get-DecryptedObject {
         $i = 8; foreach ($b in $decrypted) { if ($decrypted[$i] -ne 0 -and $decrypted[$i + 1] -ne 0 -or $i -eq $decrypted.Length) { $i -= 1; break; }; $i += 1; }
         $decrypted = $decrypted[8 .. $i]
 
-        if ($Type -eq "LinkedServer") {
-            $name = $result.srvname
-            $quotename = $null
-            $identity = $result.Name
-        } else {
-            $name = $result.name
-            $quotename = $result.quotename
-            $identity = $result.credential_identity
-            $mappedClassType = $result.mappedClassType
-            $ProviderName = $result.ProviderName
-        }
-        [pscustomobject]@{
-            Name            = $name
-            Quotename       = $quotename
-            Identity        = $identity
+        [PSCustomObject]@{
+            Name            = $result.Name
+            Quotename       = $result.Quotename
+            Identity        = $result.Identity
             Password        = $encode.GetString($decrypted)
-            MappedClassType = $mappedClassType
-            ProviderName    = $ProviderName
+            MappedClassType = $result.MappedClassType
+            ProviderName    = $result.ProviderName
         }
     }
 }

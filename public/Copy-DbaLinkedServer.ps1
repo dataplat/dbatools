@@ -30,6 +30,11 @@ function Copy-DbaLinkedServer {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER LinkedServer
         Specifies which linked servers to copy from the source instance. Accepts an array of linked server names.
         Use this when you only need to migrate specific linked servers rather than all of them.
@@ -113,6 +118,7 @@ function Copy-DbaLinkedServer {
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
+        [PSCredential]$Credential,
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
         [switch]$UpgradeSqlClient,
@@ -146,7 +152,7 @@ function Copy-DbaLinkedServer {
                     }
                 }
             } else {
-                $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Type LinkedServer
+                $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type LinkedServer -EnableException
             }
 
             $serverlist = $sourceServer.LinkedServers

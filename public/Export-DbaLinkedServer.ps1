@@ -17,7 +17,9 @@ function Export-DbaLinkedServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        Login to the target OS using alternative linked servers. Accepts credential objects (Get-Credential)
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
 
     .PARAMETER Path
         Specifies the directory where the linked server export file will be created. Defaults to the configured DbatoolsExport path.
@@ -142,21 +144,6 @@ function Export-DbaLinkedServer {
                 continue
             }
 
-            if (!(Test-SqlSa -SqlInstance $instance -SqlCredential $SqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
-            }
-
-            Write-Message -Level Verbose -Message "Getting FullComputerName name for $instance."
-            $fullComputerName = Resolve-DbaComputerName -ComputerName $instance -Credential $Credential
-
-            Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
-            try {
-                Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
-            } catch {
-                Stop-Function -Message "Can't connect to registry on $instance." -Target $fullComputerName -ErrorRecord $_
-                return
-            }
-
             $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
 
             $sql = @()
@@ -165,7 +152,7 @@ function Export-DbaLinkedServer {
                 $sql += $InputObject.Script()
             } else {
                 try {
-                    $decrypted = Get-DecryptedObject -SqlInstance $server -Type LinkedServer
+                    $decrypted = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type LinkedServer -EnableException
                 } catch {
                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                 }
