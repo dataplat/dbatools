@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "PrimarySqlCredential",
                 "Secondary",
                 "SecondarySqlCredential",
+                "Credential",
                 "AvailabilityGroup",
                 "Exclude",
                 "Login",
@@ -23,6 +24,7 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeJob",
                 "DisableJobOnDestination",
                 "InputObject",
+                "ExcludePassword",
                 "Force",
                 "EnableException"
             )
