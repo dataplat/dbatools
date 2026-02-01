@@ -103,7 +103,7 @@ function Get-DecryptedObject {
         "LinkedServer" {
             "SELECT sysservers.srvname AS Name,
                 NULL AS Quotename,
-                syslnklgns.name AS Identity,
+                syslnklgns.name AS [Identity],
                 SUBSTRING(syslnklgns.pwdhash, 5, $ivlen) AS iv,
                 SUBSTRING(syslnklgns.pwdhash, $($ivlen + 5), LEN(syslnklgns.pwdhash) - $($ivlen + 4)) AS pass,
                 NULL AS MappedClassType,
@@ -116,7 +116,7 @@ function Get-DecryptedObject {
         "Credential" {
             "SELECT cred.name AS Name,
                 QUOTENAME(cred.name) AS Quotename,
-                cred.credential_identity AS Identity,
+                cred.credential_identity AS [Identity],
                 SUBSTRING(obj.imageval, 5, $ivlen) AS iv,
                 SUBSTRING(obj.imageval, $($ivlen + 5), LEN(obj.imageval) - $($ivlen + 4)) AS pass,
                 cred.target_type AS MappedClassType,
