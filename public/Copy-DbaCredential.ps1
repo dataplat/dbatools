@@ -151,12 +151,24 @@ function Copy-DbaCredential {
         if ($Force) { $ConfirmPreference = 'none' }
 
         try {
-            if ($ExcludePassword) {
-                Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    $sourceServer = $Source
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
             } else {
-                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
             }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
@@ -261,10 +273,8 @@ function Copy-DbaCredential {
         }
     }
     end {
-        # Disconnect is important because it is a DAC
-        # Disconnect in case of WhatIf, as we opened the connection
-        if (-not $ExcludePassword) {
-            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        if ($dacOpened) {
+            $sourceServer | Disconnect-DbaInstance -WhatIf:$false
         }
     }
 }

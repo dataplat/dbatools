@@ -452,6 +452,9 @@ function Export-DbaInstance {
         }
     }
     end {
+        if ($sourceServerDac) {
+            $sourceServerDac.Disconnect()
+        }
         $totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
         Write-Message -Level Verbose -Message "SQL Server export complete."
         Write-Message -Level Verbose -Message "Export started: $started"

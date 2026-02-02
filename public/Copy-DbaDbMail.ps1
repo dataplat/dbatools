@@ -385,15 +385,26 @@ function Copy-DbaDbMail {
         }
 
         try {
-            if ($ExcludePassword) {
-                Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-                $sourceServerName = $sourceServer.Name
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    $sourceServer = $Source
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
             } else {
-                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
-                $sourceServerName = $sourceServer.Name -replace '^ADMIN:', ''
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
             }
+            $sourceServerName = $sourceServer.DomainInstanceName
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
@@ -511,8 +522,8 @@ function Copy-DbaDbMail {
         }
     }
     end {
-        if (-not $ExcludePassword) {
-            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        if ($dacOpened) {
+            $sourceServer | Disconnect-DbaInstance -WhatIf:$false
         }
     }
 }

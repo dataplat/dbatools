@@ -110,12 +110,24 @@ function Export-DbaCredential {
 
         foreach ($instance in $SqlInstance) {
             try {
-                if ($ExcludePassword) {
-                    Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                # Do we need a dedicated admin connection to the source for password retrieval?
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+
+                $dacOpened = $false
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        $server = $instance
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
                 } else {
-                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 9
                 }
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -176,9 +188,8 @@ function Export-DbaCredential {
                 }
             }
 
-            # Disconnect DAC connection if it was opened
-            if (-not $ExcludePassword) {
-                $null = $server | Disconnect-DbaInstance -WhatIf:$false
+            if ($dacOpened) {
+                $server | Disconnect-DbaInstance -WhatIf:$false
             }
         }
     }

@@ -301,34 +301,28 @@ function Copy-DbaLinkedServer {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
 
-        if (-not $ExcludePassword) {
-            try {
-                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-                return
-            }
-        } else {
-            try {
-                Write-Message -Level Verbose -Message "Connecting without DAC since -ExcludePassword is specified."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-                return
-            }
-        }
-        if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
-            Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
-            return
-        }
-
-        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source."
-        $resolvedComputerName = Resolve-DbaComputerName -ComputerName $Source
         try {
-            $null = Invoke-Command2 -ComputerName $resolvedComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    $sourceServer = $Source
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
+            } else {
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            }
         } catch {
-            Stop-Function -Message "Can't connect to registry on $Source." -Target $resolvedComputerName -ErrorRecord $_
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
     }
@@ -350,8 +344,8 @@ function Copy-DbaLinkedServer {
         }
     }
     end {
-        # Disconnect is important because it is a DAC
-        # Disconnect in case of WhatIf, as we opened the connection
-        $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        if ($dacOpened) {
+            $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        }
     }
 }

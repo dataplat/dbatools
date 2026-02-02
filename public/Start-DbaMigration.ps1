@@ -359,12 +359,34 @@ function Start-DbaMigration {
         }
 
         try {
-            if ($ExcludePassword) {
-                Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If not all of the three are excluded, we do
+            $dacNeeded = $Exclude -notcontains 'Credentials' -or $Exclude -notcontains 'DatabaseMail' -or $Exclude -notcontains 'LinkedServers'
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    $sourceServerDac = $Source
+                    # Reconnect without DAC for Copy-DbaDatabase
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServerDac = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                }
             } else {
-                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                if ($dacConnected) {
+                    # Reconnect without DAC for Copy-DbaDatabase
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
+                } else {
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                }
             }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
@@ -399,13 +421,21 @@ function Start-DbaMigration {
         if ($Exclude -notcontains 'Credentials') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SQL credentials"
             Write-Message -Level Verbose -Message "Migrating SQL credentials"
-            Copy-DbaCredential -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            if ($dacNeeded) {
+                Copy-DbaCredential -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            } else {
+                Copy-DbaCredential -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            }
         }
 
         if ($Exclude -notcontains 'DatabaseMail') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating database mail"
             Write-Message -Level Verbose -Message "Migrating database mail"
-            Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            if ($dacNeeded) {
+                Copy-DbaDbMail -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            } else {
+                Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            }
         }
 
         if ($Exclude -notcontains 'CentralManagementServer') {
@@ -491,7 +521,11 @@ function Start-DbaMigration {
         if ($Exclude -notcontains 'LinkedServers') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating linked servers"
             Write-Message -Level Verbose -Message "Migrating linked servers"
-            Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            if ($dacNeeded) {
+                Copy-DbaLinkedServer -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            } else {
+                Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            }
         }
 
         if ($Exclude -notcontains 'DataCollector') {
@@ -564,6 +598,9 @@ function Start-DbaMigration {
         }
     }
     end {
+        if ($dacOpened) {
+            $sourceServerDac | Disconnect-DbaInstance -WhatIf:$false
+        }
         if (Test-FunctionInterrupt) { return }
         $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
         Write-Message -Level Verbose -Message "SQL Server migration complete."
