@@ -198,6 +198,15 @@ jobs:
               throw "Failed to connect to SQL Server after $maxAttempts attempts"
           }
 
+      - name: Add MinIO certificate to system trust store
+        shell: bash
+        run: |
+          # Add MinIO's self-signed certificate to the system CA trust store
+          # This allows the AWS PowerShell SDK to connect to MinIO over HTTPS
+          sudo cp $HOME/.minio/certs/public.crt /usr/local/share/ca-certificates/minio.crt
+          sudo update-ca-certificates
+          echo "MinIO certificate added to system trust store"
+
       - name: Install AWS.Tools.S3 for S3 enumeration tests
         run: |
           Write-Host "Installing AWS.Tools.Installer..."
