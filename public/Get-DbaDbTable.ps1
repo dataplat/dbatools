@@ -178,9 +178,9 @@ function Get-DbaDbTable {
             Write-Message -Level Verbose -Message "Processing $db"
 
             # Let the SMO read all properties referenced in this command for all tables in the database in one query.
-            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
+            # Using SetDefaultInitFields + Refresh instead of ClearAndInitialize to respect SqlCredential
             # Build property list based on SQL Server version
-            # Note: FullTextIndex is a complex object (not a scalar property) and cannot be initialized via ClearAndInitialize
+            # Note: FullTextIndex is a complex object (not a scalar property) and cannot be initialized via SetDefaultInitFields
             $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex')
 
             # IsPartitioned available in SQL Server 2005+ (VersionMajor 9+)
@@ -209,7 +209,17 @@ function Get-DbaDbTable {
                 $null = $properties.Add('IsEdge')
             }
 
-            $db.Tables.ClearAndInitialize('', [string[]]$properties)
+            # Use SetDefaultInitFields + Refresh to batch-load properties while respecting SqlCredential
+            # This approach uses the existing connection context from $server.ConnectionContext
+            try {
+                $initFields = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFields.AddRange([string[]]$properties)
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Table], $initFields)
+                $db.Tables.Refresh()
+            } catch {
+                # If SetDefaultInitFields fails, fall back to lazy loading
+                Write-Message -Level Debug -Message "SetDefaultInitFields failed, using lazy loading: $_"
+            }
 
             if ($fqTns) {
                 $tables = @()

@@ -148,13 +148,25 @@ function Get-DbaDbUdf {
             }
 
             foreach ($db in $databases) {
+                $server = $db.Parent
 
                 # Let the SMO read all properties referenced in this command for all user defined functions in the database in one query.
-                # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-                $db.UserDefinedFunctions.ClearAndInitialize('', [string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType', 'IsSystemObject'))
+                # Using SetDefaultInitFields + Refresh instead of ClearAndInitialize to respect SqlCredential
+                try {
+                    $initFieldsUdf = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsUdf.AddRange([string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType', 'IsSystemObject'))
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction], $initFieldsUdf)
+                    $db.UserDefinedFunctions.Refresh()
 
-                # UserDefinedAggregates don't have IsSystemObject property, so initialize separately
-                $db.UserDefinedAggregates.ClearAndInitialize('', [string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType'))
+                    # UserDefinedAggregates don't have IsSystemObject property, so initialize separately
+                    $initFieldsUda = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsUda.AddRange([string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType'))
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedAggregate], $initFieldsUda)
+                    $db.UserDefinedAggregates.Refresh()
+                } catch {
+                    # If SetDefaultInitFields fails, fall back to lazy loading
+                    Write-Message -Level Debug -Message "SetDefaultInitFields failed, using lazy loading: $_"
+                }
 
                 $userDefinedFunctions = $db.UserDefinedFunctions
 

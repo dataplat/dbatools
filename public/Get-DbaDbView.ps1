@@ -161,10 +161,19 @@ function Get-DbaDbView {
 
         foreach ($db in $InputObject) {
             Write-Message -Level Verbose -Message "processing $db"
+            $server = $db.Parent
 
             # Let the SMO read all properties referenced in this command for all views in the database in one query.
-            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-            $db.Views.ClearAndInitialize('', [string[]]('Name', 'Schema', 'IsSystemObject', 'CreateDate', 'DateLastModified'))
+            # Using SetDefaultInitFields + Refresh instead of ClearAndInitialize to respect SqlCredential
+            try {
+                $initFields = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFields.AddRange([string[]]('Name', 'Schema', 'IsSystemObject', 'CreateDate', 'DateLastModified'))
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View], $initFields)
+                $db.Views.Refresh()
+            } catch {
+                # If SetDefaultInitFields fails, fall back to lazy loading
+                Write-Message -Level Debug -Message "SetDefaultInitFields failed, using lazy loading: $_"
+            }
 
             if ($fqtns) {
                 $views = @()

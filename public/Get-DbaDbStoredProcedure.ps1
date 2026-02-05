@@ -184,8 +184,17 @@ function Get-DbaDbStoredProcedure {
             }
 
             # Let the SMO read all properties referenced in this command for all stored procedures in the database in one query.
-            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-            $db.StoredProcedures.ClearAndInitialize('', [string[]]('Schema', 'Name', 'ID', 'CreateDate', 'DateLastModified', 'ImplementationType', 'Startup', 'IsSystemObject'))
+            # Using SetDefaultInitFields + Refresh instead of ClearAndInitialize to respect SqlCredential
+            $server = $db.Parent
+            try {
+                $initFields = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFields.AddRange([string[]]('Schema', 'Name', 'ID', 'CreateDate', 'DateLastModified', 'ImplementationType', 'Startup', 'IsSystemObject'))
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], $initFields)
+                $db.StoredProcedures.Refresh()
+            } catch {
+                # If SetDefaultInitFields fails, fall back to lazy loading
+                Write-Message -Level Debug -Message "SetDefaultInitFields failed, using lazy loading: $_"
+            }
 
             if ($db.StoredProcedures.Count -eq 0) {
                 Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output
