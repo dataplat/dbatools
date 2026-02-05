@@ -408,6 +408,9 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             # Create the subdirectory using SQL Server's xp_create_subdir (runs inside the container)
             $server.Query("EXEC master.dbo.xp_create_subdir '$localBackupPath'")
 
+            # Verify the backup path is accessible via SQL Server
+            Test-DbaPath -SqlInstance $server -Path $localBackupPath | Should -BeTrue
+
             $localBackupFile = Join-Path -Path $localBackupPath -ChildPath "local_test.bak"
             $splatLocalBackup = @{
                 SqlInstance   = "localhost"
@@ -418,6 +421,9 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             }
             $localBackupResult = Backup-DbaDatabase @splatLocalBackup
             $localBackupResult.BackupComplete | Should -BeTrue
+
+            # Verify the backup file exists after the backup
+            Test-DbaPath -SqlInstance $server -Path $localBackupFile | Should -BeTrue
 
             # Restore using folder path - this tests that local folder enumeration works
             # (in contrast to S3 where folder enumeration is not supported)
