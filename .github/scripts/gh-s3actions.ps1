@@ -398,10 +398,15 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
         It "Should successfully enumerate local file system paths (contrast with S3)" {
             # Create a local backup to verify enumeration works for non-S3 paths
-            # Use cross-platform temp path (Linux uses /tmp, Windows uses C:\temp or similar)
-            $tempRoot = [System.IO.Path]::GetTempPath()
-            $localBackupPath = Join-Path -Path $tempRoot -ChildPath "dbatools_s3test"
-            $null = New-Item -Path $localBackupPath -ItemType Directory -Force -ErrorAction SilentlyContinue
+            # IMPORTANT: On Linux CI, SQL Server runs in Docker with an isolated filesystem.
+            # We must use a path INSIDE the container that SQL Server can access.
+            # Using SQL Server's default backup directory ensures accessibility.
+            $server = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
+            $defaultPaths = Get-DbaDefaultPath -SqlInstance $server
+            $localBackupPath = Join-Path -Path $defaultPaths.Backup -ChildPath "dbatools_s3test"
+
+            # Create the subdirectory using SQL Server's xp_create_subdir (runs inside the container)
+            $server.Query("EXEC master.dbo.xp_create_subdir '$localBackupPath'")
 
             $localBackupFile = Join-Path -Path $localBackupPath -ChildPath "local_test.bak"
             $splatLocalBackup = @{
@@ -416,23 +421,23 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
             # Restore using folder path - this tests that local folder enumeration works
             # (in contrast to S3 where folder enumeration is not supported)
+            # Drop the source database so we can restore with the original name
             $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $script:TestDbName5 -Confirm:$false -ErrorAction SilentlyContinue
 
             $splatRestore = @{
-                SqlInstance         = "localhost"
-                SqlCredential       = $cred
-                Path                = $localBackupPath
+                SqlInstance   = "localhost"
+                SqlCredential = $cred
+                Path          = $localBackupPath
             }
             $result = Restore-DbaDatabase @splatRestore
 
             # Should successfully restore - proving local folder enumeration works
+            # Database name comes from the backup file itself
             $result | Should -Not -BeNullOrEmpty
             $result.RestoreComplete | Should -BeTrue
             $result.Database | Should -Be $script:TestDbName5
 
-            # Cleanup
-            $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $restoreDbName -Confirm:$false -ErrorAction SilentlyContinue
-            Remove-Item -Path $localBackupPath -Recurse -Force -ErrorAction SilentlyContinue
+            # Note: Backup files inside the container are cleaned up when container stops
         }
 
         It "Should require PowerShell-based enumeration for S3 (validation test)" {
