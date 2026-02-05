@@ -449,11 +449,11 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             # For MinIO (S3-compatible), use EndpointUrl with ForcePathStyleAddressing
             # MinIO uses HTTP in our test environment
             $splatListObjects = @{
-                BucketName              = $script:S3Bucket
-                Prefix                  = "$($script:S3EnumFolder)/"
-                EndpointUrl             = "https://$($script:S3Endpoint)"
-                AccessKey               = $script:S3AccessKey
-                SecretKey               = $script:S3SecretKey
+                BucketName               = $script:S3Bucket
+                Prefix                   = "$($script:S3EnumFolder)/"
+                EndpointUrl              = "https://$($script:S3Endpoint)"
+                AccessKey                = $script:S3AccessKey
+                SecretKey                = $script:S3SecretKey
                 ForcePathStyleAddressing = $true
             }
             $s3Objects = Get-S3Object @splatListObjects
