@@ -183,10 +183,6 @@ function Get-DbaDbStoredProcedure {
                 continue
             }
 
-            # Let the SMO read all properties referenced in this command for all stored procedures in the database in one query.
-            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-            $db.StoredProcedures.ClearAndInitialize('', [string[]]('Schema', 'Name', 'ID', 'CreateDate', 'DateLastModified', 'ImplementationType', 'Startup', 'IsSystemObject'))
-
             if ($db.StoredProcedures.Count -eq 0) {
                 Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output
                 continue

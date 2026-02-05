@@ -177,40 +177,6 @@ function Get-DbaDbTable {
             $server = $db.Parent
             Write-Message -Level Verbose -Message "Processing $db"
 
-            # Let the SMO read all properties referenced in this command for all tables in the database in one query.
-            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-            # Build property list based on SQL Server version
-            # Note: FullTextIndex is a complex object (not a scalar property) and cannot be initialized via ClearAndInitialize
-            $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex')
-
-            # IsPartitioned available in SQL Server 2005+ (VersionMajor 9+)
-            if ($server.VersionMajor -ge 9) {
-                $null = $properties.Add('IsPartitioned')
-            }
-
-            # ChangeTrackingEnabled introduced in SQL Server 2008 (VersionMajor 10)
-            if ($server.VersionMajor -ge 10) {
-                $null = $properties.Add('ChangeTrackingEnabled')
-            }
-
-            # IsFileTable introduced in SQL Server 2012 (VersionMajor 11)
-            if ($server.VersionMajor -ge 11) {
-                $null = $properties.Add('IsFileTable')
-            }
-
-            # IsMemoryOptimized introduced in SQL Server 2014 (VersionMajor 12)
-            if ($server.VersionMajor -ge 12) {
-                $null = $properties.Add('IsMemoryOptimized')
-            }
-
-            # IsNode and IsEdge introduced in SQL Server 2017 (VersionMajor 14)
-            if ($server.VersionMajor -ge 14) {
-                $null = $properties.Add('IsNode')
-                $null = $properties.Add('IsEdge')
-            }
-
-            $db.Tables.ClearAndInitialize('', [string[]]$properties)
-
             if ($fqTns) {
                 $tables = @()
                 foreach ($fqTn in $fqTns) {

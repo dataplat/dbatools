@@ -162,10 +162,6 @@ function Get-DbaDbView {
         foreach ($db in $InputObject) {
             Write-Message -Level Verbose -Message "processing $db"
 
-            # Let the SMO read all properties referenced in this command for all views in the database in one query.
-            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-            $db.Views.ClearAndInitialize('', [string[]]('Name', 'Schema', 'IsSystemObject', 'CreateDate', 'DateLastModified'))
-
             if ($fqtns) {
                 $views = @()
                 foreach ($fqtn in $fqtns) {
