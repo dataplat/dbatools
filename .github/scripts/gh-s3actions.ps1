@@ -435,7 +435,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
                 SqlCredential = $cred
                 Path          = $localBackupPath
             }
-            $result = Restore-DbaDatabase @splatRestore
+            $result = Restore-DbaDatabase @splatRestore -Verbose
 
             # Should successfully restore - proving local folder enumeration works
             # Database name comes from the backup file itself
