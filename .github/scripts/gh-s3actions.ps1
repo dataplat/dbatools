@@ -416,22 +416,19 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
             # Restore using folder path - this tests that local folder enumeration works
             # (in contrast to S3 where folder enumeration is not supported)
-            $restoreDbName = "dbatoolsci_localrestore"
-            $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $restoreDbName -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $script:TestDbName5 -Confirm:$false -ErrorAction SilentlyContinue
 
             $splatRestore = @{
                 SqlInstance         = "localhost"
                 SqlCredential       = $cred
                 Path                = $localBackupPath
-                DatabaseName        = $restoreDbName
-                ReplaceDbNameInFile = $true
             }
             $result = Restore-DbaDatabase @splatRestore
 
             # Should successfully restore - proving local folder enumeration works
             $result | Should -Not -BeNullOrEmpty
             $result.RestoreComplete | Should -BeTrue
-            $result.Database | Should -Be $restoreDbName
+            $result.Database | Should -Be $script:TestDbName5
 
             # Cleanup
             $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $restoreDbName -Confirm:$false -ErrorAction SilentlyContinue
@@ -455,11 +452,13 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             Import-Module AWS.Tools.S3 -ErrorAction Stop
 
             # For MinIO (S3-compatible), use EndpointUrl with ForcePathStyleAddressing
-            # MinIO uses HTTP in our test environment
+            # Note: $script:S3Endpoint is "minio:9000" which is a Docker network hostname
+            # The AWS SDK runs on the host, so we need to use localhost:9000 instead
+            $hostEndpoint = $script:S3Endpoint -replace "^minio:", "localhost:"
             $splatListObjects = @{
                 BucketName               = $script:S3Bucket
                 Prefix                   = "$($script:S3EnumFolder)/"
-                EndpointUrl              = "https://$($script:S3Endpoint)"
+                EndpointUrl              = "https://$hostEndpoint"
                 AccessKey                = $script:S3AccessKey
                 SecretKey                = $script:S3SecretKey
                 ForcePathStyleAddressing = $true
