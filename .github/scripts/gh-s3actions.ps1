@@ -451,7 +451,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             $splatListObjects = @{
                 BucketName              = $script:S3Bucket
                 Prefix                  = "$($script:S3EnumFolder)/"
-                EndpointUrl             = "http://$($script:S3Endpoint)"
+                EndpointUrl             = "https://$($script:S3Endpoint)"
                 AccessKey               = $script:S3AccessKey
                 SecretKey               = $script:S3SecretKey
                 ForcePathStyleAddressing = $true
