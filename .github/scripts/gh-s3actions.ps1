@@ -414,19 +414,27 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             $localBackupResult = Backup-DbaDatabase @splatLocalBackup
             $localBackupResult.BackupComplete | Should -BeTrue
 
-            # Enumerate local directory - this SHOULD work
-            $splatBackupInfo = @{
-                SqlInstance   = "localhost"
-                SqlCredential = $cred
-                Path          = $localBackupPath
-            }
-            $result = Get-DbaBackupInformation @splatBackupInfo
+            # Restore using folder path - this tests that local folder enumeration works
+            # (in contrast to S3 where folder enumeration is not supported)
+            $restoreDbName = "dbatoolsci_localrestore"
+            $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $restoreDbName -Confirm:$false -ErrorAction SilentlyContinue
 
-            # Should return backup information for local file system
+            $splatRestore = @{
+                SqlInstance         = "localhost"
+                SqlCredential       = $cred
+                Path                = $localBackupPath
+                DatabaseName        = $restoreDbName
+                ReplaceDbNameInFile = $true
+            }
+            $result = Restore-DbaDatabase @splatRestore
+
+            # Should successfully restore - proving local folder enumeration works
             $result | Should -Not -BeNullOrEmpty
-            $result.Database | Should -Be $script:TestDbName5
+            $result.RestoreComplete | Should -BeTrue
+            $result.Database | Should -Be $restoreDbName
 
             # Cleanup
+            $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $restoreDbName -Confirm:$false -ErrorAction SilentlyContinue
             Remove-Item -Path $localBackupPath -Recurse -Force -ErrorAction SilentlyContinue
         }
 
