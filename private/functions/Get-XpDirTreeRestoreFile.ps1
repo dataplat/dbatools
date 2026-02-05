@@ -43,12 +43,6 @@ function Get-XpDirTreeRestoreFile {
     # Determine the correct path separator based on whether this is a URL or file system path
     if ($Path -match '^https?://') {
         $pathSep = "/"
-    } elseif ($Path -match '^s3://') {
-        # S3 paths cannot be enumerated via T-SQL (xp_dirtree/dm_os_enumerate_filesystem don't support S3)
-        # SQL Server 2022+ supports S3 for BACKUP/RESTORE but has no built-in function to list S3 objects
-        # Return empty array - caller should handle S3 enumeration in PowerShell or use explicit file paths
-        Write-Message -Level Warning -Message "S3 paths cannot be enumerated using T-SQL. Use explicit file paths or PowerShell-based enumeration for S3 storage."
-        Stop-Function -Message "S3 path enumeration not supported. Path: $Path"
     } else {
         $pathSep = Get-DbaPathSep -Server $server
     }
