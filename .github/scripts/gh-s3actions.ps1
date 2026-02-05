@@ -405,7 +405,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
                 SqlInstance   = "localhost"
                 SqlCredential = $cred
                 Database      = $script:TestDbName5
-                Path          = "$localBackupPath\local_test.bak"
+                FilePath      = "$localBackupPath\local_test.bak"
                 Type          = "Full"
             }
             $null = Backup-DbaDatabase @splatLocalBackup
