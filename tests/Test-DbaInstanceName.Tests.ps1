@@ -24,7 +24,9 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command tests servername" {
         BeforeAll {
-            $results = Test-DbaInstanceName -SqlInstance $TestConfig.InstanceSingle
+            $results = Test-DbaInstanceName -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+            # "-WarningAction SilentlyContinue" because on a cluster we get this warning:
+            # "$instance is a cluster. Renaming clusters is not supported by Microsoft."
         }
 
         It "should say rename is not required" {
