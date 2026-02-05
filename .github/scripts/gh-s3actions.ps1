@@ -300,13 +300,194 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
         }
     }
 
+    Context "S3 directory enumeration limitations" {
+        BeforeAll {
+            # This context validates that SQL Server cannot enumerate S3 bucket contents using T-SQL
+            # (xp_dirtree/sys.dm_os_enumerate_filesystem don't support S3 protocol)
+            # Get-DbaBackupInformation should detect S3 URLs and handle them appropriately
+
+            $script:TestDbName5 = "dbatoolsci_s3enum"
+
+            # Create and backup a database to S3 for enumeration testing
+            $null = New-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Name $script:TestDbName5 -RecoveryModel Full
+
+            # Create multiple backup files in S3 to test enumeration behavior
+            $script:S3EnumFolder = "enumtest"
+            $splatBackup1 = @{
+                SqlInstance       = "localhost"
+                SqlCredential     = $cred
+                Database          = $script:TestDbName5
+                StorageBaseUrl    = "$($script:S3BaseUrl)/$($script:S3EnumFolder)"
+                StorageCredential = $script:S3CredentialName
+                FilePath          = "$($script:TestDbName5)_full1.bak"
+                Type              = "Full"
+            }
+            $null = Backup-DbaDatabase @splatBackup1
+
+            $splatBackup2 = @{
+                SqlInstance       = "localhost"
+                SqlCredential     = $cred
+                Database          = $script:TestDbName5
+                StorageBaseUrl    = "$($script:S3BaseUrl)/$($script:S3EnumFolder)"
+                StorageCredential = $script:S3CredentialName
+                FilePath          = "$($script:TestDbName5)_log1.trn"
+                Type              = "Log"
+            }
+            $null = Backup-DbaDatabase @splatBackup2
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $script:TestDbName5 -Confirm:$false
+        }
+
+        It "Should handle S3 folder paths when NoXpDirTree is not specified" {
+            # Get-DbaBackupInformation internally uses xp_dirtree/sys.dm_os_enumerate_filesystem
+            # When given an S3 folder path, it should detect S3 and skip enumeration
+            $s3FolderPath = "$($script:S3BaseUrl)/$($script:S3EnumFolder)/"
+
+            $splatBackupInfo = @{
+                SqlInstance       = "localhost"
+                SqlCredential     = $cred
+                Path              = $s3FolderPath
+                StorageCredential = $script:S3CredentialName
+                WarningAction     = "SilentlyContinue"
+            }
+            $result = Get-DbaBackupInformation @splatBackupInfo
+
+            # Should return empty because S3 enumeration is not supported via T-SQL
+            $result | Should -BeNullOrEmpty
+        }
+
+        It "Should write warning message when S3 folder enumeration is attempted" {
+            $s3FolderPath = "$($script:S3BaseUrl)/$($script:S3EnumFolder)/"
+
+            # Capture warning messages
+            $warningMessages = @()
+            $splatBackupInfo = @{
+                SqlInstance       = "localhost"
+                SqlCredential     = $cred
+                Path              = $s3FolderPath
+                StorageCredential = $script:S3CredentialName
+                WarningVariable   = "warningMessages"
+                WarningAction     = "SilentlyContinue"
+            }
+            $null = Get-DbaBackupInformation @splatBackupInfo
+
+            # Should have written a warning about S3 enumeration not being supported
+            $warningMessages | Should -Not -BeNullOrEmpty
+            $warningMessages -join " " | Should -BeLike "*S3*"
+        }
+
+        It "Should work with explicit S3 file paths (not folders)" {
+            # While folder enumeration doesn't work, explicit file paths should work
+            $s3FilePath = "$($script:S3BaseUrl)/$($script:S3EnumFolder)/$($script:TestDbName5)_full1.bak"
+
+            $splatBackupInfo = @{
+                SqlInstance       = "localhost"
+                SqlCredential     = $cred
+                Path              = $s3FilePath
+                StorageCredential = $script:S3CredentialName
+            }
+            $result = Get-DbaBackupInformation @splatBackupInfo
+
+            # Should successfully read the specific file
+            $result | Should -Not -BeNullOrEmpty
+            $result.Database | Should -Be $script:TestDbName5
+            $result.Type | Should -Be "Database"
+        }
+
+        It "Should successfully enumerate local file system paths (contrast with S3)" {
+            # Create a local backup to verify enumeration works for non-S3 paths
+            $localBackupPath = "C:\temp\dbatools_s3test"
+            $null = New-Item -Path $localBackupPath -ItemType Directory -Force -ErrorAction SilentlyContinue
+
+            $splatLocalBackup = @{
+                SqlInstance   = "localhost"
+                SqlCredential = $cred
+                Database      = $script:TestDbName5
+                Path          = "$localBackupPath\local_test.bak"
+                Type          = "Full"
+            }
+            $null = Backup-DbaDatabase @splatLocalBackup
+
+            # Enumerate local directory - this SHOULD work
+            $splatBackupInfo = @{
+                SqlInstance   = "localhost"
+                SqlCredential = $cred
+                Path          = $localBackupPath
+            }
+            $result = Get-DbaBackupInformation @splatBackupInfo
+
+            # Should return backup information for local file system
+            $result | Should -Not -BeNullOrEmpty
+            $result.Database | Should -Be $script:TestDbName5
+
+            # Cleanup
+            Remove-Item -Path $localBackupPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Should require PowerShell-based enumeration for S3 (validation test)" {
+            # This test demonstrates the correct approach: using PowerShell to enumerate S3
+            # Since we're using MinIO in tests, we need to use AWS PowerShell module
+            # This is a validation that the workaround approach is correct
+
+            # Skip if AWS.Tools.S3 not available (CI environments may not have it)
+            $hasAwsModule = $null -ne (Get-Module -ListAvailable -Name AWS.Tools.S3)
+            if (-not $hasAwsModule) {
+                Set-ItResult -Skipped -Because "AWS.Tools.S3 module not available"
+                return
+            }
+
+            # This demonstrates the recommended approach from the documentation
+            # Users should use Get-S3Object to list files, then pass paths to Get-DbaBackupInformation/Restore-DbaDatabase
+            Import-Module AWS.Tools.S3 -ErrorAction Stop
+
+            # Configure AWS credentials for MinIO
+            $awsCredential = [Amazon.Runtime.BasicAWSCredentials]::new($script:S3AccessKey, $script:S3SecretKey)
+            $s3Config = [Amazon.S3.AmazonS3Config]::new()
+            $s3Config.ServiceURL = "http://$($script:S3Endpoint)"
+            $s3Config.ForcePathStyle = $true
+
+            $s3Client = [Amazon.S3.AmazonS3Client]::new($awsCredential, $s3Config)
+
+            $splatListObjects = @{
+                BucketName = $script:S3Bucket
+                KeyPrefix  = "$($script:S3EnumFolder)/"
+            }
+            $s3Objects = Get-S3Object @splatListObjects -S3Client $s3Client
+
+            # PowerShell CAN enumerate S3 - this is the correct approach
+            $s3Objects | Should -Not -BeNullOrEmpty
+            $s3Objects.Key | Should -Contain "$($script:S3EnumFolder)/$($script:TestDbName5)_full1.bak"
+            $s3Objects.Key | Should -Contain "$($script:S3EnumFolder)/$($script:TestDbName5)_log1.trn"
+
+            # Now demonstrate using those paths with Get-DbaBackupInformation
+            $backupPaths = $s3Objects | ForEach-Object {
+                "$($script:S3BaseUrl)/$($_.Key)"
+            }
+
+            $splatBackupInfo = @{
+                SqlInstance       = "localhost"
+                SqlCredential     = $cred
+                Path              = $backupPaths
+                StorageCredential = $script:S3CredentialName
+            }
+            $backupInfo = Get-DbaBackupInformation @splatBackupInfo
+
+            # Should successfully read backup information for all files
+            $backupInfo | Should -Not -BeNullOrEmpty
+            $backupInfo.Count | Should -Be 2
+            $backupInfo.Database | Should -Contain $script:TestDbName5
+        }
+    }
+
     #Context "Test-DbaBackupInformation with S3" {
     #    BeforeAll {
     #        $script:TestDbName4 = "dbatoolsci_s3test"
-#
+    #
     #        # Create and backup test database
     #        $null = New-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Name $script:TestDbName4 -RecoveryModel Full
-#
+    #
     #        $script:S3TestBackupFile = "$($script:TestDbName4)_test.bak"
     #        $splatBackup = @{
     #            SqlInstance       = "localhost"
@@ -319,14 +500,14 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
     #        }
     #        $null = Backup-DbaDatabase @splatBackup
     #    }
-#
+    #
     #    AfterAll {
     #        $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $script:TestDbName4 -Confirm:$false
     #    }
-#
+    #
     #    It "Should validate S3 backup information" {
     #        $s3Path = "$($script:S3BaseUrl)/$($script:S3TestBackupFile)"
-#
+    #
     #        $splatInfo = @{
     #            SqlInstance       = "localhost"
     #            SqlCredential     = $cred
@@ -334,7 +515,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
     #            StorageCredential = $script:S3CredentialName
     #        }
     #        $backupInfo = Get-DbaBackupInformation @splatInfo
-#
+    #
     #        $splatTest = @{
     #            BackupHistory = $backupInfo
     #            SqlInstance   = "localhost"
@@ -342,7 +523,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
     #            VerifyOnly    = $true
     #        }
     #        $result = Test-DbaBackupInformation @splatTest
-#
+    #
     #        $result | Should -Not -BeNullOrEmpty
     #        # S3 URLs should pass validation - they are skipped for cloud paths
     #    }
