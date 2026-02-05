@@ -375,7 +375,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
             # Should have written a warning about S3 enumeration not being supported
             $warningMessages | Should -Not -BeNullOrEmpty
-            $warningMessages -join " " | Should -BeLike "*S3*"
+            $warningMessages -join " " | Should -BeLike "*S3 paths cannot be enumerated using T-SQL*"
         }
 
         It "Should work with explicit S3 file paths (not folders)" {
