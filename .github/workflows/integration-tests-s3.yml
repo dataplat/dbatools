@@ -198,6 +198,17 @@ jobs:
               throw "Failed to connect to SQL Server after $maxAttempts attempts"
           }
 
+      - name: Install AWS.Tools.S3 for S3 enumeration tests
+        run: |
+          Write-Host "Installing AWS.Tools.Installer..."
+          Install-Module -Name AWS.Tools.Installer -Force -Scope CurrentUser
+
+          Write-Host "Installing AWS.Tools.S3 (includes AWS.Tools.Common dependency)..."
+          Install-AWSToolsModule AWS.Tools.S3 -Force -Scope CurrentUser
+
+          Write-Host "Verifying installation..."
+          Get-Module -ListAvailable -Name AWS.Tools.S3, AWS.Tools.Common | Select-Object Name, Version
+
       - name: Run S3 backup tests
         env:
           S3_ENDPOINT: minio:9000
