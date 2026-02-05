@@ -262,10 +262,9 @@ function Get-DbaBackupInformation {
         } else {
             $Files = @()
             $groupResults = @()
-            Write-Message -Level Verbose -Message "Debug: Before NoXpDirTree: $NoXpDirTree"
+
             # Detect cloud storage URLs (Azure http:// or S3 s3://)
-            if ($Path[0] -match 'http' -or $Path[0] -match 's3') { $NoXpDirTree = $true }
-            Write-Message -Level Verbose -Message "Debug: Before NoXpDirTree: $NoXpDirTree"
+            if ($Path[0] -match '^https?://' -or $Path[0] -match '^s3://') { $NoXpDirTree = $true }
             if ($NoXpDirTree -ne $true) {
                 foreach ($f in $path) {
                     if ([System.IO.Path]::GetExtension($f).Length -gt 1) {
