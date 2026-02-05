@@ -398,17 +398,21 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
         It "Should successfully enumerate local file system paths (contrast with S3)" {
             # Create a local backup to verify enumeration works for non-S3 paths
-            $localBackupPath = "C:\temp\dbatools_s3test"
+            # Use cross-platform temp path (Linux uses /tmp, Windows uses C:\temp or similar)
+            $tempRoot = [System.IO.Path]::GetTempPath()
+            $localBackupPath = Join-Path -Path $tempRoot -ChildPath "dbatools_s3test"
             $null = New-Item -Path $localBackupPath -ItemType Directory -Force -ErrorAction SilentlyContinue
 
+            $localBackupFile = Join-Path -Path $localBackupPath -ChildPath "local_test.bak"
             $splatLocalBackup = @{
                 SqlInstance   = "localhost"
                 SqlCredential = $cred
                 Database      = $script:TestDbName5
-                FilePath      = "$localBackupPath\local_test.bak"
+                FilePath      = $localBackupFile
                 Type          = "Full"
             }
-            $null = Backup-DbaDatabase @splatLocalBackup
+            $localBackupResult = Backup-DbaDatabase @splatLocalBackup
+            $localBackupResult.BackupComplete | Should -BeTrue
 
             # Enumerate local directory - this SHOULD work
             $splatBackupInfo = @{
@@ -442,19 +446,17 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             # Users should use Get-S3Object to list files, then pass paths to Get-DbaBackupInformation/Restore-DbaDatabase
             Import-Module AWS.Tools.S3 -ErrorAction Stop
 
-            # Configure AWS credentials for MinIO
-            $awsCredential = [Amazon.Runtime.BasicAWSCredentials]::new($script:S3AccessKey, $script:S3SecretKey)
-            $s3Config = [Amazon.S3.AmazonS3Config]::new()
-            $s3Config.ServiceURL = "http://$($script:S3Endpoint)"
-            $s3Config.ForcePathStyle = $true
-
-            $s3Client = [Amazon.S3.AmazonS3Client]::new($awsCredential, $s3Config)
-
+            # For MinIO (S3-compatible), use EndpointUrl with ForcePathStyleAddressing
+            # MinIO uses HTTP in our test environment
             $splatListObjects = @{
-                BucketName = $script:S3Bucket
-                KeyPrefix  = "$($script:S3EnumFolder)/"
+                BucketName              = $script:S3Bucket
+                Prefix                  = "$($script:S3EnumFolder)/"
+                EndpointUrl             = "http://$($script:S3Endpoint)"
+                AccessKey               = $script:S3AccessKey
+                SecretKey               = $script:S3SecretKey
+                ForcePathStyleAddressing = $true
             }
-            $s3Objects = Get-S3Object @splatListObjects -S3Client $s3Client
+            $s3Objects = Get-S3Object @splatListObjects
 
             # PowerShell CAN enumerate S3 - this is the correct approach
             $s3Objects | Should -Not -BeNullOrEmpty
