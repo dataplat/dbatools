@@ -124,12 +124,12 @@ function Export-DbaCredential {
                         $server = $instance.InputObject
                     } else {
                         Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
                         $dacOpened = $true
                     }
                 } else {
                     Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 9
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 }
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
