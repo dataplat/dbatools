@@ -120,6 +120,7 @@ function Export-DbaCredential {
                 $dacOpened = $false
                 if ($dacNeeded) {
                     if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
                         $server = $instance.InputObject
                     } else {
                         Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
@@ -127,6 +128,7 @@ function Export-DbaCredential {
                         $dacOpened = $true
                     }
                 } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
                     $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 9
                 }
             } catch {

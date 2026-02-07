@@ -217,7 +217,29 @@ function Export-DbaInstance {
         foreach ($instance in $SqlInstance) {
             $stepCounter = 0
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+                # Do we need a dedicated admin connection for password retrieval?
+                # If not both are excluded, we do
+                $dacNeeded = $Exclude -notcontains 'Credentials' -or $Exclude -notcontains 'LinkedServers'
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+
+                $dacOpened = $false
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $server = $instance.InputObject
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+                }
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -447,14 +469,14 @@ function Export-DbaInstance {
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\oledbprovider.sql"
             }
 
+            if ($dacOpened) {
+                $null = $server | Disconnect-DbaInstance -WhatIf:$false
+            }
 
             Write-Progress -Activity "Performing Instance Export for $instance" -Completed
         }
     }
     end {
-        if ($sourceServerDac) {
-            $sourceServerDac.Disconnect()
-        }
         $totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
         Write-Message -Level Verbose -Message "SQL Server export complete."
         Write-Message -Level Verbose -Message "Export started: $started"

@@ -395,6 +395,7 @@ function Copy-DbaDbMail {
             $dacOpened = $false
             if ($dacNeeded) {
                 if ($dacConnected) {
+                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
                     $sourceServer = $Source.InputObject
                 } else {
                     Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
@@ -402,6 +403,7 @@ function Copy-DbaDbMail {
                     $dacOpened = $true
                 }
             } else {
+                Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
                 $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
             }
             $sourceServerName = $sourceServer.DomainInstanceName

@@ -371,20 +371,25 @@ function Start-DbaMigration {
             $dacOpened = $false
             if ($dacNeeded) {
                 if ($dacConnected) {
+                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
                     $sourceServerDac = $Source.InputObject
                     # Reconnect without DAC for Copy-DbaDatabase
+                    Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require DAC."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
                 } else {
                     Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
                     $sourceServerDac = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
                     $dacOpened = $true
+                    Write-Message -Level Verbose -Message "Opening or reusing additional normal connection for all commands that don't require DAC."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
                 }
             } else {
                 if ($dacConnected) {
                     # Reconnect without DAC for Copy-DbaDatabase
+                    Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require DAC."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
                 } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection for all commands that don't require DAC."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
                 }
             }
