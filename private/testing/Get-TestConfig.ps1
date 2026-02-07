@@ -61,18 +61,18 @@ function Get-TestConfig {
     } elseif ($env:CODESPACES -or ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
         $null = Set-DbatoolsInsecureConnection
 
-        $config['Instance1'] = "dbatools1"
-        $config['Instance2'] = "dbatools2"
+        $config['InstanceSingle'] = "dbatools1"
+        $config['InstanceMulti1'] = "dbatools1"
+        $config['InstanceMulti2'] = "dbatools2"
 
         $config['SqlCred'] = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
         $config['Defaults']['*:SqlCredential'] = $config['SqlCred']
         $config['Defaults']['*:SourceSqlCredential'] = $config['SqlCred']
         $config['Defaults']['*:DestinationSqlCredential'] = $config['SqlCred']
     } elseif ($env:GITHUB_WORKSPACE) {
-        $config['DbaToolsCi_Computer'] = "localhost"
-
-        $config['Instance1'] = "localhost"
-        $config['Instance2'] = "localhost:14333"
+        $config['InstanceSingle'] = "localhost"
+        $config['InstanceMulti1'] = "localhost"
+        $config['InstanceMulti2'] = "localhost:14333"
 
         $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing
         $config['SQLPassword'] = $null

@@ -151,10 +151,6 @@ $config['InstanceHadr'] = "YourServer\Instance2"
 # For tests that restart SQL Server (use with caution!)
 $config['InstanceRestart'] = "YourServer\Instance2"
 
-# Legacy support - some older tests still use these
-$config['instance1'] = $config['InstanceSingle']
-$config['instance2'] = $config['InstanceMulti2']
-
 # ============================================
 # Authentication
 # ============================================
@@ -174,9 +170,6 @@ $config['Defaults']['*:DestinationSqlCredential'] = $config['SqlCred']
 # ============================================
 # Test Infrastructure
 # ============================================
-
-# Computer name for certain tests
-$config['dbatoolsci_computer'] = $env:COMPUTERNAME
 
 # Temp directory for test files
 # IMPORTANT: For remote instances, use a network share accessible by both
