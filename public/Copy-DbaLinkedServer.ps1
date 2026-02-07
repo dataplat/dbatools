@@ -312,7 +312,7 @@ function Copy-DbaLinkedServer {
             $dacOpened = $false
             if ($dacNeeded) {
                 if ($dacConnected) {
-                    $sourceServer = $Source
+                    $sourceServer = $Source.InputObject
                 } else {
                     Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue

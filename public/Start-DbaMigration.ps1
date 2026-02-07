@@ -371,7 +371,7 @@ function Start-DbaMigration {
             $dacOpened = $false
             if ($dacNeeded) {
                 if ($dacConnected) {
-                    $sourceServerDac = $Source
+                    $sourceServerDac = $Source.InputObject
                     # Reconnect without DAC for Copy-DbaDatabase
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
                 } else {

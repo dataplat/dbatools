@@ -134,7 +134,7 @@ function Export-DbaLinkedServer {
                 $dacOpened = $false
                 if ($dacNeeded) {
                     if ($dacConnected) {
-                        $server = $instance
+                        $server = $instance.InputObject
                     } else {
                         Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
                         $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
