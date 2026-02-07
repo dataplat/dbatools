@@ -345,7 +345,7 @@ function Copy-DbaLinkedServer {
     }
     end {
         if ($dacOpened) {
-            $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
         }
     }
 }

@@ -599,7 +599,7 @@ function Start-DbaMigration {
     }
     end {
         if ($dacOpened) {
-            $sourceServerDac | Disconnect-DbaInstance -WhatIf:$false
+            $null = $sourceServerDac | Disconnect-DbaInstance -WhatIf:$false
         }
         if (Test-FunctionInterrupt) { return }
         $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])

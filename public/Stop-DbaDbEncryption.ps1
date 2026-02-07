@@ -185,7 +185,7 @@ function Stop-DbaDbEncryption {
                     }
                 } finally {
                     if ($server) {
-                        Disconnect-DbaInstance -SqlInstance $server
+                        $null = Disconnect-DbaInstance -SqlInstance $server
                     }
                 }
             }

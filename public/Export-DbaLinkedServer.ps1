@@ -206,7 +206,7 @@ function Export-DbaLinkedServer {
             }
 
             if ($dacOpened) {
-                $server | Disconnect-DbaInstance -WhatIf:$false
+                $null = $server | Disconnect-DbaInstance -WhatIf:$false
             }
         }
     }
