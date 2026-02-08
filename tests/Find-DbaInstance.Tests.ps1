@@ -30,7 +30,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command finds SQL Server instances" {
         BeforeAll {
-            $results = Find-DbaInstance -ComputerName $TestConfig.InstanceSingle -ScanType Browser, SqlConnect | Select-Object -First 1
+            $results = Find-DbaInstance -ComputerName $TestConfig.InstanceSingle -ScanType Browser, SqlConnect | Where-Object SqlInstance -eq $TestConfig.InstanceSingle
         }
 
         It "Returns an object type of [Dataplat.Dbatools.Discovery.DbaInstanceReport]" {

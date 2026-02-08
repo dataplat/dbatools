@@ -4,8 +4,13 @@
 # Modify the $config hashtable to include your custom configurations.
 
 # Define your local SQL Server instances
-$config['instance1'] = "localhost\SQLInstance1"    # Replace with your first SQL Server instance
-$config['instance2'] = "localhost\SQLInstance2"    # Replace with your second SQL Server instance
+$config['InstanceSingle'] = "localhost\SQLInstance1"
+$config['InstanceMulti1'] = "localhost\SQLInstance1"
+$config['InstanceMulti2'] = "localhost\SQLInstance2"
+$config['InstanceCopy1'] = "localhost\SQLInstance1"
+$config['InstanceCopy2'] = "localhost\SQLInstance2"
+$config['InstanceHadr'] = "localhost\SQLInstance1"
+$config['InstanceRestart'] = "localhost\SQLInstance1"
 
 # SQL Server credentials
 # Replace 'YourPassword' with your actual password and 'sa' with your username if different
@@ -16,9 +21,6 @@ $config['SqlCred'] = New-Object System.Management.Automation.PSCredential ("sa",
 $config['Defaults'] = [System.Management.Automation.DefaultParameterDictionary]@{
     "*:SqlCredential" = $config['SqlCred']
 }
-
-# Additional configurations
-$config['dbatoolsci_computer'] = "localhost"    # Replace if your CI computer is different
 
 # If using SQL authentication for Instance2, specify the username and password
 $config['SQLUserName'] = $null        # Replace with username if applicable
