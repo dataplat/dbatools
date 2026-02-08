@@ -246,10 +246,10 @@ function Export-DbaInstance {
 
             if ($Force) {
                 # when the caller requests to overwrite existing scripts we won't add the dynamic timestamp to the folder name, so that a pre-existing location can be overwritten.
-                $exportPath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))"
+                $exportPath = Join-DbaPath -Path $Path -Child "$($server.DomainInstanceName.replace('\', '$'))"
             } else {
                 $timeNow = (Get-Date -UFormat (Get-DbatoolsConfigValue -FullName 'formatting.uformat'))
-                $exportPath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timeNow"
+                $exportPath = Join-DbaPath -Path $Path -Child "$($server.DomainInstanceName.replace('\', '$'))-$timeNow"
             }
 
             # Ensure the export dir exists.

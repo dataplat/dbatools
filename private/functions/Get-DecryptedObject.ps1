@@ -4,9 +4,9 @@ function Get-DecryptedObject {
         Internal function.
 
     .DESCRIPTION
-        Copies SQL Server credentials from source to destination instances without losing the original passwords, which normally can't be retrieved through standard methods. This function uses a Dedicated Admin Connection (DAC) and password decryption techniques to extract the actual credential passwords from the source server and recreate them identically on the destination.
-
-        This is essential for server migrations, disaster recovery setup, or environment synchronization where you need to move service accounts, proxy credentials, or linked server authentication without having to reset passwords or contact application teams for credentials.
+        Decrypts credentials or linked server passwords from a SQL Server instance using the service master key.
+        This is necessary because SQL Server does not allow retrieval of plaintext passwords for security reasons.
+        By leveraging the service master key and the encryption mechanism used by SQL Server, this function can extract the actual passwords for credentials and linked servers.
 
         This function is used by the following public functions:
         - Copy-DbaCredential
@@ -45,7 +45,7 @@ function Get-DecryptedObject {
     )
 
     $server = $SqlInstance
-    $sourceName = $server.Name
+    $sourceName = $server.DomainInstanceName
 
     # Query Service Master Key from the database - remove padding from the key
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
