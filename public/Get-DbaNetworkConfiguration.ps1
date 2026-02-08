@@ -237,23 +237,28 @@ function Get-DbaNetworkConfiguration {
             $requiredKeyUsages = [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature -bor [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::KeyEncipherment
             $networkName = if ($vsname) { $vsname } else { hostname }
             $suitableCertificate = Get-ChildItem -Path Cert:\LocalMachine\My -ErrorAction SilentlyContinue | Where-Object {
-                $keyUsages = ($_.Extensions | Where-Object { $_ -is [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension] }).KeyUsages
-                $keyUsagesOk = ($keyUsages -band $requiredKeyUsages) -eq $requiredKeyUsages
+                try {
+                    $keyUsages = ($_.Extensions | Where-Object { $_ -is [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension] }).KeyUsages
+                    $keyUsagesOk = ($keyUsages -band $requiredKeyUsages) -eq $requiredKeyUsages
 
-                $dnsNames = $_.DnsNameList.Unicode
-                if (-not $dnsNames -and $_.Subject -match 'CN=([^,]+)') { $dnsNames = $Matches[1] }
-                $dnsNamesOk = $dnsNames -contains $networkName -or $dnsNames -contains "$networkName.$env:USERDNSDOMAIN"
+                    $dnsNames = $_.DnsNameList.Unicode
+                    if (-not $dnsNames -and $_.Subject -match 'CN=([^,]+)') { $dnsNames = @( $Matches[1] ) }
+                    $dnsNamesOk = $dnsNames -contains $networkName -or $dnsNames -contains "$networkName.$env:USERDNSDOMAIN"
 
-                $_.PrivateKey -is [System.Security.Cryptography.RSACryptoServiceProvider] -and
-                $_.PrivateKey.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange -and
-                $_.PublicKey.Key.KeySize -ge 2048 -and
-                $_.PublicKey.Oid.FriendlyName -match 'RSA' -and
-                $_.SignatureAlgorithm.FriendlyName -match 'sha256|sha384|sha512' -and
-                $_.EnhancedKeyUsageList.FriendlyName -contains 'Server Authentication' -and
-                $_.NotBefore -lt (Get-Date) -and
-                $_.NotAfter -gt (Get-Date) -and
-                $keyUsagesOk -and
-                $dnsNamesOk
+                    $_.PrivateKey -is [System.Security.Cryptography.RSACryptoServiceProvider] -and
+                    $_.PrivateKey.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange -and
+                    $_.PublicKey.Key.KeySize -ge 2048 -and
+                    $_.PublicKey.Oid.FriendlyName -match 'RSA' -and
+                    $_.SignatureAlgorithm.FriendlyName -match 'sha256|sha384|sha512' -and
+                    $_.EnhancedKeyUsageList.FriendlyName -contains 'Server Authentication' -and
+                    $_.NotBefore -lt (Get-Date) -and
+                    $_.NotAfter -gt (Get-Date) -and
+                    $keyUsagesOk -and
+                    $dnsNamesOk
+                } catch {
+                    $verbose += "Failed to test certificate '$($_.Thumbprint)' for suitability: $_"
+                    $false
+                }
             }
 
             [PSCustomObject]@{
