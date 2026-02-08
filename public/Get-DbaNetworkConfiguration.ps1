@@ -59,6 +59,7 @@ function Get-DbaNetworkConfiguration {
         - TcpIpProperties: Nested object containing Enabled, KeepAlive, and ListenAll properties for TCP/IP configuration
         - TcpIpAddresses: Array of objects representing IP address configurations with properties like Name, Active, Enabled, IpAddress, TcpDynamicPorts, and TcpPort
         - Certificate: Nested object containing SSL certificate information (FriendlyName, DnsNameList, Thumbprint, Generated, Expires, IssuedTo, IssuedBy, Certificate object)
+        - SuitableCertificate: Array of certificates from the local machine store that are suitable for SQL Server encryption based on key usage, signature algorithm, validity, and DNS names
         - Advanced: Nested object containing advanced settings (ForceEncryption, HideInstance, AcceptedSPNs, ExtendedProtection)
 
         When -OutputType ServerProtocols is specified:
@@ -231,6 +232,30 @@ function Get-DbaNetworkConfiguration {
                 $outputCertificate = $outputAdvanced = "Failed to get information from registry: Path not found"
             }
 
+            # Get a list of suitable certificates.
+            # For details on the requirements see https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/certificate-requirements
+            $requiredKeyUsages = [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature -bor [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::KeyEncipherment
+            $networkName = if ($vsname) { $vsname } else { hostname }
+            $suitableCertificate = Get-ChildItem -Path Cert:\LocalMachine\My -ErrorAction SilentlyContinue | Where-Object {
+                $keyUsages = ($_.Extensions | Where-Object { $_ -is [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension] }).KeyUsages
+                $keyUsagesOk = ($keyUsages -band $requiredKeyUsages) -eq $requiredKeyUsages
+
+                $dnsNames = $_.DnsNameList.Unicode
+                if (-not $dnsNames -and $_.Subject -match 'CN=([^,]+)') { $dnsNames = $Matches[1] }
+                $dnsNamesOk = $dnsNames -contains $networkName -or $dnsNames -contains "$networkName.$env:USERDNSDOMAIN"
+
+                $_.PrivateKey -is [System.Security.Cryptography.RSACryptoServiceProvider] -and
+                $_.PrivateKey.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange -and
+                $_.PublicKey.Key.KeySize -ge 2048 -and
+                $_.PublicKey.Oid.FriendlyName -match 'RSA' -and
+                $_.SignatureAlgorithm.FriendlyName -match 'sha256|sha384|sha512' -and
+                $_.EnhancedKeyUsageList.FriendlyName -contains 'Server Authentication' -and
+                $_.NotBefore -lt (Get-Date) -and
+                $_.NotAfter -gt (Get-Date) -and
+                $keyUsagesOk -and
+                $dnsNamesOk
+            }
+
             [PSCustomObject]@{
                 ComputerName        = $instance.ComputerName
                 InstanceName        = $instance.InstanceName
@@ -241,6 +266,7 @@ function Get-DbaNetworkConfiguration {
                 TcpIpProperties     = $outputTcpIpProperties
                 TcpIpAddresses      = $outputTcpIpAddressesIPn + $outputTcpIpAddressesIPAll
                 Certificate         = $outputCertificate
+                SuitableCertificate = $suitableCertificate
                 Advanced            = $outputAdvanced
                 Verbose             = $verbose
             }
