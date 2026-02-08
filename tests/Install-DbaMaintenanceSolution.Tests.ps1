@@ -127,16 +127,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Clean up any leftover Hallengren procedures in tempdb from the first Context
             $cleanupTempdb = "
-                IF OBJECT_ID('tempdb.dbo.CommandExecute', 'P') IS NOT NULL DROP PROCEDURE tempdb.dbo.CommandExecute;
-                IF OBJECT_ID('tempdb.dbo.DatabaseBackup', 'P') IS NOT NULL DROP PROCEDURE tempdb.dbo.DatabaseBackup;
-                IF OBJECT_ID('tempdb.dbo.DatabaseIntegrityCheck', 'P') IS NOT NULL DROP PROCEDURE tempdb.dbo.DatabaseIntegrityCheck;
-                IF OBJECT_ID('tempdb.dbo.IndexOptimize', 'P') IS NOT NULL DROP PROCEDURE tempdb.dbo.IndexOptimize;
-                IF OBJECT_ID('tempdb.dbo.CommandLog', 'U') IS NOT NULL DROP TABLE tempdb.dbo.CommandLog;
-                IF OBJECT_ID('tempdb.dbo.Queue', 'U') IS NOT NULL DROP TABLE tempdb.dbo.Queue;
-                IF OBJECT_ID('tempdb.dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE tempdb.dbo.QueueDatabase;
+                IF OBJECT_ID('dbo.CommandExecute', 'P') IS NOT NULL DROP PROCEDURE dbo.CommandExecute;
+                IF OBJECT_ID('dbo.DatabaseBackup', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseBackup;
+                IF OBJECT_ID('dbo.DatabaseIntegrityCheck', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseIntegrityCheck;
+                IF OBJECT_ID('dbo.IndexOptimize', 'P') IS NOT NULL DROP PROCEDURE dbo.IndexOptimize;
+                IF OBJECT_ID('dbo.CommandLog', 'U') IS NOT NULL DROP TABLE dbo.CommandLog;
+                IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
+                IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
             "
             $splatCleanupTempdb = @{
                 SqlInstance = $TestConfig.InstanceMulti2
+                Database    = "tempdb"
                 Query       = $cleanupTempdb
             }
             Invoke-DbaQuery @splatCleanupTempdb
@@ -185,7 +186,11 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Should add ChangeBackupType parameter to DIFF backup job" -Skip:(-not $script:installationSucceeded) {
+        It "Should add ChangeBackupType parameter to DIFF backup job" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
             $splatJobStep = @{
                 SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - DIFF"
@@ -194,7 +199,11 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep.Command | Should -Match "@ChangeBackupType = 'Y'"
         }
 
-        It "Should add ChangeBackupType parameter to LOG backup job" -Skip:(-not $script:installationSucceeded) {
+        It "Should add ChangeBackupType parameter to LOG backup job" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
             $splatJobStep = @{
                 SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - LOG"
@@ -203,7 +212,11 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep.Command | Should -Match "@ChangeBackupType = 'Y'"
         }
 
-        It "Should NOT add ChangeBackupType parameter to FULL backup job" -Skip:(-not $script:installationSucceeded) {
+        It "Should NOT add ChangeBackupType parameter to FULL backup job" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
             $splatJobStep = @{
                 SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - FULL"
@@ -212,7 +225,11 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep.Command | Should -Not -Match "@ChangeBackupType = 'Y'"
         }
 
-        It "Should add Compress parameter to all backup jobs" -Skip:(-not $script:installationSucceeded) {
+        It "Should add Compress parameter to all backup jobs" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
             $splatJobStep = @{
                 SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - FULL"
@@ -221,7 +238,11 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep.Command | Should -Match "@Compress = 'Y'"
         }
 
-        It "Should have Verify parameter set to Y in backup jobs" -Skip:(-not $script:installationSucceeded) {
+        It "Should have Verify parameter set to Y in backup jobs" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
             $splatJobStep = @{
                 SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - FULL"
@@ -230,7 +251,11 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep.Command | Should -Match "@Verify = 'Y'"
         }
 
-        It "Should have CheckSum parameter set to Y in backup jobs" -Skip:(-not $script:installationSucceeded) {
+        It "Should have CheckSum parameter set to Y in backup jobs" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
             $splatJobStep = @{
                 SqlInstance = $TestConfig.InstanceMulti2
                 Job         = "DatabaseBackup - USER_DATABASES - FULL"
