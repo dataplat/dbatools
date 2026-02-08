@@ -431,9 +431,9 @@ Context "Parameter validation" {
 ## Environment Variables & Test Config
 
 **AppVeyor test instances:**
-- `$script:instance1` = SQL Server 2008 R2
-- `$script:instance2` = SQL Server 2016
-- `$script:instance3` = SQL Server 2017
+- `$TestConfig.InstanceSingle` = SQL Server 2022
+- `$TestConfig.InstanceMulti1` = SQL Server 2022
+- `$TestConfig.InstanceMulti2` = SQL Server 2017
 
 **GitHub Actions:**
 - Linux: `localhost`, `localhost:14333` (Docker containers)
