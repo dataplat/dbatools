@@ -22,6 +22,9 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $target = $TestConfig.InstanceSingle
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
@@ -34,10 +37,18 @@ Describe $CommandName -Tag IntegrationTests {
             # AppVeyor images do not have the MSOLEDBSQL provider installed, so we use SQLNCLI11 instead
             $server.Query("EXEC master.dbo.sp_addlinkedserver @server=N'$target', @srvproduct=N'SQL Server'")
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server.Query("EXEC master.dbo.sp_dropserver @server=N'$target'")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Function works" {

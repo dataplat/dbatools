@@ -25,6 +25,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceSingle -Property ComputerName
+
         # Setup xp_cmdshell to create external processes for testing
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "
         -- To allow advanced options to be changed.
@@ -40,10 +42,12 @@ Describe $CommandName -Tag IntegrationTests {
         RECONFIGURE;
         GO"
 
-        $query = @"
-        xp_cmdshell 'powershell -command ""sleep 20""'
-"@
-        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceSingle) -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
+        # Create sql file with code to start an external process
+        $sqlFile = "$($TestConfig.Temp)\sleep.sql"
+        Set-Content -Path $sqlFile -Value "xp_cmdshell 'powershell -command ""sleep 5""'"
+
+        # Run sql file to start external process
+        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceSingle) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -62,7 +66,10 @@ Describe $CommandName -Tag IntegrationTests {
         EXECUTE sp_configure 'show advanced options', 0;
         GO
         RECONFIGURE;
-        GO" -ErrorAction SilentlyContinue
+        GO"
+
+        # remove sql file
+        Remove-Item -Path $sqlFile
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -70,8 +77,9 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Can get an external process" {
         It "returns a process" {
             Start-Sleep -Seconds 1
-            $results = Get-DbaExternalProcess -ComputerName localhost | Where-Object Name -eq "cmd.exe"
-            $results.ComputerName | Should -Be "localhost"
+            $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
+            Start-Sleep -Seconds 5
+            $results.ComputerName | Should -Be $computerName
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -Be $null
         }

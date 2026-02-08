@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "notices dbatoolsci_schemachange changed" {
-            $schemaResults.Object -match "dbatoolsci_schemachange" | Should -Be $true
+            $schemaResults.Object | Should -Contain "dbatoolsci_schemachange"
         }
     }
 }
