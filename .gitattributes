@@ -28,6 +28,7 @@
 *.lisp    text
 *.clj     text
 *.sql     text
+*.sh      text eol=lf
 *.php     text
 *.lua     text
 *.m       text
