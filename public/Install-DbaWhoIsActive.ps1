@@ -171,7 +171,7 @@ function Install-DbaWhoIsActive {
                 }
 
                 # Special handling for SqlException
-                if ($Exception -is [System.Data.SqlClient.SqlException]) {
+                if ($Exception -is [Microsoft.Data.SqlClient.SqlException]) {
                     foreach ($err in $Exception.Errors) {
                         if ($err.Message -and
                             $messages[-1] -ne $err.Message) {
@@ -231,7 +231,7 @@ function Install-DbaWhoIsActive {
                                 if ($batch) {
                                     Write-Warning "Now running batch with Invoke-DbaQuery to get better error messages if it fails."
                                     try {
-                                        $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -EnableException
+                                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -MessagesToOutput -EnableException
                                     } catch {
                                         $messages = Get-ExceptionMessages -Exception $_.Exception
                                         Write-Warning "We have $($messages.Count) messages from the exception, here are the unique ones:"
@@ -240,7 +240,7 @@ function Install-DbaWhoIsActive {
                                         }
                                     }
                                     Write-Warning "Now running batch with Invoke-DbaQuery with no error handling."
-                                    $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch
+                                    Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -MessagesToOutput
                                 }
                             }
                         }
