@@ -191,7 +191,12 @@ function Install-DbaWhoIsActive {
                             try {
                                 $null = $server.databases[$Database].ExecuteNonQuery($batch)
                             } catch {
-                                Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
+                                $ex = "$_"
+                                if ($ex.Length -gt 1000) {
+                                    $ex = $ex.Substring(0, 1000)
+                                }
+                                Write-Warning -Message "Failed to execute a batch of the installation script. Error: $ex"
+                                Stop-Function -Message "Failed to install stored procedure. Error: $ex"
                             }
                         }
 
