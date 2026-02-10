@@ -191,7 +191,8 @@ function Install-DbaWhoIsActive {
                             try {
                                 $null = $server.databases[$Database].ExecuteNonQuery($batch)
                             } catch {
-                                Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
+                                # No ErrorRecord with ExecuteNonQuery, to prevent too long eventlog entry on AppVeyor.
+                                Stop-Function -Message "Failed to install stored procedure using ExecuteNonQuery."
                             }
                         }
 
