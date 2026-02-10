@@ -155,6 +155,37 @@ function Install-DbaWhoIsActive {
                 $versionWhoIsActive = ''
             }
         }
+
+        function Get-ExceptionMessages {
+            param(
+                [Parameter(Mandatory)]
+                [System.Exception]$Exception
+            )
+
+            $messages = New-Object System.Collections.Generic.List[string]
+
+            while ($Exception) {
+                if ($Exception.Message -and
+                    $messages[-1] -ne $Exception.Message) {
+                    $messages.Add($Exception.Message)
+                }
+
+                # Special handling for SqlException
+                if ($Exception -is [System.Data.SqlClient.SqlException]) {
+                    foreach ($err in $Exception.Errors) {
+                        if ($err.Message -and
+                            $messages[-1] -ne $err.Message) {
+                            $messages.Add("SQL $($err.Number): $($err.Message)")
+                        }
+                    }
+                }
+
+                $Exception = $Exception.InnerException
+            }
+
+            $messages
+        }
+
     }
 
     process {
@@ -191,13 +222,10 @@ function Install-DbaWhoIsActive {
                             try {
                                 $null = $server.databases[$Database].ExecuteNonQuery($batch)
                             } catch {
-                                $sqlEx = $_.Exception.InnerException.InnerException
-                                if ($sqlEx -is [System.Data.SqlClient.SqlException]) {
-                                    $msg = $sqlEx.Errors | ForEach-Object { "$($_.Number): $($_.Message)" } | Out-String
-                                } else {
-                                    $msg = $_.Exception.Message
+                                $messages = Get-ExceptionMessages -Exception $_.Exception
+                                foreach ($msg in $messages) {
+                                    Write-Warning $msg
                                 }
-                                Write-Warning -Message "Failed to execute a batch: $msg"
                                 Stop-Function -Message "Failed"
                             }
                         }
