@@ -143,7 +143,7 @@ Describe $CommandName -Tag IntegrationTests {
         $policyId = $output.PolicyId
 
         # add a procedure to the master db for the export of user objects in system databases
-        $null = Install-DbaWhoIsActive -SqlInstance $testServer -Database master
+        $null = Install-DbaWhoIsActive -SqlInstance $testServer -Database master -EnableException
     }
 
     AfterAll {
