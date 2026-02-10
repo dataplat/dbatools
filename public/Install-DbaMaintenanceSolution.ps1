@@ -517,7 +517,7 @@ function Install-DbaMaintenanceSolution {
 
                 if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
                     Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
-                    $null = $db.Invoke($cleanupQuery)
+                    $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $cleanupQuery -EnableException
                 }
 
                 # Remove Ola's Jobs
@@ -545,7 +545,7 @@ function Install-DbaMaintenanceSolution {
                         $sql = $fileContents[$file]
                         try {
                             foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Invoke($query)
+                                $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $query -EnableException
                             }
                         } catch {
                             $result = "Failed"

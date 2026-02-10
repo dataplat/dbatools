@@ -254,12 +254,12 @@ function Get-DbaUserPermission {
 
             try {
                 Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
-                $tempdb.ExecuteNonQuery($removeStigSQL)
+                $null = Invoke-DbaQuery -SqlInstance $server -Database tempdb -Query $removeStigSQL -EnableException
                 Write-Message -Level Verbose -Message "Creating STIG schema customized for master database"
                 $createStigSQL = $sql.Replace("<TARGETDB>", 'master')
-                $tempdb.ExecuteNonQuery($createStigSQL)
+                $null = Invoke-DbaQuery -SqlInstance $server -Database tempdb -Query $createStigSQL -EnableException
                 Write-Message -Level Verbose -Message "Building data table for server objects"
-                $serverDT = $tempdb.Query($serverSQL)
+                $serverDT = Invoke-DbaQuery -SqlInstance $server -Database tempdb -Query $serverSQL -EnableException
                 foreach ($row in $serverDT) {
                     [PSCustomObject]@{
                         ComputerName       = $server.ComputerName
@@ -294,13 +294,13 @@ function Get-DbaUserPermission {
 
                 try {
                     Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
-                    $tempdb.ExecuteNonQuery($removeStigSQL)
+                    $null = Invoke-DbaQuery -SqlInstance $server -Database tempdb -Query $removeStigSQL -EnableException
                     Write-Message -Level Verbose -Message "Creating STIG schema customized for current database"
                     $createStigSQL = $sql.Replace("<TARGETDB>", $db.Name)
                     Write-Message -Level Verbose -Message "Length of createStigSQL: $($createStigSQL.Length)"
-                    $tempdb.ExecuteNonQuery($createStigSQL)
+                    $null = Invoke-DbaQuery -SqlInstance $server -Database tempdb -Query $createStigSQL -EnableException
                     Write-Message -Level Verbose -Message "Building data table for database objects"
-                    $dbDT = $db.Query($dbSQL)
+                    $dbDT = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query $dbSQL -EnableException
                     foreach ($row in $dbDT) {
                         [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
@@ -327,7 +327,7 @@ function Get-DbaUserPermission {
             }
 
             Write-Message -Level Verbose -Message "Removing STIG schema from tempdb"
-            $tempdb.ExecuteNonQuery($removeStigSQL)
+            $null = Invoke-DbaQuery -SqlInstance $server -Database tempdb -Query $removeStigSQL -EnableException
         }
     }
 }

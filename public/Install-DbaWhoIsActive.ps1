@@ -189,7 +189,7 @@ function Install-DbaWhoIsActive {
                         $ProcedureExists = ($server.Query($ProcedureExists_Query, $Database)).proc_count
                         foreach ($batch in $batches) {
                             try {
-                                $null = $server.databases[$Database].ExecuteNonQuery($batch)
+                                $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -EnableException
                             } catch {
                                 Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
                             }
