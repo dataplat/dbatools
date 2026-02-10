@@ -143,15 +143,7 @@ Describe $CommandName -Tag IntegrationTests {
         $policyId = $output.PolicyId
 
         # add a procedure to the master db for the export of user objects in system databases
-        try {
-            $null = Install-DbaWhoIsActive -SqlInstance $testServer -Database master -EnableException
-        } catch {
-            $exText = "$_"
-            if ($exText.Length -gt 1000) {
-                $exText = $exText.Substring(0, 1000)
-            }
-            Write-Warning -Message "Failed to install sp_WhoIsActive in master database: $exText"
-        }
+        Install-DbaWhoIsActive -SqlInstance $testServer -Database master
     }
 
     AfterAll {

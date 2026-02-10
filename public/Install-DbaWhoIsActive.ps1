@@ -219,6 +219,7 @@ function Install-DbaWhoIsActive {
                     if ($server.Databases[$Database]) {
                         $ProcedureExists = ($server.Query($ProcedureExists_Query, $Database)).proc_count
                         foreach ($batch in $batches) {
+                            Write-Warning "Running batch of length $($batch.Length) characters. First 100 characters: $($batch.Substring(0, [Math]::Min(100, $batch.Length)))"
                             try {
                                 $null = $server.databases[$Database].ExecuteNonQuery($batch)
                             } catch {
@@ -227,19 +228,21 @@ function Install-DbaWhoIsActive {
                                 foreach ($msg in $messages) {
                                     Write-Warning $msg
                                 }
-                            }
-                            try {
-                                Write-Warning "Now running batch with Invoke-DbaQuery to get better error messages if it fails."
-                                $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -EnableException
-                            } catch {
-                                $messages = Get-ExceptionMessages -Exception $_.Exception
-                                Write-Warning "We have $($messages.Count) messages from the exception, here are the unique ones:"
-                                foreach ($msg in $messages) {
-                                    Write-Warning $msg
+                                if ($batch) {
+                                    Write-Warning "Now running batch with Invoke-DbaQuery to get better error messages if it fails."
+                                    try {
+                                        $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -EnableException
+                                    } catch {
+                                        $messages = Get-ExceptionMessages -Exception $_.Exception
+                                        Write-Warning "We have $($messages.Count) messages from the exception, here are the unique ones:"
+                                        foreach ($msg in $messages) {
+                                            Write-Warning $msg
+                                        }
+                                    }
+                                    Write-Warning "Now running batch with Invoke-DbaQuery with no error handling."
+                                    $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch
                                 }
                             }
-                            Write-Warning "Now running batch with Invoke-DbaQuery with no error handling."
-                            $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch
                         }
 
                         if ($ProcedureExists -gt 0) {
