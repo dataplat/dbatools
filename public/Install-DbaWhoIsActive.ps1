@@ -231,7 +231,8 @@ function Install-DbaWhoIsActive {
                                 if ($batch) {
                                     Write-Warning "Now running batch with Invoke-DbaQuery to get better error messages if it fails."
                                     try {
-                                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -MessagesToOutput -EnableException
+                                        $out = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -MessagesToOutput -EnableException
+                                        Write-Warning "Batch succeeded with Invoke-DbaQuery. Output: $out"
                                     } catch {
                                         $messages = Get-ExceptionMessages -Exception $_.Exception
                                         Write-Warning "We have $($messages.Count) messages from the exception, here are the unique ones:"
