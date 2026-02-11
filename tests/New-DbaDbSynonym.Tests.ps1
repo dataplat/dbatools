@@ -153,4 +153,28 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "dbatoolsci_outputsyn" -BaseObject "outputobj"
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Synonym"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Schema", "BaseServer", "BaseDatabase", "BaseSchema", "BaseObject")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property for Database" {
+            $outputResult[0].psobject.Properties["Database"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.Properties["Database"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

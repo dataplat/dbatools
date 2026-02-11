@@ -569,4 +569,32 @@ Describe $CommandName -Tag IntegrationTests {
             $newJobStep.JobStepFlags | Should -Be AppendAllCmdExecOutputToJobHistory
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputJobName = "dbatoolsci_outputjob_$(Get-Random)"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $outputJobName -EnableException
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $outputJobName -StepName "OutputStep1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess -EnableException
+            $result = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $outputJobName -StepName "OutputStep1" -NewName "OutputStep1Updated"
+        }
+
+        AfterAll {
+            Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobStep"
+        }
+
+        It "Has the correct properties on the output object" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].PSObject.Properties.Name | Should -Contain "Name"
+            $result[0].PSObject.Properties.Name | Should -Contain "Subsystem"
+            $result[0].PSObject.Properties.Name | Should -Contain "Command"
+            $result[0].PSObject.Properties.Name | Should -Contain "DatabaseName"
+            $result[0].PSObject.Properties.Name | Should -Contain "OnSuccessAction"
+            $result[0].PSObject.Properties.Name | Should -Contain "OnFailAction"
+        }
+    }
 }

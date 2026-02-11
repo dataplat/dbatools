@@ -68,15 +68,9 @@ function Import-DbaSpConfigure {
         None You cannot pipe objects to Import-DbaSpConfigure
 
     .OUTPUTS
-        System.Boolean
+        None
 
-        Returns $true if the sp_configure settings were successfully applied to the destination instance, or $false if the operation failed.
-
-        When using the -ServerCopy parameter set, settings are migrated from the source instance to the destination instance and the command returns a boolean indicating success or failure of the overall migration process.
-
-        When using the -FromFile parameter set, sp_configure settings from a SQL file are executed against the target instance and the command returns a boolean indicating success or failure of the configuration import.
-
-        Note: The function may also display warning messages about configuration options that require SQL Server restart, but these do not affect the boolean return value.
+        This command does not return any output. It applies sp_configure settings directly to the destination instance and writes status messages to the information stream.
 
     .EXAMPLE
         PS C:\> Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster

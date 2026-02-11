@@ -133,4 +133,48 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Impersonate | Should -Be $false
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputTestLsName = "dbatoolscli_LSOutput_$random"
+            $result = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer $outputTestLsName -ServerProduct "outputProduct" -Provider "outputProvider" -DataSource "outputDataSource"
+        }
+        AfterAll {
+            Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer $outputTestLsName -Force -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.LinkedServer"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "RemoteServer",
+                "ProductName",
+                "Impersonate",
+                "RemoteUser",
+                "Publisher",
+                "Distributor",
+                "DateLastModified"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties["RemoteServer"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["RemoteServer"].MemberType | Should -Be "AliasProperty"
+            $result[0].psobject.Properties["Publisher"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["Publisher"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

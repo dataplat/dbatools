@@ -57,4 +57,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Be $null
         }
     }
+
+}
+
+Describe "$CommandName Output" -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputRoleName = "dbatoolsci_outputrole_$(Get-Random)"
+            $null = New-DbaServerRole -SqlInstance $outputServer -ServerRole $outputRoleName
+            $result = Remove-DbaServerRole -SqlInstance $outputServer -ServerRole $outputRoleName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "ServerRole", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct values for a successful removal" {
+            $result.Status | Should -Be "Success"
+            $result.ServerRole | Should -Be $outputRoleName
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
 }

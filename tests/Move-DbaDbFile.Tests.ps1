@@ -256,4 +256,25 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_MoveDbFile_2DataFiles").Status | Should -Be "ONLINE"
         }
     }
+
+    Context "Output validation for FileStructureOnly" {
+        BeforeAll {
+            $splatStructure = @{
+                SqlInstance       = $TestConfig.InstanceSingle
+                Database          = "dbatoolsci_MoveDbFile_2DataFiles"
+                FileStructureOnly = $true
+            }
+            $structureOutput = Move-DbaDbFile @splatStructure
+        }
+
+        It "Returns a string when using FileStructureOnly" {
+            $structureOutput | Should -Not -BeNullOrEmpty
+            $structureOutput | Should -BeOfType [string]
+        }
+
+        It "Contains the expected hashtable format" {
+            $structureOutput | Should -BeLike "*fileToMove*"
+        }
+    }
+
 }

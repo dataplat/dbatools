@@ -52,16 +52,35 @@ function Stop-DbaPfDataCollectorSet {
         https://dbatools.io/Stop-DbaPfDataCollectorSet
 
     .OUTPUTS
-        Objects from Get-DbaPfDataCollectorSet
+        PSCustomObject
 
-        Returns Data Collector Set objects from Get-DbaPfDataCollectorSet after successfully stopping each collector set. The output includes the refreshed state of each collector set with updated status information showing it is no longer running.
+        Returns Data Collector Set objects from Get-DbaPfDataCollectorSet after successfully stopping each collector set.
 
-        Properties returned match those from Get-DbaPfDataCollectorSet, including:
+        Default display properties (via Select-DefaultView in Get-DbaPfDataCollectorSet):
         - ComputerName: The computer where the Data Collector Set is configured
-        - Name: The name of the Data Collector Set that was stopped
-        - State: The current state (should be "Stopped" after successful termination)
-        - Enabled: Boolean indicating if the collector set is enabled
-        - DataCollectorSetObject: Reference to the underlying Windows COM object
+        - Name: The name of the Data Collector Set
+        - DisplayName: The user-friendly display name of the collector set
+        - Description: Text description of what the collector set monitors
+        - State: Current state (should reflect Stopped after successful termination)
+        - Duration: Duration in seconds for which the collector set will run
+        - OutputLocation: File system path where collected data is stored
+        - LatestOutputLocation: Path to the most recently collected output files
+        - RootPath: Root directory path for the collector set configuration
+        - SchedulesEnabled: Boolean indicating if schedules are enabled
+        - Segment: Segment configuration value for data collection
+        - SegmentMaxDuration: Maximum duration in seconds for a collection segment
+        - SegmentMaxSize: Maximum size in MB for a collection segment
+        - SerialNumber: Serial number or identifier for the collector set
+        - Server: Name of the server hosting the collector set
+        - StopOnCompletion: Whether the collector stops on completion
+        - Subdirectory: Subdirectory name for output
+        - SubdirectoryFormat: Format for subdirectory naming
+        - SubdirectoryFormatPattern: Pattern for subdirectory format
+        - Task: Task associated with the collector set
+        - TaskArguments: Arguments for the associated task
+        - TaskRunAsSelf: Whether the task runs as self
+        - TaskUserTextArguments: User text arguments for the task
+        - UserAccount: The user account under which the collector set runs
 
         Note: If a collector set is not in "Running" state, Stop-Function prevents output and returns no objects for that set. Only successfully stopped collectors generate output.
 

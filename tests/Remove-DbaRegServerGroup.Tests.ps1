@@ -69,4 +69,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "dbatoolsci-third"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputGroupName = "dbatoolsci-outputgroup"
+            $outputGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $outputGroupName
+            $result = $outputGroup | Remove-DbaRegServerGroup -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output as PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties for CMS groups" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -50,10 +50,20 @@ Describe $CommandName -Tag UnitTests {
             $hexResults.Numeric | Should -Be 20000000024300001
         }
     }
-}
 
-#
-#    Integration test should appear below and are custom to the command you are writing.
-#    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-#    for more guidance.
-#
+    Context "Output validation" {
+        BeforeAll {
+            $result = Convert-DbaLSN -LSN "00000014:000000f3:0001"
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result.PSObject.Properties.Name | Should -Contain "Hexadecimal"
+            $result.PSObject.Properties.Name | Should -Contain "Numeric"
+        }
+    }
+}

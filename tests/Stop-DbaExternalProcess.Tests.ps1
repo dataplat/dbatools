@@ -86,4 +86,26 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Stopped"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Start a new external process for output validation
+            Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceSingle) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
+            Start-Sleep -Seconds 2
+            $result = Get-DbaExternalProcess -ComputerName $computerName | Select-Object -First 1 | Stop-DbaExternalProcess
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result.PSObject.Properties.Name | Should -Contain "ComputerName"
+            $result.PSObject.Properties.Name | Should -Contain "ProcessId"
+            $result.PSObject.Properties.Name | Should -Contain "Name"
+            $result.PSObject.Properties.Name | Should -Contain "Status"
+        }
+    }
 }

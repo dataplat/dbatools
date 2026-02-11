@@ -120,4 +120,31 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Output -eq $null | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.InstanceSingle -Database "tempdb" -Object "dbo.dbatoolct_example"
+        }
+
+        It "Returns output as PSCustomObject" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Object",
+                "Cmd",
+                "Output"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

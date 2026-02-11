@@ -82,11 +82,6 @@ function Get-DbaRegServer {
         - Description: Text description of the registered server
         - Source: Source location of the registration - "Central Management Servers", "Local Server Groups", or "Azure Data Studio"
 
-        When -ResolveNetworkName is specified, additional properties are included in default display:
-        - ComputerName: NetBIOS computer name resolved via DNS
-        - FQDN: Fully qualified domain name resolved via DNS
-        - IPAddress: IP address resolved via DNS
-
         Additional available properties from the RegisteredServer object:
         - ComputerName: NetBIOS computer name of the CMS instance (for CMS-sourced servers)
         - InstanceName: The SQL Server instance name of the CMS (for CMS-sourced servers)

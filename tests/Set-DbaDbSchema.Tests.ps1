@@ -148,3 +148,51 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
+
+Describe "$CommandName output validation" -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $outputRandom = Get-Random
+        $outputDbName = "dbatoolsci_schemaout_$outputRandom"
+        $outputUser1 = "dbatoolsci_user1_$outputRandom"
+        $outputUser2 = "dbatoolsci_user2_$outputRandom"
+        $outputPwd = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
+        $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputUser1, $outputUser2 -Password $outputPwd -Force
+        $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Login $outputUser1
+        $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Login $outputUser2
+        $null = New-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Schema "dbatoolsci_outputschema" -SchemaOwner $outputUser1
+
+        $outputResult = Set-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Schema "dbatoolsci_outputschema" -SchemaOwner $outputUser2
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -ErrorAction SilentlyContinue -Confirm:$false
+        Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputUser1, $outputUser2 -ErrorAction SilentlyContinue -Confirm:$false
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    It "Returns output of the documented type" {
+        $outputResult | Should -Not -BeNullOrEmpty
+        $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
+    }
+
+    It "Has the expected default display properties" {
+        $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+        $expectedDefaults = @(
+            "ComputerName",
+            "InstanceName",
+            "SqlInstance",
+            "Name",
+            "IsSystemObject"
+        )
+        foreach ($prop in $expectedDefaults) {
+            $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+        }
+    }
+}

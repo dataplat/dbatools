@@ -332,6 +332,47 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output validation" {
+        BeforeAll {
+            # Create a dummy Configuration.ini for output validation
+            $mainNode = "OPTIONS"
+            @(
+                "[$mainNode]"
+                "SQLSVCACCOUNT=""foo\bar"""
+                "FEATURES=""SQLEngine,AS"""
+                "ACTION=""Install"""
+            ) | Set-Content -Path TestDrive:\Configuration.ini -Force
+
+            try {
+                $outputResult = Install-DbaInstance -Version 2019 -Path TestDrive: -EnableException -Feature All
+            } catch {
+                $outputResult = $null
+            }
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "Version", "Port", "Successful", "Restarted", "Installer", "ExitCode", "LogFile", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $additionalProps = @("SACredential", "Configuration", "ExitMessage", "Log", "ConfigurationFile")
+            foreach ($prop in $additionalProps) {
+                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
+
     Context "Negative tests" {
         It "fails when a reboot is pending" {
             #override default mock

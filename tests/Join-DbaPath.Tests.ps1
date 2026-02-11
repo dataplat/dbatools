@@ -19,3 +19,20 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = Join-DbaPath -Path "C:\temp" "Foo" "Bar"
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns a valid joined path" {
+            $result | Should -BeLike "*temp*Foo*Bar"
+        }
+    }
+}

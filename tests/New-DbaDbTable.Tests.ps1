@@ -260,4 +260,30 @@ Describe $CommandName -Tag IntegrationTests {
             $result.IsEdge | Should -BeTrue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputTableName = "dbatoolsci_output_$(Get-Random)"
+            $outputMap = @{
+                Name      = "testcol"
+                Type      = "varchar"
+                MaxLength = 20
+                Nullable  = $true
+            }
+            $outputResult = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name $outputTableName -ColumnMap $outputMap
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Table"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "FullTextIndex")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

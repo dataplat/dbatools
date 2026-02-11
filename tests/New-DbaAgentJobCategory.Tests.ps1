@@ -66,4 +66,36 @@ Describe $CommandName -Tag IntegrationTests {
             $warn -match "already exists" | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputCategory = "dbatoolsci_outputcat_$(Get-Random)"
+            $result = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategory
+        }
+
+        AfterAll {
+            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategory -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobCategory"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ID",
+                "CategoryType",
+                "JobCount"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

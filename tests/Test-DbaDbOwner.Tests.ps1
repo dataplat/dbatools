@@ -303,4 +303,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.TargetOwner | Should -Be 'sa'
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Test-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DBState", "CurrentOwner", "TargetOwner", "OwnerMatch")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include Server in default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Server" -Because "Server is excluded via Select-DefaultView -ExcludeProperty"
+        }
+
+        It "Has the Server property available on the object" {
+            $result[0].PSObject.Properties.Name | Should -Contain "Server"
+        }
+    }
 }

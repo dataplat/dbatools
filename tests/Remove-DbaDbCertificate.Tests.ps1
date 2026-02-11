@@ -32,4 +32,35 @@ Describe $CommandName -Tag IntegrationTests {
             "$($results.Status)" -match "Success" | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputCertName = "dbatoolsci_certout_$(Get-Random)"
+            $null = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Name $outputCertName -Database master
+            $result = Remove-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master -Certificate $outputCertName -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the correct properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Certificate", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the expected values" {
+            $result.Status | Should -Be "Success"
+            $result.Database | Should -Be "master"
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $result.Certificate | Should -Not -BeNullOrEmpty
+        }
+    }
 }

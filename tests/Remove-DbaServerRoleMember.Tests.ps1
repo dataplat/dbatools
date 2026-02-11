@@ -97,4 +97,39 @@ Describe $CommandName -Tag IntegrationTests {
             $roleAfter.EnumMemberNames().Contains($login2) | Should -Be $false
         }
     }
+
+}
+
+Describe "$CommandName Output" -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputLogin = "dbatoolsci_outputlogin_$(Get-Random)"
+            $outputRole = "dbatoolsci_outputrole_$(Get-Random)"
+            $splatOutputPassword = @{
+                String      = "Password1234!"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $outputPassword = ConvertTo-SecureString @splatOutputPassword
+            $null = New-DbaLogin -SqlInstance $outputServer -Login $outputLogin -Password $outputPassword
+            $null = New-DbaServerRole -SqlInstance $outputServer -ServerRole $outputRole -Owner sa
+            $null = Add-DbaServerRoleMember -SqlInstance $outputServer -ServerRole $outputRole -Login $outputLogin -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $null = Remove-DbaServerRole -SqlInstance $outputServer -ServerRole $outputRole -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Remove-DbaLogin -SqlInstance $outputServer -Login $outputLogin -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output" {
+            $result = Remove-DbaServerRoleMember -SqlInstance $outputServer -ServerRole $outputRole -Login $outputLogin -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

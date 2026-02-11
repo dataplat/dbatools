@@ -66,4 +66,27 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Where-Object Rule -match $rule).Recommended | Should -BeExactly $recommended
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Test-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Returns exactly 6 rule objects" {
+            $result.Count | Should -BeExactly 6
+        }
+
+        It "Has the expected properties on each result object" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Rule", "Recommended", "CurrentSetting", "IsBestPractice", "Notes")
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

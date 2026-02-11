@@ -77,4 +77,22 @@ Describe $CommandName -Tag IntegrationTests {
             $results[-1] | Should -BeLike "*Value: 2"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -Value Off -EnableException
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $result.PSObject.Properties.Name | Should -Contain "ComputerName"
+            $result.PSObject.Properties.Name | Should -Contain "InstanceName"
+            $result.PSObject.Properties.Name | Should -Contain "SqlInstance"
+            $result.PSObject.Properties.Name | Should -Contain "ExtendedProtection"
+        }
+    }
 }

@@ -39,4 +39,37 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
         $results.Status | Should -Be 'Removed'
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Clean up any stale mirroring endpoints before creating a new one
+            $staleEps = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle | Where-Object EndpointType -eq DatabaseMirroring
+            foreach ($staleEp in $staleEps) {
+                try { $staleEp.Parent.Query("DROP ENDPOINT [$($staleEp.Name)]") } catch { }
+            }
+            $outputEndpointName = "dbatoolsci_ep_output_$(Get-Random)"
+            $outputInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $null = $outputInstance.Query("CREATE ENDPOINT [$outputEndpointName] STATE = STARTED AS TCP (LISTENER_PORT = 5023) FOR DATABASE_MIRRORING (ROLE = PARTNER)")
+            $result = Remove-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $outputEndpointName -Confirm:$false | Where-Object { $null -ne $PSItem }
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Endpoint", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct values for a successful removal" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.Status | Should -Be "Removed"
+            $result.Endpoint | Should -Be $outputEndpointName
+        }
+    }
 }

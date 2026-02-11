@@ -48,4 +48,23 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Backup | Should -BeExactly $TestConfig.Temp
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Set-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle -Type Backup -Path $oldBackupDirectory
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Data", "Log", "Backup")
+            foreach ($prop in $expectedProps) {
+                $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

@@ -59,4 +59,33 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -Match "already exists"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputCatName = "dbatoolsci_outputcat_$(Get-Random)"
+            $outputResult = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCatName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCatName -ErrorAction SilentlyContinue | Remove-DbaAgentAlertCategory -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.AlertCategory"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "ID", "AlertCount")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

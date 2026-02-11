@@ -152,4 +152,22 @@ Describe $CommandName -Tag IntegrationTests {
             $roleDBAfter.UserName -contains "User2" | Should -Be $false
         }
     }
+
+    Context "Output validation" {
+        It "Returns no output" {
+            $outputRole = "dbatoolssci_outval_$(Get-Random)"
+            $outputUser = "dbatoolssci_outusr_$(Get-Random)"
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputUser -Password ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
+            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase -Login $outputUser -Username $outputUser
+            $null = $serverInstance.Query("CREATE ROLE [$outputRole]", $testDatabase)
+            $null = $serverInstance.Query("ALTER ROLE [$outputRole] ADD MEMBER [$outputUser]", $testDatabase)
+            $result = Remove-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Role $outputRole -User $outputUser -Database $testDatabase -Confirm:$false
+            $result | Should -BeNullOrEmpty
+
+            # Cleanup
+            $null = $serverInstance.Query("DROP ROLE [$outputRole]", $testDatabase)
+            $null = $serverInstance.Query("DROP USER [$outputUser]", $testDatabase)
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputUser -Confirm:$false -ErrorAction SilentlyContinue
+        }
+    }
 }

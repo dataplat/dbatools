@@ -143,4 +143,25 @@ Describe $CommandName -Tag IntegrationTests {
             $results.JobSteps | Where-Object Id -eq 5 | Select-Object -ExpandProperty Name | Should -Be "Step 4"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputRandom = Get-Random
+            $outputJob = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_outputjob_$outputRandom" -Description "Output validation job"
+            $result = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $outputJob -StepName "Output Step"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_outputjob_$outputRandom" -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobStep"
+        }
+    }
 }

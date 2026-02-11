@@ -133,4 +133,56 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -Contain $localLogin7Name
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputRandom = Get-Random
+            $outputInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $outputInstance3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+
+            $outputSecurePassword = ConvertTo-SecureString -String "s3cur3P4ssw0rd?" -AsPlainText -Force
+            $outputLocalLoginName = "dbatoolsci_outlocal_$outputRandom"
+            $outputRemoteLoginName = "dbatoolsci_outremote_$outputRandom"
+            $outputLinkedServerName = "dbatoolsci_outLS_$outputRandom"
+
+            New-DbaLogin -SqlInstance $outputInstance -Login $outputLocalLoginName -SecurePassword $outputSecurePassword
+            New-DbaLogin -SqlInstance $outputInstance3 -Login $outputRemoteLoginName -SecurePassword $outputSecurePassword
+
+            $null = New-DbaLinkedServer -SqlInstance $outputInstance -LinkedServer $outputLinkedServerName -ServerProduct mssql -Provider sqlncli -DataSource $outputInstance3
+            $null = New-DbaLinkedServerLogin -SqlInstance $outputInstance -LinkedServer $outputLinkedServerName -LocalLogin $outputLocalLoginName -RemoteUser $outputRemoteLoginName -RemoteUserPassword $outputSecurePassword
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $result = Remove-DbaLinkedServerLogin -SqlInstance $outputInstance -LinkedServer $outputLinkedServerName -LocalLogin $outputLocalLoginName -Confirm:$false
+        }
+
+        AfterAll {
+            $outputInstance.LinkedServers.Refresh()
+            if ($outputInstance.LinkedServers.Name -contains $outputLinkedServerName) {
+                $outputInstance.LinkedServers[$outputLinkedServerName].Drop($true)
+            }
+            $sql1 = "IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = '$outputLocalLoginName') DROP LOGIN [$outputLocalLoginName]"
+            $sql2 = "IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = '$outputRemoteLoginName') DROP LOGIN [$outputRemoteLoginName]"
+            Invoke-DbaQuery -SqlInstance $outputInstance -Query $sql1 -ErrorAction SilentlyContinue
+            Invoke-DbaQuery -SqlInstance $outputInstance3 -Query $sql2 -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "LinkedServer", "Login", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct Status value for a successful removal" {
+            $result.Status | Should -Be "Removed"
+        }
+    }
 }

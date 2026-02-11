@@ -71,4 +71,49 @@ Describe $CommandName -Tag IntegrationTests {
             $results.TraceFlag | Should -Be $safeTraceFlag
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputSafeTraceFlag = 3226
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputStartingTfs = @($outputServer.Query("DBCC TRACESTATUS(-1)"))
+            if ($outputStartingTfs.TraceFlag -notcontains $outputSafeTraceFlag) {
+                $outputServer.Query("DBCC TRACEON($outputSafeTraceFlag,-1) WITH NO_INFOMSGS")
+                $global:outputTfWasEnabled = $true
+            }
+            $result = Get-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        AfterAll {
+            if ($global:outputTfWasEnabled) {
+                $outputServer.Query("DBCC TRACEOFF($outputSafeTraceFlag,-1)")
+                $global:outputTfWasEnabled = $false
+            }
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "TraceFlag", "Global", "Status")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in default display" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Session" -Because "Session is excluded via Select-DefaultView"
+        }
+
+        It "Has the Session property available" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].PSObject.Properties.Name | Should -Contain "Session" -Because "Session should be accessible via Select-Object *"
+        }
+    }
 }

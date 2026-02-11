@@ -28,4 +28,22 @@ Describe $CommandName -Tag IntegrationTests {
             $templates.Count | Should -BeGreaterThan 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaRandomizedDatasetTemplate)
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("BaseName", "FullName")
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

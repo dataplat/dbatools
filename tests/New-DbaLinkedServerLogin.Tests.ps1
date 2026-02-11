@@ -100,4 +100,39 @@ Describe $CommandName -Tag IntegrationTests {
             $warnings | Should -BeLike "*LocalLogin is required in all scenarios*"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputLocalLoginName = "dbatoolscli_outputLogin_$random"
+            $outputRemoteLoginName = "dbatoolscli_outputRemote_$random"
+            New-DbaLogin -SqlInstance $InstanceSingle -Login $outputLocalLoginName -SecurePassword $securePassword
+            New-DbaLogin -SqlInstance $instance3 -Login $outputRemoteLoginName -SecurePassword $securePassword
+            $result = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $outputLocalLoginName -RemoteUser $outputRemoteLoginName -RemoteUserPassword $securePassword
+        }
+        AfterAll {
+            Remove-DbaLogin -SqlInstance $InstanceSingle -Login $outputLocalLoginName -ErrorAction SilentlyContinue
+            Remove-DbaLogin -SqlInstance $instance3 -Login $outputRemoteLoginName -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.LinkedServerLogin"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "RemoteUser",
+                "Impersonate"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

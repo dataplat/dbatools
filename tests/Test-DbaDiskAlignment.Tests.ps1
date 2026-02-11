@@ -33,4 +33,23 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -Be $null
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Test-DbaDiskAlignment -ComputerName $TestConfig.InstanceSingle -NoSqlCheck
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "Name", "PartitionSize", "PartitionType", "TestingStripeSize", "OffsetModuluCalculation", "StartingOffset", "IsOffsetBestPractice", "IsBestPractice", "NumberOfBlocks", "BootPartition", "PartitionBlockSize", "IsDynamicDisk")
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
+    }
 }

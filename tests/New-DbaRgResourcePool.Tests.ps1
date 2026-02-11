@@ -145,4 +145,53 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+            $outputPoolName = "dbatoolsci_outputpool"
+            $splatNewOutputPool = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                ResourcePool            = $outputPoolName
+                MaximumCpuPercentage    = 100
+                MaximumMemoryPercentage = 100
+                MaximumIOPSPerVolume    = 100
+                CapCpuPercentage        = 100
+                Force                   = $true
+            }
+            $result = New-DbaRgResourcePool @splatNewOutputPool
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $outputPoolName -Type Internal -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType Microsoft.SqlServer.Management.Smo.ResourcePool
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "CapCpuPercentage",
+                "IsSystemObject",
+                "MaximumCpuPercentage",
+                "MaximumIopsPerVolume",
+                "MaximumMemoryPercentage",
+                "MinimumCpuPercentage",
+                "MinimumIopsPerVolume",
+                "MinimumMemoryPercentage",
+                "WorkloadGroups"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

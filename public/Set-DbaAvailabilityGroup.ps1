@@ -105,9 +105,9 @@ function Set-DbaAvailabilityGroup {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.AvailabilityGroup
 
-        Returns one AvailabilityGroup object per availability group that was modified. The object contains the updated configuration properties that were changed by this command.
+        Returns one AvailabilityGroup object per availability group that was modified. The object contains the updated configuration properties that were changed by this command. Unlike Get-DbaAvailabilityGroup, this command returns the raw SMO object without Select-DefaultView applied.
 
-        Default display properties (via Select-DefaultView):
+        Properties available on the returned object include:
         - Name: Name of the availability group
         - AvailabilityReplicas: Collection of replica instances in the AG
         - AutomatedBackupPreference: Current backup preference (None, Primary, Secondary, SecondaryOnly)
@@ -118,19 +118,10 @@ function Set-DbaAvailabilityGroup {
         - FailureConditionLevel: Failover sensitivity level (OnServerDown, OnServerUnresponsive, OnCriticalServerErrors, OnModerateServerErrors, OnAnyQualifiedFailureCondition)
         - HealthCheckTimeout: Health check timeout in milliseconds
         - IsDistributedAvailabilityGroup: Boolean indicating if this is a Distributed AG (SQL Server 2016+)
-
-        Additional properties available (from SMO AvailabilityGroup object):
         - ClusterConnectionOptions: Connection options for WSFC communication (SQL Server 2025+)
         - Parent: Reference to the parent SQL Server object
-        - Databases: Collection of databases in the AG
-        - ListenerIPAddresses: Collection of listener IP addresses
-        - AvailabilityGroupListeners: Collection of AG listeners
-        - CreateDate: DateTime when the AG was created
-        - LastModificationTime: DateTime when the AG was last modified
-        - Urn: The Unified Resource Name for the AG
-        - State: Current state of the SMO object (Existing, Creating, Pending, etc.)
 
-        All properties from the base SMO AvailabilityGroup object are accessible using Select-Object * even though only default properties are displayed without that cmdlet.
+        All properties from the base SMO AvailabilityGroup object are accessible using Select-Object *.
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016 | Set-DbaAvailabilityGroup -DtcSupportEnabled

@@ -88,4 +88,31 @@ Describe $CommandName -Tag IntegrationTests {
             $pipeResults.Connectivity | Should -BeTrue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.InstanceSingle | Where-Object LinkedServerName -eq $target
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].PSObject.TypeNames | Should -Contain "Dataplat.Dbatools.Validation.LinkedServerResult"
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LinkedServerName",
+                "RemoteServer",
+                "Connectivity",
+                "Result"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

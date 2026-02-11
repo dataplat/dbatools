@@ -40,6 +40,17 @@ function Invoke-DbaDbCorruption {
       Copyright: (c) 2018 by dbatools, licensed under MIT
       License: MIT https://opensource.org/licenses/MIT
 
+      .OUTPUTS
+      PSCustomObject
+
+      Returns one object per corrupted table with the following properties:
+      - ComputerName: The computer name of the SQL Server instance
+      - InstanceName: The SQL Server instance name
+      - SqlInstance: The full SQL Server instance name (computer\instance)
+      - Database: The database that was corrupted
+      - Table: The table that was corrupted
+      - Status: The result of the operation ("Corrupted")
+
       .LINK
       https://dbatools.io/Invoke-DbaDbCorruption
 

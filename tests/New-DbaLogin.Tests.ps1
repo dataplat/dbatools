@@ -301,4 +301,45 @@ Describe $CommandName -Tag IntegrationTests {
             $warning | Should -Match "Login tester already exists"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputLoginName = "dbatoolscli_outputlogin_$(Get-Random)"
+            $outputSecurePassword = ConvertTo-SecureString "MyV3ry$ecur3P@ss!" -AsPlainText -Force
+            $result = New-DbaLogin -SqlInstance $server1 -Login $outputLoginName -SecurePassword $outputSecurePassword
+        }
+        AfterAll {
+            try {
+                if ($l = Get-DbaLogin -SqlInstance $server1 -Login $outputLoginName) {
+                    $l.Drop()
+                }
+            } catch { <#nbd#> }
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Login"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "LoginType",
+                "CreateDate",
+                "LastLogin",
+                "HasAccess",
+                "IsLocked",
+                "IsDisabled",
+                "MustChangePassword"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

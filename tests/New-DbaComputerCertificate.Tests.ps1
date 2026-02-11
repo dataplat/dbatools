@@ -80,5 +80,30 @@ if (-not $env:appveyor) {
                 $customCert.NotAfter -match ((Get-Date).Date).AddMonths(60) | Should -BeTrue
             }
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $outputCert = New-DbaComputerCertificate -SelfSigned -EnableException
+            }
+
+            AfterAll {
+                if ($outputCert.Thumbprint) {
+                    Get-ChildItem "Cert:\LocalMachine\My\$($outputCert.Thumbprint)" -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
+                }
+            }
+
+            It "Returns output of the documented type" {
+                $outputCert | Should -Not -BeNullOrEmpty
+                $outputCert.psobject.TypeNames | Should -Contain "Selected.System.Security.Cryptography.X509Certificates.X509Certificate2"
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $outputCert.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("FriendlyName", "DnsNameList", "Thumbprint", "NotBefore", "NotAfter", "Subject", "Issuer")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
 }

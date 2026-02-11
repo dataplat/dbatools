@@ -70,4 +70,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be $null
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Ensure the collector set exists for this test
+            $existing = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries"
+            if (-not $existing) {
+                $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle
+            }
+            $result = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet -Confirm:$false
+        }
+
+        It "Returns output as PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "Name", "Status")
+            foreach ($prop in $expectedProps) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

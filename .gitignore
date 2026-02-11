@@ -61,3 +61,4 @@ allcommands.ps1
 /.claude
 publish.ps1
 nul
+/tests/temp

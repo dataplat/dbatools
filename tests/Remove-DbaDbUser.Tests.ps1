@@ -85,4 +85,39 @@ Describe $CommandName -Tag IntegrationTests {
             $db.Users[$user.Name] | Should -Be $user
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputDb = Get-DbaDatabase $outputServer -Database tempdb
+            $outputSecurePassword = ConvertTo-SecureString "password" -AsPlainText -Force
+            $outputLoginName = "dbatoolsci_remove_output_$(Get-Random)"
+            $outputLogin = New-DbaLogin $outputServer -Login $outputLoginName -Password $outputSecurePassword -Force
+            $outputUser = New-Object Microsoft.SqlServer.Management.SMO.User($outputDb, $outputLogin.Name)
+            $outputUser.Login = $outputLogin.Name
+            $outputUser.Create()
+            $result = Remove-DbaDbUser $outputServer -Database tempdb -User $outputUser.Name -Confirm:$false
+        }
+        AfterAll {
+            if ($outputLogin) {
+                $outputLogin.Drop()
+            }
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "User", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct value for Status on success" {
+            $result.Status | Should -Be "Dropped"
+        }
+    }
 }

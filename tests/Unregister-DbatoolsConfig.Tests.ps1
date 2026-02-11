@@ -26,3 +26,21 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $null = Set-DbatoolsConfig -FullName "dbatoolsci.unittest.outputtest" -Value "testvalue"
+            $null = Register-DbatoolsConfig -FullName "dbatoolsci.unittest.outputtest"
+        }
+
+        AfterAll {
+            $null = Unregister-DbatoolsConfig -FullName "dbatoolsci.unittest.outputtest" -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output" {
+            $result = Unregister-DbatoolsConfig -FullName "dbatoolsci.unittest.outputtest"
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

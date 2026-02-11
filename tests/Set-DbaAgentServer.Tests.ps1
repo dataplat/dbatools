@@ -352,4 +352,54 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $validationError | Should -Be $true
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 10000 -MaximumJobHistoryRows 100
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobServer"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AgentDomainGroup",
+                "AgentLogLevel",
+                "AgentMailType",
+                "AgentShutdownWaitTime",
+                "ErrorLogFile",
+                "IdleCpuDuration",
+                "IdleCpuPercentage",
+                "IsCpuPollingEnabled",
+                "JobServerType",
+                "LoginTimeout",
+                "JobHistoryIsEnabled",
+                "MaximumHistoryRows",
+                "MaximumJobHistoryRows",
+                "MsxAccountCredentialName",
+                "MsxAccountName",
+                "MsxServerName",
+                "Name",
+                "NetSendRecipient",
+                "ServiceAccount",
+                "ServiceStartMode",
+                "SqlAgentAutoStart",
+                "SqlAgentMailProfile",
+                "SqlAgentRestart",
+                "SqlServerRestart",
+                "State",
+                "SysAdminOnly"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -226,4 +226,32 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
             $dacPackage.Name | Should -Be "LoadTestDB"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDacpac = "$testFolder\output-validation.dacpac"
+            $splatBuildValidation = @{
+                Path          = $sqlSourcePath
+                OutputPath    = $outputDacpac
+                Recursive     = $true
+                DatabaseName  = "ValidationDB"
+                WarningAction = "SilentlyContinue"
+            }
+            $result = New-DbaDacPackage @splatBuildValidation
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Path", "DatabaseName", "Version", "FileCount", "ObjectCount", "Duration", "Success")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

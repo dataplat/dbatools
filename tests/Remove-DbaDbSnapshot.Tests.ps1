@@ -101,4 +101,22 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Name "dbatoolsci_RemoveSnap_outputtest" -ErrorAction SilentlyContinue
+            $outputResult = Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Snapshot "dbatoolsci_RemoveSnap_outputtest"
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has working alias property Name mapped from Database" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].PSObject.Properties["Name"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].PSObject.Properties["Name"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

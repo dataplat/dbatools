@@ -67,4 +67,30 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id 1 | Read-DbaTraceFile | Select-Object -First 1
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Has the ComputerName, InstanceName, and SqlInstance properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties.Name | Should -Contain "ComputerName"
+            $result.psobject.Properties.Name | Should -Contain "InstanceName"
+            $result.psobject.Properties.Name | Should -Contain "SqlInstance"
+        }
+
+        It "Has the expected trace event properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties.Name | Should -Contain "EventClass"
+            $result.psobject.Properties.Name | Should -Contain "DatabaseName"
+            $result.psobject.Properties.Name | Should -Contain "StartTime"
+            $result.psobject.Properties.Name | Should -Contain "EventSequence"
+        }
+    }
 }

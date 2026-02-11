@@ -49,15 +49,15 @@ function Stop-DbaTrace {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per trace that was stopped, with the following default display properties:
-        - ComputerName: The name of the computer hosting the SQL Server instance
-        - InstanceName: The SQL Server instance name
-        - SqlInstance: The full SQL Server instance name (computer\instance format)
-        - Id: The unique identifier of the trace
-        - IsRunning: Boolean indicating if the trace is currently running (false after successful stop)
+        Returns one object per trace that was stopped. The output is the same type returned by Get-DbaTrace, with Select-DefaultView applied using -ExcludeProperty to hide internal properties.
 
-        Additional properties available via Select-Object *:
-        - Status: Current status of the trace
+        Default display properties (via Select-DefaultView -ExcludeProperty Parent, RemotePath, RemoStatus, SqlCredential):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: The trace ID number
+        - Status: Numeric trace status value (0=stopped, 1=running)
+        - IsRunning: Boolean indicating if the trace is currently running (false after successful stop)
         - Path: File path where trace events are logged
         - MaxSize: Maximum size of the trace file in MB
         - StopTime: DateTime when the trace will stop
@@ -74,7 +74,11 @@ function Stop-DbaTrace {
         - LastEventTime: DateTime of the last event logged
         - EventCount: Total number of events logged
         - DroppedEventCount: Number of events dropped due to buffer overflow
+
+        Properties excluded from default display (available via Select-Object *):
         - Parent: Reference to the parent SQL Server object
+        - RemotePath: UNC path to the trace file
+        - SqlCredential: Credential used for authentication
 
     .EXAMPLE
         PS C:\> Stop-DbaTrace -SqlInstance sql2008

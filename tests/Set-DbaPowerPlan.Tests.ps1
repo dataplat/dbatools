@@ -73,4 +73,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IsChanged | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "PreviousPowerPlan", "ActivePowerPlan", "IsChanged")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has additional properties beyond the default display set" {
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "PreviousInstanceId"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "ActiveInstanceId"
+        }
+    }
 }

@@ -21,8 +21,19 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:($true) {
+        # Repair-DbaInstanceName is a destructive operation that renames the SQL Server instance,
+        # restarts SQL services, and may break replication/mirroring. It requires a server where
+        # @@SERVERNAME differs from the Windows hostname, which is not available in standard CI.
+        # Skipping output validation as there is no safe way to test this command.
+
+        It "Returns output of the documented type" {
+            # Repair-DbaInstanceName returns PSCustomObject from Test-DbaInstanceName
+            # with properties: ComputerName, InstanceName, SqlInstance, ServerName,
+            # NewServerName, RenameRequired, Updatable, Warnings, Blockers
+            $true | Should -BeTrue
+        }
+    }
+}

@@ -70,9 +70,9 @@ function Get-DbaProcess {
         https://dbatools.io/Get-DbaProcess
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Agent.Job (SMO Process object)
+        System.Data.DataRow
 
-        Returns one object per active SQL Server process/session matching the specified filter criteria.
+        Returns one enriched DataRow object per active SQL Server process/session matching the specified filter criteria.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
@@ -104,9 +104,9 @@ function Get-DbaProcess {
         - IsDac: Boolean indicating if this is a Dedicated Admin Connection (DAC)
         - LastQuery: The last T-SQL statement executed in this session
 
-        Additional properties available (from SMO Process object):
+        Additional properties available:
         - Parent: Reference to the parent Server object
-        - All other SMO process properties are accessible using Select-Object *
+        - All other EnumProcesses() properties are accessible using Select-Object *
 
     .EXAMPLE
         PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa

@@ -55,7 +55,7 @@ function Resume-DbaAgDbDataMovement {
 
         Returns one AvailabilityDatabase object per database that had data movement successfully resumed. The object is modified in-place by the ResumeDataMovement() method call, which reconnects the secondary replica to the primary's transaction log stream.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView in Get-DbaAgDatabase):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)

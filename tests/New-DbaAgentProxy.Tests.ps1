@@ -145,5 +145,32 @@ Describe $CommandName -Tag IntegrationTests {
             $agentProxyLoginRole.MSDBRoles.Name | Should -Be ServerGroupAdministratorRole
             $agentProxyLoginRole.IsEnabled | Should -Be $true
         }
+
+        It "Returns output of the documented type" {
+            $agentProxyAllSubsystems | Should -Not -BeNullOrEmpty
+            $agentProxyAllSubsystems.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $agentProxyAllSubsystems.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ID",
+                "Name",
+                "CredentialName",
+                "CredentialIdentity",
+                "Description",
+                "Logins",
+                "ServerRoles",
+                "MsdbRoles",
+                "SubSystems",
+                "IsEnabled"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

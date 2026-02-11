@@ -58,10 +58,15 @@ function New-DbaLinkedServerLogin {
         Returns one LinkedServerLogin object for each newly created linked server login mapping.
         The returned object represents the login mapping that was created, retrieved from Get-DbaLinkedServerLogin after creation.
 
-        Properties include:
+        Default display properties (via Select-DefaultView in Get-DbaLinkedServerLogin):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The local SQL Server login name that was mapped
         - RemoteUser: The remote login name on the linked server (if credential mapping was used)
         - Impersonate: Boolean indicating whether impersonation is enabled (pass-through authentication)
+
+        Additional properties available (from SMO LinkedServerLogin object):
         - Parent: Reference to the parent LinkedServer object
         - DateLastModified: Timestamp of when the login mapping was last modified
         - State: SMO object state (Existing, Creating, Pending, etc.)

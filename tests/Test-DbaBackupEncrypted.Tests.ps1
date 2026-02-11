@@ -75,4 +75,44 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Encrypted | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputBackupPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputBackupPath -ItemType Directory
+            $outputDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+            $outputBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDb.Name -Path $outputBackupPath
+            $result = Test-DbaBackupEncrypted -SqlInstance $TestConfig.InstanceSingle -FilePath $outputBackup.BackupPath
+        }
+        AfterAll {
+            if ($outputDb) {
+                $outputDb | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+            }
+            Remove-Item -Path $outputBackupPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the correct properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "FilePath",
+                "BackupName",
+                "Encrypted",
+                "KeyAlgorithm",
+                "EncryptorThumbprint",
+                "EncryptorType",
+                "TDEThumbprint",
+                "Compressed"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

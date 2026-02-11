@@ -216,4 +216,27 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputRandom = Get-Random
+            $outputLinkedServerName = "dbatoolsci_LS_output_$outputRandom"
+            $null = New-DbaLinkedServer -SqlInstance $TestConfig.InstanceMulti1 -LinkedServer $outputLinkedServerName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $outputInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $outputInstance.LinkedServers.Refresh()
+            if ($outputInstance.LinkedServers.Name -contains $outputLinkedServerName) {
+                $outputInstance.LinkedServers[$outputLinkedServerName].Drop($true)
+            }
+        }
+
+        It "Returns no output" {
+            $result = Remove-DbaLinkedServer -SqlInstance $TestConfig.InstanceMulti1 -LinkedServer $outputLinkedServerName -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

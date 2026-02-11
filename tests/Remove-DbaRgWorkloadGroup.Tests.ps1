@@ -128,4 +128,44 @@ Describe $CommandName -Tag IntegrationTests {
             $result3 | Should -Be $null
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+
+            $outputWklGroupName = "dbatoolsci_outputwklgroup_$(Get-Random)"
+            $splatNewOutputWklGroup = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                WorkloadGroup = $outputWklGroupName
+                Force         = $true
+            }
+            $null = New-DbaRgWorkloadGroup @splatNewOutputWklGroup
+            $result = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWklGroupName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct values for a successful removal" {
+            $result.Status | Should -Be "Dropped"
+            $result.IsRemoved | Should -BeTrue
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $result.Name | Should -Be $outputWklGroupName
+        }
+    }
 }

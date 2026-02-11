@@ -18,8 +18,31 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $tempPath -ItemType Directory -Force
+            $result = Save-DbaDiagnosticQueryScript -Path $tempPath
+        }
+
+        AfterAll {
+            Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Downloads SQL diagnostic query scripts" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].Name | Should -BeLike "SQLServerDiagnosticQueries_*.sql"
+        }
+
+        It "Downloads files with content" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].Length | Should -BeGreaterThan 0
+        }
+    }
+}

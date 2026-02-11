@@ -109,4 +109,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AutoGrowAllFiles | Should -Be $true, $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Use database InputObject approach to avoid pre-existing NullReference in ShouldProcess
+            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1name
+            $outputResult = $outputDb | Set-DbaDbFileGroup -FileGroup $fileGroup1Name -AutoGrowAllFiles -Confirm:$false
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult | Should -BeOfType Microsoft.SqlServer.Management.Smo.FileGroup
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("Name", "IsDefault", "ReadOnly", "AutogrowAllFiles", "ID", "Files", "FileGroupType")
+            foreach ($prop in $expectedProps) {
+                $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has correct values for key properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult.Name | Should -Be $fileGroup1Name
+            $outputResult.AutogrowAllFiles | Should -Be $true
+        }
+    }
 }

@@ -159,4 +159,48 @@ Describe $CommandName -Tag IntegrationTests {
             $result.ReconfigurePending | Should -Be $true
         }
     }
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+            $outputWorkloadGroup = "dbatoolsci_outputwkl"
+            $splatNewOutputWkl = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                WorkloadGroup = $outputWorkloadGroup
+                Force         = $true
+            }
+            $result = New-DbaRgWorkloadGroup @splatNewOutputWkl
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWorkloadGroup -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType Microsoft.SqlServer.Management.Smo.WorkloadGroup
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "ExternalResourcePoolName",
+                "GroupMaximumRequests",
+                "Importance",
+                "IsSystemObject",
+                "MaximumDegreeOfParallelism",
+                "RequestMaximumCpuTimeInSeconds",
+                "RequestMaximumMemoryGrantPercentage",
+                "RequestMemoryGrantTimeoutInSeconds"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

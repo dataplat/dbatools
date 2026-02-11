@@ -57,4 +57,31 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Should -Contain $roleMaster
         }
     }
+
+}
+
+Describe "$CommandName Output" -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $outputRole = "dbatoolsci_outputrole_$(Get-Random)"
+            $result = New-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $outputRole
+        }
+        AfterAll {
+            $null = Remove-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $outputRole -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ServerRole"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Role", "Login", "Owner", "IsFixedRole", "DateCreated", "DateModified")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

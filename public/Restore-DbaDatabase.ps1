@@ -273,27 +273,58 @@ function Restore-DbaDatabase {
         https://dbatools.io/Restore-DbaDatabase
 
     .OUTPUTS
+        PSCustomObject (standard restore operations)
+
+        Returns one object per backup file processed via Invoke-DbaAdvancedRestore with comprehensive restore operation details.
+
+        Default display properties (via Select-DefaultView in Invoke-DbaAdvancedRestore):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - BackupFile: Comma-separated list of backup file paths processed
+        - BackupFilesCount: Number of backup files included in the restore operation
+        - BackupSize: Total size of backup files
+        - CompressedBackupSize: Compressed size of backup files
+        - Database: The name of the database being restored
+        - Owner: The database owner
+        - DatabaseRestoreTime: Total elapsed time for the database restore operation (TimeSpan)
+        - FileRestoreTime: Elapsed time for the current backup file restore (TimeSpan)
+        - NoRecovery: Boolean indicating if the database was left in RESTORING state
+        - RestoreComplete: Boolean indicating if the restore completed successfully
+        - RestoredFile: Comma-separated list of logical file names restored
+        - RestoredFilesCount: Number of files restored
+        - Script: The T-SQL RESTORE script executed
+        - RestoreDirectory: Directory path(s) where restored files are located
+        - WithReplace: Boolean indicating if REPLACE option was used
+
+        Additional properties available:
+        - DatabaseName: Alternate property for database name
+        - DatabaseOwner: Alternate property for database owner
+        - BackupSizeMB: Backup size in megabytes
+        - CompressedBackupSizeMB: Compressed backup size in megabytes
+        - RestoredFileFull: Full physical paths of all restored files
+        - BackupStartTime: DateTime when the backup started
+        - BackupEndTime: DateTime when the backup completed
+        - RestoreTargetTime: Target point-in-time or "Latest"
+        - BackupFileRaw: Raw array of backup file paths
+        - ExitError: Any exception that occurred during restoration
+        - KeepReplication: Boolean indicating if replication settings were preserved
+
         System.String (when -OutputScriptOnly is specified)
 
-        Returns the T-SQL RESTORE statements as strings without executing them. This allows the scripts to be reviewed, modified, or executed later.
+        Returns the T-SQL RESTORE statements as strings without executing them.
 
-        PSCustomObject (for -Recover parameter set only)
+        System.String (when -VerifyOnly is specified)
 
-        When using the -Recover parameter to bring databases online, returns one object per database recovered with the following properties:
+        Returns "Verify successful" or "Verify failed" strings.
+
+        PSCustomObject (when -Recover is specified)
+
+        Returns one object per database recovered with properties:
         - SqlInstance: The target SQL Server instance
-        - DatabaseName: The name of the database that was recovered
+        - DatabaseName: The name of the database recovered
         - RestoreComplete: Boolean indicating if recovery succeeded
-        - Scripts: The T-SQL RESTORE statement that was executed
-
-        No direct output (for standard restore operations)
-
-        When performing standard restore operations (without OutputScriptOnly or Recover), the function delegates to Invoke-DbaAdvancedRestore which handles database restoration. The function may also create global variables if any of the following parameters are specified:
-        - GetBackupInformation: Creates global variable containing backup information
-        - SelectBackupInformation: Creates global variable containing selected backup history
-        - FormatBackupInformation: Creates global variable containing formatted backup information
-        - TestBackupInformation: Creates global variable containing tested backup information
-
-        Use these variables to inspect the backup chain analysis, file mappings, and restore validation results without executing the restore operation.
+        - Scripts: The T-SQL RESTORE statement executed
 
     .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups

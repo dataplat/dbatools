@@ -24,8 +24,25 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests -Skip {
+    # Skip IntegrationTests because LogShipRecovery requires log shipping to be configured.
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Invoke-DbaDbLogShipRecovery -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_logship_recovery" -Force
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "RecoverResult", "Comment")
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
+}

@@ -89,4 +89,31 @@ Describe $CommandName -Tag IntegrationTests {
         $results.Count | Should -Be 1
         $filesToRemove += $results.FullName
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputTempPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputTempPath -ItemType Directory -Force
+            $result = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path $outputTempPath
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputTempPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns files that exist on disk" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].FullName | Should -Exist
+        }
+
+        It "Returns files with content" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].Length | Should -BeGreaterThan 0
+        }
+    }
 }

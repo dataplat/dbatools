@@ -34,7 +34,7 @@ function Get-DbaWsfcResource {
         https://dbatools.io/Get-DbaWsfcResource
 
     .OUTPUTS
-        MSCluster_Resource (with added NoteProperties)
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_Resource
 
         Returns one resource object per cluster resource found in the specified Windows Server Failover Cluster. Each resource represents a clustered component such as a physical disk, IP address, SQL Server instance, or network name.
 

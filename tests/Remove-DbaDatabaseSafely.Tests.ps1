@@ -80,4 +80,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.BackupFolder | Should -Be $backupPath
         }
     }
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTestDb = "dbatoolsci_safely_output_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $outputTestDb
+            $result = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.InstanceCopy1 -Database $outputTestDb -BackupFolder $backupPath -NoDbccCheckDb
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $outputTestDb -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "Rationalised Database Restore Script for $outputTestDb" -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("SqlInstance", "DatabaseName", "JobName", "TestingInstance", "BackupFolder")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct DatabaseName" {
+            $result.DatabaseName | Should -Be $outputTestDb
+        }
+
+        It "Has the correct BackupFolder" {
+            $result.BackupFolder | Should -Be $backupPath
+        }
+    }
 }

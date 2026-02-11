@@ -54,10 +54,17 @@ function Set-DbaTcpPort {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        System.Void
+        PSCustomObject
 
-        This command does not return any output to the pipeline. It modifies SQL Server network configuration and optionally restarts services.
-        When -Force is used, the Database Engine service is restarted to apply the port configuration changes immediately.
+        Returns one object per SQL Server instance whose TCP port configuration was modified, via Set-DbaNetworkConfiguration.
+
+        Properties:
+        - ComputerName (string) - The name of the computer hosting the SQL Server instance
+        - InstanceName (string) - The SQL Server instance name
+        - SqlInstance (string) - The full SQL Server instance name (computer\instance format)
+        - Changes (string[]) - Array of strings describing each configuration change made (e.g., "Changed TcpPort for IPAll to 1433")
+        - RestartNeeded (boolean) - Whether a SQL Server service restart is required for changes to take effect
+        - Restarted (boolean) - Whether the SQL Server service was successfully restarted
 
     .LINK
         https://dbatools.io/Set-DbaTcpPort

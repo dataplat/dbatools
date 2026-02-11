@@ -81,4 +81,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Dropped"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputSrvName = "dbatoolsci-outputserver"
+            $outputRegName = "dbatoolsci-outputreg"
+            $splatOutputServer = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                ServerName  = $outputSrvName
+                Name        = $outputRegName
+                Description = "dbatoolsci-outputdesc"
+            }
+            $outputServer = Add-DbaRegServer @splatOutputServer
+            $result = $outputServer | Remove-DbaRegServer -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output as PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties for CMS servers" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "ServerName", "Status")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

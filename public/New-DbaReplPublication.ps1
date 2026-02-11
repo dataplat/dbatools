@@ -60,14 +60,14 @@ function New-DbaReplPublication {
     .OUTPUTS
         Microsoft.SqlServer.Replication.TransPublication or Microsoft.SqlServer.Replication.MergePublication
 
-        Returns one publication object for each newly created publication. The returned object type depends on the publication type specified:
+        Returns one publication object for each newly created publication via Get-DbaReplPublication. The returned object type depends on the publication type specified:
         - TransPublication for Transactional or Snapshot publications
         - MergePublication for Merge publications
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView in Get-DbaReplPublication):
         - ComputerName: The computer name of the SQL Server instance where the publication was created
         - InstanceName: The SQL Server instance name
-        - SQLInstance: The full SQL Server instance object
+        - SQLInstance: The SQL Server instance connection object
         - DatabaseName: The name of the database containing the publication
         - Name: The name of the publication
         - Type: The publication type (Transactional, Snapshot, or Merge)

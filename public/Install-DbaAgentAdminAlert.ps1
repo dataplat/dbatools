@@ -106,16 +106,18 @@ function Install-DbaAgentAdminAlert {
         - Name: The alert name (e.g., "Severity 017 - Insufficient Resources", "Error Number 823 - Read/Write Error")
         - Severity: The error severity level being monitored (0 for message ID alerts, 17-25 for severity alerts)
         - MessageId: The error message ID being monitored (0 for severity alerts, 823-825 for message ID alerts)
-        - JobName: Name of the SQL Server Agent job executed when alert fires (if -JobId was specified)
-        - CategoryName: Name of the alert category (if -Category was specified)
-        - DelayBetweenResponses: Minimum seconds between alert notifications (if -DelayBetweenResponses was specified)
+
+        Conditional default display properties (added when corresponding parameter is specified):
+        - JobName: Name of the SQL Server Agent job executed when alert fires (added when -JobId is specified)
+        - CategoryName: Name of the alert category (added when -Category is specified)
+        - DelayBetweenResponses: Minimum seconds between alert notifications (added when -DelayBetweenResponses is specified)
+
+        Additional properties available (from SMO Alert object):
         - ID: Unique identifier for the alert within the instance
         - AlertType: Type of alert (Severity or Message ID based)
         - IsEnabled: Boolean indicating if the alert is enabled
         - LastRaised: DateTime when the alert last fired
         - OccurrenceCount: Number of times the alert has fired
-
-        Additional properties available (from SMO Alert object):
         - CategoryId: Numeric identifier of the alert category
         - CreateDate: DateTime when the alert was created
         - DateLastModified: DateTime when the alert was last modified

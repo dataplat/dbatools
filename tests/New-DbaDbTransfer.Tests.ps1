@@ -249,4 +249,23 @@ Describe $CommandName -Tag IntegrationTests {
             $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = New-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType Microsoft.SqlServer.Management.Smo.Transfer
+        }
+
+        It "Has the expected default properties" {
+            $outputResult.BatchSize | Should -Be 50000
+            $outputResult.BulkCopyTimeout | Should -Be 5000
+            $outputResult.Database.Name | Should -Be $dbName
+            $outputResult.CopyData | Should -Be $true
+            $outputResult.CopySchema | Should -Be $true
+        }
+    }
 }

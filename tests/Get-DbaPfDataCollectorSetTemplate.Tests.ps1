@@ -40,4 +40,33 @@ Describe $CommandName -Tag IntegrationTests {
             $templateResults.Name | Should -Be "Long Running Queries"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaPfDataCollectorSetTemplate | Select-Object -First 1)
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Name", "Source", "UserAccount", "Description")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected excluded properties available" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("File", "Path")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+            $result[0].psobject.Properties["Path"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["File"] | Should -Not -BeNullOrEmpty
+        }
+    }
 }

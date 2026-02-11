@@ -65,29 +65,23 @@ function Set-DbaAgentAlert {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Agent.Alert
 
-        Returns one Alert object for each alert that was modified. The returned objects include all properties from the Alert object with added connection context properties.
+        Returns one Alert object for each alert that was modified. The returned objects are from Get-DbaAgentAlert which applies Select-DefaultView.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView in Get-DbaAgentAlert):
         - ComputerName: The computer name of the SQL Server instance
-        - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
+        - InstanceName: The SQL Server instance name
         - Name: The name of the alert
-        - IsEnabled: Boolean indicating if the alert is currently enabled
-        - NotificationMessage: The message sent when the alert fires
-        - AlertType: Type of alert (EventAlert, PerformanceConditionAlert, or TransactionLogAlert)
-        - Severity: The severity level that triggers this alert (if alert type is EventAlert)
-        - DatabaseName: The database name the alert applies to (if applicable)
-        - EventDescriptionKeyword: Keywords in the error message that trigger the alert
-        - LastOccurrenceDate: DateTime of the last time this alert was triggered
-        - OccurrenceCount: Number of times this alert has been triggered
-
-        Additional properties available (from SMO Alert object):
         - ID: Unique identifier for the alert
-        - CreateDate: DateTime when the alert was created
-        - DateLastModified: DateTime when the alert was last modified
         - JobName: The SQL Agent job to execute when the alert fires
-        - PerformanceCondition: The performance condition that triggers the alert
-        - HasNotification: Boolean indicating if notification methods are configured
+        - AlertType: Type of alert (EventAlert, PerformanceConditionAlert, or TransactionLogAlert)
+        - CategoryName: The alert category name
+        - Severity: The severity level that triggers this alert (if alert type is EventAlert)
+        - MessageId: The error message number that triggers this alert
+        - IsEnabled: Boolean indicating if the alert is currently enabled
+        - DelayBetweenResponses: Seconds between repeated alert notifications
+        - LastRaised: DateTime of the last time this alert was triggered (added via Add-Member)
+        - OccurrenceCount: Number of times this alert has been triggered
 
         All properties from the base SMO Alert object are accessible using Select-Object *.
 

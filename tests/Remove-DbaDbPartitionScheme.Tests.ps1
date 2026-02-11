@@ -67,4 +67,46 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbPartitionScheme -SqlInstance $server -Database $dbname2 | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDbName = "dbatoolsci_outval_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $server -Name $outputDbName -EnableException
+            $outputPartFun = "dbatoolssci_outpf_$(Get-Random)"
+            $outputPartSch = "dbatoolssci_outps_$(Get-Random)"
+            $null = $server.Query("CREATE PARTITION FUNCTION $outputPartFun (int) AS RANGE LEFT FOR VALUES (1, 100, 1000); CREATE PARTITION SCHEME $outputPartSch AS PARTITION $outputPartFun ALL TO ( [PRIMARY] );", $outputDbName)
+            $result = Get-DbaDbPartitionScheme -SqlInstance $server -Database $outputDbName | Remove-DbaDbPartitionScheme -Confirm:$false
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $server -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "PartitionSchemeName",
+                "Status",
+                "IsRemoved"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct values for a successful removal" {
+            $result[0].Status | Should -Be "Dropped"
+            $result[0].IsRemoved | Should -BeTrue
+            $result[0].Database | Should -Be $outputDbName
+            $result[0].PartitionSchemeName | Should -Be $outputPartSch
+        }
+    }
 }

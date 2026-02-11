@@ -32,13 +32,13 @@ function Get-DbaWsfcNetworkInterface {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        System.Management.ManagementObject
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_NetworkInterface
 
-        Returns one network interface object per adapter found on cluster nodes queried. Each object represents a network interface configuration with IP address and DHCP settings.
+        Returns one network interface object per adapter found on cluster nodes queried. Each object is a CIM instance with ClusterName and ClusterFqdn added as NoteProperties.
 
         Default display properties (via Select-DefaultView):
-        - ClusterName: The name of the Windows Server Failover Cluster
-        - ClusterFqdn: The fully qualified domain name of the cluster
+        - ClusterName: The name of the Windows Server Failover Cluster (added via NoteProperty)
+        - ClusterFqdn: The fully qualified domain name of the cluster (added via NoteProperty)
         - Name: The name of the network interface
         - Network: The name or identifier of the network this interface belongs to
         - Node: The name of the cluster node this interface is assigned to

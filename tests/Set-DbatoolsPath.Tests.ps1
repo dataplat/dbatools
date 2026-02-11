@@ -20,3 +20,12 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        It "Returns no output" {
+            $result = Set-DbatoolsPath -Name "dbatoolsci_outputtest" -Path "C:\temp"
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

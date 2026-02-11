@@ -237,3 +237,46 @@ Describe $CommandName -Tag IntegrationTests -Skip {
         }
     }
 }
+
+Describe "$CommandName Output Validation" -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $piiscanOutputDb = "dbatoolsci_piiscan_output"
+        $sqlCreateOutputTable = "CREATE TABLE [dbo].[OutputTest](
+                    [CustomerID] [INT] IDENTITY(1,1) NOT NULL,
+                    [Firstname] [VARCHAR](30) NULL,
+                    [Lastname] [VARCHAR](50) NULL
+                ) ON [PRIMARY]
+                GO
+                INSERT [dbo].[OutputTest] ([Firstname], [Lastname]) VALUES (N'Monserrate', N'Schmidt')
+                INSERT [dbo].[OutputTest] ([Firstname], [Lastname]) VALUES (N'Delores', N'Fay')
+                INSERT [dbo].[OutputTest] ([Firstname], [Lastname]) VALUES (N'Chelsea', N'Williamson')
+                "
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $piiscanOutputDb
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $piiscanOutputDb -Query $sqlCreateOutputTable
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+        $result = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.InstanceSingle -Database $piiscanOutputDb
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $piiscanOutputDb -Confirm:$false -ErrorAction SilentlyContinue
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    It "Returns output of the documented type" {
+        $result | Should -Not -BeNullOrEmpty
+        $result[0] | Should -BeOfType [PSCustomObject]
+    }
+
+    It "Has the expected standard properties" {
+        $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Table", "Column", "PII-Category", "PII-Name", "FoundWith", "MaskingType", "MaskingSubType")
+        foreach ($prop in $expectedProps) {
+            $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+        }
+    }
+}

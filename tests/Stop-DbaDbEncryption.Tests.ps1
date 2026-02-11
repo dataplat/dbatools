@@ -144,4 +144,76 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputPasswd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $outputMastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            if (-not $outputMastercert) {
+                $outputDelmastercert = $true
+                $outputMastercert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
+            }
+
+            $outputDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+            $outputDb | New-DbaDbMasterKey -SecurePassword $outputPasswd
+            $outputDb | New-DbaDbCertificate
+            $outputDb | New-DbaDbEncryptionKey -Force
+            $outputDb | Enable-DbaDbEncryption -EncryptorName $outputMastercert.Name -Force
+
+            # Wait for encryption to complete
+            $timeout = 120
+            $elapsed = 0
+            $encrypted = $false
+            do {
+                Start-Sleep -Seconds 2
+                $elapsed += 2
+                $outputDb.Refresh()
+                $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($outputDb.Name)')"
+                $encrypted = ($dbState.encryption_state -eq 3)
+            } while (-not $encrypted -and $elapsed -lt $timeout)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $outputResult = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -WarningVariable warn
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($outputDb) {
+                $outputDb | Remove-DbaDatabase -ErrorAction SilentlyContinue
+            }
+            if ($outputDelmastercert) {
+                $outputMastercert | Remove-DbaDbCertificate -ErrorAction SilentlyContinue
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output with results" {
+            $outputResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "EncryptionEnabled"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property DatabaseName" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].PSObject.Properties["DatabaseName"] | Should -Not -BeNullOrEmpty
+        }
+    }
 }

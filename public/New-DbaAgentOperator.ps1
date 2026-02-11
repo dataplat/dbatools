@@ -101,24 +101,21 @@ function New-DbaAgentOperator {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Agent.Operator
 
-        Returns one Operator object for the newly created SQL Server Agent operator.
+        Returns one Operator object for the newly created SQL Server Agent operator. The output is returned via Get-DbaAgentOperator after creation completes.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView in Get-DbaAgentOperator):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The name of the operator
+        - ID: Unique identifier for the operator
+        - IsEnabled: Boolean indicating if the operator is active (aliased from Enabled)
         - EmailAddress: Email address for alert notifications
-        - NetSendAddress: Network send address for notifications
-        - PagerAddress: Pager email address for urgent alerts
-        - Enabled: Boolean indicating if the operator is active
-        - LastEmailDate: DateTime of the most recent email sent to this operator
-        - LastNetSendDate: DateTime of the most recent net send notification
-        - LastPagerDate: DateTime of the most recent pager notification
+        - LastEmail: DateTime of the most recent email sent to this operator
 
         Additional properties available (from SMO Operator object):
-        - ID: Unique identifier for the operator
-        - CategoryName: Alert category classification
+        - NetSendAddress: Network send address for notifications
+        - PagerAddress: Pager email address for urgent alerts
         - PagerDays: Bitmask indicating which days pager notifications are active
         - WeekdayPagerStartTime: Start time for weekday pager notifications (HH:MM:SS format)
         - WeekdayPagerEndTime: End time for weekday pager notifications (HH:MM:SS format)

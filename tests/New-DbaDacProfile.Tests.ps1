@@ -56,4 +56,38 @@ Describe $CommandName -Tag IntegrationTests {
         $publishprofile.FileName -match "publish.xml" | Should -Be $true
         Remove-Item -Path $publishprofile.FileName -ErrorAction SilentlyContinue
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = New-DbaDacProfile -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        }
+
+        AfterAll {
+            if ($result) {
+                Remove-Item -Path $result.FileName -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("SqlInstance", "Database", "FileName", "ConnectionString")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Excludes the expected properties from default display" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "ComputerName" -Because "ComputerName should be excluded from default display"
+            $defaultProps | Should -Not -Contain "InstanceName" -Because "InstanceName should be excluded from default display"
+            $defaultProps | Should -Not -Contain "ProfileTemplate" -Because "ProfileTemplate should be excluded from default display"
+        }
+    }
 }

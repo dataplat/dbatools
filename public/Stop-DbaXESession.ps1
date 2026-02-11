@@ -53,27 +53,29 @@ function Stop-DbaXESession {
     .OUTPUTS
         Microsoft.SqlServer.Management.XEvent.Session
 
-        Returns one Extended Events session object for each session that was stopped. The session objects reflect the stopped state after the command completes.
+        Returns one Extended Events session object for each session that was stopped. The session objects reflect the stopped state after the command completes. Output is returned via Get-DbaXESession with Select-DefaultView applied.
 
-        Default display properties:
+        Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The name of the Extended Events session
-        - State: The current state of the session (Created, Started, Stopped, or Altered)
-        - IsRunning: Boolean indicating if the session is currently running (false after stopping)
+        - Status: Display status of the session (Running or Stopped)
         - StartTime: DateTime when the session was started (null if not currently running)
-        - DefinitionFileLocation: Path to the XML definition file for the session
-        - MaxMemory: Maximum memory in MB allocated to the session
-        - EventRetentionMode: How events are retained (AllowSingleEventLoss, AllowMultipleEventLoss, NoEventLoss, or DropOnFullBuffer)
+        - AutoStart: Boolean indicating if the session starts automatically on server startup
+        - State: The current state of the session (Created, Started, Stopped, or Altered)
+        - Targets: Collection of targets configured for the session
+        - TargetFile: File paths for file-based targets
+        - Events: Collection of events being monitored
+        - MaxMemory: Maximum memory in KB allocated to the session
+        - MaxEventSize: Maximum size of individual events in KB
 
         Additional properties available on the SMO Session object (via Select-Object *):
-        - Urn: The Uniform Resource Name for the session object
-        - Properties: Collection of session property objects
-        - TargetCount: Number of targets associated with the session
-        - EventCount: Number of events collected by the session
-        - MaxDispatchLatency: Maximum latency in seconds for event dispatch
-        - SuspendedEventCount: Number of currently suspended events
+        - IsRunning: Boolean indicating if the session is currently running
+        - Session: Alias for the session Name
+        - RemoteTargetFile: UNC paths for file-based targets
+        - Parent: Reference to the parent SQL Server object
+        - Store: Reference to the XEvent store
 
     .EXAMPLE
         PS C:\> Stop-DbaXESession -SqlInstance sqlserver2012 -AllSessions

@@ -64,4 +64,77 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].FileLocation | Should -Be "Only on Source"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputValidation = @{
+                Source              = $TestConfig.InstanceCopy1
+                Destination         = $TestConfig.InstanceCopy2
+                Database            = "master"
+                DestinationDatabase = "Dbatoolsci_OutputValidationDB"
+            }
+            $result = Measure-DbaDiskSpaceRequirement @splatOutputValidation
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedVisible = @(
+                "SourceSqlInstance",
+                "SourceDatabase",
+                "SourceLogicalName",
+                "SourceFileName",
+                "SourceFileSize",
+                "DestinationComputerName",
+                "DestinationSqlInstance",
+                "DestinationDatabase",
+                "DestinationFileName",
+                "DestinationFileSize",
+                "DifferenceSize",
+                "MountPoint",
+                "FileLocation"
+            )
+            foreach ($prop in $expectedVisible) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in default display" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @(
+                "SourceComputerName",
+                "SourceInstance",
+                "DestinationInstance",
+                "DestinationLogicalName"
+            )
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from default display"
+            }
+        }
+
+        It "Has the excluded properties available via Select-Object" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $allProps = $result[0].PSObject.Properties.Name
+            $hiddenProps = @(
+                "SourceComputerName",
+                "SourceInstance",
+                "DestinationInstance"
+            )
+            foreach ($prop in $hiddenProps) {
+                $allProps | Should -Contain $prop -Because "hidden property '$prop' should still be accessible"
+            }
+        }
+
+        It "Has DbaSize type for file size properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].SourceFileSize | Should -BeOfType [DbaSize]
+            $result[0].DifferenceSize | Should -BeOfType [DbaSize]
+        }
+    }
 }

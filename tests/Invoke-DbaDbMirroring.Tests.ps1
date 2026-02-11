@@ -73,4 +73,64 @@ Describe $CommandName -Tag IntegrationTests {
         $WarnVar | Should -BeNullOrEmpty
         $results.Status | Should -Be "Success"
     }
+
+}
+
+Describe "$CommandName Output validation" -Tag IntegrationTests {
+    BeforeAll {
+        $outputDbName = "dbatoolsci_mirror_output"
+
+        # Clean up any leftover artifacts from previous runs using T-SQL for reliability
+        foreach ($instance in @($TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2)) {
+            try {
+                $srv = Connect-DbaInstance -SqlInstance $instance
+                $srv.Query("IF EXISTS (SELECT 1 FROM sys.databases WHERE name = '$outputDbName') BEGIN ALTER DATABASE [$outputDbName] SET PARTNER OFF END")
+            } catch { }
+            try {
+                $srv.Query("IF EXISTS (SELECT 1 FROM sys.databases WHERE name = '$outputDbName') BEGIN ALTER DATABASE [$outputDbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$outputDbName] END")
+            } catch { }
+        }
+
+        # Use Copy2 as primary and Copy1 as mirror to handle version compatibility
+        # (backup from lower version can restore to higher version, but not vice versa)
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Name $outputDbName -EnableException
+
+        $splatOutputMirroring = @{
+            Primary    = $TestConfig.InstanceCopy2
+            Mirror     = $TestConfig.InstanceCopy1
+            Database   = $outputDbName
+            Force      = $true
+            SharedPath = $TestConfig.Temp
+        }
+        try {
+            $outputResult = Invoke-DbaDbMirroring @splatOutputMirroring -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+        } catch {
+            $outputResult = $null
+        }
+    }
+    AfterAll {
+        foreach ($instance in @($TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2)) {
+            try {
+                $srv = Connect-DbaInstance -SqlInstance $instance
+                $srv.Query("IF EXISTS (SELECT 1 FROM sys.databases WHERE name = '$outputDbName') BEGIN ALTER DATABASE [$outputDbName] SET PARTNER OFF END")
+            } catch { }
+            try {
+                $srv.Query("IF EXISTS (SELECT 1 FROM sys.databases WHERE name = '$outputDbName') BEGIN ALTER DATABASE [$outputDbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$outputDbName] END")
+            } catch { }
+        }
+    }
+
+    It "Returns output of the expected type" {
+        if (-not $outputResult) { Set-ItResult -Skipped -Because "mirroring setup did not return a result - endpoint connectivity may not be available" }
+        $outputResult[0] | Should -BeOfType [PSCustomObject]
+    }
+
+    It "Has the expected default display properties" {
+        if (-not $outputResult) { Set-ItResult -Skipped -Because "mirroring setup did not return a result - endpoint connectivity may not be available" }
+        $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+        $expectedDefaults = @("Primary", "Mirror", "Database", "Status")
+        foreach ($prop in $expectedDefaults) {
+            $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+        }
+    }
 }

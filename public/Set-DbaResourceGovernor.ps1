@@ -55,14 +55,16 @@ function Set-DbaResourceGovernor {
 
         Returns the modified Resource Governor object reflecting the new enabled/disabled state and classifier function assignment. Output is piped from Get-DbaResourceGovernor which provides detailed configuration details.
 
-        Default display properties (via Get-DbaResourceGovernor):
+        Default display properties (via Select-DefaultView in Get-DbaResourceGovernor):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
-        - Enabled: Boolean indicating if Resource Governor is currently enabled
         - ClassifierFunction: Name of the classifier function currently assigned (NULL if none)
-        - RecoveryPriority: Recovery priority setting for resource allocation
-        - State: Current state of the Resource Governor (Existing, Creating, etc.)
+        - Enabled: Boolean indicating if Resource Governor is currently enabled
+        - MaxOutstandingIOPerVolume: Maximum outstanding I/O per volume setting
+        - ReconfigurePending: Boolean indicating if a reconfiguration is pending
+        - ResourcePools: Collection of internal resource pools
+        - ExternalResourcePools: Collection of external resource pools
 
         All properties from the base SMO ResourceGovernor object are accessible using Select-Object *.
 

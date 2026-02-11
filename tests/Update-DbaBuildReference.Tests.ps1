@@ -18,3 +18,12 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        It "Returns no output" {
+            $result = Update-DbaBuildReference
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

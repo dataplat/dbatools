@@ -44,33 +44,31 @@ function Get-DbaRunningJob {
         Returns one Job object for each SQL Server Agent job that is currently executing (not in Idle state).
         When no jobs are running, the command returns nothing.
 
-        Default display properties (via Get-DbaAgentJob with Select-DefaultView):
+        Default display properties (via Get-DbaAgentJob's Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance format)
         - Name: The name of the Agent job
+        - Category: The category/classification of the job
+        - OwnerLoginName: The login that owns the job
         - CurrentRunStatus: Current execution status (Executing, Idle, Suspended, etc.)
-        - IsEnabled: Boolean indicating if the job is enabled
-        - LastRunOutcome: Result of the most recent execution (Succeeded, Failed, Cancelled, etc.)
+        - CurrentRunRetryAttempt: Current retry attempt number during execution
+        - Enabled: Boolean indicating if the job is enabled (aliased from IsEnabled)
         - LastRunDate: DateTime of the most recent job execution
-        - NextRunDate: DateTime scheduled for the next execution
-        - Owner: The login that owns the job
-        - CreateDate: DateTime when the job was created
-        - Description: Text description of the job's purpose
+        - LastRunOutcome: Result of the most recent execution (Succeeded, Failed, Cancelled, etc.)
+        - HasSchedule: Boolean indicating if the job has any schedules assigned
+        - OperatorToEmail: The operator to notify by email
+        - CreateDate: DateTime when the job was created (aliased from DateCreated)
 
         Additional properties available from the base SMO Agent.Job object via Select-Object *:
         - JobID: Unique identifier (GUID) for the job
         - EventLogLevel: Logging level for event log (Never, OnSuccess, OnFailure, Always)
         - EmailLevel: Email notification level (Never, OnSuccess, OnFailure, Always)
         - NetSendLevel: Network send notification level (Never, OnSuccess, OnFailure, Always)
-        - NetsendOperatorName: Name of operator for network send notifications
-        - EmailOperatorName: Name of operator for email notifications
-        - OperatorToNetSend: Operator configured for network send notifications
+        - Description: Text description of the job's purpose
         - StartStepID: Step number where execution begins
-        - Category: The category/classification of the job
         - DeleteLevel: When to delete job history (Never, OnSuccess, OnFailure, Always)
         - TargetServers: Collection of target servers for multi-server jobs
-        - HasSchedule: Boolean indicating if the job has any schedules assigned
 
         All properties from the base SMO Agent.Job object are accessible using Select-Object *.
 

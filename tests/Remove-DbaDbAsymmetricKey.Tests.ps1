@@ -91,4 +91,44 @@ Describe $CommandName -Tag IntegrationTests {
             $removeResults.Name | Should -Be $keyname
         }
     }
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputKeyName = "dbatoolsci_asymkey_output_$(Get-Random)"
+            # Create master key via SQL to avoid ShouldProcess issues in New-DbaDbMasterKey
+            $hasMasterKey = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $database -Query "SELECT COUNT(*) AS cnt FROM sys.symmetric_keys WHERE name = '##MS_DatabaseMasterKey##'" -As SingleValue
+            if ($hasMasterKey -eq 0) {
+                Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $database -Query "CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'ThisIsThePassword1'"
+            }
+            $null = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $outputKeyName -Database $database
+            $result = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $outputKeyName -Database $database -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct Status for a successful removal" {
+            $result.Status | Should -Be "Success"
+        }
+
+        It "Has the correct Name" {
+            $result.Name | Should -Be $outputKeyName
+        }
+
+        It "Has the correct Database" {
+            $result.Database | Should -Be $database
+        }
+    }
 }

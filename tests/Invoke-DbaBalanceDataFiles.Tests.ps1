@@ -86,4 +86,57 @@ Describe $CommandName -Tag IntegrationTests {
             $sizeUsedAfter | Should -BeLessThan $sizeUsedBefore
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $resultOutput = Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -RebuildOffline -Force
+        }
+
+        It "Returns output that is not null" {
+            $resultOutput | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Start",
+                "End",
+                "Elapsed",
+                "Success",
+                "Unsuccessful",
+                "DataFilesStart",
+                "DataFilesEnd"
+            )
+            foreach ($prop in $expectedProperties) {
+                $resultOutput[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has ComputerName populated" {
+            $resultOutput[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has SqlInstance populated" {
+            $resultOutput[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has DataFilesStart as an array with file details" {
+            $resultOutput[0].DataFilesStart | Should -Not -BeNullOrEmpty
+            $resultOutput[0].DataFilesStart[0].psobject.Properties.Name | Should -Contain "LogicalName"
+            $resultOutput[0].DataFilesStart[0].psobject.Properties.Name | Should -Contain "PhysicalName"
+            $resultOutput[0].DataFilesStart[0].psobject.Properties.Name | Should -Contain "Size"
+            $resultOutput[0].DataFilesStart[0].psobject.Properties.Name | Should -Contain "UsedSpace"
+        }
+
+        It "Has DataFilesEnd as an array with file details" {
+            $resultOutput[0].DataFilesEnd | Should -Not -BeNullOrEmpty
+            $resultOutput[0].DataFilesEnd[0].psobject.Properties.Name | Should -Contain "LogicalName"
+            $resultOutput[0].DataFilesEnd[0].psobject.Properties.Name | Should -Contain "PhysicalName"
+            $resultOutput[0].DataFilesEnd[0].psobject.Properties.Name | Should -Contain "Size"
+            $resultOutput[0].DataFilesEnd[0].psobject.Properties.Name | Should -Contain "UsedSpace"
+        }
+    }
 }

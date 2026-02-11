@@ -72,4 +72,32 @@ Describe $CommandName -Tag IntegrationTests {
             $results.server_principal_name | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile | Select-Object -First 1
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected standard properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties.Name | Should -Contain "name"
+            $result.psobject.Properties.Name | Should -Contain "timestamp"
+        }
+
+        It "Has the server_principal_name property from audit fields" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties.Name | Should -Contain "server_principal_name"
+        }
+
+        It "Returns raw enumeration when using -Raw" {
+            $rawResult = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile -Raw
+            $rawResult | Should -Not -BeNullOrEmpty
+            $rawResult[0].GetType().FullName | Should -BeLike "Microsoft.SqlServer.XEvent*"
+        }
+    }
 }

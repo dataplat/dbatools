@@ -56,4 +56,23 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Extension | Should -Contain ".xel"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = $session | Get-DbaXESessionTargetFile
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType "System.IO.FileInfo"
+        }
+
+        It "Has expected FileInfo properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].Name | Should -Not -BeNullOrEmpty
+            $result[0].FullName | Should -Not -BeNullOrEmpty
+            $result[0].Extension | Should -Not -BeNullOrEmpty
+            $result[0].Length | Should -BeGreaterThan 0
+        }
+    }
 }

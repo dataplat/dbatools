@@ -64,4 +64,42 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDbName = "dbatoolsci_removeview_output_$(Get-Random)"
+            $outputViewName = "dbatoolsci_outputview_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
+            $outputInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $null = $outputInstance.Query("CREATE VIEW $outputViewName (a) AS (SELECT 1);", $outputDbName)
+            $result = Remove-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -View $outputViewName -Confirm:$false
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "View", "ViewName", "ViewSchema", "Status", "IsRemoved")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct values for a successful removal" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.Status | Should -Be "Dropped"
+            $result.IsRemoved | Should -BeTrue
+            $result.Database | Should -Be $outputDbName
+            $result.ViewName | Should -Be $outputViewName
+            $result.ViewSchema | Should -Be "dbo"
+            $result.View | Should -Be "dbo.$outputViewName"
+        }
+    }
 }

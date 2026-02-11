@@ -76,4 +76,37 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+        }
+
+        AfterAll {
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Disabled -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ResourceGovernor"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ClassifierFunction",
+                "Enabled",
+                "MaxOutstandingIOPerVolume",
+                "ReconfigurePending",
+                "ResourcePools",
+                "ExternalResourcePools"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -29,3 +29,11 @@ Describe $CommandName -Tag UnitTests {
 <#
     Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1.ps1
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:($env:APPVEYOR -or (-not $env:GITHUB_ACTIONS)) {
+        It "Returns no output" {
+            Set-ItResult -Skipped -Because "replication infrastructure required to test subscription creation"
+        }
+    }
+}

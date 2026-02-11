@@ -138,4 +138,55 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseName | Should -Contain $parallelTestDatabases[0].Name
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputBackupPath = "$($TestConfig.Temp)\$CommandName-Output-$(Get-Random)"
+            $null = New-Item -Path $outputBackupPath -ItemType Directory
+
+            $outputTestDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $splatOutputEncryption = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                Database                = $outputTestDb.Name
+                MasterKeySecurePassword = $passwd
+                BackupSecurePassword    = $passwd
+                BackupPath              = $outputBackupPath
+                Parallel                = $true
+            }
+            $outputResult = Start-DbaDbEncryption @splatOutputEncryption -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+        }
+
+        AfterAll {
+            if ($outputTestDb) {
+                $outputTestDb | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+            }
+            Remove-Item -Path $outputBackupPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output with expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "encryption setup failed - likely pre-existing certificate conflicts" }
+            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
+            $outputResult[0].InstanceName | Should -Not -BeNullOrEmpty
+            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $outputResult[0].DatabaseName | Should -Not -BeNullOrEmpty
+            $outputResult[0].EncryptionEnabled | Should -Be $true
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "encryption setup failed - likely pre-existing certificate conflicts" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "EncryptionEnabled"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

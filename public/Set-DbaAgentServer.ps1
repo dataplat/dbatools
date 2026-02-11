@@ -145,33 +145,43 @@ function Set-DbaAgentServer {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Agent.JobServer
 
-        Returns the updated JobServer object for the modified instance(s). Properties include all SQL Server Agent configuration settings that were modified, plus any existing settings.
+        Returns the updated JobServer object for the modified instance(s). Output is from Get-DbaAgentServer which applies Select-DefaultView.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView in Get-DbaAgentServer):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
-        - Name: The SQL Server Agent service name
+        - AgentDomainGroup: The Windows domain group for the Agent service
         - AgentLogLevel: Current logging level (Errors, Warnings, etc.)
-        - DatabaseMailProfile: Active Database Mail profile for notifications
-        - SqlAgentAutoStart: Boolean indicating if Agent auto-starts
-        - SqlAgentRestart: Boolean indicating if Agent auto-restarts on failure
-
-        Additional properties available (from SMO JobServer object):
         - AgentMailType: Mail system type (DatabaseMail or SqlAgentMail)
         - AgentShutdownWaitTime: Seconds to wait for Agent shutdown
-        - CpuPolling/IsCpuPollingEnabled: CPU idle monitoring enabled status
         - ErrorLogFile: Path to Agent error log
         - IdleCpuDuration: Seconds before considering CPU idle
         - IdleCpuPercentage: CPU percentage threshold for idle
+        - IsCpuPollingEnabled: CPU idle monitoring enabled status
+        - JobServerType: Type of job server
         - LoginTimeout: Connection timeout in seconds
+        - JobHistoryIsEnabled: Whether job history retention is enabled
         - MaximumHistoryRows: Maximum job history rows retained
         - MaximumJobHistoryRows: Maximum history rows per job
+        - MsxAccountCredentialName: MSX account credential name
+        - MsxAccountName: MSX account name
+        - MsxServerName: MSX server name
+        - Name: The SQL Server Agent service name
         - NetSendRecipient: Legacy net send notification recipient
+        - ServiceAccount: Agent service account
+        - ServiceStartMode: Service start mode
+        - SqlAgentAutoStart: Boolean indicating if Agent auto-starts
+        - SqlAgentMailProfile: SQL Agent Mail profile
+        - SqlAgentRestart: Boolean indicating if Agent auto-restarts on failure
+        - SqlServerRestart: Agent can restart SQL Server
+        - State: Current state of the Agent service
+        - SysAdminOnly: Whether only sysadmin can access Agent
+
+        Additional properties available (from SMO JobServer object):
+        - DatabaseMailProfile: Active Database Mail profile for notifications
         - ReplaceAlertTokensEnabled: Token replacement in alerts enabled status
         - SaveInSentFolder: Save notification copies to mail sent items
-        - SqlAgentMailProfile: Legacy SQL Agent Mail profile
-        - SqlServerRestart: Agent can restart SQL Server
         - WriteOemErrorLog: Write errors to Windows Event Log
 
         All properties from the base SMO JobServer object are accessible using Select-Object *.

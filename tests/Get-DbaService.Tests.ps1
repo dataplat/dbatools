@@ -90,4 +90,33 @@ Describe $CommandName -Tag IntegrationTests {
             $sqlInstanceResults.Count | Should -Be 1
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Engine
+        }
+
+        It "Returns output with the expected TypeName" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.DbaSqlService"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "ServiceName",
+                "ServiceType",
+                "InstanceName",
+                "DisplayName",
+                "StartName",
+                "State",
+                "StartMode"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

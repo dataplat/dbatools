@@ -127,4 +127,44 @@ Describe $CommandName -Tag IntegrationTests {
             { Set-DbaAgReplica @splatLoadBalanced } | Should -Not -Throw
         }
     }
+
+}
+
+Describe "$CommandName Output" -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
+        BeforeAll {
+            $existingAg = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr | Select-Object -First 1
+            if ($existingAg) {
+                $existingReplica = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $existingAg.Name | Where-Object Role -eq "Primary" | Select-Object -First 1
+                if ($existingReplica) {
+                    $currentPriority = $existingReplica.BackupPriority
+                    $splatOutputValidation = @{
+                        SqlInstance       = $TestConfig.InstanceHadr
+                        AvailabilityGroup = $existingAg.Name
+                        Replica           = $existingReplica.Name
+                        BackupPriority    = $currentPriority
+                    }
+                    $result = Set-DbaAgReplica @splatOutputValidation
+                }
+            }
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityReplica"
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties.Name | Should -Contain "Name"
+            $result[0].psobject.Properties.Name | Should -Contain "AvailabilityMode"
+            $result[0].psobject.Properties.Name | Should -Contain "FailoverMode"
+            $result[0].psobject.Properties.Name | Should -Contain "BackupPriority"
+            $result[0].psobject.Properties.Name | Should -Contain "ConnectionModeInPrimaryRole"
+            $result[0].psobject.Properties.Name | Should -Contain "ConnectionModeInSecondaryRole"
+            $result[0].psobject.Properties.Name | Should -Contain "EndpointUrl"
+            $result[0].psobject.Properties.Name | Should -Contain "SeedingMode"
+            $result[0].psobject.Properties.Name | Should -Contain "SessionTimeout"
+        }
+    }
 }

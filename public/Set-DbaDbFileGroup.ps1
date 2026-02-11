@@ -68,13 +68,11 @@ function Set-DbaDbFileGroup {
 
         Returns the modified FileGroup object(s) after the specified changes have been applied. One object is returned per filegroup that was successfully modified.
 
-        Default display properties:
+        Properties include:
         - Name: The name of the filegroup
         - IsDefault: Boolean indicating if this is the default filegroup for new objects
         - ReadOnly: Boolean indicating if the filegroup is read-only
         - AutogrowAllFiles: Boolean indicating if all files in the filegroup grow proportionally
-
-        Additional properties available (from SMO FileGroup object):
         - ID: The filegroup ID number
         - Parent: Reference to the parent Database object
         - Files: Collection of files contained in the filegroup

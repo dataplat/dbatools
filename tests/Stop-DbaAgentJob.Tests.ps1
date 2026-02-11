@@ -31,4 +31,37 @@ Describe $CommandName -Tag IntegrationTests {
             $results.CurrentRunStatus | Should -Be 'Idle'
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create a job that runs long enough to stop
+            $outputJobName = "dbatoolsci_stopjob_output_$(Get-Random)"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -StepName "WaitStep" -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"
+            $null = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName
+            Start-Sleep -Milliseconds 500
+            $outputResult = Stop-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -Wait
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].Name | Should -Be $outputJobName
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "CurrentRunStatus"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "LastRunOutcome"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "IsEnabled"
+        }
+    }
 }

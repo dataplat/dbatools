@@ -137,4 +137,69 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Property Comparisons will come later when we have the commands
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputServer = Connect-DbaInstance $TestConfig.InstanceSingle
+            $outputRegStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($outputServer.ConnectionContext.SqlConnectionObject)
+            $outputDbStore = $outputRegStore.DatabaseEngineServerGroup
+
+            $outputGroup = "dbatoolsci-outputgroup"
+            $outputSrvName = "dbatoolsci-outputsrv1"
+            $outputRegName = "dbatoolsci-outputreg1"
+
+            $outputNewGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($outputDbStore, $outputGroup)
+            $outputNewGroup.Create()
+            $outputDbStore.Refresh()
+
+            $outputGroupStore = $outputDbStore.ServerGroups[$outputGroup]
+            $outputNewServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($outputGroupStore, $outputRegName)
+            $outputNewServer.ServerName = $outputSrvName
+            $outputNewServer.Description = "dbatoolsci output validation test"
+            $outputNewServer.Create()
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $result = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group $outputGroup
+        }
+
+        AfterAll {
+            try {
+                $outputCleanupServer = Connect-DbaInstance $TestConfig.InstanceSingle
+                $outputCleanupStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($outputCleanupServer.ConnectionContext.SqlConnectionObject)
+                $outputCleanupDbStore = $outputCleanupStore.DatabaseEngineServerGroup
+                $outputCleanupDbStore.Refresh()
+                $outputCleanupGrp = $outputCleanupDbStore.ServerGroups["dbatoolsci-outputgroup"]
+                if ($outputCleanupGrp) {
+                    $outputCleanupGrp.Drop()
+                }
+            } catch {
+                # Ignore cleanup errors
+            }
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Name", "ServerName", "Group", "Description", "Source")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the added NoteProperty members" {
+            $result[0].PSObject.Properties["Source"] | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.Properties["InstanceName"] | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.Properties["SqlInstance"] | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.Properties["ParentServer"] | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.Properties["Group"] | Should -Not -BeNullOrEmpty
+        }
+    }
 }

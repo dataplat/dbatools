@@ -49,4 +49,23 @@ Describe $CommandName -Tags IntegrationTests {
             $result.IsEqual | Should -BeTrue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Test-DbaDbCollation -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "ServerCollation", "DatabaseCollation", "IsEqual")
+            foreach ($prop in $expectedProps) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

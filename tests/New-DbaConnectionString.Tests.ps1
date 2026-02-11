@@ -42,8 +42,19 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = New-DbaConnectionString -SqlInstance $TestConfig.InstanceSingle -SqlCredential $TestConfig.SqlCred
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType System.String
+        }
+
+        It "Returns a valid connection string containing Data Source" {
+            $result | Should -Match "Data Source"
+        }
+    }
+}

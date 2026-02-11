@@ -43,4 +43,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $allDefault = @($xeSession | Read-DbaXEFile)
+            $resultDefault = @($allDefault | Select-Object -First 3)
+            $allRaw = @($xeSession | Read-DbaXEFile -Raw)
+            $resultRaw = @($allRaw | Select-Object -First 3)
+        }
+
+        It "Returns PSCustomObject by default" {
+            if (-not $resultDefault) { Set-ItResult -Skipped -Because "no result to validate" }
+            $resultDefault[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the standard name and timestamp properties" {
+            if (-not $resultDefault) { Set-ItResult -Skipped -Because "no result to validate" }
+            $resultDefault[0].PSObject.Properties.Name | Should -Contain "name"
+            $resultDefault[0].PSObject.Properties.Name | Should -Contain "timestamp"
+        }
+
+        It "Returns XEvent objects when using -Raw" {
+            if (-not $resultRaw) { Set-ItResult -Skipped -Because "no result to validate" }
+            $resultRaw[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.XEvent.XELite.XEvent"
+        }
+    }
 }

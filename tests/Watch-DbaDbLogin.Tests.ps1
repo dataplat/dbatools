@@ -74,4 +74,11 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        It "Returns no output" {
+            $result = Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -ServersFromFile $testFile
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

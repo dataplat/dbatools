@@ -27,3 +27,14 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        It "Returns no output" {
+            $configName = "dbatoolsci.outputtest.$(Get-Random)"
+            Set-DbatoolsConfig -FullName $configName -Value "testvalue"
+            $result = Register-DbatoolsConfig -FullName $configName
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

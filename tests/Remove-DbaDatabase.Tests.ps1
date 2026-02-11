@@ -71,4 +71,35 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore | Should -BeNullOrEmpty
         }
     }
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTestDb = "dbatoolsci_removedb_output_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
+            $result = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct Status for a successful drop" {
+            $result.Status | Should -Be "Dropped"
+        }
+
+        It "Has the correct Database name" {
+            $result.Database | Should -Be $outputTestDb
+        }
+    }
 }

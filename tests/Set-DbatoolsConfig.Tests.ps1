@@ -49,4 +49,27 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Match "Connect Timeout=60"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 30 -PassThru
+        }
+
+        It "Returns no output without -PassThru" {
+            $noOutput = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 30
+            $noOutput | Should -BeNullOrEmpty
+        }
+
+        It "Returns output of the expected type with -PassThru" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Configuration.Config"
+        }
+
+        It "Has the expected properties on the config object" {
+            $result.FullName | Should -Not -BeNullOrEmpty
+            $result.Value | Should -Not -BeNullOrEmpty
+            $result.Module | Should -Not -BeNullOrEmpty
+            $result.Name | Should -Not -BeNullOrEmpty
+        }
+    }
 }

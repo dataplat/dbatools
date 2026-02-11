@@ -157,4 +157,108 @@ Describe $CommandName -Tag IntegrationTests {
             $resultskey.ObjectData.col2 | Should -Be "bilbo"
         }
     }
+
+}
+
+Describe "$CommandName Output" -Tag IntegrationTests {
+    Context "Output validation for PAGE wait resource" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputDbName = "dbatoolsci_waitresource_output_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
+            $setupSql = "
+                create table waittest_output (col1 int, col2 varchar(5))
+                insert into waittest_output values (1,'hello')
+            "
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Query $setupSql
+
+            $PageSql = "
+                Create table #TmpIndex(
+                    PageFiD int,
+                    PagePid int,
+                    IAMFID int,
+                    IAMPid int,
+                    ObjectID int,
+                    IndexID int,
+                    PartitionNumber bigint,
+                    ParitionId bigint,
+                    iam_chain_type varchar(50),
+                    PageType int,
+                    IndexLevel int,
+                    NextPageFID int,
+                    NextPagePID int,
+                    prevPageFid int,
+                    PrevPagePID int
+                );
+
+                insert #TmpIndex exec ('dbcc ind($outputDbName,waittest_output,-1)')
+
+                declare @pageid int
+                select @pageid=PagePid from #TmpIndex where PageType=10
+                select 'PAGE: '+convert(varchar(3),DB_ID())+':1:'+convert(varchar(15),@pageid)
+            "
+            $page = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Query $PageSql).Column1
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            $outputPageResult = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $page
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $outputPageResult | Should -Not -BeNullOrEmpty
+            $outputPageResult | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected PAGE properties" {
+            $expectedProps = @("DatabaseID", "DatabaseName", "DataFileName", "DataFilePath", "ObjectID", "ObjectName", "ObjectSchema", "ObjectType")
+            foreach ($prop in $expectedProps) {
+                $outputPageResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on PAGE wait resource output"
+            }
+        }
+    }
+
+    Context "Output validation for KEY wait resource" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputKeyDbName = "dbatoolsci_waitreskey_output_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputKeyDbName
+            $keySetupSql = "
+                create table keytest_output (col1 int, col2 varchar(5))
+                create clustered index idx_output_pester on keytest_output (col1)
+                insert into keytest_output values (1,'bilbo')
+            "
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $outputKeyDbName -Query $keySetupSql
+
+            $SqlKeyOutput = "
+                declare @hobt_id bigint
+                select @hobt_id = hobt_id from sys.partitions where object_id=object_id('dbo.keytest_output')
+                select 'KEY: '+convert(varchar(3),db_id())+':'+convert(varchar(30),@hobt_id)+' '+ %%lockres%% from keytest_output where col1=1
+            "
+            $keyOutput = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $outputKeyDbName -Query $SqlKeyOutput).Column1
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            $outputKeyResult = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $keyOutput
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputKeyDbName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $outputKeyResult | Should -Not -BeNullOrEmpty
+            $outputKeyResult | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected KEY properties" {
+            $expectedProps = @("DatabaseID", "DatabaseName", "SchemaName", "IndexName", "ObjectID", "ObjectName", "HobtID")
+            foreach ($prop in $expectedProps) {
+                $outputKeyResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on KEY wait resource output"
+            }
+        }
+    }
 }

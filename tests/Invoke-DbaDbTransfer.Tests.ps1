@@ -126,4 +126,35 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Log -join "`n" | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDbName = "dbatoolsci_transfer_output"
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+            $destination.Query("CREATE DATABASE $outputDbName")
+            $outputResult = Invoke-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -DestinationSqlInstance $TestConfig.InstanceMulti2 -Database $dbName -DestinationDatabase $outputDbName -CopyAll Tables
+        }
+
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @("SourceInstance", "SourceDatabase", "DestinationInstance", "DestinationDatabase", "Status", "Elapsed", "Log")
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
+
+        It "Returns string array when using ScriptOnly" {
+            $scriptResult = Invoke-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName -CopyAll Tables -ScriptOnly
+            $scriptResult | Should -Not -BeNullOrEmpty
+            $scriptResult[0] | Should -BeOfType [System.String]
+        }
+    }
 }

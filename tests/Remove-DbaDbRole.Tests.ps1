@@ -192,4 +192,13 @@ Describe $CommandName -Tag IntegrationTests {
             $schemaOwner.Owner | Should -Be "dbo"
         }
     }
+
+    Context "Output validation" {
+        It "Returns no output" {
+            $outputRole = "dbatoolssci_outval_$(Get-Random)"
+            $null = $server.Query("CREATE ROLE [$outputRole]", $dbname1)
+            $result = Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $outputRole -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

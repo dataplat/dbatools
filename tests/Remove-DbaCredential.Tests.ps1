@@ -160,4 +160,54 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaCredential @splatGetAll) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputCredName = "dbatoolsci_output_$(Get-Random)"
+            $splatCreateOutputCred = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Query       = "CREATE CREDENTIAL [$outputCredName] WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
+            }
+            $null = Invoke-DbaQuery @splatCreateOutputCred
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatRemoveOutputCred = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Credential  = $outputCredName
+                Confirm     = $false
+            }
+            $outputResult = Remove-DbaCredential @splatRemoveOutputCred
+        }
+
+        AfterAll {
+            # Cleanup in case removal failed
+            $splatCleanupOutput = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Credential  = $outputCredName
+            }
+            Remove-DbaCredential @splatCleanupOutput -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+            foreach ($prop in $expectedProps) {
+                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Returns the correct status for a successful removal" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult.Status | Should -Be "Dropped"
+            $outputResult.IsRemoved | Should -BeTrue
+        }
+    }
 }

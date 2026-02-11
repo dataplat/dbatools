@@ -82,9 +82,9 @@ function Set-DbaDbSequence {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Sequence
 
-        Returns the updated Sequence object for each modified sequence, with all properties reflecting the changes applied.
+        Returns the updated Sequence object for each modified sequence, with all properties reflecting the changes applied. Unlike Get-DbaDbSequence, no Select-DefaultView is applied; the raw SMO Sequence object is returned after the database is refreshed.
 
-        Default display properties (when piping to Select-Object):
+        Key properties:
         - Name: The name of the sequence object
         - Schema: The schema containing the sequence
         - Owner: The principal that owns the sequence

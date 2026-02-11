@@ -59,4 +59,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.job | Should -Not -Match $notSaJob
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResults = Test-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $saJob, $notSaJob
+        }
+
+        It "Returns output of the documented type" {
+            $outputResults | Should -Not -BeNullOrEmpty
+            $outputResults[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Server", "Job", "JobType", "CurrentOwner", "TargetOwner", "OwnerMatch")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has Server property populated" {
+            $outputResults[0].Server | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has Job property populated" {
+            $outputResults[0].Job | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has OwnerMatch as boolean" {
+            $outputResults[0].OwnerMatch | Should -BeOfType [bool]
+        }
+    }
 }

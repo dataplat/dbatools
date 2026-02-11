@@ -53,4 +53,29 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results.IsMember("sysadmin") | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $resetPassword = ConvertTo-SecureString -Force -AsPlainText "resetadmin_ov1!"
+            $outputResult = Reset-DbaAdmin -SqlInstance $TestConfig.InstanceRestart -Login dbatoolsci_resetadmin -SecurePassword $resetPassword
+        }
+
+        AfterAll {
+            Get-DbaProcess -SqlInstance $TestConfig.InstanceRestart -Login dbatoolsci_resetadmin -ErrorAction SilentlyContinue | Stop-DbaProcess -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Login"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "LoginType", "CreateDate", "LastLogin", "HasAccess", "IsLocked", "IsDisabled", "MustChangePassword")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

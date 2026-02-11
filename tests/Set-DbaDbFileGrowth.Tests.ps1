@@ -80,4 +80,43 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Database | Should -Be $testDbName
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputTest = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $testDbName
+            }
+            $outputResult = @(Set-DbaDbFileGrowth @splatOutputTest | Where-Object { $null -ne $PSItem })
+        }
+
+        It "Returns output with results" {
+            $outputResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "MaxSize", "GrowthType", "Growth", "File", "FileName", "State")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.Properties["File"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.Properties["File"].MemberType | Should -Be "AliasProperty"
+            $outputResult[0].psobject.Properties["FileName"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.Properties["FileName"].MemberType | Should -Be "AliasProperty"
+        }
+
+        It "Has correct values for key properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].Database | Should -Be $testDbName
+            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
+            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $outputResult[0].GrowthType | Should -BeIn @("kb", "Percent")
+        }
+    }
 }

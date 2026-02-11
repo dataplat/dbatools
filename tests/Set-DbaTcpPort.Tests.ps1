@@ -74,4 +74,37 @@ Describe $CommandName -Tag IntegrationTests {
             $setPort | Should -Be $originalPort
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $portInfo = Get-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle
+            $currentPort = $portInfo.Port
+            # Set the same port to get a result without actually changing anything meaningful
+            $result = Set-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle -Port $currentPort -Confirm:$false -WarningAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Changes",
+                "RestartNeeded",
+                "Restarted"
+            )
+            foreach ($prop in $expectedProps) {
+                $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

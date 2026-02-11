@@ -66,4 +66,35 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should -Not -Be $null
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU"
+        }
+
+        It "Returns output as a PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result.PSObject.Properties.Name | Should -Contain "Build"
+            $result.PSObject.Properties.Name | Should -Contain "MatchType"
+            $result.PSObject.Properties.Name | Should -Contain "Compliant"
+            $result.PSObject.Properties.Name | Should -Contain "MaxBehind"
+            $result.PSObject.Properties.Name | Should -Contain "SPTarget"
+            $result.PSObject.Properties.Name | Should -Contain "CUTarget"
+            $result.PSObject.Properties.Name | Should -Contain "BuildTarget"
+        }
+
+        It "Hides MinimumBuild when using -MaxBehind" {
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "MinimumBuild" -Because "MinimumBuild should be hidden when using -MaxBehind"
+        }
+
+        It "Returns boolean when using -Quiet" {
+            $quietResult = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -Quiet
+            $quietResult | Should -BeOfType [bool]
+        }
+    }
 }

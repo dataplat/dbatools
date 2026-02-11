@@ -130,16 +130,19 @@ function Update-DbaInstance {
 
         Returns one object per SQL Server instance updated, providing detailed information about the installation result and outcome.
 
-        Properties:
-        - ComputerName (string) - The computer name of the target instance
-        - InstanceName (string) - The SQL Server instance name (MSSQLSERVER for default instance)
-        - MajorVersion (int) - The SQL Server major version number (2008, 2012, 2016, 2019, 2022, etc.)
-        - TargetLevel (string) - The target patch level that was applied (e.g., "SP3CU15")
-        - KB (string) - The Knowledge Base number of the update that was installed
-        - Installer (string) - Full path to the installer executable that was executed
-        - Successful (bool) - Boolean indicating whether the patch installation completed successfully
-        - Restarted (bool) - Boolean indicating whether the server was restarted after patching
-        - Notes (object[]) - Array of messages describing the installation process, any warnings, or errors encountered
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the target instance
+        - MajorVersion: The SQL Server major version number (2008, 2012, 2016, 2019, 2022, etc.)
+        - TargetLevel: The target patch level that was applied (e.g., "SP3CU15")
+        - KB: The Knowledge Base number of the update that was installed
+        - Successful: Boolean indicating whether the patch installation completed successfully
+        - Restarted: Boolean indicating whether the server was restarted after patching
+        - InstanceName: The SQL Server instance name (MSSQLSERVER for default instance)
+        - Installer: Full path to the installer executable that was executed
+        - Notes: Array of messages describing the installation process, any warnings, or errors encountered
+
+        Additional properties available:
+        - ExtractPath: Path where the update installer was extracted before execution
 
     .LINK
         https://dbatools.io/Update-DbaInstance

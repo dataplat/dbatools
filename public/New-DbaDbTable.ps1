@@ -264,27 +264,32 @@ function New-DbaDbTable {
 
        Microsoft.SqlServer.Management.Smo.Table (default)
 
-       Returns one Table object for each table successfully created. The table object includes all configured columns, constraints, indexes, and table properties.
+       Returns one Table object for each table successfully created via Get-DbaDbTable. The table object includes all configured columns, constraints, indexes, and table properties.
 
-       Default display properties (via Select-DefaultView):
+       Default display properties (via Select-DefaultView in Get-DbaDbTable):
        - ComputerName: The computer name of the SQL Server instance
        - InstanceName: The SQL Server instance name
        - SqlInstance: The full SQL Server instance name (computer\instance)
        - Database: Database containing the table
        - Schema: Schema containing the table
        - Name: Name of the table
-       - Rows: Number of rows in the table (0 for newly created tables)
-       - Created: DateTime when the table was created
-       - LastModified: DateTime when the table was last modified
+       - IndexSpaceUsed: Index space used in KB
+       - DataSpaceUsed: Data space used in KB
+       - RowCount: Number of rows in the table
+       - HasClusteredIndex: Boolean indicating if the table has a clustered index
+       - IsPartitioned: Boolean indicating if table is partitioned (conditional, SQL Server 2016+)
+       - ChangeTrackingEnabled: Boolean indicating if change tracking is enabled (conditional)
+       - IsFileTable: Boolean indicating if table is a FileTable (conditional)
+       - IsMemoryOptimized: Boolean indicating if table is memory-optimized (conditional)
+       - IsNode: Boolean indicating if table is a graph node table (conditional, SQL Server 2017+)
+       - IsEdge: Boolean indicating if table is a graph edge table (conditional, SQL Server 2017+)
+       - FullTextIndex: Full text index information
 
        Additional properties available (from SMO Table object):
        - FileGroup: Filegroup where the table data is stored
        - AnsiNullsStatus: Boolean indicating if ANSI_NULLS is enabled
        - QuotedIdentifierStatus: Boolean indicating if QUOTED_IDENTIFIER is enabled
-       - ChangeTrackingEnabled: Boolean indicating if change tracking is enabled
-       - IsMemoryOptimized: Boolean indicating if table is memory-optimized
        - IsSystemVersioned: Boolean indicating if table is system-versioned temporal table
-       - IsFileTable: Boolean indicating if table is a FileTable
        - IsExternal: Boolean indicating if table is an external table
        - TrackColumnsUpdatedEnabled: Boolean indicating if column-level change tracking is enabled
 

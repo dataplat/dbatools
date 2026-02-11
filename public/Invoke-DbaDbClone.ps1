@@ -81,19 +81,14 @@ function Invoke-DbaDbClone {
         - IsAccessible: Boolean indicating if the database is currently accessible
         - RecoveryModel: Database recovery model (Full, Simple, or BulkLogged)
         - LogReuseWaitStatus: Status of transaction log reuse
-        - Size: Database size in megabytes
-        - Owner: Database owner login name
+        - SizeMB: Total size in megabytes (aliased from Size)
+        - Compatibility: Database compatibility level (aliased from CompatibilityLevel)
         - Collation: Database collation setting
-        - Encrypted: Boolean indicating if Transparent Data Encryption (TDE) is enabled
-
-        Additional properties available from the SMO Database object using Select-Object *:
-        - CreateDate: DateTime when the database was created
-        - LastFullBackup: DateTime of the most recent full backup
-        - LastDiffBackup: DateTime of the most recent differential backup
-        - LastLogBackup: DateTime of the most recent transaction log backup
-        - DatabaseEngineEdition: Edition of SQL Server (Enterprise, Standard, Express, etc.)
-        - ID: Database ID assigned by SQL Server
-        - And many other SMO Database properties (see https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.database)
+        - Owner: Database owner login name
+        - Encrypted: Whether Transparent Data Encryption is enabled (aliased from EncryptionEnabled)
+        - LastFullBackup: DateTime of the most recent full backup (aliased from LastBackupDate)
+        - LastDiffBackup: DateTime of the most recent differential backup (aliased from LastDifferentialBackupDate)
+        - LastLogBackup: DateTime of the most recent transaction log backup (aliased from LastLogBackupDate)
 
     .LINK
         https://dbatools.io/Invoke-DbaDbClone

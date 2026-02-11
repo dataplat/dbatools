@@ -141,4 +141,35 @@ Describe $CommandName -Tag IntegrationTests {
             $runningResults.IsRunning | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $null = Stop-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
+            $outputAll = Start-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
+            $outputResult = $outputAll | Where-Object Id -eq $traceid
+        }
+
+        It "Returns output with expected properties" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult.Id | Should -Be $traceid
+            $outputResult.IsRunning | Should -Be $true
+        }
+
+        It "Has the correct default display properties excluding Parent, RemotePath, and SqlCredential" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Parent" -Because "Parent should be excluded from default display"
+            $defaultProps | Should -Not -Contain "RemotePath" -Because "RemotePath should be excluded from default display"
+            $defaultProps | Should -Not -Contain "SqlCredential" -Because "SqlCredential should be excluded from default display"
+        }
+
+        It "Has expected visible properties in default display" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedVisible = @("ComputerName", "InstanceName", "SqlInstance", "Id", "Status", "IsRunning", "Path", "MaxSize", "StopTime", "MaxFiles", "IsRowset", "IsRollover", "IsShutdown", "IsDefault", "BufferCount", "BufferSize", "FilePosition", "ReaderSpid", "StartTime", "LastEventTime", "EventCount", "DroppedEventCount")
+            foreach ($prop in $expectedVisible) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

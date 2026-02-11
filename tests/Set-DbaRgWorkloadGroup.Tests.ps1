@@ -242,4 +242,71 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $wklGroupCleanupName, $wklGroupCleanupName2 -ErrorAction SilentlyContinue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+
+            $outputWklGroupName = "dbatoolsci_outputwklgroup"
+            $splatNewOutputWklGroup = @{
+                SqlInstance                         = $TestConfig.InstanceSingle
+                WorkloadGroup                       = $outputWklGroupName
+                ResourcePool                        = "default"
+                ResourcePoolType                    = "Internal"
+                Importance                          = "MEDIUM"
+                RequestMaximumMemoryGrantPercentage = 25
+                RequestMaximumCpuTimeInSeconds      = 0
+                RequestMemoryGrantTimeoutInSeconds  = 0
+                MaximumDegreeOfParallelism          = 0
+                GroupMaximumRequests                = 0
+                Force                               = $true
+            }
+            $null = New-DbaRgWorkloadGroup @splatNewOutputWklGroup
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatSetOutputWklGroup = @{
+                SqlInstance                         = $TestConfig.InstanceSingle
+                WorkloadGroup                       = $outputWklGroupName
+                ResourcePool                        = "default"
+                ResourcePoolType                    = "Internal"
+                Importance                          = "HIGH"
+                RequestMaximumMemoryGrantPercentage = 26
+            }
+            $result = Set-DbaRgWorkloadGroup @splatSetOutputWklGroup
+        }
+
+        AfterAll {
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWklGroupName -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.WorkloadGroup"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "ExternalResourcePoolName",
+                "GroupMaximumRequests",
+                "Importance",
+                "IsSystemObject",
+                "MaximumDegreeOfParallelism",
+                "RequestMaximumCpuTimeInSeconds",
+                "RequestMaximumMemoryGrantPercentage",
+                "RequestMemoryGrantTimeoutInSeconds"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

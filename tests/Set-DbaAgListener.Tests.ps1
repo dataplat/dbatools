@@ -23,3 +23,25 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
+        BeforeAll {
+            $listener = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr
+            if ($listener) {
+                $result = Set-DbaAgListener -InputObject $listener[0] -Port $listener[0].PortNumber
+            }
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no listener available to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener"
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no listener available to validate" }
+            $result[0].psobject.Properties.Name | Should -Contain "Name"
+            $result[0].psobject.Properties.Name | Should -Contain "PortNumber"
+        }
+    }
+}

@@ -27,3 +27,30 @@ Describe $CommandName -Tag UnitTests {
 <#
     Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1.ps1
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:($env:APPVEYOR -or (-not $TestConfig.InstanceSingle)) {
+        BeforeAll {
+            $result = Get-DbaReplSubscription -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no replication subscriptions found on test instance" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "PublicationName",
+                "Name",
+                "SubscriberName",
+                "SubscriptionDBName",
+                "SubscriptionType"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+}

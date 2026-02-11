@@ -150,4 +150,23 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-ChildItem -Path $testPath -Directory -Recurse).Count | Should -Be 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputTestPath = "TestDrive:\sqlbackups-output-$(Get-Random)"
+            $null = New-Item -Path $outputTestPath -ItemType Directory
+            $filepath = Join-Path $outputTestPath "dbatoolsci_output_backup.bak"
+            Set-Content $filepath -Value "."
+            (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputTestPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output" {
+            $result = Remove-DbaBackup -Path $outputTestPath -BackupFileExtension bak -RetentionPeriod "0d"
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

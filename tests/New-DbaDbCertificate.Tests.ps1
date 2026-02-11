@@ -89,4 +89,55 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $cert2 | Remove-DbaDbCertificate
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputCertName = "dbatoolsci_outcert_$(Get-Random)"
+            $splatOutputCert = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Name        = $outputCertName
+            }
+            $result = New-DbaDbCertificate @splatOutputCert
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            if ($outputCertName) {
+                $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $server.Databases["master"].Query("IF EXISTS (SELECT 1 FROM sys.certificates WHERE name = '$outputCertName') DROP CERTIFICATE [$outputCertName]")
+            }
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Certificate"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Subject",
+                "StartDate",
+                "ActiveForServiceBrokerDialog",
+                "ExpirationDate",
+                "Issuer",
+                "LastBackupDate",
+                "Owner",
+                "PrivateKeyEncryptionType",
+                "Serial"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

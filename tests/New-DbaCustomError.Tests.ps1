@@ -126,4 +126,34 @@ Describe $CommandName -Tag IntegrationTests {
             $results[1].ID | Should -Be 70006
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $outputMsgId = 70099
+            $outputServer.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = $outputMsgId) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = $outputMsgId, @lang = 'all'; END")
+            $result = New-DbaCustomError -SqlInstance $outputServer -MessageID $outputMsgId -Severity 16 -MessageText "dbatoolsci_outputtest"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $outputServer.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = $outputMsgId) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = $outputMsgId, @lang = 'all'; END")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.UserDefinedMessage]
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].ID | Should -Be $outputMsgId
+            $result[0].Severity | Should -Be 16
+            $result[0].Text | Should -Be "dbatoolsci_outputtest"
+            $result[0].Language | Should -Not -BeNullOrEmpty
+        }
+    }
 }

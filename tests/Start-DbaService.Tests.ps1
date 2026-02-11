@@ -72,5 +72,26 @@ Describe $CommandName -Tag IntegrationTests {
                 { Start-DbaService -ComputerName $TestConfig.InstanceRestart -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
             }
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $null = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent -ErrorAction SilentlyContinue
+                $outputResult = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
+            }
+
+            It "Returns output of the expected type" {
+                if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.DbaSqlService"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "ServiceName", "InstanceName", "ServiceType", "State", "Status", "Message")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
 }

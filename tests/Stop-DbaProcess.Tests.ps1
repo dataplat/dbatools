@@ -45,4 +45,27 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be 'Killed'
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -ClientName "dbatoolsci output test"
+            $result = Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program "dbatoolsci output test"
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("SqlInstance", "Spid", "Login", "Host", "Database", "Program", "Status")
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has Status set to Killed" {
+            $result[0].Status | Should -Be "Killed"
+        }
+    }
 }

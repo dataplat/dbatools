@@ -52,14 +52,7 @@ function Invoke-DbaDbMirrorFailover {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Database
 
-        Returns one Database object for each database that was failed over successfully. When performing a failover operation, the database object is returned with its mirroring state updated to reflect the new role (now the principal server).
-
-        Default properties visible:
-        - Name: Database name
-        - Status: Current database status
-        - Owner: Database owner login
-        - RecoveryModel: Database recovery model (typically Full for mirrored databases)
-        - Size: Database size in megabytes
+        Returns the Database object from Set-DbaDbMirror for each database that was failed over. The output is the raw SMO Database object with no custom default display properties applied by this command.
 
         When no failover is performed due to -WhatIf or user cancellation, no output is returned.
 

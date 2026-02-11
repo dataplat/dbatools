@@ -42,4 +42,45 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count -gt 0 | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaXESessionTarget -SqlInstance $TestConfig.InstanceSingle -Session "system_health"
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.XEvent.Target"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Session",
+                "SessionStatus",
+                "Name",
+                "ID",
+                "Field",
+                "PackageName",
+                "File",
+                "Description",
+                "ScriptName"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties["Field"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["Field"].MemberType | Should -Be "AliasProperty"
+            $result[0].psobject.Properties["File"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["File"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

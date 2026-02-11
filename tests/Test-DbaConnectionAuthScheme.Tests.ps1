@@ -34,4 +34,32 @@ Describe $CommandName -Tag IntegrationTests {
 
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = @(Test-DbaConnectionAuthScheme -SqlInstance $TestConfig.InstanceSingle)
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Transport", "AuthScheme")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has all additional properties available" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("SessionId", "MostRecentSessionId", "ConnectTime", "ProtocolType", "ProtocolVersion", "EndpointId", "EncryptOption", "NodeAffinity", "NumReads", "NumWrites", "LastRead", "LastWrite", "PacketSize", "ClientNetworkAddress", "ClientTcpPort", "ServerNetworkAddress", "ServerTcpPort", "ConnectionId", "ParentConnectionId", "MostRecentSqlHandle")
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
+    }
 }

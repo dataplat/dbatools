@@ -44,4 +44,25 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Get-Content) -contains "information for current instance"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputNotebookFile = "$($TestConfig.Temp)\dbatoolsci_outputtest-$(Get-Random).ipynb"
+            $result = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $outputNotebookFile
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputNotebookFile -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns a file with the correct extension" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.Extension | Should -Be ".ipynb"
+        }
+    }
 }

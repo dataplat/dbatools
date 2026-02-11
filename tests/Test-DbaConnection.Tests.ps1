@@ -35,4 +35,48 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ConnectingAsUser | Should -Be $whoami
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Test-DbaConnection -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output as a PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected connection properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SqlVersion",
+                "ConnectingAsUser",
+                "ConnectSuccess",
+                "AuthType",
+                "AuthScheme",
+                "TcpPort",
+                "IPAddress",
+                "NetBiosName",
+                "IsPingable",
+                "PSRemotingAccessible",
+                "DomainName",
+                "LocalWindows",
+                "LocalPowerShell",
+                "LocalCLR",
+                "LocalSMOVersion",
+                "LocalDomainUser",
+                "LocalRunAsAdmin",
+                "LocalEdition"
+            )
+            foreach ($prop in $expectedProps) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has valid connection status" {
+            $result.ConnectSuccess | Should -BeTrue
+        }
+    }
 }

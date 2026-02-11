@@ -53,7 +53,7 @@ function Get-DbaPbmObjectSet {
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
-        - ID: Unique identifier for the object set
+        - Id: Unique identifier for the object set
         - Name: Name of the object set
         - Facet: The facet that this object set targets (e.g., Server, Database, Table)
         - TargetSets: Collection of target sets that define the objects included in this set

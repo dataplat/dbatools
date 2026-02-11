@@ -74,4 +74,27 @@ Describe $CommandName -Tag IntegrationTests {
         $ZeroSqlParam = New-DbaSqlParameter -ParameterName ZeroInt -Value $ZeroInt -SqlDbType int
         $ZeroSqlParam.Value | Should -Be 0
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = New-DbaSqlParameter -ParameterName "TestParam" -SqlDbType NVarChar -Size 100 -Value "test"
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.GetType().FullName | Should -Be "Microsoft.Data.SqlClient.SqlParameter"
+        }
+
+        It "Has the expected SqlParameter properties" {
+            $result.ParameterName | Should -Be "TestParam"
+            $result.SqlDbType | Should -Be "NVarChar"
+            $result.Size | Should -Be 100
+            $result.Value | Should -Be "test"
+        }
+
+        It "Supports Direction property" {
+            $outputParam = New-DbaSqlParameter -ParameterName "OutputParam" -SqlDbType Int -Direction Output
+            $outputParam.Direction | Should -Be "Output"
+        }
+    }
 }

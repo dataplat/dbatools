@@ -85,4 +85,38 @@ Describe $CommandName -Tag IntegrationTests {
             $dbatoolsciValid.IsRunning | Should -Be $false
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Stop-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session dbatoolsci_session_valid
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.XEvent.Session"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "StartTime",
+                "AutoStart",
+                "State",
+                "Targets",
+                "TargetFile",
+                "Events",
+                "MaxMemory",
+                "MaxEventSize"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

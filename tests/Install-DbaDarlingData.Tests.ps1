@@ -112,4 +112,38 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $darlingDbOutput = "dbatoolsci_darling_$(Get-Random)"
+            $serverOutput = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $serverOutput.Query("CREATE DATABASE $darlingDbOutput")
+
+            $resultOutput = Install-DbaDarlingData -SqlInstance $TestConfig.InstanceSingle -Database $darlingDbOutput -Branch main -Procedure HumanEvents -Force -Verbose:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $darlingDbOutput -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $resultOutput | Should -Not -BeNullOrEmpty
+            $resultOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct output properties" {
+            if (-not $resultOutput) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            $actualProps = $resultOutput[0].PsObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

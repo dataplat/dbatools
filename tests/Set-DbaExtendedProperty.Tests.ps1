@@ -53,4 +53,23 @@ Describe $CommandName -Tag IntegrationTests {
             $newep.Value | Should -Be "Test_Database_Value"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $db | Add-DbaExtendedProperty -Name "Test_Output_Validation" -Value "original" -EnableException
+            $epToSet = Get-DbaExtendedProperty -SqlInstance $InstanceSingle -Database $newDbName -Name "Test_Output_Validation"
+            $outputResult = $epToSet | Set-DbaExtendedProperty -Value "updated"
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ExtendedProperty"
+        }
+
+        It "Has the expected properties" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].Name | Should -Be "Test_Output_Validation"
+            $outputResult[0].Value | Should -Be "updated"
+        }
+    }
 }

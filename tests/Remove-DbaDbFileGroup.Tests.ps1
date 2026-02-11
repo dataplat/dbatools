@@ -107,4 +107,29 @@ Describe $CommandName -Tag IntegrationTests {
             $fileGroup6 | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputDbName = "dbatoolsci_fgoutput_$(Get-Random)"
+            $outputFgName = "dbatoolsci_OutputFG"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputServer.Query("ALTER DATABASE $outputDbName ADD FILEGROUP $outputFgName;")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns no output on successful removal" {
+            $result = Remove-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -FileGroup $outputFgName -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

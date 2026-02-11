@@ -301,4 +301,29 @@ Describe $CommandName -Tag IntegrationTests {
             (Invoke-DbaQuery -SqlInstance $server2 -Database $dbnameSimpleModel -Query "SELECT COUNT(1) AS [RowCount] FROM dbo.Test").RowCount | Should -Be 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $null = Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query $sqlAddRows
+            $outputResult = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table dbo.Test -BatchSize 10 -Confirm:$false
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "Database", "Sql", "TotalRowsDeleted", "TotalTimeMillis", "AvgTimeMillis", "TotalIterations")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the additional properties available" {
+            $outputResult.PSObject.Properties.Name | Should -Contain "Timings"
+            $outputResult.PSObject.Properties.Name | Should -Contain "LogBackups"
+        }
+    }
 }

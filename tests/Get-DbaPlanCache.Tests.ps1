@@ -27,4 +27,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Size -is [dbasize] | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle)
+        }
+
+        It "Returns output" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Size", "UseCount")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Size property is a dbasize object" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].Size | Should -BeOfType [dbasize]
+        }
+    }
 }

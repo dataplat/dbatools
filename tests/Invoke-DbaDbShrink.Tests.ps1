@@ -156,4 +156,74 @@ Describe $CommandName -Tag IntegrationTests {
             $db.LogFiles[0].Size | Should -Be $oldLogSize
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputDb = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_shrink_output")
+
+            $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($outputDb, "PRIMARY")
+            $outputDb.FileGroups.Add($primaryFileGroup)
+            $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $outputDb.Name)
+            $primaryFile.FileName = "$($defaultPath.Data)\$($outputDb.Name).mdf"
+            $primaryFile.Size = 8 * 1024
+            $primaryFile.Growth = 8 * 1024
+            $primaryFile.GrowthType = "KB"
+            $primaryFileGroup.Files.Add($primaryFile)
+
+            $logFile = New-Object Microsoft.SqlServer.Management.Smo.LogFile($outputDb, "$($outputDb.Name)_log")
+            $logFile.FileName = "$($defaultPath.Log)\$($outputDb.Name)_log.ldf"
+            $logFile.Size = 8 * 1024
+            $logFile.Growth = 8 * 1024
+            $logFile.GrowthType = "KB"
+            $outputDb.LogFiles.Add($logFile)
+
+            $outputDb.Create()
+
+            $server.Query("
+            ALTER DATABASE [$($outputDb.name)] MODIFY FILE ( NAME = N'$($outputDb.name)', SIZE = 16384KB )
+            ALTER DATABASE [$($outputDb.name)] MODIFY FILE ( NAME = N'$($outputDb.name)_log', SIZE = 16384KB )")
+
+            $outputDb.Refresh()
+            $outputDb.Checkpoint()
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $outputResult = Invoke-DbaDbShrink $server -Database $outputDb.Name -FileType Data
+        }
+
+        AfterAll {
+            $outputDb | Remove-DbaDatabase -ErrorAction SilentlyContinue -Confirm:$false
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @(
+                "ComputerName", "InstanceName", "SqlInstance", "Database", "File",
+                "Start", "End", "Elapsed", "Success",
+                "InitialSize", "InitialUsed", "InitialAvailable",
+                "TargetAvailable", "FinalAvailable", "FinalSize",
+                "InitialAverageFragmentation", "FinalAverageFragmentation",
+                "InitialTopFragmentation", "FinalTopFragmentation", "Notes"
+            )
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
+
+        It "Excludes fragmentation properties when using ExcludeIndexStats" {
+            $excludedResult = Invoke-DbaDbShrink $server -Database $outputDb.Name -FileType Log -ExcludeIndexStats
+            if (-not $excludedResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $excludedResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "InitialAverageFragmentation"
+            $defaultProps | Should -Not -Contain "FinalAverageFragmentation"
+            $defaultProps | Should -Not -Contain "InitialTopFragmentation"
+            $defaultProps | Should -Not -Contain "FinalTopFragmentation"
+        }
+    }
 }

@@ -19,3 +19,18 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not (Get-CimInstance -Namespace root\MSCluster -ClassName MSCluster_Cluster -ErrorAction SilentlyContinue)) {
+        BeforeAll {
+            $result = Get-DbaWsfcSharedVolume
+        }
+
+        It "Has the expected added NoteProperties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties["ClusterName"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["ClusterFqdn"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["State"] | Should -Not -BeNullOrEmpty
+        }
+    }
+}

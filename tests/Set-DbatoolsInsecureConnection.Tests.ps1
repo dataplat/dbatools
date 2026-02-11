@@ -40,4 +40,21 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbatoolsConfigValue -FullName "sql.connection.encrypt" | Should -BeFalse
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Set-DbatoolsInsecureConnection -SessionOnly
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Configuration.Config"
+        }
+
+        It "Returns two configuration objects for trustcert and encrypt" {
+            @($result).Count | Should -Be 2
+            $result.FullName | Should -Contain "sql.connection.trustcert"
+            $result.FullName | Should -Contain "sql.connection.encrypt"
+        }
+    }
 }

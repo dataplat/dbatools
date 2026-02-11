@@ -134,29 +134,33 @@ function Set-DbaStartupParameter {
         https://dbatools.io/Set-DbaStartupParameter
 
     .OUTPUTS
-        Object with added NoteProperties
+        PSCustomObject
 
-        Returns the startup parameter object from Get-DbaStartupParameter with additional context properties added:
+        Returns the startup parameter object from Get-DbaStartupParameter with additional NoteProperty members added.
 
         Base properties (from Get-DbaStartupParameter):
-        - CommandPromptStart (boolean) - Whether command prompt start flag (-c) is enabled
-        - DisableMonitoring (boolean) - Whether performance monitoring is disabled (-x)
-        - ErrorLog (string) - Path to the error log file (-e parameter)
-        - IncreasedExtents (boolean) - Whether increased extents flag (-E) is enabled
+        - ComputerName (string) - The name of the computer hosting the SQL Server instance
+        - InstanceName (string) - The SQL Server instance name
+        - SqlInstance (string) - The full SQL Server instance name
         - MasterData (string) - Path to master database data file (-d parameter)
         - MasterLog (string) - Path to master database log file (-l parameter)
-        - MemoryToReserve (int) - Memory reserved in MB (-g parameter)
-        - MinimalStart (boolean) - Whether minimal start flag (-f) is enabled
-        - NoLoggingToWinEvents (boolean) - Whether Windows event logging is disabled (-n)
-        - ParameterString (string) - Complete startup parameter string as stored in registry
-        - SingleUser (boolean) - Whether single-user mode (-m) is enabled
-        - SingleUserDetails (string) - Specific login allowed in single-user mode (if specified)
-        - StartAsNamedInstance (boolean) - Whether named instance flag (-s) is enabled
+        - ErrorLog (string) - Path to the error log file (-e parameter)
         - TraceFlags (string) - Comma-separated list of enabled trace flags (-T parameters)
+        - DebugFlags (string) - Debug flags if any are set
+        - CommandPromptStart (boolean) - Whether command prompt start flag (-c) is enabled
+        - MinimalStart (boolean) - Whether minimal start flag (-f) is enabled
+        - MemoryToReserve (int) - Memory reserved in MB (-g parameter)
+        - SingleUser (boolean) - Whether single-user mode (-m) is enabled
+        - SingleUserName (string) - Specific login allowed in single-user mode (if specified)
+        - NoLoggingToWinEvents (boolean) - Whether Windows event logging is disabled (-n)
+        - StartAsNamedInstance (boolean) - Whether named instance flag (-s) is enabled
+        - DisableMonitoring (boolean) - Whether performance monitoring is disabled (-x)
+        - IncreasedExtents (boolean) - Whether increased extents flag (-E) is enabled
+        - ParameterString (string) - Complete startup parameter string as stored in registry
 
-        Added properties:
-        - OriginalStartupParameters (string) - The startup parameter string before any modifications (added to all outputs)
-        - Notes (string) - Message indicating changes were made and restart is required (added when Credential parameter not provided)
+        Added NoteProperty members:
+        - OriginalStartupParameters (string) - The startup parameter string before any modifications (always added)
+        - Notes (string) - Message indicating changes were made and restart is required (added when Credential parameter is not provided)
 
     .EXAMPLE
         PS C:\> Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser

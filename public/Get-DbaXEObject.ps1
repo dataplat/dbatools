@@ -35,11 +35,12 @@ function Get-DbaXEObject {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        PSCustomObject
+        System.Data.DataRow
 
-        Returns one object per Extended Events component available on the SQL Server instance. The number of objects returned depends on the SQL Server version and installed components.
+        Returns one DataRow object per Extended Events component available on the SQL Server instance. The number of objects returned depends on the SQL Server version and installed components.
 
         Default display properties (excludes ComputerName, InstanceName, ObjectTypeRaw):
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
         - PackageName: Name of the Extended Events package (e.g., 'package0', 'sqlserver')
         - ObjectType: Type of XE object (Event, Action, Target, Map, Message, Type, PredicateComparator, PredicateSource)
         - TargetName: Name of the Extended Events object

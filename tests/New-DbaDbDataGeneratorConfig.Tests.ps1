@@ -74,4 +74,21 @@ Describe $CommandName -Tag IntegrationTests {
             $configResults | Remove-Item -ErrorAction SilentlyContinue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputConfigPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputConfigPath -ItemType Directory
+            $result = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -Path $outputConfigPath
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputConfigPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType System.IO.FileInfo
+        }
+    }
 }

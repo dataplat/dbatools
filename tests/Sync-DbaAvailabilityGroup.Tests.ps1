@@ -30,3 +30,11 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
+        It "Returns no direct output objects" {
+            Set-ItResult -Skipped -Because "Sync-DbaAvailabilityGroup requires AG infrastructure to test output"
+        }
+    }
+}

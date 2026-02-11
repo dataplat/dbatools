@@ -183,4 +183,20 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = New-DbaConnectionStringBuilder
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -BeOfType [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]
+        }
+
+        It "Returns legacy type when -Legacy is specified" {
+            $legacyResult = New-DbaConnectionStringBuilder -Legacy
+            $legacyResult | Should -BeOfType [System.Data.SqlClient.SqlConnectionStringBuilder]
+        }
+    }
 }

@@ -14,8 +14,30 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = New-DbaScriptingOption
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.GetType().FullName | Should -Be "Microsoft.SqlServer.Management.Smo.ScriptingOptions"
+        }
+
+        It "Has common scripting option properties" {
+            $result.psobject.Properties["ScriptDrops"] | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties["WithDependencies"] | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties["Indexes"] | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties["Triggers"] | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties["Permissions"] | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has modifiable properties" {
+            $result.ScriptDrops = $true
+            $result.ScriptDrops | Should -BeTrue
+            $result.ScriptDrops = $false
+            $result.ScriptDrops | Should -BeFalse
+        }
+    }
+}

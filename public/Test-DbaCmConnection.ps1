@@ -49,9 +49,9 @@ function Test-DbaCmConnection {
         **This function should not be called from within dbatools. It is meant as a tool for users only.**
 
     .OUTPUTS
-        Dataplat.Dbatools.Connection.ConnectionManager
+        Dataplat.Dbatools.Connection.ManagementConnection
 
-        Returns one connection manager object containing the results of connectivity testing across all requested management protocols.
+        Returns one management connection object containing the results of connectivity testing across all requested management protocols.
 
         Default properties displayed:
         - ComputerName: The target computer name being tested (lowercase format)
@@ -60,7 +60,7 @@ function Test-DbaCmConnection {
         - Wmi: Result of WMI connectivity test ("Success" or "Error")
         - PowerShellRemoting: Result of PowerShell Remoting connectivity test ("Success" or "Error")
 
-        Additional properties available (from ConnectionManager object):
+        Additional properties available (from ManagementConnection object):
         - LastCimRM: DateTime of the most recent CIM over WinRM connectivity test
         - LastCimDCOM: DateTime of the most recent CIM over DCOM connectivity test
         - LastWmi: DateTime of the most recent WMI connectivity test

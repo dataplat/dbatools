@@ -29,4 +29,49 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaPfDataCollectorSet | Select-Object -First 1)
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "Name",
+                "DisplayName",
+                "Description",
+                "State",
+                "Duration",
+                "OutputLocation",
+                "LatestOutputLocation",
+                "RootPath",
+                "SchedulesEnabled",
+                "Segment",
+                "SegmentMaxDuration",
+                "SegmentMaxSize",
+                "SerialNumber",
+                "Server",
+                "StopOnCompletion",
+                "Subdirectory",
+                "SubdirectoryFormat",
+                "SubdirectoryFormatPattern",
+                "Task",
+                "TaskArguments",
+                "TaskRunAsSelf",
+                "TaskUserTextArguments",
+                "UserAccount"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

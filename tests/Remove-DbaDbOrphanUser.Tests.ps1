@@ -191,4 +191,55 @@ Describe $CommandName -Tag IntegrationTests {
         $results1 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         $results1.Name -contains $loginWindows | Should -Be $false
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputRandom = Get-Random
+            $outputDbName = "dbatoolsci_orphanout_$outputRandom"
+            $outputLogin = "dbatoolssci_outlogin_$outputRandom"
+            $outputSchema = "dbatoolssci_outschema_$outputRandom"
+            $outputPassword = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName -Owner sa
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLogin -Password $outputPassword -Force
+            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Login $outputLogin -Username $outputLogin
+
+            # Create a schema owned by the user so Remove-DbaDbOrphanUser produces output
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputServer.Query("CREATE SCHEMA [$outputSchema] AUTHORIZATION [$outputLogin]", $outputDbName)
+
+            # Remove the login to make the user orphaned
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLogin -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Remove the orphan user with -Force to trigger schema output
+            $outputResult = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -User $outputLogin -Force
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLogin -Confirm:$false -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the correct properties for schema operations" {
+            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
+            $outputResult[0].InstanceName | Should -Not -BeNullOrEmpty
+            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $outputResult[0].DatabaseName | Should -Be $outputDbName
+            $outputResult[0].SchemaName | Should -Not -BeNullOrEmpty
+            $outputResult[0].Action | Should -BeIn @("DROP", "ALTER OWNER")
+            $outputResult[0].SchemaOwnerBefore | Should -Not -BeNullOrEmpty
+            $outputResult[0].SchemaOwnerAfter | Should -Not -BeNullOrEmpty
+        }
+    }
 }

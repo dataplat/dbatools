@@ -138,4 +138,59 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IsRunning | Should -BeFalse
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTracePath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputTracePath -ItemType Directory
+
+            $outputSql = "declare @rc int
+                declare @TraceID int
+                declare @maxfilesize bigint
+                set @maxfilesize = 5
+                exec @rc = sp_trace_create @TraceID output, 0, N'$outputTracePath\outputtrace', @maxfilesize, NULL
+                exec sp_trace_setevent @TraceID, 14, 1, 1
+                exec sp_trace_setstatus @TraceID, 1
+                select TraceID=@TraceID"
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputTraceId = ($outputServer.Query($outputSql)).TraceID
+
+            $outputResult = @(Stop-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $outputTraceId) | Where-Object { $null -ne $PSItem }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $null = Remove-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $outputTraceId -ErrorAction SilentlyContinue
+            Remove-Item -Path $outputTracePath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output" {
+            $outputResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output with expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "ComputerName"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "InstanceName"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "SqlInstance"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "Id"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "IsRunning"
+        }
+
+        It "Has the correct excluded properties from default display" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Parent" -Because "Parent should be excluded from default display"
+            $defaultProps | Should -Not -Contain "RemotePath" -Because "RemotePath should be excluded from default display"
+            $defaultProps | Should -Not -Contain "SqlCredential" -Because "SqlCredential should be excluded from default display"
+        }
+
+        It "Shows the trace as stopped" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].IsRunning | Should -BeFalse
+        }
+    }
 }

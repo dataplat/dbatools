@@ -103,4 +103,31 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "No servers added"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputObject = [PSCustomObject]@{
+                ServerName = "dbatoolsci-outputtest"
+            }
+            $outputResult = $outputObject | Import-DbaRegServer -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        AfterAll {
+            Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq "dbatoolsci-outputtest" | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer"
+        }
+
+        It "Has the expected default display properties" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Name", "ServerName", "Group", "Description", "Source")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

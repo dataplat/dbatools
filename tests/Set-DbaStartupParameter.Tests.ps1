@@ -76,4 +76,57 @@ Describe $CommandName -Tag IntegrationTests {
             $result.TraceFlags[0] | Should -Be 3226
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputTest = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                TraceFlag   = 3226
+                Confirm     = $false
+            }
+            $result = Set-DbaStartupParameter @splatOutputTest
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected base properties from Get-DbaStartupParameter" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MasterData",
+                "MasterLog",
+                "ErrorLog",
+                "TraceFlags",
+                "DebugFlags",
+                "CommandPromptStart",
+                "MinimalStart",
+                "MemoryToReserve",
+                "SingleUser",
+                "SingleUserName",
+                "NoLoggingToWinEvents",
+                "StartAsNamedInstance",
+                "DisableMonitoring",
+                "IncreasedExtents",
+                "ParameterString"
+            )
+            foreach ($prop in $expectedProps) {
+                $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has the added OriginalStartupParameters NoteProperty" {
+            $result.psobject.Properties["OriginalStartupParameters"] | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties["OriginalStartupParameters"].MemberType | Should -Be "NoteProperty"
+        }
+
+        It "Has the added Notes NoteProperty" {
+            $result.psobject.Properties["Notes"] | Should -Not -BeNullOrEmpty
+            $result.psobject.Properties["Notes"].MemberType | Should -Be "NoteProperty"
+            $result.Notes | Should -Match "restart"
+        }
+    }
 }

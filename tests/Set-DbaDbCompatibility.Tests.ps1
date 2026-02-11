@@ -71,4 +71,46 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultNotMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 2
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDbName = "dbatoolsci_compat_output_$(Get-Random)"
+            $outputSqlCn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            $outputInstanceLevel = $outputSqlCn.Databases["master"].CompatibilityLevel
+            $outputPreviousLevel = [int]($outputInstanceLevel.ToString().Trim("Version")) - 10
+            $outputSqlCn.Query("CREATE DATABASE $outputDbName")
+            Start-Sleep 5
+            $outputSqlCn.Query("ALTER DATABASE $outputDbName SET COMPATIBILITY_LEVEL = $($outputPreviousLevel)")
+            $outputSqlCn.Refresh()
+            $outputSqlCn.Databases.Refresh()
+            $outputResult = Set-DbaDbCompatibility -SqlInstance $outputSqlCn -Database $outputDbName
+        }
+
+        AfterAll {
+            $outputCleanCn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            Remove-DbaDatabase -SqlInstance $outputCleanCn -Database $outputDbName -ErrorAction SilentlyContinue
+            $outputCleanCn.ConnectionContext.Disconnect()
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Compatibility", "PreviousCompatibility")
+            foreach ($prop in $expectedProps) {
+                $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has correct values for key properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult.Database | Should -Be $outputDbName
+            $outputResult.ComputerName | Should -Not -BeNullOrEmpty
+            $outputResult.InstanceName | Should -Not -BeNullOrEmpty
+            $outputResult.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
 }

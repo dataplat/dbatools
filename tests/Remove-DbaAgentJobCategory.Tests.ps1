@@ -70,4 +70,42 @@ Describe $CommandName -Tag IntegrationTests {
             $newresults.Count | Should -Be 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputCategoryName = "dbatoolsci_outputtest_$(Get-Random)"
+            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $result = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output as PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct values for a successful removal" {
+            $result.Name | Should -Be $outputCategoryName
+            $result.Status | Should -Be "Dropped"
+            $result.IsRemoved | Should -BeTrue
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
 }

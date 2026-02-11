@@ -140,4 +140,46 @@ Describe $CommandName -Tag IntegrationTests {
             @($results).Count | Should -Be 2
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName "Memory Clerk Usage"
+        }
+
+        It "Returns output as PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Number",
+                "Name",
+                "Description",
+                "DatabaseSpecific",
+                "Database",
+                "Notes",
+                "Result"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has non-null ComputerName, InstanceName, and SqlInstance properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].ComputerName | Should -Not -BeNullOrEmpty
+            $result[0].InstanceName | Should -Not -BeNullOrEmpty
+            $result[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has a non-null Result property for a query with data" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].Result | Should -Not -BeNullOrEmpty
+        }
+    }
 }

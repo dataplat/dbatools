@@ -64,4 +64,36 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "WaitType", "Category", "WaitSeconds", "ResourceSeconds", "SignalSeconds", "WaitCount", "Percentage", "AverageWaitSeconds", "AverageResourceSeconds", "AverageSignalSeconds", "URL")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Excludes Notes and Ignorable from default display without IncludeIgnorable" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Notes" -Because "Notes should be excluded from default display"
+            $defaultProps | Should -Not -Contain "Ignorable" -Because "Ignorable should be excluded from default display without IncludeIgnorable"
+        }
+
+        It "Includes Ignorable in default display with IncludeIgnorable" {
+            $outputWithIgnorable = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeIgnorable
+            $defaultProps = $outputWithIgnorable[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Contain "Ignorable" -Because "Ignorable should be in the default display set when IncludeIgnorable is specified"
+            $defaultProps | Should -Not -Contain "Notes" -Because "Notes should still be excluded from default display"
+        }
+    }
 }

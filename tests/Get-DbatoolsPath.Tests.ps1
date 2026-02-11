@@ -17,3 +17,21 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbatoolsPath -Name Temp
+        }
+
+        It "Returns a string value" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns a valid path" {
+            $result | Should -Not -BeNullOrEmpty
+            Test-Path -Path $result -IsValid | Should -BeTrue
+        }
+    }
+}

@@ -25,8 +25,20 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $spConfigPath = "$($TestConfig.Temp)\dbatoolsci_spconfigure_$(Get-Random).sql"
+            $null = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -FilePath $spConfigPath
+        }
+
+        AfterAll {
+            Remove-Item -Path $spConfigPath -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output" {
+            $outputResult = Import-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Path $spConfigPath
+            $outputResult | Should -BeNullOrEmpty
+        }
+    }
+}

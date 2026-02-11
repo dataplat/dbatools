@@ -31,16 +31,16 @@ function Get-DbaWsfcSharedVolume {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        System.Management.ManagementObject
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/ClusterSharedVolume
 
-        Returns one ClusterSharedVolume WMI object per shared volume found on the cluster, with three added NoteProperties providing cluster context.
+        Returns one ClusterSharedVolume CIM object per shared volume found on the cluster, with three added NoteProperties providing cluster context. No Select-DefaultView is applied, so all properties display by default.
 
-        Default display properties (ClusterSharedVolume WMI class properties plus):
+        Added NoteProperties:
         - ClusterName: Name of the Windows Server Failover Cluster
         - ClusterFqdn: Fully qualified domain name of the failover cluster
         - State: Current state of the cluster shared volume (Online, Offline, Failed, etc.), converted from numeric value
 
-        All properties from the underlying ClusterSharedVolume WMI class are accessible using Select-Object *.
+        All properties from the underlying ClusterSharedVolume WMI class are also accessible.
 
     .LINK
         https://dbatools.io/Get-DbaWsfcSharedVolume

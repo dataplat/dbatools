@@ -80,4 +80,56 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputScheduleName = "dbatoolsci_outputtest_$(Get-Random)"
+            $outputStartDate = (Get-Date).AddDays(2).ToString("yyyyMMdd")
+            $outputEndDate = (Get-Date).AddDays(4).ToString("yyyyMMdd")
+            $splatOutputSchedule = @{
+                SqlInstance               = $TestConfig.InstanceSingle
+                Schedule                  = $outputScheduleName
+                FrequencyRecurrenceFactor = "1"
+                FrequencySubdayInterval   = "1"
+                FrequencySubdayType       = "Hours"
+                StartDate                 = $outputStartDate
+                StartTime                 = "010000"
+                EndDate                   = $outputEndDate
+                EndTime                   = "020000"
+            }
+            $null = New-DbaAgentSchedule @splatOutputSchedule
+            $result = Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $outputScheduleName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $outputScheduleName -ErrorAction SilentlyContinue | Remove-DbaAgentSchedule -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Schedule", "ScheduleId", "ScheduleUid", "Status", "IsRemoved")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct values for removal output" {
+            $result.Status | Should -Be "Dropped"
+            $result.IsRemoved | Should -BeTrue
+            $result.Schedule | Should -Be $outputScheduleName
+            $result.ScheduleId | Should -BeOfType [int]
+            $result.ScheduleUid | Should -Not -BeNullOrEmpty
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
 }

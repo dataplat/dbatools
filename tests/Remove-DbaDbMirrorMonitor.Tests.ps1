@@ -52,4 +52,21 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
         $results.MonitorStatus | Should -Be "Removed"
     }
+
+    Context "Output validation" {
+        It "Returns output with the correct properties" {
+            # Ensure monitor is in a known good state using direct SQL
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            try { $outputServer.Query("EXEC msdb.dbo.sp_dbmmonitordropmonitoring") } catch { <# may not exist #> }
+            $outputServer.Query("EXEC msdb.dbo.sp_dbmmonitoraddmonitoring")
+            $outputResult = @(Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -Confirm:$false -EnableException:$false | Where-Object { $null -ne $PSItem })
+
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType PSCustomObject
+            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
+            $outputResult[0].InstanceName | Should -Not -BeNullOrEmpty
+            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $outputResult[0].MonitorStatus | Should -Be "Removed"
+        }
+    }
 }

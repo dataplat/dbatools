@@ -135,4 +135,28 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             # No test for results as we don't expect any running queries
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $resultOwnSpid = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid
+        }
+
+        It "Returns output as DataRow by default" {
+            if (-not $resultOwnSpid) { Set-ItResult -Skipped -Because "no result to validate" }
+            $resultOwnSpid[0] | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Returns output as PSObject when using -As PSObject" {
+            $resultPSObject = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid -As PSObject
+            if (-not $resultPSObject) { Set-ItResult -Skipped -Because "no result to validate" }
+            $resultPSObject[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Returns output with expected base columns" {
+            if (-not $resultOwnSpid) { Set-ItResult -Skipped -Because "no result to validate" }
+            $columns = $resultOwnSpid[0].Table.Columns.ColumnName
+            $columns | Should -Contain "session_id" -Because "session_id is a base column of sp_WhoIsActive"
+            $columns | Should -Contain "login_name" -Because "login_name is a base column of sp_WhoIsActive"
+        }
+    }
 }

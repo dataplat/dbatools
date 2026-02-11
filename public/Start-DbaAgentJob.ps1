@@ -77,30 +77,23 @@ function Start-DbaAgentJob {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Agent.Job
 
-        Returns one SQL Server Agent Job object per job started. Job objects are returned from Get-DbaAgentJob after the job execution completes (when -Wait is specified) or immediately after starting (without -Wait).
+        Returns one SQL Server Agent Job object per job started via Get-DbaAgentJob, which applies Select-DefaultView.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView in Get-DbaAgentJob):
         - ComputerName: The name of the computer hosting the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The name of the SQL Agent job
+        - Category: The job category name
+        - OwnerLoginName: Login that owns the job
         - CurrentRunStatus: The current execution status of the job (Idle, Executing, etc.)
+        - CurrentRunRetryAttempt: The current retry attempt number
+        - Enabled: Boolean indicating if the job is enabled (aliased from IsEnabled)
         - LastRunDate: DateTime of the most recent job execution
         - LastRunOutcome: Outcome of the last run (Succeeded, Failed, Cancelled, etc.)
-        - IsEnabled: Boolean indicating if the job is enabled
         - HasSchedule: Boolean indicating if the job has schedules
-        - OwnerLoginName: Login that owns the job
-
-        Additional properties available (from SMO Agent.Job object):
-        - JobSteps: Collection of job steps defined in this job
-        - Schedules: Collection of schedules assigned to this job
-        - Notifications: Notification settings for the job
-        - Category: The job category name
-        - CategoryID: The job category ID
-        - CreatedDate: DateTime when the job was created
-        - Description: Job description text
-
-        Note: When using sequential processing without -Wait, jobs start but the command returns after they begin. When using -Wait (sequential or parallel), the command waits for job completion before returning results.
+        - OperatorToEmail: The operator to email on job completion
+        - CreateDate: DateTime when the job was created (aliased from DateCreated)
 
     .EXAMPLE
         PS C:\> Start-DbaAgentJob -SqlInstance localhost

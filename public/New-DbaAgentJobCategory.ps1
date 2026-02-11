@@ -52,13 +52,14 @@ function New-DbaAgentJobCategory {
 
         Returns one JobCategory object for each category created. The output is returned via Get-DbaAgentJobCategory after creation completes.
 
-        Default display properties (via Get-DbaAgentJobCategory):
+        Default display properties (via Select-DefaultView in Get-DbaAgentJobCategory):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: Name of the job category
         - ID: Unique identifier for the category
         - CategoryType: Type of category (LocalJob, MultiServerJob, or None)
+        - JobCount: Number of jobs assigned to this category
 
         All properties from the base SMO JobCategory object are accessible using Select-Object *.
 

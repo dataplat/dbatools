@@ -41,4 +41,25 @@ Describe $CommandName -Tag IntegrationTests {
             $namePatternTypes.Count | Should -BeGreaterOrEqual 26
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaRandomizedType
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result[0].PSObject.Properties.Name | Should -Contain "Type"
+            $result[0].PSObject.Properties.Name | Should -Contain "SubType"
+        }
+
+        It "Has non-null Type and SubType values" {
+            $result[0].Type | Should -Not -BeNullOrEmpty
+            $result[0].SubType | Should -Not -BeNullOrEmpty
+        }
+    }
 }

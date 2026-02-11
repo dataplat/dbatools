@@ -81,8 +81,8 @@ function Test-DbaWindowsLogin {
         - Server, Domain, Login, Type, Found, SamAccountNameMismatch, DisabledInSQLServer: Same as above
         - All security properties (Enabled, AccountNotDelegated, LockedOut, etc.): null for group accounts
 
-        Default display properties (via Select-DefaultView):
-        - Server, Domain, Login, Type, Found, SamAccountNameMismatch, DisabledInSQLServer
+        Default display properties (via Select-DefaultView with -ExcludeProperty):
+        - Server, Domain, Login, Type, Found, SamAccountNameMismatch, DisabledInSQLServer, Enabled, LockedOut, PasswordExpired, PasswordNotRequired
 
         All properties are accessible using Select-Object *.
 

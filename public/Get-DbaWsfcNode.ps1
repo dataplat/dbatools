@@ -31,7 +31,7 @@ function Get-DbaWsfcNode {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        System.Management.ManagementObject
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_Node
 
         Returns one node object per cluster member node queried. Each object represents a cluster node with ownership and version information.
 

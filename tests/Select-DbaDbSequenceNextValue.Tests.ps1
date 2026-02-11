@@ -69,4 +69,15 @@ Describe $CommandName -Tag IntegrationTests {
             $sequenceValue | Should -Be 102
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Select-DbaDbSequenceNextValue -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
+        }
+
+        It "Returns output of type System.Int64" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType [System.Int64]
+        }
+    }
 }

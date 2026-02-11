@@ -117,4 +117,54 @@ Describe $CommandName -Tag IntegrationTests {
             $db4QSOptions.DataFlushIntervalInSeconds | Should -Be $originalQSOptionValue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputSrcDbName = "dbatoolsci_qsoutput_src_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputSrcDbName
+
+            $outputDestDbName = "dbatoolsci_qsoutput_dest_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDestDbName
+
+            $splatSetQsState = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Database      = $outputSrcDbName
+                State         = "ReadWrite"
+                FlushInterval = 901
+            }
+            $null = Set-DbaDbQueryStoreOption @splatSetQsState
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatCopyOutput = @{
+                Source              = $TestConfig.InstanceSingle
+                SourceDatabase      = $outputSrcDbName
+                Destination         = $TestConfig.InstanceSingle
+                DestinationDatabase = $outputDestDbName
+            }
+            $result = Copy-DbaDbQueryStoreOption @splatCopyOutput
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputSrcDbName, $outputDestDbName -Confirm:$false -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output with the expected TypeName" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

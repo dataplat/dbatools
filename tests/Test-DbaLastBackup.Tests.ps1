@@ -186,4 +186,53 @@ Describe $CommandName -Tag IntegrationTests {
             ($null -eq $fileresult) | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Test-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $testlastbackup
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "SourceServer",
+                "TestServer",
+                "Database",
+                "FileExists",
+                "Size",
+                "RestoreResult",
+                "DbccResult",
+                "RestoreStart",
+                "RestoreEnd",
+                "RestoreElapsed",
+                "DbccMaxDop",
+                "DbccStart",
+                "DbccEnd",
+                "DbccElapsed",
+                "BackupDates",
+                "BackupFiles"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct source and test server values" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult.SourceServer | Should -Not -BeNullOrEmpty
+            $outputResult.TestServer | Should -Not -BeNullOrEmpty
+            $outputResult.Database | Should -Be $testlastbackup
+        }
+
+        It "Has backup dates as DbaDateTime" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult.BackupDates | Should -Not -BeNullOrEmpty
+            $outputResult.BackupDates | ForEach-Object { $PSItem | Should -BeOfType DbaDateTime }
+        }
+    }
 }

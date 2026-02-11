@@ -50,4 +50,44 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $restartAvailable = $false
+            try {
+                $connRestart = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart -ErrorAction Stop
+                $restartInstanceName = $connRestart.ServiceName
+                $restartAvailable = $true
+            } catch {
+                $restartAvailable = $false
+            }
+            if ($restartAvailable) {
+                $result = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $restartInstanceName -Type Agent
+            }
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $restartAvailable) { Set-ItResult -Skipped -Because "InstanceRestart is not available" }
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.DbaSqlService"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $restartAvailable) { Set-ItResult -Skipped -Because "InstanceRestart is not available" }
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "ServiceName",
+                "InstanceName",
+                "ServiceType",
+                "State",
+                "Status",
+                "Message"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

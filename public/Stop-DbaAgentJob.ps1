@@ -64,7 +64,7 @@ function Stop-DbaAgentJob {
 
         Default display properties (via SMO Agent.Job):
         - Name: The name of the SQL Server Agent job
-        - Enabled: Boolean indicating if the job is enabled
+        - IsEnabled: Boolean indicating if the job is enabled
         - CurrentRunStatus: The current execution status of the job (Idle, Executing, etc.)
         - LastRunOutcome: The outcome of the last job execution (Succeeded, Failed, Retry, Canceled, etc.)
         - LastRunDate: DateTime of the most recent job execution

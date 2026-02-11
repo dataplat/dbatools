@@ -52,4 +52,32 @@ Describe $CommandName -Tag IntegrationTests {
             $noInfoResult.Output -eq $null | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.InstanceSingle -Confirm:$false
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Cmd",
+                "Output"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has no Select-DefaultView properties" {
+            $outputResult.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
+    }
 }

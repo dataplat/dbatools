@@ -55,14 +55,20 @@ function Stop-DbaEndpoint {
 
         Returns the endpoint object(s) after they have been successfully stopped. One object is returned per endpoint that was stopped.
 
-        Properties include:
+        Default display properties (via Select-DefaultView in Get-DbaEndpoint):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: The endpoint identifier
         - Name: The name of the endpoint
-        - EndpointType: Type of endpoint (ServiceBroker, DatabaseMirroring, TSQL_DEFAULT_TCP, TSQL_DEFAULT_HTTP, or custom application)
-        - ProtocolType: The protocol used by the endpoint
-        - State: Current state of the endpoint (Stopped, Started, or Disabled)
-        - Parent: Reference to the parent server or database object
-        - Protocol: Detailed protocol configuration object
-        - Payload: Endpoint payload and payload type configuration
+        - IPAddress: The IP address the endpoint listens on (TCP endpoints only)
+        - Port: The port number the endpoint listens on (TCP endpoints only)
+        - EndpointState: Current state of the endpoint (Stopped, Started, or Disabled)
+        - EndpointType: Type of endpoint (ServiceBroker, DatabaseMirroring, TSql, etc.)
+        - Owner: The login that owns the endpoint
+        - IsAdminEndpoint: Boolean indicating if this is an admin endpoint
+        - Fqdn: Fully qualified domain name with protocol and port (TCP endpoints only)
+        - IsSystemObject: Boolean indicating if this is a system endpoint
 
         All properties from the base SMO Endpoint object are accessible using Select-Object *.
 

@@ -110,4 +110,63 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $results.WaitType | Should -BeLike "*WAITFOR*"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputJobName = "dbatoolsci_WaitingOutput"
+            $outputFlag = "dbatoolsci_$(Get-Random)"
+            $outputSql = "SELECT '$outputFlag'; WAITFOR DELAY '00:10:00'"
+
+            Start-Job -Name $outputJobName -ScriptBlock {
+                Import-Module $args[0];
+                (Connect-DbaInstance -SqlInstance $args[1] -ClientName dbatools-outputwait).ConnectionContext.ExecuteNonQuery($args[2])
+            } -ArgumentList $waitingTaskModulePath, $waitingTaskInstance, $outputSql
+
+            foreach ($second in 1..30) {
+                $outputSpid = Get-DbaProcess -SqlInstance $waitingTaskInstance | Where-Object Program -eq "dbatools-outputwait" | Select-Object -ExpandProperty Spid
+                if ($outputSpid) { break }
+                Start-Sleep -Seconds 1
+            }
+
+            Start-Sleep -Seconds 1
+            $result = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $outputSpid
+        }
+
+        AfterAll {
+            $outputCleanSpid = Get-DbaProcess -SqlInstance $waitingTaskInstance | Where-Object Program -eq "dbatools-outputwait" | Select-Object -ExpandProperty Spid
+            if ($outputCleanSpid) {
+                Stop-DbaProcess -SqlInstance $waitingTaskInstance -Spid $outputCleanSpid -ErrorAction SilentlyContinue
+            }
+            Get-Job -Name $outputJobName -ErrorAction SilentlyContinue | Remove-Job -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Spid", "Thread", "Scheduler", "WaitMs", "WaitType", "BlockingSpid", "ResourceDesc", "NodeId", "Dop", "DbId")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in default display" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "SqlText" -Because "SqlText is excluded via Select-DefaultView"
+            $defaultProps | Should -Not -Contain "QueryPlan" -Because "QueryPlan is excluded via Select-DefaultView"
+            $defaultProps | Should -Not -Contain "InfoUrl" -Because "InfoUrl is excluded via Select-DefaultView"
+        }
+
+        It "Has the excluded properties available on the object" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].PSObject.Properties.Name | Should -Contain "SqlText" -Because "SqlText should be accessible via Select-Object *"
+            $result[0].PSObject.Properties.Name | Should -Contain "QueryPlan" -Because "QueryPlan should be accessible via Select-Object *"
+            $result[0].PSObject.Properties.Name | Should -Contain "InfoUrl" -Because "InfoUrl should be accessible via Select-Object *"
+        }
+    }
 }

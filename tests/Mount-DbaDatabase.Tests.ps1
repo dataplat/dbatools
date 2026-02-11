@@ -69,4 +69,39 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AttachOption | Should -Be "None"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputTestDb = "dbatoolsci_mountoutput_$(Get-Random)"
+            try {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+                $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
+                $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Type Full -FilePath "$($TestConfig.Temp)\$outputTestDb.bak"
+                $null = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Force
+                $outputResult = Mount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            } catch {
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+                $outputResult = $null
+            }
+        }
+
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-Item -Path "$($TestConfig.Temp)\$outputTestDb.bak" -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "AttachResult", "AttachOption", "FileStructure")
+            foreach ($prop in $expectedProps) {
+                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

@@ -43,4 +43,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.LogType | Should -Be "instance"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.InstanceSingle -Type instance
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogType",
+                "IsSuccessful",
+                "Notes"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has no Select-DefaultView properties" {
+            $result.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
+    }
 }

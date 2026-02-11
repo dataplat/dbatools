@@ -91,4 +91,47 @@ Describe $CommandName -Tag IntegrationTests {
             $results25.PercentUsed | Should -Be 47.06
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $table3 = "dbatoolsci_identity_$(Get-Random)"
+            $tableDDL = "CREATE TABLE $table3 (testId INT IDENTITY(1,1), testData DATETIME2 DEFAULT getdate())"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $tableDDL -Database TempDb
+            $insertSql = "INSERT INTO $table3 (testData) DEFAULT VALUES"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $insertSql -Database TempDb
+            $result = Test-DbaIdentityUsage -SqlInstance $TestConfig.InstanceSingle -Database TempDb | Where-Object Table -eq $table3
+        }
+
+        AfterAll {
+            $cleanup = "IF OBJECT_ID('tempdb.dbo.$table3') IS NOT NULL DROP TABLE $table3"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $cleanup -Database TempDb -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Table", "Column", "SeedValue", "IncrementValue", "LastValue", "PercentUsed")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the excluded properties available" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.Properties.Name | Should -Contain "MaxNumberRows"
+            $result[0].PSObject.Properties.Name | Should -Contain "NumberOfUses"
+        }
+
+        It "Excludes MaxNumberRows and NumberOfUses from default display" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "MaxNumberRows" -Because "MaxNumberRows should be excluded from the default display"
+            $defaultProps | Should -Not -Contain "NumberOfUses" -Because "NumberOfUses should be excluded from the default display"
+        }
+    }
 }

@@ -123,4 +123,34 @@ Describe $CommandName -Tag IntegrationTests -Skip {
         $results = Invoke-DbaDbLogShipping @splatLogShipping
         $results.Status -eq "Success" | Should -Be $true
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatLogShipOutput = @{
+                SourceSqlInstance       = $TestConfig.InstanceSingle
+                DestinationSqlInstance  = $TestConfig.instance
+                Database                = $dbname
+                BackupNetworkPath       = "C:\temp"
+                BackupLocalPath         = "C:\temp\logshipping\backup"
+                GenerateFullBackup      = $true
+                CompressBackup          = $true
+                SecondaryDatabaseSuffix = "_LS"
+                Force                   = $true
+            }
+            $outputResult = Invoke-DbaDbLogShipping @splatLogShipOutput
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @("PrimaryInstance", "SecondaryInstance", "PrimaryDatabase", "SecondaryDatabase", "Result", "Comment")
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

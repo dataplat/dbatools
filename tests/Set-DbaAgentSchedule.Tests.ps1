@@ -349,4 +349,62 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputJobName = "dbatoolsci_setschedout_$(Get-Random)"
+            $outputScheduleName = "dbatoolsci_outschd"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -OwnerLogin "sa" -EnableException
+            $outputStart = (Get-Date).AddDays(2).ToString("yyyyMMdd")
+            $outputEnd = (Get-Date).AddDays(4).ToString("yyyyMMdd")
+            $null = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $outputScheduleName -Job $outputJobName -FrequencyRecurrenceFactor "1" -FrequencySubdayInterval "5" -FrequencySubdayType "Time" -StartDate $outputStart -StartTime "010000" -EndDate $outputEnd -EndTime "020000" -EnableException
+            $outputAltStart = (Get-Date).AddDays(3).ToString("yyyyMMdd")
+            $outputAltEnd = (Get-Date).AddDays(5).ToString("yyyyMMdd")
+            $outputResult = Set-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $outputScheduleName -Job $outputJobName -FrequencyRecurrenceFactor "3" -StartDate $outputAltStart -StartTime "113300" -EndDate $outputAltEnd -EndTime "221100"
+        }
+
+        AfterAll {
+            Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobSchedule"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ScheduleName",
+                "ActiveEndDate",
+                "ActiveEndTimeOfDay",
+                "ActiveStartDate",
+                "ActiveStartTimeOfDay",
+                "DateCreated",
+                "FrequencyInterval",
+                "FrequencyRecurrenceFactor",
+                "FrequencyRelativeIntervals",
+                "FrequencySubDayInterval",
+                "FrequencySubDayTypes",
+                "FrequencyTypes",
+                "IsEnabled",
+                "JobCount",
+                "Description",
+                "ScheduleUid"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.Properties["ScheduleName"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.Properties["ScheduleName"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

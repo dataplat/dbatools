@@ -65,14 +65,18 @@ function Restart-DbaService {
         https://dbatools.io/Restart-DbaService
 
     .OUTPUTS
-        PSCustomObject
+        dbatools.DbaSqlService
 
-        Returns one object per service that was processed with the following properties:
+        Returns one object per service that was processed.
+
+        Default display properties (via Select-DefaultView):
         - ComputerName: The name of the computer where the service is running
-        - InstanceName: The SQL Server instance name the service belongs to
         - ServiceName: The Windows service name (MSSQLSERVER, MSSQL$NAMED, SQLSERVERAGENT, etc.)
+        - InstanceName: The SQL Server instance name the service belongs to
         - ServiceType: The type of service (Engine, Agent, Browser, FullText, SSAS, SSIS, SSRS, PolyBase, Launchpad)
+        - State: The current state of the service after the operation (Running, Stopped)
         - Status: The result of the restart operation (Successful, Failed, or other status values)
+        - Message: A descriptive message about the operation result
 
         Services that failed to stop are returned before services that successfully restarted. This allows you to identify which services encountered issues during the restart process.
 

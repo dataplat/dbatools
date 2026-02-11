@@ -84,19 +84,24 @@ function Set-DbaRgWorkloadGroup {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.WorkloadGroup
 
-        Returns the modified WorkloadGroup object(s) after configuration changes are applied. One object is returned per workload group that was modified, containing the updated workload group properties and resource constraints.
+        Returns the modified WorkloadGroup object(s) after configuration changes are applied. Output is obtained via Get-DbaRgWorkloadGroup which provides Select-DefaultView formatting.
 
-        The output is obtained by retrieving the updated workload group from the Resource Governor configuration after the Alter() operation completes, ensuring that the returned object reflects all applied changes.
-
-        Properties available on the returned WorkloadGroup objects include:
+        Default display properties (via Select-DefaultView in Get-DbaRgWorkloadGroup):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: Unique identifier for the workload group
         - Name: Name of the workload group
-        - Importance: Relative priority level (LOW, MEDIUM, or HIGH)
-        - RequestMaximumMemoryGrantPercentage: Maximum memory percentage per query request
-        - RequestMaximumCpuTimeInSeconds: Maximum CPU time per request
-        - RequestMemoryGrantTimeoutInSeconds: Memory grant timeout setting
-        - MaximumDegreeOfParallelism: Maximum parallel processors for queries
+        - ExternalResourcePoolName: Name of the associated external resource pool
         - GroupMaximumRequests: Maximum concurrent requests limit
-        - Parent: Reference to the parent ResourcePool or ExternalResourcePool object
+        - Importance: Relative priority level (LOW, MEDIUM, or HIGH)
+        - IsSystemObject: Boolean indicating if this is a system workload group
+        - MaximumDegreeOfParallelism: Maximum parallel processors for queries
+        - RequestMaximumCpuTimeInSeconds: Maximum CPU time per request
+        - RequestMaximumMemoryGrantPercentage: Maximum memory percentage per query request
+        - RequestMemoryGrantTimeoutInSeconds: Memory grant timeout setting
+
+        All properties from the base SMO WorkloadGroup object are accessible using Select-Object *.
 
     .EXAMPLE
         PS C:\> Set-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup "groupAdmin" -ResourcePool "poolAdmin"

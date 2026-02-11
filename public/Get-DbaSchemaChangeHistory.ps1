@@ -54,7 +54,7 @@ function Get-DbaSchemaChangeHistory {
         Returns one object per DDL change (CREATE, DROP, or ALTER operation) found in the SQL Server default system trace.
         When no schema changes are found matching the filter criteria, the command returns nothing.
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance format)

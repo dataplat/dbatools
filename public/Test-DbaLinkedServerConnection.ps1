@@ -41,8 +41,8 @@ function Test-DbaLinkedServerConnection {
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance format)
-        - Name: The name of the linked server
-        - DataSource: The data source or connection string of the linked server
+        - LinkedServerName: The name of the linked server
+        - RemoteServer: The data source or remote server name of the linked server
         - Connectivity: Boolean indicating if the linked server connection was successful (true = connected, false = failed)
         - Result: Connection test result message - either "Success" or the specific error message explaining the connection failure
 

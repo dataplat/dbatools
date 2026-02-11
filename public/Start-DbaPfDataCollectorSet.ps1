@@ -49,13 +49,33 @@ function Start-DbaPfDataCollectorSet {
     .OUTPUTS
         PSCustomObject
 
-        Returns one Performance Monitor Data Collector Set object for each collector set that was successfully started.
+        Returns one Performance Monitor Data Collector Set object for each collector set that was successfully started. This is the same output as Get-DbaPfDataCollectorSet.
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - ComputerName: The name of the computer where the Data Collector Set is located
-        - State: The current state of the Data Collector Set (Running, Stopped, etc.)
         - Name: The name of the Data Collector Set
-        - DataCollectorSetObject: The underlying Windows Performance Monitor Data Collector Set COM object
+        - DisplayName: The user-friendly display name of the collector set
+        - Description: Description of the collector set
+        - State: The current state of the Data Collector Set (Running, Stopped, etc.)
+        - Duration: Duration of the data collection in seconds
+        - OutputLocation: Path where output files are written
+        - LatestOutputLocation: Path to the most recent output files
+        - RootPath: Root directory for collector set output
+        - SchedulesEnabled: Whether scheduling is enabled
+        - Segment: Whether segmentation is enabled
+        - SegmentMaxDuration: Maximum segment duration
+        - SegmentMaxSize: Maximum segment size
+        - SerialNumber: Serial number incremented for each output location
+        - Server: Server name if configured
+        - StopOnCompletion: Whether to stop when all data collectors complete
+        - Subdirectory: Subdirectory name for output
+        - SubdirectoryFormat: Format for subdirectory naming
+        - SubdirectoryFormatPattern: Pattern for subdirectory format
+        - Task: Task to run on collector set events
+        - TaskArguments: Arguments for the task
+        - TaskRunAsSelf: Whether the task runs as the collector set user
+        - TaskUserTextArguments: User text arguments for the task
+        - UserAccount: Account under which the collector set runs
 
         Returns nothing if no collector sets are found matching the specified parameters, if they are already running, if they are disabled, or if the -WhatIf parameter is used.
 

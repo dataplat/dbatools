@@ -92,28 +92,32 @@ function New-DbaLinkedServer {
         Microsoft.SqlServer.Management.Smo.LinkedServer
 
         Returns one LinkedServer object for each linked server successfully created on the target SQL Server instance(s).
+        The returned object is retrieved via Get-DbaLinkedServer after creation.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView in Get-DbaLinkedServer):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: Name of the linked server
-        - DataSource: Network name or connection string for the remote data source
-        - ProviderName: OLE DB provider used to connect to the remote data source
+        - RemoteServer: Network name or connection string for the remote data source (aliased from DataSource)
         - ProductName: Product name of the remote data source
-        - LinkedServerLogins: Number of login mappings configured for this linked server
+        - Impersonate: Boolean indicating if impersonation is used for connection
+        - RemoteUser: The remote login name used for connection
+        - Publisher: Boolean indicating if the linked server is a replication publisher (aliased from DistPublisher)
+        - Distributor: Boolean indicating if the linked server is a replication distributor
+        - DateLastModified: Timestamp of when the linked server was last modified
 
         Additional properties available (from SMO LinkedServer object):
+        - DataSource: Network name or connection string (source property for RemoteServer alias)
+        - DistPublisher: Boolean indicating if the linked server is a distribution publisher (source property for Publisher alias)
         - Catalog: Default database or catalog name on the remote data source
         - Location: Physical location information for the data source
+        - ProviderName: OLE DB provider used to connect to the remote data source
         - ProviderString: Additional connection properties passed to the OLE DB provider
         - RpcEnabled: Boolean indicating if remote procedure calls are enabled
         - RpcOut: Boolean indicating if outgoing RPC calls are allowed
         - ConnectTimeout: Connection timeout in seconds
         - QueryTimeout: Query timeout in seconds
-        - IsPublisher: Boolean indicating if the linked server is a replication publisher
-        - IsSubscriber: Boolean indicating if the linked server is a replication subscriber
-        - IsDistributor: Boolean indicating if the linked server is a replication distributor
 
     .EXAMPLE
         PS C:\>New-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -ServerProduct mssql -Provider MSOLEDBSQL -DataSource sql02

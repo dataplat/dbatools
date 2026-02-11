@@ -116,4 +116,43 @@ Describe $CommandName -Tag IntegrationTests {
             $results.WeekdayPagerEndTime.ToString() | Should -Be "19:00:00"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputRandom = Get-Random
+            $outputEmail = "dbatoolsci_output$($outputRandom)@test.com"
+            $result = New-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle -Operator $outputEmail -EmailAddress $outputEmail
+        }
+
+        AfterAll {
+            Remove-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle -Operator $outputEmail -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Operator"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ID",
+                "IsEnabled",
+                "EmailAddress",
+                "LastEmail"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            $result[0].psobject.Properties["IsEnabled"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["IsEnabled"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

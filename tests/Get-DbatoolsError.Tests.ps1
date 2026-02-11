@@ -30,4 +30,36 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbatoolsError | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            try {
+                $null = Connect-DbaInstance -SqlInstance "dbatoolsci_fakeinst" -ConnectTimeout 1 -ErrorAction Stop
+            } catch { }
+            $result = Get-DbatoolsError -First 1
+        }
+
+        It "Returns output with expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProperties = @(
+                "CategoryInfo",
+                "ErrorDetails",
+                "Exception",
+                "FullyQualifiedErrorId",
+                "InvocationInfo",
+                "PipelineIterationInfo",
+                "PSMessageDetails",
+                "ScriptStackTrace",
+                "TargetObject"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has a dbatools FullyQualifiedErrorId" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].FullyQualifiedErrorId | Should -Match "dbatools"
+        }
+    }
 }

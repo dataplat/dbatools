@@ -30,13 +30,13 @@ function Get-DbaWsfcNetwork {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        PSCustomObject
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_Network
 
-        Returns one object per cluster network found on the Windows Server Failover Cluster.
+        Returns one network object per cluster network found on the Windows Server Failover Cluster. Each object is a CIM instance with ClusterName and ClusterFqdn added as NoteProperties.
 
-        Properties:
-        - ClusterName: The name of the Windows Server Failover Cluster
-        - ClusterFqdn: The fully qualified domain name of the cluster
+        Default display properties (via Select-DefaultView):
+        - ClusterName: The name of the Windows Server Failover Cluster (added via NoteProperty)
+        - ClusterFqdn: The fully qualified domain name of the cluster (added via NoteProperty)
         - Name: The network name within the cluster configuration
         - Address: The network address (IP address or network identifier)
         - AddressMask: The subnet mask or network address mask
@@ -48,6 +48,9 @@ function Get-DbaWsfcNetwork {
         - QuorumTypeValue: The quorum type value representation
         - RequestReplyTimeout: The request/reply timeout value in milliseconds
         - Role: The role of the network in the cluster (cluster, client, etc.)
+
+        Additional properties from MSCluster_Network WMI class (accessible via Select-Object *):
+        - All other properties defined in the MSCluster_Network WMI class
 
     .LINK
         https://dbatools.io/Get-DbaWsfcNetwork

@@ -83,4 +83,40 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentProxy -SqlInstance $server) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputProxyName = "dbatoolsci_outputtest_$(Get-Random)"
+            $null = Invoke-DbaQuery -SqlInstance $outputServer -Query "EXEC msdb.dbo.sp_add_proxy @proxy_name = '$outputProxyName', @enabled = 1, @description = 'Output test proxy.', @credential_name = 'proxyCred';"
+            $PSDefaultParameterValues["Disabled"] = $true
+            $result = Remove-DbaAgentProxy -SqlInstance $outputServer -Proxy $outputProxyName -Confirm:$false
+            $PSDefaultParameterValues["Disabled"] = $false
+        }
+
+        AfterAll {
+            $null = Invoke-DbaQuery -SqlInstance $outputServer -Query "EXEC msdb.dbo.sp_delete_proxy @proxy_name = '$outputProxyName';" -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct values for removal output" {
+            $result.Status | Should -Be "Dropped"
+            $result.IsRemoved | Should -BeTrue
+            $result.Name | Should -Be $outputProxyName
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
 }

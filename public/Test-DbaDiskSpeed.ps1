@@ -45,11 +45,11 @@ function Test-DbaDiskSpeed {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        PSCustomObject
+        System.Data.DataRow
 
-        Returns I/O performance statistics aggregated at the file, database, or disk level based on the -AggregateBy parameter. Properties vary by aggregation level.
+        Returns DataRow objects with I/O performance statistics aggregated at the file, database, or disk level based on the -AggregateBy parameter. Properties vary by aggregation level.
 
-        Default properties (all aggregation levels):
+        Properties (all aggregation levels):
         - ComputerName: The computer name
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL instance name (computer\instance)
@@ -72,9 +72,11 @@ function Test-DbaDiskSpeed {
         - FileName: File name (Windows: letter+name like "C:\...\file.mdf", Linux: full path)
         - FileID: File ID within the database
         - FileType: Type of file - "Log" for transaction log, "Data" for data files
+        - DiskLocation: Disk identifier
 
         When -AggregateBy 'Database':
         - Database: Database name (aggregated across all files in the database)
+        - DiskLocation: Disk identifier
 
         When -AggregateBy 'Disk':
         - DiskLocation: Disk identifier - Windows letter like "C", "D"; Linux path prefix like "/var/opt/mssql"

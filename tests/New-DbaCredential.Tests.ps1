@@ -84,4 +84,42 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Identity | Should -Be "Managed Identity"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputIdentity = "dbatoolsci_outputtest_$(Get-Random)"
+            $outputPassword = ConvertTo-SecureString "BigOlPassword!" -AsPlainText -Force
+            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $outputIdentity, "BigOlPassword!" -ComputerName $TestConfig.InstanceSingle
+            $result = New-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity $outputIdentity -SecurePassword $outputPassword
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            try {
+                (Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity $outputIdentity -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
+            } catch { }
+            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $outputIdentity -ComputerName $TestConfig.InstanceSingle
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Credential"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Identity", "CreateDate", "MappedClassType", "ProviderName")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -132,4 +132,26 @@ Describe $CommandName -Tag IntegrationTests {
             $updatedMessage.Text | Should -Be "updated text"
         }
     }
+
+}
+
+Describe "$CommandName Output" -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $outputServer.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70006) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70006, @lang = 'all'; END")
+            $null = New-DbaCustomError -SqlInstance $outputServer -MessageID 70006 -Severity 1 -MessageText "test_70006_output"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $outputServer.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70006) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70006, @lang = 'all'; END")
+        }
+
+        It "Returns no output" {
+            $outputResult = Remove-DbaCustomError -SqlInstance $outputServer -MessageID 70006
+            $outputResult | Should -BeNullOrEmpty
+        }
+    }
 }

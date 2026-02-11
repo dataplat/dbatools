@@ -110,20 +110,17 @@ function Start-DbaDbEncryption {
         https://dbatools.io/Start-DbaDbEncryption
 
     .OUTPUTS
-        PSCustomObject
+        Microsoft.SqlServer.Management.Smo.Database / PSCustomObject
 
-        When using the -Parallel parameter, returns one object per database after encryption is enabled. In sequential mode, no output is returned to the pipeline, only progress messages.
+        In sequential mode (default), returns Database objects from Enable-DbaDbEncryption with Select-DefaultView applied.
+        In parallel mode (-Parallel), returns PSCustomObject with Select-DefaultView applied.
 
-        Properties (when -Parallel is specified):
+        Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance where encryption was applied
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
-        - DatabaseName: Name of the database that was encrypted
+        - DatabaseName: Name of the database that was encrypted (aliased from Name in sequential mode)
         - EncryptionEnabled: Boolean indicating if encryption was successfully enabled on the database
-        - Status: String indicating operation result - either "Success" or "Failed"
-        - Error: Error message if Status is "Failed", otherwise null
-
-        Note: Sequential processing (default, without -Parallel) does not output to the pipeline. Use -Parallel to receive result objects for each encrypted database.
 
     .EXAMPLE
         PS C:\> $masterkeypass = (Get-Credential justneedpassword).Password

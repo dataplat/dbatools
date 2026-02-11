@@ -31,4 +31,19 @@ Describe $CommandName -Tag IntegrationTests {
             $dataset.Count | Should -Be 10
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaRandomizedDataset -Template PersonalData -Rows 1)
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has properties defined by the PersonalData template" {
+            $result[0].PSObject.Properties.Name.Count | Should -BeGreaterThan 0
+        }
+    }
 }

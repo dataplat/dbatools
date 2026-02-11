@@ -66,9 +66,9 @@ function Restore-DbaDbSnapshot {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Database
 
-        Returns one Database object for each database that was successfully restored from a snapshot. The returned object represents the state of the database after the restore operation completed and log file growth settings were restored to their pre-snapshot values.
+        Returns one Database object for each database that was successfully restored from a snapshot. The returned object is obtained via Get-DbaDatabase after the restore completes.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView in Get-DbaDatabase):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
@@ -76,16 +76,15 @@ function Restore-DbaDbSnapshot {
         - Status: Current database status (Normal, Suspect, Offline, etc.)
         - IsAccessible: Boolean indicating if the database is currently accessible
         - RecoveryModel: Database recovery model (Full, Simple, BulkLogged)
-        - Owner: Database owner login name
-
-        Additional properties available from the SMO Database object:
-        - Size: Current size of the database in megabytes
-        - CreateDate: DateTime when the database was created
-        - LastBackupDate: DateTime of the most recent backup
-        - LastDiffBackup: DateTime of the most recent differential backup
-        - LastLogBackup: DateTime of the most recent transaction log backup
+        - LogReuseWaitStatus: Why the transaction log is waiting
+        - SizeMB: Total size in megabytes (aliased from Size)
+        - Compatibility: Database compatibility level (aliased from CompatibilityLevel)
         - Collation: Database collation setting
-        - CompatibilityLevel: Database compatibility level
+        - Owner: Database owner login name
+        - Encrypted: Whether the database is encrypted (aliased from EncryptionEnabled)
+        - LastFullBackup: DateTime of the most recent full backup (aliased from LastBackupDate)
+        - LastDiffBackup: DateTime of the most recent differential backup (aliased from LastDifferentialBackupDate)
+        - LastLogBackup: DateTime of the most recent log backup (aliased from LastLogBackupDate)
 
         All properties from the base SMO Database object are accessible using Select-Object *.
 

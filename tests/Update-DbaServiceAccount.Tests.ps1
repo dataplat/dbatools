@@ -206,4 +206,31 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $svcOutputResult = Get-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Instance $instanceName | Update-DbaServiceAccount -Username $currentEngineUser
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $svcOutputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $svcOutputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Wmi.SqlService"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $svcOutputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $svcOutputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "ServiceName",
+                "State",
+                "StartName",
+                "Status",
+                "Message"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

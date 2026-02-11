@@ -59,4 +59,35 @@ Describe $CommandName -Tag IntegrationTests {
             $warning -match "existing" | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputConfigTimeout = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout).ConfiguredValue
+            $outputNewTimeout = $outputConfigTimeout + 1
+            $result = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $outputNewTimeout
+        }
+
+        AfterAll {
+            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $outputConfigTimeout -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ConfigName",
+                "PreviousValue",
+                "NewValue"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
+    }
 }

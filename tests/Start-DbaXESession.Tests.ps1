@@ -146,4 +146,40 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Stop the valid session first so we can start it and capture output
+            $null = Stop-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session dbatoolsci_session_valid -WarningAction SilentlyContinue
+            $outputResult = Start-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session dbatoolsci_session_valid -WarningAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.XEvent.Session"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "StartTime",
+                "AutoStart",
+                "State",
+                "Targets",
+                "TargetFile",
+                "Events",
+                "MaxMemory",
+                "MaxEventSize"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

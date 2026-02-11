@@ -91,4 +91,16 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Parent.Name | Should -Be $db1name, $db2name
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputFgName = "dbatoolsci_outfg_$(Get-Random)"
+            $result = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup $outputFgName
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.FileGroup"
+        }
+    }
 }

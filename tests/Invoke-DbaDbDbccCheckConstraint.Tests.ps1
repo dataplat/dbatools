@@ -93,4 +93,37 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Output.Substring(0, 25) -eq "DBCC execution completed." | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputCheck = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbname
+                Object      = $tableName
+            }
+            $outputResult = Invoke-DbaDbDbccCheckConstraint @splatOutputCheck
+        }
+
+        It "Returns output as PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Cmd",
+                "Output",
+                "Table",
+                "Constraint",
+                "Where"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

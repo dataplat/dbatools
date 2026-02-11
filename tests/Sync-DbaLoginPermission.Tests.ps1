@@ -113,4 +113,53 @@ CREATE LOGIN [$stateTestLogin]
             $destLoginAfter.IsDisabled | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $tempOutputGuid = [guid]::newguid()
+            $outputTestLogin = "dbatoolssci_output_$($tempOutputGuid.guid)"
+            $createOutputLogin = @"
+CREATE LOGIN [$outputTestLogin]
+    WITH PASSWORD = '$($tempOutputGuid.guid)';
+"@
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query $createOutputLogin
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Query $createOutputLogin
+
+            $splatOutputSync = @{
+                Source      = $TestConfig.InstanceMulti1
+                Destination = $TestConfig.InstanceMulti2
+                Login       = $outputTestLogin
+            }
+            $outputResult = Sync-DbaLoginPermission @splatOutputSync
+        }
+        AfterAll {
+            $dropOutputLogin = "DROP LOGIN [$outputTestLogin]"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Query $dropOutputLogin -Database master -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has DateTime property populated" {
+            $outputResult[0].DateTime | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has a valid Status value" {
+            $outputResult[0].Status | Should -BeIn @("Successful", "Failed")
+        }
+
+        It "Has Type set to Login Permissions" {
+            $outputResult[0].Type | Should -Be "Login Permissions"
+        }
+    }
 }

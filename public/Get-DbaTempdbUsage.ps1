@@ -39,9 +39,9 @@ function Get-DbaTempdbUsage {
         https://dbatools.io/Get-DbaTempdbUsage
 
     .OUTPUTS
-        PSCustomObject
+        System.Data.DataRow
 
-        Returns one object per running session that has allocated or deallocated tempdb space. For sessions with no tempdb allocation activity, no object is returned.
+        Returns one DataRow per running session that has allocated or deallocated tempdb space. For sessions with no tempdb allocation activity, no object is returned.
 
         Properties:
         - ComputerName: The name of the computer hosting the SQL Server instance

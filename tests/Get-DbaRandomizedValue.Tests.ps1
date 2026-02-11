@@ -52,4 +52,29 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Length | Should -Be 5
         }
     }
+
+    Context "Output validation" {
+        It "Returns a string when using varchar DataType" {
+            $result = Get-DbaRandomizedValue -DataType varchar
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns an integer when using int DataType" {
+            $result = Get-DbaRandomizedValue -DataType int
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.Int32]
+        }
+
+        It "Returns a string in date format when using date DataType" {
+            $result = Get-DbaRandomizedValue -DataType date
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -Match "^\d{4}-\d{2}-\d{2}$"
+        }
+
+        It "Returns 0 or 1 when using bit DataType" {
+            $result = Get-DbaRandomizedValue -DataType bit
+            $result | Should -BeIn 0, 1
+        }
+    }
 }
