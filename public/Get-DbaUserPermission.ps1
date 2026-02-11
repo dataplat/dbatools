@@ -254,6 +254,7 @@ function Get-DbaUserPermission {
 
             try {
                 Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
+                # We use Invoke-DbaQuery (here and later in the code) because using ExecuteNonQuery with long batches causes problems on AppVeyor.
                 $null = Invoke-DbaQuery -SqlInstance $server -Database tempdb -Query $removeStigSQL -EnableException
                 Write-Message -Level Verbose -Message "Creating STIG schema customized for master database"
                 $createStigSQL = $sql.Replace("<TARGETDB>", 'master')
@@ -294,7 +295,6 @@ function Get-DbaUserPermission {
 
                 try {
                     Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
-                    # We use Invoke-DbaQuery (here and later in the code) because using ExecuteNonQuery with long batches causes problems on AppVeyor.
                     $null = Invoke-DbaQuery -SqlInstance $server -Database tempdb -Query $removeStigSQL -EnableException
                     Write-Message -Level Verbose -Message "Creating STIG schema customized for current database"
                     $createStigSQL = $sql.Replace("<TARGETDB>", $db.Name)
