@@ -517,7 +517,7 @@ function Install-DbaMaintenanceSolution {
 
                 if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
                     Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
-                    $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $cleanupQuery -EnableException
+                    $null = $db.Invoke($cleanupQuery)
                 }
 
                 # Remove Ola's Jobs
