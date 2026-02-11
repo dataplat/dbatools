@@ -806,7 +806,7 @@ function Install-DbaMaintenanceSolution {
                 }
             }
 
-            if ($query) {
+            if ($sql) {
                 # then whatif wasn't passed
                 [PSCustomObject]@{
                     ComputerName = $server.ComputerName
